@@ -1,10 +1,21 @@
-# Main logging schema for qlog
+# qlog : QUIC and HTTP/3 logging schema
 
-This is the working area for the individual Internet-Draft, "Main logging schema for qlog".
+This is the working area for the Internet-Drafts concerning the qlog schema.  
+Two documents are currently defined:
+- The main schema: high-level schema, defining general logging format and principles
+- Event definitions: concrete event definitions for the QUIC and HTTP/3 protocols
+
+## Main schema
 
 * [Editor's Copy](https://quiclog.github.io/internet-drafts/#go.draft-marx-quic-logging-main-schema.html)
 * [Individual Draft](https://tools.ietf.org/html/draft-marx-quic-logging-main-schema)
 * [Compare Editor's Copy to Individual Draft](https://quiclog.github.io/internet-drafts/#go.draft-marx-quic-logging-main-schema.diff)
+
+## Event definitions for QUIC and HTTP/3
+
+* [Editor's Copy](https://quiclog.github.io/internet-drafts/#go.draft-marx-quic-logging-event-definitions.html)
+* [Individual Draft](https://tools.ietf.org/html/draft-marx-quic-logging-event-definitions)
+* [Compare Editor's Copy to Individual Draft](https://quiclog.github.io/internet-drafts/#go.draft-marx-quic-logging-event-definitions.diff)
 
 ## Building the Draft
 
