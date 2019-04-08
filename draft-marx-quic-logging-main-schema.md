@@ -128,6 +128,10 @@ Only the "event_fields" and "events" fields MUST be present.
     "vantage_point": "SERVER",
     "title": "Name of this particular trace (short)",
     "description": "Description for this trace (long)",
+    "configuration": {
+        "time_offset": "offset in ms",
+        "time_units": "ms" | "us"
+    },
     "common_fields": (see below),
     "event_fields": (see below),
     "events": [...]
@@ -155,6 +159,35 @@ name and readable timestamp of the log), or can be filled manually when creating
 aggregated logs (e.g., qlog files that illustrate a specific problem across traces
 that want to include additional explanations for easier communication between
 teams, students, ...).
+
+### Configuration
+
+We take into account that a log file is usually not used in isolation, but by
+means of various tools. Especially when aggregating various traces together or
+preparing traces for a demonstration, one might wish to persist certain tool-based
+settings inside the log file itself. For this, the configuration field is used.
+
+The configuration field can be viewed as a generic metadata field that tools can
+fill with their own fields, based on per-tool logic. It is best practice for tools
+to prefix each added field with their tool name to prevent collisions across
+tools. This document only defines two standard, tool-independent configuration
+settings: "time_offset" and "time_units".
+
+#### time_offset
+time_offset indicates by how many units of time (see next section) the starting
+time of the current trace should be offset. This is useful when comparing logs
+taken from various systems, where clocks might not be perfectly synchronous. Users
+could use manual tools or automated logic to align traces in time and the found
+optimal offsets can be stored in this field for future usage.
+
+#### time_units
+Since timestamps can be stored in various granularities, this field allows to
+indicate whether storage happens in either milliseconds ("ms") or microseconds
+("us"). If this field is not present, the default value is "ms". This
+configuration setting applies to all other timestamps in the trace file as well,
+not just the "time_offset" field.
+
+
 
 ### common_fields and event_fields
 
