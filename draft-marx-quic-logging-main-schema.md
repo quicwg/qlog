@@ -89,11 +89,12 @@ The main tenets for the schema design are:
 To allow separate qlog traces to be contained within a single, encompassing qlog
 file, the top-level element in the qlog schema defines only a small set of fields
 and an array of component traces. Only the "qlog_version" and "traces" fields MUST
-be present.
+be present. For this document, the "qlog_version" field MUST have a value of
+draft-00.
 
 ~~~~~~~~
 {
-    "qlog_version": "0.1",
+    "qlog_version": "draft-00",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
     "traces": [...]
@@ -551,15 +552,30 @@ separate documents, specific per protocol or use case.
 For example: event definitions for QUIC and HTTP/3 can be found in TODO.
 
 
+# Tooling requirements
+
+Tools MUST indicate which qlog version(s) they support. Additionally, they SHOULD
+indicate exactly which values for the CATEGORY, EVENT_TYPE and TRIGGER fields they
+look for to execute their logic. Tools SHOULD perform a (high-level) check if an
+input qlog file adheres to the expected qlog schema. If a tool determines a qlog
+file does not contain enough supported information to correctly execute the tool's
+logic, it SHOULD generate a clear error message to this effect.
+
+Tools MUST disregard any field names and values in the qlog format that they do
+not recognize.
+
 # Methods of Access
 
-TBD : propose to use a .well-known URL to fetch these logs from the server
+TBD : propose to use a .well-known URL to fetch logs from an endpoint / to send
+logs to.
 
 # Notes on Practical Use
 
 TBD : discuss that implementation do not have to output qlog directly. It is good
 practice to log in whatever way you want, and then just write a transformer to
 qlog for use in tooling.
+
+
 
 # Security Considerations
 
