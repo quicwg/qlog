@@ -275,7 +275,7 @@ protocols can be found in TODO.
         "reference_time": "1553986553572"
     },
     "event_fields": [
-        "delta_time",
+        "relative_time",
         "CATEGORY",
         "EVENT_TYPE",
         "TRIGGER",
@@ -340,7 +340,7 @@ expected corresponding value formats.
 
 Only a time-based field (see {{time-based-fields}}), the EVENT_TYPE field and the
 DATA field are mandatory. Typical setups will log reference_time, protocol_type
-and group_id in "common_fields" and delta_time, CATEGORY, EVENT_TYPE, TRIGGER and
+and group_id in "common_fields" and relative_time, CATEGORY, EVENT_TYPE, TRIGGER and
 DATA in "event_fields".
 
 Other field names are allowed, both in "common_fields" and "event_fields", but
@@ -348,18 +348,18 @@ their semantics depend on the context of the log usage (e.g., for QUIC, the ODCI
 field is used).
 
 
-### time, rolling_time and reference_time + delta_time {#time-based-fields}
+### time, delta_time and reference_time + relative_time {#time-based-fields}
 
 There are three main modes for logging time:
 
 * Include the full timestamp with each event ("time"). This approach uses the
   largest amount of characters.
-* Delta-encode each time value on the previously logged value ("rolling_time").
+* Delta-encode each time value on the previously logged value ("delta_time").
   The first event can log the full timestamp. This approach uses the least amount
   of characters.
 * Specify a full "reference_time" timestamp up-front in "common_fields" and
-  include only delta-encoded values based on this reference_time with each event
-  ("delta_time"). This approach uses a medium amount of characters.
+  include only relatively-encoded values based on this reference_time with each
+  event ("relative_time"). This approach uses a medium amount of characters.
 
 The first option is good for stateless loggers, the second and third for stateful
 loggers. The third option is generally preferred, since it produces smaller files
@@ -369,10 +369,10 @@ while being easier to reason about.
 The time approach will use:
 1500, 1505, 1522, 1588
 
-The rolling_time approach will use:
+The delta_time approach will use:
 1500, 5, 17, 66
 
-The delta_time approach will:
+The relative_time approach will:
 - set the reference_time to 1500 in "common_fields"
 - use: 0, 5, 22, 88
 
