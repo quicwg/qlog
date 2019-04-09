@@ -116,16 +116,25 @@ into a single qlog file.
 Each trace container encompasses a single conceptual trace. The exact definition
 of a trace can be fluid. For example, a trace could contain all events for a
 single connection, for a single endpoint, for a single measurement interval, ...
-Typically, a trace is a log collected at a single location or vantage point and
-related traces from multiple vantage points can be combined in a single qlog file.
+
+In the normal use case, a trace is a log of a single data flow collected at a
+single location or vantage point. For example, for QUIC, a single trace only
+contains events for a single logical QUIC connection. However, a single trace
+could also combine events from a variety of vantage points or use cases (e.g.,
+multiple QUIC connections or the same connection viewed from different points in
+the network).
+
 The semantics and context of the trace can be deduced from the entries in the
-"common_fields" and "event_fields" lists.
+"common_fields" (specifically the "group_ids" field) and "event_fields" lists.
 
 Only the "event_fields" and "events" fields MUST be present.
 
 ~~~~~~~~
 {
-    "vantage_point": "SERVER",
+    "vantage_point": {
+        "name": "backend-67",
+        "type": "SERVER"
+    },
     "title": "Name of this particular trace (short)",
     "description": "Description for this trace (long)",
     "configuration": {
@@ -142,13 +151,29 @@ Only the "event_fields" and "events" fields MUST be present.
 
 ### vantage_point
 
-This field described the vantage point from which the trace originates.
-Its value is a string, which can be filled in as needed.
-Three main values are defined in this document: "SERVER", "CLIENT", "NETWORK".
-Other value examples: "NETWORK-1", "loadbalancer45", "reverseproxy@192.168.1.1"
+This field describes the vantage point from which the trace originates.
+Its value is an object, with the following fields:
+
+* name: an optional, user-chosen string (e.g., "NETWORK-1", "loadbalancer45",
+  "reverseproxy@192.168.1.1", ...)
+* type: one of three values: "SERVER", "CLIENT", "NETWORK".
+
+  * CLIENT indicates an endpoint which initiates the connection.
+  * SERVER indicates an endpoint which accepts the connection.
+  * NETWORK indicates an observer in between CLIENT and SERVER.
+* flow: one of two values: "CLIENT" or "SERVER".
+
+  * This field is only required if type is "NETWORK".
+  * CLIENT indicates that this vantage point follows client data flow semantics (a
+    PACKET_TX goes in the direction of the SERVER).
+  * SERVER indicates that this vantage point follow server data flow semantics (a
+    PACKET_TX goes in the direction of the client).
+
+The type field MUST be present. The flow field MUST be present if the type field
+has value "NETWORK". The name field is optional.
 
 TODO (see issue 6): "NETWORK" should have a way to indicate what RX and TX mean
-(e.g., identify endpoints by ID or 4-tuple etc.)
+(is current way enough? maybe identify endpoints by ID or 4-tuple etc.)
 
 
 ### Title and Description
@@ -355,15 +380,8 @@ The delta_time approach will:
 
 ### group_id and group_ids {#group_ids}
 
-In the normal use case, only a single source is logged in a single trace. For
-example, for QUIC, a single trace only contains events for a single logical QUIC
-connection (grouped on ODCID because the normal connection IDs can change during
-the QUIC connection).
-
-TODO: for this simple use case, MUST a trace include a group_id?
-
-However, a single trace could also combine events from a variety of sources or use
-cases (e.g., multiple QUIC connections). For tooling considerations, it is
+A single Trace can contain events from a variety of sources, belonging to for
+example a number of individual QUIC connections. For tooling considerations, it is
 necessary to have a well-defined way to split up events belonging to different
 logical groups into subgroups for visualization and processing. For example, if
 one type of log uses 4-tuples as identifiers and uses a field name "four_tuple"
@@ -392,6 +410,10 @@ in {{qlog_json}} and the "four_tuples" field in {{group_id_indexed}}.
 
 TODO: maybe just make group_ids or group_id reference the named field instead?
 e.g., "group_id": "ODCID"
+
+TODO: for the simple use case (e.g., just 1 QUIC connection in the trace), MUST a
+trace include a group_id? maybe yes: the ODCID? (ODCID because the normal
+connection IDs can change during the QUIC connection).
 
 ~~~~~~~~
 {
@@ -558,16 +580,18 @@ TBD
 
 # Design Variations
 
-* Quic-trace (https://github.com/google/quic-trace) takes a slightly different
+* [Quic-trace](https://github.com/google/quic-trace) takes a slightly different
   approach based on protocolbuffers.
-* Spindump (https://github.com/EricssonResearch/spindump) also defines a custom
+* [Spindump](https://github.com/EricssonResearch/spindump) also defines a custom
   text-based format for in-network measurements
+* [Wireshark](https://www.wireshark.org/) also has a QUIC dissector and its results can be transformed into a
+  json output format using tshark.
 
 The idea is that qlog is able to encompass the use cases for both of these
 alternate designs and that all tooling converges on the qlog standard.
 
 # Acknowledgements
 
-Thanks to Jana Iyengar, Dmitri Tikhonov, Jari Arkko, Marcus Ihlar, Victor
-Vasiliev and Lucas Pardue for their feedback and suggestions.
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Jari Arkko, Marcus Ihlar,
+Victor Vasiliev and Lucas Pardue for their feedback and suggestions.
 
