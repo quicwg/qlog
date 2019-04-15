@@ -159,6 +159,8 @@ Triggers:
 * "RETRANSMIT_TIMEOUT" // draft-19 6.1.2
 * "RETRANSMIT_CRYPTO" // draft-19 6.2
 * "RETRANSMIT_PTO" // draft-19 6.3
+* "CC_BANDWIDTH_PROBE" // needed for some CCs to figure out bandwidth allocations
+  when there are no normal sends
 
 Data:
 
@@ -204,17 +206,28 @@ TODO: maybe name VERSION_SELECTED ?
 
 ### ALPN_UPDATE
 TODO: should this be in HTTP?
-~~~~
-{ alpn }
-~~~~
+
+~~~
+{ alpn:string }
+~~~
 
 ### STREAM_STATE_UPDATE
+
+~~~
+{
+    old:string,
+    new:string
+}
+~~~
+
+Possible values:
+
 * IDLE
 * OPEN
 * CLOSED
 * HALF_CLOSED_REMOTE
 * HALF_CLOSED_LOCAL
-* DESTROYED // memory freed
+* DESTROYED // memory actually freed
 
 * Ready
 * Send
@@ -229,7 +242,8 @@ TODO: should this be in HTTP?
 * Data Read
 * Reset Read
 
-TODO: do we need all of these? How do implementations actually handle this in practice?
+TODO: do we need all of these? How do implementations actually handle this in
+practice?
 
 ### FLOW_CONTROL_UPDATE
 * type = connection
@@ -241,15 +255,48 @@ TODO: check state machine in QUIC transport draft
 
 ### CC_STATE_UPDATE
 
-### METRIC_UPDATE
-* CWND
-* BYTES_IN_FLIGHT
-* RTT
-* SSTHRESH
-* PACING_RATE
+~~~
+{
+    old:string,
+    new:string
+}
+~~~
 
-TODO: split these up into separate events?
-TODO: allow more than 1 of these in a single METRIC_UPDATE event? (cfr. quic-trace TransportState)
+### METRIC_UPDATE
+~~~
+{
+    cwnd?: number;
+    bytes_in_flight?:number;
+
+    min_rtt?:number;
+    smoothed_rtt?:number;
+    latest_rtt?:number;
+    max_ack_delay?:number;
+
+    rtt_variance?:number;
+    ssthresh?:number;
+
+    pacing_rate?:number;
+}
+~~~
+
+This event SHOULD group all possible metric updates that happen at or around the
+same time in a single event (e.g., if min_rtt and smoothed_rtt change at the same
+time, they should be bundled in a single METRIC_UPDATE entry, rather than split
+out into two). Consequently, a METRIC_UPDATE is only guaranteed to contain at
+least one of the listed metrics.
+
+Note: to make logging easier, implementations MAY log values even if they are the
+same as previously reported values (e.g., two subsequent METRIC_UPDATE entries can
+both report the exact same value for min_rtt). However, applications SHOULD try to
+log only actual updates to values.
+
+* TODO: split these up into separate events? e.g., CWND_UPDATE,
+  BYTES_IN_FLIGHT_UPDATE, ...
+* TODO: move things like pacing_rate, cwnd, bytes_in_flight, ssthresh, etc. to
+  CC_STATE_UPDATE?
+* TODO: what types of CC metrics do we need to support by default (e.g., cubic vs
+  bbr)
 
 
 ### LOSS_ALARM_SET
@@ -258,10 +305,31 @@ TODO: allow more than 1 of these in a single METRIC_UPDATE event? (cfr. quic-tra
 
 ### PACKET_LOST
 
+Data:
+
+~~~
+{
+    packet_number:string
+}
+~~~
+
+Triggers:
+
+* "UNKNOWN",
+* "REORDERING_THRESHOLD",
+* "TIME_THRESHOLD"
+
 ### PACKET_ACKNOWLEDGED
 
+TODO: must this be a separate event? can't we get this from logged ACK frames?
+(however, explicitly indicating this and logging it in the ack handler is a better
+signal that the ACK actually had the intended effect than just logging its
+receipt)
+
 ### PACKET_RETRANSMIT
-TODO: only if a packet is retransmit in-full, which many stacks don't do. Need something more flexible.
+
+TODO: only if a packet is retransmit in-full, which many stacks don't do. Need
+something more flexible.
 
 # HTTP/3 event definitions
 
@@ -333,18 +401,20 @@ class AckFrame{
     frame_type:string = "ACK";
 
     ack_delay:string;
-    acked_ranges:Array<AckRange>;
 
-    ect1:string;
-    ect0:string;
-    ce:string;
-}
+    // first number is "from": lowest packet number in interval
+    // second number is "to": up to and including // highest packet number in interval
+    // e.g., looks like [[1,2],[4,5]]
+    acked_ranges:Array<[number, number]>;
 
-class AckRange{
-    from:string;
-    to:string; // up to and including
+    ect1?:string;
+    ect0?:string;
+    ce?:string;
 }
 ~~~
+
+Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
+ordered (e.g., \[\[5,9\],\[1,4\]\] is a valid value).
 
 ### StreamFrame
 
@@ -354,10 +424,13 @@ class StreamFrame{
 
   id:string;
 
-  // These three MUST always be set
+  // These two MUST always be set
   // If not present in the Frame type, log their default values
   offset:string;
   length:string;
+
+  // this MAY be set any time, but MUST only be set if the value is "true"
+  // if absent, the value MUST be assumed to be "false"
   fin:boolean;
 }
 ~~~
@@ -441,7 +514,7 @@ enum TransportError {
 # HTTP/3 DATA type definitions
 
 
-### ApplicationError
+## ApplicationError
 ~~~
 enum ApplicationError{
     HTTP_NO_ERROR,
@@ -482,6 +555,7 @@ TBD
 
 # Acknowledgements
 
-Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Jari Arkko, Marcus Ihlar,
-Victor Vasiliev and Lucas Pardue for their feedback and suggestions.
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev and Lucas Pardue for their feedback and
+suggestions.
 
