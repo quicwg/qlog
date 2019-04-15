@@ -97,6 +97,9 @@ draft-00.
     "qlog_version": "draft-00",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
+    "summary": {
+        ...
+    }
     "traces": [...]
 }
 ~~~~~~~~
@@ -112,6 +115,32 @@ For example, for a test setup, we perform logging on the CLIENT, on the SERVER a
 on a single point on their common NETWORK path. Each of these three logs is first
 created separately during the test. Afterwards, the three logs can be aggregated
 into a single qlog file.
+
+## Summary field
+
+In a real-life deployment with a large amount of generated logs, it can be useful
+to sort and filter logs based on some basic summarized or aggregated data (e.g.,
+log length, packet loss rate, log location, ...). The summary field (if present)
+SHOULD be on top of the qlog file, as this allows for the file to be processed in
+a streaming fashion (i.e., the implementation could just read up to and including
+the summary field and then only load the full logs that are deemed interesting by
+the user).
+
+As the summary field is highly deployment-specific, this document does not specify
+any default fields or their semantics. Some examples of potential entries are:
+
+~~~
+"summary": {
+    "trace_count":number, // amount of traces in this file
+    "max_duration":string, // time duration of the longest trace
+    "max_outgoing_loss_rate":number, // highest loss rate for outgoing packets over all traces
+    "total_event_count":number // total number of events across all traces
+}
+~~~
+
+* TODO: are there any field semantics we should specify here?
+* TODO: Will people actually use this? or will they store this info out-of-band
+  (e.g., separate database for faster querying?)
 
 ## Trace container
 Each trace container encompasses a single conceptual trace. The exact definition
@@ -561,8 +590,10 @@ input qlog file adheres to the expected qlog schema. If a tool determines a qlog
 file does not contain enough supported information to correctly execute the tool's
 logic, it SHOULD generate a clear error message to this effect.
 
-Tools MUST disregard any field names and values in the qlog format that they do
-not recognize.
+Tools MUST not produce errors for any field names and values in the qlog format
+that they do not recognize. Tools CAN indicate unknown event occurences within
+their context (e.g., marking unknown events on a timeline for manual
+interpretation by the logger).
 
 # Methods of Access
 
@@ -608,6 +639,7 @@ alternate designs and that all tooling converges on the qlog standard.
 
 # Acknowledgements
 
-Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Jari Arkko, Marcus Ihlar,
-Victor Vasiliev and Lucas Pardue for their feedback and suggestions.
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev and Lucas Pardue for their feedback and
+suggestions.
 
