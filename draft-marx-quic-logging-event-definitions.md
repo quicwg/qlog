@@ -416,6 +416,9 @@ class AckFrame{
 Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
 ordered (e.g., \[\[5,9\],\[1,4\]\] is a valid value).
 
+Note: the two numbers in the packet range can be the same (e.g., \[120,120\] means
+that packet with number 120 was ACKed). TODO: maybe make this into just \[120\]?
+
 ### StreamFrame
 
 ~~~
