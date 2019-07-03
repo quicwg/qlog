@@ -1,6 +1,6 @@
 ---
 title: QUIC and HTTP/3 event definitions for qlog
-docname: draft-marx-quic-logging-event-definitions-latest
+docname: draft-marx-qlog-event-definitions-quic-h3-latest
 category: std
 
 ipr: trust200902
@@ -23,8 +23,8 @@ normative:
   QUIC-TRANSPORT:
     title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-transport-19
-    date: 2018-10-23
+      Internet-Draft: draft-ietf-quic-transport-20
+    date: 2019-04-23
     author:
       -
         ins: J. Iyengar
@@ -36,20 +36,19 @@ normative:
         name: Martin Thomson
         org: Mozilla
         role: editor
-
-informative:
-  RFC7838:
   QUIC-HTTP:
     title: "Hypertext Transfer Protocol Version 3 (HTTP/3)"
-    date: 2018-10-23
+    date: 2019-04-23
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-19
+      Internet-Draft: draft-ietf-quic-http-20
     author:
       -
         ins: M. Bishop
         name: Mike Bishop
         org: Akamai
         role: editor
+
+informative:
 
 --- abstract
 
@@ -61,7 +60,7 @@ level schema defined in draft-marx-quic-logging-main-schema-latest.
 
 # Introduction
 
-TODO
+Feedback and discussion welcome at https://github.com/quiclog/internet-drafts
 
 ## Notational Conventions
 
@@ -76,7 +75,8 @@ DATA fields and their semantics for the QUIC and HTTP/3 protocols. The definitio
 included in this file are assumed to be used in qlog's "trace" containers, where
 the trace's "protocol_type" field MUST be set to "QUIC_HTTP3".
 
-This document is based on draft-19 of the QUIC and HTTP/3 I-Ds. TODO: add ref
+This document is based on draft-20 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT]
+[QUIC-HTTP].
 
 This document uses the ["TypeScript" language](https://www.typescriptlang.org/) to
 describe its schema in. We use TypeScript because it is less verbose than
@@ -102,16 +102,20 @@ be aware of are:
   fields that are logged as strings (e.g., packet numbers) MUST be logged in
   decimal (base-10) format. TODO: see issue 10
 
-TODO: list all possible triggers per event type
-
-TODO: make it clear which events are "normal" and which are "only if you really
+* TODO: list all possible triggers per event type
+* TODO: make it clear which events are "normal" and which are "only if you really
 need this" (normal = probably TRANSPORT TX/RX and RECOVERY basics and HTTP basics)
 
 # QUIC event definitions
 
+* TODO: flesh out the definitions for most of these
+* TODO: add all definitions for HTTP3 and QPACK events
+
 ## CONNECTIVITY
 
 ### CONNECTION_ATTEMPT
+
+TODO: specify how this works with happy eyeballs
 
 ### CONNECTION_NEW
 
@@ -123,6 +127,9 @@ TODO: mention that CIDs can be logged in hex
 e.g., PATH_UPDATE
 
 TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
+
+### CONNECTION_CLOSED
+
 
 ## SECURITY
 
@@ -198,6 +205,15 @@ Notes:
 * We don't explicitly log the encryption_level or packet_number_space: the
   packet_type specifies this by inference (assuming correct implementation)
 
+### PACKET_DROPPED
+
+Can be due to several reasons
+* TODO: How does this relate to HEADER_DECRYPT_ERROR and PACKET_DECRYPT_ERROR?
+* TODO: if a packet is dropped because we don't have a connection for it, how can
+  we add it to a given trace in the overall qlog file? Need a sort of catch-call
+  trace in each file?
+* TODO: differentiate between DATAGRAM_DROPPED and PACKET_DROPPED? Same with
+  PACKET_RECEIVED and DATAGRAM_RECEIVED?
 
 ### VERSION_UPDATE
 TODO: maybe name VERSION_SELECTED ?
@@ -546,9 +562,13 @@ enum ApplicationError{
 }
 ~~~
 
+TODO: HTTP_MALFORMED_FRAME is not a single value, but can include the frame type
+in its definition. This means we need more flexible error logging. Best to wait
+until h3-draft-21, which will include substantial changes to error codes.
+
 # Change Log
 
-## Since draft-marx-quic-logging-event-definitions-00:
+## Since draft-marx-qlog-event-definitions-quic-h3-latest-00:
 
 - None yet.
 
@@ -559,6 +579,6 @@ TBD
 # Acknowledgements
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev and Lucas Pardue for their feedback and
-suggestions.
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind and Lucas Pardue for their
+feedback and suggestions.
 

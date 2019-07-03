@@ -1,6 +1,6 @@
 ---
 title: Main logging schema for qlog
-docname: draft-marx-quic-logging-main-schema-latest
+docname: draft-marx-qlog-main-schema-latest
 category: std
 
 ipr: trust200902
@@ -20,50 +20,22 @@ author:
 
 normative:
   RFC2119:
-  QUIC-TRANSPORT:
-    title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-transport-19
-    date: 2018-10-23
-    author:
-      -
-        ins: J. Iyengar
-        name: Jana Iyengar
-        org: Fastly
-        role: editor
-      -
-        ins: M. Thomson
-        name: Martin Thomson
-        org: Mozilla
-        role: editor
 
 informative:
-  RFC7838:
-  QUIC-HTTP:
-    title: "Hypertext Transfer Protocol Version 3 (HTTP/3)"
-    date: 2018-10-23
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-19
-    author:
-      -
-        ins: M. Bishop
-        name: Mike Bishop
-        org: Akamai
-        role: editor
 
 --- abstract
 
-This document describes a high-level schema for a standardized logging format
-called qlog.  This format allows easy sharing of data and the creation of reusable
-visualization and debugging tools. The high-level schema in this document is
-intended to be protocol-agnostic. Separate documents specify how the format should
-be used for specific protocol data.
+This document describes a high-level schema for a standardized endpoint logging
+format called qlog.  This format allows easy sharing of data and the creation of
+reusable visualization and debugging tools. The high-level schema in this document
+is intended to be protocol-agnostic. Separate documents specify how the format
+should be used for specific protocol data.
 
 --- middle
 
 # Introduction
 
-TODO
+Feedback and discussion welcome at https://github.com/quiclog/internet-drafts
 
 ## Notational Conventions
 
@@ -578,7 +550,8 @@ EVENT_TYPE and TRIGGER).
 The specific values for each of these fields and their semantics are defined in
 separate documents, specific per protocol or use case.
 
-For example: event definitions for QUIC and HTTP/3 can be found in TODO.
+For example: event definitions for QUIC and HTTP/3 can be found in
+draft-marx-qlog-event-definitions-quic-h3-latest.
 
 
 # Tooling requirements
@@ -602,7 +575,7 @@ logs to.
 
 # Notes on Practical Use
 
-TBD : discuss that implementation do not have to output qlog directly. It is good
+TBD : discuss that implementations do not have to output qlog directly. It is good
 practice to log in whatever way you want, and then just write a transformer to
 qlog for use in tooling.
 
@@ -621,7 +594,7 @@ TBD
 
 # Change Log
 
-## Since draft-marx-quic-logging-main-schema-00:
+## Since draft-marx-qlog-main-schema-00:
 
 - None yet.
 
@@ -631,8 +604,8 @@ TBD
   approach based on protocolbuffers.
 * [Spindump](https://github.com/EricssonResearch/spindump) also defines a custom
   text-based format for in-network measurements
-* [Wireshark](https://www.wireshark.org/) also has a QUIC dissector and its results can be transformed into a
-  json output format using tshark.
+* [Wireshark](https://www.wireshark.org/) also has a QUIC dissector and its
+  results can be transformed into a json output format using tshark.
 
 The idea is that qlog is able to encompass the use cases for both of these
 alternate designs and that all tooling converges on the qlog standard.
@@ -640,6 +613,6 @@ alternate designs and that all tooling converges on the qlog standard.
 # Acknowledgements
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev and Lucas Pardue for their feedback and
-suggestions.
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind and Lucas Pardue for their
+feedback and suggestions.
 
