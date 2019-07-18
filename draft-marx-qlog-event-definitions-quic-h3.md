@@ -97,10 +97,11 @@ be aware of are:
 * Many numerical fields have type "string" instead of "number". This is because
   many JSON implementations only support integers up to 2^53-1 (MAX_INTEGER for
   JavaScript without BigInt support), which is less than QUIC's VLIE types
-  (2^62-1). Each VLIE field is thus a string, where a number would be semantically
-  more correct. Unless mentioned otherwise (e.g., for connection IDs), numerical
-  fields that are logged as strings (e.g., packet numbers) MUST be logged in
-  decimal (base-10) format. TODO: see issue 10
+  (2^62-1). Each field that can potentially have a value larger than 2^53-1 is
+  thus a string, where a number would be semantically more correct. Unless
+  mentioned otherwise (e.g., for connection IDs), numerical fields that are logged
+  as strings (e.g., packet numbers) MUST be logged in decimal (base-10) format.
+  TODO: see issue 10
 
 * TODO: list all possible triggers per event type
 * TODO: make it clear which events are "normal" and which are "only if you really
@@ -111,53 +112,154 @@ need this" (normal = probably TRANSPORT TX/RX and RECOVERY basics and HTTP basic
 * TODO: flesh out the definitions for most of these
 * TODO: add all definitions for HTTP3 and QPACK events
 
-## CONNECTIVITY
+## connectivity
 
-### CONNECTION_ATTEMPT
+### listening
+~~~
+{
+    ip: string,
+    port: number,
 
-TODO: specify how this works with happy eyeballs
+    quic_versions?: Array<string>,
+    alpn_values?: Array<string>
+}
+~~~
 
-### CONNECTION_NEW
+### connection_new
+Used for both attempting (client-perspective) and accepting (server-perspective)
+new connections.
 
-### CONNECTION_ID_UPDATE
+~~~
+{
+    ip_version: string,
+    src_ip: string,
+    dst_ip: string,
 
-TODO: mention that CIDs can be logged in hex
+    protocol?: string, // (default "QUIC")
+    src_port: number,
+    dst_port: number,
+
+    quic_version?: string,
+    src_cid?: string,
+    dst_cid?: string
+}
+~~~
+
+### connection_id_update
+This is viewed from the perspective of the one applying the new id. As such, if we
+receive a new connection id from our peer, we will see the dst_ fields are set. If
+we update our own connection id (e.g., NEW_CONNECTION_ID frame), we log the src_
+fields.
+
+~~~
+{
+    src_old?: string,
+    src_new?: string,
+
+    dst_old?: string,
+    dst_new?: string
+}
+~~~
+
+### spin_bit_update
+TODO: is this best as a connectivity event? should this be in transport/recovery instead?
+
+~~~
+{
+    state: boolean
+}
+~~~
+
+### connection_retry
+
+TODO
+
+### connection_close
+
+~~~
+{
+    src_id?: string (only needed when logging in a trace containing data for multiple connections. Otherwise it's implied.)
+}
+~~~
+
+Triggers:
+* "error"
+* "clean"
 
 ### MIGRATION-related events
-e.g., PATH_UPDATE
+e.g., path_update
 
 TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
+TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
 
-### CONNECTION_CLOSED
+## security
 
+### cipher_update
 
-## SECURITY
+TODO: assume this will only happen once at the start, but check up on that!
+TODO: maybe this is not the ideal name?
 
-### HEADER_DECRYPT_ERROR
-~~~~
-{ mask, error }
-~~~~
+~~~
+{
+    type:string  // (e.g., AES_128_GCM_SHA256)
+}
+~~~
 
-### PACKET_DECRYPT_ERROR
-~~~~
-{ key, error }
-~~~~
+### key_update
 
-### KEY_UPDATE
-~~~~
-{ type = "Initial | handshake | 1RTT", value }
-~~~~
+Note: secret_update would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
 
-### KEY_RETIRED
-~~~~
-{ value } # initial encryption level is implicitly deleted
-~~~~
+~~~
+{
+    type:KeyType,
+    old?:string,
+    new:string,
+    generation?:number
+}
+~~~
 
-### CIPHER_UPDATE
+Triggers:
+* "tls" (TLS gives us new secret)
+* "remote_update"
+* "local_update"
 
-## TRANSPORT
+### key_retire
+~~~
+{
+    type:KeyType,
+    key:string,
+    generation?:number
+}
+~~~
 
-### PACKET_SENT
+Triggers:
+* "implicit" // (e.g., initial, handshake and 0-RTT keys are dropped implicitly)
+* "remote_update"
+* "local_update"
+
+## transport
+
+### datagram_sent
+When we pass a UDP-level datagram to the socket
+
+~~~
+{
+    count:number, // to support passing multiple at once
+    byte_length:number
+}
+~~~
+
+### datagram_received
+When we receive a UDP-level datagram from the socket.
+
+~~~
+{
+    count:number, // to support passing multiple at once
+    byte_length:number
+}
+~~~
+
+### packet_sent
 
 Triggers:
 
@@ -173,9 +275,12 @@ Data:
 
 ~~~
 {
-    packet_type:PacketType,
+    type:PacketType,
     header:PacketHeader,
-    frames:Array<QuicFrame>
+    frames:Array<QuicFrame>, // see appendix for the definitions
+
+    raw_encrypted?:string, // for debugging purposes
+    raw_decrypted?:string  // for debugging purposes
 }
 ~~~
 
@@ -184,7 +289,7 @@ Notes:
 * We don't explicitly log the encryption_level or packet_number_space: the
   packet_type specifies this by inference (assuming correct implementation)
 
-### PACKET_RECEIVED
+### packet_received
 
 Triggers:
 
@@ -194,9 +299,12 @@ Data:
 
 ~~~
 {
-    packet_type:PacketType,
+    type:PacketType,
     header:PacketHeader,
-    frames:Array<QuicFrame>
+    frames:Array<QuicFrame>, // see appendix for the definitions
+
+    raw_encrypted?:string, // for debugging purposes
+    raw_decrypted?:string  // for debugging purposes
 }
 ~~~
 
@@ -205,29 +313,32 @@ Notes:
 * We don't explicitly log the encryption_level or packet_number_space: the
   packet_type specifies this by inference (assuming correct implementation)
 
-### PACKET_DROPPED
+### packet_dropped
 
 Can be due to several reasons
-* TODO: How does this relate to HEADER_DECRYPT_ERROR and PACKET_DECRYPT_ERROR?
+* TODO: How does this relate to HEADER_DECRYPT ERROR and PAYLOAD_DECRYPT ERROR?
 * TODO: if a packet is dropped because we don't have a connection for it, how can
   we add it to a given trace in the overall qlog file? Need a sort of catch-call
   trace in each file?
 * TODO: differentiate between DATAGRAM_DROPPED and PACKET_DROPPED? Same with
   PACKET_RECEIVED and DATAGRAM_RECEIVED?
 
-### VERSION_UPDATE
-TODO: maybe name VERSION_SELECTED ?
 
-### TRANSPORT_PARAMETERS_UPDATE
-
-### ALPN_UPDATE
-TODO: should this be in HTTP?
+### packet_buffered
+No need to repeat full packet here, should be logged in another event for that
 
 ~~~
-{ alpn:string }
+{
+    type:PacketType,
+    packet_number:string
+}
 ~~~
 
-### STREAM_STATE_UPDATE
+Triggers:
+
+* "keys_unavailable"
+
+### stream_state_update
 
 ~~~
 {
@@ -238,12 +349,12 @@ TODO: should this be in HTTP?
 
 Possible values:
 
-* IDLE
-* OPEN
-* CLOSED
-* HALF_CLOSED_REMOTE
-* HALF_CLOSED_LOCAL
-* DESTROYED // memory actually freed
+* idle
+* open
+* closed
+* half_closed_remote
+* half_closed_local
+* destroyed // memory actually freed
 
 * Ready
 * Send
@@ -261,15 +372,15 @@ Possible values:
 TODO: do we need all of these? How do implementations actually handle this in
 practice?
 
-### FLOW_CONTROL_UPDATE
+### flow_control_update
 * type = connection
 * type = stream + id = streamid
 
 TODO: check state machine in QUIC transport draft
 
-## RECOVERY
-
-### CC_STATE_UPDATE
+### version_update
+TODO: check semantics on this: can versions update? will they ever? change to
+version_selected?
 
 ~~~
 {
@@ -278,21 +389,51 @@ TODO: check state machine in QUIC transport draft
 }
 ~~~
 
-### METRIC_UPDATE
+### transport_parameters_update
+
 ~~~
 {
-    cwnd?: number;
-    bytes_in_flight?:number;
+    owner:string = "local" | "remote",
+    parameters:Array<TransportParameter>
+}
+~~~
 
-    min_rtt?:number;
-    smoothed_rtt?:number;
-    latest_rtt?:number;
-    max_ack_delay?:number;
 
-    rtt_variance?:number;
-    ssthresh?:number;
+### ALPN_update
 
-    pacing_rate?:number;
+~~~
+{
+    old:string,
+    new:string
+}
+~~~
+
+## recovery
+
+### state_update
+
+~~~
+{
+    old:string,
+    new:string
+}
+~~~
+
+### metric_update
+~~~
+{
+    cwnd?: number,
+    bytes_in_flight?:number,
+
+    min_rtt?:number,
+    smoothed_rtt?:number,
+    latest_rtt?:number,
+    max_ack_delay?:number,
+
+    rtt_variance?:number,
+    ssthresh?:number,
+
+    pacing_rate?:number,
 }
 ~~~
 
@@ -315,17 +456,22 @@ log only actual updates to values.
   bbr)
 
 
-### LOSS_ALARM_SET
+### loss_alarm_set
 
-### LOSS_ALARM_FIRED
+### loss_alarm_triggered
 
-### PACKET_LOST
+### packet_lost
 
 Data:
 
 ~~~
 {
-    packet_number:string
+    type:PacketType,
+    packet_number:string,
+
+    // not all implementations will keep track of full packets, so these are optional
+    header?:PacketHeader,
+    frames?:Array<QuicFrame>, // see appendix for the definitions
 }
 ~~~
 
@@ -335,27 +481,275 @@ Triggers:
 * "REORDERING_THRESHOLD",
 * "TIME_THRESHOLD"
 
-### PACKET_ACKNOWLEDGED
+### packet_acknowledged
 
 TODO: must this be a separate event? can't we get this from logged ACK frames?
 (however, explicitly indicating this and logging it in the ack handler is a better
 signal that the ACK actually had the intended effect than just logging its
 receipt)
 
-### PACKET_RETRANSMIT
+### packet_retransmit
 
 TODO: only if a packet is retransmit in-full, which many stacks don't do. Need
 something more flexible.
 
 # HTTP/3 event definitions
 
-## HTTP
+## Data
+
+### stream_state_update
+
+~~~~
+{
+    id:string,
+    old:string,
+    new:string
+}
+~~~~
+
+Possible values:
+
+* open // maybe local_open, remote_open?
+* closed // maybe local_closed, remote_closed?
+* expecting_push
+* expecting_settings
+* cancelled
+
+Currently, there is no proper state diagram in the HTTP draft (as opposed to the
+quic draft). TODO: figure out proper values for this.
+
+Triggers:
+* default
+* request // opened due to GET,POST,PUT,DELETE,... request from peer
+* push
+
+
+### stream_type_update
+
+~~~~
+{
+    id:string,
+    old:string,
+    new:string,
+    owner:"local"|"remote"
+}
+~~~~
+Possible values:
+
+* data
+* control
+* qpack_encode
+* qpack_decode
+* push
+* reserved
+
+Currently, there is no proper state diagram in the HTTP draft (as opposed to the
+quic draft). TODO: figure out proper values for this.
+
+
+### frame_created
+HTTP equivalent to packet_sent
+
+~~~
+{
+    stream_id:string,
+    frame:HTTP3Frame // see appendix for the definitions,
+    byte_length:string,
+
+    raw?:string
+}
+~~~
+
+### frame_parsed
+HTTP equivalent to packet_received
+
+TODO: how do we deal with partial frames (e.g., length is very long, we're
+streaming this incrementally: events should indicate this setup? or you just have
+1 frame_parsed and several data_received events for that stream?). Similar for
+frame_created.
+
+~~~
+{
+    stream_id:string,
+    frame:HTTP3Frame // see appendix for the definitions,
+    byte_length:string,
+
+    raw?:string
+}
+~~~
+
+### data_moved
+
+Used to indicate when data moves from the HTTP/3 to the transport layer (e.g.,
+passing from H3 to QUIC stream buffers). This is not always the same as frame
+creation.
+
+~~~~
+{
+    stream_id:string,
+    offset_start:string,
+    offset_end:string
+
+    recipient:"application"|"transport"
+}
+~~~~
+
+### data_received
+
+Used to indicate when data moves from the transport to the HTTP/3 layer (e.g.,
+passing from QUIC to H3 stream buffers).
+
+TODO: should this be a Transport:data_moved event instead? now it's contained in
+H3, but maybe we should split this?
+
+TODO: merge this with data_moved and add more general "direction" field? However,
+having separate events also makes a lot of sense for easy high-level filtering
+without having to look at .recipient or .source
+
+~~~~
+{
+    stream_id:string,
+    offset_start:string,
+    offset_end:string,
+
+    source:"application"|"transport"
+}
+~~~~
+
+TODO: add separate event to highlight when we didn't receive enough data to
+actually decode an H3 frame (e.g., only received 1 byte of 2-byte VLIE encoded
+value)
+
+TODO: add separate diagnostic event(s) to indicate when HOL-blocking occured (both
+inter-stream in H3 and intra-stream in QPACK layers and for control stream packets
+(e.g., prioritization, push))
 
 ## QPACK
 
+### header_encoded
+~~~~
+{
+    stream_id?:string, // not necessarily available at the QPACK level
+
+    encoded:string,
+    fields:Array<HTTPHeader>
+}
+~~~~
+
+### header_decoded
+~~~~
+{
+    stream_id?:string, // not necessarily available at the QPACK level
+
+    encoded:string,
+    fields:Array<HTTPHeader>
+}
+~~~~
+
+### TODO
+
+Add more qpack-specific events
+For example:
+* Encoder Instruction
+* Decoder Instruction
+
+
 ## PRIORITIZATION
 
+### dependency_update
+~~~~
+{
+    stream_id:string,
+    type:string = "added" | "moved" | "removed",
+
+    parent_id_old?:string,
+    parent_id_new?:string,
+
+    weight_old?:number,
+    weight_new?:number
+}
+~~~~
+
+
 ## PUSH
+
+TODO
+
+# General error and warning definitions
+
+## ERROR
+
+### HEADER_DECRYPT
+~~~~
+{ mask, error }
+~~~~
+
+### PAYLOAD_DECRYPT
+~~~~
+{ key, error }
+~~~~
+
+### CONNECTION_ERROR
+~~~~
+{
+    code?:TransportError | number,
+    description:string
+}
+~~~~
+
+### APPLICATION_ERROR
+~~~~
+{
+    code?:ApplicationError | number,
+    description:string
+}
+~~~~
+
+### INTERNAL_ERROR
+~~~~
+{
+    code?:number,
+    description:string
+}
+~~~~
+
+## WARNING
+
+### INTERNAL_WARNING
+~~~~
+{
+    code?:number,
+    description:string
+}
+~~~~
+
+## INFO
+
+### MESSAGE
+~~~~
+{
+    message:string
+}
+~~~~
+
+## DEBUG
+
+### MESSAGE
+~~~~
+{
+    message:string
+}
+~~~~
+
+## VERBOSE
+
+### MESSAGE
+~~~~
+{
+    message:string
+}
+~~~~
+
 
 # Security Considerations
 
@@ -369,17 +763,28 @@ TBD
 
 # QUIC DATA type definitions
 
+## TransportParameter
+
+~~~
+class TransportParameter
+{
+    name:string, // TODO: list all transport parameters properly in an enum
+    raw_name:string, // for unknown parameters
+    content:any
+}
+~~~
+
 ## PacketType
 
 ~~~
 enum PacketType {
-    INITIAL,
-    HANDSHAKE,
-    ZERORTT = "0RTT",
-    ONERTT = "1RTT",
-    RETRY,
-    VERSION_NEGOTIATION,
-    UNKOWN
+    initial,
+    handshake,
+    zerortt = "0RTT",
+    onertt = "1RTT",
+    retry,
+    version_negotation,
+    unknown
 }
 ~~~
 
@@ -404,24 +809,57 @@ class PacketHeader {
 }
 ~~~
 
+## KeyType
+~~~
+enum KeyType {
+    server_initial_secret,
+    client_initial_secret,
+
+    server_handshake_secret,
+    client_handshake_secret,
+
+    server_0rtt_secret,
+    client_0rtt_secret,
+
+    server_1rtt_secret,
+    client_1rtt_secret
+}
+~~~
+
 ## QUIC Frames
 
 ~~~
-type QuicFrame = AckFrame | StreamFrame | ResetStreamFrame | ConnetionCloseFrame | MaxDataFrame | MaxStreamDataFrame | UnknownFrame;
+type QuicFrame = PaddingFrame | PingFrame | AckFrame | ResetStreamFrame | StopSendingFrame | CryptoFrame | NewTokenFrame | StreamFrame | MaxDataFrame | MaxStreamDataFrame | MaxStreamsFrame | DataBlockedFrame | StreamDataBlockedFrame | StreamsBlockedFrame | NewConnectionIDFrame | RetireConnectionIDFrame | PathChallengeFrame | PathResponseFrame | ConnectionCloseFrame | UnknownFrame;
+~~~
+
+### PaddingFrame
+
+~~~
+class PaddingFrame{
+    frame_type:string = "padding";
+}
+~~~
+
+### PingFrame
+
+~~~
+class PingFrame{
+    frame_type:string = "ping";
+}
 ~~~
 
 ### AckFrame
 
 ~~~
 class AckFrame{
-    frame_type:string = "ACK";
+    frame_type:string = "ack";
 
     ack_delay:string;
 
     // first number is "from": lowest packet number in interval
     // second number is "to": up to and including // highest packet number in interval
-    // e.g., looks like [[1,2],[4,5]]
-    acked_ranges:Array<[number, number]>;
+    // e.g., looks like [["1","2"],["4","5"]]
+    acked_ranges:Array<[string, string]>;
 
     ect1?:string;
     ect0?:string;
@@ -430,55 +868,73 @@ class AckFrame{
 ~~~
 
 Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
-ordered (e.g., \[\[5,9\],\[1,4\]\] is a valid value).
+ordered (e.g., \[\["5","9"\],\["1","4"\]\] is a valid value).
 
 Note: the two numbers in the packet range can be the same (e.g., \[120,120\] means
 that packet with number 120 was ACKed). TODO: maybe make this into just \[120\]?
+
+### ResetStreamFrame
+~~~
+class ResetStreamFrame{
+    frame_type:string = "reset_stream";
+
+    id:string;
+    error_code:ApplicationError | number;
+    final_size:string;
+}
+~~~
+
+
+### StopSendingFrame
+~~~
+class StopSendingFrame{
+    frame_type:string = "stop_sending";
+
+    id:string;
+    error_code:ApplicationError | number;
+}
+~~~
+
+### CryptoFrame
+
+~~~
+class CryptoFrame{
+  frame_type:string = "crypto";
+
+  offset:string;
+  length:string;
+}
+~~~
+
+### NewTokenFrame
+
+~~~
+class NewTokenFrame{
+  frame_type:string = "new_token";
+
+  offset:string;
+}
+~~~
+
 
 ### StreamFrame
 
 ~~~
 class StreamFrame{
-  frame_type:string = "STREAM";
-
-  id:string;
-
-  // These two MUST always be set
-  // If not present in the Frame type, log their default values
-  offset:string;
-  length:string;
-
-  // this MAY be set any time, but MUST only be set if the value is "true"
-  // if absent, the value MUST be assumed to be "false"
-  fin:boolean;
-}
-~~~
-
-### ResetStreamFrame
-~~~
-class ResetStreamFrame{
-    frame_type:string = "RESET_STREAM";
+    frame_type:string = "stream";
 
     id:string;
-    error_code:ApplicationError | number;
-    final_offset:string;
-}
-~~~
 
-### ConnectionCloseFrame
+    // These two MUST always be set
+    // If not present in the Frame type, log their default values
+    offset:string;
+    length:string;
 
-~~~
+    // this MAY be set any time, but MUST only be set if the value is "true"
+    // if absent, the value MUST be assumed to be "false"
+    fin:boolean;
 
-type ErrorSpace = "TRANSPORT" | "APPLICATION";
-
-class ConnectionCloseFrame{
-    frame_type:string = "CONNECTION_CLOSE";
-
-    error_space:ErrorSpace;
-    error_code:TransportError | ApplicationError | number;
-    reason:string;
-
-    trigger_frame_type?:number; // TODO: should be more defined, but we don't have a FrameType enum atm...
+    raw?:string;
 }
 ~~~
 
@@ -486,20 +942,129 @@ class ConnectionCloseFrame{
 
 ~~~
 class MaxDataFrame{
-    stream_type:string = "MAX_DATA";
+  frame_type:string = "max_data";
 
-    maximum:string;
+  maximum:string;
 }
 ~~~
 
 ### MaxStreamDataFrame
 
 ~~~
-class MaxStreamDataFrame{
-    stream_type:string = "MAX_STREAM_DATA";
+class MaxDataFrame{
+  frame_type:string = "max_stream_data";
 
-    id:string;
-    maximum:string;
+  id:string;
+  maximum:string;
+}
+~~~
+
+### MaxStreamsFrame
+
+~~~
+class MaxStreamsFrame{
+  frame_type:string = "max_streams";
+
+  maximum:string;
+}
+~~~
+
+### DataBlockedFrame
+
+~~~
+class DataBlockedFrame{
+  frame_type:string = "data_blocked";
+
+  limit:string;
+}
+~~~
+
+### StreamDataBlockedFrame
+
+~~~
+class StreamDataBlockedFrame{
+  frame_type:string = "data_blocked";
+
+  id:string;
+  limit:string;
+}
+~~~
+
+### StreamsBlockedFrame
+
+~~~
+class StreamsBlockedFrame{
+  frame_type:string = "data_blocked";
+
+  limit:string;
+}
+~~~
+
+
+### NewConnectionIDFrame
+
+~~~
+class NewConnectionIDFrame{
+  frame_type:string = "new_connection_id";
+
+  sequence_number:string;
+  retire_prior_to:string;
+
+  length:number;
+  connection_id:string;
+
+  reset_token:string;
+}
+~~~
+
+### RetireConnectionIDFrame
+
+~~~
+class RetireConnectionIDFrame{
+  frame_type:string = "retire_connection_id";
+
+  sequence_number:string;
+}
+~~~
+
+### PathChallengeFrame
+
+~~~
+class PathChallengeFrame{
+  frame_type:string = "patch_challenge";
+
+  data?:string;
+}
+~~~
+
+### PathResponseFrame
+
+~~~
+class PathResponseFrame{
+  frame_type:string = "patch_response";
+
+  data?:string;
+}
+~~~
+
+### ConnectionCloseFrame
+
+raw_error_code is the actual, numerical code. This is useful because some error
+types are spread out over a range of codes (e.g., QUIC's crypto_error).
+
+~~~
+
+type ErrorSpace = "transport" | "application";
+
+class ConnectionCloseFrame{
+    frame_type:string = "connection_close";
+
+    error_space:ErrorSpace;
+    error_code:TransportError | ApplicationError | number;
+    raw_error_code:number;
+    reason:string;
+
+    trigger_frame_type?:number; // TODO: should be more defined, but we don't have a FrameType enum atm...
 }
 ~~~
 
@@ -507,64 +1072,189 @@ class MaxStreamDataFrame{
 
 ~~~
 class UnknownFrame{
-    frame_type:string = "UNKNOWN";
+    frame_type:string = "unknown";
+    raw_frame_type:number;
 }
 ~~~
 
 ### TransportError
 ~~~
 enum TransportError {
-    NO_ERROR,
-    INTERNAL_ERROR,
-    SERVER_BUSY,
-    APPLICATION_FLOW_CONTROL_ERROR, // 0x3
-    STREAM_FLOW_CONTROL_ERROR,  // 0x4
-    STREAM_STATE_ERROR,
-    FINAL_SIZE_ERROR,
-    FRAME_ENCODING_ERROR,
-    TRANSPORT_PARAMETER_ERROR,
-    PROTOCOL_VIOLATION,
-    INVALID_MIGRATION,
-    CRYPTO_ERROR
+    no_error,
+    internal_error,
+    server_busy,
+    flow_control_error,
+    stream_limit_error,
+    stream_state_error,
+    final_size_error,
+    frame_encoding_error,
+    transport_parameter_error,
+    protocol_violation,
+    invalid_migration,
+    crypto_buffer_exceeded,
+    crypto_error
 }
 ~~~
 
 
 # HTTP/3 DATA type definitions
 
+## HTTP/3 Frames
+
+~~~
+type HTTP3Frame = DataFrame | HeadersFrame | PriorityFrame | CancelPushFrame | SettingsFrame | PushPromiseFrame | GoAwayFrame | MaxPushIDFrame | DuplicatePushFrame | ReservedFrame | UnknownFrame;
+~~~
+
+### DataFrame
+~~~
+class DataFrame{
+    frame_type:string = "data"
+}
+~~~
+
+### HeadersFrame
+
+This represents an *uncompressed*, plaintext HTTP Headers frame (e.g., no QPACK
+compression is applied).
+
+For example:
+
+~~~
+fields: [{"name":":path","content":"/"},{"name":":method","content":"GET"},{"name":":authority","content":"127.0.0.1:4433"},{"name":":scheme","content":"https"}]
+~~~
+
+TODO: use proper HTTP naming for the fields, names, values, etc.
+
+~~~
+class HeadersFrame{
+    frame_type:string = "header",
+    fields:Array<HTTPHeader>
+}
+
+class HTTPHeader {
+    name:string,
+    content:string
+}
+~~~
+
+### PriorityFrame
+
+~~~
+class PriorityFrame{
+    frame_type:string = "priority",
+
+    prioritized_element_type:string = "request_stream"  | "push_stream" | "placeholder" | "root",
+    element_dependency_type?:string = "stream_id"       | "push_id"     | "placeholder_id",
+
+    exclusive:boolean,
+
+    prioritized_element_id:string,
+    element_dependency_id:string,
+    weight:number
+
+}
+~~~
+
+### CancelPushFrame
+~~~
+class CancelPushFrame{
+    frame_type:string = "cancel_push",
+    id:string
+}
+~~~
+
+### SettingsFrame
+~~~
+class SettingsFrame{
+    frame_type:string = "settings",
+    fields:Array<Setting>
+}
+
+class Setting{
+    name:string = "SETTINGS_MAX_HEADER_LIST_SIZE" | "SETTINGS_NUM_PLACEHOLDERS",
+    content:string
+}
+~~~
+
+### PushPromiseFrame
+
+~~~
+class PushPromiseFrame{
+    frame_type:string = "push_promise",
+    id:string,
+
+    fields:Array<HTTPHeader>
+}
+~~~
+
+### GoAwayFrame
+~~~
+class CancelPushFrame{
+    frame_type:string = "goaway",
+    id:string
+}
+~~~
+
+### MaxPushIDFrame
+~~~
+class MaxPushIDFrame{
+    frame_type:string = "max_push_id",
+    id:string
+}
+~~~
+
+### DuplicatePushFrame
+~~~
+class DuplicatePushFrame{
+    frame_type:string = "duplicate_push",
+    id:string
+}
+~~~
+
+### ReservedFrame
+~~~
+class ReservedFrame{
+    frame_type:string = "reserved"
+}
+~~~
+
+### UnknownFrame
+~~~
+class UnknownFrame{
+    frame_type:string = "unknown"
+}
+~~~
+
 
 ## ApplicationError
 ~~~
 enum ApplicationError{
-    HTTP_NO_ERROR,
-    HTTP_WRONG_SETTING_DIRECTION,
-    HTTP_PUSH_REFUSED,
-    HTTP_INTERNAL_ERROR,
-    HTTP_PUSH_ALREADY_IN_CACHE,
-    HTTP_REQUEST_CANCELLED,
-    HTTP_INCOMPLETE_REQUEST,
-    HTTP_CONNECT_ERROR,
-    HTTP_EXCESSIVE_LOAD,
-    HTTP_VERSION_FALLBACK,
-    HTTP_WRONG_STREAM,
-    HTTP_LIMIT_EXCEEDED,
-    HTTP_DUPLICATE_PUSH,
-    HTTP_UNKNOWN_STREAM_TYPE,
-    HTTP_WRONG_STREAM_COUNT,
-    HTTP_CLOSED_CRITICAL_STREAM,
-    HTTP_WRONG_STREAM_DIRECTION,
-    HTTP_EARLY_RESPONSE,
-    HTTP_MISSING_SETTINGS,
-    HTTP_UNEXPECTED_FRAME,
-    HTTP_REQUEST_REJECTED,
-    HTTP_GENERAL_PROTOCOL_ERROR,
-    HTTP_MALFORMED_FRAME
+    http_no_error,
+    http_general_protocol_error,
+    reserved,
+    http_internal_error,
+    http_request_cancelled,
+    http_incomplete_request,
+    http_connect_error,
+    http_excessive_load,
+    http_version_fallback,
+    http_wrong_stream,
+    http_id_error,
+    http_stream_creation_error,
+    http_closed_critical_stream,
+    http_early_response,
+    http_missing_settings,
+    http_unexpected_frame,
+    http_request_rejected,
+    http_settings_error,
+    http_malformed_frame
 }
 ~~~
 
-TODO: HTTP_MALFORMED_FRAME is not a single value, but can include the frame type
+TODO: http_malformed_frame is not a single value, but can include the frame type
 in its definition. This means we need more flexible error logging. Best to wait
-until h3-draft-21, which will include substantial changes to error codes.
+until h3-draft-23 (PR https://github.com/quicwg/base-drafts/pull/2662), which will
+include substantial changes to error codes.
 
 # Change Log
 
