@@ -83,8 +83,8 @@ traces can then be combined into a single qlog file by taking the "traces" entri
 for each qlog file individually and copying them to the "traces" array of a new,
 aggregated qlog file. This is typically done in a post-processing step.
 
-For example, for a test setup, we perform logging on the CLIENT, on the SERVER and
-on a single point on their common NETWORK path. Each of these three logs is first
+For example, for a test setup, we perform logging on the client, on the server and
+on a single point on their common network path. Each of these three logs is first
 created separately during the test. Afterwards, the three logs can be aggregated
 into a single qlog file.
 
@@ -135,7 +135,7 @@ Only the "event_fields" and "events" fields MUST be present.
 {
     "vantage_point": {
         "name": "backend-67",
-        "type": "SERVER"
+        "type": "server"
     },
     "title": "Name of this particular trace (short)",
     "description": "Description for this trace (long)",
@@ -158,23 +158,23 @@ Its value is an object, with the following fields:
 
 * name: an optional, user-chosen string (e.g., "NETWORK-1", "loadbalancer45",
   "reverseproxy@192.168.1.1", ...)
-* type: one of three values: "SERVER", "CLIENT", "NETWORK".
+* type: one of three values: "server", "client", "network".
 
-  * CLIENT indicates an endpoint which initiates the connection.
-  * SERVER indicates an endpoint which accepts the connection.
-  * NETWORK indicates an observer in between CLIENT and SERVER.
-* flow: one of two values: "CLIENT" or "SERVER".
+  * client indicates an endpoint which initiates the connection.
+  * server indicates an endpoint which accepts the connection.
+  * network indicates an observer in between client and server.
+* flow: one of two values: "client" or "server".
 
-  * This field is only required if type is "NETWORK".
-  * CLIENT indicates that this vantage point follows client data flow semantics (a
-    PACKET_TX goes in the direction of the SERVER).
-  * SERVER indicates that this vantage point follow server data flow semantics (a
-    PACKET_TX goes in the direction of the client).
+  * This field is only required if type is "network".
+  * client indicates that this vantage point follows client data flow semantics (a
+    packet_sent goes in the direction of the server).
+  * server indicates that this vantage point follow server data flow semantics (a
+    packet_sent goes in the direction of the client).
 
 The type field MUST be present. The flow field MUST be present if the type field
-has value "NETWORK". The name field is optional.
+has value "network". The name field is optional.
 
-TODO (see issue 6): "NETWORK" should have a way to indicate what RX and TX mean
+TODO (see issue 6): "network" should have a way to indicate what RX and TX mean
 (is current way enough? maybe identify endpoints by ID or 4-tuple etc.)
 
 
@@ -245,19 +245,19 @@ protocols can be found in TODO.
             "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
             "protocol_type": "QUIC_HTTP3",
             "time": 1553986553574,
-            "CATEGORY": "TRANSPORT",
-            "EVENT_TYPE": "PACKET_RX",
-            "TRIGGER": "LINE",
-            "DATA": [...]
+            "category": "transport",
+            "event": "packet_received",
+            "trigger": "line",
+            "data": [...]
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
             "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
             "protocol_type": "QUIC_HTTP3",
             "time": 1553986553579,
-            "CATEGORY": "APPLICATION",
-            "EVENT_TYPE": "DATA_FRAME_NEW",
-            "TRIGGER": "GET",
-            "DATA": [...]
+            "category": "HTTP",
+            "event": "frame_parsed",
+            "trigger": "GET",
+            "data": [...]
         },
         ...
     ]
@@ -277,21 +277,21 @@ protocols can be found in TODO.
     },
     "event_fields": [
         "relative_time",
-        "CATEGORY",
-        "EVENT_TYPE",
-        "TRIGGER",
-        "DATA"
+        "category",
+        "event",
+        "trigger",
+        "data"
     ],
     "events": [[
             2,
-            "TRANSPORT",
-            "PACKET_RX",
-            "LINE",
+            "transport",
+            "packet_received",
+            "line",
             [...]
         ],[
             7,
-            "APPLICATION",
-            "DATA_FRAME_NEW",
+            "HTTP",
+            "frame_parsed",
             "GET",
             [...]
         ],
@@ -339,10 +339,10 @@ corresponding values for those fields in the correct order.
 This section lists pre-defined, reserved field names with specific semantics and
 expected corresponding value formats.
 
-Only a time-based field (see {{time-based-fields}}), the EVENT_TYPE field and the
-DATA field are mandatory. Typical setups will log reference_time, protocol_type
-and group_id in "common_fields" and relative_time, CATEGORY, EVENT_TYPE, TRIGGER and
-DATA in "event_fields".
+Only a time-based field (see {{time-based-fields}}), the event field and the
+data field are mandatory. Typical setups will log reference_time, protocol_type
+and group_id in "common_fields" and relative_time, category, event, trigger and
+DAdataTA in "event_fields".
 
 Other field names are allowed, both in "common_fields" and "event_fields", but
 their semantics depend on the context of the log usage (e.g., for QUIC, the ODCID
@@ -425,31 +425,31 @@ connection IDs can change during the QUIC connection).
     "event_fields": [
         "time",
         "group_id",
-        "CATEGORY",
-        "EVENT_TYPE",
-        "TRIGGER",
-        "DATA"
+        "category",
+        "event",
+        "trigger",
+        "data"
     ],
     "events": [[
             1553986553579,
             { "ip1": "2001:67c:1232:144:9498:6df6:f450:110b", "ip2": "2001:67c:2b0:1c1::198", "port1": 59105, "port2": 80 }
-            "TRANSPORT",
-            "PACKET_RX",
-            "LINE",
+            "transport",
+            "packet_received",
+            "line",
             [...]
         ],[
             1553986553588,
             { "ip1": "10.0.6.137", "ip2": "52.58.13.57", "port1": 56522, "port2": 443 }
-            "APPLICATION",
-            "DATA_FRAME_NEW",
+            "HTTP",
+            "frame_parsed",
             "GET",
             [...]
         ],[
             1553986553598,
             { "ip1": "2001:67c:1232:144:9498:6df6:f450:110b", "ip2": "2001:67c:2b0:1c1::198", "port1": 59105, "port2": 80 }
-            "TRANSPORT",
-            "PACKET_TX",
-            "STREAM",
+            "transport",
+            "packet_sent",
+            "stream",
             [...]
         ],
         ...
@@ -476,31 +476,31 @@ connection IDs can change during the QUIC connection).
     "event_fields": [
         "time",
         "group_id",
-        "CATEGORY",
-        "EVENT_TYPE",
-        "TRIGGER",
-        "DATA"
+        "category",
+        "event",
+        "trigger",
+        "data"
     ],
     "events": [[
             1553986553579,
-            0
-            "TRANSPORT",
-            "PACKET_RX",
-            "LINE",
+            0,
+            "transport",
+            "packet_received",
+            "line",
             [...]
         ],[
             1553986553588,
-            1
-            "APPLICATION",
-            "DATA_FRAME_NEW",
+            1,
+            "HTTP",
+            "frame_parsed",
             "GET",
             [...]
         ],[
             1553986553598,
-            0
-            "TRANSPORT",
-            "PACKET_TX",
-            "STREAM",
+            0,
+            "transport",
+            "packet_sent",
+            "stream",
             [...]
         ],
         ...
@@ -511,23 +511,23 @@ connection IDs can change during the QUIC connection).
 {: #group_id_indexed title="Indexed complex group id"}
 
 
-### CATEGORY and EVENT_TYPE
+### category and event
 
-Both CATEGORY and EVENT_TYPE are separate, generic strings. CATEGORY allows a
-higher-level grouping of events per EVENT_TYPE.
+Both category and event are separate, generic strings. Category allows a
+higher-level grouping of events per event type.
 
-For example, instead of having an EVENT_TYPE of value "QUIC_PACKET_TX", we instead
-have a CATEGORY of "QUIC" and EVENT_TYPE of "PACKET_TX". This allows for fast and
-high-level filtering based on CATEGORY and re-use of EVENT_TYPEs across
-categories.
+For example, instead of having an event of value "transport_packet_sent", we
+instead have a category of "transport" and event type of "packet_sent". This
+allows for fast and high-level filtering based on category and re-use of event
+across categories.
 
-### TRIGGER
+### trigger
 
-The TRIGGER field is a generic string. It indicates which type of event triggered
+The trigger field is a generic string. It indicates which type of event triggered
 this event to occur (alternately: which other event is the reason this event
 occured).
 
-This additional information is needed in the case where a single EVENT_TYPE can be
+This additional information is needed in the case where a single event can be
 caused by a variety of other events. In the normal case, the context of the
 surrounding log messages gives a hint as to which of these other events was the
 cause. However, in highly-parallel and optimized implementations, corresponding
@@ -537,12 +537,12 @@ provide this context.
 
 TODO: is this field needed at this level? see issue 7
 
-### DATA
+### data
 
-The DATA field is a generic object (list of name-value pairs). It contains the
+The data field is a generic object (list of name-value pairs). It contains the
 per-event metadata and its form and semantics are defined per specific sort of
-event (typically per EVENT_TYPE, but possibly also by combination of CATEGORY,
-EVENT_TYPE and TRIGGER).
+event (typically per event, but possibly also by combination of category,
+event and trigger).
 
 
 ### Event field values
@@ -557,7 +557,7 @@ draft-marx-qlog-event-definitions-quic-h3-latest.
 # Tooling requirements
 
 Tools MUST indicate which qlog version(s) they support. Additionally, they SHOULD
-indicate exactly which values for the CATEGORY, EVENT_TYPE and TRIGGER fields they
+indicate exactly which values for the category, event and trigger fields they
 look for to execute their logic. Tools SHOULD perform a (high-level) check if an
 input qlog file adheres to the expected qlog schema. If a tool determines a qlog
 file does not contain enough supported information to correctly execute the tool's
@@ -566,7 +566,7 @@ logic, it SHOULD generate a clear error message to this effect.
 Tools MUST not produce errors for any field names and values in the qlog format
 that they do not recognize. Tools CAN indicate unknown event occurences within
 their context (e.g., marking unknown events on a timeline for manual
-interpretation by the logger).
+interpretation by the user).
 
 # Methods of Access
 

@@ -495,7 +495,7 @@ something more flexible.
 
 # HTTP/3 event definitions
 
-## Data
+## HTTP
 
 ### stream_state_update
 
@@ -525,6 +525,9 @@ Triggers:
 
 
 ### stream_type_update
+
+TODO: possible merge this with stream_state_update? Don't really want to watch for
+2 events to get a newly opened stream + know what type it is
 
 ~~~~
 {
@@ -654,7 +657,7 @@ For example:
 * Decoder Instruction
 
 
-## PRIORITIZATION
+## prioritization
 
 ### dependency_update
 ~~~~
@@ -951,7 +954,7 @@ class MaxDataFrame{
 ### MaxStreamDataFrame
 
 ~~~
-class MaxDataFrame{
+class MaxStreamDataFrame{
   frame_type:string = "max_stream_data";
 
   id:string;
