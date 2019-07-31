@@ -57,6 +57,10 @@ The main tenets for the schema design are:
 
 # The High Level Schema
 
+TODO: add proper data definitions for all fields (e.g., enums, strings vs numbers,
+etc. similar to what we have in the other document). For now, if in doubt, refer
+to https://github.com/quiclog/qlog/blob/master/TypeScript/draft-01/QLog.ts
+
 ## Top level container
 To allow separate qlog traces to be contained within a single, encompassing qlog
 file, the top-level element in the qlog schema defines only a small set of fields
@@ -87,6 +91,19 @@ For example, for a test setup, we perform logging on the client, on the server a
 on a single point on their common network path. Each of these three logs is first
 created separately during the test. Afterwards, the three logs can be aggregated
 into a single qlog file.
+
+As such, the "traces" array can also contain "error" entries. These indicate that
+we tried to find/convert a file for inclusion in the aggregated qlog, but there
+was an error during the process. Rather than silently dropping the erroneous file,
+we explicitly include it in the qlog file.
+
+TODO: add proper data definitions of what the "error" should look like
+~~~
+interface IError {
+    error_description: string,
+    uri: string
+}
+~~~
 
 ## Summary field
 
@@ -158,18 +175,20 @@ Its value is an object, with the following fields:
 
 * name: an optional, user-chosen string (e.g., "NETWORK-1", "loadbalancer45",
   "reverseproxy@192.168.1.1", ...)
-* type: one of three values: "server", "client", "network".
+* type: one of four values: "server", "client", "network" or "unknown".
 
   * client indicates an endpoint which initiates the connection.
   * server indicates an endpoint which accepts the connection.
   * network indicates an observer in between client and server.
-* flow: one of two values: "client" or "server".
+  * unknown indicates the endpoint is unknown.
+* flow: one of three values: "client", "server" or "unknown".
 
   * This field is only required if type is "network".
   * client indicates that this vantage point follows client data flow semantics (a
     packet_sent goes in the direction of the server).
   * server indicates that this vantage point follow server data flow semantics (a
     packet_sent goes in the direction of the client).
+  * unknown indicates that the flow is unknown.
 
 The type field MUST be present. The flow field MUST be present if the type field
 has value "network". The name field is optional.
@@ -177,6 +196,7 @@ has value "network". The name field is optional.
 TODO (see issue 6): "network" should have a way to indicate what RX and TX mean
 (is current way enough? maybe identify endpoints by ID or 4-tuple etc.)
 
+TODO: maybe mention what tools should do with "unknown"?
 
 ### Title and Description
 
@@ -197,8 +217,8 @@ settings inside the log file itself. For this, the configuration field is used.
 The configuration field can be viewed as a generic metadata field that tools can
 fill with their own fields, based on per-tool logic. It is best practice for tools
 to prefix each added field with their tool name to prevent collisions across
-tools. This document only defines two standard, tool-independent configuration
-settings: "time_offset" and "time_units".
+tools. This document only defines three standard, tool-independent configuration
+settings: "time_offset", "time_units" and "original_uris".
 
 #### time_offset
 time_offset indicates by how many units of time (see next section) the starting
@@ -214,6 +234,10 @@ indicate whether storage happens in either milliseconds ("ms") or microseconds
 configuration setting applies to all other timestamps in the trace file as well,
 not just the "time_offset" field.
 
+#### original_uris
+This is an optional parameter used when merging multiple individual qlog files or
+other source files (e.g., when converting .pcaps to qlog). It allows to keep
+better track where certain data came from. It is a simple array of strings.
 
 
 ### common_fields and event_fields

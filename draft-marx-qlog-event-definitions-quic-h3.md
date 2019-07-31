@@ -915,7 +915,8 @@ class CryptoFrame{
 class NewTokenFrame{
   frame_type:string = "new_token";
 
-  offset:string;
+  length:string;
+  token:string;
 }
 ~~~
 
@@ -986,7 +987,7 @@ class DataBlockedFrame{
 
 ~~~
 class StreamDataBlockedFrame{
-  frame_type:string = "data_blocked";
+  frame_type:string = "stream_data_blocked";
 
   id:string;
   limit:string;
@@ -997,7 +998,7 @@ class StreamDataBlockedFrame{
 
 ~~~
 class StreamsBlockedFrame{
-  frame_type:string = "data_blocked";
+  frame_type:string = "streams_blocked";
 
   limit:string;
 }
@@ -1034,7 +1035,7 @@ class RetireConnectionIDFrame{
 
 ~~~
 class PathChallengeFrame{
-  frame_type:string = "patch_challenge";
+  frame_type:string = "path_challenge";
 
   data?:string;
 }
@@ -1192,7 +1193,7 @@ class PushPromiseFrame{
 
 ### GoAwayFrame
 ~~~
-class CancelPushFrame{
+class GoAwayFrame{
     frame_type:string = "goaway",
     id:string
 }
@@ -1222,11 +1223,9 @@ class ReservedFrame{
 ~~~
 
 ### UnknownFrame
-~~~
-class UnknownFrame{
-    frame_type:string = "unknown"
-}
-~~~
+
+HTTP/3 re-uses QUIC's UnknownFrame definition, since their values and usage
+overlaps.
 
 
 ## ApplicationError
