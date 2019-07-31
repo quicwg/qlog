@@ -786,7 +786,7 @@ enum PacketType {
     zerortt = "0RTT",
     onertt = "1RTT",
     retry,
-    version_negotation,
+    version_negotiation,
     unknown
 }
 ~~~
