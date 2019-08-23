@@ -275,7 +275,7 @@ Data:
 
 ~~~
 {
-    type:PacketType,
+    packet_type:PacketType,
     header:PacketHeader,
     frames:Array<QuicFrame>, // see appendix for the definitions
 
@@ -299,7 +299,7 @@ Data:
 
 ~~~
 {
-    type:PacketType,
+    packet_type:PacketType,
     header:PacketHeader,
     frames:Array<QuicFrame>, // see appendix for the definitions
 
@@ -329,7 +329,7 @@ No need to repeat full packet here, should be logged in another event for that
 
 ~~~
 {
-    type:PacketType,
+    packet_type:PacketType,
     packet_number:string
 }
 ~~~
@@ -466,7 +466,7 @@ Data:
 
 ~~~
 {
-    type:PacketType,
+    packet_type:PacketType,
     packet_number:string,
 
     // not all implementations will keep track of full packets, so these are optional
