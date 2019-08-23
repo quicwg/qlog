@@ -1001,6 +1001,7 @@ class StreamDataBlockedFrame{
 class StreamsBlockedFrame{
   frame_type:string = "streams_blocked";
 
+  stream_type:string = "bidirectional" | "unidirectional";
   limit:string;
 }
 ~~~
