@@ -201,7 +201,7 @@ TODO: maybe this is not the ideal name?
 
 ~~~
 {
-    type:string  // (e.g., AES_128_GCM_SHA256)
+    cipher_type:string  // (e.g., AES_128_GCM_SHA256)
 }
 ~~~
 
@@ -211,7 +211,7 @@ Note: secret_update would be more correct, but in the draft it's called KEY_UPDA
 
 ~~~
 {
-    type:KeyType,
+    key_type:KeyType,
     old?:string,
     new:string,
     generation?:number
@@ -226,7 +226,7 @@ Triggers:
 ### key_retire
 ~~~
 {
-    type:KeyType,
+    key_type:KeyType,
     key:string,
     generation?:number
 }
@@ -663,7 +663,7 @@ For example:
 ~~~~
 {
     stream_id:string,
-    type:string = "added" | "moved" | "removed",
+    update_type:string = "added" | "moved" | "removed",
 
     parent_id_old?:string,
     parent_id_new?:string,
@@ -969,6 +969,7 @@ class MaxStreamDataFrame{
 class MaxStreamsFrame{
   frame_type:string = "max_streams";
 
+  stream_type:string = "bidirectional" | "unidirectional";
   maximum:string;
 }
 ~~~
