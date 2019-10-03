@@ -70,19 +70,20 @@ interpreted as described in [RFC2119].
 
 # Overview
 
-This document describes the values of the qlog CATEGORY, EVENT_TYPE, TRIGGER and
-DATA fields and their semantics for the QUIC and HTTP/3 protocols. The definitions
+This document describes the values of the qlog "category", "event_type" and "data"
+fields and their semantics for the QUIC and HTTP/3 protocols. The definitions
 included in this file are assumed to be used in qlog's "trace" containers, where
 the trace's "protocol_type" field MUST be set to "QUIC_HTTP3".
 
-This document is based on draft-20 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT]
+This document is based on draft-23 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT]
 [QUIC-HTTP].
 
 This document uses the ["TypeScript" language](https://www.typescriptlang.org/) to
 describe its schema in. We use TypeScript because it is less verbose than
 JSON-schema and almost as expressive. It also makes it easier to include these
-definitions directly into a web-based tool. The main conventions a reader should
-be aware of are:
+definitions directly into a web-based tool. TypeScript type definitions for this
+document are available at https://github.com/quiclog/qlog/tree/master/TypeScript.
+The main conventions a reader should be aware of are:
 
 * obj? : this object is optional
 * type1 &#124; type2 : a union of these two types (object can be either type1 OR
@@ -93,7 +94,7 @@ be aware of are:
 * number : identifies either an integer, float or double in TypeScript. In this
   document, number always means an integer.
 * Unless explicity defined, the value of an enum entry is the string version of
-  its name (e.g., INITIAL = "INITIAL")
+  its name (e.g., initial = "initial")
 * Many numerical fields have type "string" instead of "number". This is because
   many JSON implementations only support integers up to 2^53-1 (MAX_INTEGER for
   JavaScript without BigInt support), which is less than QUIC's VLIE types
@@ -107,6 +108,42 @@ be aware of are:
 * TODO: make it clear which events are "normal" and which are "only if you really
 need this" (normal = probably TRANSPORT TX/RX and RECOVERY basics and HTTP basics)
 
+# Importance
+
+Not all the listed events are of equal importance to achieve good debuggability.
+As such, each event has an "importance indicator" with one of three values, in
+decreasing order of importance and exptected usage:
+
+* Core
+* Base
+* Extra
+
+The "Core" events are the events that SHOULD be present in all qlog files. These
+are mostly tied to basic packet and frame parsing and creation, as well as listing
+basic internal metrics. Tool implementers SHOULD expect and add support for these
+events, though SHOULD NOT expect all Core events to be present in each qlog trace.
+
+The "Base" events add additional debugging options and CAN be present in qlog
+files. Most of these can be implicitly inferred from data in Core events (if those
+contain all their fields), but for many it is better to log the events explicitly
+as well, making it clearer how the implementation behaves. These events are for
+example tied to passing data around in buffers and show when decisions are
+actually made based on received data. Tool implementers SHOULD at least add
+support for showing the contents of these events, if they do not handle them
+explicitly.
+
+The "Extra" events are considered mostly useful for low-level debugging of the
+implementation, rather than the protocol. They allow more fine-grained tracking of
+internal behaviour. As such, they CAN be present in qlog files and tool
+implementers CAN add support for these, but they are not required to.
+
+Note that in some cases, implementers might not want to log frame-level details in
+the "Core" events due to performance considerations. In this case, they SHOULD use
+(a subset of) relevant "Base" events instead to ensure usability of the qlog
+output. As an example, implementations that do not log "packet_received" events
+and thus also not which (if any) ACK frames the packet contain, SHOULD log
+packets_acknowledged events instead.
+
 # QUIC event definitions
 
 * TODO: flesh out the definitions for most of these
@@ -114,7 +151,9 @@ need this" (normal = probably TRANSPORT TX/RX and RECOVERY basics and HTTP basic
 
 ## connectivity
 
-### listening
+### server_listening
+Importance: Base
+
 ~~~
 {
     ip: string,
@@ -125,7 +164,9 @@ need this" (normal = probably TRANSPORT TX/RX and RECOVERY basics and HTTP basic
 }
 ~~~
 
-### connection_new
+### connection_started
+Importance: Base
+
 Used for both attempting (client-perspective) and accepting (server-perspective)
 new connections.
 
@@ -145,7 +186,9 @@ new connections.
 }
 ~~~
 
-### connection_id_update
+### connection_id_updated
+Importance: Core
+
 This is viewed from the perspective of the one applying the new id. As such, if we
 receive a new connection id from our peer, we will see the dst_ fields are set. If
 we update our own connection id (e.g., NEW_CONNECTION_ID frame), we log the src_
@@ -161,7 +204,9 @@ fields.
 }
 ~~~
 
-### spin_bit_update
+### spin_bit_updated
+Importance: Base
+
 TODO: is this best as a connectivity event? should this be in transport/recovery instead?
 
 ~~~
@@ -170,15 +215,16 @@ TODO: is this best as a connectivity event? should this be in transport/recovery
 }
 ~~~
 
-### connection_retry
+### connection_retried
 
 TODO
 
-### connection_close
+### connection_closed
+Importance: Extra
 
 ~~~
 {
-    src_id?: string (only needed when logging in a trace containing data for multiple connections. Otherwise it's implied.)
+    src_id?: string // (only needed when logging in a trace containing data for multiple connections. Otherwise it's implied.)
 }
 ~~~
 
@@ -187,14 +233,15 @@ Triggers:
 * "clean"
 
 ### MIGRATION-related events
-e.g., path_update
+e.g., path_updated
 
 TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
 TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
 
 ## security
 
-### cipher_update
+### cipher_updated
+Importance: Base
 
 TODO: assume this will only happen once at the start, but check up on that!
 TODO: maybe this is not the ideal name?
@@ -205,7 +252,8 @@ TODO: maybe this is not the ideal name?
 }
 ~~~
 
-### key_update
+### key_updated
+Importance: Base
 
 Note: secret_update would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
 
@@ -223,7 +271,9 @@ Triggers:
 * "remote_update"
 * "local_update"
 
-### key_retire
+### key_retired
+Importance: Base
+
 ~~~
 {
     key_type:KeyType,
@@ -240,26 +290,31 @@ Triggers:
 ## transport
 
 ### datagram_sent
+Importance: Extra
+
 When we pass a UDP-level datagram to the socket
 
 ~~~
 {
-    count:number, // to support passing multiple at once
+    count?:number, // to support passing multiple at once
     byte_length:number
 }
 ~~~
 
 ### datagram_received
+Importance: Extra
+
 When we receive a UDP-level datagram from the socket.
 
 ~~~
 {
-    count:number, // to support passing multiple at once
+    count?:number, // to support passing multiple at once
     byte_length:number
 }
 ~~~
 
 ### packet_sent
+Importance: Core
 
 Triggers:
 
@@ -290,6 +345,7 @@ Notes:
   packet_type specifies this by inference (assuming correct implementation)
 
 ### packet_received
+Importance: Core
 
 Triggers:
 
@@ -314,6 +370,7 @@ Notes:
   packet_type specifies this by inference (assuming correct implementation)
 
 ### packet_dropped
+Importance: Core
 
 Can be due to several reasons
 * TODO: How does this relate to HEADER_DECRYPT ERROR and PAYLOAD_DECRYPT ERROR?
@@ -325,7 +382,9 @@ Can be due to several reasons
 
 
 ### packet_buffered
-No need to repeat full packet here, should be logged in another event for that
+Importance: Base
+
+TODO: No need to repeat full packet here, should be logged in another event for that
 
 ~~~
 {
@@ -338,7 +397,8 @@ Triggers:
 
 * "keys_unavailable"
 
-### stream_state_update
+### stream_state_updated
+Importance: Base
 
 ~~~
 {
@@ -372,13 +432,17 @@ Possible values:
 TODO: do we need all of these? How do implementations actually handle this in
 practice?
 
-### flow_control_update
+### flow_control_updated
+Importance: Base
+
 * type = connection
 * type = stream + id = streamid
 
 TODO: check state machine in QUIC transport draft
 
-### version_update
+### version_updated
+Importance: Base
+
 TODO: check semantics on this: can versions update? will they ever? change to
 version_selected?
 
@@ -389,7 +453,8 @@ version_selected?
 }
 ~~~
 
-### transport_parameters_update
+### transport_parameters_updated
+Importance: Core
 
 ~~~
 {
@@ -399,7 +464,8 @@ version_selected?
 ~~~
 
 
-### ALPN_update
+### ALPN_updated
+Importance: Core
 
 ~~~
 {
@@ -410,16 +476,9 @@ version_selected?
 
 ## recovery
 
-### state_update
+### metrics_updated
+Importance: Core
 
-~~~
-{
-    old:string,
-    new:string
-}
-~~~
-
-### metric_update
 ~~~
 {
     cwnd?: number,
@@ -440,27 +499,30 @@ version_selected?
 This event SHOULD group all possible metric updates that happen at or around the
 same time in a single event (e.g., if min_rtt and smoothed_rtt change at the same
 time, they should be bundled in a single METRIC_UPDATE entry, rather than split
-out into two). Consequently, a METRIC_UPDATE is only guaranteed to contain at
-least one of the listed metrics.
+out into two). Consequently, a metrics_updated event is only guaranteed to contain
+at least one of the listed metrics.
 
 Note: to make logging easier, implementations MAY log values even if they are the
 same as previously reported values (e.g., two subsequent METRIC_UPDATE entries can
 both report the exact same value for min_rtt). However, applications SHOULD try to
 log only actual updates to values.
 
-* TODO: split these up into separate events? e.g., CWND_UPDATE,
-  BYTES_IN_FLIGHT_UPDATE, ...
-* TODO: move things like pacing_rate, cwnd, bytes_in_flight, ssthresh, etc. to
-  CC_STATE_UPDATE?
 * TODO: what types of CC metrics do we need to support by default (e.g., cubic vs
   bbr)
 
 
 ### loss_alarm_set
+Importance: Extra
+
+TODO: define
 
 ### loss_alarm_triggered
+Importance: Extra
+
+TODO: define
 
 ### packet_lost
+Importance: Core
 
 Data:
 
@@ -481,14 +543,16 @@ Triggers:
 * "REORDERING_THRESHOLD",
 * "TIME_THRESHOLD"
 
-### packet_acknowledged
+### packets_acknowledged
+Importance: Extra
 
 TODO: must this be a separate event? can't we get this from logged ACK frames?
 (however, explicitly indicating this and logging it in the ack handler is a better
 signal that the ACK actually had the intended effect than just logging its
 receipt)
 
-### packet_retransmit
+### packet_retransmitted
+Importance: Extra
 
 TODO: only if a packet is retransmit in-full, which many stacks don't do. Need
 something more flexible.
@@ -497,7 +561,8 @@ something more flexible.
 
 ## HTTP
 
-### stream_state_update
+### stream_state_updated
+Importance: Base
 
 ~~~~
 {
@@ -524,7 +589,8 @@ Triggers:
 * push
 
 
-### stream_type_update
+### stream_type_updated
+Importance: Base
 
 TODO: possible merge this with stream_state_update? Don't really want to watch for
 2 events to get a newly opened stream + know what type it is
@@ -551,7 +617,11 @@ quic draft). TODO: figure out proper values for this.
 
 
 ### frame_created
-HTTP equivalent to packet_sent
+Importance: Core
+
+HTTP equivalent to the packet_sent event. This event is emitted when the HTTP/3
+framing actually happens. Note: this is not necessarily the same as when the
+HTTP/3 data is passed on to the QUIC layer. For that, see the "data_moved" event.
 
 ~~~
 {
@@ -564,7 +634,12 @@ HTTP equivalent to packet_sent
 ~~~
 
 ### frame_parsed
-HTTP equivalent to packet_received
+Importance: Core
+
+HTTP equivalent to the packet_received event. This event is emitted when we
+actually parse the HTTP/3 frame. Note: this is not necessarily the same as when
+the HTTP/3 data is actually received on the QUIC layer. For that, see the
+"data_moved" event.
 
 TODO: how do we deal with partial frames (e.g., length is very long, we're
 streaming this incrementally: events should indicate this setup? or you just have
@@ -582,42 +657,28 @@ frame_created.
 ~~~
 
 ### data_moved
+Importance: Extra
 
-Used to indicate when data moves from the HTTP/3 to the transport layer (e.g.,
-passing from H3 to QUIC stream buffers). This is not always the same as frame
-creation.
-
-~~~~
-{
-    stream_id:string,
-    offset_start:string,
-    offset_end:string
-
-    recipient:"application"|"transport"
-}
-~~~~
-
-### data_received
-
-Used to indicate when data moves from the transport to the HTTP/3 layer (e.g.,
-passing from QUIC to H3 stream buffers).
-
-TODO: should this be a Transport:data_moved event instead? now it's contained in
-H3, but maybe we should split this?
-
-TODO: merge this with data_moved and add more general "direction" field? However,
-having separate events also makes a lot of sense for easy high-level filtering
-without having to look at .recipient or .source
+Used to indicate when data moves between the HTTP/3 and the transport layer (e.g.,
+passing from H3 to QUIC stream buffers and vice versa) or between HTTP/3 and the
+actual user application on top (e.g., a browser engine). This helps debug errors
+where buffers are full with ready data, but aren't beind drained fast enough.
 
 ~~~~
 {
     stream_id:string,
-    offset_start:string,
-    offset_end:string,
+    offset_start?:string,
+    offset_end?:string,
 
-    source:"application"|"transport"
+    length?:number, // to be used mainly if no exact offsets are known
+
+    from?:"application"|"transport",
+    to?:"application"|"transport"
 }
 ~~~~
+
+The "from" and "to" fields MUST NOT be set at the same time. The missing field is
+always implied to have the value "http".
 
 TODO: add separate event to highlight when we didn't receive enough data to
 actually decode an H3 frame (e.g., only received 1 byte of 2-byte VLIE encoded
@@ -630,6 +691,8 @@ inter-stream in H3 and intra-stream in QPACK layers and for control stream packe
 ## QPACK
 
 ### header_encoded
+Importance: Base
+
 ~~~~
 {
     stream_id?:string, // not necessarily available at the QPACK level
@@ -640,6 +703,8 @@ inter-stream in H3 and intra-stream in QPACK layers and for control stream packe
 ~~~~
 
 ### header_decoded
+Importance: Base
+
 ~~~~
 {
     stream_id?:string, // not necessarily available at the QPACK level
@@ -659,19 +724,8 @@ For example:
 
 ## prioritization
 
-### dependency_update
-~~~~
-{
-    stream_id:string,
-    update_type:string = "added" | "moved" | "removed",
-
-    parent_id_old?:string,
-    parent_id_new?:string,
-
-    weight_old?:number,
-    weight_new?:number
-}
-~~~~
+TODO: add some higher-level primitives that can work regardless of the resulting
+scheme and then add some more specific things later? e.g., scheduler_updated?
 
 
 ## PUSH
@@ -682,17 +736,23 @@ TODO
 
 ## ERROR
 
-### HEADER_DECRYPT
+### header_decrypt
+Importance: Base
+
 ~~~~
 { mask, error }
 ~~~~
 
-### PAYLOAD_DECRYPT
+### payload_decrypt
+Importance: Base
+
 ~~~~
 { key, error }
 ~~~~
 
 ### CONNECTION_ERROR
+Importance: Extra
+
 ~~~~
 {
     code?:TransportError | number,
@@ -701,6 +761,8 @@ TODO
 ~~~~
 
 ### APPLICATION_ERROR
+Importance: Extra
+
 ~~~~
 {
     code?:ApplicationError | number,
@@ -709,6 +771,8 @@ TODO
 ~~~~
 
 ### INTERNAL_ERROR
+Importance: Base
+
 ~~~~
 {
     code?:number,
@@ -719,6 +783,8 @@ TODO
 ## WARNING
 
 ### INTERNAL_WARNING
+Importance: Base
+
 ~~~~
 {
     code?:number,
@@ -729,6 +795,8 @@ TODO
 ## INFO
 
 ### MESSAGE
+Importance: Extra
+
 ~~~~
 {
     message:string
@@ -738,6 +806,8 @@ TODO
 ## DEBUG
 
 ### MESSAGE
+Importance: Extra
+
 ~~~~
 {
     message:string
@@ -747,6 +817,8 @@ TODO
 ## VERBOSE
 
 ### MESSAGE
+Importance: Extra
+
 ~~~~
 {
     message:string
@@ -1262,9 +1334,11 @@ include substantial changes to error codes.
 
 # Change Log
 
-## Since draft-marx-qlog-event-definitions-quic-h3-latest-00:
+## Since draft-00:
 
-- None yet.
+- Added many new events and their definitions
+- Events are given an importance indicator (issue \#22)
+- Event names are more consistent and use past tense (issue \#21)
 
 # Design Variations
 
@@ -1273,6 +1347,6 @@ TBD
 # Acknowledgements
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind and Lucas Pardue for their
-feedback and suggestions.
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé and Lucas
+Pardue for their feedback and suggestions.
 

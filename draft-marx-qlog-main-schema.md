@@ -637,6 +637,6 @@ alternate designs and that all tooling converges on the qlog standard.
 # Acknowledgements
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind and Lucas Pardue for their
-feedback and suggestions.
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé and Lucas
+Pardue for their feedback and suggestions.
 
