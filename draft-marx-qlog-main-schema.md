@@ -271,16 +271,14 @@ protocols can be found in TODO.
             "time": 1553986553574,
             "category": "transport",
             "event": "packet_received",
-            "trigger": "line",
             "data": [...]
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
             "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
             "protocol_type": "QUIC_HTTP3",
             "time": 1553986553579,
-            "category": "HTTP",
+            "category": "http",
             "event": "frame_parsed",
-            "trigger": "GET",
             "data": [...]
         },
         ...
@@ -303,20 +301,17 @@ protocols can be found in TODO.
         "relative_time",
         "category",
         "event",
-        "trigger",
         "data"
     ],
     "events": [[
             2,
             "transport",
             "packet_received",
-            "line",
             [...]
         ],[
             7,
-            "HTTP",
+            "http",
             "frame_parsed",
-            "GET",
             [...]
         ],
         ...
@@ -363,10 +358,10 @@ corresponding values for those fields in the correct order.
 This section lists pre-defined, reserved field names with specific semantics and
 expected corresponding value formats.
 
-Only a time-based field (see {{time-based-fields}}), the event field and the
-data field are mandatory. Typical setups will log reference_time, protocol_type
-and group_id in "common_fields" and relative_time, category, event, trigger and
-DAdataTA in "event_fields".
+Only a time-based field (see {{time-based-fields}}), the event field and the data
+field are mandatory. Typical setups will log reference_time, protocol_type and
+group_id in "common_fields" and relative_time, category, event and data in
+"event_fields".
 
 Other field names are allowed, both in "common_fields" and "event_fields", but
 their semantics depend on the context of the log usage (e.g., for QUIC, the ODCID
@@ -451,7 +446,6 @@ connection IDs can change during the QUIC connection).
         "group_id",
         "category",
         "event",
-        "trigger",
         "data"
     ],
     "events": [[
@@ -459,21 +453,18 @@ connection IDs can change during the QUIC connection).
             { "ip1": "2001:67c:1232:144:9498:6df6:f450:110b", "ip2": "2001:67c:2b0:1c1::198", "port1": 59105, "port2": 80 }
             "transport",
             "packet_received",
-            "line",
             [...]
         ],[
             1553986553588,
             { "ip1": "10.0.6.137", "ip2": "52.58.13.57", "port1": 56522, "port2": 443 }
-            "HTTP",
+            "http",
             "frame_parsed",
-            "GET",
             [...]
         ],[
             1553986553598,
             { "ip1": "2001:67c:1232:144:9498:6df6:f450:110b", "ip2": "2001:67c:2b0:1c1::198", "port1": 59105, "port2": 80 }
             "transport",
             "packet_sent",
-            "stream",
             [...]
         ],
         ...
@@ -502,7 +493,6 @@ connection IDs can change during the QUIC connection).
         "group_id",
         "category",
         "event",
-        "trigger",
         "data"
     ],
     "events": [[
@@ -510,21 +500,18 @@ connection IDs can change during the QUIC connection).
             0,
             "transport",
             "packet_received",
-            "line",
             [...]
         ],[
             1553986553588,
             1,
-            "HTTP",
+            "http",
             "frame_parsed",
-            "GET",
             [...]
         ],[
             1553986553598,
             0,
             "transport",
             "packet_sent",
-            "stream",
             [...]
         ],
         ...
@@ -545,28 +532,12 @@ instead have a category of "transport" and event type of "packet_sent". This
 allows for fast and high-level filtering based on category and re-use of event
 across categories.
 
-### trigger
-
-The trigger field is a generic string. It indicates which type of event triggered
-this event to occur (alternately: which other event is the reason this event
-occured).
-
-This additional information is needed in the case where a single event can be
-caused by a variety of other events. In the normal case, the context of the
-surrounding log messages gives a hint as to which of these other events was the
-cause. However, in highly-parallel and optimized implementations, corresponding
-logs messages might be wide and far between in time. The trigger field allows
-adding an additional hint as to the cause, even if the surrounding messages do not
-provide this context.
-
-TODO: is this field needed at this level? see issue 7
-
 ### data
 
 The data field is a generic object (list of name-value pairs). It contains the
 per-event metadata and its form and semantics are defined per specific sort of
-event (typically per event, but possibly also by combination of category,
-event and trigger).
+event (typically per event, but possibly also by combination of category and
+event).
 
 
 ### Event field values
@@ -577,15 +548,79 @@ separate documents, specific per protocol or use case.
 For example: event definitions for QUIC and HTTP/3 can be found in
 draft-marx-qlog-event-definitions-quic-h3-latest.
 
+## triggers
+
+Sometimes, additional information is needed in the case where a single event can
+be caused by a variety of other events. In the normal case, the context of the
+surrounding log messages gives a hint as to which of these other events was the
+cause. However, in highly-parallel and optimized implementations, corresponding
+log messages might be wide and far between in time. Another option is to use
+triggers instead of logging extra full events to get more fine-grained information
+without much additional overhead.
+
+For this reason, qlog allows an optional "trigger" property on the value of the
+"data" field to convey such information. It indicates the reason this event
+occured. The possible reasons depend on the type of event and SHOULD be specified
+next to each event definition. Triggers can be of any type, but are typically
+logged as strings. For an example, see {{trigger_example}}.
+
+~~~~~~~~
+{
+    "common_fields": {
+        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+        "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
+        "protocol_type":  "QUIC_HTTP3",
+        "reference_time": "1553986553572"
+    },
+    "event_fields": [
+        "relative_time",
+        "category",
+        "event",
+        "data"
+    ],
+    "events": [[
+            20,
+            "transport",
+            "packet_received",
+            [
+                // Indicates that the packet wasn't received exactly now,
+                // but instead had been buffered because there were no
+                // appropriate TLS keys available to decrypt it before.
+                "trigger": "keys_available",
+                ...
+            ]
+        ],[
+            27,
+            "http",
+            "frame_created",
+            [
+                // Indicates that this frame is being created in response
+                // to an HTTP GET/POST/... request
+                "trigger": "request",
+                ...
+            ]
+        ],
+        ...
+    ]
+}
+~~~~~~~~
+{: .language-json}
+{: #trigger_example title="Trigger example"}
+
+Note: previously, triggers were also top-level fields, similar to category, event
+and data itself. However, since many events don't have specific triggers and some
+triggers are difficult to implement or keep track of in an implementation flow, it
+was decided to make "trigger" an optional property of the data field value
+instead.
 
 # Tooling requirements
 
 Tools MUST indicate which qlog version(s) they support. Additionally, they SHOULD
-indicate exactly which values for the category, event and trigger fields they
-look for to execute their logic. Tools SHOULD perform a (high-level) check if an
-input qlog file adheres to the expected qlog schema. If a tool determines a qlog
-file does not contain enough supported information to correctly execute the tool's
-logic, it SHOULD generate a clear error message to this effect.
+indicate exactly which values for and properties of the category, event and data
+fields they look for to execute their logic. Tools SHOULD perform a (high-level)
+check if an input qlog file adheres to the expected qlog schema. If a tool
+determines a qlog file does not contain enough supported information to correctly
+execute the tool's logic, it SHOULD generate a clear error message to this effect.
 
 Tools MUST not produce errors for any field names and values in the qlog format
 that they do not recognize. Tools CAN indicate unknown event occurences within
@@ -620,7 +655,9 @@ TBD
 
 ## Since draft-marx-qlog-main-schema-00:
 
-- None yet.
+* All field names are now lowercase (e.g., category instead of CATEGORY)
+* Triggers are now properties on the "data" field value, instead of separate field
+  types (#23)
 
 # Design Variations
 
