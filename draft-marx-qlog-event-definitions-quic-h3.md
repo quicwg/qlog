@@ -60,6 +60,10 @@ level schema defined in draft-marx-quic-logging-main-schema-latest.
 
 # Introduction
 
+This document describes the values of the qlog "category", "event" and "data"
+fields and their semantics for the QUIC and HTTP/3 protocols. This document is
+based on draft-23 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT] [QUIC-HTTP].
+
 Feedback and discussion welcome at https://github.com/quiclog/internet-drafts.
 Readers are advised to refer to "editor's draft" at that URL for an up-to-date
 version of this document.
@@ -69,16 +73,6 @@ version of this document.
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
 interpreted as described in [RFC2119].
-
-# Overview
-
-This document describes the values of the qlog "category", "event_type" and "data"
-fields and their semantics for the QUIC and HTTP/3 protocols. The definitions
-included in this file are assumed to be used in qlog's "trace" containers, where
-the trace's "protocol_type" field MUST be set to "QUIC_HTTP3".
-
-This document is based on draft-23 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT]
-[QUIC-HTTP].
 
 This document uses the ["TypeScript" language](https://www.typescriptlang.org/) to
 describe its schema in. We use TypeScript because it is less verbose than
@@ -106,7 +100,7 @@ The main conventions a reader should be aware of are:
   as strings (e.g., packet numbers) MUST be logged in decimal (base-10) format.
   TODO: see issue 10
 
-# Importance
+## Importance
 
 Not all the listed events are of equal importance to achieve good debuggability.
 As such, each event has an "importance indicator" with one of three values, in
@@ -142,10 +136,76 @@ output. As an example, implementations that do not log "packet_received" events
 and thus also not which (if any) ACK frames the packet contain, SHOULD log
 packets_acknowledged events instead.
 
-# QUIC event definitions
 
-* TODO: flesh out the definitions for most of these
-* TODO: add all definitions for HTTP3 and QPACK events
+# Overview
+
+This document describes the values of the qlog "category", "event" and "data"
+fields and their semantics for the QUIC and HTTP/3 protocols. The definitions
+included in this file are assumed to be used in qlog's "trace" containers, where
+the trace's "protocol_type" field MUST be set to "QUIC_HTTP3".
+
+Many of the events map directly to concepts seen in the QUIC and HTTP/3 documents,
+while others act as aggregating events that combine data from several possible
+protocol behaviours or code paths into one, to reduce the amount of different
+event definitions. Limiting the amount of different events is one of the main
+design goals for this document. As such, many events that can be directly inferred
+from data on the wire (e.g., flow control limit changes) if the implementation is
+bug-free, are not explicitly defined as stand-alone events.
+
+Similarly, we prevent logging duplicate data as much as possible. As such,
+especially packet header value updates are split out into separate events (e.g.,
+spin_bit_updated, connection_id_updated), as there are expected to change
+sparingly.
+
+This document assumes the usage of the encompassing main qlog schema defined in
+draft-marx-quic-logging-main-schema-latest. Each subsection below defines a
+separate category (e.g., connectivity, transport, http) and each subsubsection is
+an event type.
+
+For each event type, its importance and data definition is laid out, often
+accompanied by possible values for the optional "trigger" field. For the
+definition and semantics of "trigger", see the main scheme document.
+
+Most of the complex datastructures, enums and re-usable definitions are grouped
+together on the bottom of the document for clarity.
+
+# Events not belonging to a single connection {#handling-unknown-connections}
+
+For several types of events, it is sometimes impossible to tie them to a specific
+conceptual QUIC connection (e.g., a packet_dropped event triggered because the
+packet has an unknown connection_id in the header). Since a qlog events in a trace
+are typically associated with a single connection (see the discussions on group_id
+in draft-marx-quic-logging-main-schema-latest), it is unclear how to log these
+events.
+
+Ideally, implementers SHOULD create a separate "endpoint-level" trace or at least
+group_id, not associated with a specific connection (e.g., group_id = "server" |
+"client"), and log all of these events on that trace. However, this is not always
+practical, depending on the implementation. Because the semantics of these events
+are well-defined in the protocols and because they are difficult to mis-interpret
+as belonging to a connection, implementers MAY log events not belonging to a
+particular connection in any other trace, even those strongly associated with a
+single connection.
+
+Note that this can make it difficult to match logs from different vantage points
+with each other. For example, from the client side, it is easy to log connections
+with version negotiation or stateless retry in the same trace, while on the server
+they would most likely be logged in separate traces.
+
+# QUIC and HTTP/3 fields
+
+This document re-uses all the fields defined in the main qlog schema (e.g.,,
+category, event, data, group_id, protocol_type, the time-related fields, etc.).
+
+The value of the protocol_type field MUST be "QUIC_HTTP3".
+
+As the group_id field can contain any grouping identifier, this document defines
+an additional similar field, named ODCID (for Original Destination Connection ID),
+since the ODCID is the lowest common denominator to be able to link packets to a
+connection. Typically though, the group_id and ODCID fields will contain the same
+value (or the ODCID field is omitted).
+
+# QUIC event definitions
 
 ## connectivity
 
@@ -165,8 +225,7 @@ Data:
     quic_versions?: Array<string>,
     alpn_values?: Array<string>,
 
-    early_data_allowed?:boolean,
-    stateless_reset_required?:boolean
+    stateless_reset_required?:boolean // server will always respond with stateless_reset for incoming initials
 }
 ~~~
 
@@ -217,7 +276,8 @@ Data:
 ### spin_bit_updated
 Importance: Base
 
-TODO: is this best as a connectivity event? should this be in transport/recovery instead?
+To be emitted when the spin bit changes value. It SHOULD NOT be emitted if the
+spin bit is set without changing its value.
 
 Data:
 
@@ -231,21 +291,37 @@ Data:
 
 TODO
 
-### connection_closed
-Importance: Extra
+### connection_state_updated
+Importance: Base
 
 Data:
 
 ~~~
 {
-    src_id?: string // (only needed when logging in a trace containing data for multiple connections. Otherwise it's implied.)
+    old?:ConnectionState,
+    new:ConnectionState
 }
+
+enum ConnectionState {
+    attempted, // client initial sent
+    reset, // stateless reset sent
+    handshake, // handshake in progress
+    active, // handshake successful, data exchange
+    keepalive, // no data for a longer period
+    draining, // CONNECTION_CLOSE sent
+    closed // connection actually fully closed, memory freed
+}
+
 ~~~
+
+Note: connection_state_changed with a new state of "attempted" is the same
+conceptual event as the connection_started event above from the client's
+perspective.
 
 Triggers:
 
-* "error"
-* "clean"
+* "error" // when closing because of an unexpected event
+* "clean" // when closing normally
 
 ### MIGRATION-related events
 e.g., path_updated
@@ -255,24 +331,10 @@ TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
 
 ## security
 
-### cipher_updated
-Importance: Base
-
-TODO: assume this will only happen once at the start, but check up on that!
-TODO: maybe this is not the ideal name?
-
-Data:
-
-~~~
-{
-    cipher_type:string  // (e.g., AES_128_GCM_SHA256)
-}
-~~~
-
 ### key_updated
 Importance: Base
 
-Note: secret_update would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
+Note: secret_updated would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
 
 Data:
 
@@ -281,7 +343,9 @@ Data:
     key_type:KeyType,
     old?:string,
     new:string,
-    generation?:number
+    generation?:number,
+
+    trigger?: string
 }
 ~~~
 
@@ -300,7 +364,9 @@ Data:
 {
     key_type:KeyType,
     key:string,
-    generation?:number
+    generation?:number,
+
+    trigger?: string
 }
 ~~~
 
@@ -312,31 +378,95 @@ Triggers:
 
 ## transport
 
-### datagram_sent
-Importance: Extra
+### parameters_set
+Importance: Core
 
-When we pass a UDP-level datagram to the socket
+This event groups settings from many different sources (transport parameters,
+version negotiation, ALPN selection, TLS ciphers, etc.) into a single event. This
+is done to minimize the amount of events and to decouple conceptual setting
+impacts from their underlying mechanism for easier high-level reasoning.
+
+All these settings are typically set once and never change. However, they are
+typically set at different times during the connection, so there will typically be
+several instances of this event with different fields set.
+
+Note that while the settings may be set just once, some have two variations (one
+set locally, one requested by the remote peer). This is reflected in the "owner"
+field. As such, this field MUST be correct for all settings included a single
+event instance. If you need to log settings from two sides, you MUST emit two
+separate event instances.
 
 Data:
 
 ~~~
 {
-    count?:number, // to support passing multiple at once
-    byte_length:number
+    owner?:string = "local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
+
+    resumption_allowed?:boolean, // valid session ticket was received
+    early_data_enabled?:boolean, // early data extension was enabled on the TLS layer
+    alpn?:string,
+    version?:string, // hex (e.g., 0x)
+    tls_cipher?:string, // (e.g., AES_128_GCM_SHA256)
+
+    // transport parameters from the TLS layer:
+    original_connection_id:string, // hex
+    stateless_reset_token:string, // hex
+    disable_active_migration:bool,
+
+    idle_timeout:number,
+    max_packet_size:number,
+    ack_delay_exponent:number,
+    max_ack_delay:number,
+    active_connection_id_limit:number,
+
+    initial_max_data:string,
+    initial_max_stream_data_bidi_local:string,
+    initial_max_stream_data_bidi_remote:string,
+    initial_max_stream_data_uni:string,
+    initial_max_streams_bidi:string,
+    initial_max_streams_uni:string,
+
+    preferred_address:PreferredAddress
+}
+
+interface PreferredAddress {
+    ip_v4:string,
+    ip_v6:string,
+
+    port_v4:number,
+    port_v6:number,
+
+    connection_id:string, // hex
+    stateless_reset_token:string // hex
 }
 ~~~
 
-### datagram_received
-Importance: Extra
+Additionally, this event can contain any number of unspecified fields. This is to
+reflect setting of for example unknown (greased) transport parameters or employed
+(proprietary) extensions.
 
-When we receive a UDP-level datagram from the socket.
+### transport_parameters_updated
+Importance: Core
 
 Data:
 
 ~~~
 {
-    count?:number, // to support passing multiple at once
-    byte_length:number
+    owner:string = "local" | "remote",
+    parameters:Array<TransportParameter>;
+}
+~~~
+
+
+### ALPN_updated
+Importance: Core
+
+Data:
+
+~~~
+{
+    old:string,
+    new:string
 }
 ~~~
 
@@ -354,7 +484,9 @@ Data:
     is_coalesced?:boolean,
 
     raw_encrypted?:string, // for debugging purposes
-    raw_decrypted?:string  // for debugging purposes
+    raw_decrypted?:string  // for debugging purposes,
+
+    trigger?: string
 }
 ~~~
 
@@ -385,7 +517,9 @@ Data:
     is_coalesced?:boolean,
 
     raw_encrypted?:string, // for debugging purposes
-    raw_decrypted?:string  // for debugging purposes
+    raw_decrypted?:string  // for debugging purposes,
+
+    trigger?: string
 }
 ~~~
 
@@ -400,22 +534,36 @@ Triggers:
 ### packet_dropped
 Importance: Base
 
+This event indicates a QUIC-level packet was dropped after partial or no parsing.
+
+For this event, the "trigger" property SHOULD be set to one of the values below,
+as this helps tremendously in debugging.
+
 Data:
 
 ~~~
 {
+    packet_type?:PacketType,
     packet_size:number,
-    raw?:string, // hex encoded
+    raw?:string, // hex encoded,
+
+    trigger?: string
 }
 ~~~
 
-Can be due to several reasons
-* TODO: How does this relate to HEADER_DECRYPT ERROR and PAYLOAD_DECRYPT ERROR?
-* TODO: if a packet is dropped because we don't have a connection for it, how can
-  we add it to a given trace in the overall qlog file? Need a sort of catch-call
-  trace in each file?
-* TODO: differentiate between DATAGRAM_DROPPED and PACKET_DROPPED? Same with
-  PACKET_RECEIVED and DATAGRAM_RECEIVED?
+Triggers:
+
+* "key_unavailable"
+* "unknown_connection_id"
+* "header_decrypt_error"
+* "payload_decrypt_error"
+* "protocol_violation"
+* "dos_prevention"
+* "unsupported_version"
+
+Note: sometimes packets are dropped before they can be associated with a
+particular connection (e.g., in case of "unsupported_version"). This situation is
+discussed in {{handling-unknown-connections}}.
 
 
 ### packet_buffered
@@ -428,7 +576,9 @@ Data:
 ~~~
 {
     packet_type:PacketType,
-    packet_number:string
+    packet_number:string,
+
+    trigger?: string
 }
 ~~~
 
@@ -439,90 +589,103 @@ Triggers:
 * "keys_unavailable" // if packet cannot be decrypted because the proper keys were
   not yet available
 
+### datagrams_sent
+Importance: Extra
+
+When we pass one or more UDP-level datagrams to the socket
+
+Data:
+
+~~~
+{
+    count?:number, // to support passing multiple at once
+    byte_length:number
+}
+~~~
+
+### datagrams_received
+Importance: Extra
+
+When we receive one or more UDP-level datagrams from the socket.
+
+Data:
+
+~~~
+{
+    count?:number, // to support passing multiple at once
+    byte_length:number
+}
+~~~
+
+### datagram_dropped
+Importance: extra
+
+When we drop a UDP-level datagram. Typically if it does not contain a valid QUIC
+packet.
+
+Data:
+
+~~~
+{
+    byte_length:number
+}
+~~~
+
 ### stream_state_updated
 Importance: Base
 
-Data:
-
-~~~
-{
-    old:string,
-    new:string
-}
-~~~
-
-Possible values:
-
-* idle
-* open
-* closed
-* half_closed_remote
-* half_closed_local
-* destroyed // memory actually freed
-
-* Ready
-* Send
-* Data Sent
-* Reset Sent
-* Data Rcvd
-* Reset Rcvd
-
-* Recv
-* Size Known
-* Data Rcvd
-* Data Read
-* Reset Read
-
-TODO: do we need all of these? How do implementations actually handle this in
-practice?
-
-### flow_control_updated
-Importance: Base
-
-* type = connection
-* type = stream + id = streamid
-
-TODO: check state machine in QUIC transport draft
-
-### version_updated
-Importance: Base
-
-TODO: check semantics on this: can versions update? will they ever? change to
-version_selected?
+This event is emitted whenever the internal state of a QUIC stream is updated, as
+described in QUIC transport draft-23 section 3. Most of this can be inferred from
+several types of frames going over the wire, but it's much easier to have explicit
+signals for these state changes.
 
 Data:
 
 ~~~
 {
-    old:string,
-    new:string
+    stream_id:string,
+
+    old?:StreamState,
+    new:StreamState,
+
+    stream_side?:"sending"|"receiving"
+}
+
+enum StreamState {
+    // bidirectional stream states, draft-23 3.4.
+    idle,
+    open,
+    closed
+    half_closed_local,
+    half_closed_remote,
+
+    // sending-side stream states, draft-23 3.1.
+    ready,
+    send,
+    data_sent,
+    reset_sent,
+    reset_received,
+
+    // receive-side stream states, draft-23 3.2.
+    receive,
+    size_known,
+    data_read,
+    data_received,
+    reset_read,
+
+    // both-side states
+    data_received,
+
+    // qlog-defined
+    destroyed // memory actually freed
 }
 ~~~
 
-### transport_parameters_updated
-Importance: Core
-
-Data:
-
-~~~
-{
-    owner:string = "local" | "remote",
-    parameters:Array<TransportParameter>;
-}
-~~~
-
-
-### ALPN_updated
-Importance: Core
-
-Data:
-
-~~~
-{
-    old:string,
-    new:string
-}
-~~~
+Note: QUIC implementations SHOULD mainly log the simplified bidirectional
+(HTTP/2-alike) stream states (e.g., idle, open, closed) instead of the more
+finegrained stream states (e.g., data_sent, reset_received). These latter ones are
+mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
+equally.
 
 ## recovery
 
@@ -600,7 +763,9 @@ Data:
 
     // not all implementations will keep track of full packets, so these are optional
     header?:PacketHeader,
-    frames?:Array<QuicFrame>, // see appendix for the definitions
+    frames?:Array<QuicFrame>, // see appendix for the definitions,
+
+    trigger?: string
 }
 ~~~
 
@@ -639,7 +804,9 @@ Data:
 {
     id:string,
     old:string,
-    new:string
+    new:string,
+
+    trigger?: string
 }
 ~~~~
 
@@ -816,36 +983,16 @@ scheme and then add some more specific things later? e.g., scheduler_updated?
 
 TODO
 
-# General error and warning definitions
+# General error, warning and debugging definitions
 
 ## error
 
-### header_decrypt
-Importance: Base
-
-Data:
-
-~~~~
-{
-    mask:string, // hex-formatted
-    error:string
-}
-~~~~
-
-### payload_decrypt
-Importance: Base
-
-Data:
-
-~~~~
-{
-    key:string, // hex-formatted
-    error:string
-}
-~~~~
-
 ### connection_error
 Importance: Extra
+
+Logged when there is a connection error. Can be inferred from a CONNECTION_CLOSE
+frame, but one might refrain from sending a long string in that frame, while
+logging it here.
 
 Data:
 
@@ -859,6 +1006,10 @@ Data:
 ### application_error
 Importance: Extra
 
+Logged when there is an application error. Can be inferred from a CONNECTION_CLOSE
+frame, but one might refrain from sending a long string in that frame, while
+logging it here.
+
 Data:
 
 ~~~~
@@ -870,6 +1021,9 @@ Data:
 
 ### internal_error
 Importance: Base
+
+Used to log details of an internal error that might get translated into a more
+generic error on the wire (e.g., protocol_violation)
 
 Data:
 
@@ -885,6 +1039,9 @@ Data:
 ### internal_warning
 Importance: Base
 
+Used to log details of an internal warning that might not get reflected on the
+wire.
+
 Data:
 
 ~~~~
@@ -899,6 +1056,9 @@ Data:
 ### message
 Importance: Extra
 
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages.
+
 Data:
 
 ~~~~
@@ -911,6 +1071,9 @@ Data:
 
 ### message
 Importance: Extra
+
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages.
 
 Data:
 
@@ -925,6 +1088,9 @@ Data:
 ### message
 Importance: Extra
 
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages.
+
 Data:
 
 ~~~~
@@ -932,6 +1098,17 @@ Data:
     message:string
 }
 ~~~~
+
+## simulation
+
+### marker
+Importance: Extra
+
+Used for when running an implementation in a form of simulation setup where
+specific emulation conditions are triggered at set times (e.g., at 3 seconds in 2%
+packet loss is introduced, at 10s a NAT rebind is triggered). Marker events can be
+added to the logs and visualizations to show clearly when underlying conditions
+have been changed.
 
 
 # Security Considerations
@@ -1444,9 +1621,12 @@ include substantial changes to error codes.
 
 ## Since draft-00:
 
-- Added many new events and their definitions
-- Events are given an importance indicator (issue \#22)
-- Event names are more consistent and use past tense (issue \#21)
+* Event and category names are now all lowercase
+* Added many new events and their definitions
+* "type" fields have been made more specific (especially important for PacketType
+  fields, which are now called packet_type instead of type)
+* Events are given an importance indicator (issue \#22)
+* Event names are more consistent and use past tense (issue \#21)
 
 # Design Variations
 
