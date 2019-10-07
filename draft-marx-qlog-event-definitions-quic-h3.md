@@ -512,7 +512,7 @@ Data:
 {
     packet_type:PacketType,
     header:PacketHeader,
-    frames:Array<QuicFrame>;, // see appendix for the definitions
+    frames:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean,
 
@@ -592,7 +592,8 @@ Triggers:
 ### datagrams_sent
 Importance: Extra
 
-When we pass one or more UDP-level datagrams to the socket
+When we pass one or more UDP-level datagrams to the socket. This is useful for
+determining how QUIC packet buffers are drained to the OS.
 
 Data:
 
@@ -606,7 +607,8 @@ Data:
 ### datagrams_received
 Importance: Extra
 
-When we receive one or more UDP-level datagrams from the socket.
+When we receive one or more UDP-level datagrams from the socket. This is useful
+for determining how datagrams are passed to the user space stack from the OS.
 
 Data:
 
@@ -618,10 +620,10 @@ Data:
 ~~~
 
 ### datagram_dropped
-Importance: extra
+Importance: Extra
 
-When we drop a UDP-level datagram. Typically if it does not contain a valid QUIC
-packet.
+When we drop a UDP-level datagram. This is typically if it does not contain a
+valid QUIC packet (in that case, use packet_dropped instead).
 
 Data:
 
@@ -687,10 +689,53 @@ finegrained stream states (e.g., data_sent, reset_received). These latter ones a
 mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
 equally.
 
+### frames_processed
+Importance: Extra
+
+This event's main goal is to prevent a large proliferation of specific purpose
+events (e.g., packets_acknowledged, flow_control_updated, stream_data_received).
+We want to give implementations the opportunity to (selectively) log this type of
+signal without having to log packet-level details (e.g., in packet_received).
+Since for almost all cases, the effects of applying a frame to the internal state
+of an implementation can be inferred from that frame's contents, we aggregate
+these events in this single "frames_processed" event.
+
+Note: This event can be used to signal internal state change not resulting
+directly from the actual "parsing" of a frame (e.g., the frame could have been
+parsed, data put into a buffer, then later processed, then logged with this
+event).
+
+Note: Implementations logging "packet_received" and which include all of the
+packet's constituent frames therein, are not expected to emit this
+"frames_processed" event (contrary to the HTTP-level "frames_parsed" event).
+Rather, implementations not wishing to log full packets or that wish to explicitly
+convey extra information about when frames are processed (if not directly tied to
+their reception) can use this event.
+
+Note: for some events, this approach will lose some information (e.g., for which
+encryption level are packets being acknowledged?). If this information is
+important, please use the packet_received event instead.
+
+Data:
+
+~~~
+{
+    frames:Array<QuicFrame>, // see appendix for the definitions
+}
+~~~
+
+
 ## recovery
 
 ### metrics_updated
 Importance: Core
+
+This event is emitted when one or more of the observable recovery metrics changes
+value. This event SHOULD group all possible metric updates that happen at or
+around the same time in a single event (e.g., if min_rtt and smoothed_rtt change
+at the same time, they should be bundled in a single metrics_updated entry, rather
+than split out into two). Consequently, a metrics_updated event is only guaranteed
+to contain at least one of the listed metrics.
 
 Data:
 
@@ -709,15 +754,11 @@ Data:
 
     pacing_rate?:number,
 
-    maximum_packet_size?:number // e.g., when updated after pmtud
+    maximum_packet_size?:number, // e.g., when updated after pmtud
+
+    packets_in_flight?:number
 }
 ~~~
-
-This event SHOULD group all possible metric updates that happen at or around the
-same time in a single event (e.g., if min_rtt and smoothed_rtt change at the same
-time, they should be bundled in a single METRIC_UPDATE entry, rather than split
-out into two). Consequently, a metrics_updated event is only guaranteed to contain
-at least one of the listed metrics.
 
 Note: to make logging easier, implementations MAY log values even if they are the
 same as previously reported values (e.g., two subsequent METRIC_UPDATE entries can
@@ -731,6 +772,8 @@ log only actual updates to values.
 ### loss_timer_set
 Importance: Extra
 
+This event is emitted when the single recovery loss timer is set.
+
 Data:
 
 ~~~
@@ -740,8 +783,17 @@ Data:
 }
 ~~~
 
+TODO: how about CC algo's that use multiple timers? How generic do these events
+need to be? Just support QUIC-style recovery from the spec or broader?
+
+Triggers:
+
+TODO
+
 ### loss_timer_expired
 Importance: Extra
+
+This event is emitted when the single recovery loss timer fires.
 
 Data:
 
@@ -753,6 +805,9 @@ Data:
 
 ### packet_lost
 Importance: Core
+
+This event is emitted when a packet is deemed lost by loss detection. Use the
+"trigger" field to indicate the loss detection method used for this decision.
 
 Data:
 
@@ -775,19 +830,35 @@ Triggers:
 * "time_threshold"
 * "pto_expired" // draft-23 section 5.3.1, MAY
 
-### packets_acknowledged
+
+### marked_for_retransmit
 Importance: Extra
 
-TODO: must this be a separate event? can't we get this from logged ACK frames?
-(however, explicitly indicating this and logging it in the ack handler is a better
-signal that the ACK actually had the intended effect than just logging its
-receipt)
+This event indicates which data was marked for retransmit upon detecing a packet
+loss (see packet_lost). Similar to our reasoning for the "frames_processed" event,
+in order to keep the amount of different events low, we group this signal for all
+types of retransmittable data in a single event based on existing QUIC frame
+definitions.
 
-### packet_retransmitted
-Importance: Extra
+Implementations retransmitting full packets or frames directly can just log the
+consituent frames of the lost packet here (or do away with this event and use the
+contents of the packet_lost event instead). Conversely, implementations that have
+more complex logic (e.g., marking ranges in a stream's data buffer as in-flight),
+or that do not track sent frames in full (e.g., only stream offset + length), can
+translate their internal behaviour into the appropriate frame instance here even
+if that frame was never or will never be put on the wire.
 
-TODO: only if a packet is retransmit in-full, which many stacks don't do. Need
-something more flexible.
+Note: much of this data can be inferred if implementations log packet_sent events
+(e.g., looking at overlapping stream data offsets and length, one can determine
+when data was retransmitted).
+
+Data:
+
+~~~
+{
+    frames:Array<QuicFrame>, // see appendix for the definitions
+}
+~~~
 
 # HTTP/3 event definitions
 
@@ -1293,7 +1364,7 @@ class StreamFrame{
 
     // this MAY be set any time, but MUST only be set if the value is "true"
     // if absent, the value MUST be assumed to be "false"
-    fin:boolean;
+    fin?:boolean;
 
     raw?:string;
 }
@@ -1627,6 +1698,7 @@ include substantial changes to error codes.
   fields, which are now called packet_type instead of type)
 * Events are given an importance indicator (issue \#22)
 * Event names are more consistent and use past tense (issue \#21)
+* Triggers have been redefined as properties of the "data" field and updated for most events (issue \#23)
 
 # Design Variations
 
