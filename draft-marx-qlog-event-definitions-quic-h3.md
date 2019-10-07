@@ -329,6 +329,8 @@ e.g., path_updated
 TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
 TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
 
+For now, infer from other connectivity events and path_challenge/path_response frames
+
 ## security
 
 ### key_updated
@@ -342,8 +344,8 @@ Data:
 {
     key_type:KeyType,
     old?:string,
-    new:string,
-    generation?:number,
+    new?:string,
+    generation?:number, // needed for 1RTT key updates
 
     trigger?: string
 }
@@ -363,8 +365,8 @@ Data:
 ~~~
 {
     key_type:KeyType,
-    key:string,
-    generation?:number,
+    key?:string,
+    generation?:number, // needed for 1RTT key updates
 
     trigger?: string
 }
@@ -409,24 +411,24 @@ Data:
     tls_cipher?:string, // (e.g., AES_128_GCM_SHA256)
 
     // transport parameters from the TLS layer:
-    original_connection_id:string, // hex
-    stateless_reset_token:string, // hex
-    disable_active_migration:bool,
+    original_connection_id?:string, // hex
+    stateless_reset_token?:string, // hex
+    disable_active_migration?:bool,
 
-    idle_timeout:number,
-    max_packet_size:number,
-    ack_delay_exponent:number,
-    max_ack_delay:number,
-    active_connection_id_limit:number,
+    idle_timeout?:number,
+    max_packet_size?:number,
+    ack_delay_exponent?:number,
+    max_ack_delay?:number,
+    active_connection_id_limit?:number,
 
-    initial_max_data:string,
-    initial_max_stream_data_bidi_local:string,
-    initial_max_stream_data_bidi_remote:string,
-    initial_max_stream_data_uni:string,
-    initial_max_streams_bidi:string,
-    initial_max_streams_uni:string,
+    initial_max_data?:string,
+    initial_max_stream_data_bidi_local?:string,
+    initial_max_stream_data_bidi_remote?:string,
+    initial_max_stream_data_uni?:string,
+    initial_max_streams_bidi?:string,
+    initial_max_streams_uni?:string,
 
-    preferred_address:PreferredAddress
+    preferred_address?:PreferredAddress
 }
 
 interface PreferredAddress {
@@ -445,31 +447,6 @@ Additionally, this event can contain any number of unspecified fields. This is t
 reflect setting of for example unknown (greased) transport parameters or employed
 (proprietary) extensions.
 
-### transport_parameters_updated
-Importance: Core
-
-Data:
-
-~~~
-{
-    owner:string = "local" | "remote",
-    parameters:Array<TransportParameter>;
-}
-~~~
-
-
-### ALPN_updated
-Importance: Core
-
-Data:
-
-~~~
-{
-    old:string,
-    new:string
-}
-~~~
-
 ### packet_sent
 Importance: Core
 
@@ -479,7 +456,7 @@ Data:
 {
     packet_type:PacketType,
     header:PacketHeader,
-    frames:Array<QuicFrame>, // see appendix for the definitions
+    frames?:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean,
 
@@ -512,7 +489,7 @@ Data:
 {
     packet_type:PacketType,
     header:PacketHeader,
-    frames:Array<QuicFrame>, // see appendix for the definitions
+    frames?:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean,
 
@@ -544,7 +521,7 @@ Data:
 ~~~
 {
     packet_type?:PacketType,
-    packet_size:number,
+    packet_size?:number,
     raw?:string, // hex encoded,
 
     trigger?: string
@@ -576,7 +553,7 @@ Data:
 ~~~
 {
     packet_type:PacketType,
-    packet_number:string,
+    packet_number?:string,
 
     trigger?: string
 }
@@ -600,7 +577,7 @@ Data:
 ~~~
 {
     count?:number, // to support passing multiple at once
-    byte_length:number
+    byte_length?:number
 }
 ~~~
 
@@ -615,7 +592,7 @@ Data:
 ~~~
 {
     count?:number, // to support passing multiple at once
-    byte_length:number
+    byte_length?:number
 }
 ~~~
 
@@ -629,7 +606,7 @@ Data:
 
 ~~~
 {
-    byte_length:number
+    byte_length?:number
 }
 ~~~
 
@@ -727,6 +704,41 @@ Data:
 
 ## recovery
 
+Note: most of the events in this category are kept generic to support different
+recovery approaches and various congestion control algorithms. Tool creators
+SHOULD make an effort to support and visualize even unknown data in these events
+(e.g., plot unknown congestion states by name on a timeline visualization).
+
+### parameters_set
+Importance: Base
+
+This event groups initial parameters from both loss detection and congestion
+control into a single event. All these settings are typically set once and never
+change. Implementation that do, for some reason, change these parameters during
+execution, MAY emit the parameters_set event twice.
+
+Data:
+
+~~~
+{
+    // Loss detection, see recovery draft-23, Appendix A.2
+    reordering_threshold?:number, // in amount of packets
+    time_threshold?:number, // as RTT multiplier
+    timer_granularity?:number, // in ms or us, depending on the overarching qlog's configuration
+    initial_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
+
+    // congestion control, Appendix B.1.
+    max_datagram_size?:number, // in bytes // Note: this could be updated after pmtud
+    initial_congestion_window?:number, // in bytes
+    minimum_congestion_window?:number, // in bytes // Note: this could change when max_datagram_size changes
+    loss_reduction_factor?:number,
+    persistent_congestion_threshold?:number // as PTO multiplier
+}
+~~~
+
+Additionally, this event can contain any number of unspecified fields to support
+different recovery approaches.
+
 ### metrics_updated
 Importance: Core
 
@@ -741,22 +753,26 @@ Data:
 
 ~~~
 {
-    cwnd?: number,
-    bytes_in_flight?:number,
-
+    // Loss detection, see recovery draft-23, Appendix A.3
     min_rtt?:number,
     smoothed_rtt?:number,
     latest_rtt?:number,
-    max_ack_delay?:number,
-
     rtt_variance?:number,
-    ssthresh?:number,
 
-    pacing_rate?:number,
+    max_ack_delay?:number,
+    pto_count?:number,
 
-    maximum_packet_size?:number, // e.g., when updated after pmtud
+    // Congestion control, Appendix B.2.
+    congestion_window?:number, // in bytes
+    bytes_in_flight?:number,
 
-    packets_in_flight?:number
+    ssthresh?:number, // in bytes
+
+    // qlog defined
+    packets_in_flight?:number, // sum of all packet number spaces
+    in_recovery?:boolean, // high-level signal. For more granularity, see congestion_state_updated
+
+    pacing_rate?:number // in bps
 }
 ~~~
 
@@ -765,9 +781,41 @@ same as previously reported values (e.g., two subsequent METRIC_UPDATE entries c
 both report the exact same value for min_rtt). However, applications SHOULD try to
 log only actual updates to values.
 
-* TODO: what types of CC metrics do we need to support by default (e.g., cubic vs
-  bbr)
+Additionally, this event can contain any number of unspecified fields to support
+different recovery approaches.
 
+### congestion_state_updated
+Importance: Base
+
+This event signifies when the congestion controller enters a significant new state
+and changes its behaviour. This event's definition is kept generic to support
+different Congestion Control algorithms. For example, for the algorithm defined in
+the Recovery draft ("enhanced" New Reno), the following states are defined:
+
+* slow_start
+* congestion_avoidance
+* application_limited
+* recovery
+
+The trigger SHOULD be logged if there are multiple ways in which a state change
+can occur but MAY be omitted if a given state can only be due to a single event
+occuring (e.g., slow start is exited only when ssthresh is exceeded).
+
+Some triggers for ("enhanced" New Reno):
+
+* persistent_congestion
+* ECN
+
+Data:
+
+~~~
+{
+    old?:string,
+    new:string,
+
+    trigger?:string
+}
+~~~
 
 ### loss_timer_set
 Importance: Extra
@@ -778,8 +826,8 @@ Data:
 
 ~~~
 {
-    timer_type:"ack"|"pto", // called "mode" in draft-23 A.9.
-    timeout:number
+    timer_type?:"ack"|"pto", // called "mode" in draft-23 A.9.
+    timeout?:number
 }
 ~~~
 
@@ -799,7 +847,7 @@ Data:
 
 ~~~
 {
-    timer_type:"ack"|"pto", // called "mode" in draft-23 A.9.
+    timer_type?:"ack"|"pto", // called "mode" in draft-23 A.9.
 }
 ~~~
 
@@ -874,7 +922,7 @@ Data:
 ~~~~
 {
     id:string,
-    old:string,
+    old?:string,
     new:string,
 
     trigger?: string
@@ -910,9 +958,9 @@ Data:
 ~~~~
 {
     id:string,
-    old:string,
+    old?:string,
     new:string,
-    owner:"local"|"remote"
+    owner?:"local"|"remote"
 }
 ~~~~
 Possible values:
@@ -941,7 +989,7 @@ Data:
 {
     stream_id:string,
     frame:HTTP3Frame // see appendix for the definitions,
-    byte_length:string,
+    byte_length?:string,
 
     raw?:string
 }
@@ -966,7 +1014,7 @@ Data:
 {
     stream_id:string,
     frame:HTTP3Frame // see appendix for the definitions,
-    byte_length:string,
+    byte_length?:string,
 
     raw?:string
 }
@@ -1070,7 +1118,7 @@ Data:
 ~~~~
 {
     code?:TransportError | number,
-    description:string
+    description?:string
 }
 ~~~~
 
@@ -1086,7 +1134,7 @@ Data:
 ~~~~
 {
     code?:ApplicationError | number,
-    description:string
+    description?:string
 }
 ~~~~
 
@@ -1101,7 +1149,7 @@ Data:
 ~~~~
 {
     code?:number,
-    description:string
+    description?:string
 }
 ~~~~
 
@@ -1118,7 +1166,7 @@ Data:
 ~~~~
 {
     code?:number,
-    description:string
+    description?:string
 }
 ~~~~
 
@@ -1180,6 +1228,13 @@ specific emulation conditions are triggered at set times (e.g., at 3 seconds in 
 packet loss is introduced, at 10s a NAT rebind is triggered). Marker events can be
 added to the logs and visualizations to show clearly when underlying conditions
 have been changed.
+
+~~~~
+{
+    marker_type:string,
+    message?:string
+}
+~~~~
 
 
 # Security Considerations
