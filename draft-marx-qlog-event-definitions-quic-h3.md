@@ -618,6 +618,7 @@ described in QUIC transport draft-23 section 3. Most of this can be inferred fro
 several types of frames going over the wire, but it's much easier to have explicit
 signals for these state changes.
 
+
 Data:
 
 ~~~
@@ -1054,60 +1055,193 @@ TODO: add separate diagnostic event(s) to indicate when HOL-blocking occured (bo
 inter-stream in H3 and intra-stream in QPACK layers and for control stream packets
 (e.g., prioritization, push))
 
-## QPACK
+### PUSH-events
 
-### header_encoded
+TODO: add these
+
+
+
+## qpack
+
+Note: like all category values, the "qpack" category is written in lowercase.
+
+The QPACK events mainly serve as an aid to debug low-level QPACK issues. The
+higher-level, plaintext header values SHOULD (also) be logged in the
+http.frame_created and http.frame_parsed event data (instead).
+
+### parameters_set
 Importance: Base
+
+This event contains QPACK-level settings, received from the HTTP/3 SETTINGS frame.
+All these parameters are typically set once and never change.
+
+~~~
+{
+    max_table_capacity?:number, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
+    blocked_streams_count?:number // from SETTINGS_QPACK_BLOCKED_STREAMS
+}
+~~~
+
+### state_updated
+Importance: Base
+
+This event is emitted when one or more of the internal QPACK variables changes
+value. Note that some variables have two variations (one set locally, one
+requested by the remote peer). This is reflected in the "owner" field. As such,
+this field MUST be correct for all variables included a single event instance. If
+you need to log settings from two sides, you MUST emit two separate event
+instances.
+
+Data:
+
+~~~
+{
+    owner?:string = "local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
+
+    dynamic_table_capacity?:number,
+    dynamic_table_size?:number, // effective current size, sum of all the entries
+
+    known_received_count?:number,
+    current_insert_count?:number
+}
+~~~
+
+### stream_state_updated
+Importance: Core
+
+This event is emitted when a stream becomes blocked or unblocked by header
+decoding requests or QPACK instructions.
+
+Note: This event is of "Core" importance, as it might have a large impact on
+HTTP/3's observed performance.
+
+Data:
+
+~~~
+{
+    stream_id:string,
+
+    state:"blocked"|"unblocked" // streams are assumed to start "unblocked" until they become "blocked"
+}
+~~~
+
+### dynamic_table_updated
+Importance: Extra
+
+This event is emitted when one or more entries are added or evicted from QPACK's dynamic table.
+
+Data:
+
+~~~
+{
+    update_type:"added"|"evicted",
+
+    entries:Array<DynamicTableEntry>
+}
+
+class DynamicTableEntry {
+    index:number,
+    name?:string,
+    value?:string
+}
+~~~
+
+### headers_encoded
+Importance: Base
+
+This event is emitted when an uncompressed header block is encoded successfully.
+
+Note: this event has overlap with http.frame_created for the HeadersFrame type.
+When outputting both events, implementers MAY omit the "headers" field in this
+event.
 
 Data:
 
 ~~~~
 {
-    stream_id?:string, // not necessarily available at the QPACK level
+    stream_id?:string,
 
-    encoded:string,
-    fields:Array<HTTPHeader>
+    headers?:Array<HTTPHeader>,
+
+    block_prefix:QPACKHeaderBlockPrefix,
+    compressed_headers:Array<QPackCompressedHeader>,
+
+    raw?:string, // in hex
 }
 ~~~~
 
-### header_decoded
+### headers_decoded
 Importance: Base
+
+This event is emitted when a compressed header block is decoded successfully.
+
+Note: this event has overlap with http.frame_parsed for the HeadersFrame type.
+When outputting both events, implementers MAY omit the "headers" field in this
+event.
 
 Data:
 
 ~~~~
 {
-    stream_id?:string, // not necessarily available at the QPACK level
+    stream_id?:string,
 
-    encoded:string,
-    fields:Array<HTTPHeader>
+    headers?:Array<HTTPHeader>,
+
+    block_prefix:QPACKHeaderBlockPrefix,
+    compressed_headers:Array<QPackCompressedHeader>,
+
+    raw?:string, // in hex
 }
 ~~~~
 
-### TODO
+### instruction_sent
+Importance: Base
 
-Add more qpack-specific events
-For example:
-* Encoder Instruction
-* Decoder Instruction
+This event is emitted when a QPACK instruction (both decoder and encoder) is sent.
 
+Data:
 
-## prioritization
+~~~
+{
+    instruction:QPACKInstruction // see appendix for the definitions,
+    byte_length?:string,
 
-TODO: add some higher-level primitives that can work regardless of the resulting
-scheme and then add some more specific things later? e.g., scheduler_updated?
+    raw?:string // in hex
+}
+~~~
 
+Note: encoder/decoder semantics and stream_id's are implicit in either the
+instruction types or can be logged via other events (e.g.,
+http.stream_type_updated)
 
-## PUSH
+### instruction_received
+Importance: Base
 
-TODO
+This event is emitted when a QPACK instruction (both decoder and encoder) is
+received.
+
+Data:
+
+~~~
+{
+    instruction:QPACKInstruction // see appendix for the definitions,
+    byte_length?:string,
+
+    raw?:string // in hex
+}
+~~~
+
+Note: encoder/decoder semantics and stream_id's are implicit in either the
+instruction types or can be logged via other events (e.g.,
+http.stream_type_updated)
+
 
 # General error, warning and debugging definitions
 
 ## error
 
 ### connection_error
-Importance: Extra
+Importance: Core
 
 Logged when there is a connection error. Can be inferred from a CONNECTION_CLOSE
 frame, but one might refrain from sending a long string in that frame, while
@@ -1123,7 +1257,7 @@ Data:
 ~~~~
 
 ### application_error
-Importance: Extra
+Importance: Core
 
 Logged when there is an application error. Can be inferred from a CONNECTION_CLOSE
 frame, but one might refrain from sending a long string in that frame, while
@@ -1609,7 +1743,7 @@ compression is applied).
 For example:
 
 ~~~
-fields: [{"name":":path","content":"/"},{"name":":method","content":"GET"},{"name":":authority","content":"127.0.0.1:4433"},{"name":":scheme","content":"https"}]
+headers: [{"name":":path","content":"/"},{"name":":method","content":"GET"},{"name":":authority","content":"127.0.0.1:4433"},{"name":":scheme","content":"https"}]
 ~~~
 
 TODO: use proper HTTP naming for the fields, names, values, etc.
@@ -1617,7 +1751,7 @@ TODO: use proper HTTP naming for the fields, names, values, etc.
 ~~~
 class HeadersFrame{
     frame_type:string = "header",
-    fields:Array<HTTPHeader>
+    headers:Array<HTTPHeader>
 }
 
 class HTTPHeader {
@@ -1672,7 +1806,7 @@ class PushPromiseFrame{
     frame_type:string = "push_promise",
     id:string,
 
-    fields:Array<HTTPHeader>
+    headers:Array<HTTPHeader>
 }
 ~~~
 
@@ -1742,6 +1876,167 @@ TODO: http_malformed_frame is not a single value, but can include the frame type
 in its definition. This means we need more flexible error logging. Best to wait
 until h3-draft-23 (PR https://github.com/quicwg/base-drafts/pull/2662), which will
 include substantial changes to error codes.
+
+# QPACK DATA type definitions
+
+## QPACK Instructions
+
+Note: the instructions do not have explicit encoder/decoder types, since there is
+no overlap between the insturctions of both types in neither name nor function.
+
+~~~
+type QPACKInstruction = SetDynamicTableCapacityInstruction | InsertWithNameReferenceInstruction | InsertWithoutNameReferenceInstruction | DuplicateInstruction | HeaderAcknowledgementInstruction | StreamCancellationInstruction | InsertCountIncrementInstruction;
+~~~
+
+### SetDynamicTableCapacityInstruction
+
+~~~
+class SetDynamicTableCapacityInstruction {
+    instruction_type:string = "set_dynamic_table_capacity",
+
+    capacity:number
+}
+~~~
+
+### InsertWithNameReferenceInstruction
+
+~~~
+class InsertWithNameReferenceInstruction {
+    instruction_type:string = "insert_with_name_reference",
+
+    table_type:"static"|"dynamic",
+
+    name_index:number,
+
+    huffman_encoded_value:boolean,
+    value_length:number,
+    value:string
+}
+~~~
+
+### InsertWithoutNameReferenceInstruction
+
+~~~
+class InsertWithoutNameReferenceInstruction {
+    instruction_type:string = "insert_without_name_reference",
+
+    huffman_encoded_name:boolean,
+    name_length:number,
+    name:string
+
+    huffman_encoded_value:boolean,
+    value_length:number,
+    value:string
+}
+~~~
+
+### DuplicateInstruction
+
+~~~
+class DuplicateInstruction {
+    instruction_type:string = "duplicate",
+
+    index:number
+}
+~~~
+
+### HeaderAcknowledgementInstruction
+
+~~~
+class HeaderAcknowledgementInstruction {
+    instruction_type:string = "header_acknowledgement",
+
+    stream_id:string
+}
+~~~
+
+### StreamCancellationInstruction
+
+~~~
+class StreamCancellationInstruction {
+    instruction_type:string = "stream_cancellation",
+
+    stream_id:string
+}
+~~~
+
+### InsertCountIncrementInstruction
+
+~~~
+class InsertCountIncrementInstruction {
+    instruction_type:string = "insert_count_increment",
+
+    increment:number
+}
+~~~
+
+## QPACK Header compression
+
+~~~
+type QPackCompressedHeader = IndexedHeaderField | LiteralHeaderFieldWithName | LiteralHeaderFieldWithoutName;
+~~~
+
+### IndexedHeaderField
+
+Note: also used for "indexed header field with post-base index"
+
+~~~
+class IndexedHeaderField {
+    header_field_type:string = "index_header",
+
+    table_type:"static"|"dynamic", // MUST be "dynamic" if is_post_base is true
+    index:number,
+
+    is_post_base?:boolean = false, // to represent the "indexed header field with post-base index" header field type
+}
+~~~
+
+### LiteralHeaderFieldWithName
+
+Note: also used for "Literal header field with post-base name reference"
+
+~~~
+class LiteralHeaderFieldWithName {
+    header_field_type:string = "literal_with_name",
+
+    preserve_literal:boolean, // the 3rd "N" bit
+    table_type:"static"|"dynamic", // MUST be "dynamic" if is_post_base is true
+    name_index:number,
+
+    huffman_encoded_value:boolean,
+    value_length:number,
+    value:string,
+
+    is_post_base?:boolean = false, // to represent the "Literal header field with post-base name reference" header field type
+}
+~~~
+### LiteralHeaderFieldWithoutName
+
+~~~
+class LiteralHeaderFieldWithoutName {
+    header_field_type:string = "literal_without_name",
+
+    preserve_literal:boolean, // the 3rd "N" bit
+
+    huffman_encoded_name:boolean,
+    name_length:number,
+    name:string
+
+    huffman_encoded_value:boolean,
+    value_length:number,
+    value:string,
+}
+~~~
+
+### QPACKHeaderBlockPrefix
+
+~~~
+class QPACKHeaderBlockPrefix {
+    required_insert_count:number,
+    sign_bit:boolean,
+    delta_base:number
+}
+~~~
 
 # Change Log
 
