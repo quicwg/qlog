@@ -98,6 +98,7 @@ was an error during the process. Rather than silently dropping the erroneous fil
 we explicitly include it in the qlog file.
 
 TODO: add proper data definitions of what the "error" should look like
+
 ~~~
 interface IError {
     error_description: string,
@@ -228,11 +229,12 @@ could use manual tools or automated logic to align traces in time and the found
 optimal offsets can be stored in this field for future usage.
 
 #### time_units
-Since timestamps can be stored in various granularities, this field allows to
-indicate whether storage happens in either milliseconds ("ms") or microseconds
-("us"). If this field is not present, the default value is "ms". This
-configuration setting applies to all other timestamps in the trace file as well,
-not just the "time_offset" field.
+Since timestamps and other time-related values can be stored in various
+granularities, this field allows to indicate whether storage happens in either
+milliseconds ("ms") or microseconds ("us"). If this field is not present, the
+default value is "ms". This configuration setting applies to all other timestamps
+and time-related values in the trace file and its consituent events as well, not
+just the "time_offset" field.
 
 #### original_uris
 This is an optional parameter used when merging multiple individual qlog files or
@@ -398,6 +400,10 @@ The relative_time approach will:
 
 ~~~
 {: #time_approaches title="Three different approaches for logging timestamps"}
+
+Events in each individual trace MUST be logged in strictly ascending timestamp
+order. Tools are not expected to sort all events on the timestamp before
+processing them.
 
 ### group_id and group_ids {#group_ids}
 

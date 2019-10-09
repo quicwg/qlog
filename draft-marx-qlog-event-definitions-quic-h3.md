@@ -47,6 +47,17 @@ normative:
         name: Mike Bishop
         org: Akamai
         role: editor
+  QLOG-MAIN:
+    title: "Main logging schema for qlog"
+    date: 2019-10-14
+    seriesinfo:
+      Internet-Draft: draft-marx-qlog-main-schema-01
+    author:
+      -
+        ins: R. Marx
+        name: Robin Marx
+        org: Hasselt University
+        role: editor
 
 informative:
 
@@ -1065,10 +1076,8 @@ Data:
 ~~~~
 {
     stream_id:string,
-    offset_start?:string,
-    offset_end?:string,
-
-    length?:number, // to be used mainly if no exact offsets are known
+    offset?:string,
+    length?:number,
 
     from?:"application"|"transport",
     to?:"application"|"transport",
@@ -1191,8 +1200,8 @@ Data:
 
     headers?:Array<HTTPHeader>,
 
-    block_prefix:QPACKHeaderBlockPrefix,
-    compressed_headers:Array<QPackCompressedHeader>,
+    block_prefix:QPackHeaderBlockPrefix,
+    header_block:Array<QPackHeaderBlockRepresentation>,
 
     raw?:string, // in hex
 }
@@ -1215,8 +1224,8 @@ Data:
 
     headers?:Array<HTTPHeader>,
 
-    block_prefix:QPACKHeaderBlockPrefix,
-    compressed_headers:Array<QPackCompressedHeader>,
+    block_prefix:QPackHeaderBlockPrefix,
+    header_block:Array<QPackHeaderBlockRepresentation>,
 
     raw?:string, // in hex
 }
@@ -1231,7 +1240,7 @@ Data:
 
 ~~~
 {
-    instruction:QPACKInstruction // see appendix for the definitions,
+    instruction:QPackInstruction // see appendix for the definitions,
     byte_length?:string,
 
     raw?:string // in hex
@@ -1251,7 +1260,7 @@ Data:
 
 ~~~
 {
-    instruction:QPACKInstruction // see appendix for the definitions,
+    instruction:QPackInstruction // see appendix for the definitions,
     byte_length?:string,
 
     raw?:string // in hex
@@ -1277,7 +1286,7 @@ Data:
 
 ~~~~
 {
-    code?:TransportError | number,
+    code?:TransportError | CryptoError | number,
     description?:string
 }
 ~~~~
@@ -1489,12 +1498,12 @@ class PingFrame{
 class AckFrame{
     frame_type:string = "ack";
 
-    ack_delay:string;
+    ack_delay?:string;
 
     // first number is "from": lowest packet number in interval
     // second number is "to": up to and including // highest packet number in interval
     // e.g., looks like [["1","2"],["4","5"]]
-    acked_ranges:Array<[string, string]|[string]>;
+    acked_ranges?:Array<[string, string]|[string]>;
 
     ect1?:string;
     ect0?:string;
@@ -1514,7 +1523,7 @@ SHOULD log \["120"\] instead and tools MUST be able to deal with both notations.
 class ResetStreamFrame{
     frame_type:string = "reset_stream";
 
-    id:string;
+    stream_id:string;
     error_code:ApplicationError | number;
     final_size:string;
 }
@@ -1526,7 +1535,7 @@ class ResetStreamFrame{
 class StopSendingFrame{
     frame_type:string = "stop_sending";
 
-    id:string;
+    stream_id:string;
     error_code:ApplicationError | number;
 }
 ~~~
@@ -1538,7 +1547,7 @@ class CryptoFrame{
   frame_type:string = "crypto";
 
   offset:string;
-  length:string;
+  length:number;
 }
 ~~~
 
@@ -1548,7 +1557,7 @@ class CryptoFrame{
 class NewTokenFrame{
   frame_type:string = "new_token";
 
-  length:string;
+  length:number;
   token:string;
 }
 ~~~
@@ -1565,7 +1574,7 @@ class StreamFrame{
     // These two MUST always be set
     // If not present in the Frame type, log their default values
     offset:string;
-    length:string;
+    length:number;
 
     // this MAY be set any time, but MUST only be set if the value is "true"
     // if absent, the value MUST be assumed to be "false"
@@ -1719,6 +1728,7 @@ class UnknownFrame{
 ~~~
 
 ### TransportError
+
 ~~~
 enum TransportError {
     no_error,
@@ -1732,11 +1742,26 @@ enum TransportError {
     transport_parameter_error,
     protocol_violation,
     invalid_migration,
-    crypto_buffer_exceeded,
-    crypto_error
+    crypto_buffer_exceeded
 }
 ~~~
 
+### CryptoError
+
+These errors are defined in the TLS document as "A TLS alert is turned into a QUIC
+connection error by converting the one-byte alert description into a QUIC error
+code. The alert description is added to 0x100 to produce a QUIC error code from
+the range reserved for CRYPTO_ERROR."
+
+This approach maps badly to a pre-defined enum. As such, we define the
+crypto_error string as having a dynamic component here, which should include the
+hex-encoded value of the TLS alert description.
+
+~~~
+enum CryptoError {
+    crypto_error_{TLS_ALERT}
+}
+~~~
 
 # HTTP/3 data field definitions
 
@@ -1878,7 +1903,7 @@ Note: the instructions do not have explicit encoder/decoder types, since there i
 no overlap between the insturctions of both types in neither name nor function.
 
 ~~~
-type QPACKInstruction = SetDynamicTableCapacityInstruction | InsertWithNameReferenceInstruction | InsertWithoutNameReferenceInstruction | DuplicateInstruction | HeaderAcknowledgementInstruction | StreamCancellationInstruction | InsertCountIncrementInstruction;
+type QPackInstruction = SetDynamicTableCapacityInstruction | InsertWithNameReferenceInstruction | InsertWithoutNameReferenceInstruction | DuplicateInstruction | HeaderAcknowledgementInstruction | StreamCancellationInstruction | InsertCountIncrementInstruction;
 ~~~
 
 ### SetDynamicTableCapacityInstruction
@@ -1966,7 +1991,7 @@ class InsertCountIncrementInstruction {
 ## QPACK Header compression
 
 ~~~
-type QPackCompressedHeader = IndexedHeaderField | LiteralHeaderFieldWithName | LiteralHeaderFieldWithoutName;
+type QPackHeaderBlockRepresentation = IndexedHeaderField | LiteralHeaderFieldWithName | LiteralHeaderFieldWithoutName;
 ~~~
 
 ### IndexedHeaderField
@@ -2022,10 +2047,10 @@ class LiteralHeaderFieldWithoutName {
 }
 ~~~
 
-### QPACKHeaderBlockPrefix
+### QPackHeaderBlockPrefix
 
 ~~~
-class QPACKHeaderBlockPrefix {
+class QPackHeaderBlockPrefix {
     required_insert_count:number;
     sign_bit:boolean;
     delta_base:number;
