@@ -154,7 +154,7 @@ bug-free, are not explicitly defined as stand-alone events.
 
 Similarly, we prevent logging duplicate data as much as possible. As such,
 especially packet header value updates are split out into separate events (e.g.,
-spin_bit_updated, connection_id_updated), as there are expected to change
+spin_bit_updated, connection_id_updated), as they are expected to change
 sparingly.
 
 This document assumes the usage of the encompassing main qlog schema defined in
@@ -233,7 +233,9 @@ Data:
 Importance: Base
 
 Used for both attempting (client-perspective) and accepting (server-perspective)
-new connections.
+new connections. Note that this event has overlap with connection_state_updated
+and this is a separate event mainly because of all the additional data that should
+be logged.
 
 Data:
 
@@ -322,6 +324,7 @@ Triggers:
 
 * "error" // when closing because of an unexpected event
 * "clean" // when closing normally
+* "application" // e.g., HTTP/3's GOAWAY frame
 
 ### MIGRATION-related events
 e.g., path_updated
@@ -392,17 +395,16 @@ All these settings are typically set once and never change. However, they are
 typically set at different times during the connection, so there will typically be
 several instances of this event with different fields set.
 
-Note that while the settings may be set just once, some have two variations (one
-set locally, one requested by the remote peer). This is reflected in the "owner"
-field. As such, this field MUST be correct for all settings included a single
-event instance. If you need to log settings from two sides, you MUST emit two
-separate event instances.
+Note that some settings have two variations (one set locally, one requested by the
+remote peer). This is reflected in the "owner" field. As such, this field MUST be
+correct for all settings included a single event instance. If you need to log
+settings from two sides, you MUST emit two separate event instances.
 
 Data:
 
 ~~~
 {
-    owner?:string = "local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
+    owner?:"local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
 
     resumption_allowed?:boolean, // valid session ticket was received
     early_data_enabled?:boolean, // early data extension was enabled on the TLS layer
@@ -445,7 +447,8 @@ interface PreferredAddress {
 
 Additionally, this event can contain any number of unspecified fields. This is to
 reflect setting of for example unknown (greased) transport parameters or employed
-(proprietary) extensions.
+(proprietary) extensions. In this case, the field name should be the hex-encoded
+value of the parameter name or identifier.
 
 ### packet_sent
 Importance: Core
@@ -546,7 +549,9 @@ discussed in {{handling-unknown-connections}}.
 ### packet_buffered
 Importance: Base
 
-TODO: No need to repeat full packet here, should be logged in another event for that
+This event is emitted when a packet is buffered because it cannot be processed
+yet. Typically, this is because the packet cannot be parsed yet, and thus we only
+log the full packet contents when it was parsed in a packet_received event.
 
 Data:
 
@@ -624,6 +629,7 @@ Data:
 ~~~
 {
     stream_id:string,
+    stream_type?:"unidirectional"|"bidirectional", // mainly useful when opening the stream
 
     old?:StreamState,
     new:StreamState,
@@ -635,9 +641,9 @@ enum StreamState {
     // bidirectional stream states, draft-23 3.4.
     idle,
     open,
-    closed
     half_closed_local,
     half_closed_remote,
+    closed,
 
     // sending-side stream states, draft-23 3.1.
     ready,
@@ -915,67 +921,75 @@ Data:
 
 Note: like all category values, the "http" category is written in lowercase.
 
-### stream_state_updated
+### parameters_set
 Importance: Base
+
+This event contains HTTP/3 and QPACK-level settings, mostly those received from
+the HTTP/3 SETTINGS frame. All these parameters are typically set once and never
+change. However, they are typically set at different times during the connection,
+so there can be several instances of this event with different fields set.
+
+Note that some settings have two variations (one set locally, one requested by the
+remote peer). This is reflected in the "owner" field. As such, this field MUST be
+correct for all settings included a single event instance. If you need to log
+settings from two sides, you MUST emit two separate event instances.
 
 Data:
 
-~~~~
+~~~
 {
-    id:string,
-    old?:string,
-    new:string,
+    owner?:"local" | "remote",
 
-    trigger?: string
+    max_header_list_size?:number, // from SETTINGS_MAX_HEADER_LIST_SIZE
+    max_table_capacity?:number, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
+    blocked_streams_count?:number, // from SETTINGS_QPACK_BLOCKED_STREAMS
+
+    push_allowed?:boolean, // received a MAX_PUSH_ID frame with non-zero value
+
+    // qlog-defined
+    waits_for_settings?:boolean // indicates whether this implementation waits for a SETTINGS frame before processing requests
 }
-~~~~
+~~~
 
-Possible values:
+Additionally, this event can contain any number of unspecified fields. This is to
+reflect setting of for example unknown (greased) settings or parameters of
+(proprietary) extensions. In this case, the field name should be the hex-encoded
+value of the setting identifier.
 
-* open // maybe local_open, remote_open?
-* closed // maybe local_closed, remote_closed?
-* expecting_push
-* expecting_settings
-* cancelled
-
-Currently, there is no proper state diagram in the HTTP draft (as opposed to the
-quic draft). TODO: figure out proper values for this.
-
-Triggers:
-
-* "request" // opened due to GET,POST,PUT,DELETE,... request from peer
-* "push"
-* "reset" // closed due to reset from peer
-
-
-### stream_type_updated
+### stream_type_set
 Importance: Base
 
-TODO: possible merge this with stream_state_update? Don't really want to watch for
-2 events to get a newly opened stream + know what type it is
+Emitted when a stream's type becomes known. This is typically when a stream is
+opened and the stream's type indicator is sent or received.
+
+Note: most of this information can also be inferred by looking at a stream's id,
+since id's are strictly partitioned at the QUIC level. Even so, this event has a
+"Base" importance because it helps a lot in debugging to have this information
+clearly spelled out.
 
 Data:
 
 ~~~~
 {
-    id:string,
-    old?:string,
-    new:string,
+    stream_id:string,
+
     owner?:"local"|"remote"
+
+    old?:StreamType,
+    new:StreamType,
+
+    associated_push_id?:number // only when new == "push"
+}
+
+enum StreamType {
+    data, // bidirectional request-response streams
+    control,
+    push,
+    reserved,
+    qpack_encode,
+    qpack_decode
 }
 ~~~~
-Possible values:
-
-* data
-* control
-* qpack_encode
-* qpack_decode
-* push
-* reserved
-
-Currently, there is no proper state diagram in the HTTP draft (as opposed to the
-quic draft). TODO: figure out proper values for this.
-
 
 ### frame_created
 Importance: Core
@@ -992,9 +1006,15 @@ Data:
     frame:HTTP3Frame // see appendix for the definitions,
     byte_length?:string,
 
-    raw?:string
+    raw?:string // in hex
 }
 ~~~
+
+Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
+header overhead. As such, DATA frames can span many QUIC packets and can be
+created in a streaming fashion. In this case, the frame_created event is emitted
+once for the frame header, and further streamed data is indicated using the
+data_moved event.
 
 ### frame_parsed
 Importance: Core
@@ -1004,11 +1024,6 @@ actually parse the HTTP/3 frame. Note: this is not necessarily the same as when
 the HTTP/3 data is actually received on the QUIC layer. For that, see the
 "data_moved" event.
 
-TODO: how do we deal with partial frames (e.g., length is very long, we're
-streaming this incrementally: events should indicate this setup? or you just have
-1 frame_parsed and several data_received events for that stream?). Similar for
-frame_created.
-
 Data:
 
 ~~~
@@ -1017,17 +1032,33 @@ Data:
     frame:HTTP3Frame // see appendix for the definitions,
     byte_length?:string,
 
-    raw?:string
+    raw?:string // in hex
 }
 ~~~
 
+Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
+header overhead. As such, DATA frames can span many QUIC packets and can be
+processed in a streaming fashion. In this case, the frame_parsed event is emitted
+once for the frame header, and further streamed data is indicated using the
+data_moved event.
+
 ### data_moved
-Importance: Extra
+Importance: Base
 
 Used to indicate when data moves between the HTTP/3 and the transport layer (e.g.,
 passing from H3 to QUIC stream buffers and vice versa) or between HTTP/3 and the
-actual user application on top (e.g., a browser engine). This helps debug errors
-where buffers are full with ready data, but aren't beind drained fast enough.
+actual user application on top (e.g., a browser engine). This helps make clear the
+flow of data, how long data remains in various buffers and the overheads
+introduced by HTTP/3's framing layer.
+
+For example, when moving from application to http, the data will most likely be
+the raw request we wish to transmit. When then moving that request from http to
+transport, it will be compressed using QPACK and wrapped in an HTTP/3 HEADERS
+frame. Similarly, when receiving data from the transport layer, this will
+potentially include HTTP/3 headers, which are not passed on to the application
+layer. A final use case is making clear when only part of an HTTP/3 frame is
+received (e.g., only 1 or 2 bytes, while 3, 4 or more are needed to fully
+interpret an HTTP/3 frame).
 
 Data:
 
@@ -1040,26 +1071,31 @@ Data:
     length?:number, // to be used mainly if no exact offsets are known
 
     from?:"application"|"transport",
-    to?:"application"|"transport"
+    to?:"application"|"transport",
+
+    raw?:string // in hex
 }
 ~~~~
 
 The "from" and "to" fields MUST NOT be set at the same time. The missing field is
 always implied to have the value "http".
 
-TODO: add separate event to highlight when we didn't receive enough data to
-actually decode an H3 frame (e.g., only received 1 byte of 2-byte VLIE encoded
-value)
+### push_resolved
+Importance: Extra
 
-TODO: add separate diagnostic event(s) to indicate when HOL-blocking occured (both
-inter-stream in H3 and intra-stream in QPACK layers and for control stream packets
-(e.g., prioritization, push))
+This event is emitted when a pushed resource is successfully claimed (used) or,
+conversely, abandoned (rejected) by the application on top of HTTP/3 (e.g., the
+web browser). This event is added to help debug problems with unexpected PUSH
+behaviour, which is commonplace with HTTP/2.
 
-### PUSH-events
+~~~
+{
+    push_id?:number,
+    stream_id?:string, // in case this is logged from a place that does not have access to the push_id
 
-TODO: add these
-
-
+    decision:"claimed"|"abandoned"
+}
+~~~
 
 ## qpack
 
@@ -1069,18 +1105,10 @@ The QPACK events mainly serve as an aid to debug low-level QPACK issues. The
 higher-level, plaintext header values SHOULD (also) be logged in the
 http.frame_created and http.frame_parsed event data (instead).
 
-### parameters_set
-Importance: Base
-
-This event contains QPACK-level settings, received from the HTTP/3 SETTINGS frame.
-All these parameters are typically set once and never change.
-
-~~~
-{
-    max_table_capacity?:number, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
-    blocked_streams_count?:number // from SETTINGS_QPACK_BLOCKED_STREAMS
-}
-~~~
+Note: qpack does not have its own parameters_set event. This was merged with
+http.parameters_set for brevity, since qpack is a required extension for HTTP/3
+anyway. Other HTTP/3 extensions MAY also log their SETTINGS fields in
+http.parameters_set or MAY define their own events.
 
 ### state_updated
 Importance: Base
@@ -1096,7 +1124,7 @@ Data:
 
 ~~~
 {
-    owner?:string = "local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
+    owner?:"local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
 
     dynamic_table_capacity?:number,
     dynamic_table_size?:number, // effective current size, sum of all the entries
@@ -1140,9 +1168,9 @@ Data:
 }
 
 class DynamicTableEntry {
-    index:number,
-    name?:string,
-    value?:string
+    index:number;
+    name?:string;
+    value?:string;
 }
 ~~~
 
@@ -1211,8 +1239,7 @@ Data:
 ~~~
 
 Note: encoder/decoder semantics and stream_id's are implicit in either the
-instruction types or can be logged via other events (e.g.,
-http.stream_type_updated)
+instruction types or can be logged via other events (e.g., http.stream_type_set)
 
 ### instruction_received
 Importance: Base
@@ -1232,8 +1259,7 @@ Data:
 ~~~
 
 Note: encoder/decoder semantics and stream_id's are implicit in either the
-instruction types or can be logged via other events (e.g.,
-http.stream_type_updated)
+instruction types or can be logged via other events (e.g., http.stream_type_set)
 
 
 # General error, warning and debugging definitions
@@ -1381,18 +1407,7 @@ TBD
 
 --- back
 
-# QUIC DATA type definitions
-
-## TransportParameter
-
-~~~
-class TransportParameter
-{
-    name:string, // TODO: list all transport parameters properly in an enum
-    raw_name:string, // for unknown parameters
-    content:any
-}
-~~~
+# QUIC data field definitions
 
 ## PacketType
 
@@ -1479,7 +1494,7 @@ class AckFrame{
     // first number is "from": lowest packet number in interval
     // second number is "to": up to and including // highest packet number in interval
     // e.g., looks like [["1","2"],["4","5"]]
-    acked_ranges:Array<[string, string]>;
+    acked_ranges:Array<[string, string]|[string]>;
 
     ect1?:string;
     ect0?:string;
@@ -1490,8 +1505,9 @@ class AckFrame{
 Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
 ordered (e.g., \[\["5","9"\],\["1","4"\]\] is a valid value).
 
-Note: the two numbers in the packet range can be the same (e.g., \[120,120\] means
-that packet with number 120 was ACKed). TODO: maybe make this into just \[120\]?
+Note: the two numbers in the packet range can be the same (e.g., \["120","120"\]
+means that packet with number 120 was ACKed). However, in that case, implementers
+SHOULD log \["120"\] instead and tools MUST be able to deal with both notations.
 
 ### ResetStreamFrame
 ~~~
@@ -1544,7 +1560,7 @@ class NewTokenFrame{
 class StreamFrame{
     frame_type:string = "stream";
 
-    id:string;
+    stream_id:string;
 
     // These two MUST always be set
     // If not present in the Frame type, log their default values
@@ -1575,7 +1591,7 @@ class MaxDataFrame{
 class MaxStreamDataFrame{
   frame_type:string = "max_stream_data";
 
-  id:string;
+  stream_id:string;
   maximum:string;
 }
 ~~~
@@ -1607,7 +1623,7 @@ class DataBlockedFrame{
 class StreamDataBlockedFrame{
   frame_type:string = "stream_data_blocked";
 
-  id:string;
+  stream_id:string;
   limit:string;
 }
 ~~~
@@ -1687,7 +1703,7 @@ class ConnectionCloseFrame{
     raw_error_code:number;
     reason:string;
 
-    trigger_frame_type?:number; // TODO: should be more defined, but we don't have a FrameType enum atm...
+    trigger_frame_type?:string; // For known frame types, the appropriate "frame_type" string. For unknown frame types, the hex encoded identifier value
 }
 ~~~
 
@@ -1697,6 +1713,8 @@ class ConnectionCloseFrame{
 class UnknownFrame{
     frame_type:string = "unknown";
     raw_frame_type:number;
+
+    raw?:string; // hex encoded
 }
 ~~~
 
@@ -1720,7 +1738,7 @@ enum TransportError {
 ~~~
 
 
-# HTTP/3 DATA type definitions
+# HTTP/3 data field definitions
 
 ## HTTP/3 Frames
 
@@ -1731,7 +1749,9 @@ type HTTP3Frame = DataFrame | HeadersFrame | PriorityFrame | CancelPushFrame | S
 ### DataFrame
 ~~~
 class DataFrame{
-    frame_type:string = "data"
+    frame_type:string = "data";
+
+    raw?:string; // hex encoded
 }
 ~~~
 
@@ -1743,59 +1763,39 @@ compression is applied).
 For example:
 
 ~~~
-headers: [{"name":":path","content":"/"},{"name":":method","content":"GET"},{"name":":authority","content":"127.0.0.1:4433"},{"name":":scheme","content":"https"}]
+headers: [{"name":":path","value":"/"},{"name":":method","value":"GET"},{"name":":authority","value":"127.0.0.1:4433"},{"name":":scheme","value":"https"}]
 ~~~
-
-TODO: use proper HTTP naming for the fields, names, values, etc.
 
 ~~~
 class HeadersFrame{
-    frame_type:string = "header",
-    headers:Array<HTTPHeader>
+    frame_type:string = "header";
+    headers:Array<HTTPHeader>;
 }
 
 class HTTPHeader {
-    name:string,
-    content:string
-}
-~~~
-
-### PriorityFrame
-
-~~~
-class PriorityFrame{
-    frame_type:string = "priority",
-
-    prioritized_element_type:string = "request_stream"  | "push_stream" | "placeholder" | "root",
-    element_dependency_type?:string = "stream_id"       | "push_id"     | "placeholder_id",
-
-    exclusive:boolean,
-
-    prioritized_element_id:string,
-    element_dependency_id:string,
-    weight:number
-
+    name:string;
+    value:string;
 }
 ~~~
 
 ### CancelPushFrame
 ~~~
 class CancelPushFrame{
-    frame_type:string = "cancel_push",
-    id:string
+    frame_type:string = "cancel_push";
+    push_id:string;
 }
 ~~~
 
 ### SettingsFrame
 ~~~
 class SettingsFrame{
-    frame_type:string = "settings",
-    fields:Array<Setting>
+    frame_type:string = "settings";
+    settings:Array<Setting>;
 }
 
 class Setting{
-    name:string = "SETTINGS_MAX_HEADER_LIST_SIZE" | "SETTINGS_NUM_PLACEHOLDERS",
-    content:string
+    name:string;
+    value:string;
 }
 ~~~
 
@@ -1803,41 +1803,41 @@ class Setting{
 
 ~~~
 class PushPromiseFrame{
-    frame_type:string = "push_promise",
-    id:string,
+    frame_type:string = "push_promise";
+    push_id:string;
 
-    headers:Array<HTTPHeader>
+    headers:Array<HTTPHeader>;
 }
 ~~~
 
 ### GoAwayFrame
 ~~~
 class GoAwayFrame{
-    frame_type:string = "goaway",
-    id:string
+    frame_type:string = "goaway";
+    stream_id:string;
 }
 ~~~
 
 ### MaxPushIDFrame
 ~~~
 class MaxPushIDFrame{
-    frame_type:string = "max_push_id",
-    id:string
+    frame_type:string = "max_push_id";
+    push_id:string;
 }
 ~~~
 
 ### DuplicatePushFrame
 ~~~
 class DuplicatePushFrame{
-    frame_type:string = "duplicate_push",
-    id:string
+    frame_type:string = "duplicate_push";
+    push_id:string;
 }
 ~~~
 
 ### ReservedFrame
 ~~~
 class ReservedFrame{
-    frame_type:string = "reserved"
+    frame_type:string = "reserved";
 }
 ~~~
 
@@ -1852,30 +1852,23 @@ overlaps.
 enum ApplicationError{
     http_no_error,
     http_general_protocol_error,
-    reserved,
     http_internal_error,
-    http_request_cancelled,
-    http_incomplete_request,
-    http_connect_error,
-    http_excessive_load,
-    http_version_fallback,
-    http_wrong_stream,
-    http_id_error,
     http_stream_creation_error,
     http_closed_critical_stream,
-    http_early_response,
-    http_missing_settings,
-    http_unexpected_frame,
-    http_request_rejected,
+    http_frame_unexpected,
+    http_frame_error,
+    http_excessive_load,
+    http_id_error,
     http_settings_error,
-    http_malformed_frame
+    http_missing_settings,
+    http_request_rejected,
+    http_request_cancelled,
+    http_request_incomplete,
+    http_early_response,
+    http_connect_error,
+    http_version_fallback
 }
 ~~~
-
-TODO: http_malformed_frame is not a single value, but can include the frame type
-in its definition. This means we need more flexible error logging. Best to wait
-until h3-draft-23 (PR https://github.com/quicwg/base-drafts/pull/2662), which will
-include substantial changes to error codes.
 
 # QPACK DATA type definitions
 
@@ -1892,9 +1885,9 @@ type QPACKInstruction = SetDynamicTableCapacityInstruction | InsertWithNameRefer
 
 ~~~
 class SetDynamicTableCapacityInstruction {
-    instruction_type:string = "set_dynamic_table_capacity",
+    instruction_type:string = "set_dynamic_table_capacity";
 
-    capacity:number
+    capacity:number;
 }
 ~~~
 
@@ -1902,15 +1895,15 @@ class SetDynamicTableCapacityInstruction {
 
 ~~~
 class InsertWithNameReferenceInstruction {
-    instruction_type:string = "insert_with_name_reference",
+    instruction_type:string = "insert_with_name_reference";
 
-    table_type:"static"|"dynamic",
+    table_type:"static"|"dynamic";
 
-    name_index:number,
+    name_index:number;
 
-    huffman_encoded_value:boolean,
-    value_length:number,
-    value:string
+    huffman_encoded_value:boolean;
+    value_length:number;
+    value:string;
 }
 ~~~
 
@@ -1918,15 +1911,15 @@ class InsertWithNameReferenceInstruction {
 
 ~~~
 class InsertWithoutNameReferenceInstruction {
-    instruction_type:string = "insert_without_name_reference",
+    instruction_type:string = "insert_without_name_reference";
 
-    huffman_encoded_name:boolean,
-    name_length:number,
-    name:string
+    huffman_encoded_name:boolean;
+    name_length:number;
+    name:string;
 
-    huffman_encoded_value:boolean,
-    value_length:number,
-    value:string
+    huffman_encoded_value:boolean;
+    value_length:number;
+    value:string;
 }
 ~~~
 
@@ -1934,9 +1927,9 @@ class InsertWithoutNameReferenceInstruction {
 
 ~~~
 class DuplicateInstruction {
-    instruction_type:string = "duplicate",
+    instruction_type:string = "duplicate";
 
-    index:number
+    index:number;
 }
 ~~~
 
@@ -1944,9 +1937,9 @@ class DuplicateInstruction {
 
 ~~~
 class HeaderAcknowledgementInstruction {
-    instruction_type:string = "header_acknowledgement",
+    instruction_type:string = "header_acknowledgement";
 
-    stream_id:string
+    stream_id:string;
 }
 ~~~
 
@@ -1954,9 +1947,9 @@ class HeaderAcknowledgementInstruction {
 
 ~~~
 class StreamCancellationInstruction {
-    instruction_type:string = "stream_cancellation",
+    instruction_type:string = "stream_cancellation";
 
-    stream_id:string
+    stream_id:string;
 }
 ~~~
 
@@ -1964,9 +1957,9 @@ class StreamCancellationInstruction {
 
 ~~~
 class InsertCountIncrementInstruction {
-    instruction_type:string = "insert_count_increment",
+    instruction_type:string = "insert_count_increment";
 
-    increment:number
+    increment:number;
 }
 ~~~
 
@@ -1982,12 +1975,12 @@ Note: also used for "indexed header field with post-base index"
 
 ~~~
 class IndexedHeaderField {
-    header_field_type:string = "index_header",
+    header_field_type:string = "index_header";
 
-    table_type:"static"|"dynamic", // MUST be "dynamic" if is_post_base is true
-    index:number,
+    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
+    index:number;
 
-    is_post_base?:boolean = false, // to represent the "indexed header field with post-base index" header field type
+    is_post_base?:boolean = false; // to represent the "indexed header field with post-base index" header field type
 }
 ~~~
 
@@ -1997,34 +1990,35 @@ Note: also used for "Literal header field with post-base name reference"
 
 ~~~
 class LiteralHeaderFieldWithName {
-    header_field_type:string = "literal_with_name",
+    header_field_type:string = "literal_with_name";
 
-    preserve_literal:boolean, // the 3rd "N" bit
-    table_type:"static"|"dynamic", // MUST be "dynamic" if is_post_base is true
-    name_index:number,
+    preserve_literal:boolean; // the 3rd "N" bit
+    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
+    name_index:number;
 
-    huffman_encoded_value:boolean,
-    value_length:number,
-    value:string,
+    huffman_encoded_value:boolean;
+    value_length:number;
+    value:string;
 
-    is_post_base?:boolean = false, // to represent the "Literal header field with post-base name reference" header field type
+    is_post_base?:boolean = false; // to represent the "Literal header field with post-base name reference" header field type
 }
 ~~~
+
 ### LiteralHeaderFieldWithoutName
 
 ~~~
 class LiteralHeaderFieldWithoutName {
-    header_field_type:string = "literal_without_name",
+    header_field_type:string = "literal_without_name";
 
-    preserve_literal:boolean, // the 3rd "N" bit
+    preserve_literal:boolean; // the 3rd "N" bit
 
-    huffman_encoded_name:boolean,
-    name_length:number,
-    name:string
+    huffman_encoded_name:boolean;
+    name_length:number;
+    name:string;
 
-    huffman_encoded_value:boolean,
-    value_length:number,
-    value:string,
+    huffman_encoded_value:boolean;
+    value_length:number;
+    value:string;
 }
 ~~~
 
@@ -2032,9 +2026,9 @@ class LiteralHeaderFieldWithoutName {
 
 ~~~
 class QPACKHeaderBlockPrefix {
-    required_insert_count:number,
-    sign_bit:boolean,
-    delta_base:number
+    required_insert_count:number;
+    sign_bit:boolean;
+    delta_base:number;
 }
 ~~~
 
