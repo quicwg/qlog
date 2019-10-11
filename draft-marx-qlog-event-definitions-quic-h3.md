@@ -23,8 +23,8 @@ normative:
   QUIC-TRANSPORT:
     title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-transport-20
-    date: 2019-04-23
+      Internet-Draft: draft-ietf-quic-transport-23
+    date: 2019-09-23
     author:
       -
         ins: J. Iyengar
@@ -38,9 +38,9 @@ normative:
         role: editor
   QUIC-HTTP:
     title: "Hypertext Transfer Protocol Version 3 (HTTP/3)"
-    date: 2019-04-23
+    date: 2019-09-23
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-20
+      Internet-Draft: draft-ietf-quic-http-23
     author:
       -
         ins: M. Bishop
@@ -65,7 +65,7 @@ informative:
 
 This document describes concrete qlog event definitions and their metadata for
 QUIC and HTTP/3-related events. These events can then be embedded in the higher
-level schema defined in draft-marx-quic-logging-main-schema-latest.
+level schema defined in [QLOG-MAIN].
 
 --- middle
 
@@ -75,9 +75,14 @@ This document describes the values of the qlog "category", "event" and "data"
 fields and their semantics for the QUIC and HTTP/3 protocols. This document is
 based on draft-23 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT] [QUIC-HTTP].
 
-Feedback and discussion welcome at https://github.com/quiclog/internet-drafts.
-Readers are advised to refer to "editor's draft" at that URL for an up-to-date
-version of this document.
+Feedback and discussion welcome at
+[https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
+Readers are advised to refer to the "editor's draft" at that URL for an
+up-to-date version of this document.
+
+Concrete examples of integrations of this schema in
+various programming languages can be found at
+[https://github.com/quiclog/qlog/](https://github.com/quiclog/qlog/).
 
 ## Notational Conventions
 
