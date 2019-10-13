@@ -627,6 +627,13 @@ event (typically per event, but possibly also by combination of category and
 event). For example data field value definitons for QUIC and HTTP/3, see
 [QLOG-QUIC-HTTP3].
 
+### custom fields
+
+Note that qlog files can always contain custom fields (e.g., a per-event field
+indicating its privacy properties) and assign custom values to existing fields
+(e.g., new categories for implemenation-specific events). Loggers are free to add
+such fields and field values and tools MUST either ignore these unknown fields or
+show them in a generic fashion.
 
 ### Event field values
 Required: yes

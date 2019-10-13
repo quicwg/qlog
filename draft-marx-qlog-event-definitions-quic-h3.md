@@ -174,9 +174,8 @@ spin_bit_updated, connection_id_updated), as they are expected to change
 sparingly.
 
 This document assumes the usage of the encompassing main qlog schema defined in
-draft-marx-quic-logging-main-schema-latest. Each subsection below defines a
-separate category (e.g., connectivity, transport, http) and each subsubsection is
-an event type.
+[QLOG-MAIN]. Each subsection below defines a separate category (e.g.,
+connectivity, transport, http) and each subsubsection is an event type.
 
 For each event type, its importance and data definition is laid out, often
 accompanied by possible values for the optional "trigger" field. For the
@@ -184,6 +183,14 @@ definition and semantics of "trigger", see the main scheme document.
 
 Most of the complex datastructures, enums and re-usable definitions are grouped
 together on the bottom of the document for clarity.
+
+## Custom fields
+
+Note that implementers are free to define new category and event types, as well as
+values for the "trigger" property within the "data" field, as they see fit. They
+SHOULD NOT however expect non-specialized tools to recognize or visualize this
+custom data. However, tools SHOULD make an effort to visualize even unknown data
+if possible in the specific tool's context.
 
 # Events not belonging to a single connection {#handling-unknown-connections}
 
