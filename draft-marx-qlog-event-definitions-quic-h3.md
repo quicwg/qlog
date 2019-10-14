@@ -784,12 +784,12 @@ Data:
 ~~~
 {
     // Loss detection, see recovery draft-23, Appendix A.3
-    min_rtt?:number,
-    smoothed_rtt?:number,
-    latest_rtt?:number,
-    rtt_variance?:number,
+    min_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
+    smoothed_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
+    latest_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
+    rtt_variance?:number, // in ms or us, depending on the overarching qlog's configuration
 
-    max_ack_delay?:number,
+    max_ack_delay?:number, // in ms or us, depending on the overarching qlog's configuration
     pto_count?:number,
 
     // Congestion control, Appendix B.2.
@@ -1510,7 +1510,7 @@ class PingFrame{
 class AckFrame{
     frame_type:string = "ack";
 
-    ack_delay?:string;
+    ack_delay?:string; // in ms or us, depending on the overarching qlog's configuration
 
     // first number is "from": lowest packet number in interval
     // second number is "to": up to and including // highest packet number in interval
