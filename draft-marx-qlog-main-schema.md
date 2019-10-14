@@ -490,8 +490,8 @@ The relative_time approach will:
 {: #time_approaches title="Three different approaches for logging timestamps"}
 
 Events in each individual trace MUST be logged in strictly ascending timestamp
-order (though not necessarily value, for the "delta_time" setup). Tools are NOT
-expected to sort all events on the timestamp before processing them.
+order (though not necessarily absolute value, for the "delta_time" setup). Tools
+are NOT expected to sort all events on the timestamp before processing them.
 
 ### group_id {#group_ids}
 Required: no, but recommended
@@ -722,6 +722,15 @@ Tools MUST NOT produce errors for any field names and values in the qlog format
 that they do not recognize. Tools CAN indicate unknown event occurences within
 their context (e.g., marking unknown events on a timeline for manual
 interpretation by the user).
+
+Tool authors should be aware that, depending on the logging implementation, some
+events will not always be present in all traces. For example, using a circular
+logging buffer of a fixed size, it could be that the earliest events (e.g.,
+connection setup events) are later overwritten by "newer" events. Tool authors are
+encouraged to take this setup into account and to make their tools robust enough
+to still provide adequate output for incomplete logs. Loggers using a circular
+buffer are in turn reminded of the requirement of listing events in strict time
+order, as er {{time-based-fields}}.
 
 # Methods of Access
 
