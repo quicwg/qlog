@@ -95,7 +95,7 @@ A qlog file should be able to contain several indivdual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of fields and an array of
 component traces. Only the "qlog_version" and "traces" fields MUST be present. For
-this document, the "qlog_version" field MUST have a value of draft-01.
+this document, the "qlog_version" field MUST have a value of "draft-01".
 
 ~~~~~~~~
 {
@@ -221,7 +221,12 @@ Only the "vantage_point", "event_fields" and "events" fields MUST be present.
 ### vantage_point {#vantage-point}
 Required: yes
 
-This field describes the vantage point from which the trace originates.
+This field describes the vantage point from which the trace originates. Each trace
+can have only a single vantage_point and thus all events in a trace MUST BE from
+the perspective of this vantage_point. To include events from multiple
+vantage_points, implementers can include multiple traces, split by vantage_point,
+in a single qlog file.
+
 Its value is an object, with the following fields:
 
 * name: a user-chosen string (e.g., "NETWORK-1", "loadbalancer45",

@@ -243,7 +243,8 @@ Data:
 {
     ip_v4?: string,
     ip_v6?: string,
-    port: number,
+    port_v4: number,
+    port_v6: number,
 
     quic_versions?: Array<string>,
     alpn_values?: Array<string>,
@@ -370,7 +371,7 @@ Data:
 {
     key_type:KeyType,
     old?:string,
-    new?:string,
+    new:string,
     generation?:number, // needed for 1RTT key updates
 
     trigger?: string
@@ -438,7 +439,7 @@ Data:
     // transport parameters from the TLS layer:
     original_connection_id?:string, // hex
     stateless_reset_token?:string, // hex
-    disable_active_migration?:bool,
+    disable_active_migration?:boolean,
 
     idle_timeout?:number,
     max_packet_size?:number,
@@ -679,7 +680,6 @@ enum StreamState {
     receive,
     size_known,
     data_read,
-    data_received,
     reset_read,
 
     // both-side states
@@ -2012,7 +2012,7 @@ Note: also used for "indexed header field with post-base index"
 
 ~~~
 class IndexedHeaderField {
-    header_field_type:string = "index_header";
+    header_field_type:string = "indexed_header";
 
     table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
     index:number;
