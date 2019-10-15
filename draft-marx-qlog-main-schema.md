@@ -95,11 +95,11 @@ A qlog file should be able to contain several indivdual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of fields and an array of
 component traces. Only the "qlog_version" and "traces" fields MUST be present. For
-this document, the "qlog_version" field MUST have a value of "draft-01".
+this document, the "qlog_version" field MUST have a value of "draft-02-wip".
 
 ~~~~~~~~
 {
-    "qlog_version": "draft-01",
+    "qlog_version": "draft-02-wip",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
     "summary": {

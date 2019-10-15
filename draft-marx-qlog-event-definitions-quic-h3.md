@@ -243,8 +243,8 @@ Data:
 {
     ip_v4?: string,
     ip_v6?: string,
-    port_v4: number,
-    port_v6: number,
+    port_v4?: number,
+    port_v6?: number,
 
     quic_versions?: Array<string>,
     alpn_values?: Array<string>,
@@ -252,6 +252,9 @@ Data:
     stateless_reset_required?:boolean // server will always respond with stateless_reset for incoming initials
 }
 ~~~
+
+Note: some QUIC stacks do not handle sockets directly and are thus unable to log
+IP and/or port information.
 
 ### connection_started
 Importance: Base
@@ -265,19 +268,22 @@ Data:
 
 ~~~
 {
-    ip_version: string,
-    src_ip: string,
-    dst_ip: string,
+    ip_version?: string,
+    src_ip?: string,
+    dst_ip?: string,
 
     protocol?: string, // (default "QUIC")
-    src_port: number,
-    dst_port: number,
+    src_port?: number,
+    dst_port?: number,
 
     quic_version?: string,
     src_cid?: string,
     dst_cid?: string
 }
 ~~~
+
+Note: some QUIC stacks do not handle sockets directly and are thus unable to log
+IP and/or port information.
 
 ### connection_id_updated
 Importance: Core
@@ -423,6 +429,12 @@ Note that some settings have two variations (one set locally, one requested by t
 remote peer). This is reflected in the "owner" field. As such, this field MUST be
 correct for all settings included a single event instance. If you need to log
 settings from two sides, you MUST emit two separate event instances.
+
+In the case of connection resumption and 0-RTT, some of the server's parameters
+are stored up-front at the client and used for the initial connection startup.
+They are later updated with the server's reply. In these cases, these parameters
+are logged twice: once at the very start of the connection and once when the
+updated parameters become available.
 
 Data:
 
