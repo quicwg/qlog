@@ -732,6 +732,13 @@ to still provide adequate output for incomplete logs. Loggers using a circular
 buffer are in turn reminded of the requirement of listing events in strict time
 order, as er {{time-based-fields}}.
 
+Most JSON parsers strictly follow the JSON specification. This includes the rule
+that trailing comma's are not allowed. As it is frequently annoying to remove
+these trailing comma's when logging events in a streaming fashion, tool
+implementers SHOULD allow the last event entry of a qlog trace to be an empty
+array. This allows loggers to simply close the qlog file by appending "[]]}]}"
+after their last streamed event.
+
 # Methods of Access
 
 qlog implementers MAY make generated logs and traces on an endpoint (typically the

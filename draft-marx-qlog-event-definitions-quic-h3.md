@@ -246,8 +246,8 @@ Data:
     port_v4?: number,
     port_v6?: number,
 
-    quic_versions?: Array<string>,
-    alpn_values?: Array<string>,
+    quic_versions?: Array<string>, // the application layer protocols this server supports
+    alpn_values?: Array<string>, // the application layer protocols this server supports
 
     stateless_reset_required?:boolean // server will always respond with stateless_reset for incoming initials
 }
@@ -278,7 +278,9 @@ Data:
 
     quic_version?: string,
     src_cid?: string,
-    dst_cid?: string
+    dst_cid?: string,
+
+    alpn_values?: Array<string> // ALPN values offered by the client / received by the server. Use parameters_set to log the actually selected alp
 }
 ~~~
 
