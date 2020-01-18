@@ -1499,7 +1499,7 @@ enum KeyType {
 ## QUIC Frames
 
 ~~~
-type QuicFrame = PaddingFrame | PingFrame | AckFrame | ResetStreamFrame | StopSendingFrame | CryptoFrame | NewTokenFrame | StreamFrame | MaxDataFrame | MaxStreamDataFrame | MaxStreamsFrame | DataBlockedFrame | StreamDataBlockedFrame | StreamsBlockedFrame | NewConnectionIDFrame | RetireConnectionIDFrame | PathChallengeFrame | PathResponseFrame | ConnectionCloseFrame | UnknownFrame;
+type QuicFrame = PaddingFrame | PingFrame | AckFrame | ResetStreamFrame | StopSendingFrame | CryptoFrame | NewTokenFrame | StreamFrame | MaxDataFrame | MaxStreamDataFrame | MaxStreamsFrame | DataBlockedFrame | StreamDataBlockedFrame | StreamsBlockedFrame | NewConnectionIDFrame | RetireConnectionIDFrame | PathChallengeFrame | PathResponseFrame | ConnectionCloseFrame | HandshakeDoneFrame | UnknownFrame;
 ~~~
 
 ### PaddingFrame
@@ -1739,6 +1739,14 @@ class ConnectionCloseFrame{
     reason:string;
 
     trigger_frame_type?:string; // For known frame types, the appropriate "frame_type" string. For unknown frame types, the hex encoded identifier value
+}
+~~~
+
+### HandshakeDoneFrame
+
+~~~
+class HandshakeDoneFrame{
+  frame_type:string = "handshake_done";
 }
 ~~~
 
