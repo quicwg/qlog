@@ -1742,6 +1742,14 @@ class ConnectionCloseFrame{
 }
 ~~~
 
+### HandshakeDoneFrame
+
+~~~
+class HandshakeDoneFrame{
+  frame_type:string = "handshake_done";
+}
+~~~
+
 ### UnknownFrame
 
 ~~~
