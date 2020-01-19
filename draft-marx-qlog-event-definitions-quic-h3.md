@@ -495,7 +495,7 @@ Data:
 
 ~~~
 {
-    packet_type:PacketType,
+    packet_size?:number,
     header:PacketHeader,
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
@@ -528,7 +528,7 @@ Data:
 
 ~~~
 {
-    packet_type:PacketType,
+    packet_size?:number,
     header:PacketHeader,
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
@@ -1462,8 +1462,8 @@ enum PacketType {
 
 ~~~
 class PacketHeader {
+    packet_type:PacketType;
     packet_number: string;
-    packet_size?: number;
     payload_length?: number;
 
     // only if present in the header
