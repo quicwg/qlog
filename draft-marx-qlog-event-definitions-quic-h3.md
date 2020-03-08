@@ -573,7 +573,7 @@ Triggers:
 
 * "key_unavailable"
 * "unknown_connection_id"
-* "header_decrypt_error"
+* "header_parse_error"
 * "payload_decrypt_error"
 * "protocol_violation"
 * "dos_prevention"
