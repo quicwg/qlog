@@ -455,7 +455,7 @@ Data:
     stateless_reset_token?:string, // hex
     disable_active_migration?:boolean,
 
-    idle_timeout?:number,
+    max_idle_timeout?:number,
     max_packet_size?:number,
     ack_delay_exponent?:number,
     max_ack_delay?:number,
