@@ -3,15 +3,26 @@ function setStatus(msg) {
   status.innerText = msg;
 }
 
+function date(s) {
+  const d = Date.parse(s);
+  if (isNaN(d)) {
+    return 0;
+  }
+  return d;
+}
+
 var sortKey = 'id';
 function sort(k) {
   k = k || sortKey;
   if (k === 'id') {
-    issues.sort((x, y) => x.number - y.number);
+    db.all.sort((x, y) => x.number - y.number);
     setStatus('sorted by ID');
   } else if (k === 'recent') {
-    issues.sort((x, y) => Date.parse(y.updated_at) - Date.parse(x.updated_at));
+    db.all.sort((x, y) => date(y.updatedAt) - date(x.updatedAt));
     setStatus('sorted by last modified');
+  } else if (k === 'closed') {
+    db.all.sort((x, y) => date(y.closedAt) - date(x.closedAt));
+    setStatus('sorted by time of closure');
   } else {
     setStatus('no idea how to sort like that');
     return;
@@ -19,64 +30,26 @@ function sort(k) {
   sortKey = k;
 }
 
-function getNext(response) {
-  const link = response.headers.get('link');
-  if (!link) {
-    return;
+var db;
+async function get() {
+  db = null;
+  const response = await fetch('archive.json');
+  if (Math.floor(response.status / 100) !== 2) {
+    throw new Error(`Error loading <${url}>: ${response.status}`);
   }
-
-  const m = link.match(/^<([^>]*)>\s*;[^,]*rel="?next"?/);
-  if (!m) {
-    return;
-  }
-  return m[1];
-}
-
-function buildUrl(wg, repo, type) {
-  if (wg && repo) {
-    console.log(`loading remote ${type} for ${wg}/${repo}`);
-    return `https://api.github.com/repos/${wg}/${repo}/${type}?state=all`;
-  }
-  return `${type}.json`;
-}
-
-async function getAll(url) {
-  let records = [];
-  do {
-    const response = await fetch(url);
-    if (Math.floor(response.status / 100) !== 2) {
-      throw new Error(`Error loading <${url}>: ${response.status}`);
-    }
-    records = records.concat(await response.json());
-    url = getNext(response);
-  } while (url);
-  return records;
-}
-
-var issues;
-
-async function get(wg, repo) {
-  issues = null;
-  var pulls = null;
-  [issues, pulls] = await Promise.all(
-    ['issues', 'pulls'].map(type => getAll(buildUrl(wg, repo, type))));
-  issues.forEach(issue => {
-    if (issue.pull_request) {
-      let pull = pulls.find(x => x.url == issue.pull_request.url);
-      if (pull) {
-        issue.pull_request = pull;
-      }
-    }
-  });
+  db = await response.json();
+  db.pulls.forEach(pr => pr.pr = true);
+  db.all = db.issues.concat(db.pulls);
+  db.labels = db.labels.reduce((all, l) => {
+    all[l.name] = l;
+    return all;
+  }, {});
   sort();
-  let m = issues[0].html_url.match(/^https:\/\/github\.com\/([^\/]+)\/([^\/]+)\//);
-  if (m) {
-    document.title = m[1] + '/' + m[2] + ' Issues';
-  }
-  console.log('loaded all issues');
+  document.title = `${db.repo} Issues`;
+  console.log(`Loaded ${db.all.length} issues for ${db.repo}.`);
   console.log('Raw data for issues can be found in:');
-  console.log('  window.issues = all issues');
-  console.log('  window.subset = just the subset of issues that are shown');
+  console.log('  db.all = all issues and pull requests');
+  console.log('  subset = just the subset of issues that are shown');
   console.log('format(subset[, formatter]) to dump the current subset to the console');
 }
 
@@ -90,37 +63,37 @@ var issueFilters = {
   assigned_to: {
     args: ['string'],
     h: 'assigned to a specific user',
-    f: login => issue => issue.assignees.some(assignee => assignee.login === login),
+    f: login => issue => issue.assignees.some(assignee => assignee === login),
   },
 
   created_by: {
     args: ['string'],
     h: 'created by a specific user',
-    f: login => issue => issue.user.login === login,
+    f: login => issue => issue.author === login,
   },
 
   closed: {
     args: [],
     h: 'is closed',
-    f: issue => issue.closed_at,
+    f: issue => issue.state === 'CLOSED',
   },
 
   open: {
     args: [],
     h: 'is open',
-    f: issue => !issue.closed_at,
+    f: issue => issue.state === 'OPEN',
   },
 
   merged: {
     args: [],
     h: 'a merged pull request',
-    f: issue => issue.pull_request && issue.pull_request.merged_at,
+    f: issue => issue.state == 'MERGED',
   },
 
   discarded: {
     args: [],
     h: 'a discarded pull request',
-    f: issue => issue.pull_request && !issue.pull_request.merged_at && issue.closed_at
+    f: issue => issue.pr && issue.state === 'CLOSED'
   },
 
   n: {
@@ -132,7 +105,7 @@ var issueFilters = {
   label: {
     args: ['string'],
     h: 'has a specific label',
-    f: name => issue => issue.labels.some(label => label.name === name),
+    f: name => issue => issue.labels.some(label => label === name),
   },
 
   labelled: {
@@ -171,14 +144,14 @@ var issueFilters = {
   pr: {
     args: [],
     h: 'is a pull request',
-    f: issue => issue.pull_request,
+    f: issue => issue.pr,
   },
 
   issue: {
     args: [],
     h: 'is a plain issue, i.e., not(pr)',
     f: function(issue) {
-      return !issue.pull_request;
+      return !issue.pr;
     }
   },
 
@@ -211,13 +184,13 @@ var issueFilters = {
   closed_since: {
     args: ['date'],
     h: 'issues closed since the date and time',
-    f: since => issue => Date.parse(issue.closed_at) >= since,
+    f: since => issue => date(issue.closedAt) >= since,
   },
 
   updated_since: {
     args: ['date'],
     h: 'issues updated since the date and time',
-    f: since => issue => Date.parse(issue.updated_at) >= since,
+    f: since => issue => date(issue.updatedAt) >= since,
   }
 };
 
@@ -293,6 +266,10 @@ class Parser {
   }
 
   parseFilter() {
+    if (this.next === '-') {
+      this.parseSeparator('-');
+      return issueFilters.not.f.call(null, this.parseFilter());
+    }
     let name = this.parseName();
     if (!name) {
       let n = this.parseNumber();
@@ -339,7 +316,7 @@ class Parser {
 
 var subset = [];
 function filterIssues(str) {
-  subset = issues;
+  subset = db.all;
   let parser = new Parser(str);
   let f = parser.parseFilter();
   while (f) {
@@ -350,7 +327,7 @@ function filterIssues(str) {
 
 var formatter = {
   brief: x => `* ${x.title} (#${x.number})`,
-  md: x => `* [#${x.number}](${x.html_url}): ${x.title}`,
+  md: x => `* [#${x.number}](${x.url}): ${x.title}`,
 };
 
 function format(set, f) {
@@ -379,7 +356,7 @@ function debounce(f) {
       window.clearTimeout(debounces[f.name]);
       delete debounces[f.name];
     }
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       r(true);
     } else {
       debounces[f.name] = window.setTimeout(_ => {
@@ -390,109 +367,272 @@ function debounce(f) {
   }
 }
 
-function makeRow(issue) {
+function cell(row, children, cellClass) {
+  let td = document.createElement('td');
+  if (cellClass) {
+    td.className = cellClass;
+  }
+  if (Array.isArray(children)) {
+    children.forEach(c => {
+      td.appendChild(c);
+      td.appendChild(document.createTextNode(' '));
+    });
+  } else {
+    td.appendChild(children);
+  }
+  row.appendChild(td);
+}
+
+function author(x) {
+  let user = x.author || x;
+  let sp = document.createElement('span');
+  sp.classList.add('item');
+  sp.classList.add('user');
+  let image = document.createElement('img');
+  image.alt = '\uD83E\uDDD0';
+  image.src = `https://github.com/${user}.png?size=16`;
+  image.width = 16;
+  image.height = 16;
+  sp.appendChild(image);
+  let a = document.createElement('a');
+  a.href = `https://github.com/${user}`;
+  a.innerText = user;
+  sp.appendChild(a);
+  return sp;
+}
+
+function issueState(issue) {
+  let st = document.createElement('span');
+  st.className = 'state';
+  if (issue.pr) {
+    switch (issue.state) {
+      case 'MERGED':
+        st.innerText = 'merged';
+        break;
+      case 'CLOSED':
+        st.innerText = 'discarded';
+        break;
+      default:
+        st.innerText = 'pr';
+        break;
+    }
+  } else {
+    st.innerText = issue.state.toLowerCase();
+  }
+  return st;
+}
+
+function showBody(item) {
+  let div = document.createElement('div');
+  div.className = 'body';
+  let body = item.body.trim().replace(/\r\n?/g, '\n');
+  body.split('\n\n').forEach(t => {
+    let p = document.createElement('p');
+    p.innerText = t;
+    div.appendChild(p)
+  });
+  return div;
+}
+
+function showDate(d, reference) {
+  let de = document.createElement('span');
+  de.classList.add('item');
+  de.classList.add('date');
+  const full = d.toISOString();
+  const parts = full.split(/[TZ\.]/);
+  if (reference && parts[0] === reference.toISOString().split('T')[0]) {
+    de.innerText = parts[1];
+  } else {
+    de.innerText = parts[0] + ' ' + parts[1];
+  }
+  de.title = full;
+  return de;
+}
+
+// Make a fresh replacement element for the identified element.
+function freshReplacement(id) {
+  let e = document.getElementById(id);
+  let r = document.createElement(e.tagName);
+  r.id = id;
+  e.replaceWith(r);
+  return r;
+}
+
+var displayed = null;
+
+function show(index) {
+  if (index < 0 || index >= subset.length) {
+    hideIssue();
+    return;
+  }
+  displayed = index;
+  const issue = subset[index];
+
+  document.getElementById('overlay').classList.add('active');
+  let frame = freshReplacement('issue');
+  frame.classList.add('active');
+
+  function showTitle() {
+    let title = document.createElement('h2');
+    title.className = 'title';
+    let number = document.createElement('a');
+    number.className = 'number';
+    number.href = issue.url;
+    number.innerText = `#${issue.number}`;
+    title.appendChild(number);
+    title.appendChild(document.createTextNode(': '));
+    let name = document.createElement('a');
+    name.href = issue.url;
+    name.innerText = issue.title;
+    title.appendChild(name);
+    return title;
+  }
+
+  function showMeta() {
+    let meta = document.createElement('div');
+    meta.className = 'meta';
+    let created = new Date(issue.createdAt);
+    meta.appendChild(showDate(created));
+    meta.appendChild(author(issue));
+    meta.appendChild(issueState(issue));
+    if (issue.closedAt) {
+      meta.appendChild(showDate(new Date(issue.closedAt), created));
+    }
+    return meta;
+  }
+
+  let refdate = null;
+  function showComment(c) {
+    let row = document.createElement('tr');
+    let cdate = new Date(c.createdAt);
+    cell(row, showDate(cdate, refdate), 'date');
+    refdate = cdate;
+    cell(row, author(c), 'user');
+
+    if (issue.pr) {
+      let icon = document.createElement('span');
+      switch (c.state) {
+        case 'APPROVED':
+          icon.innerText = '\u2714';
+          icon.title = 'Approved';
+          break;
+        case 'CHANGES_REQUESTED':
+          icon.innerText = '\u2718';
+          icon.title = 'Changes Requested';
+          break;
+        default:
+          icon.innerText = '\uD83D\uDCAC';
+          icon.title = 'Comment';
+          break;
+      }
+      cell(row, icon);
+    }
+
+    let body = showBody(c);
+    if (c.comments && c.comments.length > 0) {
+      let codeComments = document.createElement('div');
+      codeComments.className = 'item';
+      const s = (c.comments.length === 1) ? '' : 's';
+      codeComments.innerText = `... ${c.comments.length} comment${s} on changes`;
+      body.appendChild(codeComments);
+    }
+    cell(row, body);
+    return row;
+  }
+
+  frame.appendChild(showTitle());
+  frame.appendChild(showMeta());
+  frame.appendChild(showBody(issue));
+
+  let allcomments = (issue.comments || []).concat(issue.reviews || []);
+  allcomments.sort((a, b) => date(a.createdAt) - date(b.createdAt));
+  let comments = document.createElement('table');
+  comments.className = 'comments';
+  allcomments.map(showComment).forEach(row => comments.appendChild(row));
+  frame.appendChild(comments);
+
+  frame.scroll(0, 0);
+}
+
+function hideIssue() {
+  document.getElementById('help').classList.remove('active');
+  document.getElementById('issue').classList.remove('active');
+  document.getElementById('overlay').classList.remove('active');
+  displayed = null;
+}
+
+function step(n) {
+  if (displayed === null) {
+    if (n > 0) {
+      show(n - 1);
+    } else {
+      show(subset.length + n);
+    }
+  } else {
+    show(displayed + n);
+  }
+}
+
+function makeRow(issue, index) {
   function cellID() {
-    let td = document.createElement('td');
-    td.className = 'id';
     let a = document.createElement('a');
-    a.href = issue.html_url;
+    a.href = issue.url;
     a.innerText = issue.number;
-    td.appendChild(a);
-    return td;
+    return a;
   }
 
   function cellTitle() {
-    let td = document.createElement('td');
-    let div = document.createElement('div');
-    div.innerText = issue.title;
-    div.onclick = e => e.target.parentNode.classList.toggle('active');
-    div.style.cursor = 'pointer';
-    td.appendChild(div);
-    div = document.createElement('div');
-    div.innerText = issue.body;
-    div.className = 'extra';
-    td.appendChild(div);
-    return td;
-  }
-
-  function addUser(td, user, short) {
-    let image = document.createElement('img');
-    image.src = user.avatar_url + '&s=32';
-    image.width = 16;
-    image.height = 16;
-    td.appendChild(image);
     let a = document.createElement('a');
-    a.href = user.html_url;
-    a.innerText = user.login;
-    if (short) {
-      a.classList.add('short');
-    }
-    td.appendChild(a);
-  }
-
-  function cellUser() {
-    let td = document.createElement('td');
-    td.className = 'user';
-    addUser(td, issue.user);
-    return td;
+    a.innerText = issue.title;
+    a.href = issue.url;
+    a.onclick = e => {
+      e.preventDefault();
+      show(index);
+    };
+    return a;
   }
 
   function cellAssignees() {
-    let td = document.createElement('td');
-    td.className = 'user';
-    if (issue.assignees) {
-      issue.assignees.forEach(user => addUser(td, user, issue.assignees.length > 1));
-    }
-    return td;
-  }
-
-  function cellState() {
-    let td = document.createElement('td');
-    if (issue.pull_request) {
-      if (issue.pull_request.merged_at) {
-        td.innerText = 'merged';
-      } else if (issue.pull_request.closed_at) {
-        td.innerText = 'discarded';
-      } else {
-        td.innerText = 'pr';
-      }
-    } else {
-      td.innerText = issue.state;
-    }
-    return td;
+    return (issue.assignees || []).map(u => author(u));
   }
 
   function cellLabels() {
-    let td = document.createElement('td');
-    td.className = 'label';
-    issue.labels.forEach(label => {
+    return issue.labels.map(label => {
+      let item = document.createElement('span');
+      item.className = 'item';
       let sp = document.createElement('span');
-      sp.style.backgroundColor = '#' + label.color;
-      sp.innerText = label.name;
-      td.appendChild(sp);
+      sp.style.backgroundColor = '#' + db.labels[label].color;
+      sp.className = 'swatch';
+      item.appendChild(sp);
+      let spl = document.createElement('span');
+      spl.innerText = label;
+      if (db.labels[label].description) {
+        item.title = db.labels[label].description;
+      }
+      item.appendChild(spl);
+      return item;
     });
-    return td;
   }
 
   let tr = document.createElement('tr');
-  tr.appendChild(cellID());
-  tr.appendChild(cellTitle());
-  tr.appendChild(cellState());
-  tr.appendChild(cellUser());
-  tr.appendChild(cellAssignees());
-  tr.appendChild(cellLabels());
+  cell(tr, cellID(), 'id');
+  cell(tr, cellTitle(), 'title');
+  cell(tr, issueState(issue), 'state');
+  cell(tr, author(issue), 'user');
+  cell(tr, cellAssignees(), 'assignees');
+  cell(tr, cellLabels(), 'labels');
   return tr;
 }
 
-function show(issues) {
+function list(issues) {
   if (!issues) {
     return;
   }
 
-  let tbody = document.getElementById('tbody');
-  tbody.innerHTML = '';
-  issues.forEach(issue => {
-    tbody.appendChild(makeRow(issue));
+  let body = freshReplacement('issuelist');
+  body.innerHTML = '';
+  issues.forEach((issue, index) => {
+    body.appendChild(makeRow(issue, index));
   });
 }
 
@@ -500,7 +640,7 @@ var currentFilter = '';
 function filter(str, now) {
   try {
     filterIssues(str);
-    setStatus(`${issues.length} records selected`);
+    setStatus(`${subset.length} records selected`);
     if (now) {
       window.location.hash = str;
       currentFilter = str;
@@ -513,26 +653,23 @@ function filter(str, now) {
   }
 }
 
+function showHelp() {
+  setStatus('help shown');
+  let h = document.getElementById('help');
+  h.classList.add('active');
+  h.scroll(0, 0);
+  document.getElementById('overlay').classList.add('active');
+}
+
 function slashCmd(cmd) {
   if (cmd[0] === 'help') {
-    setStatus('help shown');
-    document.getElementById('help').classList.remove('hidden');
+    showHelp();
   } else if (cmd[0] === 'local') {
     setStatus('retrieving local JSON files');
     get().then(redraw);
-  } else if (cmd[0] === 'remote') {
-    if (cmd.length < 3) {
-      setStatus('need to specify github repo');
-    } else {
-      get(cmd[1], cmd[2]).then(redraw)
-        .then(
-          _ => status.innerText = `successfully loaded ${cmd[1]}/${cmd[2]} from GitHub`,
-          e => status.innerText = `Error: ${e.message}`);
-      setStatus(`fetching from GitHub for ${cmd[1]}/${cmd[2]}`);
-    }
   } else if (cmd[0]  === 'sort') {
     sort(cmd[1]);
-    show(subset);
+    list(subset);
   } else {
     setStatus('unknown command: /' + cmd.join(' '));
   }
@@ -544,22 +681,20 @@ function redraw(now) {
     if (now) {
       slashCmd(cmd.value.slice(1).split(' ').map(x => x.trim()));
       cmd.value = currentFilter;
-      document.getElementById('display').classList.add('hidden');
     }
     return;
   }
 
-  if (!issues) {
+  if (!db) {
     if (now) {
       showStatus('Still loading...');
     }
     return;
   }
 
-  document.getElementById('help').classList.add('hidden');
-  document.getElementById('display').classList.remove('hidden');
+  document.getElementById('help').classList.remove('active');
   filter(cmd.value, now);
-  show(subset);
+  list(subset);
 }
 
 function generateHelp() {
@@ -570,11 +705,14 @@ function generateHelp() {
     if (issueFilters[k].args.length > 0) {
       arglist = '(' + issueFilters[k].args.map(x => '<' + x + '>').join(', ') + ')';
     }
+    let fn = document.createElement('tt');
+    fn.innerText = k + arglist;
+    li.appendChild(fn);
     let help = '';
     if (issueFilters[k].h) {
       help = ' - ' + issueFilters[k].h;
     }
-    li.innerText = `${k}${arglist}${help}`;
+    li.appendChild(document.createTextNode(help));
     functionhelp.appendChild(li);
   });
 }
@@ -584,22 +722,61 @@ function addFileHelp() {
   if (window.location.protocol !== 'file:') {
     return;
   }
-  let h = document.getElementById('help');
   let p = document.createElement('p');
   p.className = 'warning';
   p.innerHTML = 'Important: Browsers display files inconsistently.' +
     ' You can work around this by running an HTTP server,' +
-    ' such as <code>python -m SimpleHTTPServer</code>,' +
+    ' such as <code>python3 -m http.server</code>,' +
     ' then view this file using that server.';
-  h.insertBefore(p, h.firstChild);
+  document.getElementById('help').insertBefore(p, h.firstChild);
+}
+
+function issueOverlaySetup() {
+  let overlay = document.getElementById('overlay');
+  overlay.addEventListener('click', hideIssue);
+  window.addEventListener('keyup', e => {
+    if (e.target.id === 'cmd') {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.target.blur();
+      }
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      hideIssue();
+    }
+  });
+  window.addEventListener('keypress', e=> {
+    if (e.target.closest('input')) {
+      return;
+    }
+    if (e.key === 'p' || e.key === 'k') {
+      e.preventDefault();
+      step(-1);
+    } else if (e.key === 'n' || e.key === 'j') {
+      e.preventDefault();
+      step(1);
+    } else if (e.key === '?') {
+      e.preventDefault();
+      showHelp();
+    } else if (e.key === '\'') {
+      e.preventDefault();
+      hideIssue();
+      document.getElementById('cmd').focus();
+    }
+  })
 }
 
 window.onload = () => {
   let cmd = document.getElementById('cmd');
-  cmd.onkeypress = debounce(redraw);
+  let redrawHandler = debounce(redraw);
+  cmd.addEventListener('input', redrawHandler);
+  cmd.addEventListener('keypress', redrawHandler);
   if (window.location.hash) {
     cmd.value = decodeURIComponent(window.location.hash.substring(1));
   }
   generateHelp();
+  issueOverlaySetup();
   get().then(redraw).catch(addFileHelp);
 }
