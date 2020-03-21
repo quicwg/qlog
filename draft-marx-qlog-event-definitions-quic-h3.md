@@ -456,7 +456,7 @@ Data:
     disable_active_migration?:boolean,
 
     max_idle_timeout?:number,
-    max_packet_size?:number,
+    max_udp_payload_size?:number,
     ack_delay_exponent?:number,
     max_ack_delay?:number,
     active_connection_id_limit?:number,
