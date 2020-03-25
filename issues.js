@@ -11,23 +11,77 @@ function date(s) {
   return d;
 }
 
-var sortKey = 'id';
-function sort(k) {
-  k = k || sortKey;
-  if (k === 'id') {
-    db.all.sort((x, y) => x.number - y.number);
-    setStatus('sorted by ID');
-  } else if (k === 'recent') {
-    db.all.sort((x, y) => date(y.updatedAt) - date(x.updatedAt));
-    setStatus('sorted by last modified');
-  } else if (k === 'closed') {
-    db.all.sort((x, y) => date(y.closedAt) - date(x.closedAt));
-    setStatus('sorted by time of closure');
+function stateString(issue) {
+  let str;
+  if (issue.pr) {
+    switch (issue.state) {
+      case 'MERGED':
+      str = 'merged';
+      break;
+      case 'CLOSED':
+      str = 'discarded';
+      break;
+      default:
+      str = 'pr';
+      break;
+    }
   } else {
-    setStatus('no idea how to sort like that');
-    return;
+    str = issue.state.toLowerCase();
   }
+  return str;
+}
+
+function stateOrder(issue) {
+  return ['open', 'pr', 'closed', 'merged', 'discarded'].indexOf(stateString(issue));
+}
+
+var sortKey = 'id';
+var sortInvert = false;
+function invert(x) {
+  return x * (sortInvert ? -1 : 1);
+}
+function sort(k) {
+  sortInvert = (k === sortKey) ? !sortInvert : false;
+  k = k || sortKey;
+  let message = k;
+  switch (k) {
+    case 'id':
+      subset.sort((x, y) => invert(x.number - y.number));
+      message = 'ID';
+      break;
+    case 'recent':
+      subset.sort((x, y) => invert(date(y.updatedAt) - date(x.updatedAt)));
+      message = 'last modified';
+      break;
+    case 'closed':
+      subset.sort((x, y) => invert(date(y.closedAt) - date(x.closedAt)));
+      message = 'time of closure';
+      break;
+    case 'title':
+      subset.sort((x, y) => invert(x.title.localeCompare(y.title)));
+      break;
+    case 'state':
+      subset.sort((x, y) => invert(stateOrder(x) - stateOrder(y)));
+      break;
+    case 'author':
+      subset.sort((x, y) => invert(x.author.localeCompare(y.author)));
+    break;
+      default:
+      setStatus('no idea how to sort like that');
+      return;
+  }
+  setStatus(`sorted by ${message}${(sortInvert) ? ' (reversed)' : ''}`);
   sortKey = k;
+  list(subset);
+}
+
+function sortSetup() {
+  ['id', 'title', 'state', 'author'].forEach(k => {
+    let el = document.getElementById(`sort-${k}`);
+    el.addEventListener('click', _ => sort(k));
+    el.style.cursor = 'pointer';
+    el.title = `Sort by ${el.innerText}`;
+  });
 }
 
 var db;
@@ -39,7 +93,7 @@ async function get() {
   }
   db = await response.json();
   db.pulls.forEach(pr => pr.pr = true);
-  db.all = db.issues.concat(db.pulls);
+  subset = db.all = db.issues.concat(db.pulls);
   db.labels = db.labels.reduce((all, l) => {
     all[l.name] = l;
     return all;
@@ -55,21 +109,51 @@ async function get() {
 
 var issueFilters = {
   assigned: {
-    args: [],
-    h: 'has an assignee',
-    f: issue => issue.assignees.length > 0,
+    args: ['string'],
+    h: 'assigned to this user',
+    f: login => issue => {
+      if (login === '') {
+        return issue.assignees.length > 0;
+      } else {
+        return issue.assignees.some(assignee => assignee === login);
+      }
+    },
   },
 
-  assigned_to: {
+  author: {
     args: ['string'],
-    h: 'assigned to a specific user',
-    f: login => issue => issue.assignees.some(assignee => assignee === login),
-  },
-
-  created_by: {
-    args: ['string'],
-    h: 'created by a specific user',
+    h: 'created by this user',
     f: login => issue => issue.author === login,
+  },
+
+  commenter: {
+    args: ['string'],
+    h: 'commented on by this user',
+    f: login => issue => {
+      return issue.author === login ||
+        issue.comments.some(comment => comment.author === login) ||
+        (issue.reviews || []).some(review => review.author === login);
+    },
+  },
+
+  reviewer: {
+    args: ['string'],
+    h: 'reviewed by this user',
+    f: login => issue => {
+      return issue.reviews &&
+        issue.reviews.some(review => review.author === login);
+    },
+  },
+
+  user: {
+    args: ['string'],
+    h: 'mentions this user',
+    f: login => issue => {
+      return issue.author === login ||
+        issue.assignees.some(assignee => assignee === login) ||
+        issue.comments.some(comment => comment.author === login) ||
+        (issue.reviews || []).some(review => review.author === login);
+    },
   },
 
   closed: {
@@ -383,42 +467,50 @@ function cell(row, children, cellClass) {
   row.appendChild(td);
 }
 
-function author(x) {
+
+function loadAvatars(elements) {
+  elements.forEach(e => {
+    let avatar = new Image(16, 16);
+    avatar.addEventListener('load', _ => e.target.replaceWith(avatar));
+    let user = e.target.dataset.user;
+    avatar.src = `https://github.com/${user}.png?size=16`;
+  });
+}
+var intersection = new IntersectionObserver(loadAvatars, { rootMargin: '50px 0px 100px 0px' });
+
+function author(x, click, userSearch) {
   let user = x.author || x;
   let sp = document.createElement('span');
-  sp.classList.add('item');
-  sp.classList.add('user');
-  let image = document.createElement('img');
-  image.alt = '\uD83E\uDDD0';
-  image.src = `https://github.com/${user}.png?size=16`;
-  image.width = 16;
-  image.height = 16;
-  sp.appendChild(image);
-  let a = document.createElement('a');
-  a.href = `https://github.com/${user}`;
-  a.innerText = user;
-  sp.appendChild(a);
+  sp.classList.add('item', 'user');
+  let ai = document.createElement('a');
+  ai.href = `https://github.com/${user}`;
+  ai.className = 'avatar';
+  let placeholder = document.createElement('span');
+  placeholder.className = 'swatch';
+  placeholder.innerText = '\uD83E\uDDD0';
+  placeholder.dataset.user = user;
+  intersection.observe(placeholder);
+  ai.appendChild(placeholder);
+  sp.appendChild(ai);
+
+  let au = document.createElement('a');
+  au.href = `#${userSearch || 'user'}(${user})`;
+  au.innerText = user;
+  au.addEventListener('click', click);
+  sp.appendChild(au);
   return sp;
 }
 
-function issueState(issue) {
+function issueState(issue, click) {
   let st = document.createElement('span');
-  st.className = 'state';
-  if (issue.pr) {
-    switch (issue.state) {
-      case 'MERGED':
-        st.innerText = 'merged';
-        break;
-      case 'CLOSED':
-        st.innerText = 'discarded';
-        break;
-      default:
-        st.innerText = 'pr';
-        break;
-    }
-  } else {
-    st.innerText = issue.state.toLowerCase();
+  st.classList.add('item', 'state');
+  let a = document.createElement('a');
+  a.innerText = stateString(issue);
+  a.href = `#${stateString(issue)}`;
+  if (click) {
+    a.addEventListener('click', click);
   }
+  st.appendChild(a);
   return st;
 }
 
@@ -426,18 +518,129 @@ function showBody(item) {
   let div = document.createElement('div');
   div.className = 'body';
   let body = item.body.trim().replace(/\r\n?/g, '\n');
-  body.split('\n\n').forEach(t => {
-    let p = document.createElement('p');
-    p.innerText = t;
-    div.appendChild(p)
+
+  let list = null;
+  let el = null;
+  let pre = null;
+  function closeElement() {
+    if (el) {
+      if (list) {
+        list.appendChild(el);
+      } else {
+        div.appendChild(el);
+      }
+    }
+    el = null;
+    pre = null;
+  }
+  function closeBoth() {
+    closeElement();
+    if (list) {
+      div.appendChild(list);
+      list = null;
+    }
+  }
+  function addText(t) {
+    if (pre) {
+      el.appendChild(document.createTextNode(t + '\n'));
+      return;
+    }
+    if (el.innerText !== '') {
+      el.appendChild(document.createElement('br'));
+    }
+    if (t !== '') {
+      el.appendChild(document.createTextNode(t));
+    }
+  }
+
+  body.split('\n').forEach(t => {
+    if (t.charAt(0) === ' ') {
+      t = t.substring(1); // This fixes lots of problems.
+    }
+    if (t.indexOf('```') === 0) {
+      let needNew = !el || !pre;
+      closeBoth();
+      if (needNew) {
+        el = document.createElement('pre');
+        pre = 'q';
+        let language = t.substring(3).trim();
+        if (language) {
+          el.dataset.language = language;
+        }
+      }
+    } else if (pre === 'q') {
+      addText(t);
+    } else if (!el && t.indexOf('   ') === 0) {
+      if (!pre) {
+        closeBoth();
+        el = document.createElement('pre');
+        pre = 's';
+      }
+      addText(t.substring(3));
+    } else if (t.trim() === '') {
+      closeElement();
+    } else if (t.indexOf('# ') === 0) {
+      closeBoth();
+      el = document.createElement('h2');
+      addText(t.substring(2).trimLeft());
+      closeElement();
+    } else if (t.indexOf('## ') === 0) {
+      closeBoth();
+      el = document.createElement('h3');
+      addText(t.substring(3).trimLeft());
+      closeElement();
+    } else if (t.indexOf('### ') === 0) {
+      closeBoth();
+      el = document.createElement('h4');
+      addText(t.substring(4).trimLeft());
+      closeElement();
+    } else if (t.charAt(0) === '>') {
+      if (!el || el.tagName !== 'BLOCKQUOTE') {
+        closeElement();
+        el = document.createElement('blockquote');
+      }
+      addText(t.substring(1).trimLeft());
+    } else if (t.indexOf('* ') === 0 || t.indexOf('- ') === 0) {
+      if (list && list.tagName !== 'UL') {
+        closeBoth();
+      } else {
+        closeElement();
+      }
+      if (!list) {
+        list = document.createElement('ul');
+      }
+      el = document.createElement('li');
+      addText(t.substring(2).trimLeft());
+    } else if (t.match(/^(?:\(?\d+\)|\d+\.)/)) {
+      if (list && list.tagName !== 'OL') {
+        closeBoth();
+      } else {
+        closeElement();
+      }
+      if (!list) {
+        list = document.createElement('ol');
+      }
+      el = document.createElement('li');
+      let sep = t.match(/^(?:\(?\d+\)|\d+\.)/)[0].length;
+      addText(t.substring(sep).trimLeft());
+    } else {
+      if (list && !el) {
+        div.appendChild(list);
+        list = null;
+      }
+      if (!el) {
+        el = document.createElement('p');
+      }
+      addText(t);
+    }
   });
+  closeBoth();
   return div;
 }
 
 function showDate(d, reference) {
   let de = document.createElement('span');
-  de.classList.add('item');
-  de.classList.add('date');
+  de.classList.add('item', 'date');
   const full = d.toISOString();
   const parts = full.split(/[TZ\.]/);
   if (reference && parts[0] === reference.toISOString().split('T')[0]) {
@@ -447,6 +650,51 @@ function showDate(d, reference) {
   }
   de.title = full;
   return de;
+}
+
+function narrow(e, extra) {
+  e.preventDefault();
+  hideIssue();
+  let cmd = document.getElementById('cmd');
+  let v = `${cmd.value} ${extra}`;
+  cmd.value = v.trim();
+  redraw(true);
+}
+
+function narrowLabel(e) {
+  narrow(e, `label(${e.target.innerText})`);
+}
+
+function narrowState(e) {
+  narrow(e, e.target.innerText);
+}
+
+function narrowUser(userType) {
+  return function narrowUserInner(e) {
+    narrow(e, `${userType}(${e.target.innerText})`);
+  };
+}
+
+function showLabels(labels, click) {
+  return labels.map(label => {
+    let item = document.createElement('span');
+    item.className = 'item';
+    let sp = document.createElement('span');
+    sp.style.backgroundColor = '#' + db.labels[label].color;
+    sp.className = 'swatch';
+    item.appendChild(sp);
+    let a = document.createElement('a');
+    a.innerText = label;
+    a.href = `#label(${label})`;
+    if (click) {
+      a.addEventListener('click', click);
+    }
+    if (db.labels[label].description) {
+      item.title = db.labels[label].description;
+    }
+    item.appendChild(a);
+    return item;
+  });
 }
 
 // Make a fresh replacement element for the identified element.
@@ -488,13 +736,39 @@ function show(index) {
     return title;
   }
 
-  function showMeta() {
+  function showIssueLabels() {
+    let meta = document.createElement('div');
+    meta.className = 'meta';
+    showLabels(issue.labels, hideIssue).forEach(el => {
+      meta.appendChild(el);
+      meta.appendChild(document.createTextNode(' '));
+    });
+    return meta;
+  }
+
+  function showIssueUsers() {
+    let meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.appendChild(author(issue, hideIssue, 'author'));
+    if (issue.assignees && issue.assignees.length > 0) {
+      let arrow = document.createElement('span');
+      arrow.innerText = ' \u279c';
+      arrow.title = 'Assigned to';
+      meta.appendChild(arrow);
+      issue.assignees.map(u => author(u, hideIssue, 'assigned')).forEach(el => {
+        meta.appendChild(document.createTextNode(' '));
+        meta.appendChild(el);
+      });
+    }
+    return meta;
+  }
+
+  function showIssueDates() {
     let meta = document.createElement('div');
     meta.className = 'meta';
     let created = new Date(issue.createdAt);
     meta.appendChild(showDate(created));
-    meta.appendChild(author(issue));
-    meta.appendChild(issueState(issue));
+    meta.appendChild(issueState(issue, hideIssue));
     if (issue.closedAt) {
       meta.appendChild(showDate(new Date(issue.closedAt), created));
     }
@@ -507,7 +781,7 @@ function show(index) {
     let cdate = new Date(c.createdAt);
     cell(row, showDate(cdate, refdate), 'date');
     refdate = cdate;
-    cell(row, author(c), 'user');
+    cell(row, author(c, hideIssue, (c.commit) ? 'reviewer' : 'commenter'), 'user');
 
     if (issue.pr) {
       let icon = document.createElement('span');
@@ -541,7 +815,9 @@ function show(index) {
   }
 
   frame.appendChild(showTitle());
-  frame.appendChild(showMeta());
+  frame.appendChild(showIssueLabels());
+  frame.appendChild(showIssueUsers());
+  frame.appendChild(showIssueDates());
   frame.appendChild(showBody(issue));
 
   let allcomments = (issue.comments || []).concat(issue.reviews || []);
@@ -576,8 +852,12 @@ function step(n) {
 function makeRow(issue, index) {
   function cellID() {
     let a = document.createElement('a');
-    a.href = issue.url;
     a.innerText = issue.number;
+    a.href = issue.url;
+    a.onclick = e => {
+      e.preventDefault();
+      show(index);
+    };
     return a;
   }
 
@@ -592,35 +872,14 @@ function makeRow(issue, index) {
     return a;
   }
 
-  function cellAssignees() {
-    return (issue.assignees || []).map(u => author(u));
-  }
-
-  function cellLabels() {
-    return issue.labels.map(label => {
-      let item = document.createElement('span');
-      item.className = 'item';
-      let sp = document.createElement('span');
-      sp.style.backgroundColor = '#' + db.labels[label].color;
-      sp.className = 'swatch';
-      item.appendChild(sp);
-      let spl = document.createElement('span');
-      spl.innerText = label;
-      if (db.labels[label].description) {
-        item.title = db.labels[label].description;
-      }
-      item.appendChild(spl);
-      return item;
-    });
-  }
-
   let tr = document.createElement('tr');
   cell(tr, cellID(), 'id');
   cell(tr, cellTitle(), 'title');
-  cell(tr, issueState(issue), 'state');
-  cell(tr, author(issue), 'user');
-  cell(tr, cellAssignees(), 'assignees');
-  cell(tr, cellLabels(), 'labels');
+  cell(tr, issueState(issue, narrowState), 'state');
+  cell(tr, author(issue, narrowUser('author'), 'author'), 'user');
+  cell(tr, (issue.assignees || [])
+             .map(u => author(u, narrowUser('assigned'), 'assigned')), 'assignees');
+  cell(tr, showLabels(issue.labels, narrowLabel), 'labels');
   return tr;
 }
 
@@ -663,13 +922,8 @@ function showHelp() {
 
 function slashCmd(cmd) {
   if (cmd[0] === 'help') {
+    document.getElementById('cmd').blur();
     showHelp();
-  } else if (cmd[0] === 'local') {
-    setStatus('retrieving local JSON files');
-    get().then(redraw);
-  } else if (cmd[0]  === 'sort') {
-    sort(cmd[1]);
-    list(subset);
   } else {
     setStatus('unknown command: /' + cmd.join(' '));
   }
@@ -747,7 +1001,7 @@ function issueOverlaySetup() {
       hideIssue();
     }
   });
-  window.addEventListener('keypress', e=> {
+  window.addEventListener('keypress', e => {
     if (e.target.closest('input')) {
       return;
     }
@@ -764,6 +1018,11 @@ function issueOverlaySetup() {
       e.preventDefault();
       hideIssue();
       document.getElementById('cmd').focus();
+    } else if (e.key === 'c') {
+      e.preventDefault();
+      hideIssue();
+      document.getElementById('cmd').value = '';
+      redraw(true);
     }
   })
 }
@@ -773,9 +1032,14 @@ window.onload = () => {
   let redrawHandler = debounce(redraw);
   cmd.addEventListener('input', redrawHandler);
   cmd.addEventListener('keypress', redrawHandler);
+  window.addEventListener('hashchange', e => {
+    cmd.value = decodeURIComponent(window.location.hash.substring(1));
+    redrawHandler(e);
+  });
   if (window.location.hash) {
     cmd.value = decodeURIComponent(window.location.hash.substring(1));
   }
+  sortSetup();
   generateHelp();
   issueOverlaySetup();
   get().then(redraw).catch(addFileHelp);
