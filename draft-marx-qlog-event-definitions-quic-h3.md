@@ -817,6 +817,8 @@ Data:
 
     ssthresh?:number, // in bytes
 
+    packet_number_space?:PacketNumberSpace, // mainly necessary if an implementation does not log other events (e.g., key_retired) that indicate the pn-space has changed
+
     // qlog defined
     packets_in_flight?:number, // sum of all packet number spaces
     in_recovery?:boolean, // high-level signal. For more granularity, see congestion_state_updated
@@ -866,10 +868,18 @@ Data:
 }
 ~~~
 
-### loss_timer_set
+### loss_timer_updated
 Importance: Extra
 
-This event is emitted when the single recovery loss timer is set.
+This event is emitted when a recovery loss timer changes state. The three main
+event types are:
+
+* set: the timer is set with a delta timeout for when it will trigger next
+* expired: when the timer effectively expires after the delta timeout
+* cancelled: when a timer is cancelled (e.g., all outstanding packets are
+  acknowledged, start idle period)
+
+Note: to indicate an active timer's timeout update, a new "set" event is used.
 
 Data:
 
@@ -877,30 +887,21 @@ Data:
 {
     timer_type?:"ack"|"pto", // called "mode" in draft-23 A.9.
     packet_number_space?: PacketNumberSpace,
-    timeout?:number
+
+    event_type:"set"|"expired"|"cancelled",
+
+    delta?:number // if event_type === "set": delta time in ms or us (see configuration) from this event's timestamp until when the timer will trigger
 }
 ~~~
 
 TODO: how about CC algo's that use multiple timers? How generic do these events
 need to be? Just support QUIC-style recovery from the spec or broader?
 
+TODO: read up on the loss detection logic in draft-27+ and see if this suffices
+
 Triggers:
 
-TODO
-
-### loss_timer_expired
-Importance: Extra
-
-This event is emitted when the single recovery loss timer fires.
-
-Data:
-
-~~~
-{
-    timer_type?:"ack"|"pto", // called "mode" in draft-23 A.9.
-    packet_number_space?: PacketNumberSpace
-}
-~~~
+* no_packets_outstanding // for cancelling the timer
 
 ### packet_lost
 Importance: Core
@@ -2111,6 +2112,10 @@ class QPackHeaderBlockPrefix {
 
 # Change Log
 
+## Since draft-01:
+
+* Merged loss_timer events into one loss_timer_updated event
+
 ## Since draft-00:
 
 * Event and category names are now all lowercase
@@ -2127,7 +2132,8 @@ TBD
 
 # Acknowledgements
 
-Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé and Lucas
-Pardue for their feedback and suggestions.
+Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
+Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy
+Lainé, Kazu Yamamoto, Christian Huitema, and Lucas Pardue for their feedback and
+suggestions.
 
