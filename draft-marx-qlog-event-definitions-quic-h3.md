@@ -876,6 +876,7 @@ Data:
 ~~~
 {
     timer_type?:"ack"|"pto", // called "mode" in draft-23 A.9.
+    packet_number_space?: PacketNumberSpace,
     timeout?:number
 }
 ~~~
@@ -897,6 +898,7 @@ Data:
 ~~~
 {
     timer_type?:"ack"|"pto", // called "mode" in draft-23 A.9.
+    packet_number_space?: PacketNumberSpace
 }
 ~~~
 
@@ -1461,6 +1463,16 @@ enum PacketType {
     version_negotiation,
     stateless_reset,
     unknown
+}
+~~~
+
+## PacketNumberSpace
+
+~~~
+enum PacketNumberSpace {
+    initial,
+    handshake,
+    application_data
 }
 ~~~
 
