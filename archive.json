@@ -1,6 +1,6 @@
 {
   "magic": "B8n2c@e8kvfx",
-  "timestamp": "2020-03-21T12:32:46.993396+00:00",
+  "timestamp": "2020-03-28T10:52:17.919606+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -1311,15 +1311,15 @@
       "id": "MDU6SXNzdWU1ODA0Mjk3OTU=",
       "title": "Properly specify stateless reset, retry and migration",
       "url": "https://github.com/quiclog/internet-drafts/issues/64",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "These concepts were in flux when -01 was made and are now much more settled.\r\n\r\nAny thoughts on how to best approach this are more than welcome.",
       "createdAt": "2020-03-13T07:50:57Z",
-      "updatedAt": "2020-03-13T09:49:16Z",
-      "closedAt": null,
+      "updatedAt": "2020-03-28T10:24:20Z",
+      "closedAt": "2020-03-28T10:24:20Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1404,6 +1404,46 @@
           "updatedAt": "2020-03-18T11:04:50Z"
         }
       ]
+    },
+    {
+      "number": 69,
+      "id": "MDU6SXNzdWU1ODkxNDQzOTY=",
+      "title": "PTO is per PN-space",
+      "url": "https://github.com/quiclog/internet-drafts/issues/69",
+      "state": "CLOSED",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, we log `pto_count` in `metrics_updated`. However, we can have multiple PTO's running across multiple PN spaces and there is no proper way to correlate them with a PN space in metrics_updated.\r\n\r\nThis also impacts the `loss_timer*` event types. \r\n\r\nPossible resolutions:\r\n- Add pn_space attribute to `metrics_updated`\r\n- Split PTO count into a separate event (potentially merge with loss_timer?)\r\n\r\nTODO: reason more about how these metrics are tied to PN spaces in general (are there others than PTO that are duplicated)\r\n\r\ncc @marten-seemann ",
+      "createdAt": "2020-03-27T13:45:29Z",
+      "updatedAt": "2020-03-28T10:29:31Z",
+      "closedAt": "2020-03-28T10:29:31Z",
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> * Add pn_space attribute to metrics_updated\r\n\r\nMost other metrics in the `metrics_updated` event are independent of the PN space, so that would be weird.\r\n\r\n> * Split PTO count into a separate event (potentially merge with loss_timer?)\r\n\r\nI'd prefer to do that. Not sure if it makes sense to merge is with the loss timer events, since we also need to be able to log a reset of the PTO count to 0 (which doesn't require setting of a timer).",
+          "createdAt": "2020-03-27T13:51:04Z",
+          "updatedAt": "2020-03-27T13:51:04Z"
+        }
+      ]
+    },
+    {
+      "number": 72,
+      "id": "MDU6SXNzdWU1ODk1NTEzNzU=",
+      "title": "Allow listing which events were supported by the logger",
+      "url": "https://github.com/quiclog/internet-drafts/issues/72",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "When looking at a qlog at this time, if there is a certain event type missing, you don't know if it's because those events never occurred or if the implementation simply doesn't support/log that event type. \r\n\r\nThis is especially troublesome if you want to selectively enable/disable certain types to reduce overhead when you're doing targeted \"live\" debugging on a deployed system.\r\n\r\nThe simplest solution I can see is to add a new field to `configuration`, for example:\r\n\r\n> supportedEvents:Array\\<string\\> // each string is category:event_type (e.g., transport:packet_sent)\r\n\r\nSome bikeshedding can help to decide if we need two separate fields (supportedCategories separately for example) or if we can cut out the category in here completely (as there is little overlap in event names atm).\r\n\r\nThis would also be interesting for doing a fast \"is this trace compatible with this visualization\"-check in qvis and others tools. \r\n\r\nThanks to @mjoras for reporting.",
+      "createdAt": "2020-03-28T10:36:52Z",
+      "updatedAt": "2020-03-28T10:37:39Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -1571,6 +1611,85 @@
       "updatedAt": "2020-03-21T12:32:22Z",
       "closedAt": "2020-03-21T12:32:21Z",
       "mergedAt": "2020-03-21T12:32:21Z",
+      "mergedBy": "rmarx",
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 68,
+      "id": "MDExOlB1bGxSZXF1ZXN0MzkzODIxMTU2",
+      "title": "Add stateless reset support",
+      "url": "https://github.com/quiclog/internet-drafts/pull/68",
+      "state": "MERGED",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Partially fixes #64.\r\n\r\nMain change is adding `stateless_reset` as a PacketType.\r\n\r\nThe `stateless_reset_token` is added as a field to packet_sent and packet_received.\r\nAny of the \"unpredictable bits\" can be logged as `raw_encrypted`\r\n\r\nAdded a trigger to `connection_state_update` to indicate if a connection goes into draining/closing because a valid stateless_reset was received.\r\n\r\nBackwards compatibility break: renamed `reset_token` to `stateless_reset_token` on the NewConnectionID frame definition (for consistency). \r\n\r\nBeen thinking about a way to signal an \"invalid\" stateless reset, but figured there is no way to distinguish it from an otherwise garbage datagram, so decided it was impossible. Not 100% sure about the \"looping case\" where you continually lower the packet size. Maybe that's solved by adding a generic \"packet_size\" trigger value to `packet_dropped` though?",
+      "createdAt": "2020-03-25T20:50:37Z",
+      "updatedAt": "2020-03-28T10:24:21Z",
+      "closedAt": "2020-03-28T10:24:21Z",
+      "mergedAt": "2020-03-28T10:24:20Z",
+      "mergedBy": "rmarx",
+      "comments": [
+        {
+          "author": "kazu-yamamoto",
+          "authorAssociation": "NONE",
+          "body": "LGTM!",
+          "createdAt": "2020-03-27T02:54:01Z",
+          "updatedAt": "2020-03-27T02:54:01Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3MzgyMDE3NjE5",
+          "commit": {
+            "abbreviatedOid": "6ff25a4"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2020-03-26T13:40:51Z",
+          "updatedAt": "2020-03-26T13:40:51Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 70,
+      "id": "MDExOlB1bGxSZXF1ZXN0Mzk1MDU5NTUz",
+      "title": "update transport errors",
+      "url": "https://github.com/quiclog/internet-drafts/pull/70",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2020-03-28T07:26:37Z",
+      "updatedAt": "2020-03-28T07:36:38Z",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 71,
+      "id": "MDExOlB1bGxSZXF1ZXN0Mzk1MDY0ODQy",
+      "title": "add a packet number space field to loss_timer_set and loss_timer_expired",
+      "url": "https://github.com/quiclog/internet-drafts/pull/71",
+      "state": "MERGED",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #69.",
+      "createdAt": "2020-03-28T08:27:33Z",
+      "updatedAt": "2020-03-28T10:29:32Z",
+      "closedAt": "2020-03-28T10:29:31Z",
+      "mergedAt": "2020-03-28T10:29:31Z",
       "mergedBy": "rmarx",
       "comments": [],
       "reviews": []
