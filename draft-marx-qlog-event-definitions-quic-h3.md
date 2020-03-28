@@ -357,6 +357,7 @@ Triggers:
 * "error" // when closing because of an unexpected event
 * "clean" // when closing normally
 * "application" // e.g., HTTP/3's GOAWAY frame
+* "stateless_reset" // because a stateless reset was received
 
 ### MIGRATION-related events
 e.g., path_updated
@@ -501,6 +502,8 @@ Data:
 
     is_coalesced?:boolean,
 
+    stateless_reset_token?:string, // only if PacketType === stateless_reset
+
     raw_encrypted?:string, // for debugging purposes
     raw_decrypted?:string  // for debugging purposes,
 
@@ -533,6 +536,8 @@ Data:
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean,
+
+    stateless_reset_token?:string, // only if PacketType === stateless_reset
 
     raw_encrypted?:string, // for debugging purposes
     raw_decrypted?:string  // for debugging purposes,
@@ -1454,6 +1459,7 @@ enum PacketType {
     onertt = "1RTT",
     retry,
     version_negotiation,
+    stateless_reset,
     unknown
 }
 ~~~
@@ -1687,7 +1693,7 @@ class NewConnectionIDFrame{
   length:number;
   connection_id:string;
 
-  reset_token:string;
+  stateless_reset_token:string;
 }
 ~~~
 
