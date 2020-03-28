@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Main logging schema for qlog</title>
+<meta content="Robin Marx" name="author">
+<meta content="
+       This document describes a high-level schema for a standardized logging format
+called qlog.  This format allows easy sharing of data and the creation of reusable
+visualization and debugging tools. The high-level schema in this document is
+intended to be protocol-agnostic. Separate documents specify how the format should
+be used for specific protocol data. 
+    " name="description">
+<meta content="xml2rfc 2.41.0" name="generator">
+<meta content="Internet-Draft" name="keyword">
+<meta content="draft-marx-qlog-main-schema-latest" name="ietf.draft">
+<link href="draft-marx-qlog-main-schema.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@import url('https://martinthomson.github.io/i-d-template/fonts.css');
+
+html {
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --small-font-size: 14.5px;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+#title, h1, h2, h3, h4, h5, h6 {
+  font-family: "Cabin Condensed", sans-serif;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+#title {
+  padding: 1em 0 0.2em;
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 26px;
+}
+h4, h5, h6 {
+  font-size: 18px;
+  line-height: 22px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+}
+#abstract+p, #abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 18px;
+  line-height: 24px;
+}
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div, span {
+  position: relative;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 1em 2em;
+}
+ol ol, ul ul, ol ul, ul ol {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+ul.compact, .ulCompact,
+ol.compact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl > dd {
+  margin-bottom: .8em;
+  min-height: 1.3em;
+}
+dl.compact > dd, .dlCompact > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href].selfRef {
+  color: var(--text-color);
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+a.xref {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px 'Oxygen Mono', monospace;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+}
+@media screen {
+  pre {
+    display: inline-block;
+    overflow-x: auto;
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  pre + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+  table {
+    display: inline-block;
+    overflow-x: auto;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5em 0.75em;
+}
+th {
+  text-align: left;
+  background-color: #eee;
+}
+tr:nth-child(2n) > td {
+  background-color: var(--background-color);
+}
+tr:nth-child(2n+1) > td {
+  background-color: var(--highlight-color);
+}
+thead+tbody tr:nth-child(2n) > td {
+  background-color: var(--highlight-color);
+}
+thead+tbody tr:nth-child(2n+1) > td {
+  background-color: var(--background-color);
+}
+table caption {
+  font-style: italic;
+  margin: 0.3em 0;
+  padding: 0;
+  text-align: left;
+}
+table p {
+  /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
+     be allowed within tables more generally, it would be far better to select on a class. */
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  visibility: hidden;
+  user-select: none;
+}
+a.pilcrow[href] { color: #ddd; }
+a.pilcrow[href]:hover { text-decoration: none; }
+@media screen {
+  :hover > a.pilcrow {
+    visibility: visible;
+  }
+  a.pilcrow:hover {
+    background-color: transparent;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+}
+
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 8em;
+}
+#identifiers dt {
+  width: var(--identifier-width);
+  margin: 0;
+  clear: left;
+  float: left;
+  text-align: right;
+}
+#identifiers dd {
+  margin: 0 0 0 calc(1em + var(--identifier-width));
+  min-width: 5em;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+#toc nav ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+#toc nav li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+#toc a.xref {
+  white-space: normal;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+.index ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+  list-style: none;
+}
+.index ul ul {
+  margin: 0;
+}
+.index li {
+  margin: 0;
+  text-indent: -2em;
+  padding-left: 2em;
+  padding-bottom: 5px;
+}
+.indexIndex {
+  margin: 0.5em 0 1em;
+}
+.index a {
+  font-weight: 700;
+}
+/* make the index two-column on all but the smallest screens */
+@media (min-width: 500px) {
+  .index ul {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  .index ul ul {
+    column-count: 1;
+    column-gap: 0;
+  }
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses > section {
+    display: relative;
+    padding: 32px 0 0;
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #name-authors-addresses {
+    position: absolute;
+    top: 0px;
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+    break-inside: avoid-column;
+  }
+}
+
+/* temporary notes */
+.rfcEditorRemove::before {
+  position: absolute;
+  top: 0.2em;
+  right: 0.2em;
+  padding: 0.2em;
+  content: "The RFC Editor will remove this note";
+  color: #b76427;
+  background-color: rgba(249, 232, 105, 0.3);
+}
+.rfcEditorRemove {
+  position: relative;
+  padding-top: 1.8em;
+  background-color: rgba(249, 232, 105, 0.3);
+  border-radius: 3px;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc.active {
+      opacity: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 8px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active nav {
+    display: block;
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin-top: 2px;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #toc nav > ul  {
+    margin-bottom: 2em;
+  }
+  #toc ul {
+    margin: 0 0 0 4px;
+    font-size: var(--small-font-size);
+  }
+  #toc ul p, #toc ul li {
+    margin: 2px 0;
+    line-height: 22px;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Changes introduced to fix issues found during implementation */
+
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin: 8px 0.5em 0;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table .text-left, table .text-left {
+  text-align: left;
+}
+table .text-center, table .text-center {
+  text-align: center;
+}
+table .text-right, table .text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 20em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Provide table alignment support.  We can't use the alignX classes above
+   since they do unwanted things with caption and other styling. */
+table.right {
+ margin-left: auto;
+ margin-right: 0;
+}
+table.center {
+ margin-left: auto;
+ margin-right: auto;
+}
+table.left {
+ margin-left: 0;
+ margin-right: auto;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+
+@media print {
+  .toplink {
+    display: none;
+  }
+
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
+
+  /* Avoid page breaks inside dl and author address entries */
+  dd {
+    page-break-before: avoid;
+  }
+  .vcard {
+    page-break-inside: avoid;
+  }
+
+}
+/* Tweak the bcp14 keyword presentation */
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+</style>
+<link href="rfc-local.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">Main logging schema for qlog</td>
+<td class="right">March 2020</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Marx</td>
+<td class="center">Expires 29 September 2020</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">QUIC</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-marx-qlog-main-schema-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2020-03-28" class="published">28 March 2020</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Standards Track</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2020-09-29">29 September 2020</time></dd>
+<dt class="label-authors">Author:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">R. Marx</div>
+<div class="org">Hasselt University</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Main logging schema for qlog</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document describes a high-level schema for a standardized logging format
+called qlog.  This format allows easy sharing of data and the creation of reusable
+visualization and debugging tools. The high-level schema in this document is
+intended to be protocol-agnostic. Separate documents specify how the format should
+be used for specific protocol data.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 29 September 2020.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2020 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Simplified BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Simplified BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a><a href="#section-toc.1-1.1.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1"><a href="#section-1.1" class="xref">1.1</a>.  <a href="#name-notational-conventions" class="xref">Notational Conventions</a><a href="#section-toc.1-1.1.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-design-goals" class="xref">Design Goals</a><a href="#section-toc.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-the-high-level-schema" class="xref">The High Level Schema</a><a href="#section-toc.1-1.3.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-traces-field" class="xref">Traces field</a><a href="#section-toc.1-1.3.2.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-summary-field" class="xref">Summary field</a><a href="#section-toc.1-1.3.2.2.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.2.2.1">
+                    <p id="section-toc.1-1.3.2.2.2.1.1"><a href="#section-3.2.1" class="xref">3.2.1</a>.  <a href="#name-title-and-description" class="xref">Title and Description</a><a href="#section-toc.1-1.3.2.2.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="xref">3.3</a>.  <a href="#name-individual-trace-containers" class="xref">Individual trace containers</a><a href="#section-toc.1-1.3.2.3.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.3.2.1">
+                    <p id="section-toc.1-1.3.2.3.2.1.1"><a href="#section-3.3.1" class="xref">3.3.1</a>.  <a href="#name-vantage_point" class="xref">vantage_point</a><a href="#section-toc.1-1.3.2.3.2.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.3.2.2">
+                    <p id="section-toc.1-1.3.2.3.2.2.1"><a href="#section-3.3.2" class="xref">3.3.2</a>.  <a href="#name-title-and-description-2" class="xref">Title and Description</a><a href="#section-toc.1-1.3.2.3.2.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.3.2.3">
+                    <p id="section-toc.1-1.3.2.3.2.3.1"><a href="#section-3.3.3" class="xref">3.3.3</a>.  <a href="#name-configuration" class="xref">Configuration</a><a href="#section-toc.1-1.3.2.3.2.3.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.3.2.4">
+                    <p id="section-toc.1-1.3.2.3.2.4.1"><a href="#section-3.3.4" class="xref">3.3.4</a>.  <a href="#name-common_fields-and-event_fie" class="xref">common_fields and event_fields</a><a href="#section-toc.1-1.3.2.3.2.4.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.4">
+                <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="xref">3.4</a>.  <a href="#name-field-name-semantics" class="xref">Field name semantics</a><a href="#section-toc.1-1.3.2.4.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.4.2.1">
+                    <p id="section-toc.1-1.3.2.4.2.1.1"><a href="#section-3.4.1" class="xref">3.4.1</a>.  <a href="#name-time-delta_time-and-referen" class="xref">time, delta_time and reference_time + relative_time</a><a href="#section-toc.1-1.3.2.4.2.1.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.4.2.2">
+                    <p id="section-toc.1-1.3.2.4.2.2.1"><a href="#section-3.4.2" class="xref">3.4.2</a>.  <a href="#name-group_id" class="xref">group_id</a><a href="#section-toc.1-1.3.2.4.2.2.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.4.2.3">
+                    <p id="section-toc.1-1.3.2.4.2.3.1"><a href="#section-3.4.3" class="xref">3.4.3</a>.  <a href="#name-category-and-event" class="xref">category and event</a><a href="#section-toc.1-1.3.2.4.2.3.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.4.2.4">
+                    <p id="section-toc.1-1.3.2.4.2.4.1"><a href="#section-3.4.4" class="xref">3.4.4</a>.  <a href="#name-data" class="xref">data</a><a href="#section-toc.1-1.3.2.4.2.4.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.4.2.5">
+                    <p id="section-toc.1-1.3.2.4.2.5.1"><a href="#section-3.4.5" class="xref">3.4.5</a>.  <a href="#name-custom-fields-2" class="xref">custom fields</a><a href="#section-toc.1-1.3.2.4.2.5.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.4.2.6">
+                    <p id="section-toc.1-1.3.2.4.2.6.1"><a href="#section-3.4.6" class="xref">3.4.6</a>.  <a href="#name-event-field-values" class="xref">Event field values</a><a href="#section-toc.1-1.3.2.4.2.6.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.3.2.5">
+                <p id="section-toc.1-1.3.2.5.1"><a href="#section-3.5" class="xref">3.5</a>.  <a href="#name-triggers" class="xref">triggers</a><a href="#section-toc.1-1.3.2.5.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-tooling-requirements" class="xref">Tooling requirements</a><a href="#section-toc.1-1.4.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-methods-of-access" class="xref">Methods of Access</a><a href="#section-toc.1-1.5.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-notes-on-practical-use" class="xref">Notes on Practical Use</a><a href="#section-toc.1-1.6.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-security-considerations" class="xref">Security Considerations</a><a href="#section-toc.1-1.7.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="xref">8</a>.  <a href="#name-iana-considerations" class="xref">IANA Considerations</a><a href="#section-toc.1-1.8.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="xref">9</a>.  <a href="#name-normative-references" class="xref">Normative References</a><a href="#section-toc.1-1.9.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-appendix.a" class="xref">Appendix A</a>.  <a href="#name-change-log" class="xref">Change Log</a><a href="#section-toc.1-1.10.1" class="pilcrow">¶</a></p>
+<ul class="toc ulEmpty">
+<li class="toc ulEmpty" id="section-toc.1-1.10.2.1">
+                <p id="section-toc.1-1.10.2.1.1"><a href="#section-a.1" class="xref">A.1</a>.  <a href="#name-since-draft-marx-qlog-main-" class="xref">Since draft-marx-qlog-main-schema-00:</a><a href="#section-toc.1-1.10.2.1.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-appendix.b" class="xref">Appendix B</a>.  <a href="#name-design-variations" class="xref">Design Variations</a><a href="#section-toc.1-1.11.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#section-appendix.c" class="xref">Appendix C</a>.  <a href="#name-acknowledgements" class="xref">Acknowledgements</a><a href="#section-toc.1-1.12.1" class="pilcrow">¶</a></p>
+</li>
+<li class="toc ulEmpty" id="section-toc.1-1.13">
+            <p id="section-toc.1-1.13.1"><a href="#section-appendix.d" class="xref"></a><a href="#name-authors-address" class="xref">Author's Address</a><a href="#section-toc.1-1.13.1" class="pilcrow">¶</a></p>
+</li>
+</ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">There is currently a lack of an easily usable, standardized endpoint logging
+format. Especially for the use case of debugging and evaluating modern web
+protocols and their performance, it is often difficult to obtain structured logs
+that provide adequate information for tasks like problem root cause analysis.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">This document aims to provide a high-level schema and harness that describes the
+general layout of an easily usable, shareable, aggregatable and structured logging
+format. This high-level schema is protocol agnostic, with logging entries for
+specific protocols and use cases being defined in other documents (see for example
+<span>[<a href="#QLOG-QUIC-HTTP3" class="xref">QLOG-QUIC-HTTP3</a>]</span> for QUIC and HTTP/3-related event definitions).<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">The goal of this high-level schema is to provide amenities and default
+characteristics that each logging file should contain (or should be able to
+contain), such that generic and reusable toolsets can be created that can deal
+with logs from a variety of different protocols and use cases.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<p id="section-1-4">As such, this document contains concepts such as versioning, metadata inclusion,
+log aggregation, event grouping and log file size reduction techniques.<a href="#section-1-4" class="pilcrow">¶</a></p>
+<p id="section-1-5">Feedback and discussion welcome at
+<a href="https://github.com/quiclog/internet-drafts">https://github.com/quiclog/internet-drafts</a>.
+Readers are advised to refer to the "editor's draft" at that URL for an
+up-to-date version of this document.<a href="#section-1-5" class="pilcrow">¶</a></p>
+<div id="notational-conventions">
+<section id="section-1.1">
+        <h3 id="name-notational-conventions">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-notational-conventions" class="section-name selfRef">Notational Conventions</a>
+        </h3>
+<p id="section-1.1-1">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
+interpreted as described in <span>[<a href="#RFC2119" class="xref">RFC2119</a>]</span>.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="design-goals">
+<section id="section-2">
+      <h2 id="name-design-goals">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-design-goals" class="section-name selfRef">Design Goals</a>
+      </h2>
+<p id="section-2-1">The main tenets for the qlog schema design are:<a href="#section-2-1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-2-2.1">Streamable, event-based logging<a href="#section-2-2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-2-2.2">Flexibility in the format, complexity in the tooling (e.g., few components are a
+MUST, tools need to deal with this)<a href="#section-2-2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-2-2.3">Extensible and pragmatic (e.g., no complex fixed schema with extension points)<a href="#section-2-2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-2-2.4">Aggregation and transformation friendly (e.g., the top-level element is a
+container for individual traces)<a href="#section-2-2.4" class="pilcrow">¶</a>
+</li>
+<li id="section-2-2.5">Metadata is stored together with event data<a href="#section-2-2.5" class="pilcrow">¶</a>
+</li>
+<li id="section-2-2.6">Explicit and human-readable<a href="#section-2-2.6" class="pilcrow">¶</a>
+</li>
+</ul>
+</section>
+</div>
+<div id="the-high-level-schema">
+<section id="section-3">
+      <h2 id="name-the-high-level-schema">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-the-high-level-schema" class="section-name selfRef">The High Level Schema</a>
+      </h2>
+<p id="section-3-1">A qlog file should be able to contain several indivdual traces and logs from
+multiple vantage points that are in some way related. To that end, the top-level
+element in the qlog schema defines only a small set of fields and an array of
+component traces. Only the "qlog_version" and "traces" fields MUST be present. For
+this document, the "qlog_version" field MUST have a value of "draft-02-wip".<a href="#section-3-1" class="pilcrow">¶</a></p>
+<span id="name-top-level-element"></span><div id="top_element">
+<figure id="figure-1">
+        <div class="artwork art-text alignLeft art-json" id="section-3-2.1">
+<pre>
+{
+    "qlog_version": "draft-02-wip",
+    "title": "Name of this particular qlog file (short)",
+    "description": "Description for this group of traces (long)",
+    "summary": {
+        ...
+    }
+    "traces": [...]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
+<a href="#name-top-level-element" class="selfRef">Top-level element</a>
+        </figcaption></figure>
+</div>
+<div id="traces-field">
+<section id="section-3.1">
+        <h3 id="name-traces-field">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-traces-field" class="section-name selfRef">Traces field</a>
+        </h3>
+<p id="section-3.1-1">Required: yes<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1-2">The "traces" array contains a list of individual qlog traces. Typical logs will
+only contain a single element in this array. Multiple traces can however be
+combined into a single qlog file by taking the "traces" entries for each qlog file
+individually and copying them to the "traces" array of a new, aggregated qlog
+file. This is typically done in a post-processing step.<a href="#section-3.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.1-3">For example, for a test setup, we perform logging on the client, on the server and
+on a single point on their common network path. Each of these three logs is first
+created separately during the test. Afterwards, the three logs can be aggregated
+into a single qlog file.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
+<p id="section-3.1-4">As such, the "traces" array can also contain "error" entries. These indicate that
+we tried to find/convert a file for inclusion in the aggregated qlog, but there
+was an error during the process. Rather than silently dropping the erroneous file,
+we can opt to explicitly include it in the qlog file as an entry in the "traces"
+array.<a href="#section-3.1-4" class="pilcrow">¶</a></p>
+<p id="section-3.1-5">An error is defined as follows. The uri and vantage_point fields are optional. The
+"error_description" field MUST be present and can be used by tools to identify the
+presence of an error.<a href="#section-3.1-5" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.1-6">
+<pre>
+{
+    "error_description": "A description of the error (e.g., file could not be found, file had errors, ...)",
+    "uri": "the original URI at which we attempted to find the file",
+    "vantage_point": see {{vantage_point}} // the vantage point we were expecting to include here
+}
+
+</pre><a href="#section-3.1-6" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="summary-field">
+<section id="section-3.2">
+        <h3 id="name-summary-field">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-summary-field" class="section-name selfRef">Summary field</a>
+        </h3>
+<p id="section-3.2-1">Required: no<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">In a real-life deployment with a large amount of generated logs, it can be useful
+to sort and filter logs based on some basic summarized or aggregated data (e.g.,
+log length, packet loss rate, log location, presence of error events, ...). The
+summary field (if present) SHOULD be on top of the qlog file, as this allows for
+the file to be processed in a streaming fashion (i.e., the implementation could
+just read up to and including the summary field and then only load the full logs
+that are deemed interesting by the user).<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.2-3">As the summary field is highly deployment-specific, this document does not specify
+any default fields or their semantics. Some examples of potential entries are:<a href="#section-3.2-3" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.2-4">
+<pre>
+"summary": {
+    "trace_count":number, // amount of traces in this file
+    "max_duration":string, // time duration of the longest trace
+    "max_outgoing_loss_rate":number, // highest loss rate for outgoing packets over all traces
+    "total_event_count":number, // total number of events across all traces,
+    "error_count":number // total number of error events in this trace
+}
+</pre><a href="#section-3.2-4" class="pilcrow">¶</a>
+</div>
+<div id="title-and-description">
+<section id="section-3.2.1">
+          <h4 id="name-title-and-description">
+<a href="#section-3.2.1" class="section-number selfRef">3.2.1. </a><a href="#name-title-and-description" class="section-name selfRef">Title and Description</a>
+          </h4>
+<p id="section-3.2.1-1">Required: no<a href="#section-3.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.2.1-2">Both fields' values are generic strings, used for describing the contents of the
+entire qlog file. These can either be filled in automatically (e.g., including the
+timestamp when the file was generated, the specific test case or simulation these
+logs were collected from), or can be filled manually when creating aggregated logs
+(e.g., qlog files that illustrate a specific problem across traces that want to
+include additional explanations for easier communication between teams, students,
+...).<a href="#section-3.2.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="individual-trace-containers">
+<section id="section-3.3">
+        <h3 id="name-individual-trace-containers">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-individual-trace-containers" class="section-name selfRef">Individual trace containers</a>
+        </h3>
+<p id="section-3.3-1">Each indidivual trace container encompasses a single conceptual trace. The exact
+definition of a trace can be fluid. For example, a trace could contain all events
+for a single connection, for a single endpoint, for a single measurement interval,
+etc.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">In the normal use case, a trace is a log of a single data flow collected at a
+single location or vantage point. For example, for QUIC, a single trace only
+contains events for a single logical QUIC connection for either the client or the
+server. However, a single trace could also combine events from a variety of
+vantage points or use cases (e.g., a middlebox could group events from all
+observed connections into a single trace).<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.3-3">The semantics and context of the trace can be deduced from the entries in the
+"common_fields" (specifically the "group_id" field) and "event_fields" lists.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
+<p id="section-3.3-4">Only the "vantage_point", "event_fields" and "events" fields MUST be present.<a href="#section-3.3-4" class="pilcrow">¶</a></p>
+<span id="name-trace-container"></span><div id="trace_container">
+<figure id="figure-2">
+          <div class="artwork art-text alignLeft art-json" id="section-3.3-5.1">
+<pre>
+{
+    "vantage_point": {
+        "name": "backend-67",
+        "type": "server"
+    },
+    "title": "Name of this particular trace (short)",
+    "description": "Description for this trace (long)",
+    "configuration": {
+        "time_units": "ms" | "us",
+        "time_offset": "offset to help align trace start times"
+    },
+    "common_fields": (see below),
+    "event_fields": (see below),
+    "events": [...]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
+<a href="#name-trace-container" class="selfRef">Trace container</a>
+          </figcaption></figure>
+</div>
+<div id="vantage-point">
+<section id="section-3.3.1">
+          <h4 id="name-vantage_point">
+<a href="#section-3.3.1" class="section-number selfRef">3.3.1. </a><a href="#name-vantage_point" class="section-name selfRef">vantage_point</a>
+          </h4>
+<p id="section-3.3.1-1">Required: yes<a href="#section-3.3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.1-2">This field describes the vantage point from which the trace originates. Each trace
+can have only a single vantage_point and thus all events in a trace MUST BE from
+the perspective of this vantage_point. To include events from multiple
+vantage_points, implementers can include multiple traces, split by vantage_point,
+in a single qlog file.<a href="#section-3.3.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.1-3">Its value is an object, with the following fields:<a href="#section-3.3.1-3" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-3.3.1-4.1">name: a user-chosen string (e.g., "NETWORK-1", "loadbalancer45",
+"reverseproxy@192.168.1.1", ...)<a href="#section-3.3.1-4.1" class="pilcrow">¶</a>
+</li>
+<li id="section-3.3.1-4.2">
+              <p id="section-3.3.1-4.2.1">type: one of four values: "server", "client", "network" or "unknown".<a href="#section-3.3.1-4.2.1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-3.3.1-4.2.2.1">client indicates an endpoint which initiates the connection.<a href="#section-3.3.1-4.2.2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-3.3.1-4.2.2.2">server indicates an endpoint which accepts the connection.<a href="#section-3.3.1-4.2.2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-3.3.1-4.2.2.3">network indicates an observer in between client and server.<a href="#section-3.3.1-4.2.2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-3.3.1-4.2.2.4">unknown indicates the endpoint is unknown.<a href="#section-3.3.1-4.2.2.4" class="pilcrow">¶</a>
+</li>
+</ul>
+</li>
+<li id="section-3.3.1-4.3">
+              <p id="section-3.3.1-4.3.1">flow: one of three values: "client", "server" or "unknown".<a href="#section-3.3.1-4.3.1" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-3.3.1-4.3.2.1">This field is only required if type is "network".<a href="#section-3.3.1-4.3.2.1" class="pilcrow">¶</a>
+</li>
+<li id="section-3.3.1-4.3.2.2">"client" indicates that this vantage point follows client data flow semantics (a
+"packet sent" event goes in the direction of the server).<a href="#section-3.3.1-4.3.2.2" class="pilcrow">¶</a>
+</li>
+<li id="section-3.3.1-4.3.2.3">"server" indicates that this vantage point follow server data flow semantics (a
+"packet sent" event goes in the direction of the client).<a href="#section-3.3.1-4.3.2.3" class="pilcrow">¶</a>
+</li>
+<li id="section-3.3.1-4.3.2.4">"unknown" indicates that the flow is unknown.<a href="#section-3.3.1-4.3.2.4" class="pilcrow">¶</a>
+</li>
+</ul>
+</li>
+</ul>
+<p id="section-3.3.1-5">The type field MUST be present. The flow field MUST be present if the type field
+has value "network". The name field is optional.<a href="#section-3.3.1-5" class="pilcrow">¶</a></p>
+<p id="section-3.3.1-6">The flow field is necessary because for multiple reasons (e.g., privacy) data from
+which the flow direction might be inferred (e.g., IP addresses) might not be
+present in the logs.<a href="#section-3.3.1-6" class="pilcrow">¶</a></p>
+<p id="section-3.3.1-7">Depending on the context, tools confronted with "unknown" values in the
+vantage_point can either try to infer the semantics from protocol-level domain
+knowledge (e.g., in QUIC, the client sends an Initial packet) or give the user the
+option to switch between client and server perspectives.<a href="#section-3.3.1-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="title-and-description-1">
+<section id="section-3.3.2">
+          <h4 id="name-title-and-description-2">
+<a href="#section-3.3.2" class="section-number selfRef">3.3.2. </a><a href="#name-title-and-description-2" class="section-name selfRef">Title and Description</a>
+          </h4>
+<p id="section-3.3.2-1">Required: no<a href="#section-3.3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.2-2">Both fields' values are generic strings, used for describing the contents of the
+trace. These can either be filled in automatically (e.g., showing the endpoint
+name and readable timestamp of the log), or can be filled manually when creating
+aggregated logs (e.g., qlog files that illustrate a specific problem across traces
+that want to include additional explanations for easier communication between
+teams, students, ...).<a href="#section-3.3.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="configuration">
+<section id="section-3.3.3">
+          <h4 id="name-configuration">
+<a href="#section-3.3.3" class="section-number selfRef">3.3.3. </a><a href="#name-configuration" class="section-name selfRef">Configuration</a>
+          </h4>
+<p id="section-3.3.3-1">Required: no<a href="#section-3.3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.3-2">We take into account that a log file is usually not used in isolation, but by
+means of various tools. Especially when aggregating various traces together or
+preparing traces for a demonstration, one might wish to persist certain tool-based
+settings inside the log file itself. For this, the configuration field is used.<a href="#section-3.3.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.3-3">The configuration field can be viewed as a generic metadata field that tools can
+fill with their own fields, based on per-tool logic. It is best practice for tools
+to prefix each added field with their tool name to prevent collisions across
+tools. This document only defines three optional, standard, tool-independent
+configuration settings: "time_units", "time_offset" and "original_uris".<a href="#section-3.3.3-3" class="pilcrow">¶</a></p>
+<div id="timeunits">
+<section id="section-3.3.3.1">
+            <h5 id="name-time_units">
+<a href="#section-3.3.3.1" class="section-number selfRef">3.3.3.1. </a><a href="#name-time_units" class="section-name selfRef">time_units</a>
+            </h5>
+<p id="section-3.3.3.1-1">Since timestamps and other time-related values can be stored in various
+granularities, this field allows to indicate whether storage happens in either
+milliseconds ("ms") or microseconds ("us"). If this field is not present, the
+default value is "ms". This configuration setting applies to all other timestamps
+and time-related values in the trace file and its consituent events as well, not
+just the "time_offset" field.<a href="#section-3.3.3.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="timeoffset">
+<section id="section-3.3.3.2">
+            <h5 id="name-time_offset">
+<a href="#section-3.3.3.2" class="section-number selfRef">3.3.3.2. </a><a href="#name-time_offset" class="section-name selfRef">time_offset</a>
+            </h5>
+<p id="section-3.3.3.2-1">time_offset indicates by how many units of time the starting time of the current
+trace should be offset. This is useful when comparing logs taken from various
+systems, where clocks might not be perfectly synchronous. Users could use manual
+tools or automated logic to align traces in time and the found optimal offsets can
+be stored in this field for future usage. The default value is "0".<a href="#section-3.3.3.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="originaluris">
+<section id="section-3.3.3.3">
+            <h5 id="name-original_uris">
+<a href="#section-3.3.3.3" class="section-number selfRef">3.3.3.3. </a><a href="#name-original_uris" class="section-name selfRef">original_uris</a>
+            </h5>
+<p id="section-3.3.3.3-1">This field is used when merging multiple individual qlog files or other source
+files (e.g., when converting .pcaps to qlog). It allows to keep better track where
+certain data came from. It is a simple array of strings. It is an array instead of
+a single string, since a single qlog trace can be made up out of an aggregation of
+multiple component qlog traces as well. The default value is an empty array.<a href="#section-3.3.3.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="custom-fields">
+<section id="section-3.3.3.4">
+            <h5 id="name-custom-fields">
+<a href="#section-3.3.3.4" class="section-number selfRef">3.3.3.4. </a><a href="#name-custom-fields" class="section-name selfRef">custom fields</a>
+            </h5>
+<p id="section-3.3.3.4-1">Tools can add optional custom metadata to the "configuration" field to store state
+and make it easier to share specific data viewpoints and view configurations.<a href="#section-3.3.3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.3.4-2">An example from the <a href="https://qvis.edm.uhasselt.be">qvis toolset</a>'s congestion
+graph follows. In this example, the congestion graph is zoomed in between 1s and
+2s of the trace and the 124th event in the trace is selected.<a href="#section-3.3.3.4-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-3.3.3.4-3">
+<pre>
+{
+    "configuration" : {
+        "time_offset": "100",
+        "time_units": "ms" | "us",
+        "qvis" : {
+            "congestiongraph": {
+                "startX": 1000,
+                "endX": 2000,
+                "selectedEvent": 124
+            }
+        }
+    }
+}
+</pre><a href="#section-3.3.3.4-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="commonfields-and-eventfields">
+<section id="section-3.3.4">
+          <h4 id="name-common_fields-and-event_fie">
+<a href="#section-3.3.4" class="section-number selfRef">3.3.4. </a><a href="#name-common_fields-and-event_fie" class="section-name selfRef">common_fields and event_fields</a>
+          </h4>
+<p id="section-3.3.4-1">Required: event_fields only<a href="#section-3.3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.4-2">To reduce file size and make logging easier, the trace schema lists the names of
+the specific fields that are logged per-event up-front, instead of repeating the
+field name with each value, as is common in traditiona JSON. This is done in the
+"event_fields" list. This allows us to encode individual events as an array of
+values, instead of an object. To reduce file size even further, common event
+fields that have the same value for all events in this trace, are listed as
+name-value pairs in "common_fields".<a href="#section-3.3.4-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.4-3">For example, when logging events for a single QUIC connection, all events will
+share the same "original destination connection ID" (ODCID). This field and its
+value should be set in "common_fields", rather than "event_fields". However, if a
+single trace would contain events for multiple QUIC connections at the same time
+(e.g., a single, big output log for a server), the ODCID can be different across
+events, and should be part of "event_fields" instead (leading to it being logged
+for each individual event).<a href="#section-3.3.4-3" class="pilcrow">¶</a></p>
+<p id="section-3.3.4-4">Examples comparing traditional JSON vs the qlog format can be found in
+<a href="#traditional_json" class="xref">Figure 3</a> and <a href="#qlog_json" class="xref">Figure 4</a>. The events described in these examples are
+purely for illustration. Actual event type definitions for the QUIC and HTTP/3
+protocols can be found in <span>[<a href="#QLOG-QUIC-HTTP3" class="xref">QLOG-QUIC-HTTP3</a>]</span>.<a href="#section-3.3.4-4" class="pilcrow">¶</a></p>
+<span id="name-traditional-json"></span><div id="traditional_json">
+<figure id="figure-3">
+            <div class="artwork art-text alignLeft art-json" id="section-3.3.4-5.1">
+<pre>
+{
+    "events": [{
+            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+            "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
+            "protocol_type": "QUIC_HTTP3",
+            "time": 1553986553574,
+            "category": "transport",
+            "event": "packet_received",
+            "data": [...]
+        },{
+            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+            "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
+            "protocol_type": "QUIC_HTTP3",
+            "time": 1553986553579,
+            "category": "http",
+            "event": "frame_parsed",
+            "data": [...]
+        },
+        ...
+    ]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
+<a href="#name-traditional-json" class="selfRef">Traditional JSON</a>
+            </figcaption></figure>
+</div>
+<span id="name-qlog-optimized-json"></span><div id="qlog_json">
+<figure id="figure-4">
+            <div class="artwork art-text alignLeft art-json" id="section-3.3.4-6.1">
+<pre>
+{
+    "common_fields": {
+        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+        "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
+        "protocol_type":  "QUIC_HTTP3",
+        "reference_time": "1553986553572"
+    },
+    "event_fields": [
+        "relative_time",
+        "category",
+        "event",
+        "data"
+    ],
+    "events": [[
+            2,
+            "transport",
+            "packet_received",
+            [...]
+        ],[
+            7,
+            "http",
+            "frame_parsed",
+            [...]
+        ],
+        ...
+    ]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-4" class="selfRef">Figure 4</a>:
+<a href="#name-qlog-optimized-json" class="selfRef">qlog optimized JSON</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.4-7">The main field names that can be included in these fields are defined in
+<a href="#field-name-semantics" class="xref">Section 3.4</a>.<a href="#section-3.3.4-7" class="pilcrow">¶</a></p>
+<p id="section-3.3.4-8">Given that qlog is intended to be a flexible format, unknown field names in both
+"common_fields" and "event_fields" MUST be disregarded by the user and tools
+(i.e., the presence of an uknown field is explicitly NOT an error).<a href="#section-3.3.4-8" class="pilcrow">¶</a></p>
+<p id="section-3.3.4-9">This approach makes line-per-line logging easier and faster, as each log statement
+only needs to include the data for the events, not the field names. Events can
+also be logged and processed separately, as part of a contiguous event-stream.<a href="#section-3.3.4-9" class="pilcrow">¶</a></p>
+<div id="commonfields-format">
+<section id="section-3.3.4.1">
+            <h5 id="name-common_fields-format">
+<a href="#section-3.3.4.1" class="section-number selfRef">3.3.4.1. </a><a href="#name-common_fields-format" class="section-name selfRef">common_fields format</a>
+            </h5>
+<p id="section-3.3.4.1-1">An object containing pairs of "field name"-"field value". Fields included in
+"common_fields" indicate that these field values are the same for each event in
+the "events" array.<a href="#section-3.3.4.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.4.1-2">If even one event in the trace does not adhere to this convention, that field name
+should be in "event_fields" instead, and the value logged per event. An
+alternative route is to include the most commonly seen value in "common_fields"
+and then include the deviating field value in the generic "data" field for each
+non-confirming event. However, these semantics are not defined in this document.<a href="#section-3.3.4.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="eventfields-format">
+<section id="section-3.3.4.2">
+            <h5 id="name-event_fields-format">
+<a href="#section-3.3.4.2" class="section-number selfRef">3.3.4.2. </a><a href="#name-event_fields-format" class="section-name selfRef">event_fields format</a>
+            </h5>
+<p id="section-3.3.4.2-1">An array of field names (plain strings). Field names included in "event_fields"
+indicate that these field names are present <strong>in this exact order</strong> for each event
+in the "events" array. Each individual event then only has to log the
+corresponding values for those fields in the correct order.<a href="#section-3.3.4.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="field-name-semantics">
+<section id="section-3.4">
+        <h3 id="name-field-name-semantics">
+<a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-field-name-semantics" class="section-name selfRef">Field name semantics</a>
+        </h3>
+<p id="section-3.4-1">This section lists pre-defined, reserved field names with specific semantics and
+expected corresponding value formats.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4-2">Only one time-based field (see <a href="#time-based-fields" class="xref">Section 3.4.1</a>), the "event" field and the
+"data" field are mandatory. Typical setups will log "reference_time",
+"protocol_type" and "group_id" in "common_fields" and "relative_time", "category",
+"event" and "data" in "event_fields".<a href="#section-3.4-2" class="pilcrow">¶</a></p>
+<p id="section-3.4-3">Other field names are allowed, both in "common_fields" and "event_fields", but
+their semantics depend on the context of the log usage (e.g., for QUIC, the ODCID
+field is used), see <span>[<a href="#QLOG-QUIC-HTTP3" class="xref">QLOG-QUIC-HTTP3</a>]</span>.<a href="#section-3.4-3" class="pilcrow">¶</a></p>
+<div id="time-based-fields">
+<section id="section-3.4.1">
+          <h4 id="name-time-delta_time-and-referen">
+<a href="#section-3.4.1" class="section-number selfRef">3.4.1. </a><a href="#name-time-delta_time-and-referen" class="section-name selfRef">time, delta_time and reference_time + relative_time</a>
+          </h4>
+<p id="section-3.4.1-1">Required: one of these<a href="#section-3.4.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-2">There are three main modes for logging time:<a href="#section-3.4.1-2" class="pilcrow">¶</a></p>
+<ul>
+<li id="section-3.4.1-3.1">Include the full timestamp with each event ("time"). This approach uses the
+largest amount of characters.<a href="#section-3.4.1-3.1" class="pilcrow">¶</a>
+</li>
+<li id="section-3.4.1-3.2">Delta-encode each time value on the previously logged value ("delta_time").
+The first event can log the full timestamp. This approach uses the least amount
+of characters.<a href="#section-3.4.1-3.2" class="pilcrow">¶</a>
+</li>
+<li id="section-3.4.1-3.3">Specify a full "reference_time" timestamp up-front in "common_fields" and
+include only relatively-encoded values based on this reference_time with each
+event ("relative_time"). This approach uses a medium amount of characters.<a href="#section-3.4.1-3.3" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-3.4.1-4">The first option is good for stateless loggers, the second and third for stateful
+loggers. The third option is generally preferred, since it produces smaller files
+while being easier to reason about.<a href="#section-3.4.1-4" class="pilcrow">¶</a></p>
+<span id="name-three-different-approaches-"></span><div id="time_approaches">
+<figure id="figure-5">
+            <div class="artwork art-text alignLeft" id="section-3.4.1-5.1">
+<pre>
+The time approach will use:
+1500, 1505, 1522, 1588
+
+The delta_time approach will use:
+1500, 5, 17, 66
+
+The relative_time approach will:
+- set the reference_time to 1500 in "common_fields"
+- use: 0, 5, 22, 88
+
+</pre>
+</div>
+<figcaption><a href="#figure-5" class="selfRef">Figure 5</a>:
+<a href="#name-three-different-approaches-" class="selfRef">Three different approaches for logging timestamps</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.4.1-6">Events in each individual trace MUST be logged in strictly ascending timestamp
+order (though not necessarily absolute value, for the "delta_time" setup). Tools
+are NOT expected to sort all events on the timestamp before processing them.<a href="#section-3.4.1-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="group_ids">
+<section id="section-3.4.2">
+          <h4 id="name-group_id">
+<a href="#section-3.4.2" class="section-number selfRef">3.4.2. </a><a href="#name-group_id" class="section-name selfRef">group_id</a>
+          </h4>
+<p id="section-3.4.2-1">Required: no, but recommended<a href="#section-3.4.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-2">A single Trace can contain events from a variety of sources, belonging to for
+example a number of individual QUIC connections. For tooling considerations, it is
+necessary to have a well-defined way to split up events belonging to different
+logical groups into subgroups for visualization and processing. For example, if
+one type of log uses 4-tuples as identifiers and uses a field name "four_tuple"
+and another uses "ODCID", there is no way to know for generic tools which of these
+fields should be used to create subgroups. As such, qlog uses the generic
+"group_id" field to circumvent this issue.<a href="#section-3.4.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-3">The "group_id" field can be any type of valid JSON object, but is typically a
+string or integer. For more complex use cases, the group_id could become a complex
+object with several fields (e.g., a 4-tuple). In those cases, it would be wasteful
+to log these values in full every single time. This would also complicate
+tool-based processing. qlog allows using the "group_id" field in both
+"common_fields" and "event_fields" <strong>at the same time</strong> (where normally, a field
+is only allowed in one of both). If the "group_id" field is present in both lists,
+the "group_id" value in "common_fields" MUST be an array of the various present
+group ids for this trace. If this field is present, per-event "group_id" values
+are regarded as indices into the "common_fields.group_id" array. This is useful if the
+group_ids are known up-front or the qlog trace can be generated from a more
+verbose format afterwards. If this is not the case, it is acceptable to just log
+the complex objects as the "group_id" for each event. Both use cases are
+demonstrated in <a href="#group_id_repeated" class="xref">Figure 6</a> and <a href="#group_id_indexed" class="xref">Figure 7</a>.<a href="#section-3.4.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-4">Since "group_id" is a generic name, it conveys little of the semantics to the
+casual reader. It is best practice to also include a per use case additional field
+to the "common_fields" with a semantic name, that has the same value as the
+"group_id" field. For example, see the "ODCID" field in <a href="#qlog_json" class="xref">Figure 4</a> and the
+"four_tuples" field in <a href="#group_id_indexed" class="xref">Figure 7</a>.<a href="#section-3.4.2-4" class="pilcrow">¶</a></p>
+<span id="name-repeated-complex-group-id"></span><div id="group_id_repeated">
+<figure id="figure-6">
+            <div class="artwork art-text alignLeft art-json" id="section-3.4.2-5.1">
+<pre>
+{
+    "common_fields": {
+        "protocol_type":  "QUIC_HTTP3",
+    },
+    "event_fields": [
+        "time",
+        "group_id",
+        "category",
+        "event",
+        "data"
+    ],
+    "events": [[
+            1553986553579,
+            { "ip1": "2001:67c:1232:144:9498:6df6:f450:110b", "ip2": "2001:67c:2b0:1c1::198", "port1": 59105, "port2": 80 }
+            "transport",
+            "packet_received",
+            [...]
+        ],[
+            1553986553588,
+            { "ip1": "10.0.6.137", "ip2": "52.58.13.57", "port1": 56522, "port2": 443 }
+            "http",
+            "frame_parsed",
+            [...]
+        ],[
+            1553986553598,
+            { "ip1": "2001:67c:1232:144:9498:6df6:f450:110b", "ip2": "2001:67c:2b0:1c1::198", "port1": 59105, "port2": 80 }
+            "transport",
+            "packet_sent",
+            [...]
+        ],
+        ...
+    ]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-6" class="selfRef">Figure 6</a>:
+<a href="#name-repeated-complex-group-id" class="selfRef">Repeated complex group id</a>
+            </figcaption></figure>
+</div>
+<span id="name-indexed-complex-group-id"></span><div id="group_id_indexed">
+<figure id="figure-7">
+            <div class="artwork art-text alignLeft art-json" id="section-3.4.2-6.1">
+<pre>
+{
+    "common_fields": {
+        "protocol_type":  "QUIC_HTTP3",
+        "group_id": [
+            { "ip1": "2001:67c:1232:144:9498:6df6:f450:110b", "ip2": "2001:67c:2b0:1c1::198", "port1": 59105, "port2": 80 },
+            { "ip1": "10.0.6.137", "ip2": "52.58.13.57", "port1": 56522, "port2": 443 }
+        ],
+        "four_tuples": [
+            { "ip1": "2001:67c:1232:144:9498:6df6:f450:110b", "ip2": "2001:67c:2b0:1c1::198", "port1": 59105, "port2": 80 },
+            { "ip1": "10.0.6.137", "ip2": "52.58.13.57", "port1": 56522, "port2": 443 }
+        ]
+    },
+    "event_fields": [
+        "time",
+        "group_id",
+        "category",
+        "event",
+        "data"
+    ],
+    "events": [[
+            1553986553579,
+            0,
+            "transport",
+            "packet_received",
+            [...]
+        ],[
+            1553986553588,
+            1,
+            "http",
+            "frame_parsed",
+            [...]
+        ],[
+            1553986553598,
+            0,
+            "transport",
+            "packet_sent",
+            [...]
+        ],
+        ...
+    ]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
+<a href="#name-indexed-complex-group-id" class="selfRef">Indexed complex group id</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="category-and-event">
+<section id="section-3.4.3">
+          <h4 id="name-category-and-event">
+<a href="#section-3.4.3" class="section-number selfRef">3.4.3. </a><a href="#name-category-and-event" class="section-name selfRef">category and event</a>
+          </h4>
+<p id="section-3.4.3-1">Required: event only. category is recommended.<a href="#section-3.4.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.3-2">Both category and event are separate, generic strings. Category allows a
+higher-level grouping of events per event type.<a href="#section-3.4.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.3-3">For example, instead of having an event of value "transport_packet_sent", we
+instead have a category of "transport" and event type of "packet_sent". This
+allows for fast and high-level filtering based on category and re-use of event
+across categories.<a href="#section-3.4.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="data">
+<section id="section-3.4.4">
+          <h4 id="name-data">
+<a href="#section-3.4.4" class="section-number selfRef">3.4.4. </a><a href="#name-data" class="section-name selfRef">data</a>
+          </h4>
+<p id="section-3.4.4-1">Required: yes<a href="#section-3.4.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.4-2">The data field is a generic object (list of name-value pairs). It contains the
+per-event metadata and its form and semantics are defined per specific sort of
+event (typically per event, but possibly also by combination of category and
+event). For example data field value definitons for QUIC and HTTP/3, see
+<span>[<a href="#QLOG-QUIC-HTTP3" class="xref">QLOG-QUIC-HTTP3</a>]</span>.<a href="#section-3.4.4-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="custom-fields-1">
+<section id="section-3.4.5">
+          <h4 id="name-custom-fields-2">
+<a href="#section-3.4.5" class="section-number selfRef">3.4.5. </a><a href="#name-custom-fields-2" class="section-name selfRef">custom fields</a>
+          </h4>
+<p id="section-3.4.5-1">Note that qlog files can always contain custom fields (e.g., a per-event field
+indicating its privacy properties) and assign custom values to existing fields
+(e.g., new categories for implemenation-specific events). Loggers are free to add
+such fields and field values and tools MUST either ignore these unknown fields or
+show them in a generic fashion.<a href="#section-3.4.5-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="event-field-values">
+<section id="section-3.4.6">
+          <h4 id="name-event-field-values">
+<a href="#section-3.4.6" class="section-number selfRef">3.4.6. </a><a href="#name-event-field-values" class="section-name selfRef">Event field values</a>
+          </h4>
+<p id="section-3.4.6-1">Required: yes<a href="#section-3.4.6-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-2">The specific values for each of these fields and their semantics are defined in
+separate documents, specific per protocol or use case.<a href="#section-3.4.6-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-3">For example: event definitions for QUIC and HTTP/3 can be found in
+<span>[<a href="#QLOG-QUIC-HTTP3" class="xref">QLOG-QUIC-HTTP3</a>]</span>.<a href="#section-3.4.6-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="triggers">
+<section id="section-3.5">
+        <h3 id="name-triggers">
+<a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-triggers" class="section-name selfRef">triggers</a>
+        </h3>
+<p id="section-3.5-1">Required: no<a href="#section-3.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.5-2">Sometimes, additional information is needed in the case where a single event can
+be caused by a variety of other events. In the normal case, the context of the
+surrounding log messages gives a hint as to which of these other events was the
+cause. However, in highly-parallel and optimized implementations, corresponding
+log messages might be wide and far between in time. Another option is to use
+triggers instead of logging extra full events to get more fine-grained information
+without much additional overhead.<a href="#section-3.5-2" class="pilcrow">¶</a></p>
+<p id="section-3.5-3">For this reason, qlog allows an optional "trigger" property on the value of the
+"data" field to convey such information. It indicates the reason this event
+occured. The possible reasons depend on the type of event and SHOULD be specified
+next to each event definition. Triggers can be of any type, but are typically
+logged as strings. For an example, see <a href="#trigger_example" class="xref">Figure 8</a>.<a href="#section-3.5-3" class="pilcrow">¶</a></p>
+<span id="name-trigger-example"></span><div id="trigger_example">
+<figure id="figure-8">
+          <div class="artwork art-text alignLeft art-json" id="section-3.5-4.1">
+<pre>
+{
+    "common_fields": {
+        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+        "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
+        "protocol_type":  "QUIC_HTTP3",
+        "reference_time": "1553986553572"
+    },
+    "event_fields": [
+        "relative_time",
+        "category",
+        "event",
+        "data"
+    ],
+    "events": [[
+            20,
+            "transport",
+            "packet_received",
+            [
+                // Indicates that the packet wasn't received exactly now,
+                // but instead had been buffered because there were no
+                // appropriate TLS keys available to decrypt it before.
+                "trigger": "keys_available",
+                ...
+            ]
+        ],[
+            27,
+            "http",
+            "frame_created",
+            [
+                // Indicates that this frame is being created in response
+                // to an HTTP GET/POST/... request
+                "trigger": "request",
+                ...
+            ]
+        ],
+        ...
+    ]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
+<a href="#name-trigger-example" class="selfRef">Trigger example</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="tooling-requirements">
+<section id="section-4">
+      <h2 id="name-tooling-requirements">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-tooling-requirements" class="section-name selfRef">Tooling requirements</a>
+      </h2>
+<p id="section-4-1">Tools MUST indicate which qlog version(s) they support. Additionally, they SHOULD
+indicate exactly which values for and properties of the category, event and data
+fields they look for to execute their logic. Tools SHOULD perform a (high-level)
+check if an input qlog file adheres to the expected qlog schema. If a tool
+determines a qlog file does not contain enough supported information to correctly
+execute the tool's logic, it SHOULD generate a clear error message to this effect.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<p id="section-4-2">Tools MUST NOT produce errors for any field names and values in the qlog format
+that they do not recognize. Tools CAN indicate unknown event occurences within
+their context (e.g., marking unknown events on a timeline for manual
+interpretation by the user).<a href="#section-4-2" class="pilcrow">¶</a></p>
+<p id="section-4-3">Tool authors should be aware that, depending on the logging implementation, some
+events will not always be present in all traces. For example, using a circular
+logging buffer of a fixed size, it could be that the earliest events (e.g.,
+connection setup events) are later overwritten by "newer" events. Tool authors are
+encouraged to take this setup into account and to make their tools robust enough
+to still provide adequate output for incomplete logs. Loggers using a circular
+buffer are in turn reminded of the requirement of listing events in strict time
+order, as er <a href="#time-based-fields" class="xref">Section 3.4.1</a>.<a href="#section-4-3" class="pilcrow">¶</a></p>
+<p id="section-4-4">Most JSON parsers strictly follow the JSON specification. This includes the rule
+that trailing comma's are not allowed. As it is frequently annoying to remove
+these trailing comma's when logging events in a streaming fashion, tool
+implementers SHOULD allow the last event entry of a qlog trace to be an empty
+array. This allows loggers to simply close the qlog file by appending "[]]}]}"
+after their last streamed event.<a href="#section-4-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="methods-of-access">
+<section id="section-5">
+      <h2 id="name-methods-of-access">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-methods-of-access" class="section-name selfRef">Methods of Access</a>
+      </h2>
+<p id="section-5-1">qlog implementers MAY make generated logs and traces on an endpoint (typically the
+server) available via the following .well-known URI:<a href="#section-5-1" class="pilcrow">¶</a></p>
+<ul class="ulEmpty">
+<li class="ulEmpty" id="section-5-2.1">.well-known/log/{IDENTIFIER}<a href="#section-5-2.1" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-5-3">The IDENTIFIER variable depends on the setup and the chosen protocol. For example,
+for QUIC logging, the ODCID is often used to uniquely identify a connection.<a href="#section-5-3" class="pilcrow">¶</a></p>
+<p id="section-5-4">Implementers SHOULD allow users to fetch logs for a given connection on a 2nd,
+separate connection. This helps prevent pollution of the logs by fetching them
+over the same connection that one wishes to observe through the log. Ideally, for
+the QUIC use case, the logs should also be approachable via an HTTP/2 or HTTP/1.1
+endpoint, to aid debugging.<a href="#section-5-4" class="pilcrow">¶</a></p>
+<p id="section-5-5">qlog implementers SHOULD NOT enable this .well-known endpoint in typical
+production settings to prevent (malicious) users from downloading logs from other
+connections. Implementers are advised to disable this endpoint by default and
+require specific actions from the end users to enable it (and potentially qlog
+itself).<a href="#section-5-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="notes-on-practical-use">
+<section id="section-6">
+      <h2 id="name-notes-on-practical-use">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-notes-on-practical-use" class="section-name selfRef">Notes on Practical Use</a>
+      </h2>
+<p id="section-6-1">Note that, even with the optimizations detailed above, it is to be expected that
+qlog files (as they are JSON) will be relatively large when compared to binary
+formats. If this turns out to be an issue in a real deployment, it is a perfectly
+acceptable practices to first generate the initial application-side logs in
+another (custom) (binary) format. Afterwards, those bespoke files can then be
+transformed into the qlog format for improved interoperability with tools and
+other logs. A prime example of this is converting of binary .pcap packet capture
+files (e.g., obtained from wireshark or tcpdump) to the qlog format. <a href="https://github.com/quiclog/pcap2qlog">Such a
+conversion tool is available for the QUIC and HTTP/3
+protocols</a>.<a href="#section-6-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-7">
+      <h2 id="name-security-considerations">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-7-1">TODO : discuss privacy and security considerations (e.g., what NOT to log, what to
+strip out of a log before sharing, ...)<a href="#section-7-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-8">
+      <h2 id="name-iana-considerations">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-8-1">TODO: primarily the .well-known URI<a href="#section-8-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<section id="section-9">
+      <h2 id="name-normative-references">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      </h2>
+<dl class="references">
+<dt id="QLOG-QUIC-HTTP3">[QLOG-QUIC-HTTP3]</dt>
+<dd>
+<span class="refAuthor">Marx, R., Ed.</span>, <span class="refTitle">"QUIC and HTTP/3 event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-marx-qlog-event-definitions-quic-h3-01</span>, <time datetime="2019-10-14">14 October 2019</time>, <span>&lt;<a href="https://tools.ietf.org/html/draft-marx-qlog-event-definitions-quic-h3-01">https://tools.ietf.org/html/draft-marx-qlog-event-definitions-quic-h3-01</a>&gt;</span>. </dd>
+<dt id="RFC2119">[RFC2119]</dt>
+<dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc2119">https://www.rfc-editor.org/info/rfc2119</a>&gt;</span>. </dd>
+</dl>
+</section>
+<div id="change-log">
+<section id="section-appendix.a">
+      <h2 id="name-change-log">
+<a href="#section-appendix.a" class="section-number selfRef">Appendix A. </a><a href="#name-change-log" class="section-name selfRef">Change Log</a>
+      </h2>
+<div id="since-draft-marx-qlog-main-schema-00">
+<section id="section-a.1">
+        <h2 id="name-since-draft-marx-qlog-main-">
+<a href="#section-a.1" class="section-number selfRef">A.1. </a><a href="#name-since-draft-marx-qlog-main-" class="section-name selfRef">Since draft-marx-qlog-main-schema-00:</a>
+        </h2>
+<ul>
+<li id="section-a.1-1.1">All field names are now lowercase (e.g., category instead of CATEGORY)<a href="#section-a.1-1.1" class="pilcrow">¶</a>
+</li>
+<li id="section-a.1-1.2">Triggers are now properties on the "data" field value, instead of separate field
+types (#23)<a href="#section-a.1-1.2" class="pilcrow">¶</a>
+</li>
+<li id="section-a.1-1.3">group_ids in common_fields is now just also group_id<a href="#section-a.1-1.3" class="pilcrow">¶</a>
+</li>
+</ul>
+</section>
+</div>
+</section>
+</div>
+<div id="design-variations">
+<section id="section-appendix.b">
+      <h2 id="name-design-variations">
+<a href="#section-appendix.b" class="section-number selfRef">Appendix B. </a><a href="#name-design-variations" class="section-name selfRef">Design Variations</a>
+      </h2>
+<ul>
+<li id="section-appendix.b-1.1">
+          <a href="https://github.com/google/quic-trace">Quic-trace</a> takes a slightly different
+approach based on protocolbuffers.<a href="#section-appendix.b-1.1" class="pilcrow">¶</a>
+</li>
+<li id="section-appendix.b-1.2">
+          <a href="https://github.com/EricssonResearch/spindump">Spindump</a> also defines a custom
+text-based format for in-network measurements<a href="#section-appendix.b-1.2" class="pilcrow">¶</a>
+</li>
+<li id="section-appendix.b-1.3">
+          <a href="https://www.wireshark.org/">Wireshark</a> also has a QUIC dissector and its
+results can be transformed into a json output format using tshark.<a href="#section-appendix.b-1.3" class="pilcrow">¶</a>
+</li>
+</ul>
+<p id="section-appendix.b-2">The idea is that qlog is able to encompass the use cases for both of these
+alternate designs and that all tooling converges on the qlog standard.<a href="#section-appendix.b-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="acknowledgements">
+<section id="section-appendix.c">
+      <h2 id="name-acknowledgements">
+<a href="#section-appendix.c" class="section-number selfRef">Appendix C. </a><a href="#name-acknowledgements" class="section-name selfRef">Acknowledgements</a>
+      </h2>
+<p id="section-appendix.c-1">Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kuehlewind, Jeremy Laine and Lucas
+Pardue for their feedback and suggestions.<a href="#section-appendix.c-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="section-appendix.d">
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Robin Marx</span></div>
+<div dir="auto" class="left"><span class="org">Hasselt University</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:robin.marx@uhasselt.be" class="email">robin.marx@uhasselt.be</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
