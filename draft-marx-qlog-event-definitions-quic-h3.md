@@ -1774,8 +1774,10 @@ enum TransportError {
     final_size_error,
     frame_encoding_error,
     transport_parameter_error,
+    connection_id_limit_error,
     protocol_violation,
-    invalid_migration,
+    invalid_token,
+    application_error,
     crypto_buffer_exceeded
 }
 ~~~
