@@ -817,8 +817,6 @@ Data:
 
     ssthresh?:number, // in bytes
 
-    packet_number_space?:PacketNumberSpace, // mainly necessary if an implementation does not log other events (e.g., key_retired) that indicate the pn-space has changed
-
     // qlog defined
     packets_in_flight?:number, // sum of all packet number spaces
     in_recovery?:boolean, // high-level signal. For more granularity, see congestion_state_updated
@@ -898,10 +896,6 @@ TODO: how about CC algo's that use multiple timers? How generic do these events
 need to be? Just support QUIC-style recovery from the spec or broader?
 
 TODO: read up on the loss detection logic in draft-27+ and see if this suffices
-
-Triggers:
-
-* no_packets_outstanding // for cancelling the timer
 
 ### packet_lost
 Importance: Core
