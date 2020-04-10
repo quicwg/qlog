@@ -578,6 +578,10 @@ Triggers:
 * "protocol_violation"
 * "dos_prevention"
 * "unsupported_version"
+* "unexpected_version_negotiation"
+* "unexpected_retry"
+* "unexpected_source_connection_id"
+* "unexpected_version"
 
 Note: sometimes packets are dropped before they can be associated with a
 particular connection (e.g., in case of "unsupported_version"). This situation is
