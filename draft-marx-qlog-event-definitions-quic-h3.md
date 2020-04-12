@@ -578,8 +578,7 @@ Triggers:
 * "protocol_violation"
 * "dos_prevention"
 * "unsupported_version"
-* "unexpected_version_negotiation"
-* "unexpected_retry"
+* "unexpected_packet"
 * "unexpected_source_connection_id"
 * "unexpected_version"
 
