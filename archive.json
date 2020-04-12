@@ -1,6 +1,6 @@
 {
   "magic": "B8n2c@e8kvfx",
-  "timestamp": "2020-03-28T10:52:17.919606+00:00",
+  "timestamp": "2020-04-12T12:10:43.287677+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -1071,7 +1071,7 @@
       "labels": [],
       "body": "Per @huitema:\r\n\r\n` I would split the active state between \"start\" and \"confirmed\", and the handshake start on the server side between \"received a request\" and \"address validated\".`\r\n\r\n```\r\nThe server will go through the \"anti dos mitigation\" phase until the client's address is validated. That's important, because the server behavior in that state is restricted. Once it has sent all the handshake packets, the server goes to a \"false start\" phase in which it can send 1-RTT packets but (should) not receive. And then once it receives the client finished and sends the \"handshake done\", it moves to a confirmed state, at which point it can deal with migration and key update.\r\n\r\nClient is kind of the same. It goes from initiating to handshake, then to an \"almost ready\" phase after sending the \"client finished\" and getting the 1rtt keys. But it will only become really active once it receives the \"handshake done\" or an equivalent.\r\n```",
       "createdAt": "2020-02-04T11:40:06Z",
-      "updatedAt": "2020-03-08T23:24:39Z",
+      "updatedAt": "2020-04-12T12:10:01Z",
       "closedAt": null,
       "comments": [
         {
@@ -1080,6 +1080,13 @@
           "body": "Defining connection states is hard, but here is what I would suggest:\r\n\r\n1) Client side, up to the \"ready\" state:\r\n* attempted (Initial sent, no handshake keys received yet)\r\n* handshake (handshake keys received)\r\n* almost ready (1RTT keys received, but handshake done not received yet)\r\n* ready (or active) (handshake done received from server, or equivalent)\r\n2) Server side:\r\n* received (initial received)\r\n* validated (client address has been verified)\r\n* handshake (handshake packets received from client, handshake in progress)\r\n* false start (1RTT keys write received, but handshake not complete yet)\r\n* ready (handshake complete, handshake done sent)\r\n3) Both sides:\r\n* draining (close connection packet sent or received, waiting for some time)\r\n* disconnected (done with this connection)\r\n\r\n",
           "createdAt": "2020-03-08T23:24:39Z",
           "updatedAt": "2020-03-08T23:24:39Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I like the addition of `validated`. That can be really useful when debugging the early handshake stages.\r\n\r\n> * almost ready (1RTT keys received, but handshake done not received yet)\r\n> * ready (or active) (handshake done received from server, or equivalent)\r\n\r\nThis could be `handshake_completed` and `handshake_confimred`. Both of them would work for client as well as the server.\r\n\r\n> false start (1RTT keys write received, but handshake not complete yet)\r\n\r\nNot sure if we need this. We already have a `key_updated` event.",
+          "createdAt": "2020-04-12T12:08:56Z",
+          "updatedAt": "2020-04-12T12:10:01Z"
         }
       ]
     },
@@ -1349,9 +1356,17 @@
       "labels": [],
       "body": "Currently, `data_moved` is in the HTTP category, but it's (application) protocol agnostic and can be used for other application-layer protocols as well.\r\n\r\ncc @marten-seemann ",
       "createdAt": "2020-03-13T08:11:40Z",
-      "updatedAt": "2020-03-13T08:11:40Z",
+      "updatedAt": "2020-04-10T17:34:54Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "strong agree!",
+          "createdAt": "2020-04-10T17:34:54Z",
+          "updatedAt": "2020-04-10T17:34:54Z"
+        }
+      ]
     },
     {
       "number": 66,
@@ -1441,9 +1456,104 @@
       "labels": [],
       "body": "When looking at a qlog at this time, if there is a certain event type missing, you don't know if it's because those events never occurred or if the implementation simply doesn't support/log that event type. \r\n\r\nThis is especially troublesome if you want to selectively enable/disable certain types to reduce overhead when you're doing targeted \"live\" debugging on a deployed system.\r\n\r\nThe simplest solution I can see is to add a new field to `configuration`, for example:\r\n\r\n> supportedEvents:Array\\<string\\> // each string is category:event_type (e.g., transport:packet_sent)\r\n\r\nSome bikeshedding can help to decide if we need two separate fields (supportedCategories separately for example) or if we can cut out the category in here completely (as there is little overlap in event names atm).\r\n\r\nThis would also be interesting for doing a fast \"is this trace compatible with this visualization\"-check in qvis and others tools. \r\n\r\nThanks to @mjoras for reporting.",
       "createdAt": "2020-03-28T10:36:52Z",
-      "updatedAt": "2020-03-28T10:37:39Z",
+      "updatedAt": "2020-03-29T10:53:44Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This only captures a subset of the possible changes. For example, you wouldn't be able to tell if a  qlog implementation already supported the recently added `stateless_reset` packet type or not.\r\n\r\nIn the end, I think it makes more sense to add some kind of versioning scheme to your qlog file (which is orthogonal to the `qlog_version`), and would not be interpreted by tools.",
+          "createdAt": "2020-03-29T08:53:36Z",
+          "updatedAt": "2020-03-29T08:53:36Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I'm not sure I follow you here...\r\nIf the implementation doesn't support stateless_reset, it won't log them either in the first place, so them being absent from the `supportedEvents` list is the same.\r\n\r\nThis is not really intended to show what an implementation \"supports\" but more what is has \"enabled\". The situation is that as a user, you get a random qlog file in front of you, on which you need to do analysis. You're looking for the occurrence of a certain event type, but it isn't there. Is that because the event type wasn't being logged for this log (e.g., mvfst wants to selectively log only -some- of the supported event types to keep overhead down) or because it actually never occurred during the connection (e.g., signalling the bug you're looking for).\r\n\r\nCould you expand on the orthogonal versioning scheme? For your example of the `stateless_reset`, that would just be `draft-02` going forward from my viewpoint. \r\n\r\n\r\n\r\n",
+          "createdAt": "2020-03-29T10:53:44Z",
+          "updatedAt": "2020-03-29T10:53:44Z"
+        }
+      ]
+    },
+    {
+      "number": 74,
+      "id": "MDU6SXNzdWU1ODk2MDg4Nzg=",
+      "title": "Add packet_number to frames_processed",
+      "url": "https://github.com/quiclog/internet-drafts/issues/74",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "With recent discussions on that it's sometimes expensive to log parsed frames in packet_received/packet_sent directly, it would be interesting to make frames_processed a bit more usable in practice.\r\n\r\nGiving it a packet_number allows it to be more easily linked to a specific packet and thus can be combined with packet_sent/received.\r\n\r\nThough, maybe we should rather go for a frame_created/frame_parsed equivalent to H3, as _processed only implies _parsed at this point. In that vein, maybe make it multiple frameS instead of just 1? ",
+      "createdAt": "2020-03-28T16:19:26Z",
+      "updatedAt": "2020-03-28T16:19:26Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 75,
+      "id": "MDU6SXNzdWU1OTAyMDI5MDU=",
+      "title": "Add way to log contents of version negotiation packet",
+      "url": "https://github.com/quiclog/internet-drafts/issues/75",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, there is no way to do this.\r\n\r\nPossible approaches:\r\n1. add `supported_versions:Array<string>` to `parameters_set` (similar to ALPN in #28)\r\n2. add `supported_versions:Array<string>` to the `packet_*` events (similar to how we do stateless_reset\r\n\r\nI personally have a preference for nr. 2, since it's consistent with how other packets are handled. ALPN is after all indeed a parameter, not a full packet. \r\n\r\ncc @mpiraux",
+      "createdAt": "2020-03-30T11:09:53Z",
+      "updatedAt": "2020-03-30T11:09:53Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 76,
+      "id": "MDU6SXNzdWU1OTU2NzI3NDI=",
+      "title": "packet_buffered should have a packet_size field",
+      "url": "https://github.com/quiclog/internet-drafts/issues/76",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "This field would be really helpful for debugging. Without a packet size, there's no way to correlate a buffered packet to a packet that is later dequeued from the buffer.",
+      "createdAt": "2020-04-07T08:01:26Z",
+      "updatedAt": "2020-04-08T09:07:20Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Good point.\r\n\r\nReminder to me: maybe mention in the comments that it's primarily useful when you're buffering because keys were not available yet (e.g., during handshake).\r\n\r\nAlso: related to #40 ",
+          "createdAt": "2020-04-08T09:07:03Z",
+          "updatedAt": "2020-04-08T09:07:20Z"
+        }
+      ]
+    },
+    {
+      "number": 78,
+      "id": "MDU6SXNzdWU1OTg0MDUzODI=",
+      "title": "revisit connection_state_updated",
+      "url": "https://github.com/quiclog/internet-drafts/issues/78",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I see the following problems with the `connection_state_updated` event:\r\n1. `attempted` seems to be a duplicate of `connection_started` for the client (i.e. the two events would always be emitted at the same time)\r\n2. `reset` is impossible to log. You send a stateless reset if you lost state for a connection (after a crash or reboot, or if a packet was misrouted to the wrong backend server). In any case, there\u2019s no connection state to update by definition.\r\n3. `handshake` seems to be a duplicate of connection_started for both sides.\r\n\r\nI think these events could be removed without losing any information in the log.\r\n\r\nI suggest adding a new event for [confirmation of the handshake](https://quicwg.org/base-drafts/draft-ietf-quic-tls.html#name-handshake-confirmed). Maybe it would make sense to rename `active` to `handshake_completed` and add a `handshake_confirmed`?",
+      "createdAt": "2020-04-12T04:01:04Z",
+      "updatedAt": "2020-04-12T11:31:59Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Potential duplicate of #49, should be handled together. \r\n\r\n(meaning that, yes, this should be handled for -02)",
+          "createdAt": "2020-04-12T11:31:59Z",
+          "updatedAt": "2020-04-12T11:31:59Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -1661,17 +1771,17 @@
       "id": "MDExOlB1bGxSZXF1ZXN0Mzk1MDU5NTUz",
       "title": "update transport errors",
       "url": "https://github.com/quiclog/internet-drafts/pull/70",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2020-03-28T07:26:37Z",
-      "updatedAt": "2020-03-28T07:36:38Z",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
+      "updatedAt": "2020-03-28T11:00:33Z",
+      "closedAt": "2020-03-28T11:00:33Z",
+      "mergedAt": "2020-03-28T11:00:33Z",
+      "mergedBy": "rmarx",
       "comments": [],
       "reviews": []
     },
@@ -1692,6 +1802,99 @@
       "mergedAt": "2020-03-28T10:29:31Z",
       "mergedBy": "rmarx",
       "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 73,
+      "id": "MDExOlB1bGxSZXF1ZXN0Mzk1MDc5MjQ3",
+      "title": "Merge loss_timer events",
+      "url": "https://github.com/quiclog/internet-drafts/pull/73",
+      "state": "MERGED",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #69.\r\n\r\nNot 100% sure this is enough for all the latest draft-27(+) changes though, added a TODO in the draft for that purpose. \r\n\r\nAlso added a packet_number_space field to metrics_updated to be flexible for implementations that don't want to implement all types of events. It's not a great fit at that location, but it seemed the most synergistic without having a completely new event type.\r\n\r\nPTAL @marten-seemann ",
+      "createdAt": "2020-03-28T10:55:36Z",
+      "updatedAt": "2020-03-29T11:23:59Z",
+      "closedAt": "2020-03-29T11:23:59Z",
+      "mergedAt": "2020-03-29T11:23:59Z",
+      "mergedBy": "rmarx",
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3MzgzMzg4MzI3",
+          "commit": {
+            "abbreviatedOid": "1833887"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2020-03-29T08:59:00Z",
+          "updatedAt": "2020-03-29T09:01:06Z",
+          "comments": [
+            {
+              "originalPosition": 4,
+              "body": "There's no single point in time where the packet number space changes for loss recovery purposes. On the contrary, both client and server will have packets from different packet number spaces in flight during every QUIC handshake.\r\n\r\nTherefore I'd suggest to remove this field.",
+              "createdAt": "2020-03-29T08:59:00Z",
+              "updatedAt": "2020-03-29T11:10:15Z"
+            },
+            {
+              "originalPosition": 64,
+              "body": "Why do we need to export a trigger, if this is the only possible reason for canceling the timer anyway?",
+              "createdAt": "2020-03-29T09:00:48Z",
+              "updatedAt": "2020-03-29T11:10:15Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3MzgzMzk5MDAx",
+          "commit": {
+            "abbreviatedOid": "11720e0"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2020-03-29T11:13:37Z",
+          "updatedAt": "2020-03-29T11:13:37Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 77,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDAxNzczNjIw",
+      "title": "add more packet_dropped triggers",
+      "url": "https://github.com/quiclog/internet-drafts/pull/77",
+      "state": "MERGED",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2020-04-10T06:13:27Z",
+      "updatedAt": "2020-04-12T12:10:18Z",
+      "closedAt": "2020-04-12T12:10:18Z",
+      "mergedAt": "2020-04-12T12:10:18Z",
+      "mergedBy": "rmarx",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Per discussion on slack, `unexpected_version_negotiation` and `unexpected_retry` can be merged into `unexpected_packet`, given that we have a `packet_type` field for the disambiguation. ",
+          "createdAt": "2020-04-12T11:41:05Z",
+          "updatedAt": "2020-04-12T11:41:05Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@rmarx Done. Updated the PR.",
+          "createdAt": "2020-04-12T11:56:16Z",
+          "updatedAt": "2020-04-12T11:56:16Z"
+        }
+      ],
       "reviews": []
     }
   ]
