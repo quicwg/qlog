@@ -504,6 +504,7 @@ Data:
     is_coalesced?:boolean,
 
     stateless_reset_token?:string, // only if PacketType === stateless_reset
+    supported_versions:Array<string>, // only if PacketType === version_negotiation
 
     raw_encrypted?:string, // for debugging purposes
     raw_decrypted?:string  // for debugging purposes,
@@ -539,6 +540,7 @@ Data:
     is_coalesced?:boolean,
 
     stateless_reset_token?:string, // only if PacketType === stateless_reset
+    supported_versions:Array<string>, // only if PacketType === version_negotiation
 
     raw_encrypted?:string, // for debugging purposes
     raw_decrypted?:string  // for debugging purposes,
