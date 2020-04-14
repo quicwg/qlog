@@ -358,6 +358,7 @@ Triggers:
 * "clean" // when closing normally
 * "application" // e.g., HTTP/3's GOAWAY frame
 * "stateless_reset" // because a stateless reset was received
+* "version_negotiation" // because there's no mutually supported version
 
 ### MIGRATION-related events
 e.g., path_updated
