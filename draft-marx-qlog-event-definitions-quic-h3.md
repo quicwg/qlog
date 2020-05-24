@@ -454,6 +454,8 @@ Data:
 
     // transport parameters from the TLS layer:
     original_destination_connection_id?:string, // hex
+    initial_source_connection_id?:string, // hex
+    retry_source_connection_id?:string, // hex
     stateless_reset_token?:string, // hex
     disable_active_migration?:boolean,
 
