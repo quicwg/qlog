@@ -1786,7 +1786,7 @@ class UnknownFrame{
 enum TransportError {
     no_error,
     internal_error,
-    server_busy,
+    connection_refused,
     flow_control_error,
     stream_limit_error,
     stream_state_error,
