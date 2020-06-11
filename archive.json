@@ -1,6 +1,6 @@
 {
-  "magic": "B8n2c@e8kvfx",
-  "timestamp": "2020-04-14T14:40:28.631683+00:00",
+  "magic": "E!vIA5L86J2I",
+  "timestamp": "2020-06-11T15:07:00.888518+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -681,7 +681,7 @@
       "labels": [],
       "body": "I just started working on implementing qlog in quic-go. Maybe it's because I'm still fairly unfamiliar with qlog, but I feel like encoding things in JSON leads to some awkward hacks. Examples of these are:\r\n* A lot of numbers are encoded as strings, e.g. stream offset or packet numbers. I assume this is because JSON doesn't properly handle uint64s (or does it?).\r\n* IP addresses are encoded as strings. If that means they're supposed to be encoded in the human-readable encoding (with . and :), that's ambiguous for IPv6 addresses. Really, IP addresses should be a byte array.\r\n* (Raw) packet data is supposed to be hex encoded, which greatly increases the log size.\r\n* Some fields are defined as enums, whereas other fields that just have a few options are encoded as strings. Examples are the `stream_side` (\"sending\" or \"receiving\") and `stream_type` (\"unidirectional\" or \"bidirectional\"), which are both string fields.\r\n\r\nI'm not sure if I like trick to save bytes on the `events` by first defining the `event_fields` and then using a list instead of an object to encode the `events`. To me, this feels more like a hack to work around the shortcomings of JSON, namely the repetition of the field labels when using objects.\r\nAs far as I can see, a binary encoding scheme would be able to provide a type-safe representation here without repeating the field labels (and blowing up the file size), as long as it's possible to define some `common_fields` for a connection.\r\n\r\nA protobuf-based logging format (This is just a suggestion. Protobufs are the thing I'm most familiar with, maybe there are better choices out there.) would resolve the encoding ambiguities I listed above, because we'd be able to make use of a strong typing system, which would allow us to completely eliminate the use of `string`s (except for places where things actually are strings, e.g. CONNECTION_CLOSE reason phrases). Furthermore, it would greatly simplify implementing qlog: Just fill in the corresponding fields in the Protobuf messages, call `Marshal()`, and you're done. No need to manually define dozens of logging structs and make sure they're correctly serialized into qlog's flavor of JSON.",
       "createdAt": "2019-11-19T07:30:57Z",
-      "updatedAt": "2020-03-18T11:10:59Z",
+      "updatedAt": "2020-04-22T09:56:02Z",
       "closedAt": null,
       "comments": [
         {
@@ -732,6 +732,20 @@
           "body": "Thanks a lot for that @huitema. Doing something similar to the \"block format\" would be trivial for qlog as well. However, it mismatches with how I thought general purpose compression works in my head... don't those algorithms also build that type of lookup-table on the fly? I will test with manual block formats as well and see what that gives.\r\n\r\nAnother interesting ref from @martinthomson https://tools.ietf.org/html/draft-mattsson-tls-cbor-cert-compress-00",
           "createdAt": "2020-03-18T11:10:58Z",
           "updatedAt": "2020-03-18T11:10:58Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So I've been doing some tests of my own to figure out the best approach to this for qlog.\r\n\r\nI've created converter scripts (see https://github.com/quiclog/pcap2qlog/tree/binary/src/converters) that use a lookup table/dictionary instead of repeating values, one that cbor encodes the files and a (rudimentary) protobuf schema. The dictionary is currently fully dynamic and stored inside the resulting file, but this can obviously be improved by having a static shared dictionary with a dynamic part for just the field values (much like QPACK and Chrome's NetLog). \r\n\r\nI've then also looked at various compression schemes (https://github.com/quiclog/pcap2qlog/blob/binary/src/scripts/comparisons/compare.sh) (xz, gzip, brotli, zstd, lz4), focusing mainly on the schemes most often seen on the web for on-the-fly compression (gzip 6 and brotli 4).\r\n\r\nFull results can be found at https://gist.github.com/rmarx/49bb14f83157d9fe59fb40e7c05b1f3f, a bit nicer representation in the following image (sizes for traces in which a 500MB or 100MB file were downloaded from the lsquic public endpoint). The blue value is the reference point for the percentages, green is the \"best in class\" for that row:\r\n\r\n![2020-04-22 11_27_11-results xlsx - Excel](https://user-images.githubusercontent.com/2240689/79965403-410ed380-848c-11ea-9d66-b1a90bd4bc72.png)\r\n\r\n\r\nMain takeaways for me:\r\n1. protobuf is the smallest, but not by a huge margin compared to dictionary+cbor, especially not when compression is used.\r\n2. compression alone saves massively, even on the original JSON file or direct CBOR version of that\r\n3. protobuf without compression is still quite large (23% of original), so I'd reckon you'd always use compression for storage/transmission anyway? \r\n\r\nNext to these tests, we also ran a survey among QUIC experts (implementers and researchers), on which we got replies from 28 participants (thanks everyone!). Part of the survey was to ask how important they felt features like \"fast (de)serialization, small file size, flexibility (e.g., easily add new event types), grep-ability\" were. The full results will be posted soon (are part of a publication we're preparing), but the gist of it is:\r\n\r\n![2020-04-22 11_37_40-QUIC and HTTP_3 Debugging Survey - March 2020 - Google Forms](https://user-images.githubusercontent.com/2240689/79966456-c050d700-848d-11ea-9113-d9c2a230d8ab.png)\r\n\r\nMy interpretation:\r\n1. Flexibility is the major selling point across the board. I personally believe moving to something like protobuf sort of robs us from that (much more difficult to add new event types as you have to update the schema)\r\n2. Most don't care too much about (de)serialization performance\r\n3. Small file size was regarded as important, but again not as much as flexibility. \r\n4. grep-ability was also considered an important feature by many\r\n5. easy integration is also a major point and this would be easier with something like protobuf\r\n\r\nFinally, we also talked to Facebook (cc @mjoras), who have been deploying qlog at scale, logging over 30 billion qlog events per day. Compared to their earlier binary format, qlog is about 2-3x larger and takes 50% longer to serialize. Yet, this is quite manageable on the server side, where they log full-string JSON events to a centralized service. On the client, they do find the file-size to be prohibitive to upload granular full qlogs (containing all events they'd like). Yet, Matt was also adamant that they'd rather keep the flexibility of the JSON format than move to a more inflexible binary one. They were considering utilizing compression and writing a custom JSON (de)serializer, optimized for qlog, to help deal with some of the overhead. \r\n\r\n----------------------------------\r\n\r\nSo, presented with those results, my standpoint today is still to keep using JSON as the basis for qlog. I would propose to add the \"dictionary\" setup to the spec though, as an optional optimized mode and also recommend tools to support that (not sure about a default static dictionary at this point though). Furthermore, I'd recommend using cbor if file size is important. \r\n\r\nCompanies that do need more optimizations can write their own protobuf (or equivalent) schema (which I've shown is possible) and then write a post-processor to go to proper JSON qlog for shared tooling. \r\n\r\nStill, feedback on all this is more than welcome of course! @marten-seemann, @martinthomson, @huitema, @LPardue, @nibanks, @mjoras\r\n\r\n\r\n\r\n\r\n\r\n",
+          "createdAt": "2020-04-22T09:50:22Z",
+          "updatedAt": "2020-04-22T09:50:22Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "If we use cbor, does that mean that we can get rid of the `event_fields`? Having implemented a both an encoder as well as a parsing tool, this complicated things quite a bit for me (over just encoding an event as a normal JSON object).",
+          "createdAt": "2020-04-22T09:56:02Z",
+          "updatedAt": "2020-04-22T09:56:02Z"
         }
       ]
     },
@@ -889,7 +903,7 @@
       "labels": [],
       "body": "Now, we only make varints strings if it's likely they will go over 2^53 (JSON's / JavaScript's number limit). \r\n\r\nFor example, this means error codes are just numbers, even though they are varints, as it's unlikely to see a very large error code. However, for fields that are greased (e.g., see https://github.com/quicwg/base-drafts/pull/3360) they could be larger and a number no longer suffices.\r\n\r\nSee also dcil and scil in PacketHeader, which could be numbers but are now strings.\r\n\r\nMore in general: maybe it's best to simply allow both for all number fields and have the tools figure it out? ",
       "createdAt": "2020-01-18T15:07:33Z",
-      "updatedAt": "2020-02-26T00:54:29Z",
+      "updatedAt": "2020-05-25T15:25:30Z",
       "closedAt": null,
       "comments": [
         {
@@ -898,6 +912,41 @@
           "body": "For me it would be very unnatural to treat Quic integers (varint encoded) as strings instead of numbers. Not impossible of course, one could always add quotes. But very unnatural.\r\n",
           "createdAt": "2020-02-26T00:54:29Z",
           "updatedAt": "2020-02-26T00:54:29Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "An approach some people are using for extension experimentation IS to pick large values for frame type, settings, stream types, etc. ",
+          "createdAt": "2020-05-25T13:03:08Z",
+          "updatedAt": "2020-05-25T13:03:08Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "@LPardue people do pick large numbers for experimentation, but the numbers are typically 2 bytes:\r\n```\r\nFrame types:\r\n    ack_frequency = 0xAF,\r\n    time_stamp = 757\r\nTP:\r\n    test_large_chello = 3127,\r\n    enable_loss_bit_old = 0x1055,\r\n    enable_loss_bit = 0x1057,\r\n    min_ack_delay = 0xDE1A,\r\n    enable_time_stamp = 0x7157\r\n```\r\nEven if we add another byte for versioning, traditional JSON will work just fine.",
+          "createdAt": "2020-05-25T14:39:55Z",
+          "updatedAt": "2020-05-25T14:39:55Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "The plan is to switch away from JSON/TypeScript notation in the draft and use explicit type annotations (e.g., uint32, uint64, etc.).\r\n\r\nThen I'd add something stating that, if using a JSON format, you should decide yourself between a) encoding 64-bit values as strings or b) hope they won't be larger than 2^53 and log them as numbers. Tools would be strongly advised to support both string and number variants of these fields. ",
+          "createdAt": "2020-05-25T15:02:24Z",
+          "updatedAt": "2020-05-25T15:03:02Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "and PRIORITY_UPDATE is using `0x1CCB8BBF1F0700` :)\r\n\r\nIt will be more difficult to make a general purpose library that can do what Robin suggests on the serialization side. It might also make it hard on the deserialization side in my specific implementation. \r\n\r\nThat said, I really dislike the arbitrary schema inconstencies that exist today. So on balance I look forward to the proposed approach.",
+          "createdAt": "2020-05-25T15:19:41Z",
+          "updatedAt": "2020-05-25T15:19:41Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "If only we knew someone from the H3 Priorities team that could help mitigate that weirdly large Frame identifier... ",
+          "createdAt": "2020-05-25T15:25:30Z",
+          "updatedAt": "2020-05-25T15:25:30Z"
         }
       ]
     },
@@ -1572,7 +1621,7 @@
       "labels": [],
       "body": "I see the following problems with the `connection_state_updated` event:\r\n1. `attempted` seems to be a duplicate of `connection_started` for the client (i.e. the two events would always be emitted at the same time)\r\n2. `reset` is impossible to log. You send a stateless reset if you lost state for a connection (after a crash or reboot, or if a packet was misrouted to the wrong backend server). In any case, there\u2019s no connection state to update by definition.\r\n3. `handshake` seems to be a duplicate of connection_started for both sides.\r\n\r\nI think these events could be removed without losing any information in the log.\r\n\r\nI suggest adding a new event for [confirmation of the handshake](https://quicwg.org/base-drafts/draft-ietf-quic-tls.html#name-handshake-confirmed). Maybe it would make sense to rename `active` to `handshake_completed` and add a `handshake_confirmed`?",
       "createdAt": "2020-04-12T04:01:04Z",
-      "updatedAt": "2020-04-12T12:16:05Z",
+      "updatedAt": "2020-04-20T15:46:10Z",
       "closedAt": null,
       "comments": [
         {
@@ -1595,6 +1644,13 @@
           "body": "Adding to my list, `keepalive` should probably not be a connection state. The QUIC specification doesn't  say a lot about keep-alives other than you can send a packet once in a while if you have nothing else to send.\r\nMaybe it's enough to set this as a `trigger` on the `packet_sent` event?",
           "createdAt": "2020-04-12T12:16:04Z",
           "updatedAt": "2020-04-12T12:16:04Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "@marten-seemann just reported on slack that a separate `connection_closed` event would be interesting to log the reason the connection was closed (for which we're now either relying on the CONNECTION_CLOSE frame contents or an (internal_)error event). \r\n\r\nIt seem like adding a `reason` field to `connection_state_updated` would work there too.\r\nAlternatively, this could be part of the envisioned `parameters_set` connectivity event that would replace both separate `connection_started` and `connection_close` semantics, though I'd feel a bit uneasy putting a `reason` field in `parameters_set` (semantics seem off).  \r\n\r\nBest to take a step back and look at this from a higher viewpoint to see if making all this generic gives us more benefits than simply having separate events for everything. \r\n",
+          "createdAt": "2020-04-20T15:45:58Z",
+          "updatedAt": "2020-04-20T15:46:10Z"
         }
       ]
     },
@@ -1629,6 +1685,154 @@
       "updatedAt": "2020-04-13T10:07:15Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 85,
+      "id": "MDU6SXNzdWU2MDM2ODIzNzM=",
+      "title": "split up events",
+      "url": "https://github.com/quiclog/internet-drafts/issues/85",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "This is a high-level observation based on my experience of 1. adding qlog support for quic-go and 2. writing some tooling to sift through a pile of logs.\r\n\r\nWhen adding qlog support for quic-go, I already found it confusing that qlog bundles things that have little to do with each other into the same event. Examples for these are:\r\n* The values in `parameters_set` event in `transport` that are not part of the QUIC transport parameters.\r\n* The `pto_count` in `metrics_updated`.\r\n* The `connection_state_updated` event. This is the worst in this list.\r\n\r\nIn my implementation, I worked around this by exposing an API that exposes different functions, which then would encode the same qlog event (with the respective fields set). For example, I have a `qlog.UpdatedPTOCount()` and a `qlog.UpdatedMetrics()`, which both emit a `metrics_updated` event.\r\n\r\nWriting my own qlog parser, I'm now encountering the same problem again. For example, one interesting thing to monitor on a production system would be the reason why a connection was closed (to see if there are any PROTOCOL_VIOLATIONS, for example). It would make filtering much easier if there was a `connection_closed` event, instead of having to look at optional fields in all the `connection_state_updated` events emitted over the lifetime of the connection. A similar argument applies to the PTO count (Connections that experience a lot of PTO events might be interesting to look at. Connections that collect many RTT samples are not).\r\n\r\nFrom my discussions with @rmarx (and I hope that I'm paraphrasing him correctly here), the main argument for having fewer events was that it makes things easier to implement. I hope that I laid out my argument here that the opposite is the case.",
+      "createdAt": "2020-04-21T03:43:01Z",
+      "updatedAt": "2020-04-21T15:26:22Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So to me, this is a core question that I'd like to resolve before finalizing draft-02.\r\n\r\nMy viewpoint has indeed always been that too many individual events and definitions would lead people to support only a minor subset. As it is, even with heavy coalescing, we have a large amount of events today and many implementations only implement a subset of those. \r\n\r\nThat being said, I can see the appeal of splitting things out again, yet that would mean doing that at all layers (e.g., you can't have everything split out at `transport` but keep everything aggregated in `http` (or am I wrong about that?)).\r\n\r\nThere is another aspect of \"backwards compatibility\" with existing implementations that are being re-used (e.g., Lucas' Rust crate, qvis). I'm not sure if people are willing to make major changes at this point. On the other end: we probably shouldn't get bogged down by that at this point yet.\r\n\r\nSo I'd like some more input on this from other active implementers/contributors: @lpardue, @huitema, @jlaine, @nibanks, @mpiraux\r\n\r\n\r\n\r\n",
+          "createdAt": "2020-04-21T08:41:07Z",
+          "updatedAt": "2020-04-21T08:41:07Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "The crate is easy to update, I don't have many consumers of it right now and I do not have concerns about backwards compatibility. As long as qlog is versioned (which it is) I have no qualms about breaking changes. \r\n\r\nIn summary, qlog crate is not a concern in the decision you make",
+          "createdAt": "2020-04-21T15:26:22Z",
+          "updatedAt": "2020-04-21T15:26:22Z"
+        }
+      ]
+    },
+    {
+      "number": 86,
+      "id": "MDU6SXNzdWU2MTA2NDIwNTU=",
+      "title": "Need to add support for the token in an Initial packet",
+      "url": "https://github.com/quiclog/internet-drafts/issues/86",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Probably needs to be in the PacketHeader struct",
+      "createdAt": "2020-05-01T08:41:49Z",
+      "updatedAt": "2020-05-01T08:41:49Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 88,
+      "id": "MDU6SXNzdWU2MjM4MTk0NDk=",
+      "title": "How to log transport parameters restored for 0-RTT",
+      "url": "https://github.com/quiclog/internet-drafts/issues/88",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "When initiating a 0-RTT connection, the client restores transport parameters that it remembers from the last connection. Currently, it has to use the `parameters_set` event for this, with `owner` equal to `server`.\r\n\r\nAs I've already argued in #85, the `parameters_set` event would benefit from being split up. Taking this issue into consideration, maybe `parameters_sent`, `parameters_received` and `parameters_restored` would be a good fit?",
+      "createdAt": "2020-05-24T08:24:27Z",
+      "updatedAt": "2020-05-24T08:24:27Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 89,
+      "id": "MDU6SXNzdWU2MjQxMzIzNTg=",
+      "title": "Make traditional JSON the default, provide two optimization options",
+      "url": "https://github.com/quiclog/internet-drafts/issues/89",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, we utilize what I'd call a \"csv\" optimization, where the `time, category, event name and data fields` omit their keys (these are defined once in `event_fields`, much like csv columns are defined on top) and only log their values. This saves some bytes, but is non-trivial to parse (need to remember the order of the columns to know which value represents what) and to serialize (serializers typically don't like this type of thing).\r\n\r\nThis also breaks a bit with traditional JSON, which just lists the key names for every field as well. Using normal JSON would make it easier to serialize and parse, but increase the file size. \r\n\r\nThere is a third optimized option, which is to replace all keys (and potentially also values) with indices into a lookup table/dictionary. This was discussed in #30 and, especially in combination with compression, seems like a good optimization option. \r\n\r\nSo, to summarize, we have three options:\r\n1. csv column optimization (current default and only supported)\r\n2. pure JSON\r\n3. dictionary optimization\r\n\r\nThe proposal is to switch qlog to nr 2 as default, and present nr 1 and 3 as optional optimizations (which can also be done post-hoc and offline). There would not be a given static dictionary (at least not in draft-02), with the dynamic dictionary always included in the qlog. Implementations are of course free to provide a built-in static dictionary themselves.\r\n\r\nTools would be required to only support nr 2, with optional support for 1 and 3. qvis would support all 3. \r\n\r\nCompression (gzip, brotli or other) would be also described but not mandated (qvis already supports gzip and brotli atm). \r\n\r\ncc @marten-seemann @LPardue\r\n\r\nI also know @martinthomson had strong opinions on this, so it would be interesting to hear from you as I'd like to get this right for -02 now. ",
+      "createdAt": "2020-05-25T08:22:55Z",
+      "updatedAt": "2020-05-26T03:44:55Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I'd prefer to only have only 2. The choice of JSON as a logging format already means that we don't care about file size. I see little point in introducing piecemeal improvements to JSON's inefficiency to create what is essentially a new file format.\r\n\r\nIn addition to 2 I'd like to see a binary format (I know I've been nagging with this for a long time) that was built with efficiency considerations from the ground up.",
+          "createdAt": "2020-05-25T08:28:11Z",
+          "updatedAt": "2020-05-25T08:28:11Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Moving to only/mainly 2 does make a binary format a lot easier I think, as things can be more directly mapped and interchanged (at least from what I know now of protobufs). \r\n\r\nOne option would be to say: qlog draft is format agnostic (but uses JSON as examples because it's readable) and the events can be presented in other formats as well (i.e., qlog just defines the fields and their types per event, not their eventual \"on the wire\" serialization). Tools should provide conversions between other forms and JSON if they want to support alternate forms. Then, anyone can just make e.g., a protobuf format based on that. \r\n\r\nI am planning to move away from TypeScript format for the event definitions anyway, as it's needed to define e.g., the difference between 64-bit numbers, smaller numbers and strings (see #39). That requires a custom mapping to TypeScript/JSON anyway, so a protobuf (or similar) mapping fits in that logic too. ",
+          "createdAt": "2020-05-25T09:41:36Z",
+          "updatedAt": "2020-05-25T09:41:36Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "I think there's a good chance I could switch the `qlog` crate to 2) without an API change. Addding an API method would allow user selection, and be non-breaking in the first case.\r\n\r\nIt seems nice if logs could self-identify the serialization format, otherwise you're relying on tools to do heuristics. This could be done with file extensions, or qlog parameters, or file magic. It's probably hard to get complete coverage but something might be a quick win.",
+          "createdAt": "2020-05-25T13:09:30Z",
+          "updatedAt": "2020-05-25T13:09:46Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I was wondering if CBOR should be the standard format. The representation is very similar to JSON, but it provides better typing support:\r\n1. it can unambiguously represent uint64s (so #39 would be solved)\r\n2. it supports byte strings, eliminating the need for byte to string conversions (as remarked in #30). Those happen quite often, e.g. for connection IDs, retry token, stateless reset tokens etc.\r\n\r\nI'm not sure human readability should be a goal. For my part, I've never felt the urge to look at a raw qlog file, mostly thanks to amazing tools like qvis. I don't expect this situation to shift in favor of viewing raw files in the future, if at all, more tools will make it even less necessary to do so.\r\nThat being said, CBOR could easily be converted to a human-readable file format, should the need to manually inspect a trace arise.\r\n\r\nThere are also moderate file size savings, but those wouldn't be the main motivation here. CBOR of course doesn't provide any compression of map keys / values, so I'd expect CBOR qlogs to still be quite wasteful. Not sure if there's a schema-less serialization format that can use something like a dictionary to compress commonly used identifiers.",
+          "createdAt": "2020-05-26T03:40:57Z",
+          "updatedAt": "2020-05-26T03:44:55Z"
+        }
+      ]
+    },
+    {
+      "number": 90,
+      "id": "MDU6SXNzdWU2MjQ3MTE5Mjg=",
+      "title": "Add events indicating reasons for stalls",
+      "url": "https://github.com/quiclog/internet-drafts/issues/90",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "For example, an application might have more data ready to send, but cannot due to Flow Control or Congestion Control or Anti-Amplification limits. \r\n\r\nThese are currently only observable for the Flow Control case and only if the sender sends *_BLOCKED frames (which is optional). \r\n\r\nI'm not sure in which category this type of event would belong though... maybe look at msquic's handling (they have this type of event for sure). \r\n\r\ncc @scw00",
+      "createdAt": "2020-05-26T08:50:30Z",
+      "updatedAt": "2020-05-26T08:56:56Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 91,
+      "id": "MDU6SXNzdWU2MjQ3MTQ4MzM=",
+      "title": "Add mechanism for tracking coalesced packets",
+      "url": "https://github.com/quiclog/internet-drafts/issues/91",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, this can be done implicitly by looking at `datagrams_sent` and `datagrams_received` events, but: a) these are very chatty if enabled for the entire connection and b) it's still implicit.\r\n\r\nOne proposed option (cc @marten-seemann) would be to add an optional `datagram_id` field to the `packet_*` and `datagrams_*` events that allows explicit correlation. This id would be an implementation-specific thing though, since QUIC itself does not define it (can be as easy as an implementation incrementing a counter).\r\n\r\nAnother point from Marten:\r\n> Note that this would also allow to correlate packets that processed at different times: assume that one packet contained in a datagram can be processed immediately, but it is coalesced with a packet of an encyrption level that the endpoint doesn\u2019t have keys for, and needs to buffer first\r\n\r\nIn that case, we probably also need to add the datagram_id to the `packet_buffered` event",
+      "createdAt": "2020-05-26T08:54:28Z",
+      "updatedAt": "2020-05-26T09:07:47Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "And to `packet_dropped`.",
+          "createdAt": "2020-05-26T09:07:47Z",
+          "updatedAt": "2020-05-26T09:07:47Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -1649,7 +1853,16 @@
       "mergedAt": "2019-07-22T21:12:06Z",
       "mergedBy": "rmarx",
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "52267e9675f5fd06f5d507a1792aa601ea0bdb81",
+      "headRepository": "jlaine/internet-drafts",
+      "headRefName": "negotiation-typo",
+      "headRefOid": "22e20c5e072d32d98f4e432effec3e2b49d6c869",
+      "mergeCommit": {
+        "oid": "9bc53886d90472c68000652c2a1c83a9a6c338a5"
+      }
     },
     {
       "number": 18,
@@ -1668,7 +1881,16 @@
       "mergedAt": "2019-08-23T12:30:44Z",
       "mergedBy": "rmarx",
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "3b12117f096ab7fa7927516a39a2fd17b392d8d6",
+      "headRepository": "jlaine/internet-drafts",
+      "headRefName": "packet_type",
+      "headRefOid": "f629b74ec44e95158b4594873c338435d07fc108",
+      "mergeCommit": {
+        "oid": "886a41e3afc7634500ed382350508a1fe5c224b7"
+      }
     },
     {
       "number": 38,
@@ -1722,7 +1944,16 @@
           "updatedAt": "2020-01-18T15:31:31Z",
           "comments": []
         }
-      ]
+      ],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "e5c946c65db20624d4f06d5c9102d6154fc8c847",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "handshake-done",
+      "headRefOid": "189dd7bbf606d0b8400d91260e704c9c328b6aa3",
+      "mergeCommit": {
+        "oid": "b50635531bbbbcd059d9670b0b97f55069defb4f"
+      }
     },
     {
       "number": 41,
@@ -1741,7 +1972,14 @@
       "mergedAt": null,
       "mergedBy": null,
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b50635531bbbbcd059d9670b0b97f55069defb4f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "udp-vs-quic-header",
+      "headRefOid": "ce9b1690e05a31048d39ec171721febb1922d618",
+      "mergeCommit": null
     },
     {
       "number": 61,
@@ -1760,7 +1998,14 @@
       "mergedAt": null,
       "mergedBy": null,
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b50635531bbbbcd059d9670b0b97f55069defb4f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "header-decrypt-error",
+      "headRefOid": "359513a3bb236747fcbd71ee1f506e12199293ad",
+      "mergeCommit": null
     },
     {
       "number": 63,
@@ -1779,7 +2024,16 @@
       "mergedAt": "2020-03-13T08:13:43Z",
       "mergedBy": "rmarx",
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b50635531bbbbcd059d9670b0b97f55069defb4f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "max-idle-timeout",
+      "headRefOid": "a007af093fb3f7f77c82d415a6f366f2dc9b2098",
+      "mergeCommit": {
+        "oid": "89d2a71667fbdf7888c9139583c84bc0a9690e0f"
+      }
     },
     {
       "number": 67,
@@ -1798,7 +2052,16 @@
       "mergedAt": "2020-03-21T12:32:21Z",
       "mergedBy": "rmarx",
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "89d2a71667fbdf7888c9139583c84bc0a9690e0f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "max-udp-payload-size",
+      "headRefOid": "8c8e39e1dafd3ced236d384d20539a7a2dec25d2",
+      "mergeCommit": {
+        "oid": "eeebaa4826d2596f552dedac95b4d01998d6e735"
+      }
     },
     {
       "number": 68,
@@ -1839,7 +2102,16 @@
           "updatedAt": "2020-03-26T13:40:51Z",
           "comments": []
         }
-      ]
+      ],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "eeebaa4826d2596f552dedac95b4d01998d6e735",
+      "headRepository": "quiclog/internet-drafts",
+      "headRefName": "stateless_reset",
+      "headRefOid": "6ff25a4b44ee3a5f146381c737a5de3c64e14c78",
+      "mergeCommit": {
+        "oid": "edf676c342bf73c168a27a4af6b6f45af58518ba"
+      }
     },
     {
       "number": 70,
@@ -1858,7 +2130,16 @@
       "mergedAt": "2020-03-28T11:00:33Z",
       "mergedBy": "rmarx",
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "eeebaa4826d2596f552dedac95b4d01998d6e735",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "update-transport-errors",
+      "headRefOid": "26a19a8f72339cac08eb277f45285fdd244981eb",
+      "mergeCommit": {
+        "oid": "2a4dfd91598685b31daade04cf99db4bdffd2109"
+      }
     },
     {
       "number": 71,
@@ -1877,7 +2158,16 @@
       "mergedAt": "2020-03-28T10:29:31Z",
       "mergedBy": "rmarx",
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "eeebaa4826d2596f552dedac95b4d01998d6e735",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "loss-timer-events-pn-space",
+      "headRefOid": "da1743e05116cf2f0f0390ea24c54bf66b2df0c0",
+      "mergeCommit": {
+        "oid": "d4a976e57f271d237d1818e5e56c62b6b60fd38b"
+      }
     },
     {
       "number": 73,
@@ -1936,7 +2226,16 @@
           "updatedAt": "2020-03-29T11:13:37Z",
           "comments": []
         }
-      ]
+      ],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "d4a976e57f271d237d1818e5e56c62b6b60fd38b",
+      "headRepository": "quiclog/internet-drafts",
+      "headRefName": "loss_timer",
+      "headRefOid": "11720e0eb6c63f44526e7546c705aa419a7bf6ef",
+      "mergeCommit": {
+        "oid": "a68c214abaa655138ad5935bf3a1021091bfc5a5"
+      }
     },
     {
       "number": 77,
@@ -1970,7 +2269,16 @@
           "updatedAt": "2020-04-12T11:56:16Z"
         }
       ],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "a68c214abaa655138ad5935bf3a1021091bfc5a5",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "more-drop-triggers",
+      "headRefOid": "af1614c49eace48bf29b911790a9db0095b458ca",
+      "mergeCommit": {
+        "oid": "9af27705fd0eed8f38465ebf34afeedc9e93d857"
+      }
     },
     {
       "number": 81,
@@ -1989,7 +2297,16 @@
       "mergedAt": "2020-04-14T14:40:17Z",
       "mergedBy": "rmarx",
       "comments": [],
-      "reviews": []
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "9af27705fd0eed8f38465ebf34afeedc9e93d857",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "log-supported-versions",
+      "headRefOid": "d02e59eeb7ca2df7787b9818b584629d01608cd9",
+      "mergeCommit": {
+        "oid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f"
+      }
     },
     {
       "number": 82,
@@ -2007,6 +2324,155 @@
       "closedAt": "2020-04-14T14:39:52Z",
       "mergedAt": "2020-04-14T14:39:52Z",
       "mergedBy": "rmarx",
+      "comments": [],
+      "reviews": [],
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "9af27705fd0eed8f38465ebf34afeedc9e93d857",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "version-mismatch",
+      "headRefOid": "573c8386c29bed76851f66c40158eb4165fb35a3",
+      "mergeCommit": {
+        "oid": "05c45b5d9e2195535a610c28f9c4a27d88444c5d"
+      }
+    },
+    {
+      "number": 83,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDAzNTMwMzQ5",
+      "title": "add a timeout trigger for the closed connection_state_updated event",
+      "url": "https://github.com/quiclog/internet-drafts/pull/83",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2020-04-15T04:12:58Z",
+      "updatedAt": "2020-04-15T07:43:32Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "connection-state-timeout",
+      "headRefOid": "08e4ca6944c39f416b951adba3dd03d30af326a7",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I'm unsure about this PR. In my implementation, I have an idle timeout as well as a handshake timeout (the handshake timeout way shorter than the idle timeout).\r\nWould it make sense to add a value for both? Or a separate field for trigger details?",
+          "createdAt": "2020-04-15T07:43:32Z",
+          "updatedAt": "2020-04-15T07:43:32Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 84,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDAzNjUzMDA0",
+      "title": "add a packet_size field to the packet_buffered event",
+      "url": "https://github.com/quiclog/internet-drafts/pull/84",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #76.",
+      "createdAt": "2020-04-15T09:44:14Z",
+      "updatedAt": "2020-04-15T09:44:14Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "packet-buffered-packet-size",
+      "headRefOid": "e17dbba7a86e0c28814ed03b1d9833b2c0c2750a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 87,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDIyMzcxOTQz",
+      "title": "Authenticate connection IDs",
+      "url": "https://github.com/quiclog/internet-drafts/pull/87",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Adds the transport parameters added in https://github.com/quicwg/base-drafts/pull/3499.",
+      "createdAt": "2020-05-24T06:41:19Z",
+      "updatedAt": "2020-05-24T06:41:19Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "authenticate-connection-ids",
+      "headRefOid": "3f2ea8e74fb7a36fb692f4d96951de1656f13102",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 92,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDIzNTYwODU1",
+      "title": "add a packet_dropped trigger for duplicate packets",
+      "url": "https://github.com/quiclog/internet-drafts/pull/92",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "See https://quicwg.org/base-drafts/draft-ietf-quic-transport.html#name-packet-numbers.",
+      "createdAt": "2020-05-27T02:03:51Z",
+      "updatedAt": "2020-05-27T02:03:51Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "packet-drop-duplicate",
+      "headRefOid": "ce41034f74bd922dd0b9e3849f2672dea04e9f84",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 93,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDMzMDA5OTUz",
+      "title": "rename server_busy to connection_refused",
+      "url": "https://github.com/quiclog/internet-drafts/pull/93",
+      "state": "MERGED",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2020-06-11T11:19:22Z",
+      "updatedAt": "2020-06-11T15:06:15Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "connection-refused",
+      "headRefOid": "8d9475002611699c8381081fa90b95e51ea22f72",
+      "closedAt": "2020-06-11T15:06:15Z",
+      "mergedAt": "2020-06-11T15:06:15Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "b8a2fd89f64b95e026a68dfcfb879d6c695e1514"
+      },
       "comments": [],
       "reviews": []
     }
