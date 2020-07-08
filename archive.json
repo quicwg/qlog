@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-06-11T15:07:00.888518+00:00",
+  "timestamp": "2020-07-08T09:30:36.673914+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -863,7 +863,7 @@
       "labels": [],
       "body": "For example, NewTokenFrame doesn't really need a length field if the encoding of the token is specified (e.g., if it is hex-encoded, byte-length is 2x token.length).\r\n\r\nWe already indicate hex-encoding at other places in the text (e.g., for version), maybe it's a good idea to enforce this across the board (then also specificy whether it should have 0x prefix or not etc. + examples).\r\n\r\nThanks to @marten-seemann for reporting",
       "createdAt": "2020-01-18T11:08:45Z",
-      "updatedAt": "2020-01-18T14:43:29Z",
+      "updatedAt": "2020-07-08T09:01:57Z",
       "closedAt": null,
       "comments": [
         {
@@ -872,6 +872,13 @@
           "body": "This also applies to the NEW_CONNECTION_ID frame.",
           "createdAt": "2020-01-18T14:43:29Z",
           "updatedAt": "2020-01-18T14:43:29Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Could this be as easy as saying that all byte-values are hex-encoding (omitting the 0x) somewhere in the introduction? Then this would apply to connection IDs, Retry tokens, NEW_TOKEN tokens, stateless reset tokens, etc.",
+          "createdAt": "2020-07-08T09:01:57Z",
+          "updatedAt": "2020-07-08T09:01:57Z"
         }
       ]
     },
@@ -1698,7 +1705,7 @@
       "labels": [],
       "body": "This is a high-level observation based on my experience of 1. adding qlog support for quic-go and 2. writing some tooling to sift through a pile of logs.\r\n\r\nWhen adding qlog support for quic-go, I already found it confusing that qlog bundles things that have little to do with each other into the same event. Examples for these are:\r\n* The values in `parameters_set` event in `transport` that are not part of the QUIC transport parameters.\r\n* The `pto_count` in `metrics_updated`.\r\n* The `connection_state_updated` event. This is the worst in this list.\r\n\r\nIn my implementation, I worked around this by exposing an API that exposes different functions, which then would encode the same qlog event (with the respective fields set). For example, I have a `qlog.UpdatedPTOCount()` and a `qlog.UpdatedMetrics()`, which both emit a `metrics_updated` event.\r\n\r\nWriting my own qlog parser, I'm now encountering the same problem again. For example, one interesting thing to monitor on a production system would be the reason why a connection was closed (to see if there are any PROTOCOL_VIOLATIONS, for example). It would make filtering much easier if there was a `connection_closed` event, instead of having to look at optional fields in all the `connection_state_updated` events emitted over the lifetime of the connection. A similar argument applies to the PTO count (Connections that experience a lot of PTO events might be interesting to look at. Connections that collect many RTT samples are not).\r\n\r\nFrom my discussions with @rmarx (and I hope that I'm paraphrasing him correctly here), the main argument for having fewer events was that it makes things easier to implement. I hope that I laid out my argument here that the opposite is the case.",
       "createdAt": "2020-04-21T03:43:01Z",
-      "updatedAt": "2020-04-21T15:26:22Z",
+      "updatedAt": "2020-07-08T08:48:23Z",
       "closedAt": null,
       "comments": [
         {
@@ -1714,6 +1721,13 @@
           "body": "The crate is easy to update, I don't have many consumers of it right now and I do not have concerns about backwards compatibility. As long as qlog is versioned (which it is) I have no qualms about breaking changes. \r\n\r\nIn summary, qlog crate is not a concern in the decision you make",
           "createdAt": "2020-04-21T15:26:22Z",
           "updatedAt": "2020-04-21T15:26:22Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "After further discussion on slack, I think @marten-seemann's overall viewpoint is:\r\n\r\n- Events can be grouped, but only if they (a) logically belong together and/or (b) share the same fields\r\n\r\nThis leads to the following concrete example changes:\r\n- In the example of `connection_state_updated`, if there is a `reason` for the `connection_close` (see #78), that reason won't be present for `connection_attempted` and so it makes sense to split up those events.\r\n- In the example of `metrics_updated`, almost everything happens as the result of receiving an ACK, but `pto_count` does not (due to timer firing), so they should be split up as well. (tangent: max_ack_delay is a constant and should probably be in a `parameters_set` recovery equivalent)\r\n\r\nTentative conclusion: we don't need to split up everything as it stands now, just go through the events and make sure they adhere to the general principle above. I tend to agree with that. \r\n\r\nA prime candidate for re-evaluation is `transport:parameters_set`\r\n\r\n",
+          "createdAt": "2020-07-08T08:38:47Z",
+          "updatedAt": "2020-07-08T08:48:23Z"
         }
       ]
     },
@@ -1831,6 +1845,195 @@
           "body": "And to `packet_dropped`.",
           "createdAt": "2020-05-26T09:07:47Z",
           "updatedAt": "2020-05-26T09:07:47Z"
+        }
+      ]
+    },
+    {
+      "number": 94,
+      "id": "MDU6SXNzdWU2NDIzNTgwMDc=",
+      "title": "Add support for retry token and integrity tag",
+      "url": "https://github.com/quiclog/internet-drafts/issues/94",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Related to #86 , probably also best at home in the PacketHeader struct.\r\n\r\nProposal:\r\n- use a single `token` field for both retry and initial tokens\r\n- use a single `token_length` field for initial (explicit) and retry (implicit), `integrity_tag` field for retry",
+      "createdAt": "2020-06-20T11:16:37Z",
+      "updatedAt": "2020-07-08T08:58:20Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I don\u2019t think we need to log the integrity tag. We also don\u2019t log the AEAD tag for normal packets.",
+          "createdAt": "2020-06-20T12:37:16Z",
+          "updatedAt": "2020-06-20T12:37:16Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "It would probably be interesting to log if the token is a Retry token or a NEW_TOKEN token.\r\nFor the client, this bit of information is trivially available, for the server it is after it unprotects the token (assuming unprotecting succeeds), as servers are required to be able to distinguish between Retry and NEW_TOKEN tokens.",
+          "createdAt": "2020-07-08T08:58:20Z",
+          "updatedAt": "2020-07-08T08:58:20Z"
+        }
+      ]
+    },
+    {
+      "number": 95,
+      "id": "MDU6SXNzdWU2NTMwODU3NTI=",
+      "title": "remove the time_units configuration",
+      "url": "https://github.com/quiclog/internet-drafts/issues/95",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "All time values are encoded as floats, so it doesn't make any difference if we encode them in ms or in \u03bcs.\r\n\r\nRemoving the configuration option makes it easier to implement qlog parsers, since there's less state to carry around to parse events.",
+      "createdAt": "2020-07-08T08:09:14Z",
+      "updatedAt": "2020-07-08T08:27:47Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "While I agree it makes it more difficult to parse, I'm not sure we can remove this?\r\n\r\nWould you advocate for forcing implementation to log either ms or \u03bcs (and do x1000 or /1000 if they use the other internally) then? Currently, I think we have about 4 implementations doing \u03bcs. ",
+          "createdAt": "2020-07-08T08:12:48Z",
+          "updatedAt": "2020-07-08T08:12:48Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "It doesn't matter which one is removed. Currently, I'm logging in ms (just because it's the default).\r\nChanging this to \u03bcs would basically just being a change from calling `duration.Milliseconds()` to `duration.Microseconds()` (see https://github.com/lucas-clemente/quic-go/blob/master/qlog/event.go#L14). I assume it's the same for other implementations: You have one (language/implementaton-specific) time representation, and you convert that to whatever unit you export to qlog.",
+          "createdAt": "2020-07-08T08:27:47Z",
+          "updatedAt": "2020-07-08T08:27:47Z"
+        }
+      ]
+    },
+    {
+      "number": 96,
+      "id": "MDU6SXNzdWU2NTMxMDY1MTI=",
+      "title": "in_recovery is a congestion_state_updated event and doesn't belong in metrics_updated",
+      "url": "https://github.com/quiclog/internet-drafts/issues/96",
+      "state": "CLOSED",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "indicating whether the CC has entered recovery can currently be done in two ways, should probably removed this from `metrics_updated`.\r\n\r\ncc @marten-seemann ",
+      "createdAt": "2020-07-08T08:40:20Z",
+      "updatedAt": "2020-07-08T09:29:59Z",
+      "closedAt": "2020-07-08T09:29:59Z",
+      "comments": []
+    },
+    {
+      "number": 97,
+      "id": "MDU6SXNzdWU2NTMxMTA2OTA=",
+      "title": "Indicate (encoded) sizes",
+      "url": "https://github.com/quiclog/internet-drafts/issues/97",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently we do not have many fields for indicating (compressed) sizes of things.\r\n\r\nWe have the `packet_size`, but this is in the wrong place (#40) and `payload_length` (though it's not well-defined whether packet_size includes the TLS suffix). \r\n\r\nHowever, we lack size indicators for datagrams and, especially frames. When creating the qvis packetization diagram, this was very annoying, as I'd have to reconstruct the encoded frame headers to properly render those (and even then there might be rounding issues if the sender didn't encode things in the absolute minimum of bytes allowed). \r\n\r\nIn comparison, wireshark output does include exact sizes for these fields for TCP/TLS/H2 and this was quite handy. \r\n\r\nAnother point: need some way to indicate the used TLS AEAD tag length (though that should be constant for the entire connection and depends on the used cipher IIUC. For TCP+TLS from Wireshark I also had to manually calculate this from the cipher definitions though, which was a PITA). \r\n\r\nFinally, make terminology consistent (_size vs _length)\r\n",
+      "createdAt": "2020-07-08T08:46:33Z",
+      "updatedAt": "2020-07-08T09:15:27Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 100,
+      "id": "MDU6SXNzdWU2NTMxMTYzNDc=",
+      "title": "make it possible to log persistent congestion",
+      "url": "https://github.com/quiclog/internet-drafts/issues/100",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "This would be *really* important for generating metrics.\r\n\r\nLogically, it's a congestion event, but I'm not sure if it would probably make sense to add this as a state to the `congestion_state_updated` event, because once you declare persistent congestion, your congestion controller enters either slow start or congestion avoidance (not sure which one, haven't implemented persistent congestion yet), which are already `congestion_state_updated` events.",
+      "createdAt": "2020-07-08T08:54:37Z",
+      "updatedAt": "2020-07-08T08:54:37Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 101,
+      "id": "MDU6SXNzdWU2NTMxMjM3NjI=",
+      "title": "Combine category and event type",
+      "url": "https://github.com/quiclog/internet-drafts/issues/101",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, we have two separate fields for category and event type.\r\n\r\nIn a default JSON form, you'd have:\r\n```\r\n{\r\n    category: \"transport\",\r\n    type: \"parameters_set\"\r\n}\r\n```\r\n\r\nHowever, the event type names (e.g., `parameters_set`, `state_updated`) aren't unique to the categories at the moment. \r\n\r\nThis can lead to some issues:\r\n- Processing qlog requires you to always check the category as well (cannot just look at the event_type)\r\n- Makes them difficult to encode in formats like protobuf (e.g., https://github.com/quiclog/pcap2qlog/blob/binary/src/converters/types/qlog.proto#L54) (and I assume things like serde as well @LPardue?) because you cannot easily de-serialize based just on the type-name.\r\n\r\nOne solution would be to combine both into one field:\r\n```\r\n{\r\n    type: \"transport:parameters_set\"\r\n}\r\n```\r\n\r\nThis should make it easier to de-serialize just based on the type field (and make it into an enum) and easier to do a `switch` when processing events. \r\n\r\nAnother option would be to make sure each event has a unique name, but that would come down the pre-pending the category (or something similar) anyway afaict (e.g., `transport_parameters_set`), which is basically the same thing. \r\n\r\nI don't see many use cases where you'd only want to log one category (and thus could leave that out and just log the event names to save some space). I also don't know if compression would be that much worse overall if we'd combine the two into one field. If we'd move to regular JSON as the default (#89), it would probably save space, as then we'd only have a single field per-object instead of 2 (as in the examples above).\r\n\r\nWhat do people think? CC @LPardue  @marten-seemann @mpiraux @triplewy @mikkelfj @nibanks @jlaine\r\n\r\n \r\n",
+      "createdAt": "2020-07-08T09:04:43Z",
+      "updatedAt": "2020-07-08T09:29:30Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Makes sense to me. I support making this change.",
+          "createdAt": "2020-07-08T09:17:31Z",
+          "updatedAt": "2020-07-08T09:17:31Z"
+        }
+      ]
+    },
+    {
+      "number": 102,
+      "id": "MDU6SXNzdWU2NTMxMjQ1OTY=",
+      "title": "remove redundant length fields",
+      "url": "https://github.com/quiclog/internet-drafts/issues/102",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Once we require hex-encoding for byte-fields (which, as far as I can see from other peoples' qlogs, is already the de-facto standard), we don't need length fields any more. This applies to the `scil` and `dcil` in the `Header` (as well as the proposed token length in #94), the `NewTokenFrame`, `NewConnectionIDFrame` (and probably also the QPACK events, but I'm not an expert on those).",
+      "createdAt": "2020-07-08T09:05:51Z",
+      "updatedAt": "2020-07-08T09:22:53Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I kind of disagree, as I think an important use case is where you'd not want to log the raw values but only the lengths. \r\n\r\nWe can argue whether that's the case for the CIDs of course, but for tokens and qpack data (and, obviously, payloads), I think people should have the option to not log the raw values. \r\n\r\nThis flows from privacy/security concerns, as well as storage efficiency for larger deployments. \r\n\r\nI do think we could add text stating something like \"if you log the raw values in hex, the length field is redundant, and tools SHOULD be able to derive length from hex\"?",
+          "createdAt": "2020-07-08T09:13:08Z",
+          "updatedAt": "2020-07-08T09:13:08Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Good point. I can see why you want to log tokens (since they create a correlation spanning two separate connections).\r\n\r\n> I do think we could add text stating something like \"if you log the raw values in hex, the length field is redundant, and tools SHOULD be able to derive length from hex\"?\r\n\r\nI'd make this an even stronger statement: \"\"if you log the raw values in hex, the length field is redundant and SHOULD (or MUST?) be omitted. Tools MUST be able to derive length from hex\".",
+          "createdAt": "2020-07-08T09:20:09Z",
+          "updatedAt": "2020-07-08T09:22:53Z"
+        }
+      ]
+    },
+    {
+      "number": 104,
+      "id": "MDU6SXNzdWU2NTMxMzAxNTY=",
+      "title": "consider removing StreamFrame.raw",
+      "url": "https://github.com/quiclog/internet-drafts/issues/104",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I can't see how logging the exact contents of a STREAM frame could facilitate debugging / analysis of QUIC connections.\r\n\r\nArguably, a transport-level logging system should not log application data exchanged, as this might expose user data to places where it doesn't belong. While qlog can't prevent implementations from adding additional JSON fields to existing events, it should not encourage this behavior.",
+      "createdAt": "2020-07-08T09:14:00Z",
+      "updatedAt": "2020-07-08T09:27:44Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "While I agree from a security/privacy perspective that it shouldn't be encouraged, I disagree somewhat about the non-usefulness in debugging (esp. if you go beyond just H3 and look at things like DoQ or MASQUE). \r\n\r\nTwo direct alternatives I can see at the moment:\r\n- Remove from QUIC STREAM, but keep it on H3 DATA (though this means people can't easily get this without also logging H3/app-layer events, which e.g., things like quant might not like)\r\n- Add a generic `raw` and/or `raw_payload` field for all events to use (much like what we have for `trigger`). This makes it less obvious per-event (so less encouraged you might say) while still keeping a common name for interoperable tooling. \r\n\r\nOverall though, I'd vote to just keep it as-is. While it shouldn't be encouraged, it should imo be -possible- to express in the format for specific use cases. I'd even go one step further and add an explicit `raw` field to the datagram_* events (especially `datagram_dropped`) as I've seen several times in the slack that packets aren't being decoded correctly and having the raw values available could help there. \r\n\r\nIf we do keep `raw`, I'd propose to work out a scheme to allow logging only the first x-bytes though (e.g., `raw: 0xABABCD...(436)` indicating there were 436 more bytes not logged). ",
+          "createdAt": "2020-07-08T09:23:36Z",
+          "updatedAt": "2020-07-08T09:27:44Z"
         }
       ]
     }
@@ -2473,6 +2676,86 @@
       "mergeCommit": {
         "oid": "b8a2fd89f64b95e026a68dfcfb879d6c695e1514"
       },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 98,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDQ2MDkxNDgx",
+      "title": "max_ack_delay is a constant, and logged in the transport parameters_set",
+      "url": "https://github.com/quiclog/internet-drafts/pull/98",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2020-07-08T08:47:07Z",
+      "updatedAt": "2020-07-08T08:47:07Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b8a2fd89f64b95e026a68dfcfb879d6c695e1514",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "remove-max-ack-delay-from-metrics-update",
+      "headRefOid": "408d46cd7076062970ad2898cba4079091629cff",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 99,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDQ2MDkyNjE0",
+      "title": "remove in_recovery from metrics_update",
+      "url": "https://github.com/quiclog/internet-drafts/pull/99",
+      "state": "MERGED",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #96.",
+      "createdAt": "2020-07-08T08:49:13Z",
+      "updatedAt": "2020-07-08T09:29:59Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b8a2fd89f64b95e026a68dfcfb879d6c695e1514",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "remove-in-recovery-from-metrics-update",
+      "headRefOid": "a348778bab9d89e583a49e4262d3ab5be20c896d",
+      "closedAt": "2020-07-08T09:29:59Z",
+      "mergedAt": "2020-07-08T09:29:59Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "2b49fb613be515fdfde9eff5e1f66c455499fd35"
+      },
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 103,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDQ2MTAzNDQ2",
+      "title": "remove the UnknownFrame QUIC frame type",
+      "url": "https://github.com/quiclog/internet-drafts/pull/103",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Other than H3 frames, QUIC frames are not TLV encoded. It's therefore not possible to parse a frame type that your implementation doesn't understand. In fact, it's a protocol violation to even send such a frame.",
+      "createdAt": "2020-07-08T09:08:43Z",
+      "updatedAt": "2020-07-08T09:08:43Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "b8a2fd89f64b95e026a68dfcfb879d6c695e1514",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "remove-unknown-frame",
+      "headRefOid": "76957f1589918be259181e40d9a9b6b810ceb9b2",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
       "comments": [],
       "reviews": []
     }
