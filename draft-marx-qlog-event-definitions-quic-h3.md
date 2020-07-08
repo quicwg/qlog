@@ -1769,17 +1769,6 @@ class HandshakeDoneFrame{
 }
 ~~~
 
-### UnknownFrame
-
-~~~
-class UnknownFrame{
-    frame_type:string = "unknown";
-    raw_frame_type:number;
-
-    raw?:string; // hex encoded
-}
-~~~
-
 ### TransportError
 
 ~~~
