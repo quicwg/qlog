@@ -814,7 +814,6 @@ Data:
     latest_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
     rtt_variance?:number, // in ms or us, depending on the overarching qlog's configuration
 
-    max_ack_delay?:number, // in ms or us, depending on the overarching qlog's configuration
     pto_count?:number,
 
     // Congestion control, Appendix B.2.
