@@ -825,7 +825,6 @@ Data:
 
     // qlog defined
     packets_in_flight?:number, // sum of all packet number spaces
-    in_recovery?:boolean, // high-level signal. For more granularity, see congestion_state_updated
 
     pacing_rate?:number // in bps
 }
