@@ -973,10 +973,10 @@ directly appended to each other, without delimiters. The full value is not
 prefixed with 0x (as is sometimes common).
 
 ~~~~~~~~
-For the five raw unsigned byte input values of: 5 20 40 83 255, the JSON serialization is:
+For the five raw unsigned byte input values of: 5 20 40 171 255, the JSON serialization is:
 
 {
-    "raw": "05142853FF"
+    "raw": "051428abff"
 }
 ~~~~~~~~
 {: .language-json}
@@ -1005,12 +1005,12 @@ separate length-indicating field is present.
 // both the full raw value and its length are present (length is redundant)
 {
     "raw_length": 5,
-    "raw": "05142853FF"
+    "raw": "051428abff"
 }
 
 // only the raw value is present, indicating it represents the fields full value
 {
-    "raw": "05142853FF"
+    "raw": "051428abff"
 }
 
 // only the length field is present, meaning the value was omitted
