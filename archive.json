@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-07-08T09:30:36.673914+00:00",
+  "timestamp": "2020-07-11T20:49:57.553599+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -1884,15 +1884,15 @@
       "id": "MDU6SXNzdWU2NTMwODU3NTI=",
       "title": "remove the time_units configuration",
       "url": "https://github.com/quiclog/internet-drafts/issues/95",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "All time values are encoded as floats, so it doesn't make any difference if we encode them in ms or in \u03bcs.\r\n\r\nRemoving the configuration option makes it easier to implement qlog parsers, since there's less state to carry around to parse events.",
       "createdAt": "2020-07-08T08:09:14Z",
-      "updatedAt": "2020-07-08T08:27:47Z",
-      "closedAt": null,
+      "updatedAt": "2020-07-11T20:49:16Z",
+      "closedAt": "2020-07-11T20:49:16Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2034,6 +2034,75 @@
           "body": "While I agree from a security/privacy perspective that it shouldn't be encouraged, I disagree somewhat about the non-usefulness in debugging (esp. if you go beyond just H3 and look at things like DoQ or MASQUE). \r\n\r\nTwo direct alternatives I can see at the moment:\r\n- Remove from QUIC STREAM, but keep it on H3 DATA (though this means people can't easily get this without also logging H3/app-layer events, which e.g., things like quant might not like)\r\n- Add a generic `raw` and/or `raw_payload` field for all events to use (much like what we have for `trigger`). This makes it less obvious per-event (so less encouraged you might say) while still keeping a common name for interoperable tooling. \r\n\r\nOverall though, I'd vote to just keep it as-is. While it shouldn't be encouraged, it should imo be -possible- to express in the format for specific use cases. I'd even go one step further and add an explicit `raw` field to the datagram_* events (especially `datagram_dropped`) as I've seen several times in the slack that packets aren't being decoded correctly and having the raw values available could help there. \r\n\r\nIf we do keep `raw`, I'd propose to work out a scheme to allow logging only the first x-bytes though (e.g., `raw: 0xABABCD...(436)` indicating there were 436 more bytes not logged). ",
           "createdAt": "2020-07-08T09:23:36Z",
           "updatedAt": "2020-07-08T09:27:44Z"
+        }
+      ]
+    },
+    {
+      "number": 105,
+      "id": "MDU6SXNzdWU2NTUwMDg1NDk=",
+      "title": "Log Retry and Connection in same Qlog file, use ODCID for indentification",
+      "url": "https://github.com/quiclog/internet-drafts/issues/105",
+      "state": "OPEN",
+      "author": "huitema",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Many implementations identify the Qlog file using the \"Initial DCID\" used by the client. In the case of Retry, this results in two Qlog traces: one identified by the original DCID that contains the first initial packet of the client and the Retry packet that the server produced, and a second one identified by the Initial DCID used in the subsequent connection.\r\n\r\nMy proposal is to use a single file for the retry and for the next connection, identified by the ODCID. But I wonder whether that's going to break something.",
+      "createdAt": "2020-07-10T20:06:03Z",
+      "updatedAt": "2020-07-11T15:53:59Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "The current spec kind of gives up on the issue. It says \"Note that this can make it difficult to match logs from different vantage points with each other. For example, from the client side, it is easy to log connections with version negotiation or stateless retry in the same trace, while on the server they would most likely be logged in separate traces.\" My point is that it can be solved on the server, if the server keys logging events with the ODCID.",
+          "createdAt": "2020-07-10T20:11:56Z",
+          "updatedAt": "2020-07-10T20:11:56Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> My point is that it can be solved on the server, if the server keys logging events with the ODCID.\r\n\r\nThat's correct, and it's a trivial thing to do. The server needs to encode the ODCID in the token anyway, to be able to send it in the transport parameters. In fact, that's [how quic-go does it](https://github.com/lucas-clemente/quic-go/blob/e7fa420e264c4d319625c6dbf7cdf1c7668e7535/server.go#L452-L456).",
+          "createdAt": "2020-07-11T01:36:30Z",
+          "updatedAt": "2020-07-11T01:36:46Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "@huitema I'm not 100% sure what the issue is here.\r\n\r\nThe current qlog text explicitly mentions using the ODCID as filename for qlog files as the \"lowest common denominator\". Furthermore, qlog files can contain multiple individual traces, as the `traces' property is an array. So it's already perfectly possible to log one trace for the first connection and then a second trace for the retried one after that. As @marten-seemann said, there are people doing just that already. Maybe the problem is in the wording? That you interpret a `trace' as a single file, and I interpret it as a list of events, where 1 file can contain multiple traces? \r\n\r\nAnother approach would be to use the `group_id' field and not set that to an ODCID but assign that a sort of internal server number based on IP+port or something to uniquely identify a client across attempts. That would work even for \"version negotiation\", as there you don't have the luxury of having a stable ODCID. I don't want to mandate this type of thing in the text though, since it all implies the server needs to keep extra state around to match up connections, and some (most?) won't want to do that (in production). \r\n\r\nIn short: I'm not sure what you'd like me to change to the text at this time. \r\n\r\n\r\n\r\n",
+          "createdAt": "2020-07-11T15:53:59Z",
+          "updatedAt": "2020-07-11T15:53:59Z"
+        }
+      ]
+    },
+    {
+      "number": 106,
+      "id": "MDU6SXNzdWU2NTUwMTI5OTY=",
+      "title": "Logging events outside of connections",
+      "url": "https://github.com/quiclog/internet-drafts/issues/106",
+      "state": "OPEN",
+      "author": "huitema",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Servers typically notice events happening outside of connections: packets for which the DCID is not recognized, malformed Initial packets, etc. When debugging and looking at both client traces and server traces, it might be useful to match a client packet with an out-of-connection event at the server. I wonder how to do that within the qlog framework.",
+      "createdAt": "2020-07-10T20:15:49Z",
+      "updatedAt": "2020-07-11T16:12:46Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I encountered the same issue. I think the root of the problem is that qlog is not streamable. Otherwise, you could just have a `server.qlog` and append every event that's not matched to any connection.\r\n\r\nSure, you can always play some tricks to work around this issue, like exporting a server qlog every one hour, for example. Downside is, of course, that you wouldn't have access to the events that happened with the last hour.\r\n\r\nBroadening the scope of this issue, I'd say the root cause is that qlog is trying to make it possible to have multiple traces per file. Sure, it's possible, but only by giving up on streamability. I'm not sure if that's a feature worth having though, considering how much complexity it creates for the format itself (and for parsers that want to support it). I'd actually prefer to have a format that looks something like this:\r\n```\r\n<header>\r\n   config options, vantage, other trace-related metadata\r\n</header>\r\n<events>\r\n\r\n<events>\r\n```\r\n",
+          "createdAt": "2020-07-11T01:34:15Z",
+          "updatedAt": "2020-07-11T01:34:15Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So, here again (like with #105, which I see as similar to this, maybe read my reply there first) I'm not sure what the issue is.\r\n\r\nIf an event cannot be matched to a connection, it's difficult to log it together with other events without keeping extra state and doing some work. That is usually relatively easy though: you can e.g., match IP+port of a malformed initial to other proper packets from the same source and aggregate them in the same trace based on that. Then you do need to add extra logic for migration etc. but it's certainly possible I'd say? \r\n\r\nAnother option is as @marten-seemann mentions to have a single big `server.qlog' that includes all the events that don't nicely match to a connection (this could also include things you reply to with a version negotiation for example). I think Lars does this for quant. To me, it depends on how you want to debug your setup and how you approach these types of errors. I'm not sure if there needs to be more text on this? \r\n\r\n-----------\r\n\r\nI am however unsure about why this `server.qlog` wouldn't be possible with the JSON-based setup... each qlog event is self-contained (it's a single array with some values and in draft-02 will be a single object) and can trivially be appended to a file by prepending it with a `,`. \r\n\r\nThe thing that makes a JSON file that was \"streamed\" a bit more awkward is that you'd need to close it with a `]}]}' to be \"valid JSON\". However, qvis for example includes a fallback to a streaming parser (http://oboejs.com) to deal with files that don't do this and it seems to work perfectly fine (was initially added for cases where the endpoint shuts down unexpectedly and doesn't have time to print those final closing characters). Furthermore, this case is trivially fixed by a post-processor that adds those characters if they're not found at the end of a file. \r\n\r\nAm I missing something crucial in this discussion on streaming? Several people have brought this up (e.g., @martinthomson) but I have always considered this a non-issue. If we were switch to e.g., a csv-format, you'd have to write custom parsers for that as well (which would likely be slower than optimized, built-in JSON parsers), while now at least you get a free JSON parser if your files are well-formed (which, from my experience, most are or can be made to be). \r\n\r\nI also don't agree this is due to having support for multiple traces in one file. You can have just a single trace and use `group_id' to split things out later. The only thing this adds is the extra `]}`. Even if we left that out and stayed with JSON, you'd still be stuck with the other `]}' to close the `<events>` list and total object. \r\n\r\nFinally, especially for @marten-seemann, these might be moot points for draft-02, as that should make it much easier to use protobufs or similar instead of JSON. Still, I'd love some feedback on my points above, to make sure I'm not missing a key point in this discussion. \r\n\r\n",
+          "createdAt": "2020-07-11T16:12:46Z",
+          "updatedAt": "2020-07-11T16:12:46Z"
         }
       ]
     }
@@ -2684,24 +2753,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NDQ2MDkxNDgx",
       "title": "max_ack_delay is a constant, and logged in the transport parameters_set",
       "url": "https://github.com/quiclog/internet-drafts/pull/98",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2020-07-08T08:47:07Z",
-      "updatedAt": "2020-07-08T08:47:07Z",
+      "updatedAt": "2020-07-08T09:30:40Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
       "baseRefOid": "b8a2fd89f64b95e026a68dfcfb879d6c695e1514",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "remove-max-ack-delay-from-metrics-update",
       "headRefOid": "408d46cd7076062970ad2898cba4079091629cff",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2020-07-08T09:30:40Z",
+      "mergedAt": "2020-07-08T09:30:40Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "11edf486b69a96720646b436789d33d4621a02e2"
+      },
       "comments": [],
       "reviews": []
     },
@@ -2738,25 +2809,40 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NDQ2MTAzNDQ2",
       "title": "remove the UnknownFrame QUIC frame type",
       "url": "https://github.com/quiclog/internet-drafts/pull/103",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Other than H3 frames, QUIC frames are not TLV encoded. It's therefore not possible to parse a frame type that your implementation doesn't understand. In fact, it's a protocol violation to even send such a frame.",
       "createdAt": "2020-07-08T09:08:43Z",
-      "updatedAt": "2020-07-08T09:08:43Z",
+      "updatedAt": "2020-07-08T09:38:57Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
       "baseRefOid": "b8a2fd89f64b95e026a68dfcfb879d6c695e1514",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "remove-unknown-frame",
       "headRefOid": "76957f1589918be259181e40d9a9b6b810ceb9b2",
-      "closedAt": null,
+      "closedAt": "2020-07-08T09:38:56Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I'm not sure I follow you on this one.\r\n\r\nHere, the use case is for the receiver. They see an incoming frame with an unknown type, which, according to the spec, leads to a connection close:\r\n\r\n> An endpoint MUST treat the receipt of a frame of unknown type as a\r\n   connection error of type FRAME_ENCODING_ERROR.\r\n\r\nThis definition is to allow the endpoint to log more detailed info (or at least the raw value for manual dissection during debugging) about the unexpected frame before closing the connection. ",
+          "createdAt": "2020-07-08T09:34:51Z",
+          "updatedAt": "2020-07-08T09:34:51Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "That makes sense. Must have missed that, sorry.",
+          "createdAt": "2020-07-08T09:38:56Z",
+          "updatedAt": "2020-07-08T09:38:56Z"
+        }
+      ],
       "reviews": []
     }
   ]
