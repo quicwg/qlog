@@ -589,6 +589,7 @@ Triggers:
 * "unexpected_packet"
 * "unexpected_source_connection_id"
 * "unexpected_version"
+* "invalid_initial"
 
 Note: sometimes packets are dropped before they can be associated with a
 particular connection (e.g., in case of "unsupported_version"). This situation is
