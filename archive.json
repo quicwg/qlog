@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-07-11T20:49:57.553599+00:00",
+  "timestamp": "2020-07-22T07:46:03.940216+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -2049,7 +2049,7 @@
       "labels": [],
       "body": "Many implementations identify the Qlog file using the \"Initial DCID\" used by the client. In the case of Retry, this results in two Qlog traces: one identified by the original DCID that contains the first initial packet of the client and the Retry packet that the server produced, and a second one identified by the Initial DCID used in the subsequent connection.\r\n\r\nMy proposal is to use a single file for the retry and for the next connection, identified by the ODCID. But I wonder whether that's going to break something.",
       "createdAt": "2020-07-10T20:06:03Z",
-      "updatedAt": "2020-07-11T15:53:59Z",
+      "updatedAt": "2020-07-12T01:08:58Z",
       "closedAt": null,
       "comments": [
         {
@@ -2072,6 +2072,13 @@
           "body": "@huitema I'm not 100% sure what the issue is here.\r\n\r\nThe current qlog text explicitly mentions using the ODCID as filename for qlog files as the \"lowest common denominator\". Furthermore, qlog files can contain multiple individual traces, as the `traces' property is an array. So it's already perfectly possible to log one trace for the first connection and then a second trace for the retried one after that. As @marten-seemann said, there are people doing just that already. Maybe the problem is in the wording? That you interpret a `trace' as a single file, and I interpret it as a list of events, where 1 file can contain multiple traces? \r\n\r\nAnother approach would be to use the `group_id' field and not set that to an ODCID but assign that a sort of internal server number based on IP+port or something to uniquely identify a client across attempts. That would work even for \"version negotiation\", as there you don't have the luxury of having a stable ODCID. I don't want to mandate this type of thing in the text though, since it all implies the server needs to keep extra state around to match up connections, and some (most?) won't want to do that (in production). \r\n\r\nIn short: I'm not sure what you'd like me to change to the text at this time. \r\n\r\n\r\n\r\n",
           "createdAt": "2020-07-11T15:53:59Z",
           "updatedAt": "2020-07-11T15:53:59Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> So it's already perfectly possible to log one trace for the first connection and then a second trace for the retried one after that. As @marten-seemann said, there are people doing just that already.\r\n\r\nActually, that's not what I'm doing. I'm not logging the first Intitial received and the Retry sent at all on the server side (only on the client side), since there's no reasonable way of logging events that happen outside of a connection (see #106).",
+          "createdAt": "2020-07-12T01:08:58Z",
+          "updatedAt": "2020-07-12T01:08:58Z"
         }
       ]
     },
@@ -2087,7 +2094,7 @@
       "labels": [],
       "body": "Servers typically notice events happening outside of connections: packets for which the DCID is not recognized, malformed Initial packets, etc. When debugging and looking at both client traces and server traces, it might be useful to match a client packet with an out-of-connection event at the server. I wonder how to do that within the qlog framework.",
       "createdAt": "2020-07-10T20:15:49Z",
-      "updatedAt": "2020-07-11T16:12:46Z",
+      "updatedAt": "2020-07-12T03:09:04Z",
       "closedAt": null,
       "comments": [
         {
@@ -2103,6 +2110,58 @@
           "body": "So, here again (like with #105, which I see as similar to this, maybe read my reply there first) I'm not sure what the issue is.\r\n\r\nIf an event cannot be matched to a connection, it's difficult to log it together with other events without keeping extra state and doing some work. That is usually relatively easy though: you can e.g., match IP+port of a malformed initial to other proper packets from the same source and aggregate them in the same trace based on that. Then you do need to add extra logic for migration etc. but it's certainly possible I'd say? \r\n\r\nAnother option is as @marten-seemann mentions to have a single big `server.qlog' that includes all the events that don't nicely match to a connection (this could also include things you reply to with a version negotiation for example). I think Lars does this for quant. To me, it depends on how you want to debug your setup and how you approach these types of errors. I'm not sure if there needs to be more text on this? \r\n\r\n-----------\r\n\r\nI am however unsure about why this `server.qlog` wouldn't be possible with the JSON-based setup... each qlog event is self-contained (it's a single array with some values and in draft-02 will be a single object) and can trivially be appended to a file by prepending it with a `,`. \r\n\r\nThe thing that makes a JSON file that was \"streamed\" a bit more awkward is that you'd need to close it with a `]}]}' to be \"valid JSON\". However, qvis for example includes a fallback to a streaming parser (http://oboejs.com) to deal with files that don't do this and it seems to work perfectly fine (was initially added for cases where the endpoint shuts down unexpectedly and doesn't have time to print those final closing characters). Furthermore, this case is trivially fixed by a post-processor that adds those characters if they're not found at the end of a file. \r\n\r\nAm I missing something crucial in this discussion on streaming? Several people have brought this up (e.g., @martinthomson) but I have always considered this a non-issue. If we were switch to e.g., a csv-format, you'd have to write custom parsers for that as well (which would likely be slower than optimized, built-in JSON parsers), while now at least you get a free JSON parser if your files are well-formed (which, from my experience, most are or can be made to be). \r\n\r\nI also don't agree this is due to having support for multiple traces in one file. You can have just a single trace and use `group_id' to split things out later. The only thing this adds is the extra `]}`. Even if we left that out and stayed with JSON, you'd still be stuck with the other `]}' to close the `<events>` list and total object. \r\n\r\nFinally, especially for @marten-seemann, these might be moot points for draft-02, as that should make it much easier to use protobufs or similar instead of JSON. Still, I'd love some feedback on my points above, to make sure I'm not missing a key point in this discussion. \r\n\r\n",
           "createdAt": "2020-07-11T16:12:46Z",
           "updatedAt": "2020-07-11T16:12:46Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> I am however unsure about why this server.qlog wouldn't be possible with the JSON-based setup... each qlog event is self-contained (it's a single array with some values \r\n\r\nI'm not sure if I understand your point. I thought this is not the case. You can have multiple traces per file, so you'd have a file where events are appended at different locations within that file.\r\nThis is why I suggested getting rid of this corner case by saying that `1 qlog file == 1 trace`. That would simplify things quite a bit.\r\n\r\n> Am I missing something crucial in this discussion on streaming? Several people have brought this up (e.g., @martinthomson) but I have always considered this a non-issue.\r\n\r\nI'd be curious to hear what other peoples' requirements are here.\r\nFor me, streaming means that you have a valid at any given moment. With the qlog format that's not possible since you'll always be missing some closing `]` and `}`.\r\nImagine you want to build a tool like the UNIX command line utility `tail` for qlog, which outputs events as soon as they come in. This would be hard to do, as you're dealing with invalid JSON most of the time. \r\nThings are further complicated by the fact that JSON doesn't define the order of the fields within an object (for example, it would be valid qlog if `common_fields` comes after the `events`, and iirc, I've seen at least one qlog implementation write files like that).\r\n\r\n>  If we were switch to e.g., a csv-format, you'd have to write custom parsers for that as well (which would likely be slower than optimized, built-in JSON parsers), while now at least you get a free JSON parser if your files are well-formed (which, from my experience, most are or can be made to be).\r\n\r\nWhen I think of slow encoders, I think of JSON...\r\nThat being said, I don't think JSON buys us a lot here. The fact that qlogs have `common_fields` and `event_fields`, and that events are not exported as objects but as arrays makes it quite cumbersome to write a qlog exporter / parser. As I understand, the `event_fields` are effectively an attempt to build in some compression into the format, an attempt rendered moot by the fact that JSON is an inherently space-inefficient file format. gzipping a tyical qlog gives you a file smaller than 10% of the original file size... so I can't help to think of this as a premature optimization.",
+          "createdAt": "2020-07-12T02:32:10Z",
+          "updatedAt": "2020-07-12T02:32:10Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "+1 on premature optimization. I tripped on the event_fields when writing a python parser for the qlogs, and I see that others have similar issues. If you want to reduce volume, it would be simpler to just have shorter names for the variables.",
+          "createdAt": "2020-07-12T02:37:29Z",
+          "updatedAt": "2020-07-12T02:37:29Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "+1 on format too. I would very much like to be able to just add an event by appending the data at the end of the log file. I can do that with my binary logs, and then call a converter to produce the qlog and add the required set of curly and square brackets at the end. But with an actual qlog file, I would have to roll back the end of the file, remove the end brackets, write the event, and then add the brackets again. Kind of, not funny.\r\n",
+          "createdAt": "2020-07-12T03:09:04Z",
+          "updatedAt": "2020-07-12T03:09:04Z"
+        }
+      ]
+    },
+    {
+      "number": 107,
+      "id": "MDU6SXNzdWU2NTU1NjA4MzM=",
+      "title": "Do we need an acked_packet event?",
+      "url": "https://github.com/quiclog/internet-drafts/issues/107",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "We have a `lost_packet` event, but no corresponding `acked_packet` event. That event would fire when a packet is acknowledged and removed from the map of sent packets.\r\n\r\nA parser that wants to track when a packet is (first) acknowledged would have to build a map of sent packets, and remove packets from that map when they are either acknowledged, declared lost or when the packet number space is lost.",
+      "createdAt": "2020-07-13T03:49:47Z",
+      "updatedAt": "2020-07-13T14:30:59Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So this is similar to \"do we need a `connection_closed` event?\" in that there's a question of how many \"redundant\" ways we can have to log the same event. \r\n\r\nFor connection close and packet acked, the reasoning initially was that those could be fully parsed from the corresponding frames inside `packet_sent` and `packet_received` and thus didn't need an extra event. \r\n\r\nI can now see the reasoning for wanting a specific `connection_closed` event (e.g., logging an internal reason that you don't send over the wire), but I'm not sure what a separate `acked_packet` event would give us. For some use cases it would make it easier (if you're not parsing frames inside the `packet_*` events), but in most, I feel it would make things more complicated (do I need to log both? Do I skip logging of ACK frames if I do `acked_packet`? etc.). I do see that receipt of an ACK frame is potentially different from adding/removing to the internal packet datastructure (given duplicate acks), but not sure that should be exposed in a default way in qlog (we have many more of those type of `implied` actions that are expected to happen upon frame processing. Though there is some precedent of exposing that type of thing, e.g., in `data_moved`). In most cases, it was expected that tools could derive this type of action from the logged frames (e.g., like how I track retransmissions and gaps in streams in qvis: those are also not explicitly logged).",
+          "createdAt": "2020-07-13T14:15:51Z",
+          "updatedAt": "2020-07-13T14:18:11Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "Personally, I agree with @marten-seemann. MsQuic logs (to [ETW](https://docs.microsoft.com/en-us/windows/win32/etw/event-tracing-portal)) events or state changes for things. For qlog, we then have a converter. We don't log the contents of every packet or frame. For packets, we track when they're created, acknowledged, dropped, assumed lost, deemed spuriously lost, etc. IMO, tools that process the logs should not have to know how to process a logged ACK frame to then go calculate which in-flight packets have now been acknowledged. Another reason, is that our logging system doesn't assume full state was contained within the log file. The logs may have been started mid run or the fixed fixed log buffer rolled over. In those cases, you wouldn't necessarily have the created event for a packet and wouldn't know what is already in-flight.",
+          "createdAt": "2020-07-13T14:30:59Z",
+          "updatedAt": "2020-07-13T14:30:59Z"
         }
       ]
     }
@@ -2843,6 +2902,34 @@
           "updatedAt": "2020-07-08T09:38:56Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 108,
+      "id": "MDExOlB1bGxSZXF1ZXN0NDQ5NDM2MjM3",
+      "title": "add an \"invalid_initial\" trigger to the packet_dropped event",
+      "url": "https://github.com/quiclog/internet-drafts/pull/108",
+      "state": "MERGED",
+      "author": "marten-seemann",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "There are two conditions an Initial packet has to fulfill:\r\n1. It's DCID must be >= 8 bytes long.\r\n2. The size of the datagram must be >= 1200.\r\n\r\nNone of the other triggers for the `packet_dropped` event seem appropriate for this.",
+      "createdAt": "2020-07-15T12:02:04Z",
+      "updatedAt": "2020-07-22T07:45:42Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "fae11164cbfc22ff5aa6a763eae746e2e15abd00",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "add-invalid-initial-drop-trigger",
+      "headRefOid": "0a8175658bf0aa7ef8d9ebd4754deb1a52c49844",
+      "closedAt": "2020-07-22T07:45:42Z",
+      "mergedAt": "2020-07-22T07:45:42Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "d6433e1e93343aae970163d13549ad8361535330"
+      },
+      "comments": [],
       "reviews": []
     }
   ]
