@@ -588,6 +588,7 @@ Data:
 {
     packet_type:PacketType,
     packet_number?:string,
+    packet_size?:number,
 
     trigger?: string
 }
