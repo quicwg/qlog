@@ -90,31 +90,9 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
 interpreted as described in [RFC2119].
 
-This document uses the ["TypeScript" language](https://www.typescriptlang.org/) to
-describe its schema in. We use TypeScript because it is less verbose than
-JSON-schema and almost as expressive. It also makes it easier to include these
-definitions directly into a web-based tool. TypeScript type definitions for this
-document are available at https://github.com/quiclog/qlog/tree/master/TypeScript.
-The main conventions a reader should be aware of are:
-
-* obj? : this object is optional
-* type1 &#124; type2 : a union of these two types (object can be either type1 OR
-  type2)
-* obj&#58;type : this object has this concrete type
-* obj&#91;&#93; : this object is an array (which can contain any type of object)
-* obj&#58;Array&lt;type&gt; : this object is an array of this type
-* number : identifies either an integer, float or double in TypeScript. In this
-  document, number always means an integer.
-* Unless explicity defined, the value of an enum entry is the string version of
-  its name (e.g., initial = "initial")
-* Many numerical fields have type "string" instead of "number". This is because
-  many JSON implementations only support integers up to 2^53-1 (MAX_INTEGER for
-  JavaScript without BigInt support), which is less than QUIC's VLIE types
-  (2^62-1). Each field that can potentially have a value larger than 2^53-1 is
-  thus a string, where a number would be semantically more correct. Unless
-  mentioned otherwise (e.g., for connection IDs), numerical fields that are logged
-  as strings (e.g., packet numbers) MUST be logged in decimal (base-10) format.
-  TODO: see issue 10
+The examples and data definitions in ths document are expressed in a custom data
+definition language, inspired by JSON and TypeScript, and described in
+[QLOG-MAIN].
 
 ## Importance
 
@@ -590,6 +568,7 @@ Triggers:
 * "unexpected_source_connection_id"
 * "unexpected_version"
 * "duplicate"
+* "invalid_initial"
 
 Note: sometimes packets are dropped before they can be associated with a
 particular connection (e.g., in case of "unsupported_version"). This situation is
@@ -815,7 +794,6 @@ Data:
     latest_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
     rtt_variance?:number, // in ms or us, depending on the overarching qlog's configuration
 
-    max_ack_delay?:number, // in ms or us, depending on the overarching qlog's configuration
     pto_count?:number,
 
     // Congestion control, Appendix B.2.
@@ -826,7 +804,6 @@ Data:
 
     // qlog defined
     packets_in_flight?:number, // sum of all packet number spaces
-    in_recovery?:boolean, // high-level signal. For more granularity, see congestion_state_updated
 
     pacing_rate?:number // in bps
 }
@@ -1787,7 +1764,7 @@ class UnknownFrame{
 enum TransportError {
     no_error,
     internal_error,
-    server_busy,
+    connection_refused,
     flow_control_error,
     stream_limit_error,
     stream_state_error,
