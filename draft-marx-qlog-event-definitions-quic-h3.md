@@ -567,6 +567,7 @@ Triggers:
 * "unexpected_packet"
 * "unexpected_source_connection_id"
 * "unexpected_version"
+* "duplicate"
 * "invalid_initial"
 
 Note: sometimes packets are dropped before they can be associated with a
