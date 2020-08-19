@@ -100,13 +100,17 @@ The main general conventions a reader should be aware of are:
 
 The main data types are:
 
-* int32 : signed 32-byte integer
-* int64 : signed 64-byte integer
-* uint32 : unsigned 32-byte integer
-* uint64 : unsigned 64-byte integer
-* float : 32-byte floating point value
-* double : 64-byte floating point value
-* byte : an individual raw byte value (use array&lt;byte&gt; to specify a binary blob)
+* int8 : signed 8-bit integer
+* int16 : signed 16-bit integer
+* int32 : signed 32-bit integer
+* int64 : signed 64-bit integer
+* uint8 : unsigned 8-bit integer
+* uint16 : unsigned 16-bit integer
+* uint32 : unsigned 32-bit integer
+* uint64 : unsigned 64-bit integer
+* float : 32-bit floating point value
+* double : 64-bit floating point value
+* byte : an individual raw byte (8-bit) value (use array&lt;byte&gt; to specify a binary blob)
 * string : list of ASCII encoded characters
 * boolean : boolean
 * enum: fixed list of values (Unless explicity defined, the value of an enum entry
@@ -114,7 +118,7 @@ The main data types are:
 * any : represents any object type. Mainly used here as a placeholder for more
   concrete types defined in related documents (e.g., specific event types)
 
-All timestamps in qlog are logged as UNIX epoch timestamps as uint64 in the
+All timestamps in qlog are logged as Unix epoch timestamps as doubles in the
 millisecond resolution. All other time-related values (e.g., offsets) are also
 always expressed in milliseconds.
 
@@ -304,7 +308,7 @@ configuration settings: "time_offset" and "original_uris".
 ~~~~~~~~
 Definition:
 class Configuration {
-    time_offset:uint64, // in milliseconds,
+    time_offset:double, // in ms,
     original_uris: array<string>,
     // list of fields with any type
 }
@@ -553,10 +557,10 @@ Definition:
     group_id?:string|uint32, // if per-event
 
     // at least one of these four fields must be present
-    time?: uint64,
-    reference_time?: uint64,
-    relative_time?: uint64,
-    delta_time?: uint64,
+    time?: double,
+    reference_time?: double,
+    relative_time?: double,
+    delta_time?: double,
 
     category: string,
     event: string,
@@ -596,7 +600,8 @@ There are three main modes for logging time:
   of characters.
 * Specify a full "reference_time" timestamp up-front in "common_fields" and
   include only relatively-encoded values based on this reference_time with each
-  event ("relative_time"). This approach uses a medium amount of characters.
+  event ("relative_time"). This approach uses a medium amount of characters. The
+  "reference_time" is in ms since the Unix epoch.
 
 The first option is good for stateless loggers, the second and third for stateful
 loggers. The third option is generally preferred, since it produces smaller files
@@ -878,7 +883,7 @@ files.
 qlog implementers MAY make generated logs and traces on an endpoint (typically the
 server) available via the following .well-known URI:
 
-> .well-known/qlog/{IDENTIFIER}
+> .well-known/qlog/IDENTIFIER
 
 The IDENTIFIER variable depends on the setup and the chosen protocol. For example,
 for QUIC logging, the ODCID is often used to uniquely identify a connection.
@@ -1035,7 +1040,11 @@ JSON strings are serialized with quotes. Numbers without.
 
 | qlog type | JSON type                             |
 |-----------|---------------------------------------|
+| int8      | number                                |
+| int16     | number                                |
 | int32     | number                                |
+| uint8     | number                                |
+| uint16    | number                                |
 | uint32    | number                                |
 | float     | number                                |
 | int64     | number or string                      |

@@ -134,9 +134,7 @@ packets_acknowledged events instead.
 # Overview
 
 This document describes the values of the qlog "category", "event" and "data"
-fields and their semantics for the QUIC and HTTP/3 protocols. The definitions
-included in this file are assumed to be used in qlog's "trace" containers, where
-the trace's "protocol_type" field MUST be set to "QUIC_HTTP3".
+fields and their semantics for the QUIC and HTTP/3 protocols.
 
 Many of the events map directly to concepts seen in the QUIC and HTTP/3 documents,
 while others act as aggregating events that combine data from several possible
@@ -198,7 +196,7 @@ they would most likely be logged in separate traces.
 This document re-uses all the fields defined in the main qlog schema (e.g.,,
 category, event, data, group_id, protocol_type, the time-related fields, etc.).
 
-The value of the protocol_type field MUST be "QUIC_HTTP3".
+The value of the "protocol_type" qlog field MUST be "QUIC_HTTP3".
 
 As the group_id field can contain any grouping identifier, this document defines
 an additional similar field, named ODCID (for Original Destination Connection ID),
@@ -219,10 +217,10 @@ Data:
 
 ~~~
 {
-    ip_v4?: string,
-    ip_v6?: string,
-    port_v4?: number,
-    port_v6?: number,
+    ip_v4?: IPAddress,
+    ip_v6?: IPAddress,
+    port_v4?: uint32,
+    port_v6?: uint32,
 
     quic_versions?: Array<string>, // the application layer protocols this server supports
     alpn_values?: Array<string>, // the application layer protocols this server supports
@@ -246,17 +244,17 @@ Data:
 
 ~~~
 {
-    ip_version?: string,
-    src_ip?: string,
-    dst_ip?: string,
+    ip_version?: "v4" | "v6",
+    src_ip?: IPAddress,
+    dst_ip?: IPAddress,
 
-    protocol?: string, // (default "QUIC")
-    src_port?: number,
-    dst_port?: number,
+    protocol?: string, // transport layer protocol (default "QUIC")
+    src_port?: uint32,
+    dst_port?: uint32,
 
-    quic_version?: string,
-    src_cid?: string,
-    dst_cid?: string,
+    quic_version?: bytes, // e.g., ff00001d for draft-29
+    src_cid?: bytes,
+    dst_cid?: bytes,
 
     alpn_values?: Array<string> // ALPN values offered by the client / received by the server. Use parameters_set to log the actually selected alp
 }
@@ -277,11 +275,11 @@ Data:
 
 ~~~
 {
-    src_old?: string,
-    src_new?: string,
+    src_old?: bytes,
+    src_new?: bytes,
 
-    dst_old?: string,
-    dst_new?: string
+    dst_old?: bytes,
+    dst_new?: bytes
 }
 ~~~
 
@@ -358,9 +356,9 @@ Data:
 ~~~
 {
     key_type:KeyType,
-    old?:string,
-    new:string,
-    generation?:number, // needed for 1RTT key updates
+    old?:bytes,
+    new:bytes,
+    generation?:uint32, // needed for 1RTT key updates
 
     trigger?: string
 }
@@ -380,8 +378,8 @@ Data:
 ~~~
 {
     key_type:KeyType,
-    key?:string,
-    generation?:number, // needed for 1RTT key updates
+    key?:bytes,
+    generation?:uint32, // needed for 1RTT key updates
 
     trigger?: string
 }
@@ -427,41 +425,41 @@ Data:
     resumption_allowed?:boolean, // valid session ticket was received
     early_data_enabled?:boolean, // early data extension was enabled on the TLS layer
     alpn?:string,
-    version?:string, // hex (e.g., 0x)
-    tls_cipher?:string, // (e.g., AES_128_GCM_SHA256)
+    version?:bytes,
+    tls_cipher?:string, // (e.g., "AES_128_GCM_SHA256")
 
     // transport parameters from the TLS layer:
-    original_destination_connection_id?:string, // hex
-    initial_source_connection_id?:string, // hex
-    retry_source_connection_id?:string, // hex
-    stateless_reset_token?:string, // hex
+    original_destination_connection_id?:bytes,
+    initial_source_connection_id?:bytes,
+    retry_source_connection_id?:bytes,
+    stateless_reset_token?:bytes,
     disable_active_migration?:boolean,
 
-    max_idle_timeout?:number,
-    max_udp_payload_size?:number,
-    ack_delay_exponent?:number,
-    max_ack_delay?:number,
-    active_connection_id_limit?:number,
+    max_idle_timeout?:uint64,
+    max_udp_payload_size?:uint32,
+    ack_delay_exponent?:uint16,
+    max_ack_delay?:uint16,
+    active_connection_id_limit?:uint32,
 
-    initial_max_data?:string,
-    initial_max_stream_data_bidi_local?:string,
-    initial_max_stream_data_bidi_remote?:string,
-    initial_max_stream_data_uni?:string,
-    initial_max_streams_bidi?:string,
-    initial_max_streams_uni?:string,
+    initial_max_data?:uint64,
+    initial_max_stream_data_bidi_local?:uint64,
+    initial_max_stream_data_bidi_remote?:uint64,
+    initial_max_stream_data_uni?:uint64,
+    initial_max_streams_bidi?:uint64,
+    initial_max_streams_uni?:uint64,
 
     preferred_address?:PreferredAddress
 }
 
 interface PreferredAddress {
-    ip_v4:string,
-    ip_v6:string,
+    ip_v4:IPAddress,
+    ip_v6:IPAddress,
 
-    port_v4:number,
-    port_v6:number,
+    port_v4:uint16,
+    port_v6:uint16,
 
-    connection_id:string, // hex
-    stateless_reset_token:string // hex
+    connection_id:bytes,
+    stateless_reset_token:bytes
 }
 ~~~
 
@@ -483,11 +481,12 @@ Data:
 
     is_coalesced?:boolean,
 
-    stateless_reset_token?:string, // only if PacketType === stateless_reset
-    supported_versions:Array<string>, // only if PacketType === version_negotiation
+    stateless_reset_token?:bytes, // only if PacketType === stateless_reset
+    supported_versions:Array<bytes>, // only if PacketType === version_negotiation
 
-    raw_encrypted?:string, // for debugging purposes
-    raw_decrypted?:string  // for debugging purposes,
+    raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
+    raw_encrypted?:bytes, // for debugging purposes
+    raw_decrypted?:bytes  // for debugging purposes,
 
     trigger?: string
 }
@@ -519,11 +518,12 @@ Data:
 
     is_coalesced?:boolean,
 
-    stateless_reset_token?:string, // only if PacketType === stateless_reset
-    supported_versions:Array<string>, // only if PacketType === version_negotiation
+    stateless_reset_token?:bytes, // only if PacketType === stateless_reset
+    supported_versions:Array<bytes>, // only if PacketType === version_negotiation
 
-    raw_encrypted?:string, // for debugging purposes
-    raw_decrypted?:string  // for debugging purposes,
+    raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
+    raw_encrypted?:bytes, // for debugging purposes
+    raw_decrypted?:bytes  // for debugging purposes,
 
     trigger?: string
 }
@@ -550,8 +550,8 @@ Data:
 ~~~
 {
     packet_type?:PacketType,
-    packet_size?:number,
-    raw?:string, // hex encoded,
+    raw_length?:uint32,
+    raw?:bytes,
 
     trigger?: string
 }
@@ -589,8 +589,8 @@ Data:
 ~~~
 {
     packet_type:PacketType,
-    packet_number?:string,
-    packet_size?:number,
+    packet_number?:uint64,
+    packet_size?:uint32,
 
     trigger?: string
 }
@@ -613,8 +613,8 @@ Data:
 
 ~~~
 {
-    count?:number, // to support passing multiple at once
-    byte_length?:number
+    count?:uint16, // to support passing multiple at once
+    byte_length?:uint32
 }
 ~~~
 
@@ -628,8 +628,8 @@ Data:
 
 ~~~
 {
-    count?:number, // to support passing multiple at once
-    byte_length?:number
+    count?:uint16, // to support passing multiple at once
+    byte_length?:uint32
 }
 ~~~
 
@@ -643,7 +643,7 @@ Data:
 
 ~~~
 {
-    byte_length?:number
+    byte_length?:uint32
 }
 ~~~
 
@@ -660,7 +660,7 @@ Data:
 
 ~~~
 {
-    stream_id:string,
+    stream_id:uint64,
     stream_type?:"unidirectional"|"bidirectional", // mainly useful when opening the stream
 
     old?:StreamState,
@@ -760,17 +760,17 @@ Data:
 ~~~
 {
     // Loss detection, see recovery draft-23, Appendix A.2
-    reordering_threshold?:number, // in amount of packets
-    time_threshold?:number, // as RTT multiplier
-    timer_granularity?:number, // in ms or us, depending on the overarching qlog's configuration
-    initial_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
+    reordering_threshold?:uint16, // in amount of packets
+    time_threshold?:float, // as RTT multiplier
+    timer_granularity?:uint16, // in ms
+    initial_rtt?:float, // in ms
 
     // congestion control, Appendix B.1.
-    max_datagram_size?:number, // in bytes // Note: this could be updated after pmtud
-    initial_congestion_window?:number, // in bytes
-    minimum_congestion_window?:number, // in bytes // Note: this could change when max_datagram_size changes
-    loss_reduction_factor?:number,
-    persistent_congestion_threshold?:number // as PTO multiplier
+    max_datagram_size?:uint32, // in bytes // Note: this could be updated after pmtud
+    initial_congestion_window?:uint64, // in bytes
+    minimum_congestion_window?:uint32, // in bytes // Note: this could change when max_datagram_size changes
+    loss_reduction_factor?:float,
+    persistent_congestion_threshold?:uint16 // as PTO multiplier
 }
 ~~~
 
@@ -792,23 +792,23 @@ Data:
 ~~~
 {
     // Loss detection, see recovery draft-23, Appendix A.3
-    min_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
-    smoothed_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
-    latest_rtt?:number, // in ms or us, depending on the overarching qlog's configuration
-    rtt_variance?:number, // in ms or us, depending on the overarching qlog's configuration
+    min_rtt?:float, // in ms or us, depending on the overarching qlog's configuration
+    smoothed_rtt?:float, // in ms or us, depending on the overarching qlog's configuration
+    latest_rtt?:float, // in ms or us, depending on the overarching qlog's configuration
+    rtt_variance?:float, // in ms or us, depending on the overarching qlog's configuration
 
-    pto_count?:number,
+    pto_count?:uint16,
 
     // Congestion control, Appendix B.2.
-    congestion_window?:number, // in bytes
-    bytes_in_flight?:number,
+    congestion_window?:uint64, // in bytes
+    bytes_in_flight?:uint64,
 
-    ssthresh?:number, // in bytes
+    ssthresh?:uint64, // in bytes
 
     // qlog defined
-    packets_in_flight?:number, // sum of all packet number spaces
+    packets_in_flight?:uint64, // sum of all packet number spaces
 
-    pacing_rate?:number // in bps
+    pacing_rate?:uint64 // in bps
 }
 ~~~
 
@@ -875,14 +875,14 @@ Data:
 
     event_type:"set"|"expired"|"cancelled",
 
-    delta?:number // if event_type === "set": delta time in ms or us (see configuration) from this event's timestamp until when the timer will trigger
+    delta?:float // if event_type === "set": delta time in ms or us (see configuration) from this event's timestamp until when the timer will trigger
 }
 ~~~
 
 TODO: how about CC algo's that use multiple timers? How generic do these events
 need to be? Just support QUIC-style recovery from the spec or broader?
 
-TODO: read up on the loss detection logic in draft-27+ and see if this suffices
+TODO: read up on the loss detection logic in draft-27 onward and see if this suffices
 
 ### packet_lost
 Importance: Core
@@ -895,7 +895,7 @@ Data:
 ~~~
 {
     packet_type:PacketType,
-    packet_number:string,
+    packet_number:uint64,
 
     // not all implementations will keep track of full packets, so these are optional
     header?:PacketHeader,
@@ -966,9 +966,9 @@ Data:
 {
     owner?:"local" | "remote",
 
-    max_header_list_size?:number, // from SETTINGS_MAX_HEADER_LIST_SIZE
-    max_table_capacity?:number, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
-    blocked_streams_count?:number, // from SETTINGS_QPACK_BLOCKED_STREAMS
+    max_header_list_size?:uint64, // from SETTINGS_MAX_HEADER_LIST_SIZE
+    max_table_capacity?:uint64, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
+    blocked_streams_count?:uint64, // from SETTINGS_QPACK_BLOCKED_STREAMS
 
     push_allowed?:boolean, // received a MAX_PUSH_ID frame with non-zero value
 
@@ -997,14 +997,14 @@ Data:
 
 ~~~~
 {
-    stream_id:string,
+    stream_id:uint64,
 
     owner?:"local"|"remote"
 
     old?:StreamType,
     new:StreamType,
 
-    associated_push_id?:number // only when new == "push"
+    associated_push_id?:uint64 // only when new == "push"
 }
 
 enum StreamType {
@@ -1028,11 +1028,12 @@ Data:
 
 ~~~
 {
-    stream_id:string,
+    stream_id:uint64,
     frame:HTTP3Frame // see appendix for the definitions,
-    byte_length?:string,
+    byte_length?:uint64,
 
-    raw?:string // in hex
+    raw_length?:uint64,
+    raw?:bytes
 }
 ~~~
 
@@ -1054,11 +1055,12 @@ Data:
 
 ~~~
 {
-    stream_id:string,
+    stream_id:uint64,
     frame:HTTP3Frame // see appendix for the definitions,
-    byte_length?:string,
+    byte_length?:uint64,
 
-    raw?:string // in hex
+    raw_length?:uint64,
+    raw?:bytes
 }
 ~~~
 
@@ -1090,14 +1092,15 @@ Data:
 
 ~~~~
 {
-    stream_id:string,
-    offset?:string,
-    length?:number,
+    stream_id:uint64,
+    offset?:uint64,
+    length?:uint64,
 
     from?:"application"|"transport",
     to?:"application"|"transport",
 
-    raw?:string // in hex
+    raw_length?:uint64,
+    raw?:bytes
 }
 ~~~~
 
@@ -1114,8 +1117,8 @@ behaviour, which is commonplace with HTTP/2.
 
 ~~~
 {
-    push_id?:number,
-    stream_id?:string, // in case this is logged from a place that does not have access to the push_id
+    push_id?:uint64,
+    stream_id?:uint64, // in case this is logged from a place that does not have access to the push_id
 
     decision:"claimed"|"abandoned"
 }
@@ -1150,11 +1153,11 @@ Data:
 {
     owner?:"local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
 
-    dynamic_table_capacity?:number,
-    dynamic_table_size?:number, // effective current size, sum of all the entries
+    dynamic_table_capacity?:uint64,
+    dynamic_table_size?:uint64, // effective current size, sum of all the entries
 
-    known_received_count?:number,
-    current_insert_count?:number
+    known_received_count?:uint64,
+    current_insert_count?:uint64
 }
 ~~~
 
@@ -1171,7 +1174,7 @@ Data:
 
 ~~~
 {
-    stream_id:string,
+    stream_id:uint64,
 
     state:"blocked"|"unblocked" // streams are assumed to start "unblocked" until they become "blocked"
 }
@@ -1192,9 +1195,9 @@ Data:
 }
 
 class DynamicTableEntry {
-    index:number;
-    name?:string;
-    value?:string;
+    index:uint64;
+    name?:string | bytes;
+    value?:string | bytes;
 }
 ~~~
 
@@ -1211,14 +1214,15 @@ Data:
 
 ~~~~
 {
-    stream_id?:string,
+    stream_id?:uint64,
 
     headers?:Array<HTTPHeader>,
 
     block_prefix:QPackHeaderBlockPrefix,
     header_block:Array<QPackHeaderBlockRepresentation>,
 
-    raw?:string, // in hex
+    raw_length?:uint32,
+    raw?:bytes
 }
 ~~~~
 
@@ -1235,14 +1239,15 @@ Data:
 
 ~~~~
 {
-    stream_id?:string,
+    stream_id?:uint64,
 
     headers?:Array<HTTPHeader>,
 
     block_prefix:QPackHeaderBlockPrefix,
     header_block:Array<QPackHeaderBlockRepresentation>,
 
-    raw?:string, // in hex
+    raw_length?:uint32,
+    raw?:bytes
 }
 ~~~~
 
@@ -1256,9 +1261,9 @@ Data:
 ~~~
 {
     instruction:QPackInstruction // see appendix for the definitions,
-    byte_length?:string,
 
-    raw?:string // in hex
+    raw_length?:uint32,
+    raw?:bytes
 }
 ~~~
 
@@ -1276,9 +1281,9 @@ Data:
 ~~~
 {
     instruction:QPackInstruction // see appendix for the definitions,
-    byte_length?:string,
 
-    raw?:string // in hex
+    raw_length?:uint32,
+    raw?:bytes
 }
 ~~~
 
@@ -1301,7 +1306,7 @@ Data:
 
 ~~~~
 {
-    code?:TransportError | CryptoError | number,
+    code?:TransportError | CryptoError | uint32,
     description?:string
 }
 ~~~~
@@ -1317,7 +1322,7 @@ Data:
 
 ~~~~
 {
-    code?:ApplicationError | number,
+    code?:ApplicationError | uint32,
     description?:string
 }
 ~~~~
@@ -1332,7 +1337,7 @@ Data:
 
 ~~~~
 {
-    code?:number,
+    code?:uint32,
     description?:string
 }
 ~~~~
@@ -1349,7 +1354,7 @@ Data:
 
 ~~~~
 {
-    code?:number,
+    code?:uint32,
     description?:string
 }
 ~~~~
@@ -1433,6 +1438,16 @@ TBD
 
 # QUIC data field definitions
 
+## IPAddress
+
+~~~
+
+class IPAddress : string | bytes;
+
+// an IPAddress can either be a "human readable" form (e.g., "127.0.0.1" for v4 or "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or use a raw byte-form (as the string forms can be ambiguous)
+
+~~~
+
 ## PacketType
 
 ~~~
@@ -1462,18 +1477,18 @@ enum PacketNumberSpace {
 
 ~~~
 class PacketHeader {
-    packet_number: string;
-    packet_size?: number;
-    payload_length?: number;
+    packet_number: uint64;
+    packet_size?: uint32;
+    payload_length?: uint32;
 
     // only if present in the header
-    // if correctly using NEW_CONNECTION_ID events,
+    // if correctly using transport:connection_id_updated events,
     // dcid can be skipped for 1RTT packets
-    version?: string;
-    scil?: string;
-    dcil?: string;
-    scid?: string;
-    dcid?: string;
+    version?: bytes; // e.g., ff00001d for draft-29
+    scil?: uint8;
+    dcil?: uint8;
+    scid?: bytes;
+    dcid?: bytes;
 
     // Note: short vs long header is implicit through PacketType
 }
@@ -1524,34 +1539,35 @@ class PingFrame{
 class AckFrame{
     frame_type:string = "ack";
 
-    ack_delay?:string; // in ms or us, depending on the overarching qlog's configuration
+    ack_delay?:float; // in ms
 
     // first number is "from": lowest packet number in interval
     // second number is "to": up to and including // highest packet number in interval
-    // e.g., looks like [["1","2"],["4","5"]]
-    acked_ranges?:Array<[string, string]|[string]>;
+    // e.g., looks like [[1,2],[4,5]]
+    acked_ranges?:Array<[uint64, uint64]|[uint64]>;
 
-    ect1?:string;
-    ect0?:string;
-    ce?:string;
+    // ECN (explicit congestion notification) related fields (not always present)
+    ect1?:uint64;
+    ect0?:uint64;
+    ce?:uint64;
 }
 ~~~
 
 Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
-ordered (e.g., \[\["5","9"\],\["1","4"\]\] is a valid value).
+ordered (e.g., \[\[5,9\],\[1,4\]\] is a valid value).
 
-Note: the two numbers in the packet range can be the same (e.g., \["120","120"\]
-means that packet with number 120 was ACKed). However, in that case, implementers
-SHOULD log \["120"\] instead and tools MUST be able to deal with both notations.
+Note: the two numbers in the packet range can be the same (e.g., \[120,120\] means
+that packet with number 120 was ACKed). However, in that case, implementers SHOULD
+log \[120\] instead and tools MUST be able to deal with both notations.
 
 ### ResetStreamFrame
 ~~~
 class ResetStreamFrame{
     frame_type:string = "reset_stream";
 
-    stream_id:string;
-    error_code:ApplicationError | number;
-    final_size:string;
+    stream_id:uint64;
+    error_code:ApplicationError | uint32;
+    final_size:uint64; // in bytes
 }
 ~~~
 
@@ -1561,8 +1577,8 @@ class ResetStreamFrame{
 class StopSendingFrame{
     frame_type:string = "stop_sending";
 
-    stream_id:string;
-    error_code:ApplicationError | number;
+    stream_id:uint64;
+    error_code:ApplicationError | uint32;
 }
 ~~~
 
@@ -1572,8 +1588,8 @@ class StopSendingFrame{
 class CryptoFrame{
   frame_type:string = "crypto";
 
-  offset:string;
-  length:number;
+  offset:uint64;
+  length:uint64;
 }
 ~~~
 
@@ -1583,8 +1599,8 @@ class CryptoFrame{
 class NewTokenFrame{
   frame_type:string = "new_token";
 
-  length:number;
-  token:string;
+  token_length?:uint32;
+  token?:bytes;
 }
 ~~~
 
@@ -1595,18 +1611,19 @@ class NewTokenFrame{
 class StreamFrame{
     frame_type:string = "stream";
 
-    stream_id:string;
+    stream_id:uint64;
 
     // These two MUST always be set
     // If not present in the Frame type, log their default values
-    offset:string;
-    length:number;
+    offset:uint64;
+    length:uint64;
 
     // this MAY be set any time, but MUST only be set if the value is "true"
     // if absent, the value MUST be assumed to be "false"
     fin?:boolean;
 
-    raw?:string;
+    raw_length?:uint32; // STREAM frames cannot span more than 1 QUIC packet
+    raw?:bytes;
 }
 ~~~
 
@@ -1616,7 +1633,7 @@ class StreamFrame{
 class MaxDataFrame{
   frame_type:string = "max_data";
 
-  maximum:string;
+  maximum:uint64;
 }
 ~~~
 
@@ -1626,8 +1643,8 @@ class MaxDataFrame{
 class MaxStreamDataFrame{
   frame_type:string = "max_stream_data";
 
-  stream_id:string;
-  maximum:string;
+  stream_id:uint64;
+  maximum:uint64;
 }
 ~~~
 
@@ -1638,7 +1655,7 @@ class MaxStreamsFrame{
   frame_type:string = "max_streams";
 
   stream_type:string = "bidirectional" | "unidirectional";
-  maximum:string;
+  maximum:uint64;
 }
 ~~~
 
@@ -1648,7 +1665,7 @@ class MaxStreamsFrame{
 class DataBlockedFrame{
   frame_type:string = "data_blocked";
 
-  limit:string;
+  limit:uint64;
 }
 ~~~
 
@@ -1658,8 +1675,8 @@ class DataBlockedFrame{
 class StreamDataBlockedFrame{
   frame_type:string = "stream_data_blocked";
 
-  stream_id:string;
-  limit:string;
+  stream_id:uint64;
+  limit:uint64;
 }
 ~~~
 
@@ -1670,7 +1687,7 @@ class StreamsBlockedFrame{
   frame_type:string = "streams_blocked";
 
   stream_type:string = "bidirectional" | "unidirectional";
-  limit:string;
+  limit:uint64;
 }
 ~~~
 
@@ -1681,13 +1698,13 @@ class StreamsBlockedFrame{
 class NewConnectionIDFrame{
   frame_type:string = "new_connection_id";
 
-  sequence_number:string;
-  retire_prior_to:string;
+  sequence_number:uint32;
+  retire_prior_to:uint32;
 
-  length:number;
-  connection_id:string;
+  connection_id_length?:uint8;
+  connection_id:bytes;
 
-  stateless_reset_token:string;
+  stateless_reset_token?:bytes; // is always 128-bit
 }
 ~~~
 
@@ -1697,7 +1714,7 @@ class NewConnectionIDFrame{
 class RetireConnectionIDFrame{
   frame_type:string = "retire_connection_id";
 
-  sequence_number:string;
+  sequence_number:uint32;
 }
 ~~~
 
@@ -1707,7 +1724,7 @@ class RetireConnectionIDFrame{
 class PathChallengeFrame{
   frame_type:string = "path_challenge";
 
-  data?:string;
+  data?:bytes; // always 64-bit
 }
 ~~~
 
@@ -1717,7 +1734,7 @@ class PathChallengeFrame{
 class PathResponseFrame{
   frame_type:string = "patch_response";
 
-  data?:string;
+  data?:bytes; // always 64-bit
 }
 ~~~
 
@@ -1734,11 +1751,11 @@ class ConnectionCloseFrame{
     frame_type:string = "connection_close";
 
     error_space:ErrorSpace;
-    error_code:TransportError | ApplicationError | number;
-    raw_error_code:number;
+    error_code:TransportError | ApplicationError | uint32;
+    raw_error_code:uint32;
     reason:string;
 
-    trigger_frame_type?:string; // For known frame types, the appropriate "frame_type" string. For unknown frame types, the hex encoded identifier value
+    trigger_frame_type?:uint64 | string; // For known frame types, the appropriate "frame_type" string. For unknown frame types, the hex encoded identifier value
 }
 ~~~
 
@@ -1755,9 +1772,10 @@ class HandshakeDoneFrame{
 ~~~
 class UnknownFrame{
     frame_type:string = "unknown";
-    raw_frame_type:number;
+    raw_frame_type:uint64;
 
-    raw?:string; // hex encoded
+    raw_length?:uint32;
+    raw?:bytes;
 }
 ~~~
 
@@ -1812,7 +1830,7 @@ type HTTP3Frame = DataFrame | HeadersFrame | PriorityFrame | CancelPushFrame | S
 class DataFrame{
     frame_type:string = "data";
 
-    raw?:string; // hex encoded
+    raw?:bytes;
 }
 ~~~
 
@@ -1843,7 +1861,7 @@ class HTTPHeader {
 ~~~
 class CancelPushFrame{
     frame_type:string = "cancel_push";
-    push_id:string;
+    push_id:uint64;
 }
 ~~~
 
@@ -1865,7 +1883,7 @@ class Setting{
 ~~~
 class PushPromiseFrame{
     frame_type:string = "push_promise";
-    push_id:string;
+    push_id:uint64;
 
     headers:Array<HTTPHeader>;
 }
@@ -1875,7 +1893,7 @@ class PushPromiseFrame{
 ~~~
 class GoAwayFrame{
     frame_type:string = "goaway";
-    stream_id:string;
+    stream_id:uint64;
 }
 ~~~
 
@@ -1883,7 +1901,7 @@ class GoAwayFrame{
 ~~~
 class MaxPushIDFrame{
     frame_type:string = "max_push_id";
-    push_id:string;
+    push_id:uint64;
 }
 ~~~
 
@@ -1891,7 +1909,7 @@ class MaxPushIDFrame{
 ~~~
 class DuplicatePushFrame{
     frame_type:string = "duplicate_push";
-    push_id:string;
+    push_id:uint64;
 }
 ~~~
 
@@ -1948,7 +1966,7 @@ type QPackInstruction = SetDynamicTableCapacityInstruction | InsertWithNameRefer
 class SetDynamicTableCapacityInstruction {
     instruction_type:string = "set_dynamic_table_capacity";
 
-    capacity:number;
+    capacity:uint64;
 }
 ~~~
 
@@ -1960,11 +1978,12 @@ class InsertWithNameReferenceInstruction {
 
     table_type:"static"|"dynamic";
 
-    name_index:number;
+    name_index:uint64;
 
     huffman_encoded_value:boolean;
-    value_length:number;
-    value:string;
+
+    value_length?:uint64;
+    value?:string;
 }
 ~~~
 
@@ -1975,12 +1994,14 @@ class InsertWithoutNameReferenceInstruction {
     instruction_type:string = "insert_without_name_reference";
 
     huffman_encoded_name:boolean;
-    name_length:number;
-    name:string;
+
+    name_length:uint64;
+    name?:string;
 
     huffman_encoded_value:boolean;
-    value_length:number;
-    value:string;
+
+    value_length:uint64;
+    value?:string;
 }
 ~~~
 
@@ -1990,7 +2011,7 @@ class InsertWithoutNameReferenceInstruction {
 class DuplicateInstruction {
     instruction_type:string = "duplicate";
 
-    index:number;
+    index:uint64;
 }
 ~~~
 
@@ -2000,7 +2021,7 @@ class DuplicateInstruction {
 class HeaderAcknowledgementInstruction {
     instruction_type:string = "header_acknowledgement";
 
-    stream_id:string;
+    stream_id:uint64;
 }
 ~~~
 
@@ -2010,7 +2031,7 @@ class HeaderAcknowledgementInstruction {
 class StreamCancellationInstruction {
     instruction_type:string = "stream_cancellation";
 
-    stream_id:string;
+    stream_id:uint64;
 }
 ~~~
 
@@ -2020,7 +2041,7 @@ class StreamCancellationInstruction {
 class InsertCountIncrementInstruction {
     instruction_type:string = "insert_count_increment";
 
-    increment:number;
+    increment:uint64;
 }
 ~~~
 
@@ -2039,7 +2060,7 @@ class IndexedHeaderField {
     header_field_type:string = "indexed_header";
 
     table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
-    index:number;
+    index:uint64;
 
     is_post_base?:boolean = false; // to represent the "indexed header field with post-base index" header field type
 }
@@ -2055,10 +2076,10 @@ class LiteralHeaderFieldWithName {
 
     preserve_literal:boolean; // the 3rd "N" bit
     table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
-    name_index:number;
+    name_index:uint64;
 
     huffman_encoded_value:boolean;
-    value_length:number;
+    value_length:uint64;
     value:string;
 
     is_post_base?:boolean = false; // to represent the "Literal header field with post-base name reference" header field type
@@ -2074,11 +2095,11 @@ class LiteralHeaderFieldWithoutName {
     preserve_literal:boolean; // the 3rd "N" bit
 
     huffman_encoded_name:boolean;
-    name_length:number;
+    name_length:uint64;
     name:string;
 
     huffman_encoded_value:boolean;
-    value_length:number;
+    value_length:uint64;
     value:string;
 }
 ~~~
@@ -2087,9 +2108,9 @@ class LiteralHeaderFieldWithoutName {
 
 ~~~
 class QPackHeaderBlockPrefix {
-    required_insert_count:number;
+    required_insert_count:uint64;
     sign_bit:boolean;
-    delta_base:number;
+    delta_base:uint64;
 }
 ~~~
 
