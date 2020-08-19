@@ -110,7 +110,8 @@ The main data types are:
 * uint64 : unsigned 64-bit integer
 * float : 32-bit floating point value
 * double : 64-bit floating point value
-* byte : an individual raw byte (8-bit) value (use array&lt;byte&gt; to specify a binary blob)
+* byte : an individual raw byte (8-bit) value (use array&lt;byte&gt; or the
+  shorthand bytes to specify a binary blob)
 * string : list of ASCII encoded characters
 * boolean : boolean
 * enum: fixed list of values (Unless explicity defined, the value of an enum entry
