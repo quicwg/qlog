@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-07-22T07:46:03.940216+00:00",
+  "timestamp": "2020-08-19T14:16:39.570779+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -1095,9 +1095,17 @@
       "labels": [],
       "body": "We have a number of \"generic\" events in the draft (section 7, General error, warning and debugging definitions). These currently have their own categories: error, warning, info, debug, verbose, simulation. This is a bit awkward, since most of these only have a single event type. \r\n\r\nIt might be a good idea to group these under a single category, e.g., \"generic\" or \"general\" or \"textual\" or... (or maybe 2: generic and simulation). Another option would be to define a new event field called `log_level` next to category (but that would increase overhead, as now we're essentially squatting on the category to provide that). \r\n\r\nThe purpose of these events (sans simulation) is to allow one to replace the default textual logging with qlog completely (e.g., everything you now send to stdout/stderr with printf() would go into these kinds of events).\r\n\r\nThanks to @LPardue for reporting.",
       "createdAt": "2020-01-24T12:52:37Z",
-      "updatedAt": "2020-03-09T07:46:13Z",
+      "updatedAt": "2020-08-06T00:27:00Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "kazu-yamamoto",
+          "authorAssociation": "NONE",
+          "body": "I would vote for \"generic\" or \"general\".",
+          "createdAt": "2020-08-06T00:27:00Z",
+          "updatedAt": "2020-08-06T00:27:00Z"
+        }
+      ]
     },
     {
       "number": 48,
@@ -1597,15 +1605,15 @@
       "id": "MDU6SXNzdWU1OTU2NzI3NDI=",
       "title": "packet_buffered should have a packet_size field",
       "url": "https://github.com/quiclog/internet-drafts/issues/76",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "This field would be really helpful for debugging. Without a packet size, there's no way to correlate a buffered packet to a packet that is later dequeued from the buffer.",
       "createdAt": "2020-04-07T08:01:26Z",
-      "updatedAt": "2020-04-08T09:07:20Z",
-      "closedAt": null,
+      "updatedAt": "2020-07-22T07:48:08Z",
+      "closedAt": "2020-07-22T07:48:08Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1628,7 +1636,7 @@
       "labels": [],
       "body": "I see the following problems with the `connection_state_updated` event:\r\n1. `attempted` seems to be a duplicate of `connection_started` for the client (i.e. the two events would always be emitted at the same time)\r\n2. `reset` is impossible to log. You send a stateless reset if you lost state for a connection (after a crash or reboot, or if a packet was misrouted to the wrong backend server). In any case, there\u2019s no connection state to update by definition.\r\n3. `handshake` seems to be a duplicate of connection_started for both sides.\r\n\r\nI think these events could be removed without losing any information in the log.\r\n\r\nI suggest adding a new event for [confirmation of the handshake](https://quicwg.org/base-drafts/draft-ietf-quic-tls.html#name-handshake-confirmed). Maybe it would make sense to rename `active` to `handshake_completed` and add a `handshake_confirmed`?",
       "createdAt": "2020-04-12T04:01:04Z",
-      "updatedAt": "2020-04-20T15:46:10Z",
+      "updatedAt": "2020-08-02T10:37:53Z",
       "closedAt": null,
       "comments": [
         {
@@ -1658,6 +1666,27 @@
           "body": "@marten-seemann just reported on slack that a separate `connection_closed` event would be interesting to log the reason the connection was closed (for which we're now either relying on the CONNECTION_CLOSE frame contents or an (internal_)error event). \r\n\r\nIt seem like adding a `reason` field to `connection_state_updated` would work there too.\r\nAlternatively, this could be part of the envisioned `parameters_set` connectivity event that would replace both separate `connection_started` and `connection_close` semantics, though I'd feel a bit uneasy putting a `reason` field in `parameters_set` (semantics seem off).  \r\n\r\nBest to take a step back and look at this from a higher viewpoint to see if making all this generic gives us more benefits than simply having separate events for everything. \r\n",
           "createdAt": "2020-04-20T15:45:58Z",
           "updatedAt": "2020-04-20T15:46:10Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Here's my suggestion for a better `connection_state_updated` definition:\r\n```\r\nenum ConnectionState {\r\n    client_address_verified, // when the server considers the client's source address verified\r\n    handshake_complete, // handshake completed\r\n    handshake_confirmed, // handshake confirmed\r\n    draining, // CONNECTION_CLOSE sent\r\n    closed // connection actually fully closed, memory freed\r\n}\r\n```\r\n\r\nI added a `client_address_verified` to my earlier suggestion, since with https://github.com/quicwg/base-drafts/pull/3924, servers can make this decision based on multiple different criteria.\r\n\r\n@rmarx What do you think?",
+          "createdAt": "2020-07-27T04:18:33Z",
+          "updatedAt": "2020-07-27T04:18:33Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "I like splitting `active` into `handshake_complete` and `handshake_confirmed` as @marten-seemann is suggesting above, and I also like `client address verified` as an intermediate server state. On the client side, I would like to see logging of the transition between `started` and `heard_from_the_server`, which is pretty much the client equivalent of `client_address_verified`.\r\n\r\nOn the other hand, all these states can be trivially deduced from observing the packet flow. @rmarx is the connection_state event really useful?",
+          "createdAt": "2020-08-02T00:25:57Z",
+          "updatedAt": "2020-08-02T00:25:57Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I have to re-read the draft myself first, but a merge of Marten's proposal (with a \"started\" state or similar put back in) and Christian's suggestion of `heard_from_server` seems sensible at first glance.\r\n\r\nWith regards to \"do we need this event at all\"... it depends. If you're logging all packets: potentially not, though that might hide implementation bugs (state transfer too early/late). However, as @marten-seemann has also said wrt a separate `connection_closed` event (instead of simply watching the `connection_state_updated` for this) and the discussion on needing a `packet_acked` event (#107): when writing tools that try to quickly deduce these state transitions from a trace, it can be useful to have these \"duplicate\" events as well. I don't think I'd write many tools that fully rely on only these myself, and I wouldn't mark them as \"core\" events in the spec, but I can see why some people like to keep them in and have a preference for this myself as well (up to a certain point...)",
+          "createdAt": "2020-08-02T10:37:53Z",
+          "updatedAt": "2020-08-02T10:37:53Z"
         }
       ]
     },
@@ -1938,9 +1967,17 @@
       "labels": [],
       "body": "Currently we do not have many fields for indicating (compressed) sizes of things.\r\n\r\nWe have the `packet_size`, but this is in the wrong place (#40) and `payload_length` (though it's not well-defined whether packet_size includes the TLS suffix). \r\n\r\nHowever, we lack size indicators for datagrams and, especially frames. When creating the qvis packetization diagram, this was very annoying, as I'd have to reconstruct the encoded frame headers to properly render those (and even then there might be rounding issues if the sender didn't encode things in the absolute minimum of bytes allowed). \r\n\r\nIn comparison, wireshark output does include exact sizes for these fields for TCP/TLS/H2 and this was quite handy. \r\n\r\nAnother point: need some way to indicate the used TLS AEAD tag length (though that should be constant for the entire connection and depends on the used cipher IIUC. For TCP+TLS from Wireshark I also had to manually calculate this from the cipher definitions though, which was a PITA). \r\n\r\nFinally, make terminology consistent (_size vs _length)\r\n",
       "createdAt": "2020-07-08T08:46:33Z",
-      "updatedAt": "2020-07-08T09:15:27Z",
+      "updatedAt": "2020-08-06T14:10:11Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "From a discussion on slack, most are in favor of adding AEAD length to the general packet_size field (one reasons is because the tag also contributes to cwnd calculation)",
+          "createdAt": "2020-08-06T14:10:11Z",
+          "updatedAt": "2020-08-06T14:10:11Z"
+        }
+      ]
     },
     {
       "number": 100,
@@ -2146,7 +2183,7 @@
       "labels": [],
       "body": "We have a `lost_packet` event, but no corresponding `acked_packet` event. That event would fire when a packet is acknowledged and removed from the map of sent packets.\r\n\r\nA parser that wants to track when a packet is (first) acknowledged would have to build a map of sent packets, and remove packets from that map when they are either acknowledged, declared lost or when the packet number space is lost.",
       "createdAt": "2020-07-13T03:49:47Z",
-      "updatedAt": "2020-07-13T14:30:59Z",
+      "updatedAt": "2020-08-03T15:09:41Z",
       "closedAt": null,
       "comments": [
         {
@@ -2162,8 +2199,170 @@
           "body": "Personally, I agree with @marten-seemann. MsQuic logs (to [ETW](https://docs.microsoft.com/en-us/windows/win32/etw/event-tracing-portal)) events or state changes for things. For qlog, we then have a converter. We don't log the contents of every packet or frame. For packets, we track when they're created, acknowledged, dropped, assumed lost, deemed spuriously lost, etc. IMO, tools that process the logs should not have to know how to process a logged ACK frame to then go calculate which in-flight packets have now been acknowledged. Another reason, is that our logging system doesn't assume full state was contained within the log file. The logs may have been started mid run or the fixed fixed log buffer rolled over. In those cases, you wouldn't necessarily have the created event for a packet and wouldn't know what is already in-flight.",
           "createdAt": "2020-07-13T14:30:59Z",
           "updatedAt": "2020-07-13T14:30:59Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Paraphrasing an argument I made in a Slack conversation:\r\n \r\nI can see @rmarx's argument that logging both the ACK frame and `packet_acked` is kind of redundant, given that a parser can build a copy of the packet map. However, I\u2019d rather log a `packet_acked` event instaed of the content of ACK frames. I care more about the state changes than about what redundant ACK ranges get serialized on the wire.",
+          "createdAt": "2020-08-03T15:09:41Z",
+          "updatedAt": "2020-08-03T15:09:41Z"
         }
       ]
+    },
+    {
+      "number": 109,
+      "id": "MDU6SXNzdWU2Njc2MjkwNjI=",
+      "title": "Add streaming option",
+      "url": "https://github.com/quiclog/internet-drafts/issues/109",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Current thinking is to allow http://ndjson.org and to log the qlog header information as a separate object on top. \r\nThis would remove the possibility to log multiple traces in the same qlog file if it uses the streaming option, so users would need to use `group_id` in those cases.\r\n\r\nWould also require the addition of a \"format\" field to the qlog metadata header (though we probably need that anyway if we want to keep support for other JSON-based optimizations like `event_fields`.\r\n\r\nWe first need to check how this plays with oboe.js in qvis though, to see if we need to add another parser in the mix. \r\n\r\nSee also #106 and #2 for more discussion.\r\n\r\nFor comparison:\r\n```\r\nDraft-01 would look like this (if, like me, JSON serializers would be too lazy to add quotes):\r\n{\r\n    version: draft-01,\r\n    traces: [\r\n        {\r\n             vantage_point: client,\r\n             common_fields: [ ... ],\r\n             event_fields: [ ... ], \r\n             events: [\r\n                 [ 55, transport, packet_sent, { ... } ],\r\n                 [ 66, transport, packet_received, { ... } ],\r\n                 ...\r\n             ]\r\n        }\r\n    ]\r\n}\r\n\r\nDraft-02 would be more like:\r\n{\r\n    version: draft-02,\r\n    format: \"ndjson\",\r\n    trace: {\r\n             vantage_point: client,\r\n             common_fields: [ ... ]\r\n     }\r\n}\r\n{ time: 55, name: \"transport:packet_sent\", data: { ... } }\r\n{ time: 66, name: \"transport:packet_received\", data: { ... } }\r\n...\r\n```\r\n\r\nCC @marten-seemann @huitema",
+      "createdAt": "2020-07-29T07:49:26Z",
+      "updatedAt": "2020-07-30T09:05:52Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I like this idea. In the interest of keeping parsers simple, I would be supportive of completely replacing the current qlog format with this.\r\nAs I've said elsewhere, I don't think that the complexity that comes with putting multiple traces into the same file justifies the complexity.",
+          "createdAt": "2020-07-29T08:00:15Z",
+          "updatedAt": "2020-07-29T08:00:15Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "I agree with @marten-seemann. We should optimize for the primary case, which is definitely single machine/trace.",
+          "createdAt": "2020-07-29T11:12:46Z",
+          "updatedAt": "2020-07-29T11:12:46Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "Streaming would definitely be useful for me too. Currently, I have to use a two stage approach to solve that: stream-supporting binary log, then convert to qlog once I am sure the end is reached. And yes, all usage is single machine/trace.",
+          "createdAt": "2020-07-29T18:11:00Z",
+          "updatedAt": "2020-07-29T18:11:00Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "support this, would be good to see a short example of the difference between new and old formats so I can start planning",
+          "createdAt": "2020-07-29T23:33:32Z",
+          "updatedAt": "2020-07-29T23:33:32Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I've updated the issue with an example, PTAL. \r\n\r\nI'm highly skeptical that that type of thing would be de-serializable automatically with something like @LPardue's serde, but a girl can dream. ",
+          "createdAt": "2020-07-30T08:58:37Z",
+          "updatedAt": "2020-07-30T08:58:37Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "Thanks. FWIW, the current qlog format is effectively not deserializable using serde either, so nothing would be lost.\r\n\r\nedit: hmm, actually the new format might make it more straightforward to use a semi-automated deserializer",
+          "createdAt": "2020-07-30T09:03:36Z",
+          "updatedAt": "2020-07-30T09:05:52Z"
+        }
+      ]
+    },
+    {
+      "number": 110,
+      "id": "MDU6SXNzdWU2Nzk4MTM1MDI=",
+      "title": "push_allowed may be misleading",
+      "url": "https://github.com/quiclog/internet-drafts/issues/110",
+      "state": "OPEN",
+      "author": "dtikhonov",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The \"push_allowed\" data element is `parameters_set` event is odd in that other data elements log actual settings values while \"push_allowed\" is derived from the value of `MAX_PUSH_ID` frame.\r\n\r\nIn addition, for pushing to be allowed, a second condition is necessary:  There must be enough unidirectional stream credit.  For example, if only three unidirectional streams are allowed, it effectively means that pushing is not possible, as those will be taken by the control and the two QPACK streams.",
+      "createdAt": "2020-08-16T19:41:52Z",
+      "updatedAt": "2020-08-19T13:12:50Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I agree this is unclear.\r\nThe thinking was that you'd be able to see the MAX_PUSH_ID frame when that's logged as part of `frame_created` or `frame_parsed` and the `push_allowed` would be a more high-level indicator if applications don't log the frames individually (e.g., to save space).\r\n\r\nGiven this, would you advocate:\r\n1. removing `push_allowed` altogether\r\n2. properly defining `push_allowed` as meaning both MAX_PUSH_ID > 0 AND unidirectional credit at the same time\r\n3. replacing `push_allowed` with a `max_push_id` field\r\n",
+          "createdAt": "2020-08-19T13:12:50Z",
+          "updatedAt": "2020-08-19T13:12:50Z"
+        }
+      ]
+    },
+    {
+      "number": 111,
+      "id": "MDU6SXNzdWU2Nzk4MTU5OTY=",
+      "title": "data_moved describes three layers, but only two are specified",
+      "url": "https://github.com/quiclog/internet-drafts/issues/111",
+      "state": "OPEN",
+      "author": "dtikhonov",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "> Used to indicate when data moves between the HTTP/3 and the transport layer (e.g., passing from H3 to QUIC stream buffers and vice versa) or between HTTP/3 and the actual user application on top (e.g., a browser engine). This helps make clear the flow of data, how long data remains in various buffers and the overheads introduced by HTTP/3's framing layer.\r\n\r\nThe paragraph above describes three layers: transport, HTTP/3, and user application.\r\n\r\nThe definition allows for only two layers:\r\n\r\n```\r\n    from?:\"application\"|\"transport\",\r\n    to?:\"application\"|\"transport\",\r\n```\r\n\r\nIn addition, the definition of \"application\" is ambiguous: it could be the application protocol (HTTP/3) or the user application.",
+      "createdAt": "2020-08-16T19:58:10Z",
+      "updatedAt": "2020-08-19T13:10:27Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So, the current thinking is that this is always an HTTP level event, so there is no need to specify the \"third\" layer, as it is always HTTP. \r\n\"application\" in this case will always be the user application, not the application protocol (which, I agree, is not entirely clear or obvious).\r\n\r\nGiven this explanation, would you push for:\r\n1. making this a more generic event by adding the \"third layer\" as well (not sure which category we would use for this event then though)\r\n2. re-naming \"application\" to something else here to separate it from HTTP3/application protocol more clearly\r\n3. keeping it as is but adding text to explain it more clearly\r\n",
+          "createdAt": "2020-08-19T13:10:27Z",
+          "updatedAt": "2020-08-19T13:10:27Z"
+        }
+      ]
+    },
+    {
+      "number": 112,
+      "id": "MDU6SXNzdWU2Nzk4MTczNTI=",
+      "title": "QPACK encoder and decoder each has its own state",
+      "url": "https://github.com/quiclog/internet-drafts/issues/112",
+      "state": "OPEN",
+      "author": "dtikhonov",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Each peer has two QPACK states: encoder and decoder.  `qpack`'s `state_updated` and `dynamic_table_updated` events do not make such differentiation, making the specification incomplete.  For example:\r\n\r\n> This event is emitted when one or more entries are added or evicted from QPACK's dynamic table.\r\n\r\nWhich dynamic table is meant: encoder or decoder?",
+      "createdAt": "2020-08-16T20:06:37Z",
+      "updatedAt": "2020-08-16T20:06:37Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 113,
+      "id": "MDU6SXNzdWU2Nzk4MTc2MzE=",
+      "title": "QPACK: dynamic table entries are \"inserted,\" not \"added\"",
+      "url": "https://github.com/quiclog/internet-drafts/issues/113",
+      "state": "OPEN",
+      "author": "dtikhonov",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The draft should use the QPACK terminology.",
+      "createdAt": "2020-08-16T20:08:19Z",
+      "updatedAt": "2020-08-16T20:08:19Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 114,
+      "id": "MDU6SXNzdWU2Nzk4MTgxMjA=",
+      "title": "qpack.instruction_sent -- which \"sent\" time is meant?",
+      "url": "https://github.com/quiclog/internet-drafts/issues/114",
+      "state": "OPEN",
+      "author": "dtikhonov",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "> This event is emitted when a QPACK instruction (both decoder and encoder) is sent.\r\n\r\nA QPACK instruction is:\r\n- written to the encoder (or decoder) stream, which is then\r\n- packetized, and\r\n- the packet (or packets!) is sent.\r\n\r\nWhich of the three events above is meant is not clear.",
+      "createdAt": "2020-08-16T20:11:32Z",
+      "updatedAt": "2020-08-16T20:11:32Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -2706,24 +2905,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NDAzNjUzMDA0",
       "title": "add a packet_size field to the packet_buffered event",
       "url": "https://github.com/quiclog/internet-drafts/pull/84",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #76.",
       "createdAt": "2020-04-15T09:44:14Z",
-      "updatedAt": "2020-04-15T09:44:14Z",
+      "updatedAt": "2020-07-22T07:48:09Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
       "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "packet-buffered-packet-size",
       "headRefOid": "e17dbba7a86e0c28814ed03b1d9833b2c0c2750a",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2020-07-22T07:48:08Z",
+      "mergedAt": "2020-07-22T07:48:08Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "fc2eec4b31c9484f8891323017acdc20bae816b3"
+      },
       "comments": [],
       "reviews": []
     },
@@ -2732,24 +2933,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NDIyMzcxOTQz",
       "title": "Authenticate connection IDs",
       "url": "https://github.com/quiclog/internet-drafts/pull/87",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Adds the transport parameters added in https://github.com/quicwg/base-drafts/pull/3499.",
       "createdAt": "2020-05-24T06:41:19Z",
-      "updatedAt": "2020-05-24T06:41:19Z",
+      "updatedAt": "2020-07-22T07:48:29Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
       "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "authenticate-connection-ids",
       "headRefOid": "3f2ea8e74fb7a36fb692f4d96951de1656f13102",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2020-07-22T07:48:29Z",
+      "mergedAt": "2020-07-22T07:48:28Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "09f447a17f183f02f8e0ada7cd0b834c3fd3963a"
+      },
       "comments": [],
       "reviews": []
     },
@@ -2758,24 +2961,26 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NDIzNTYwODU1",
       "title": "add a packet_dropped trigger for duplicate packets",
       "url": "https://github.com/quiclog/internet-drafts/pull/92",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "See https://quicwg.org/base-drafts/draft-ietf-quic-transport.html#name-packet-numbers.",
       "createdAt": "2020-05-27T02:03:51Z",
-      "updatedAt": "2020-05-27T02:03:51Z",
+      "updatedAt": "2020-07-22T07:46:53Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
-      "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
+      "baseRefOid": "d6433e1e93343aae970163d13549ad8361535330",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "packet-drop-duplicate",
-      "headRefOid": "ce41034f74bd922dd0b9e3849f2672dea04e9f84",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "4278731985a41594c118fa093912a44e9d4e4ed4",
+      "closedAt": "2020-07-22T07:46:53Z",
+      "mergedAt": "2020-07-22T07:46:53Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "c93c66d7dafdba32aa415e720a84643ab4835f86"
+      },
       "comments": [],
       "reviews": []
     },
