@@ -19,12 +19,11 @@ author:
     email: robin.marx@uhasselt.be
 
 normative:
-  RFC2119:
   QLOG-QUIC-HTTP3:
     title: "QUIC and HTTP/3 event definitions for qlog"
-    date: 2019-10-14
+    date: 2020-09-15
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-event-definitions-quic-h3-01
+      Internet-Draft: draft-marx-qlog-event-definitions-quic-h3-02
     author:
       -
         ins: R. Marx
@@ -48,7 +47,7 @@ represented in for example JSON, csv or protobuf.
 # Introduction
 
 There is currently a lack of an easily usable, standardized endpoint logging
-format. Especially for the use case of debugging and evaluating modern web
+format. Especially for the use case of debugging and evaluating modern Web
 protocols and their performance, it is often difficult to obtain structured logs
 that provide adequate information for tasks like problem root cause analysis.
 
@@ -68,27 +67,28 @@ log aggregation, event grouping and log file size reduction techniques.
 
 Feedback and discussion welcome at
 [https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
-Readers are advised to refer to the "editor's draft" at that URL for an
-up-to-date version of this document.
+Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
+version of this document.
 
 ## Notational Conventions {#data_types}
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
-interpreted as described in [RFC2119].
+interpreted as described in {{?RFC2119}}.
 
 While the qlog schema's are format-agnostic, for readability the qlog documents
-will use a JSON-inspired format for examples and definitions.
+will use a JSON-inspired format ({{?RFC8259}}) for examples and definitions.
 
-As qlog can be used both for purely textual but also binary formats, we employ a
-custom datatype definition language, inspired loosely by the ["TypeScript"
+As qlog can be serialized both textually but also in binary, we employ a custom
+datatype definition language, inspired loosely by the ["TypeScript"
 language](https://www.typescriptlang.org/).
 
-Other documents will describe how to transform the qlog schema into a specific
-format. We include an example of such a transformation for JSON and discuss
-options for binary formatting and optimization in {{concrete-formats}}.
+This document describes how to employ JSON and NDJSON as textual serializations
+for qlog in {{concrete-formats}}. Other documents will describe how to utilize
+other concrete serialization options, though tips and requirements for these are
+also listed in this document ({{concrete-formats}}).
 
-The main general conventions a reader should be aware of are:
+The main general conventions in this document a reader should be aware of are:
 
 * obj? : this object is optional
 * type1 &#124; type2 : a union of these two types (object can be either type1 OR
@@ -111,7 +111,7 @@ The main data types are:
 * float : 32-bit floating point value
 * double : 64-bit floating point value
 * byte : an individual raw byte (8-bit) value (use array&lt;byte&gt; or the
-  shorthand bytes to specify a binary blob)
+  shorthand "bytes" to specify a binary blob)
 * string : list of ASCII encoded characters
 * boolean : boolean
 * enum: fixed list of values (Unless explicity defined, the value of an enum entry
@@ -119,14 +119,13 @@ The main data types are:
 * any : represents any object type. Mainly used here as a placeholder for more
   concrete types defined in related documents (e.g., specific event types)
 
-All timestamps in qlog are logged as Unix epoch timestamps as doubles in the
-millisecond resolution. All other time-related values (e.g., offsets) are also
-always expressed in milliseconds.
+All timestamps and time-related values (e.g., offsets) in qlog are logged as
+doubles in the millisecond resolution.
 
-Other qlog documents can define their own types (e.g., separately for each Packet
-type a protocol supports).
+Other qlog documents can define their own data types (e.g., separately for each
+Packet type that a protocol supports).
 
-# Design Goals
+# Design goals
 
 The main tenets for the qlog schema design are:
 
@@ -135,44 +134,59 @@ The main tenets for the qlog schema design are:
   MUST, tools need to deal with this)
 * Extensible and pragmatic (e.g., no complex fixed schema with extension points)
 * Aggregation and transformation friendly (e.g., the top-level element is a
-  container for individual traces)
+  container for individual traces, group_id can be used to tag events to a
+  particular context)
 * Metadata is stored together with event data
 
 
-# The High Level Schema
+# The high level qlog schema {#top-level}
 
 A qlog file should be able to contain several indivdual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
-element in the qlog schema defines only a small set of fields and an array of
-component traces. For this document, the "qlog_version" field MUST have a value of
-"draft-02-RC1".
+element in the qlog schema defines only a small set of "header" fields and an
+array of component traces. For this document, the required "qlog_version" field
+MUST have a value of "draft-02-RC1".
+
+As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
+indicate which serialization option was chosen. Its value MUST either be one of
+the options defined in this document (e.g., {{concrete-formats}}) or the field
+must be omitted entirely, in which case it assumes the default value of "JSON".
+
+In order to make it easier to parse and identify qlog files and their
+serialization format, the "qlog_version" and "qlog_format" fields and their values
+SHOULD be in the first 256 characters/bytes of the resulting log file.
+
+An example of the qlog file's top-level structure is shown in {{top-element}}.
 
 ~~~~~~~~
 Definition:
 
-class LogFile {
+class QlogFile {
     qlog_version:string,
+    qlog_format?:string,
     title?:string,
     description?:string,
     summary?: Summary,
     traces: array<Trace|TraceError>
 }
 
-JSON example:
+JSON serialization:
+
 {
     "qlog_version": "draft-02-RC1",
+    "qlog_format": "JSON",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
     "summary": {
         ...
-    }
+    },
     "traces": [...]
 }
 ~~~~~~~~
 {: .language-json}
-{: #top_element title="Top-level element"}
+{: #top-element title="Top-level element"}
 
-## Summary field
+## summary
 
 In a real-life deployment with a large amount of generated logs, it can be useful
 to sort and filter logs based on some basic summarized or aggregated data (e.g.,
@@ -183,96 +197,108 @@ just read up to and including the summary field and then only load the full logs
 that are deemed interesting by the user).
 
 As the summary field is highly deployment-specific, this document does not specify
-any default fields or their semantics. Some examples of potential entries are:
+any default fields or their semantics. Some examples of potential entries are
+shown in {{summary-example}}.
 
 ~~~
-class Summary {
-    // list of fields with any type
-}
+Definition (purely illustrative example):
 
-JSON example:
-{
+class Summary {
     "trace_count":uint32, // amount of traces in this file
-    "max_duration":uint64, // time duration of the longest trace
+    "max_duration":uint64, // time duration of the longest trace in ms
     "max_outgoing_loss_rate":float, // highest loss rate for outgoing packets over all traces
     "total_event_count":uint64, // total number of events across all traces,
     "error_count":uint64 // total number of error events in this trace
 }
+
+JSON serialization:
+
+{
+    "trace_count": 1,
+    "max_duration": 5006,
+    "max_outgoing_loss_rate": 0.013,
+    "total_event_count": 568,
+    "error_count": 2
+}
 ~~~
 {: .language-json}
-{: #summary title="Summary example definition"}
+{: #summary-example title="Summary example definition"}
 
 
-## Traces field
+## traces
 
-The "traces" array contains a list of individual qlog traces. Typical logs will
-only contain a single element in this array. Multiple traces can however be
-combined into a single qlog file by taking the "traces" entries for each qlog file
+It is often advantageous to group several related qlog traces together in a single
+file. For example, we can simultaneously perform logging on the client, on the
+server and on a single point on their common network path. For analysis, it is
+useful to aggregate these three individual traces together into a single file, so
+it can be uniquely stored, transferred and annotated.
+
+As such, the "traces" array contains a list of individual qlog traces. Typical
+qlogs will only contain a single trace in this array. These can later be combined
+into a single qlog file by taking the "traces" entry/entries for each qlog file
 individually and copying them to the "traces" array of a new, aggregated qlog
 file. This is typically done in a post-processing step.
 
-For example, for a test setup, we perform logging on the client, on the server and
-on a single point on their common network path. Each of these three logs is first
-created separately during the test. Afterwards, the three logs can be aggregated
-into a single qlog file.
-
-For the definition of the Trace type, see {{trace}}.
-
-As such, the "traces" array can also contain "error" entries. These indicate that
-we tried to find/convert a file for inclusion in the aggregated qlog, but there
-was an error during the process. Rather than silently dropping the erroneous file,
-we can opt to explicitly include it in the qlog file as an entry in the "traces"
-array.
+The "traces" array can thus contain both normal traces (for the definition of the
+Trace type, see {{trace}}), but also "error" entries. These indicate that we tried
+to find/convert a file for inclusion in the aggregated qlog, but there was an
+error during the process. Rather than silently dropping the erroneous file, we can
+opt to explicitly include it in the qlog file as an entry in the "traces" array,
+as shown in {{trace-error}}.
 
 ~~~
 Definition:
+
 class TraceError {
-    error_description: string,
-    uri?: string,
-    vantage_point?: VantagePoint
+    error_description: string, // A description of the error
+    uri?: string, // the original URI at which we attempted to find the file
+    vantage_point?: VantagePoint // see {{vantage_point}}: the vantage point we were expecting to include here
 }
 
-JSON example:
+JSON serialization:
+
 {
-    "error_description": "A description of the error (e.g., file could not be found, file had errors, ...)",
-    "uri": "the original URI at which we attempted to find the file",
-    "vantage_point": see {{vantage_point}} // the vantage point we were expecting to include here
+    "error_description": "File could not be found",
+    "uri": "/srv/traces/today/latest.qlog",
+    "vantage_point": { type: "server" }
 }
 ~~~
 {: .language-json}
-{: #traceerror title="TraceError definition"}
+{: #trace-error title="TraceError definition"}
 
+Note that another way to combine events of different traces in a single qlog file
+is through the use of the "group_id" field, discussed in {{group-ids}}.
 
 ## Individual Trace containers {#trace}
 
-Each indidivual trace container encompasses a single conceptual trace. The exact
-definition of a trace can be fluid. For example, a trace could contain all events
-for a single connection, for a single endpoint, for a single measurement interval,
-etc.
+The exact conceptual definition of a Trace can be fluid. For example, a trace
+could contain all events for a single connection, for a single endpoint, for a
+single measurement interval, for a single protocol, etc. As such, a Trace
+container contains some metadata in addition to the logged events, see
+{{trace-container}}.
 
-In the normal use case, a trace is a log of a single data flow collected at a
-single location or vantage point. For example, for QUIC, a single trace only
+In the normal use case however, a trace is a log of a single data flow collected
+at a single location or vantage point. For example, for QUIC, a single trace only
 contains events for a single logical QUIC connection for either the client or the
-server. However, a single trace could also combine events from a variety of
-vantage points or use cases (e.g., a middlebox could group events from all
-observed connections into a single trace).
+server.
 
-The semantics and context of the trace can be deduced from the entries in the
-"common_fields" (specifically the "group_id" field) and "event_fields" lists.
+The semantics and context of the trace can mainly be deduced from the entries in
+the "common_fields" list and "vantage_point" field.
 
 ~~~~~~~~
 Definition:
+
 class Trace {
     title?: string,
     description?: string,
     configuration?: Configuration,
     common_fields?: CommonFields,
-    event_fields?: array<string>,
     vantage_point: VantagePoint,
     events: array<Event>
 }
 
-JSON example:
+JSON serialization:
+
 {
     "title": "Name of this particular trace (short)",
     "description": "Description for this trace (long)",
@@ -280,9 +306,9 @@ JSON example:
         "time_offset": 150
     },
     "common_fields": {
-        "ODCID": "be12"
+        "ODCID": "abcde1234",
+        "time_format": "absolute"
     },
-    "event_fields": (see below),
     "vantage_point": {
         "name": "backend-67",
         "type": "server"
@@ -291,14 +317,14 @@ JSON example:
 }
 ~~~~~~~~
 {: .language-json}
-{: #trace_container title="Trace container definition"}
+{: #trace-container title="Trace container definition"}
 
-### Configuration
+### configuration
 
-We take into account that a log file is usually not used in isolation, but by
+We take into account that a qlog file is usually not used in isolation, but by
 means of various tools. Especially when aggregating various traces together or
 preparing traces for a demonstration, one might wish to persist certain tool-based
-settings inside the log file itself. For this, the configuration field is used.
+settings inside the qlog file itself. For this, the configuration field is used.
 
 The configuration field can be viewed as a generic metadata field that tools can
 fill with their own fields, based on per-tool logic. It is best practice for tools
@@ -308,13 +334,16 @@ configuration settings: "time_offset" and "original_uris".
 
 ~~~~~~~~
 Definition:
+
 class Configuration {
     time_offset:double, // in ms,
     original_uris: array<string>,
+
     // list of fields with any type
 }
 
-Example:
+JSON serialization:
+
 {
     "time_offset": 150, // starts 150ms after the first timestamp indicates
     "original_uris": [
@@ -328,54 +357,63 @@ Example:
 
 
 #### time_offset
-time_offset indicates by how many milliseconds the starting time of the current
+The time_offset field indicates by how many milliseconds the starting time of the current
 trace should be offset. This is useful when comparing logs taken from various
 systems, where clocks might not be perfectly synchronous. Users could use manual
 tools or automated logic to align traces in time and the found optimal offsets can
 be stored in this field for future usage. The default value is 0.
 
 #### original_uris
-This field is used when merging multiple individual qlog files or other source
-files (e.g., when converting .pcaps to qlog). It allows to keep better track where
-certain data came from. It is a simple array of strings. It is an array instead of
-a single string, since a single qlog trace can be made up out of an aggregation of
-multiple component qlog traces as well. The default value is an empty array.
+The original_uris field is used when merging multiple individual qlog files or
+other source files (e.g., when converting .pcaps to qlog). It allows to keep
+better track where certain data came from. It is a simple array of strings. It is
+an array instead of a single string, since a single qlog trace can be made up out
+of an aggregation of multiple component qlog traces as well. The default value is
+an empty array.
 
 
 #### custom fields
 Tools can add optional custom metadata to the "configuration" field to store state
 and make it easier to share specific data viewpoints and view configurations.
 
-An example from the [qvis toolset](https://qvis.edm.uhasselt.be)'s congestion
-graph follows. In this example, the congestion graph is zoomed in between 1s and
-2s of the trace and the 124th event in the trace is selected.
+Two examples from the [qvis toolset](https://qvis.edm.uhasselt.be) are shown in
+{{qvis-config}}.
 
 ~~~
 {
     "configuration" : {
-        "time_offset": 100,
         "qvis" : {
-            "congestiongraph": {
+            // when loaded into the qvis toolsuite's congestion graph tool
+            // zoom in on the period between 1s and 2s and select the 124th event defined in this trace
+            "congestion_graph": {
                 "startX": 1000,
                 "endX": 2000,
-                "selectedEvent": 124
+                "focusOnEventIndex": 124
+            }
+
+
+            // when loaded into the qvis toolsuite's sequence diagram tool
+            // automatically scroll down the timeline to the 555th event defined in this trace
+            "sequence_diagram" : {
+                "focusOnEventIndex": 555
             }
         }
     }
 }
 ~~~
-{: #qvis_config title="Custom configuration fields example"}
+{: #qvis-config title="Custom configuration fields example"}
 
 ### vantage_point {#vantage-point}
 
-This field describes the vantage point from which the trace originates. Each trace
-can have only a single vantage_point and thus all events in a trace MUST BE from
-the perspective of this vantage_point. To include events from multiple
-vantage_points, implementers can include multiple traces, split by vantage_point,
-in a single qlog file.
+The vantage_point field describes the vantage point from which the trace
+originates, see {{vantage-point-example}}. Each trace can have only a single vantage_point
+and thus all events in a trace MUST BE from the perspective of this vantage_point.
+To include events from multiple vantage_points, implementers can for example
+include multiple traces, split by vantage_point, in a single qlog file.
 
 ~~~~~~~~
 Definition:
+
 class VantagePoint {
     name?: string,
     type: VantagePointType,
@@ -389,7 +427,8 @@ class VantagePointType {
     unknown
 }
 
-JSON examples:
+JSON serialization examples:
+
 {
     "name": "aioquic client",
     "type": "client",
@@ -402,10 +441,10 @@ JSON examples:
 }
 ~~~~~~~~
 {: .language-json}
-{: #vantage_point title="VantagePoint definition"}
+{: #vantage-point-example title="VantagePoint definition"}
 
-The flow field is only required if type is "network" (for example, the trace is
-generated from a packet capture). It is used to disambiguate events like
+The flow field is only required if the type is "network" (for example, the trace
+is generated from a packet capture). It is used to disambiguate events like
 "packet sent" and "packet received". This is indicated explicitly because for
 multiple reasons (e.g., privacy) data from which the flow direction can be
 otherwise inferred (e.g., IP addresses) might not be present in the logs.
@@ -415,471 +454,690 @@ Meaning of the different values for the flow field:
     "packet sent" event goes in the direction of the server).
   * "server" indicates that this vantage point follow server data flow semantics (a
     "packet sent" event goes in the direction of the client).
-  * "unknown" indicates that the flow is unknown.
+  * "unknown" indicates that the flow's direction is unknown.
 
 Depending on the context, tools confronted with "unknown" values in the
-vantage_point can either try to infer the semantics from protocol-level domain
-knowledge (e.g., in QUIC, the client always sends the first packet) or give the
-user the option to switch between client and server perspectives manually.
-
-### common_fields and event_fields
-
-To reduce file size and make logging easier, the trace schema lists the names of
-the specific fields that are logged per-event up-front, instead of repeating the
-field name with each value, as is common in traditiona JSON. This is done in the
-"event_fields" list. This allows us to encode individual events as an array of
-values, instead of an object. To reduce file size even further, common event
-fields that have the same value for all events in this trace, are listed as
-name-value pairs in "common_fields".
-
-For example, when logging events for a single QUIC connection, all events will
-share the same "original destination connection ID" (ODCID). This field and its
-value should be set in "common_fields", rather than "event_fields". However, if a
-single trace would contain events for multiple QUIC connections at the same time
-(e.g., a single, big output log for a server), the ODCID can be different across
-events, and should be part of "event_fields" instead (leading to it being logged
-for each individual event).
-
-Examples comparing traditional JSON vs the qlog format can be found in
-{{traditional_json}} and {{qlog_json}}. The events described in these examples are
-purely for illustration. Actual event type definitions for the QUIC and HTTP/3
-protocols can be found in [QLOG-QUIC-HTTP3].
-
-~~~~~~~~
-{
-    "events": [{
-            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_type": "QUIC_HTTP3",
-            "time": 1553986553574,
-            "category": "transport",
-            "event": "packet_received",
-            "data": [...]
-        },{
-            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_type": "QUIC_HTTP3",
-            "time": 1553986553579,
-            "category": "http",
-            "event": "frame_parsed",
-            "data": [...]
-        },
-        ...
-    ]
-}
-~~~~~~~~
-{: .language-json}
-{: #traditional_json title="Traditional JSON"}
-
-
-~~~~~~~~
-{
-    "common_fields": {
-        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "protocol_type":  "QUIC_HTTP3",
-        "reference_time": "1553986553572"
-    },
-    "event_fields": [
-        "relative_time",
-        "category",
-        "event",
-        "data"
-    ],
-    "events": [[
-            2,
-            "transport",
-            "packet_received",
-            [...]
-        ],[
-            7,
-            "http",
-            "frame_parsed",
-            [...]
-        ],
-        ...
-    ]
-}
-~~~~~~~~
-{: .language-json}
-{: #qlog_json title="qlog optimized JSON"}
-
-The main field names that can be included in these fields are defined in
-{{field-name-semantics}}.
-
-Given that qlog is intended to be a flexible format, unknown field names in both
-"common_fields" and "event_fields" MUST be disregarded by the user and tools
-(i.e., the presence of an uknown field is explicitly NOT an error).
-
-This approach makes line-per-line logging easier and faster, as each log statement
-only needs to include the data for the events, not the field names. Events can
-also be logged and processed separately, as part of a contiguous event-stream.
-
-#### common_fields format
-
-An object containing pairs of "field name"-"field value". Fields included in
-"common_fields" indicate that these field values are the same for each event in
-the "events" array.
-
-If even one event in the trace does not adhere to this convention, that field name
-should be in "event_fields" instead, and the value logged per event. An
-alternative route is to include the most commonly seen value in "common_fields"
-and then include the deviating field value in the generic "data" field for each
-non-confirming event. However, these semantics are not defined in this document.
-
-#### event_fields format
-
-An array of field names (plain strings). Field names included in "event_fields"
-indicate that these field names are present **in this exact order** for each event
-in the "events" array. Each individual event then only has to log the
-corresponding values for those fields in the correct order.
+vantage_point can either try to heuristically infer the semantics from
+protocol-level domain knowledge (e.g., in QUIC, the client always sends the first
+packet) or give the user the option to switch between client and server
+perspectives manually.
 
 ## Field name semantics {#field-name-semantics}
 
-This section lists pre-defined, reserved field names with specific semantics and
-expected corresponding value formats.
+Inside of the "events" field of a qlog trace is a list of events logged by the
+endpoint. Each event is specified as a generic object with a number of member
+fields and their associated data. Depending on the protocol and use case, the
+exact member field names and their formats can differ across implementations. This
+section lists the main, pre-defined and reserved field names with specific
+semantics and expected corresponding value formats.
 
-Only one time-based field (see {{time-based-fields}}), the "event" field and the
-"data" field are mandatory. Typical setups will log "reference_time",
-"protocol_type" and "group_id" in "common_fields" and "relative_time", "category",
-"event" and "data" in "event_fields".
+Each qlog event at minimum requires the "time" ({{time-based-fields}}), "name"
+({{name-field}}) and "data" ({{data-field}}) fields. Other typical fields are
+"time_format" ({{time-based-fields}}), "protocol_type" ({{protocol-type-field}}),
+"trigger" ({{trigger-field}}), and "group_id" {{group-ids}}. As especially these
+later fields typically have identical values across individual event instances,
+they are normally logged separately in the "common_fields" ({{common-fields}}).
 
-Other field names are allowed, both in "common_fields" and "event_fields", but
-their semantics depend on the context of the log usage (e.g., for QUIC, the ODCID
-field is used), see [QLOG-QUIC-HTTP3].
+The specific values for each of these fields and their semantics are defined in
+separate documents, specific per protocol or use case. For example: event
+definitions for QUIC and HTTP/3 can be found in [QLOG-QUIC-HTTP3].
 
+Other fields are explicitly allowed by the qlog approach, and tools SHOULD allow
+for the presence of unknown event fields, but their semantics depend on the
+context of the log usage (e.g., for QUIC, the ODCID field is used), see
+[QLOG-QUIC-HTTP3].
 
+An example of a qlog event with its component fields is shown in
+{{event-definition}}.
 
 ~~~~~~~~
 Definition:
- {
-    protocol_type: string,
-    group_id?:array<string>, // if in common_fields
-    group_id?:string|uint32, // if per-event
 
-    // at least one of these four fields must be present
-    time?: double,
-    reference_time?: double,
-    relative_time?: double,
-    delta_time?: double,
-
-    category: string,
-    event: string,
+class Event {
+    time: double,
+    name: string,
     data: any,
+
+    protocol_type?: string,
+    group_id?: string|uint32,
+
+    time_format?: "absolute"|"delta"|"relative",
 
     // list of fields with any type
 }
 
-JSON example:
+JSON serialization:
+
 {
-    "protocol_type":  "QUIC_HTTP3",
-    "group_id": ["127ecc830d98f9d54a42c4f0842aa87e181a"],
+    time: 1553986553572,
 
-    "time": 1553986553572,
-    "reference_time": 1553986553572,
-    "relative_time": 125,
-    "delta_time": 5,
+    name: "transport:packet_sent",
+    event: "packet_sent",
+    data: { ... }
 
-    "category": "transport",
-    "event": "packet_sent",
-    "data": { ... }
+    protocol_type:  "QUIC_HTTP3",
+    group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
 
-    "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
+    time_format: "absolute",
+
+    ODCID: "127ecc830d98f9d54a42c4f0842aa87e181a", // QUIC specific
 }
 ~~~~~~~~
 {: .language-json}
-{: #event_fields title="Event fields definition"}
+{: #event-definition title="Event fields definition"}
 
 ### timestamps {#time-based-fields}
 
-There are three main modes for logging time:
+The "time" field indicates the timestamp at which the event occured. Its value is
+typically the Unix timestamp since the 1970 epoch (number of milliseconds since
+midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports two
+more succint timestamps formats to allow reducing file size. The employed format
+is indicated in the "time_format" field, which allows one of three values:
+"absolute", "delta" or "relative":
 
-* Include the full timestamp with each event ("time"). This approach uses the
-  largest amount of characters.
-* Delta-encode each time value on the previously logged value ("delta_time").
-  The first event can log the full timestamp. This approach uses the least amount
-  of characters.
-* Specify a full "reference_time" timestamp up-front in "common_fields" and
-  include only relatively-encoded values based on this reference_time with each
-  event ("relative_time"). This approach uses a medium amount of characters. The
-  "reference_time" is in ms since the Unix epoch.
+* Absolute: Include the full absolute timestamp with each event. This approach
+  uses the largest amount of characters. This is also the default value of the
+  "time_format" field.
+* Delta: Delta-encode each time value on the previously logged value. The first
+  event in a trace typically logs the full absolute timestamp. This approach uses
+  the least amount of characters.
+* Relative: Specify a full "reference_time" timestamp (typically this is done
+  up-front in "common_fields", see {{common-fields}}) and include only
+  relatively-encoded values based on this reference_time with each event. The
+  "reference_time" value is typically the first absolute timestamp. This approach
+  uses a medium amount of characters.
 
 The first option is good for stateless loggers, the second and third for stateful
 loggers. The third option is generally preferred, since it produces smaller files
-while being easier to reason about.
+while being easier to reason about. An example for each option can be seen in
+{{time-examples}}.
 
 ~~~
-The time approach will use:
+The absolute approach will use:
 1500, 1505, 1522, 1588
 
-The delta_time approach will use:
+The delta approach will use:
 1500, 5, 17, 66
 
-The relative_time approach will:
+The relative approach will:
 - set the reference_time to 1500 in "common_fields"
 - use: 0, 5, 22, 88
 
 ~~~
-{: #time_approaches title="Three different approaches for logging timestamps"}
+{: #time-examples title="Three different approaches for logging timestamps"}
 
-One of these options should be chosen for the entire trace. Each event MUST
-include a timestamp.
+One of these options is typically chosen for the entire trace (put differently:
+each event has the same value for the "time_format" field). Each event MUST
+include a timestamp in the "time" field.
 
 Events in each individual trace SHOULD be logged in strictly ascending timestamp
-order (though not necessarily absolute value, for the "delta_time" setup). Tools
-CAN sort all events on the timestamp before processing them, though are not
-required to (as this could impose a significant processing overhead).
+order (though not necessarily absolute value, for the "delta" format). Tools CAN
+sort all events on the timestamp before processing them, though are not required
+to (as this could impose a significant processing overhead).
 
-### group_id {#group_ids}
+Timestamps do not have to use the UNIX epoch timestamp as their reference. For
+example for privacy considerations, any initial reference timestamps (for example
+"endpoint uptime in ms" or "time since connection start in ms") can be chosen.
+Tools SHOULD NOT assume the ability to derive the absolute Unix timestamp from
+qlog traces, nor allow on them to relatively order events across two or more
+separate files (in this case, clock drift should also be taken into account).
 
-A single Trace can contain events from a variety of sources, belonging to for
-example a number of individual QUIC connections. For tooling considerations, it is
-necessary to have a well-defined way to split up events belonging to different
-logical groups into subgroups for visualization and processing. For example, if
-one type of log uses 4-tuples as identifiers and uses a field name "four_tuple"
-and another uses "ODCID", there is no way to know for generic tools which of these
-fields should be used to create subgroups. As such, qlog uses the generic
-"group_id" field to circumvent this issue.
+### category and event {#name-field}
 
-The "group_id" field is always an array of strings. For more complex use cases, in
-which the the group_id's internally are complex objects with several fields (e.g.,
-a 4-tuple per group), this complex value should be serialized. In those
-cases, it would be wasteful to log these values in full every single time. This
-would also complicate tool-based processing.
+Events differ mainly in the type of metadata associated with them. To help
+identify a given event and how to interpret its metadata in the "data" field (see
+{{data-field}}), each event has an associated "name" field. This can be considered
+as a concatenation of two other fields, namely event "category" and event "type".
 
+Category allows a higher-level grouping of events per specific event type. For
+example for QUIC and HTTP/3, the different categories could be "transport",
+"http", "qpack", and "recovery". Within these categories, the event Type provides
+additional granularity. For example for QUIC and HTTP/3, within the "transport"
+Category, there would be "packet_sent" and "packet_received" events.
 
-qlog typically expects to find the "group_id" field in both "common_fields" and
-"event_fields" **at the same time** (where normally, a field is only allowed in
-one of both). In this case, the per-event value of the "group_id" field represents
-an index in to the group_id array in "common_fields". This is useful if the
-group_ids are known up-front or the qlog trace can be generated from a more
-verbose format afterwards. If this is not the case however, it is acceptable to
-just log the full serialized group_id for each event and to not include "group_id"
-in "common_fields". Both use cases are demonstrated in {{group_id_repeated}} and
-{{group_id_indexed}}. The final option is not to include the "group_id" int each
-event but rather have a "group_id" array with a single entry in "common_fields".
-This is useful when all events in a trace belong to the same group, but you still
-want to keep track of the group_id explicitly.
+Logging category and type separately conceptually allows for fast and high-level
+filtering based on category and the re-use of event types across categories.
+However, it also considerably inflates the log size and this flexibility is not
+used extensively in practice at the time of writing.
 
-Since "group_id" is a generic name, it conveys little of the semantics to the
-casual reader. It is best practice to also include a per use case additional field
-to the "common_fields" with a semantic name, that has the same value as the
-"group_id" field. For example, see the "ODCID" field in {{qlog_json}} and the
-"four_tuples" field in {{group_id_indexed}}.
+As such, the default approach in qlog is to concatenate both field values using
+the ":" character in the "name" field, as can be seen in {{name-example}}. As
+such, qlog category and type names MUST NOT include this character.
 
-~~~~~~~~
+~~~
+JSON serialization using separate fields:
 {
-    "common_fields": {
-        "protocol_type":  "QUIC_HTTP3",
-    },
-    "event_fields": [
-        "time",
-        "group_id",
-        "category",
-        "event",
-        "data"
-    ],
-    "events": [[
-            1553986553579,
-            "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80"
-            "transport",
-            "packet_received",
-            [...]
-        ],[
-            1553986553588,
-            "ip1=10.0.6.137,ip2=52.58.13.57,port1=56522,port2=443"
-            "http",
-            "frame_parsed",
-            [...]
-        ],[
-            1553986553598,
-            "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80"
-            "transport",
-            "packet_sent",
-            [...]
-        ],
-        ...
-    ]
+    category: "transport",
+    type: "packet_sent"
 }
-~~~~~~~~
-{: .language-json}
-{: #group_id_repeated title="Repeated complex group_id"}
 
-
-~~~~~~~~
+JSON serialization using ":" concatenated field:
 {
-    "common_fields": {
-        "protocol_type":  "QUIC_HTTP3",
-        "group_id": [
-            "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80"
-            "ip1=10.0.6.137,ip2=52.58.13.57,port1=56522,port2=443"
-        ],
-        "four_tuples": [
-            "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80"
-            "ip1=10.0.6.137,ip2=52.58.13.57,port1=56522,port2=443"
-        ]
-    },
-    "event_fields": [
-        "time",
-        "group_id",
-        "category",
-        "event",
-        "data"
-    ],
-    "events": [[
-            1553986553579,
-            0,
-            "transport",
-            "packet_received",
-            [...]
-        ],[
-            1553986553588,
-            1,
-            "http",
-            "frame_parsed",
-            [...]
-        ],[
-            1553986553598,
-            0,
-            "transport",
-            "packet_sent",
-            [...]
-        ],
-        ...
-    ]
+    name: "transport:packet_sent"
 }
-~~~~~~~~
-{: .language-json}
-{: #group_id_indexed title="Indexed complex group_id"}
+~~~
+{: #name-example title="Ways of logging category, type and name of an event."}
 
+Certain serializations CAN emit category and type as separate fields, and qlog
+tools SHOULD be able to deal with both the concatenated "name" field, and the
+separate "category" and "type" fields. Text-based serializations however are
+encouraged to employ the concatenated "name" field for efficiency.
 
-### category and event
-
-Category allows a higher-level grouping of events per specific event type.
-
-For example, instead of having an event of value "transport_packet_sent", we
-instead have a category of "transport" and event type of "packet_sent". This
-allows for fast and high-level filtering based on category and re-use of event
-across categories.
-
-### data
+### data {#data-field}
 
 The data field is a generic object. It contains the per-event metadata and its
-form and semantics are defined per specific sort of event (typically per event,
-but possibly also by combination of category and event). For example data field
+form and semantics are defined per specific sort of event. For example, data field
 value definitons for QUIC and HTTP/3, see [QLOG-QUIC-HTTP3].
 
-### custom Fields
+One purely illustrative example for a QUIC "packet_sent" event is shown in
+{{data-example}}.
+
+~~~~~~~~
+Definition:
+
+class TransportPacketSentEvent {
+    packet_size?:uint32,
+    header:PacketHeader,
+    frames?:Array<QuicFrame>
+}
+
+JSON serialization:
+
+{
+    packet_size: 1280,
+    header: {
+        packet_type: "1RTT",
+        packet_number: 123
+    },
+    frames: [
+        {
+            frame_type: "stream",
+            length: 1000,
+            offset: 456
+        },
+        {
+            frame_type: "padding"
+        }
+    ]
+}
+~~~~~~~~
+{: .language-json}
+{: #data-example title="Example of the 'data' field for a QUIC packet_sent event"}
+
+### protocol_type {#protocol-type-field}
+
+The "protocol_type" field indicates to which protocol (or protocol "stack") this
+event belongs. This allows a single qlog file to aggregate traces of different
+protocols (e.g., a web server offering both TCP+HTTP/2 and QUIC+HTTP/3
+connections).
+
+For example, QUIC and HTTP/3 events have the "QUIC_HTTP3" protocol_type value, see
+[QLOG-QUIC-HTTP3].
+
+Typically however, all events in a single trace are of the same protocol, and this
+field is logged once in "common_fields", see {{common-fields}}.
+
+### custom fields
 
 Note that qlog files can always contain custom fields (e.g., a per-event field
 indicating its privacy properties or path_id in multipath protocols) and assign
-custom values to existing fields (e.g., new categories for implemenation-specific
-events). Loggers are free to add such fields and field values and tools MUST
-either ignore these unknown fields or show them in a generic fashion.
+custom values to existing fields (e.g., new categories/types for
+implemenation-specific events). Loggers are free to add such fields and field
+values and tools MUST either ignore these unknown fields or show them in a generic
+fashion.
 
-### event field values
-
-The specific values for each of these fields and their semantics are defined in
-separate documents, specific per protocol or use case.
-
-For example: event definitions for QUIC and HTTP/3 can be found in
-[QLOG-QUIC-HTTP3].
-
-## Triggers
+### triggers {#trigger-field}
 
 Sometimes, additional information is needed in the case where a single event can
 be caused by a variety of other events. In the normal case, the context of the
 surrounding log messages gives a hint as to which of these other events was the
 cause. However, in highly-parallel and optimized implementations, corresponding
-log messages might be wide and far between in time. Another option is to use
-triggers instead of logging extra full events to get more fine-grained information
-without much additional overhead.
+log messages might separated in time. Another option is to explicitly indicate
+these "triggers" in a high-level way per-event to get more fine-grained
+information without much additional overhead.
 
-For this reason, qlog allows an optional "trigger" property on the value of the
-"data" field to convey such information. It indicates the reason this event
-occured. The possible reasons depend on the type of event and SHOULD be specified
-next to each event definition. Triggers are always strings, though specific
-protocols can add additional fields with more metadata on the triggering
-conditions.
+In qlog, the optional "trigger" field contains a string value describing the
+reason (if any) for this event instance occuring. While this "trigger" field could
+be a property of the qlog Event itself, it is instead a property of the "data"
+field instead. This choice was made because many event types do not include a
+trigger value, and having the field at the Event-level would cause overhead in
+some serializations. Additional information on the trigger can be added in the
+form of additional member fields of the "data" field value, yet this is highly
+implementation-specific, as are the trigger field's string values.
+
+One purely illustrative example of some potential triggers for QUIC's
+"packet_dropped" event is shown in {{trigger-example}}.
 
 ~~~~~~~~
-{
-    "common_fields": {
-        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "protocol_type":  "QUIC_HTTP3",
-        "reference_time": 1553986553572
+Definition:
+
+class QuicPacketDroppedEvent {
+    packet_type?:PacketType,
+    raw_length?:uint32,
+
+    trigger?: "key_unavailable" | "unknown_connection_id" | "decrypt_error" | "unsupported_version"
+}
+~~~~~~~~
+{: .language-json}
+{: #trigger-example title="Trigger example"}
+
+### group_id {#group-ids}
+
+As discussed in {{trace}}, a single qlog file can contain several traces taken
+from different vantage points. However, a single trace from one endpoint can also
+contain events from a variety of sources. For example, a server implementation
+might choose to log events for all incoming connections in a single large
+(streamed) qlog file. As such, we need a method for splitting up events belonging
+to separate logical entities.
+
+The simplest way to perform this splitting is by associating a "group identifier"
+to each event that indicates to which conceptual "group" each event belongs. A
+post-processing step can then extract events per group. However, this group
+identifier can be highly protocol and context-specific. In the example above, we
+might use QUIC's "Original Destination Connection ID" to uniquely identify a
+connection. As such, they might add a "ODCID" field to each event. However, a
+middlebox logging IP or TCP traffic might rather use four-tuples to identify
+connections, and add a "four_tuple" field.
+
+As such, to provide consistency and ease of tooling in cross-protocol and
+cross-context setups, qlog instead defines the common "group_id" field, which
+contains a string value. Implementations are free to use their preferred string
+serialization for this field, so long as it contains a unique value per logical
+group. Some examples can be seen in {{group-id-example}}.
+
+~~~~~~~~
+JSON serialization for events grouped by four tuples and QUIC connection IDs:
+
+events: [
+    {
+        time: 1553986553579,
+        protocol_type: "TCP_HTTPS2",
+        group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
+        name: "transport:packet_received",
+        data: { ... },
     },
-    "event_fields": [
-        "relative_time",
-        "category",
-        "event",
-        "data"
-    ],
-    "events": [[
-            20,
-            "transport",
-            "packet_dropped",
-            {
-                // Indicates that the packet has been dropped because
-                // there were no appropriate TLS keys available to decrypt
-                // it at this time.
-                "trigger": "keys_unavailable",
-                ...
-            }
-        ],[
-            27,
-            "transport",
-            "packet_sent",
-            {
-                // Indicates that this packet was sent as a probe after a timeout occurred
-                "trigger": "pto_probe",
-                ...
-            }
-        ],
-        ...
+    {
+        time: 1553986553581,
+        protocol_type: "QUIC_HTTP3",
+        group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
+        name: "transport:packet_sent",
+        data: { ... },
+    }
+]
+~~~~~~~~
+{: .language-json}
+{: #group-id-example title="Example of group_id usage"}
+
+Note that in some contexts (for example a Multipath transport protocol) it might
+make sense to add additional contextual per-event fields (for example "path_id"),
+rather than use the group_id field for that purpose.
+
+Note also that, typically, a single trace only contains events belonging to a
+single logical group (for example, an individual QUIC connection). As such,
+instead of logging the "group_id" field with an identical value for each event
+instance, this field is typically logged once in "common_fields", see
+{{common-fields}}.
+
+### common_fields {#common-fields}
+
+As discussed in the previous sections, information for a typical qlog event varies
+in three main fields: "time", "name" and associated data. Additionally, there are
+also several more advanced fields that allow mixing events from different
+protocols and contexts inside of the same trace (for example "protocol_type" and
+"group_id"). In most "normal" use cases however, the values of these advanced
+fields are consistent for each event instance (for example, a single trace
+contains events for a single QUIC connection).
+
+To reduce file size and making logging easier, qlog uses the "common_fields" list
+to indicate those fields and their values that are shared by all events in this
+component trace. This prevents these fields from being logged for each individual
+event. An example of this is shown in {{common-fields-example}}.
+
+~~~~~~~~
+JSON serialization with repeated field values per-event instance:
+
+{
+    events: [{
+            group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
+            protocol_type: "QUIC_HTTP3",
+            time_format: "relative",
+            reference_time: "1553986553572",
+
+            time: 2,
+            name: "transport:packet_received",
+            data: { ... }
+        },{
+            group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
+            protocol_type: "QUIC_HTTP3",
+            time_format: "relative",
+            reference_time: "1553986553572",
+
+            time: 7,
+            name: "http:frame_parsed",
+            data: { ... }
+        }
+    ]
+}
+
+JSON serialization with repeated field values extracted to common_fields:
+
+{
+    common_fields: {
+        group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
+        protocol_type:  "QUIC_HTTP3",
+        time_format: "relative",
+        reference_time: "1553986553572"
+    },
+    events: [
+        {
+            time: 2,
+            name: "transport:packet_received",
+            data: { ... }
+        },{
+            7,
+            name: "http:frame_parsed",
+            data: { ... }
+        }
     ]
 }
 ~~~~~~~~
 {: .language-json}
-{: #trigger_example title="Trigger example"}
+{: #common-fields-example title="Example of common_fields usage"}
 
-# Tooling requirements
+The "common_fields" field is a generic dictionary of key-value pairs, where the
+key is always a string and the value can be of any type, but is typically also a
+string or number. As such, unknown entries in this dictionary MUST be disregarded
+by the user and tools (i.e., the presence of an uknown field is explicitly NOT an
+error).
 
-Tools MUST indicate which qlog version(s) they support. Additionally, they SHOULD
-indicate exactly which values for and properties of the category, event and data
-fields they look for to execute their logic. Tools SHOULD perform a (high-level)
-check if an input qlog file adheres to the expected qlog schema. If a tool
-determines a qlog file does not contain enough supported information to correctly
-execute the tool's logic, it SHOULD generate a clear error message to this effect.
+The list of default qlog fields that are typically logged in common_fields (as
+opposed to as individual fields per event instance) are:
 
-Tools MUST NOT produce errors for any field names and values in the qlog format
-that they do not recognize. Tools CAN indicate unknown event occurences within
-their context (e.g., marking unknown events on a timeline for manual
-interpretation by the user).
+* time_format
+* reference_time
+* protocol_type
+* group_id
 
-Tool authors should be aware that, depending on the logging implementation, some
-events will not always be present in all traces. For example, using a circular
-logging buffer of a fixed size, it could be that the earliest events (e.g.,
-connection setup events) are later overwritten by "newer" events. Tool authors are
-encouraged to take this setup into account and to make their tools robust enough
-to still provide adequate output for incomplete logs. Loggers using a circular
-buffer are in turn reminded of the requirement of listing events in strict time
-order, as per {{time-based-fields}}.
+Tools MUST be able to deal with these fields being defined either on each event
+individually or combined in common_fields. Note that if at least one event in a
+trace has a different value for a given field, this field MUST NOT be added to
+common_fields but instead defined on each event individually. Good example of such
+fields are "time" and "data", who are divergent by nature.
+
+# Serializing qlog {#concrete-formats}
+
+This document and other related qlog schema definitions are intentionally
+serialization-format agnostic. This means that implementers themselves can choose
+how to represent and serialize qlog data practically on disk or on the wire. Some
+examples of possible formats are JSON, CBOR, CSV, protocol buffers, flatbuffers,
+etc.
+
+All these formats make certain tradeoffs between flexibility and efficiency, with
+textual formats like JSON typically being more flexible but also less efficient
+than binary formats like protocol buffers. The format choice will depend on the
+practical use case of the qlog user. For example, for use in day to day debugging,
+a plaintext readable (yet relatively large) format like JSON is probably
+preferred. However, for use in production, a more optimized yet restricted format
+can be better. In this latter case, it will be more difficult to achieve
+interoperability between qlog implementations of various protocol stacks, as some
+custom or tweaked events from one might not be compatible with the format of the
+other. This will also reflect in tooling: not all tools will support all formats.
+
+This being said, the authors prefer JSON as the basis for storing qlog, as it
+retains full flexibility and maximum interoperability. Storage overhead can be
+managed well in practice by employing compression. For this reason, this document
+details both how to practically transform qlog schema definitions to JSON and to
+the streamable NDJSON. We discuss concrete options to bring down JSON size and
+processing overheads in {{optimizations}}.
+
+As depending on the employed format different deserializers/parsers should be
+used, the "qlog_format" field is used to indicate the chosen serialization
+approach.
+
+## qlog to JSON mapping
+
+When mapping qlog to normal JSON, the "qlog_format" field MUST have the value
+"JSON". This is also the default qlog serialization and default value of this field.
+
+To facilitate this mapping, the qlog documents employ a format that is close to
+pure JSON for its examples and data definitions. Still, as JSON is not a typed
+format, there are some practical peculiarities to observe.
+
+### numbers
+
+While JSON has built-in support for integers up to 64 bits in size, not all JSON
+parsers do. For example, none of the major Web browsers support full 64-bit
+integers at this time, as all numerical values (both floating-point numbers and
+integers) are internally represented as floating point [IEEE
+754](https://en.wikipedia.org/wiki/Floating-point_arithmetic) values. In practice,
+this limits their integers to a maximum value of 2^53-1. Integers larger than that
+are either truncated or produce a JSON parsing error. While this is expected to
+improve in the future (as ["BigInt"
+support](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)
+has been introduced in most Browsers, though not yet integrated into JSON
+parsers), we still need to deal with it here.
+
+When transforming an int64, uint64 or double from qlog to JSON, the implementer
+can thus choose to either log them as JSON numbers (taking the risk of truncation
+or un-parseability) or to log them as strings instead. Logging as strings should
+however only be practically needed if the value is likely to exceed 2^53-1. In
+practice, even though protocols such as QUIC allow 64-bit values for for example
+stream identifiers, these high numbers are unlikely to be reached for the
+overwhelming majority of cases. As such, it is probably a valid trade-off to take
+the risk and log 64-bit values as JSON numbers instead of strings.
+
+Tools processing JSON-based qlog SHOULD however be able to deal with 64-bit fields
+being serialized as either strings or numbers.
+
+### bytes
+
+Unlike most binary formats, JSON does not allow the logging of raw binary blobs
+directly. As such, when serializing a byte or array&lt;byte&gt;, a scheme needs to
+be chosen.
+
+To represent qlog bytes in JSON, they MUST be serialized to their lowercase
+hexadecimal equivalents (with 0 prefix for values lower than 10). All values are
+directly appended to each other, without delimiters. The full value is not
+prefixed with 0x (as is sometimes common). An example is given in
+{{json-bytes-example}}.
+
+~~~~~~~~
+For the five raw unsigned byte input values of: 5 20 40 171 255, the JSON serialization is:
+
+{
+    raw: "051428abff"
+}
+~~~~~~~~
+{: .language-json}
+{: #json-bytes-example title="Example for serializing bytes"}
+
+As such, the resulting string will always have an even amount of characters and
+the original byte-size can be retrieved by dividing the string length by 2.
+
+#### Truncated values
+
+In some cases, it can be interesting not to log a full raw blob but instead a
+truncated value (for example, only the first 100 bytes of an HTTP response body to
+be able to discern which file it actually contained). In these cases, the original
+byte-size length cannot be obtained from the serialized value directly. As such,
+all qlog schema definitions SHOULD include a separate, length-indicating field for
+all fields of type array&lt;byte&gt; they specify. This allows always retrieving
+the original length, but also allows the omission of any raw value bytes of the
+field completely (e.g., out of privacy or security considerations).
+
+To reduce overhead however and in the case the full raw value is logged, the extra
+length-indicating field can be left out. As such, tools MUST be able to deal with
+this situation and derive the length of the field from the raw value if no
+separate length-indicating field is present. All possible permutations are shown
+by example in {{json-bytes-example-two}}.
+
+~~~~~~~~
+// both the full raw value and its length are present (length is redundant)
+{
+    "raw_length": 5,
+    "raw": "051428abff"
+}
+
+// only the raw value is present, indicating it represents the fields full value
+// the byte length is obtained by calculating raw.length / 2
+{
+    "raw": "051428abff"
+}
+
+// only the length field is present, meaning the value was omitted
+{
+    "raw_length": 5,
+}
+
+// both fields are present and the lengths do not match: the value was truncated to the first three bytes.
+{
+    "raw_length": 5,
+    "raw": "051428"
+}
+
+~~~~~~~~
+{: .language-json}
+{: #json-bytes-example-two title="Example for serializing truncated bytes"}
+
+
+### Summarizing table
+
+By definition, JSON strings are serialized with quotes. Numbers without.
+
+| qlog type | JSON type                             |
+|-----------|---------------------------------------|
+| int8      | number                                |
+| int16     | number                                |
+| int32     | number                                |
+| uint8     | number                                |
+| uint16    | number                                |
+| uint32    | number                                |
+| float     | number                                |
+| int64     | number or string                      |
+| uint64    | number or string                      |
+| double    | number or string                      |
+| bytes     | string (lowercase hex value)          |
+| string    | string                                |
+| boolean   | string ("true" or "false")            |
+| enum      | string (full value/name, not index)   |
+| any       | object  ( {...} )                     |
+| array     | array   ( \[...\] )                   |
+
+### Other JSON specifics
 
 Most JSON parsers strictly follow the JSON specification. This includes the rule
 that trailing comma's are not allowed. As it is frequently annoying to remove
 these trailing comma's when logging events in a streaming fashion, tool
 implementers SHOULD allow the last event entry of a qlog trace to be an empty
-array. This allows loggers to simply close the qlog file by appending "[]]}]}"
-after their last streamed event.
+object. This allows loggers to simply close the qlog file by appending "{}]}]}"
+after their last added event.
 
-# Methods of Access and Generation
+## qlog to NDJSON mapping
+
+One of the downsides of using pure JSON is that it is inherently a non-streamable
+format. Put differently, it is not possible to simply append new qlog events to a
+log file without "closing" this file at the end by appending "]}]}". Without these
+closing tags, most JSON parsers will be unable to parse the file entirely. As most
+platforms do not provide a standard streaming JSON parser (which would be able to
+deal with this problem), this document also provides a qlog mapping to a
+streamable JSON format called [Newline-Delimited JSON
+(NDJSON)](http://ndjson.org/).
+
+When mapping qlog to NDJSON, the "qlog_format" field MUST have the value "NDJSON".
+
+NDJSON is very similar to JSON, except that it interprets each line in a file as a
+fully separate JSON object. Put differently, unlike default JSON, it does not
+require a file to be wrapped as a full object with "{ ... }" or "\[ ... \]". Using
+this setup, qlog events can simply be appended as individually serialized lines at
+the back of a streamed logging file.
+
+For this to work, some qlog definitions have to be adjusted however. Mainly,
+events are no longer part of the "events" array in the Trace object, but are
+instead logged separately from the qlog "file header" (QlogFile class in
+{{top-level}}). Additionally, qlog's NDJSON mapping does not allow logging
+multiple individual traces in a single qlog file. As such, the QlogFile:traces
+field is replaced by the singular "trace" field, which simply contains the Trace
+data directly. An example can be seen in {{ndjson-example}}. Note that the
+"group_id" field can still be used on a per-event basis to include events from
+conceptually different sources in a single NDJSON qlog file.
+
+Note as well from {{ndjson-example}} that the file's header (QlogFileNDJSON) also
+needs to be fully serialized on a single line to be NDJSON compatible.
+
+~~~~~~~~
+Definition:
+
+class QlogFileNDJSON {
+    qlog_format: "NDJSON",
+
+    qlog_version:string,
+    title?:string,
+    description?:string,
+    summary?: Summary,
+    trace: Trace
+}
+// list of qlog events, separated by newlines
+
+NDJSON serialization:
+
+{"qlog_format":"NDJSON","qlog_version":"draft-02","title":"Name of this particular NDJSON qlog file (short)","description":"Description for this NDJSON qlog file (long)","trace":{"common_fields":{"protocol_type":"QUIC_HTTP3","group_id":"127ecc830d98f9d54a42c4f0842aa87e181a","time_format":"relative","reference_time":"1553986553572"},"vantage_point":{"name":"backend-67","type":"server"}}}
+{"time": 2, "name": "transport:packet_received", "data": { ... } }
+{"time": 7, "name": "http:frame_parsed", "data": { ... } }
+~~~~~~~~
+{: .language-json}
+{: #ndjson-example title="Top-level element"}
+
+### Supporting NDJSON in tooling
+
+Note that NDJSON is not supported in most default programming environments (unlike
+normal JSON). However, several [custom NDJSON parsing libraries
+exist](http://ndjson.org/libraries.html) that can be used and the format is easy
+enough to parse with existing implementations (i.e., by splitting the file into
+its component lines and feeding them to a normal JSON parser individually, as each
+line by itself is a valid JSON object).
+
+## Optimization options {#optimizations}
+
+Besides moving to a stricter, binary format (such as protocol buffers), there are
+various options to reduce the size of a JSON-based qlog format. As we as authors
+believe JSON is the format best suited for qlog, we also formalize a few of these
+optimization options here. Tools SHOULD support these if they intend to be useful
+across protocol stacks.
+
+TODO: common_fields as expected, default, no-brainer optimization
+TODO: cbor and compression as recommended optimizations
+TODO: event_fields/csv as potential optimization
+TODO: dictionary-based as potential optimization
+TODO: protobuf or other binary format as potential optimization with flexibility caveat
+
+TODO: link to discussion + reproduce results table here (first get resutls for the
+non-event-field version of qlog though)
+
+## Conversion between formats
+
+TODO: rework this text and make it more general about converters
+
+Note that, even with the optimizations detailed above, it is to be expected that
+qlog files (as they are JSON) will be relatively large when compared to binary
+formats. If this turns out to be an issue in a real deployment, it is a perfectly
+acceptable practices to first generate the initial application-side logs in
+another (custom) (binary) format. Afterwards, those bespoke files can then be
+transformed into the qlog format for improved interoperability with tools and
+other logs. A prime example of this is converting of binary .pcap packet capture
+files (e.g., obtained from wireshark or tcpdump) to the qlog format. [Such a
+conversion tool is available for the QUIC and HTTP/3
+protocols](https://github.com/quiclog/pcap2qlog). Other examples include
+[converting Chromium's Netlog format to
+qlog](https://github.com/quiclog/qvis/tree/master/visualizations/src/components/filemanager/netlogconverter)
+and transforming [quictrace to qlog](https://github.com/quiclog/quictrace2qlog).
+
+
+# Methods of access and generation
 
 This section describes some default ways to access and trigger generation of qlog
 files.
 
-## via a well-known endpoint
+## Via a well-known endpoint
 
 qlog implementers MAY make generated logs and traces on an endpoint (typically the
 server) available via the following .well-known URI:
@@ -901,183 +1159,40 @@ connections. Implementers are advised to disable this endpoint by default and
 require specific actions from the end users to enable it (and potentially qlog
 itself).
 
+## Via an environment variable
 
-# Notes on Practical Use
+TODO: QLOGDIR
 
-Note that, even with the optimizations detailed above, it is to be expected that
-qlog files (as they are JSON) will be relatively large when compared to binary
-formats. If this turns out to be an issue in a real deployment, it is a perfectly
-acceptable practices to first generate the initial application-side logs in
-another (custom) (binary) format. Afterwards, those bespoke files can then be
-transformed into the qlog format for improved interoperability with tools and
-other logs. A prime example of this is converting of binary .pcap packet capture
-files (e.g., obtained from wireshark or tcpdump) to the qlog format. [Such a
-conversion tool is available for the QUIC and HTTP/3
-protocols](https://github.com/quiclog/pcap2qlog).
+# Tooling requirements
 
-# Guidance on Exporting qlog to a Concrete Format {#concrete-formats}
+Tools MUST indicate which qlog version(s) they support. Additionally, they SHOULD
+indicate exactly which values for and properties of the name (category and type)
+and data fields they look for to execute their logic. Tools SHOULD perform a
+(high-level) check if an input qlog file adheres to the expected qlog schema. If a
+tool determines a qlog file does not contain enough supported information to
+correctly execute the tool's logic, it SHOULD generate a clear error message to
+this effect.
 
-This document and other related qlog schema definitions are intentionally
-format-agnostic. This means that implementers themselves can choose how to
-represent and serialize qlog data practically on disk or on the wire. Some
-examples of possible formats are JSON, CBOR, CSV, protocol buffers, flatbuffers,
-etc. All these formats make certain tradeoffs between flexibility and efficiency,
-with textual formats like JSON typically being more flexible than binary formats
-like protocol buffers. The format choice will depend on the practical use case of
-the qlog user. For example, for use in day to day debugging, a plaintext readable
-(yet relatively large) format like JSON is probably preferred. However, for use in
-production, a more optimized yet restricted format can be better. In this latter
-case, it will be more difficult to achieve interoperability between qlog
-implementations of various protocol stacks, as some custom or tweaked events from
-one might not be compatible with the format of the other. This will also reflect
-in tooling: not all tools will support all formats.
+Tools MUST NOT produce errors for any field names and/or values in the qlog format
+that they do not recognize. Tools CAN indicate unknown event occurences within
+their context (e.g., marking unknown events on a timeline for manual
+interpretation by the user).
 
-This being said, the authors prefer JSON as the basis for storing qlog, as it
-retains full flexibility and maximum interoperability. For this reason, this
-section details how to practically transform qlog schema definitions to JSON. We
-also discuss options to bring down JSON size and processing overheads in
-{{optimizations}}, which has made the JSON-based approach quite usable in many
-practical situations.
+Tool authors should be aware that, depending on the logging implementation, some
+events will not always be present in all traces. For example, using a circular
+logging buffer of a fixed size, it could be that the earliest events (e.g.,
+connection setup events) are later overwritten by "newer" events. Alternatively,
+some events can be intentionally omitted out of privacy or file size
+considerations. Tool authors are encouraged to make their tools robust enough to
+still provide adequate output for incomplete logs. Loggers using a circular buffer
+are in turn reminded of the requirement of listing events in strict time order, as
+per {{time-based-fields}}.
 
-## qlog to JSON mapping
+TODO: Tools SHOULD indicate which qlog serialization formats they support. SHOULD
+allow uploading of .qlog and .json. SHOULD allow uploading of .cbor, .zip and
+.brotli. No standards in place, so we make some recommendations for file extensions.
 
-To facilitate this mapping, the qlog document employ a format that is close to
-pure JSON for its examples and data definitions. Still, as JSON is not a typed
-format, there are some peculiarities to observe.
-
-### Numbers
-
-While JSON has built-in support for both strings and numbers up to 64 bits in
-size, not all JSON parsers do. For example, none of the major Web browsers support
-full 64-bit numbers at this time. Instead, all numbers are internally represented
-as floating point values, with a maximum value of 2^53-1. Numbers larger than that
-are either truncated or produce a JSON parsing error. While this is expected to
-improve in the future (as "BigInt" support has been introduced in most Browsers),
-we still need to deal with it here.
-
-When transforming an int64, uint64 or double from qlog to JSON, the implementer
-can thus choose to either log them as JSON numbers (taking the risk) or to log
-them as strings instead. Logging as strings should however only be practically
-needed if the value is likely to exceed 2^53-1. In practice, even though protocols
-such as QUIC allow 64-bit values for for example stream identifiers, these high
-numbers are unlikely to be reached for the overwhelming majority of cases. As
-such, it is probably a valid trade-off to take the risk and log 64-bit values as
-JSON numbers instead of strings.
-
-Tools processing JSON-based qlog SHOULD be able to deal with 64-bit fields being
-serialized as either strings or numbers.
-
-### Bytes
-
-Unlike most binary formats, JSON does not allow the logging of raw binary blobs
-directly. As such, when serializing a byte or array&lt;byte&gt;, a scheme needs to
-be chosen.
-
-To represent qlog bytes in JSON, they MUST be serialized to their lowercase
-hexadecimal format (with 0 prefix for values lower than 10). All values are
-directly appended to each other, without delimiters. The full value is not
-prefixed with 0x (as is sometimes common).
-
-~~~~~~~~
-For the five raw unsigned byte input values of: 5 20 40 171 255, the JSON serialization is:
-
-{
-    "raw": "051428abff"
-}
-~~~~~~~~
-{: .language-json}
-{: #bytes_example title="Example for serializing bytes"}
-
-As such, the resulting string will always have an even amount of characters and
-the original byte-size can be retrieved by dividing the string length by 2.
-
-#### Truncated Values
-
-In some cases, it can be interesting not to log a full raw blob but instead a
-truncated value (for example, only the first 100 bytes of an HTTP response body to
-be able to discern which file it actually contained). In these cases, the original
-byte-size length cannot be obtained from the serialized value directly. As such,
-all qlog schema definitions SHOULD include a separate, length-indicating field for
-all fields of type array&lt;byte&gt; they specify. This allows always retrieving
-the original length, but also allows the omission of any raw value bytes of the
-field completely (e.g., out of privacy or security considerations).
-
-To reduce overhead however and in the case the full raw value is logged, the extra
-length-indicating field can be left out. As such, tools MUST be able to deal with
-this situation and derive the length of the field from the raw value if no
-separate length-indicating field is present.
-
-~~~~~~~~
-// both the full raw value and its length are present (length is redundant)
-{
-    "raw_length": 5,
-    "raw": "051428abff"
-}
-
-// only the raw value is present, indicating it represents the fields full value
-{
-    "raw": "051428abff"
-}
-
-// only the length field is present, meaning the value was omitted
-{
-    "raw_length": 5,
-}
-
-// both fields are present and the lengths do not match: the value was truncated to the first three bytes.
-{
-    "raw_length": 5,
-    "raw": "051428"
-}
-
-~~~~~~~~
-{: .language-json}
-{: #bytes_example_two title="Example for serializing truncated bytes"}
-
-
-### Summarizing table
-
-JSON strings are serialized with quotes. Numbers without.
-
-| qlog type | JSON type                             |
-|-----------|---------------------------------------|
-| int8      | number                                |
-| int16     | number                                |
-| int32     | number                                |
-| uint8     | number                                |
-| uint16    | number                                |
-| uint32    | number                                |
-| float     | number                                |
-| int64     | number or string                      |
-| uint64    | number or string                      |
-| double    | number or string                      |
-| bytes     | string (lowercase hex value)          |
-| string    | string                                |
-| boolean   | string ("true" or "false")            |
-| enum      | string (full value/name, not index)   |
-| any       | object  ( {...} )                     |
-| array     | array   ( \[...\] )                   |
-
-
-## Optimization options {#optimizations}
-
-Besides moving to a stricter, binary format (such as protocol buffers), there are
-various options to reduce the size of a JSON-based qlog format. As we as authors
-believe JSON is the format best suited for qlog, we also formalize a few of these
-optimization options here. Tools SHOULD support these if they intend to be useful
-across protocol stacks.
-
-TODO: common_fields as expected, default, no-brainer optimization
-TODO: cbor and compression as recommended optimizations
-TODO: event_fields as potential optimization
-TODO: dictionary-based as potential optimization
-TODO: protobuf or other binary format as potential optimization with flexibility caveat
-
-TODO: link to discussion + reproduce results table here (first get resutls for the
-non-event-field version of qlog though)
-
-
-# Security Considerations
+# Security and privacy considerations
 
 TODO : discuss privacy and security considerations (e.g., what NOT to log, what to
 strip out of a log before sharing, ...)
@@ -1100,6 +1215,10 @@ TODO: primarily the .well-known URI
     * binary blobs are now logged as lowercase hex strings (#39, #36)
     * added guidance to add length-specifiers for binary blobs (#102)
 * Removed "time_units" from Configuration. All times are now in ms instead (#95)
+* Removed the "event_fields" setup for a more straightforward JSON format
+  (#101,#89)
+* Added a streaming option using the NDJSON format (#109,#2,#106)
+* Overall tightened up the text and added more examples
 
 
 ## Since draft-marx-qlog-main-schema-00:
