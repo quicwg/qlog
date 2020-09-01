@@ -1134,34 +1134,85 @@ and transforming [quictrace to qlog](https://github.com/quiclog/quictrace2qlog).
 
 # Methods of access and generation
 
-This section describes some default ways to access and trigger generation of qlog
-files.
+Different implementations will have different ways of generating and storing
+qlogs. However, there is still value in defining a few default ways in which to
+steer this generation and access of the results.
 
-## Via a well-known endpoint
+## Set destination via an environment variable
 
-qlog implementers MAY make generated logs and traces on an endpoint (typically the
-server) available via the following .well-known URI:
+To provide users control over where and how qlog files are created, we define two
+environment variables. The first, QLOGFILE, indicates a full path to where an
+individual qlog file should be stored. The second, QLOGDIR, sets a general
+directory path in which qlog files should be placed. This path MUST include the
+directory separator character at the end.
 
-> .well-known/qlog/IDENTIFIER
+In general, QLOGDIR should be preferred over QLOGFILE if an endpoint is prone to
+generate multiple qlog files. This can for example be the case for a QUIC server
+implementation that logs each QUIC connection in a separate qlog file. An
+alternative that uses QLOGFILE would be a QUIC server that logs all connections in
+a single file and uses the "group_id" field ({{group-ids}}) to allow post-hoc
+separation of events. It is expected most implementations would only support
+QLOGDIR, even for situations where just one qlog file will be written.
 
-The IDENTIFIER variable depends on the setup and the chosen protocol. For example,
-for QUIC logging, the ODCID is often used to uniquely identify a connection.
+When using QLOGDIR, it is up to the implementation to choose an appropriate naming
+scheme for the qlog files themselves. The chosen scheme will typically depend on
+the context or protocols used. For example, for QUIC, it is recommended to use the
+Original Destination Connection ID (ODCID), followed by the vantage point type of
+the logging endpoint. Examples of all options for QUIC are shown in
+{{qlogdir-example}}.
+
+~~~~~~~~
+Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
+
+Should result in the the quicclientbinary executable logging a single qlog file named client.qlog in the /srv/qlogs directory.
+This is for example useful in tests when the client sets up just a single connection and then exits.
+
+Command: QLOGDIR=/srv/qlogs/ quicserverbinary
+
+Should result in the quicserverbinary executable generating several logs files, one for each QUIC connection.
+Given two QUIC connections, with ODCID values "abcde" and "12345" respectively, this would result in two files:
+/srv/qlogs/abcde_server.qlog
+/srv/qlogs/12345_server.qlog
+
+Command: QLOGFILE=/srv/qlogs/server.qlog quicserverbinary
+
+Should result in the the quicserverbinary executable logging a single qlog file named server.qlog in the /srv/qlogs directory.
+Given that the server handled two QUIC connections before it was shut down, with ODCID values "abcde" and "12345" respectively,
+this would result in event instances in the qlog file being tagged with the "group_id" field with values "abcde" and "12345".
+~~~~~~~~
+{: .language-json}
+{: #qlogdir-example title="Environment variable examples for a QUIC implementation"}
+
+## Access logs via a well-known endpoint
+
+After generation, qlog implementers MAY make generated logs and traces on an
+endpoint (typically the server) available via the following .well-known URI:
+
+> .well-known/qlog/IDENTIFIER.extension
+
+The IDENTIFIER variable depends on the context and the protocol. For example for
+QUIC, the lowercase Original Destination Connection ID (ODCID) is recommended, as
+it can uniquely identify a connection. Additionally, the extension depends on the
+chosen format. While this should typically be .qlog, it can take other values as
+well, as discussed in {{optimizations}}. For example, for a QUIC connection with
+ODCID "abcde", the endpoint for fetching its default JSON-formatted .qlog file
+would be:
+
+> .well-known/qlog/abcde.qlog
 
 Implementers SHOULD allow users to fetch logs for a given connection on a 2nd,
 separate connection. This helps prevent pollution of the logs by fetching them
 over the same connection that one wishes to observe through the log. Ideally, for
 the QUIC use case, the logs should also be approachable via an HTTP/2 or HTTP/1.1
-endpoint, to aid debugging.
+endpoint (i.e., on TCP port 443), to aid debugging.
 
 qlog implementers SHOULD NOT enable this .well-known endpoint in typical
 production settings to prevent (malicious) users from downloading logs from other
 connections. Implementers are advised to disable this endpoint by default and
 require specific actions from the end users to enable it (and potentially qlog
-itself).
-
-## Via an environment variable
-
-TODO: QLOGDIR
+itself). Implementers should also take into account the general privacy and
+security guidelines discussed in {{privacy}} before exposing qlogs to outside
+actors.
 
 # Tooling requirements
 
@@ -1192,7 +1243,7 @@ TODO: Tools SHOULD indicate which qlog serialization formats they support. SHOUL
 allow uploading of .qlog and .json. SHOULD allow uploading of .cbor, .zip and
 .brotli. No standards in place, so we make some recommendations for file extensions.
 
-# Security and privacy considerations
+# Security and privacy considerations {#privacy}
 
 TODO : discuss privacy and security considerations (e.g., what NOT to log, what to
 strip out of a log before sharing, ...)
@@ -1218,6 +1269,8 @@ TODO: primarily the .well-known URI
 * Removed the "event_fields" setup for a more straightforward JSON format
   (#101,#89)
 * Added a streaming option using the NDJSON format (#109,#2,#106)
+* Added QLOGDIR and QLOGFILE environment variables, clarified the .well-known URL
+  usage (#26,#33,#51)
 * Overall tightened up the text and added more examples
 
 
