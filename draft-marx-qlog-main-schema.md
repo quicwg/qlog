@@ -112,7 +112,7 @@ The main data types are:
 * double : 64-bit floating point value
 * byte : an individual raw byte (8-bit) value (use array&lt;byte&gt; or the
   shorthand "bytes" to specify a binary blob)
-* string : list of ASCII encoded characters
+* string : list of Unicode (typically UTF-8) encoded characters
 * boolean : boolean
 * enum: fixed list of values (Unless explicity defined, the value of an enum entry
   is the string version of its name (e.g., initial = "initial"))
@@ -1006,7 +1006,7 @@ by example in {{json-bytes-example-two}}.
 
 ### Summarizing table
 
-By definition, JSON strings are serialized with quotes. Numbers without.
+By definition, JSON strings are serialized surrounded by quotes. Numbers without.
 
 | qlog type | JSON type                             |
 |-----------|---------------------------------------|
@@ -1028,6 +1028,9 @@ By definition, JSON strings are serialized with quotes. Numbers without.
 | array     | array   ( \[...\] )                   |
 
 ### Other JSON specifics
+
+JSON files by definition ({{?RFC8259}}) MUST utilize the UTF-8 encoding, both for
+the file itself and the string values.
 
 Most JSON parsers strictly follow the JSON specification. This includes the rule
 that trailing comma's are not allowed. As it is frequently annoying to remove
