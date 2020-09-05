@@ -892,9 +892,13 @@ processing overheads in {{optimizations}}.
 
 As depending on the employed format different deserializers/parsers should be
 used, the "qlog_format" field is used to indicate the chosen serialization
-approach.
+approach. This field is always a string, but can be made hierarchical by the use
+of the "." separator between entries. For example, a value of "JSON.optimizationA"
+can indicate that a default JSON format is being used, but that a certain
+optimization of type A was applied to the file as well (see also
+{{optimizations}}).
 
-## qlog to JSON mapping
+## qlog to JSON mapping {#format-json}
 
 When mapping qlog to normal JSON, the "qlog_format" field MUST have the value
 "JSON". This is also the default qlog serialization and default value of this field.
@@ -1032,7 +1036,7 @@ implementers SHOULD allow the last event entry of a qlog trace to be an empty
 object. This allows loggers to simply close the qlog file by appending "{}]}]}"
 after their last added event.
 
-## qlog to NDJSON mapping
+## qlog to NDJSON mapping {#format-ndjson}
 
 One of the downsides of using pure JSON is that it is inherently a non-streamable
 format. Put differently, it is not possible to simply append new qlog events to a
@@ -1096,41 +1100,229 @@ enough to parse with existing implementations (i.e., by splitting the file into
 its component lines and feeding them to a normal JSON parser individually, as each
 line by itself is a valid JSON object).
 
-## Optimization options {#optimizations}
+## Other optimizated formatting options {#optimizations}
 
-Besides moving to a stricter, binary format (such as protocol buffers), there are
-various options to reduce the size of a JSON-based qlog format. As we as authors
-believe JSON is the format best suited for qlog, we also formalize a few of these
-optimization options here. Tools SHOULD support these if they intend to be useful
-across protocol stacks.
+Both the JSON and NDJSON formatting options described above are serviceable in
+general small to medium scale (debugging) setups. However, these approaches tend
+to be relatively verbose, leading to larger file sizes. Additionally, generalized
+(ND)JSON (de)serialization performance is typically (slightly) lower than that of
+more optimized and predictable formats. Both aspects make these formats more
+challenging ([though still practical](https://qlog.edm.uhasselt.be/anrw/)) to use
+in large scale setups.
 
-TODO: common_fields as expected, default, no-brainer optimization
-TODO: cbor and compression as recommended optimizations
-TODO: event_fields/csv as potential optimization
-TODO: dictionary-based as potential optimization
-TODO: protobuf or other binary format as potential optimization with flexibility caveat
+During the development of qlog, we compared a multitude of alternative formatting
+and optimization options. The results of this study are [summarized on the qlog
+github
+repository](https://github.com/quiclog/internet-drafts/issues/30#issuecomment-617675097).
+The rest of this section discusses some of these approaches implementations could
+choose and the expected gains and tradeoffs inherent therein. Tools SHOULD support
+mainly the compression options listed in {{compression}}, as they provide the
+largest wins for the least cost overall.
 
-TODO: link to discussion + reproduce results table here (first get resutls for the
-non-event-field version of qlog though)
+Over time, specific qlog formats and encodings can be created that more formally
+define and combine some of the discussed optimizations or add new ones. We choose
+to define these schemes in separate documents to keep the main qlog definition
+clean and generalizable, as not all contexts require the same performance or
+flexibility as others and qlog is intended to be a broadly usable and extensible
+format (for example more flexibility is needed in earlier stages of protocol
+development, while more performance is typically needed in later stages). This is
+also the main reason why the general qlog format is the less optimized JSON
+instead of a more performant option.
 
-## Conversion between formats
+To be able to easily distinguish between these options in qlog compatible tooling
+(without the need to have the user provide out-of-band information or to
+(heuristically) parse and process files in a multitude of ways, see also
+{{tooling}}), we recommend using explicit file extensions to indicate specific
+formats. As there are no standards in place for this type of extension to format
+mapping, we employ a commonly used scheme here. Our approach is to list the
+applied optimizations in the extension in ascending order of application (e.g., if
+a qlog file is first optimized with technique A and then compressed with technique
+B, the resulting file would have the extension ".qlog.A.B"). This allows tooling
+to start at the back of the extension to "undo" applied optimizations to finally
+arrive at the expected qlog representation.
 
-TODO: rework this text and make it more general about converters
+### Data structure optimizations {#structure-optimizations}
 
-Note that, even with the optimizations detailed above, it is to be expected that
-qlog files (as they are JSON) will be relatively large when compared to binary
-formats. If this turns out to be an issue in a real deployment, it is a perfectly
-acceptable practices to first generate the initial application-side logs in
-another (custom) (binary) format. Afterwards, those bespoke files can then be
-transformed into the qlog format for improved interoperability with tools and
-other logs. A prime example of this is converting of binary .pcap packet capture
-files (e.g., obtained from wireshark or tcpdump) to the qlog format. [Such a
-conversion tool is available for the QUIC and HTTP/3
-protocols](https://github.com/quiclog/pcap2qlog). Other examples include
-[converting Chromium's Netlog format to
-qlog](https://github.com/quiclog/qvis/tree/master/visualizations/src/components/filemanager/netlogconverter)
-and transforming [quictrace to qlog](https://github.com/quiclog/quictrace2qlog).
+The first general category of optimizations is to alter the representation of data
+within an (ND)JSON qlog file to reduce file size.
 
+The first option is to employ a scheme similar to the CSV (comma separated value
+{{?rfc4180}}) format, which utilizes the concept of column "headers" to prevent
+repeating field names for each datapoint instance. Concretely for JSON qlog,
+several field names are repeated with each event (i.e., time, name, data). These
+names could be extracted into a separate list, after which qlog events could be
+serialized as an array of values, as opposed to a full object. This approach was a
+key part of the original qlog format (prior to draft 02) using the "event_fields"
+field. However, tests showed that this optimization only provided a mean file size
+reduction of 5% (100MB to 95MB) while significantly increasing the implementation
+complexity, and this approach was abandoned in favor of the default JSON setup.
+Implementations using this format should not employ a separate file extension (as
+it still uses JSON), but rather employ a new value of "JSON.namedheaders" (or
+"NDJSON.namedheaders") for the "qlog_format" field (see {{top-level}}).
+
+The second option is to replace field values and/or names with indices into a
+(dynamic) lookup table. This is a common compression technique and can provide
+significant file size reductions (up to 50% in our tests, 100MB to 50MB). However,
+this approach is even more difficult to implement efficiently and requires either
+including the (dynamic) table in the resulting file (an approach taken by for
+example [Chromium's NetLog
+format](https://www.chromium.org/developers/design-documents/network-stack/netlog))
+or defining a (static) table up-front and sharing this between implementations.
+Implementations using this approach should not employ a separate file extension
+(as it still uses JSON), but rather employ a new value of "JSON.dictionary" (or
+"NDJSON.dictionary") for the "qlog_format" field (see {{top-level}}).
+
+As both options either proved difficult to implement, reduced qlog file
+readability, and provided too little improvement compared to other more
+straightforward options (for example {{compression}}), these schemes are not
+inherently part of qlog.
+
+### Compression {#compression}
+
+The second general category of optimizations is to utilize a (generic) compression
+scheme for textual data. As qlog in the (ND)JSON format typically contains a large
+amount of repetition, off-the-shelf (text) compression techniques typically
+succeed very well in bringing down file sizes (regularly with up to two orders of
+magnitude in our tests, even for "fast" compression levels). As such, utilizing
+compression is recommended before attempting other optimization options, even
+though this might (somewhat) increase processing costs due to the additional
+compression step.
+
+The first option is to use GZIP compression ({{?RFC1952}}). This generic
+compression scheme provides multiple compression levels (providing a trade-off
+between compression speed and size reduction). Utilized at level 6 (a medium
+setting thought to be applicable for streaming compression of a qlog stream in
+commodity devices), gzip compresses qlog JSON files to 7% of their initial size on
+average (100MB to 7MB). For this option, the file extension .qlog.gz SHOULD BE
+used.  The "qlog_format" field should still reflect the original JSON formatting
+of the qlog data (e.g., "JSON" or "NDJSON").
+
+The second option is to use Brotli compression ({{?RFC7932}}). While similar to
+gzip, this more recent compression scheme provides a better efficiency. It also
+allows multiple compression levels. Utilized at level 4 (a medium setting thought
+to be applicable for streaming compression of a qlog stream in commodity devices),
+brotli compresses qlog JSON files to 7% of their initial size on average (100MB to
+7MB). For this option, the file extension .qlog.br SHOULD BE used. The
+"qlog_format" field should still reflect the original JSON formatting of the qlog
+data (e.g., "JSON" or "NDJSON").
+
+Other compression algorithms of course exist (for example xz, zstd, and lz4). We
+mainly recommend gzip and brotli because of their tweakable behaviour and wide
+support in web-based environments, which we envision as the main tooling ecosystem
+(see also {{tooling}}).
+
+### Binary formats {#binary}
+
+The third general category of optimizations is to use a more optimized (often
+binary) format instead of the textual JSON format. This approach inherently
+produces smaller files and often has better (de)serialization performance.
+However, the resultant files are no longer human readable and some formats require
+hard tradeoffs between flexibility for performance.
+
+The first option is to use the CBOR (Concise Binary Object Representation
+{{?rfc7049}}) format. For our purposes, CBOR can be viewed as a straighforward
+binary variant of JSON. As such, existing JSON qlog files can be trivially
+converted to and from CBOR (though slightly more work is needed for NDJSON qlogs).
+While CBOR thus does retain the full qlog flexibility, it only provides a 25% file
+size reduction (100MB to 75MB) compared to textual (ND)JSON. As CBOR support in
+programming environments is not as widespread as that of textual JSON and the
+format lacks human readability, CBOR was not chosen as the default qlog format.
+For this option, the file extension .qlog.cbor SHOULD BE used. The "qlog_format"
+field should still reflect the original JSON formatting of the qlog data (e.g.,
+"JSON" or "NDJSON").
+
+A second option is to use a more specialized binary format, such as [Protocol
+Buffers](https://developers.google.com/protocol-buffers) (protobuf). This format
+is battle-tested, has support for optional fields and has libraries in most
+programming languages. Still, it is significantly less flexible than textual JSON
+or CBOR, as it relies on a separate, pre-defined schema (a .proto file). As such,
+it it not possible to (easily) log new event types in protobuf files without
+adjusting this schema as well, which has its own practical challenges. As qlog is
+intended to be a flexible, general purpose format, this type of format was not
+chosen as its basic serialization. The lower flexibility does lead to
+significantly reduced file sizes. Our straightforward mapping of the qlog main
+schema and QUIC/HTTP3 event types to protobuf created qlog files 24% as large as
+the raw JSON equivalents (100MB to 24MB). For this option, the file extension
+.qlog.protobuf SHOULD BE used. The "qlog_format" field should reflect the
+different internal format, for example: "qlog_format": "protobuf".
+
+Note that binary formats can (and should) also be used in conjunction with
+compression (see {{compression}}). For example, CBOR compresses well (to about 6%
+of the original textual JSON size (100MB to 6MB) for both gzip and brotli) and so
+does protobuf (5% (gzip) to 3% (brotli)). However, these gains are similar to the
+ones achieved by simply compression the textual JSON equivalents directly (7%, see
+{{compression}}). As such, since compression is still needed to achieve optimal
+file size reductions event with binary formats, we feel the more flexible
+compressed textual JSON options are a better default for the qlog format in
+general.
+
+{::comment}
+The definition of the qlog main schema and existing event type
+documents (for example [QLOG-QUIC-HTTP3]) should allow a relatively easy qlog
+definition in a variety of binary format schemas.
+{:/comment}
+
+### Overview and summary {#format-summary}
+
+In summary, textual JSON was chosen as the main qlog format due to its high
+flexibility and because its inefficiencies can be largely solved by the
+utilization of compression techniques (which are needed to achieve optimal results
+with other formats as well).
+
+Still, qlog implementers are free to define other qlog formats depending on their
+needs and context of use. These formats should be described in their own
+documents, the discussion in this document mainly acting as inspiration and
+high-level guidance. Implementers are encouraged to add concrete qlog formats and
+definitions to [the designated public
+repository](https://github.com/quiclog/qlog).
+
+The following table provides an overview of all the discussed qlog formatting
+options with examples:
+
+| format                                    | qlog_format               | extension     |
+|-------------------------------------------|---------------------------|---------------|
+| JSON {{format-json}}                      | JSON                      | .qlog         |
+| NDJSON  {{format-ndjson}}                 | NDJSON                    | .qlog         |
+| named headers {{structure-optimizations}} | (ND)JSON.namedheaders     | .qlog         |
+| dictionary {{structure-optimizations}}    | (ND)JSON.dictionary       | .qlog         |
+| CBOR {{binary}}                           | (ND)JSON                  | .qlog.cbor    |
+| protobuf {{binary}}                       | protobuf                  | .qlog.protobuf|
+|                                           |                           |               |
+| gzip {{compression}}                      | no change                 | .gz suffix    |
+| brotli {{compression}}                    | no change                 | .br suffix    |
+
+## Conversion between formats {#conversion}
+
+As discussed in the previous sections, a qlog file can be serialized in a
+multitude of formats, each of which can conceivably be transformed into or from
+one another without loss of information. For example, a number of NDJSON streamed
+qlogs could be combined into a JSON formatted qlog for later processing.
+Similarly, a captured binary qlog could be transformed to JSON for easier
+interpretation and sharing.
+
+Secondly, we can also consider other structured logging approaches that contain
+similar (though typically not identical) data to qlog, like raw packet capture
+files (for example .pcap files from tcpdump) or endpoint-specific logging formats
+(for example the NetLog format in Google Chrome). These are sometimes the only
+options, if an implementation cannot or will not support direct qlog output for
+any reason, but does provide other internal or external (e.g., SSLKEYLOGFILE
+export to allow decryption of packet captures) logging options For this second
+category, a (partial) transformation from/to qlog can also be defined.
+
+As such, when defining a new qlog serialization format or wanting to utilize
+qlog-compatible tools with existing codebases lacking qlog support, it is
+recommended to define and provide a concrete mapping from one format to default
+JSON-serialized qlog. Several of such mappings exist. Firstly,
+[pcap2qlog]((https://github.com/quiclog/pcap2qlog) transforms QUIC and HTTP/3
+packet capture files to qlog. Secondly,
+[netlog2qlog](https://github.com/quiclog/qvis/tree/master/visualizations/src/components/filemanager/netlogconverter)
+converts chromium's internal dictionary-encoded JSON format to qlog. Finally,
+[quictrace2qlog](https://github.com/quiclog/quictrace2qlog) converts the older
+quictrace format to JSON qlog. Tools can then easily integrate with these
+converters (either by incorporating them directly or for example using them as a
+(web-based) API) so users can provide different file types with ease. For example,
+the [qvis](https://qvis.edm.uhasselt.be) toolsuite supports a multitude of formats
+and qlog serializations.
 
 # Methods of access and generation
 
@@ -1138,21 +1330,24 @@ Different implementations will have different ways of generating and storing
 qlogs. However, there is still value in defining a few default ways in which to
 steer this generation and access of the results.
 
-## Set destination via an environment variable
+## Set file output destination via an environment variable
 
 To provide users control over where and how qlog files are created, we define two
 environment variables. The first, QLOGFILE, indicates a full path to where an
-individual qlog file should be stored. The second, QLOGDIR, sets a general
-directory path in which qlog files should be placed. This path MUST include the
-directory separator character at the end.
+individual qlog file should be stored. This path MUST include the full file
+extension. The second, QLOGDIR, sets a general directory path in which qlog files
+should be placed. This path MUST include the directory separator character at the
+end.
 
 In general, QLOGDIR should be preferred over QLOGFILE if an endpoint is prone to
 generate multiple qlog files. This can for example be the case for a QUIC server
 implementation that logs each QUIC connection in a separate qlog file. An
 alternative that uses QLOGFILE would be a QUIC server that logs all connections in
 a single file and uses the "group_id" field ({{group-ids}}) to allow post-hoc
-separation of events. It is expected most implementations would only support
-QLOGDIR, even for situations where just one qlog file will be written.
+separation of events.
+
+Implementations SHOULD provide support for QLOGDIR and MAY provide support for
+QLOGFILE.
 
 When using QLOGDIR, it is up to the implementation to choose an appropriate naming
 scheme for the qlog files themselves. The chosen scheme will typically depend on
@@ -1185,16 +1380,15 @@ this would result in event instances in the qlog file being tagged with the "gro
 
 ## Access logs via a well-known endpoint
 
-After generation, qlog implementers MAY make generated logs and traces on an
-endpoint (typically the server) available via the following .well-known URI:
+After generation, qlog implementers MAY make available generated logs and traces
+on an endpoint (typically the server) via the following .well-known URI:
 
 > .well-known/qlog/IDENTIFIER.extension
 
 The IDENTIFIER variable depends on the context and the protocol. For example for
 QUIC, the lowercase Original Destination Connection ID (ODCID) is recommended, as
 it can uniquely identify a connection. Additionally, the extension depends on the
-chosen format. While this should typically be .qlog, it can take other values as
-well, as discussed in {{optimizations}}. For example, for a QUIC connection with
+chosen format (see {{format-summary}}). For example, for a QUIC connection with
 ODCID "abcde", the endpoint for fetching its default JSON-formatted .qlog file
 would be:
 
@@ -1204,30 +1398,32 @@ Implementers SHOULD allow users to fetch logs for a given connection on a 2nd,
 separate connection. This helps prevent pollution of the logs by fetching them
 over the same connection that one wishes to observe through the log. Ideally, for
 the QUIC use case, the logs should also be approachable via an HTTP/2 or HTTP/1.1
-endpoint (i.e., on TCP port 443), to aid debugging.
+endpoint (i.e., on TCP port 443), to for example aid debugging in the case where
+QUIC/UDP is blocked on the network.
 
 qlog implementers SHOULD NOT enable this .well-known endpoint in typical
 production settings to prevent (malicious) users from downloading logs from other
 connections. Implementers are advised to disable this endpoint by default and
 require specific actions from the end users to enable it (and potentially qlog
-itself). Implementers should also take into account the general privacy and
-security guidelines discussed in {{privacy}} before exposing qlogs to outside
-actors.
+itself). Implementers MUST also take into account the general privacy and security
+guidelines discussed in {{privacy}} before exposing qlogs to outside actors.
 
-# Tooling requirements
+# Tooling requirements {#tooling}
 
-Tools MUST indicate which qlog version(s) they support. Additionally, they SHOULD
-indicate exactly which values for and properties of the name (category and type)
-and data fields they look for to execute their logic. Tools SHOULD perform a
-(high-level) check if an input qlog file adheres to the expected qlog schema. If a
-tool determines a qlog file does not contain enough supported information to
-correctly execute the tool's logic, it SHOULD generate a clear error message to
-this effect.
+Tools ingestion qlog MUST indicate which qlog version(s), qlog format(s),
+compression methods and potentially other input file formats (for example .pcap)
+they support. Tools SHOULD at least support .qlog files in the default JSON format
+({{format-json}}). Additionally, they SHOULD indicate exactly which values for and
+properties of the name (category and type) and data fields they look for to
+execute their logic. Tools SHOULD perform a (high-level) check if an input qlog
+file adheres to the expected qlog schema. If a tool determines a qlog file does
+not contain enough supported information to correctly execute the tool's logic, it
+SHOULD generate a clear error message to this effect.
 
-Tools MUST NOT produce errors for any field names and/or values in the qlog format
-that they do not recognize. Tools CAN indicate unknown event occurences within
-their context (e.g., marking unknown events on a timeline for manual
-interpretation by the user).
+Tools MUST NOT produce breaking errors for any field names and/or values in the
+qlog format that they do not recognize. Tools SHOULD indicate even unknown event
+occurences within their context (e.g., marking unknown events on a timeline for
+manual interpretation by the user).
 
 Tool authors should be aware that, depending on the logging implementation, some
 events will not always be present in all traces. For example, using a circular
@@ -1235,18 +1431,21 @@ logging buffer of a fixed size, it could be that the earliest events (e.g.,
 connection setup events) are later overwritten by "newer" events. Alternatively,
 some events can be intentionally omitted out of privacy or file size
 considerations. Tool authors are encouraged to make their tools robust enough to
-still provide adequate output for incomplete logs. Loggers using a circular buffer
-are in turn reminded of the requirement of listing events in strict time order, as
-per {{time-based-fields}}.
-
-TODO: Tools SHOULD indicate which qlog serialization formats they support. SHOULD
-allow uploading of .qlog and .json. SHOULD allow uploading of .cbor, .zip and
-.brotli. No standards in place, so we make some recommendations for file extensions.
+still provide adequate output for incomplete logs.
 
 # Security and privacy considerations {#privacy}
 
 TODO : discuss privacy and security considerations (e.g., what NOT to log, what to
 strip out of a log before sharing, ...)
+
+TODO: strip out/don't log IPs, ports, specific CIDs, raw user data, exact times,
+HTTP HEADERS (or at least :path), SNI values
+
+TODO: see if there is merit in encrypting the logs and having the server choose an
+encryption key (e.g., sent in transport parameters)
+
+Good initial reference: [Christian Huitema's
+blogpost](https://huitema.wordpress.com/2020/07/21/scrubbing-quic-logs-for-privacy/)
 
 # IANA Considerations
 
@@ -1269,6 +1468,7 @@ TODO: primarily the .well-known URI
 * Removed the "event_fields" setup for a more straightforward JSON format
   (#101,#89)
 * Added a streaming option using the NDJSON format (#109,#2,#106)
+* Described optional optimization options for implementers (#30)
 * Added QLOGDIR and QLOGFILE environment variables, clarified the .well-known URL
   usage (#26,#33,#51)
 * Overall tightened up the text and added more examples
