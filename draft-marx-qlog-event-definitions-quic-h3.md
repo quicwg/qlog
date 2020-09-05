@@ -19,12 +19,11 @@ author:
     email: robin.marx@uhasselt.be
 
 normative:
-  RFC2119:
   QUIC-TRANSPORT:
     title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-transport-23
-    date: 2019-09-23
+      Internet-Draft: draft-ietf-quic-transport-29
+    date: 2020-06-10
     author:
       -
         ins: J. Iyengar
@@ -38,14 +37,25 @@ normative:
         role: editor
   QUIC-HTTP:
     title: "Hypertext Transfer Protocol Version 3 (HTTP/3)"
-    date: 2019-09-23
+    date: 2020-06-10
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-23
+      Internet-Draft: draft-ietf-quic-http-29
     author:
       -
         ins: M. Bishop
         name: Mike Bishop
         org: Akamai
+        role: editor
+  QUIC-QPACK:
+    title: "QPACK: Header Compression for HTTP/3"
+    date: 2020-06-09
+    seriesinfo:
+      Internet-Draft: draft-ietf-quic-http-16
+    author:
+      -
+        ins: A. Frindell
+        name: Alan Frindell
+        org: Facebook
         role: editor
   QLOG-MAIN:
     title: "Main logging schema for qlog"
@@ -71,9 +81,10 @@ level schema defined in [QLOG-MAIN].
 
 # Introduction
 
-This document describes the values of the qlog "category", "event" and "data"
-fields and their semantics for the QUIC and HTTP/3 protocols. This document is
-based on draft-23 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT] [QUIC-HTTP].
+This document describes the values of the qlog name ("category" + "event") and
+"data" fields and their semantics for the QUIC and HTTP/3 protocols. This document
+is based on draft-29 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT] [QUIC-HTTP] and
+draft-16 of the QPACK I-D [QUIC-QPACK].
 
 Feedback and discussion welcome at
 [https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
@@ -88,11 +99,43 @@ various programming languages can be found at
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
-interpreted as described in [RFC2119].
+interpreted as described in {{?RFC2119}}.
 
 The examples and data definitions in ths document are expressed in a custom data
 definition language, inspired by JSON and TypeScript, and described in
 [QLOG-MAIN].
+
+# Overview
+
+This document describes the values of the qlog "name" ("category" + "event") and
+"data" fields and their semantics for the QUIC and HTTP/3 protocols.
+
+Many of the events map directly to concepts seen in the QUIC and HTTP/3 documents,
+while others act as aggregating events that combine data from several possible
+protocol behaviours or code paths into one, to reduce the amount of different
+event definitions. Limiting the amount of different events is one of the main
+design goals for this document. As such, many events that can be directly inferred
+from data on the wire (for example flow control limit changes) if the
+implementation is bug-free, are not explicitly defined as stand-alone events.
+Exceptions can be made for common events that benefit from being easily
+identifiable or individually logged (for example the `packet_acked` event).
+
+Similarly, we prevent logging duplicate data as much as possible. As such,
+especially packet header value updates are split out into separate events (for
+example spin_bit_updated, connection_id_updated), as they are expected to change
+sparingly.
+
+This document assumes the usage of the encompassing main qlog schema defined in
+[QLOG-MAIN]. Each subsection below defines a separate category (for example
+connectivity, transport, http) and each subsubsection is an event type (for
+example `packet_received`).
+
+For each event type, its importance and data definition is laid out, often
+accompanied by possible values for the optional "trigger" field. For the
+definition and semantics of "trigger", see the main schema document.
+
+Most of the complex datastructures, enums and re-usable definitions are grouped
+together on the bottom of the document for clarity.
 
 ## Importance
 
@@ -130,81 +173,63 @@ output. As an example, implementations that do not log "packet_received" events
 and thus also not which (if any) ACK frames the packet contain, SHOULD log
 packets_acknowledged events instead.
 
-
-# Overview
-
-This document describes the values of the qlog "category", "event" and "data"
-fields and their semantics for the QUIC and HTTP/3 protocols.
-
-Many of the events map directly to concepts seen in the QUIC and HTTP/3 documents,
-while others act as aggregating events that combine data from several possible
-protocol behaviours or code paths into one, to reduce the amount of different
-event definitions. Limiting the amount of different events is one of the main
-design goals for this document. As such, many events that can be directly inferred
-from data on the wire (e.g., flow control limit changes) if the implementation is
-bug-free, are not explicitly defined as stand-alone events.
-
-Similarly, we prevent logging duplicate data as much as possible. As such,
-especially packet header value updates are split out into separate events (e.g.,
-spin_bit_updated, connection_id_updated), as they are expected to change
-sparingly.
-
-This document assumes the usage of the encompassing main qlog schema defined in
-[QLOG-MAIN]. Each subsection below defines a separate category (e.g.,
-connectivity, transport, http) and each subsubsection is an event type.
-
-For each event type, its importance and data definition is laid out, often
-accompanied by possible values for the optional "trigger" field. For the
-definition and semantics of "trigger", see the main scheme document.
-
-Most of the complex datastructures, enums and re-usable definitions are grouped
-together on the bottom of the document for clarity.
-
 ## Custom fields
 
 Note that implementers are free to define new category and event types, as well as
-values for the "trigger" property within the "data" field, as they see fit. They
-SHOULD NOT however expect non-specialized tools to recognize or visualize this
-custom data. However, tools SHOULD make an effort to visualize even unknown data
-if possible in the specific tool's context.
+values for the "trigger" property within the "data" field, or other member fields
+of the "data" field, as they see fit. They SHOULD NOT however expect
+non-specialized tools to recognize or visualize this custom data. However, tools
+SHOULD make an effort to visualize even unknown data if possible in the specific
+tool's context.
 
 # Events not belonging to a single connection {#handling-unknown-connections}
 
 For several types of events, it is sometimes impossible to tie them to a specific
 conceptual QUIC connection (e.g., a packet_dropped event triggered because the
-packet has an unknown connection_id in the header). Since a qlog events in a trace
-are typically associated with a single connection (see the discussions on group_id
-in draft-marx-quic-logging-main-schema-latest), it is unclear how to log these
+packet has an unknown connection_id in the header). Since qlog events in a trace
+are typically associated with a single connection, it is unclear how to log these
 events.
 
-Ideally, implementers SHOULD create a separate "endpoint-level" trace or at least
-group_id, not associated with a specific connection (e.g., group_id = "server" |
-"client"), and log all of these events on that trace. However, this is not always
-practical, depending on the implementation. Because the semantics of these events
-are well-defined in the protocols and because they are difficult to mis-interpret
-as belonging to a connection, implementers MAY log events not belonging to a
-particular connection in any other trace, even those strongly associated with a
+Ideally, implementers SHOULD create a separate, individual "endpoint-level" trace
+file (or group_id value), not associated with a specific connection (for example a
+"server.qlog" or group_id = "client"), and log all events that do not belong to a
+single connection to this grouping trace. However, this is not always practical,
+depending on the implementation. Because the semantics of most of these events are
+well-defined in the protocols and because they are difficult to mis-interpret as
+belonging to a connection, implementers MAY choose to log events not belonging to
+a particular connection in any other trace, even those strongly associated with a
 single connection.
 
 Note that this can make it difficult to match logs from different vantage points
 with each other. For example, from the client side, it is easy to log connections
 with version negotiation or stateless retry in the same trace, while on the server
-they would most likely be logged in separate traces.
+they would most likely be logged in separate traces. Servers can take extra
+efforts (and keep additional state) to keep these events combined in a single
+trace however (for example by also matching connections on their four-tuple
+instead of just the connection ID).
 
 # QUIC and HTTP/3 fields
 
-This document re-uses all the fields defined in the main qlog schema (e.g.,,
-category, event, data, group_id, protocol_type, the time-related fields, etc.).
+This document re-uses all the fields defined in the main qlog schema (e.g., name,
+category, type, data, group_id, protocol_type, the time-related fields, etc.).
 
 The value of the "protocol_type" qlog field MUST be "QUIC_HTTP3".
 
-As the group_id field can contain any grouping identifier, this document defines
-an additional similar field, named ODCID (for Original Destination Connection ID),
-since the ODCID is the lowest common denominator to be able to link packets to a
-connection. Typically though, the group_id and ODCID fields will contain the same
-value (or the ODCID field is omitted).
+When the qlog "group_id" field is used, it is recommended to use QUIC's Original
+Destination Connection ID (ODCID, the CID chosen by the client when first
+contacting the server), as this is the only value that does not change over the
+course of the connection and can be used to link more advanced QUIC packets (e.g.,
+Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
+used as the qlog filename or file identifier, potentially suffixed by the
+vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
+trace of the connection with ODCID abcd1234).
 
 # QUIC event definitions
+
+Each subheading in this section is a qlog event category, while each
+sub-subheading is a qlog event type. Concretely, for the following two items, we
+have the category "connectivity" and event type "server_listening", resulting in a
+concatenated qlog "name" field value of "connectivity:server_listening".
 
 ## connectivity
 
@@ -479,7 +504,7 @@ Data:
     header:PacketHeader,
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
-    is_coalesced?:boolean,
+    is_coalesced?:boolean, // default value is false
 
     stateless_reset_token?:bytes, // only if PacketType === stateless_reset
     supported_versions:Array<bytes>, // only if PacketType === version_negotiation
