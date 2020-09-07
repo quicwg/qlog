@@ -793,8 +793,10 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
    Data:
 
 {
-    packet_type:PacketType,
     header:PacketHeader,
+    packet_size?: uint32, // size of the full encrypted packet, including the AEAD tag
+    payload_size?: uint32, // size of the decoded payload, excluding the AEAD tag
+
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean, // default value is false
@@ -808,8 +810,8 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 }
 
    Note: We do not explicitly log the encryption_level or
-   packet_number_space: the packet_type specifies this by inference
-   (assuming correct implementation)
+   packet_number_space: the header.packet_type specifies this by
+   inference (assuming correct implementation)
 
    Triggers:
 
@@ -835,16 +837,16 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
 
 
-
-
 Marx                      Expires 11 March 2021                [Page 15]
 
 Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
 
 {
-    packet_type:PacketType,
     header:PacketHeader,
+    packet_size?: uint32, // size of the full encrypted packet, including the AEAD tag
+    payload_size?: uint32, // size of the payload, excluding the AEAD tag
+
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean,
@@ -858,8 +860,8 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 }
 
    Note: We do not explicitly log the encryption_level or
-   packet_number_space: the packet_type specifies this by inference
-   (assuming correct implementation)
+   packet_number_space: the header.packet_type specifies this by
+   inference (assuming correct implementation)
 
    Triggers:
 
@@ -875,11 +877,12 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
    Data:
 
-   {
-       packet_type?:PacketType,
-       raw_length?:uint32,
-       raw?:bytes
-   }
+{
+    header?:PacketHeader, // primarily packet_type should be filled here, as other fields might not be parseable
+
+    raw_length?:uint32,
+    raw?:bytes
+}
 
    For this event, the "trigger" field SHOULD be set (for example to one
    of the values below), as this helps tremendously in debugging.
@@ -888,15 +891,14 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
    *  "key_unavailable"
 
-   *  "unknown_connection_id"
-
-
 
 
 Marx                      Expires 11 March 2021                [Page 16]
 
 Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
+
+   *  "unknown_connection_id"
 
    *  "header_decrypt_error"
 
@@ -934,18 +936,16 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
    Data:
 
-   {
-       packet_type:PacketType,
-       packet_number?:uint64,
-       packet_size?:uint32
-   }
+{
+    header?:PacketHeader, // primarily packet_type and possible packet_number should be filled here, as other elements might not be available yet
+
+    packet_size?:uint32 // full encrypted packet size, including AEAD tag
+}
 
    Triggers:
 
    *  "backpressure" // indicates the parser cannot keep up, temporarily
       buffers packet for later processing
-
-
 
 
 
@@ -1432,11 +1432,9 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
    Data:
 
 {
-    packet_type:PacketType,
-    packet_number:uint64,
+    header?:PacketHeader, // should include at least the packet_type and packet_number
 
     // not all implementations will keep track of full packets, so these are optional
-    header?:PacketHeader,
     frames?:Array<QuicFrame> // see appendix for the definitions
 }
 
@@ -1450,6 +1448,8 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
    *  "time_threshold"
 
    *  "pto_expired" // draft-23 section 5.3.1, MAY
+
+
 
 
 
@@ -2132,22 +2132,23 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
 A.4.  PacketHeader
 
-   class PacketHeader {
-       packet_number: uint64;
-       packet_size?: uint32;
-       payload_length?: uint32;
+class PacketHeader {
+    packet_type: PacketType;
+    packet_number: uint64;
 
-       // only if present in the header
-       // if correctly using transport:connection_id_updated events,
-       // dcid can be skipped for 1RTT packets
-       version?: bytes; // e.g., "ff00001d" for draft-29
-       scil?: uint8;
-       dcil?: uint8;
-       scid?: bytes;
-       dcid?: bytes;
+    flags?: uint8; // the bit flags of the packet headers (spin bit, key update bit, etc. up to and including the packet number length bits if present) interpreted as a single 8-bit integer
 
-       // Note: short vs long header is implicit through PacketType
-   }
+    // only if present in the header
+    // if correctly using transport:connection_id_updated events,
+    // dcid can be skipped for 1RTT packets
+    version?: bytes; // e.g., "ff00001d" for draft-29
+    scil?: uint8;
+    dcil?: uint8;
+    scid?: bytes;
+    dcid?: bytes;
+
+    // Note: short vs long header is implicit through PacketType
+}
 
 A.5.  KeyType
 
@@ -2174,7 +2175,6 @@ A.6.1.  PaddingFrame
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
    interpreted and logged as an individual PaddingFrame.
-
 
 
 
@@ -2846,10 +2846,10 @@ D.1.  Since draft-01:
 
    Major changes: * Moved data_moved from http to transport.  Also made
    the "from" and "to" fields flexible strings instead of an enum
-   (#111,#65)
-
-
-
+   (#111,#65) * Moved packet_type fields to PacketHeader, and
+   packet_size field out of PacketHeader to individual events (#40) *
+   Made events that need to log packet_type and packet_number use a
+   header field instead of logging these fields individually
 
 
 
@@ -2872,7 +2872,8 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
    transport:connection_id_updated to be more in line with other similar
    events.  Also dropped importance from Core to Base (#45) * Added
    length property to PaddingFrame (#34) * Added packet_number field to
-   transport:frames_processed (#74)
+   transport:frames_processed (#74) * Added a way to generically log
+   packet header flags (first 8 bits) to PacketHeader
 
 D.2.  Since draft-00:
 
@@ -2903,7 +2904,6 @@ Appendix F.  Acknowledgements
    Huitema, and Lucas Pardue for their feedback and suggestions.
 
 Author's Address
-
 
 
 
