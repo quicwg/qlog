@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-09-05T16:12:35.508467+00:00",
+  "timestamp": "2020-09-07T13:47:41.898669+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -57,7 +57,7 @@
       "id": "MDU6SXNzdWU0MjkzNTQzMDY=",
       "title": "Streaming format",
       "url": "https://github.com/quiclog/internet-drafts/issues/2",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -67,8 +67,8 @@
       ],
       "body": "Plain JSON is not entirely streamable... it requires its fields to be closed properly (by ] and }) at the end.\r\n\r\ne.g.,\r\n```\r\n\"events\": [\r\n           { \"key\": \"val\" }\r\n```\r\nWill fail, but \r\n```\r\n\"events\": [\r\n           { \"key\": \"val\" }\r\n]\r\n```\r\nwill succeed. \r\n\r\nHowever, one could employ a streaming JSON parser (e.g., http://oboejs.com/) and ignore unclosed fields at the end that way. \r\nFor the way the format is currently defined, an implementation would then write the \"header\" of the qlog file, and then it could stream individual events that are just appended to the file. \r\nIf the file isn't properly closed, that's not a problem: the streaming parser user just ignores those errors.\r\nHowever, this breaks compatibility with the built-in parsers in many stdlibs and the browsers themselves.\r\nIt would also be possible to write a simple postprocessing tool that simply appends the necessary \"closing\" characters to a qlog file if it isn't complete, though that adds another step in a pipeline... \r\n\r\nThere are also various JSON-subformats that address this problem (see https://en.wikipedia.org/wiki/JSON_streaming), but they also do not seem to be supported in the standard JSON parsers for many platforms...\r\n\r\n**Given all this, my personal preference is to stay with just the normal JSON format and tools are recommended to use a streaming parser.** \r\n\r\n\r\nExample of how the browser's built-in JSON parser does not support special JSON:\r\n![2019-04-04 17_02_41](https://user-images.githubusercontent.com/2240689/55566226-8df5ff80-56fb-11e9-9a60-ab0fe703cf27.png)\r\n\r\nExample of how a streaming parser (oboe) does handle this properly:\r\n![proof](https://user-images.githubusercontent.com/2240689/55569216-77eb3d80-5701-11e9-86af-2b1a5b79ea2f.png)\r\n\r\n\r\n\r\n",
       "createdAt": "2019-04-04T15:47:41Z",
-      "updatedAt": "2019-04-08T14:18:05Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:15:36Z",
+      "closedAt": "2020-09-05T16:15:36Z",
       "comments": []
     },
     {
@@ -76,7 +76,7 @@
       "id": "MDU6SXNzdWU0Mjk3MTAwNDc=",
       "title": "Aggregated metrics",
       "url": "https://github.com/quiclog/internet-drafts/issues/3",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -85,8 +85,8 @@
       ],
       "body": "Example: in-network logger aggregates over a period of time and sends back summarized data in 1 go (e.g., average RTT in past 10s, measured over 10k packets).\r\n\r\nThis can be supported in a variety of ways.\r\n\r\nThe easiest would probably be a new EVENT type that just contains the aggregated metrics.\r\nHowever, this depends on which types of aggregated data you want to pass. \r\n\r\ne.g., saying: median RTT was 50ms over the past 5s and we saw 1k packets in that time is fine\r\n\r\ne.g., saying: median RTT was 50ms across these 5 connections identified by these 4-tuples, is not really adhering to the semantics of the original setup.\r\n\r\nWe need more input from the people doing aggregated use cases to see how this data would be used and which types of metadata is needed to make an informed decision. ",
       "createdAt": "2019-04-05T11:30:41Z",
-      "updatedAt": "2019-04-16T10:06:33Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T13:18:00Z",
+      "closedAt": "2020-09-07T13:18:00Z",
       "comments": []
     },
     {
@@ -94,7 +94,7 @@
       "id": "MDU6SXNzdWU0Mjk3MjQzNzc=",
       "title": "Readability vs file size",
       "url": "https://github.com/quiclog/internet-drafts/issues/4",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -103,8 +103,8 @@
       ],
       "body": "We would like to keep the file (semi-) human readable.\r\nThis means more advanced techniques like listing all fields in an ENUM up-front and then referencing to them by index is not optimal.\r\n\r\nHowever, when repeating strings, we might want to limit the length of individual fields. \r\ne.g., TRANS instead of TRANSPORT, APP instead of APPLICATION, RX instead of RECEIVE, etc. \r\n\r\nCurrent numbers (with readable strings):\r\n- qlog version without whitespace is about 4x the size of the binary .qtr file for the quic-trace example file (3.5MB to 823KB)\r\n- qlog version with whitespace is 10.6MB. However, this should matter little, since if manually reviewing large logs, you'll probably use a text editor that can auto-format the json from the version without whitespace\r\n\r\n4x size difference is a lot, but better than the direct .json protobuf transform, which clocks in at 14MB. ",
       "createdAt": "2019-04-05T12:11:32Z",
-      "updatedAt": "2019-04-16T10:04:50Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:19:14Z",
+      "closedAt": "2020-09-05T16:19:14Z",
       "comments": []
     },
     {
@@ -112,7 +112,7 @@
       "id": "MDU6SXNzdWU0Mjk3MzAwOTY=",
       "title": "Decide upon a language to define the schema definition",
       "url": "https://github.com/quiclog/internet-drafts/issues/5",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -121,8 +121,8 @@
       ],
       "body": "We need to indicate various things, such as field types (int, string, ...), whether fields are required or optional, give example values for fields, etc.\r\n\r\nWe could use normal JSON-schema for this, but this is quite verbose...\r\nWe could also use TypeScript, though this is non-standard...\r\nOther RFCs are known to use their own specific languages for this (i.e., see TLS 1.3's type definitions), but maybe there is something workable already out there. \r\n\r\nCurrently, we use TypeScript format, since this is used in the Quicker prototype qlog implementation directly + is easy enough to parse for newcomers. ",
       "createdAt": "2019-04-05T12:26:48Z",
-      "updatedAt": "2019-04-08T14:16:22Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:19:46Z",
+      "closedAt": "2020-09-05T16:19:46Z",
       "comments": []
     },
     {
@@ -245,7 +245,7 @@
       "id": "MDU6SXNzdWU0MzA5NTQyMzE=",
       "title": "Numbers in JSON",
       "url": "https://github.com/quiclog/internet-drafts/issues/10",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -255,8 +255,8 @@
       ],
       "body": "Typically, integers in JavaScript and most JSON implementations are limited to 2^53-1.\r\nThis gives problems, as the VLIE values in the QUIC/H3 specs are 2^62-1.\r\n\r\nTwo options:\r\n- Allow bigger values in the JSON. Tools MUST use a JSON parser that can deal with this and a JavaScript engine that supports BigInt (currently limited to Chromium: https://caniuse.com/#search=bigint)\r\n- Encode all VLIE fields as strings. Tools have to deal with this themselves (most will probably just take the shortcut of assuming actual values will be < 2^53 and just use the JavaScript \"Number\" type). This is best for a wide tooling implementation area in browsers. \r\n\r\nCurrently, the draft uses option 2. \r\n\r\n",
       "createdAt": "2019-04-09T13:00:45Z",
-      "updatedAt": "2020-01-19T10:45:33Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:19:32Z",
+      "closedAt": "2020-09-05T16:19:32Z",
       "comments": [
         {
           "author": "jlaine",
@@ -414,15 +414,15 @@
       "id": "MDU6SXNzdWU0NzMwNTg0NzU=",
       "title": "Simplify / fix group_id usage",
       "url": "https://github.com/quiclog/internet-drafts/issues/17",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Right now, the group_id concept is -very- flexible. It can be in common_fields (e.g., 1 trace per connection) but it can also be in event_fields (combining several connections into 1 trace). That already puts quite a burden on tools to support this different approaches.\r\n\r\nThen, another problem comes up if you would have the same group_id across multiple traces (e.g., trace 1 has some events for group_id x, but trace 2 has some group_id x events as well.)\r\n\r\nNote: This concept was mainly added to support the spindump use case (https://github.com/EricssonResearch/spindump), CC @jariarkko. There, a network intermediary logs (aggregated) data on many connections and even protocols. It would be tedious for that setup to split everything out into separate traces. \r\n\r\nPossible solutions I currently see:\r\n- Only allow 1 of the options (e.g., group_id only in common_fields or only in event_fields). I'm not a big fan of this (common only is inflexible, event_fields only has much overhead)(also: common can be seen as a special case of event_fields, so that could be the implementation target)\r\n- Disallow the same group_id across different traces: I think this makes a lot of sense, my preference\r\n- Discard the whole group_id concept alltogether (in practice, this would lead to many different approaches in different tools. basically the same as event_fields only, only no standard way of calling the thing)\r\n\r\nAdditional suggestion: rename group_id to \"luid\" (locally unique identifier)\r\n\r\nThanks to @nibanks for reporting this",
       "createdAt": "2019-07-25T20:35:32Z",
-      "updatedAt": "2019-10-14T08:58:26Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:21:06Z",
+      "closedAt": "2020-09-05T16:21:06Z",
       "comments": [
         {
           "author": "rmarx",
@@ -444,6 +444,13 @@
           "body": "1) About the use case of having multiple traces in 1 file, I'm not directly thinking of the Windows scenario or using this in production, but more about use cases such as research, education and case studies. There, it's handy to be able to group everything needed for a single \"context\" in a single file to be shared and interpreted easily. For production, automated gathering or aggregation in separate datastores is certainly also possible. The current setup does not prevent you loading separate files, 1 per vantage point, either.  \r\n\r\n2) I'm not sure how only allowing a single trace from a single vantage point per file would help the original problem that it's difficult for tool developers to deal with group_ids occurring across traces... client and server will still have events with the same group_id (e.g., ODCID)\r\n\r\n As such, I'm not 100% sure what you're proposing? Do you want to do away with the \"traces\" array and replace it with a single \"trace\" per qlog file? Or do you want to do away with group_id at the \"event_fields\" level, requiring each individual trace to only contain events from a single connection?\r\n\r\nIn the latter case, I think that would actually be an obstacle to adoption, since currently several implementers are simply logging all events on the server in a single trace, tagged with ODCID for later splitting. This is generally much simpler than generating a single file (or trace) per connection on the server. \r\n\r\nIf you want to do away with group_id completely, that would leave out a whole bunch of other use cases, e.g., in-network observers like spindump (https://github.com/EricssonResearch/spindump, CC @jariarkko, @ihlar). This might be good enough for the QUIC use case (though barely), but not if qlog would grow to a more flexible format. \r\n\r\nFor draft-01, I've decided to keep the setup as-is, since there are users employing group_ids already (e.g., quant). I did specify the intended uses a bit more and am certainly open to more discussion on this design. Will you be in Singapore, @nibanks?",
           "createdAt": "2019-10-14T08:58:25Z",
           "updatedAt": "2019-10-14T08:58:25Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "the `group_id` field was not seeing much use in practice and as discussed above had some issues.\r\n\r\nIt has been considerably simplified for draft02, from f5db7cdc8cd0cf37bfe5f1b0b4c54fc56ffc5f28 onward. ",
+          "createdAt": "2020-09-05T16:21:06Z",
+          "updatedAt": "2020-09-05T16:21:06Z"
         }
       ]
     },
@@ -674,15 +681,15 @@
       "id": "MDU6SXNzdWU1MjQ4MjY3Nzg=",
       "title": "consider moving to a binary format",
       "url": "https://github.com/quiclog/internet-drafts/issues/30",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "I just started working on implementing qlog in quic-go. Maybe it's because I'm still fairly unfamiliar with qlog, but I feel like encoding things in JSON leads to some awkward hacks. Examples of these are:\r\n* A lot of numbers are encoded as strings, e.g. stream offset or packet numbers. I assume this is because JSON doesn't properly handle uint64s (or does it?).\r\n* IP addresses are encoded as strings. If that means they're supposed to be encoded in the human-readable encoding (with . and :), that's ambiguous for IPv6 addresses. Really, IP addresses should be a byte array.\r\n* (Raw) packet data is supposed to be hex encoded, which greatly increases the log size.\r\n* Some fields are defined as enums, whereas other fields that just have a few options are encoded as strings. Examples are the `stream_side` (\"sending\" or \"receiving\") and `stream_type` (\"unidirectional\" or \"bidirectional\"), which are both string fields.\r\n\r\nI'm not sure if I like trick to save bytes on the `events` by first defining the `event_fields` and then using a list instead of an object to encode the `events`. To me, this feels more like a hack to work around the shortcomings of JSON, namely the repetition of the field labels when using objects.\r\nAs far as I can see, a binary encoding scheme would be able to provide a type-safe representation here without repeating the field labels (and blowing up the file size), as long as it's possible to define some `common_fields` for a connection.\r\n\r\nA protobuf-based logging format (This is just a suggestion. Protobufs are the thing I'm most familiar with, maybe there are better choices out there.) would resolve the encoding ambiguities I listed above, because we'd be able to make use of a strong typing system, which would allow us to completely eliminate the use of `string`s (except for places where things actually are strings, e.g. CONNECTION_CLOSE reason phrases). Furthermore, it would greatly simplify implementing qlog: Just fill in the corresponding fields in the Protobuf messages, call `Marshal()`, and you're done. No need to manually define dozens of logging structs and make sure they're correctly serialized into qlog's flavor of JSON.",
       "createdAt": "2019-11-19T07:30:57Z",
-      "updatedAt": "2020-04-22T09:56:02Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:22:44Z",
+      "closedAt": "2020-09-05T16:22:44Z",
       "comments": [
         {
           "author": "rmarx",
@@ -746,6 +753,13 @@
           "body": "If we use cbor, does that mean that we can get rid of the `event_fields`? Having implemented a both an encoder as well as a parsing tool, this complicated things quite a bit for me (over just encoding an event as a normal JSON object).",
           "createdAt": "2020-04-22T09:56:02Z",
           "updatedAt": "2020-04-22T09:56:02Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "With the latest commit linked above (https://github.com/quiclog/internet-drafts/commit/eb59e69aa0f92031d8a2377575b7328429440061), I feel this issue has been resolved.\r\n\r\nqlog has not moved to a binary format by default, but is now much easier to serialize as one/to define a binary schema for. Some of the reasoning behind that has also been included in the qlog document. ",
+          "createdAt": "2020-09-05T16:22:44Z",
+          "updatedAt": "2020-09-05T16:22:44Z"
         }
       ]
     },
@@ -754,15 +768,15 @@
       "id": "MDU6SXNzdWU1MzA1NzkzNjI=",
       "title": "Typo in path response frame definition",
       "url": "https://github.com/quiclog/internet-drafts/issues/31",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mpiraux",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "```\r\n### PathResponseFrame\r\n\r\n~~~\r\nclass PathResponseFrame{\r\n  frame_type:string = \"patch_response\";\r\n\r\n  data?:string;\r\n}\r\n~~~\r\n```\r\n\r\n`patch_response` should be `path_response`.",
       "createdAt": "2019-11-30T13:30:20Z",
-      "updatedAt": "2019-11-30T13:30:20Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T13:29:02Z",
+      "closedAt": "2020-09-07T13:29:02Z",
       "comments": []
     },
     {
@@ -810,15 +824,15 @@
       "id": "MDU6SXNzdWU1NDk5MDA3MzI=",
       "title": "Consolidate repeated padding frames?",
       "url": "https://github.com/quiclog/internet-drafts/issues/34",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "agrover",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "Padding frames contain no information, but when eyeballing a qlog for the start of a connection, they swamp more interesting things.\r\n\r\nIt's a bit of a cheat, given that qlog otherwise is 1:1 between packet contents and logging, but I was wondering if a more compact representation of repeated padding frames might be nice.\r\n\r\nThis is less about qlog file size -- I'm assuming repeated padding entries in json would compress amazingly -- more about human readability.\r\n\r\nI see pros and cons, but wanted to raise it as an issue. Cheers.",
       "createdAt": "2020-01-15T00:45:26Z",
-      "updatedAt": "2020-01-16T18:48:52Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T13:28:39Z",
+      "closedAt": "2020-09-07T13:28:39Z",
       "comments": [
         {
           "author": "rmarx",
@@ -864,15 +878,15 @@
       "id": "MDU6SXNzdWU1NTE3NTUxNTg=",
       "title": "Require specific encoding for string fields",
       "url": "https://github.com/quiclog/internet-drafts/issues/36",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "For example, NewTokenFrame doesn't really need a length field if the encoding of the token is specified (e.g., if it is hex-encoded, byte-length is 2x token.length).\r\n\r\nWe already indicate hex-encoding at other places in the text (e.g., for version), maybe it's a good idea to enforce this across the board (then also specificy whether it should have 0x prefix or not etc. + examples).\r\n\r\nThanks to @marten-seemann for reporting",
       "createdAt": "2020-01-18T11:08:45Z",
-      "updatedAt": "2020-07-08T09:01:57Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:23:16Z",
+      "closedAt": "2020-09-05T16:23:16Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -911,15 +925,15 @@
       "id": "MDU6SXNzdWU1NTE3ODA4OTQ=",
       "title": "Be more consistent in numbers vs strings for (potentially) large numbers (varints)",
       "url": "https://github.com/quiclog/internet-drafts/issues/39",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Now, we only make varints strings if it's likely they will go over 2^53 (JSON's / JavaScript's number limit). \r\n\r\nFor example, this means error codes are just numbers, even though they are varints, as it's unlikely to see a very large error code. However, for fields that are greased (e.g., see https://github.com/quicwg/base-drafts/pull/3360) they could be larger and a number no longer suffices.\r\n\r\nSee also dcil and scil in PacketHeader, which could be numbers but are now strings.\r\n\r\nMore in general: maybe it's best to simply allow both for all number fields and have the tools figure it out? ",
       "createdAt": "2020-01-18T15:07:33Z",
-      "updatedAt": "2020-05-25T15:25:30Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T13:19:00Z",
+      "closedAt": "2020-09-07T13:19:00Z",
       "comments": [
         {
           "author": "huitema",
@@ -1042,15 +1056,15 @@
       "id": "MDU6SXNzdWU1NTI3ODQ2MDM=",
       "title": "Reduce importance of connection_id_updated",
       "url": "https://github.com/quiclog/internet-drafts/issues/45",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Currently, it is a Core event.\r\nHowever, as pointed out by @marten-seemann, not all implementations track when the remote endpoint changes their CID (e.g., looks when they first receive a packet with a new CID). In those cases, they might decide to take the log filesize hit by just logging the CID for each incoming PacketHeader.\r\n\r\nAs such, the connection_id_updated should probably be a Base event, with guidance on when to use which option.",
       "createdAt": "2020-01-21T10:27:41Z",
-      "updatedAt": "2020-01-21T10:27:41Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T13:24:26Z",
+      "closedAt": "2020-09-07T13:24:26Z",
       "comments": []
     },
     {
@@ -1120,16 +1134,24 @@
       "id": "MDU6SXNzdWU1NTYxMDAyMzI=",
       "title": "Reference the JSON specification",
       "url": "https://github.com/quiclog/internet-drafts/issues/48",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Currently JSON is mentioned, but not officially referenced.\r\nMake it clear that formats unspecified in the qlog draft should be taken from JSON spec (e.g., that booleans should be spelled `true` and `false`)\r\n\r\nthanks @hawkinsw for reporting",
       "createdAt": "2020-01-28T10:01:15Z",
-      "updatedAt": "2020-01-28T10:01:15Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2020-09-05T16:23:51Z",
+      "closedAt": "2020-09-05T16:23:51Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Was fixed in f5db7cdc8cd0cf37bfe5f1b0b4c54fc56ffc5f28",
+          "createdAt": "2020-09-05T16:23:51Z",
+          "updatedAt": "2020-09-05T16:23:51Z"
+        }
+      ]
     },
     {
       "number": 49,
@@ -1573,15 +1595,15 @@
       "id": "MDU6SXNzdWU1ODk2MDg4Nzg=",
       "title": "Add packet_number to frames_processed",
       "url": "https://github.com/quiclog/internet-drafts/issues/74",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "With recent discussions on that it's sometimes expensive to log parsed frames in packet_received/packet_sent directly, it would be interesting to make frames_processed a bit more usable in practice.\r\n\r\nGiving it a packet_number allows it to be more easily linked to a specific packet and thus can be combined with packet_sent/received.\r\n\r\nThough, maybe we should rather go for a frame_created/frame_parsed equivalent to H3, as _processed only implies _parsed at this point. In that vein, maybe make it multiple frameS instead of just 1? ",
       "createdAt": "2020-03-28T16:19:26Z",
-      "updatedAt": "2020-03-28T16:19:26Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T13:37:28Z",
+      "closedAt": "2020-09-07T13:37:28Z",
       "comments": []
     },
     {
@@ -1719,16 +1741,24 @@
       "id": "MDU6SXNzdWU1OTg4MDAyNTQ=",
       "title": "Remove trigger fields from individual events",
       "url": "https://github.com/quiclog/internet-drafts/issues/80",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Triggers are now said to be a global optional property of all \"data\" fields in an event.\r\n\r\nYet, some events (like `key_retired` and `key_updated` still include them. Make sure they don't.\r\n\r\ncc @marten-seemann ",
       "createdAt": "2020-04-13T10:07:15Z",
-      "updatedAt": "2020-04-13T10:07:15Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2020-09-07T10:27:46Z",
+      "closedAt": "2020-09-07T10:27:46Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "There were more of these than I expected, but all have been removed now. ",
+          "createdAt": "2020-09-07T10:27:46Z",
+          "updatedAt": "2020-09-07T10:27:46Z"
+        }
+      ]
     },
     {
       "number": 85,
@@ -1805,15 +1835,15 @@
       "id": "MDU6SXNzdWU2MjQxMzIzNTg=",
       "title": "Make traditional JSON the default, provide two optimization options",
       "url": "https://github.com/quiclog/internet-drafts/issues/89",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Currently, we utilize what I'd call a \"csv\" optimization, where the `time, category, event name and data fields` omit their keys (these are defined once in `event_fields`, much like csv columns are defined on top) and only log their values. This saves some bytes, but is non-trivial to parse (need to remember the order of the columns to know which value represents what) and to serialize (serializers typically don't like this type of thing).\r\n\r\nThis also breaks a bit with traditional JSON, which just lists the key names for every field as well. Using normal JSON would make it easier to serialize and parse, but increase the file size. \r\n\r\nThere is a third optimized option, which is to replace all keys (and potentially also values) with indices into a lookup table/dictionary. This was discussed in #30 and, especially in combination with compression, seems like a good optimization option. \r\n\r\nSo, to summarize, we have three options:\r\n1. csv column optimization (current default and only supported)\r\n2. pure JSON\r\n3. dictionary optimization\r\n\r\nThe proposal is to switch qlog to nr 2 as default, and present nr 1 and 3 as optional optimizations (which can also be done post-hoc and offline). There would not be a given static dictionary (at least not in draft-02), with the dynamic dictionary always included in the qlog. Implementations are of course free to provide a built-in static dictionary themselves.\r\n\r\nTools would be required to only support nr 2, with optional support for 1 and 3. qvis would support all 3. \r\n\r\nCompression (gzip, brotli or other) would be also described but not mandated (qvis already supports gzip and brotli atm). \r\n\r\ncc @marten-seemann @LPardue\r\n\r\nI also know @martinthomson had strong opinions on this, so it would be interesting to hear from you as I'd like to get this right for -02 now. ",
       "createdAt": "2020-05-25T08:22:55Z",
-      "updatedAt": "2020-05-26T03:44:55Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:15:21Z",
+      "closedAt": "2020-09-05T16:15:20Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -1842,6 +1872,13 @@
           "body": "I was wondering if CBOR should be the standard format. The representation is very similar to JSON, but it provides better typing support:\r\n1. it can unambiguously represent uint64s (so #39 would be solved)\r\n2. it supports byte strings, eliminating the need for byte to string conversions (as remarked in #30). Those happen quite often, e.g. for connection IDs, retry token, stateless reset tokens etc.\r\n\r\nI'm not sure human readability should be a goal. For my part, I've never felt the urge to look at a raw qlog file, mostly thanks to amazing tools like qvis. I don't expect this situation to shift in favor of viewing raw files in the future, if at all, more tools will make it even less necessary to do so.\r\nThat being said, CBOR could easily be converted to a human-readable file format, should the need to manually inspect a trace arise.\r\n\r\nThere are also moderate file size savings, but those wouldn't be the main motivation here. CBOR of course doesn't provide any compression of map keys / values, so I'd expect CBOR qlogs to still be quite wasteful. Not sure if there's a schema-less serialization format that can use something like a dictionary to compress commonly used identifiers.",
           "createdAt": "2020-05-26T03:40:57Z",
           "updatedAt": "2020-05-26T03:44:55Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Finished this transformation in f5db7cdc8cd0cf37bfe5f1b0b4c54fc56ffc5f28.\r\n\r\nDraft 02 will use default JSON as prime format, with NDJSON for streaming. CBOR is discussed as an option, but provides few benefits over normal JSON when paired with compression. \r\n\r\nThe text now also includes (limited) discussion and reasoning on the choice of JSON as the default format, per tests mainly discussed in #30. \r\n",
+          "createdAt": "2020-09-05T16:15:20Z",
+          "updatedAt": "2020-09-05T16:15:20Z"
         }
       ]
     },
@@ -2008,15 +2045,15 @@
       "id": "MDU6SXNzdWU2NTMxMjM3NjI=",
       "title": "Combine category and event type",
       "url": "https://github.com/quiclog/internet-drafts/issues/101",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Currently, we have two separate fields for category and event type.\r\n\r\nIn a default JSON form, you'd have:\r\n```\r\n{\r\n    category: \"transport\",\r\n    type: \"parameters_set\"\r\n}\r\n```\r\n\r\nHowever, the event type names (e.g., `parameters_set`, `state_updated`) aren't unique to the categories at the moment. \r\n\r\nThis can lead to some issues:\r\n- Processing qlog requires you to always check the category as well (cannot just look at the event_type)\r\n- Makes them difficult to encode in formats like protobuf (e.g., https://github.com/quiclog/pcap2qlog/blob/binary/src/converters/types/qlog.proto#L54) (and I assume things like serde as well @LPardue?) because you cannot easily de-serialize based just on the type-name.\r\n\r\nOne solution would be to combine both into one field:\r\n```\r\n{\r\n    type: \"transport:parameters_set\"\r\n}\r\n```\r\n\r\nThis should make it easier to de-serialize just based on the type field (and make it into an enum) and easier to do a `switch` when processing events. \r\n\r\nAnother option would be to make sure each event has a unique name, but that would come down the pre-pending the category (or something similar) anyway afaict (e.g., `transport_parameters_set`), which is basically the same thing. \r\n\r\nI don't see many use cases where you'd only want to log one category (and thus could leave that out and just log the event names to save some space). I also don't know if compression would be that much worse overall if we'd combine the two into one field. If we'd move to regular JSON as the default (#89), it would probably save space, as then we'd only have a single field per-object instead of 2 (as in the examples above).\r\n\r\nWhat do people think? CC @LPardue  @marten-seemann @mpiraux @triplewy @mikkelfj @nibanks @jlaine\r\n\r\n \r\n",
       "createdAt": "2020-07-08T09:04:43Z",
-      "updatedAt": "2020-07-08T09:29:30Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:18:38Z",
+      "closedAt": "2020-09-05T16:18:38Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -2132,15 +2169,15 @@
       "id": "MDU6SXNzdWU2NTUwMTI5OTY=",
       "title": "Logging events outside of connections",
       "url": "https://github.com/quiclog/internet-drafts/issues/106",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "huitema",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "Servers typically notice events happening outside of connections: packets for which the DCID is not recognized, malformed Initial packets, etc. When debugging and looking at both client traces and server traces, it might be useful to match a client packet with an out-of-connection event at the server. I wonder how to do that within the qlog framework.",
       "createdAt": "2020-07-10T20:15:49Z",
-      "updatedAt": "2020-07-12T03:09:04Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:18:06Z",
+      "closedAt": "2020-09-05T16:18:06Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -2176,6 +2213,13 @@
           "body": "+1 on format too. I would very much like to be able to just add an event by appending the data at the end of the log file. I can do that with my binary logs, and then call a converter to produce the qlog and add the required set of curly and square brackets at the end. But with an actual qlog file, I would have to roll back the end of the file, remove the end brackets, write the event, and then add the brackets again. Kind of, not funny.\r\n",
           "createdAt": "2020-07-12T03:09:04Z",
           "updatedAt": "2020-07-12T03:09:04Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I believe this was resolved with the introduction of the streaming NDJSON option (discussed in #109) and other options I outlined in https://github.com/quiclog/internet-drafts/issues/106#issuecomment-657087933. If not, feel free to re-open. \r\n\r\n\r\n",
+          "createdAt": "2020-09-05T16:18:06Z",
+          "updatedAt": "2020-09-05T16:18:06Z"
         }
       ]
     },
@@ -2222,15 +2266,15 @@
       "id": "MDU6SXNzdWU2Njc2MjkwNjI=",
       "title": "Add streaming option",
       "url": "https://github.com/quiclog/internet-drafts/issues/109",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Current thinking is to allow http://ndjson.org and to log the qlog header information as a separate object on top. \r\nThis would remove the possibility to log multiple traces in the same qlog file if it uses the streaming option, so users would need to use `group_id` in those cases.\r\n\r\nWould also require the addition of a \"format\" field to the qlog metadata header (though we probably need that anyway if we want to keep support for other JSON-based optimizations like `event_fields`.\r\n\r\nWe first need to check how this plays with oboe.js in qvis though, to see if we need to add another parser in the mix. \r\n\r\nSee also #106 and #2 for more discussion.\r\n\r\nFor comparison:\r\n```\r\nDraft-01 would look like this (if, like me, JSON serializers would be too lazy to add quotes):\r\n{\r\n    version: draft-01,\r\n    traces: [\r\n        {\r\n             vantage_point: client,\r\n             common_fields: [ ... ],\r\n             event_fields: [ ... ], \r\n             events: [\r\n                 [ 55, transport, packet_sent, { ... } ],\r\n                 [ 66, transport, packet_received, { ... } ],\r\n                 ...\r\n             ]\r\n        }\r\n    ]\r\n}\r\n\r\nDraft-02 would be more like:\r\n{\r\n    version: draft-02,\r\n    format: \"ndjson\",\r\n    trace: {\r\n             vantage_point: client,\r\n             common_fields: [ ... ]\r\n     }\r\n}\r\n{ time: 55, name: \"transport:packet_sent\", data: { ... } }\r\n{ time: 66, name: \"transport:packet_received\", data: { ... } }\r\n...\r\n```\r\n\r\nCC @marten-seemann @huitema",
       "createdAt": "2020-07-29T07:49:26Z",
-      "updatedAt": "2020-08-27T16:01:37Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-05T16:25:57Z",
+      "closedAt": "2020-09-05T16:25:57Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -2280,6 +2324,13 @@
           "body": "Initial support for \"newline delimited JSON\" qlog streaming is now in qvis per https://github.com/quiclog/qvis/commit/8504c0e4581b28c985f97eff701589b866bde4b9\r\n\r\nAn example draft-02 NDJSON file can be found in attachment (should load just fine in the live qvis atm).\r\nNow that I'm certain this can be done without major performance issues, I will move forward with this for qlog draft-02. \r\n\r\nIn the meantime, further feedback based on the example file is of course welcome. \r\n\r\n[newline_delimited.zip](https://github.com/quiclog/internet-drafts/files/5137476/newline_delimited.zip)\r\n\r\n",
           "createdAt": "2020-08-27T16:01:36Z",
           "updatedAt": "2020-08-27T16:01:36Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "This issues should have been resolved by the choice of NDJSON as streaming format as of https://github.com/quiclog/internet-drafts/commit/f5db7cdc8cd0cf37bfe5f1b0b4c54fc56ffc5f28",
+          "createdAt": "2020-09-05T16:25:57Z",
+          "updatedAt": "2020-09-05T16:25:57Z"
         }
       ]
     },
@@ -2288,15 +2339,15 @@
       "id": "MDU6SXNzdWU2Nzk4MTM1MDI=",
       "title": "push_allowed may be misleading",
       "url": "https://github.com/quiclog/internet-drafts/issues/110",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "dtikhonov",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "The \"push_allowed\" data element is `parameters_set` event is odd in that other data elements log actual settings values while \"push_allowed\" is derived from the value of `MAX_PUSH_ID` frame.\r\n\r\nIn addition, for pushing to be allowed, a second condition is necessary:  There must be enough unidirectional stream credit.  For example, if only three unidirectional streams are allowed, it effectively means that pushing is not possible, as those will be taken by the control and the two QPACK streams.",
       "createdAt": "2020-08-16T19:41:52Z",
-      "updatedAt": "2020-08-20T12:49:21Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T10:21:24Z",
+      "closedAt": "2020-09-07T10:21:24Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2311,6 +2362,13 @@
           "body": "Well, `MAX_PUSH_ID` is already logged, so we don't need (3).  (2) may be onerous to log because now the implementation needs to add checks in at least two places and log `push_allowed`...  Let the tool do it!\r\n\r\nThus, I vote for (1).",
           "createdAt": "2020-08-20T12:49:21Z",
           "updatedAt": "2020-08-20T12:49:21Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Was removed and explanation text added. ",
+          "createdAt": "2020-09-07T10:21:24Z",
+          "updatedAt": "2020-09-07T10:21:24Z"
         }
       ]
     },
@@ -2326,7 +2384,7 @@
       "labels": [],
       "body": "> Used to indicate when data moves between the HTTP/3 and the transport layer (e.g., passing from H3 to QUIC stream buffers and vice versa) or between HTTP/3 and the actual user application on top (e.g., a browser engine). This helps make clear the flow of data, how long data remains in various buffers and the overheads introduced by HTTP/3's framing layer.\r\n\r\nThe paragraph above describes three layers: transport, HTTP/3, and user application.\r\n\r\nThe definition allows for only two layers:\r\n\r\n```\r\n    from?:\"application\"|\"transport\",\r\n    to?:\"application\"|\"transport\",\r\n```\r\n\r\nIn addition, the definition of \"application\" is ambiguous: it could be the application protocol (HTTP/3) or the user application.",
       "createdAt": "2020-08-16T19:58:10Z",
-      "updatedAt": "2020-08-20T14:20:34Z",
+      "updatedAt": "2020-09-07T13:40:36Z",
       "closedAt": null,
       "comments": [
         {
@@ -2356,6 +2414,13 @@
           "body": "Here is how reading from an HTTP/3 stream works in lsquic (in the best-case scenario):\r\n\r\n1. The packet is decrypted and the decrypted payload is stored in a new memory object.  (This is data copy number 1.)\r\n2. The packet is parsed.  This creates _STREAM_ frame marker objects.\r\n3. If, as a result of a new marker, reading from a stream becomes possible, the user is notified via an \"on stream write\" event.  Note that *in the case of HTTP/3 stream, special magic happens internally*: the stream is fast-forwarded through the framing.  _DATA_ frames are processed and discarded.  You can peek at [how it's done in the `read_data_frames()` function](https://github.com/litespeedtech/lsquic/blob/v2.19.5/src/liblsquic/lsquic_stream.c#L1360L1363).\r\n4. The user then reads data from stream using one of two ways.\r\n   - **copy read**.  In this case, `lsquic_stream_read()` or `lsquic_stream_readv()` is called and data is copied into user-supplied buffer(s).  (This is data copy number 2.)\r\n   - **zero copy**.  User can call `lsquic_stream_readf()` with a callback.  This callback will then be given a pointer to the data from the  first copy (in Step 1).  See [line 1367](https://github.com/litespeedtech/lsquic/blob/v2.19.5/src/liblsquic/lsquic_stream.c#L1367) -- this is where this callback is called.  Here, the user can copy the data or process it directly.\r\n\r\nNote that there was no copy from transport layer into any intermediate layer.  So, no, stripping out frame headers does not mean that data must be copied.",
           "createdAt": "2020-08-20T14:20:34Z",
           "updatedAt": "2020-08-20T14:20:34Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Is tied to #65 ",
+          "createdAt": "2020-09-07T13:40:36Z",
+          "updatedAt": "2020-09-07T13:40:36Z"
         }
       ]
     },
@@ -2364,16 +2429,24 @@
       "id": "MDU6SXNzdWU2Nzk4MTczNTI=",
       "title": "QPACK encoder and decoder each has its own state",
       "url": "https://github.com/quiclog/internet-drafts/issues/112",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "dtikhonov",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "Each peer has two QPACK states: encoder and decoder.  `qpack`'s `state_updated` and `dynamic_table_updated` events do not make such differentiation, making the specification incomplete.  For example:\r\n\r\n> This event is emitted when one or more entries are added or evicted from QPACK's dynamic table.\r\n\r\nWhich dynamic table is meant: encoder or decoder?",
       "createdAt": "2020-08-16T20:06:37Z",
-      "updatedAt": "2020-08-16T20:06:37Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2020-09-07T10:17:26Z",
+      "closedAt": "2020-09-07T10:17:26Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Closed by adding an \"owner\" field to `dynamic_state_updated`.\r\n\r\nOther qpack events either already had this field or are split out into created/parsed or encoded/decoded events, which makes this implicit. ",
+          "createdAt": "2020-09-07T10:17:26Z",
+          "updatedAt": "2020-09-07T10:17:26Z"
+        }
+      ]
     },
     {
       "number": 113,
@@ -2387,40 +2460,56 @@
       "labels": [],
       "body": "The draft should use the QPACK terminology.",
       "createdAt": "2020-08-16T20:08:19Z",
-      "updatedAt": "2020-08-16T20:08:19Z",
+      "updatedAt": "2020-09-07T10:11:24Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So, I'm not entirely sure what to do here... I based myself mainly on this section, which does use \"added\"/\"evicted\": \r\nhttps://tools.ietf.org/html/draft-ietf-quic-qpack-16#section-3.2.2\r\n\r\nHowever, I agree that in other places, \"inserted\" is used for the same/similar operations. I have changed it to \"inserted\" in qlog, as I trust @dtikhonov's good judgement, but wonder if this should be made consistent in the QPACK text? \r\n\r\nSimilarly, several diagrams refer to the \"dropping point\" or \"dropped count\", which I -assume- is the same as \"evicted\" or \"eviction index\" etc. The \"dropping point\" is not mentioned in the running text anywhere in any case. Maybe that should also be made more consistent?\r\n\r\nCC'ing @afrind on this. If needed, I can make issues in the quicwg repo for this. \r\n",
+          "createdAt": "2020-09-07T10:11:23Z",
+          "updatedAt": "2020-09-07T10:11:23Z"
+        }
+      ]
     },
     {
       "number": 114,
       "id": "MDU6SXNzdWU2Nzk4MTgxMjA=",
       "title": "qpack.instruction_sent -- which \"sent\" time is meant?",
       "url": "https://github.com/quiclog/internet-drafts/issues/114",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "dtikhonov",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "> This event is emitted when a QPACK instruction (both decoder and encoder) is sent.\r\n\r\nA QPACK instruction is:\r\n- written to the encoder (or decoder) stream, which is then\r\n- packetized, and\r\n- the packet (or packets!) is sent.\r\n\r\nWhich of the three events above is meant is not clear.",
       "createdAt": "2020-08-16T20:11:32Z",
-      "updatedAt": "2020-08-16T20:11:32Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2020-09-07T10:04:05Z",
+      "closedAt": "2020-09-07T10:04:05Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Resolved by renaming `instruction_sent/received` to `instruction_created/parsed`, as an analogy to the HTTP/3 `frame_created/parsed` events. \r\n\r\nThanks for noticing this @dtikhonov!",
+          "createdAt": "2020-09-07T10:04:05Z",
+          "updatedAt": "2020-09-07T10:04:05Z"
+        }
+      ]
     },
     {
       "number": 115,
       "id": "MDU6SXNzdWU2ODE4ODYxODI=",
       "title": "QPACK: check data types",
       "url": "https://github.com/quiclog/internet-drafts/issues/115",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Commit 128f3840cf951e8032c25896683b369cb92d13e6 adds proper data type definitions (e.g., uint64 instead of just \"number\", bytes instead of \"hex string\") to the qlog event fields.\r\n\r\nThese were a bit difficult to figure out for QPACK events (with the whole \"prefixed integer\" stuff), so I've put everything at uint64 for now. While this is the \"safest\" option, elsewhere in the document I've taken the approach of choosing the smallest \"likely\" integer size for a given value. One example is the datagram_size: it's unlikely we'll see datagrams larger than uint32 in practice (you could even argue uint16?), so this field is not a uint64. Similarly, the length of a QUIC STREAM frame is also just uint32, not 64. This approach should help make binary qlog derivations more optimized. \r\n\r\nAs such, I was hoping someone with more QPACK experience could help indicate the \"minimal\" data type size for the different fields. \r\n\r\nA secondary aspect is the values logged for \"name\" and \"value\" (e.g., in InsertWithoutNameReferenceInstruction). I'm not sure if these should be readable strings (e.g., \"Content-Encoding\" or their hex/byte equivalents (e.g., \"abcde1234\"). For debugging it makes more sense if they are the readable strings, though I'm not sure it's logical to treat them that way inside a QPACK implementation. Alternative is the make the datatype for those `string | bytes` (one of both) and let the logger/tools figure it out. \r\n\r\nSo, TLDR:\r\n1. Which QPACK number-esque fields can do with less than 64 bits in practice?\r\n2. Which data type should name and value fields have in qlog? \r\n\r\nI was hoping for some input on this from maybe @dtikhonov, @lpardue, @afrind. Thanks in advance!\r\n\r\n\r\n\r\n",
       "createdAt": "2020-08-19T14:27:50Z",
-      "updatedAt": "2020-08-20T15:47:06Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T10:04:54Z",
+      "closedAt": "2020-09-07T10:04:53Z",
       "comments": [
         {
           "author": "LPardue",
@@ -2463,8 +2552,31 @@
           "body": "Seems like you could probably reduce the table capacity and table size to 32 bits, as I have a hard time seeing someone reserving up to 4GB for this purpose.  That said, it is possible in the protocol, so if you want to be able to handle even the crazies I guess you have to stick to 64.  ",
           "createdAt": "2020-08-20T15:47:06Z",
           "updatedAt": "2020-08-20T15:47:06Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Thanks all for the review.\r\n\r\nName and value (and their lengths) are now always optional and some uint64's have become uint32's (we do not want to encourage the crazies ;)) ",
+          "createdAt": "2020-09-07T10:04:53Z",
+          "updatedAt": "2020-09-07T10:04:53Z"
         }
       ]
+    },
+    {
+      "number": 116,
+      "id": "MDU6SXNzdWU2OTQ4NjY2MDE=",
+      "title": "Add certificate verification events",
+      "url": "https://github.com/quiclog/internet-drafts/issues/116",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "In real deployments, getting some feedback on certificate validation events is useful (e.g., these are included in NetLog).\r\n\r\nI wonder if these can be done as triggers... but on what event would those triggers be logged then? Maybe on a connection close if validation fails? What if it succeeds? \r\n\r\nAs I've seen some discussion about these things being async and sometimes depend on remote fetches (e.g., for OCSP), it would probably be useful to have separate events though. \r\n\r\nI need to get a better overview of the types of events though to decide on how to log this. Probably add something simple for draft-02 and extend in -03. ",
+      "createdAt": "2020-09-07T08:37:28Z",
+      "updatedAt": "2020-09-07T08:37:28Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
