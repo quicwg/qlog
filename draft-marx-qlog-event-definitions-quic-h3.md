@@ -763,6 +763,51 @@ Data:
 }
 ~~~
 
+### data_moved
+Importance: Base
+
+Used to indicate when data moves between the different layers (for example passing
+from HTTP/3 to QUIC stream buffers and vice versa) or between HTTP/3 and the actual
+user application on top (for example a browser engine). This helps make clear the
+flow of data, how long data remains in various buffers and the overheads
+introduced by individual layers.
+
+For example, this helps make clear whether received data on a QUIC stream is moved
+to the HTTP layer immediately (for example per received packet) or in larger
+batches (for example, all QUIC packets are processed first and afterwards the HTTP
+layer reads from the streams with newly available data). This in turn can help
+identify bottlenecks or scheduling problems.
+
+Data:
+
+~~~~
+{
+    stream_id?:uint64,
+    offset?:uint64,
+    length?:uint64,
+
+    from?:string, // typically: use either of "application","http","transport"
+    to?:string, // typically: use either of "application","http","transport"
+
+    raw_length?:uint64,
+    raw?:bytes
+}
+~~~~
+
+Note: we do not for example use a "direction" field (with values "up" and "down")
+to specify the data flow. This is because in some optimized implementations, data
+might skip some individual layers. Additionally, using explicit "from" and "to"
+fields is more flexible and allows the definition of other conceptual "layers"
+(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
+library ("security") or from HTTP/3 to QPACK ("qpack")).
+
+Note: this event type is part of the "transport" category, but really spans all
+the different layers. This means we have a few leaky abstractions here (for
+example, the stream_id or stream offset might not be available at some logging
+points, or the raw data might not be in a byte-array form). In these situations,
+implementers can decide to define new, in-context fields to aid in manual
+debugging.
+
 
 ## recovery
 
@@ -1093,43 +1138,6 @@ header overhead. As such, DATA frames can span many QUIC packets and can be
 processed in a streaming fashion. In this case, the frame_parsed event is emitted
 once for the frame header, and further streamed data is indicated using the
 data_moved event.
-
-### data_moved
-Importance: Base
-
-Used to indicate when data moves between the HTTP/3 and the transport layer (e.g.,
-passing from H3 to QUIC stream buffers and vice versa) or between HTTP/3 and the
-actual user application on top (e.g., a browser engine). This helps make clear the
-flow of data, how long data remains in various buffers and the overheads
-introduced by HTTP/3's framing layer.
-
-For example, when moving from application to http, the data will most likely be
-the raw request we wish to transmit. When then moving that request from http to
-transport, it will be compressed using QPACK and wrapped in an HTTP/3 HEADERS
-frame. Similarly, when receiving data from the transport layer, this will
-potentially include HTTP/3 headers, which are not passed on to the application
-layer. A final use case is making clear when only part of an HTTP/3 frame is
-received (e.g., only 1 or 2 bytes, while 3, 4 or more are needed to fully
-interpret an HTTP/3 frame).
-
-Data:
-
-~~~~
-{
-    stream_id:uint64,
-    offset?:uint64,
-    length?:uint64,
-
-    from?:"application"|"transport",
-    to?:"application"|"transport",
-
-    raw_length?:uint64,
-    raw?:bytes
-}
-~~~~
-
-The "from" and "to" fields MUST NOT be set at the same time. The missing field is
-always implied to have the value "http".
 
 ### push_resolved
 Importance: Extra
@@ -2155,6 +2163,11 @@ class QPackHeaderBlockPrefix {
 
 ## Since draft-01:
 
+Major changes:
+* Moved data_moved from http to transport. Also made the "from" and "to" fields
+  flexible strings instead of an enum (#111,#65)
+
+Smaller changes:
 * Merged loss_timer events into one loss_timer_updated event
 * Field data types are now strongly defined (#10,#39,#36,#115)
 * Renamed qpack instruction_received and instruction_sent to instruction_created
