@@ -289,7 +289,12 @@ Note: some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
 ### connection_id_updated
-Importance: Core
+Importance: Base
+
+This event is emitted when either party updates their current Connection ID. As
+this typically happens only sparingly over the course of a connection, this event
+allows loggers to be more efficient than logging the observed CID with each packet
+in the .header field of the "packet_sent" or "packet_received" events.
 
 This is viewed from the perspective of the one applying the new id. As such, if we
 receive a new connection id from our peer, we will see the dst_ fields are set. If
@@ -300,11 +305,10 @@ Data:
 
 ~~~
 {
-    src_old?: bytes,
-    src_new?: bytes,
+    owner: "local" | "remote",
 
-    dst_old?: bytes,
-    dst_new?: bytes
+    old?:bytes,
+    new?:bytes,
 }
 ~~~
 
@@ -383,9 +387,7 @@ Data:
     key_type:KeyType,
     old?:bytes,
     new:bytes,
-    generation?:uint32, // needed for 1RTT key updates
-
-    trigger?: string
+    generation?:uint32 // needed for 1RTT key updates
 }
 ~~~
 
@@ -404,9 +406,7 @@ Data:
 {
     key_type:KeyType,
     key?:bytes,
-    generation?:uint32, // needed for 1RTT key updates
-
-    trigger?: string
+    generation?:uint32 // needed for 1RTT key updates
 }
 ~~~
 
@@ -511,9 +511,7 @@ Data:
 
     raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
     raw_encrypted?:bytes, // for debugging purposes
-    raw_decrypted?:bytes  // for debugging purposes,
-
-    trigger?: string
+    raw_decrypted?:bytes  // for debugging purposes
 }
 ~~~
 
@@ -549,8 +547,6 @@ Data:
     raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
     raw_encrypted?:bytes, // for debugging purposes
     raw_decrypted?:bytes  // for debugging purposes,
-
-    trigger?: string
 }
 ~~~
 
@@ -567,20 +563,18 @@ Importance: Base
 
 This event indicates a QUIC-level packet was dropped after partial or no parsing.
 
-For this event, the "trigger" property SHOULD be set to one of the values below,
-as this helps tremendously in debugging.
-
 Data:
 
 ~~~
 {
     packet_type?:PacketType,
     raw_length?:uint32,
-    raw?:bytes,
-
-    trigger?: string
+    raw?:bytes
 }
 ~~~
+
+For this event, the "trigger" field SHOULD be set (for example to one of the
+values below), as this helps tremendously in debugging.
 
 Triggers:
 
@@ -599,7 +593,7 @@ Triggers:
 
 Note: sometimes packets are dropped before they can be associated with a
 particular connection (e.g., in case of "unsupported_version"). This situation is
-discussed in {{handling-unknown-connections}}.
+discussed more in {{handling-unknown-connections}}.
 
 
 ### packet_buffered
@@ -615,9 +609,7 @@ Data:
 {
     packet_type:PacketType,
     packet_number?:uint64,
-    packet_size?:uint32,
-
-    trigger?: string
+    packet_size?:uint32
 }
 ~~~
 
@@ -756,11 +748,18 @@ Note: for some events, this approach will lose some information (e.g., for which
 encryption level are packets being acknowledged?). If this information is
 important, please use the packet_received event instead.
 
+Note: in some implementations, it can be difficult to log frames directly, even
+when using packet_sent and packet_received events. For these cases, this event
+also contains the direct packet_number field, which can be used to more explicitly
+link this event to the packet_sent/received events.
+
 Data:
 
 ~~~
 {
     frames:Array<QuicFrame>, // see appendix for the definitions
+
+    packet_number?:uint64
 }
 ~~~
 
@@ -858,7 +857,16 @@ the Recovery draft ("enhanced" New Reno), the following states are defined:
 * application_limited
 * recovery
 
-The trigger SHOULD be logged if there are multiple ways in which a state change
+Data:
+
+~~~
+{
+    old?:string,
+    new:string
+}
+~~~
+
+The "trigger" field SHOULD be logged if there are multiple ways in which a state change
 can occur but MAY be omitted if a given state can only be due to a single event
 occuring (e.g., slow start is exited only when ssthresh is exceeded).
 
@@ -866,17 +874,6 @@ Some triggers for ("enhanced" New Reno):
 
 * persistent_congestion
 * ECN
-
-Data:
-
-~~~
-{
-    old?:string,
-    new:string,
-
-    trigger?:string
-}
-~~~
 
 ### loss_timer_updated
 Importance: Extra
@@ -912,8 +909,7 @@ TODO: read up on the loss detection logic in draft-27 onward and see if this suf
 ### packet_lost
 Importance: Core
 
-This event is emitted when a packet is deemed lost by loss detection. Use the
-"trigger" field to indicate the loss detection method used for this decision.
+This event is emitted when a packet is deemed lost by loss detection.
 
 Data:
 
@@ -924,11 +920,12 @@ Data:
 
     // not all implementations will keep track of full packets, so these are optional
     header?:PacketHeader,
-    frames?:Array<QuicFrame>, // see appendix for the definitions,
-
-    trigger?: string
+    frames?:Array<QuicFrame> // see appendix for the definitions
 }
 ~~~
+
+For this event, the "trigger" field SHOULD be set (for example to one of the
+values below), as this helps tremendously in debugging.
 
 Triggers:
 
@@ -995,12 +992,14 @@ Data:
     max_table_capacity?:uint64, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
     blocked_streams_count?:uint64, // from SETTINGS_QPACK_BLOCKED_STREAMS
 
-    push_allowed?:boolean, // received a MAX_PUSH_ID frame with non-zero value
-
     // qlog-defined
     waits_for_settings?:boolean // indicates whether this implementation waits for a SETTINGS frame before processing requests
 }
 ~~~
+
+Note: enabling server push is not explicitly done in HTTP/3 by use of a setting or
+parameter. Instead, it is communicated by use of the MAX_PUSH_ID frame, which
+should be logged using the frame_created and frame_parsed events below.
 
 Additionally, this event can contain any number of unspecified fields. This is to
 reflect setting of for example unknown (greased) settings or parameters of
@@ -1176,7 +1175,7 @@ Data:
 
 ~~~
 {
-    owner?:"local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
+    owner:"local" | "remote",
 
     dynamic_table_capacity?:uint64,
     dynamic_table_size?:uint64, // effective current size, sum of all the entries
@@ -1208,13 +1207,15 @@ Data:
 ### dynamic_table_updated
 Importance: Extra
 
-This event is emitted when one or more entries are added or evicted from QPACK's dynamic table.
+This event is emitted when one or more entries are inserted or evicted from QPACK's dynamic table.
 
 Data:
 
 ~~~
 {
-    update_type:"added"|"evicted",
+    owner:"local" | "remote", // local = the encoder's dynamic table. remote = the decoder's dynamic table
+
+    update_type:"inserted"|"evicted",
 
     entries:Array<DynamicTableEntry>
 }
@@ -1276,10 +1277,11 @@ Data:
 }
 ~~~~
 
-### instruction_sent
+### instruction_created
 Importance: Base
 
-This event is emitted when a QPACK instruction (both decoder and encoder) is sent.
+This event is emitted when a QPACK instruction (both decoder and encoder) is
+created and added to the encoder/decoder stream.
 
 Data:
 
@@ -1295,11 +1297,11 @@ Data:
 Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
-### instruction_received
+### instruction_parsed
 Importance: Base
 
-This event is emitted when a QPACK instruction (both decoder and encoder) is
-received.
+This event is emitted when a QPACK instruction (both decoder and encoder) is read
+from the encoder/decoder stream.
 
 Data:
 
@@ -1509,7 +1511,7 @@ class PacketHeader {
     // only if present in the header
     // if correctly using transport:connection_id_updated events,
     // dcid can be skipped for 1RTT packets
-    version?: bytes; // e.g., ff00001d for draft-29
+    version?: bytes; // e.g., "ff00001d" for draft-29
     scil?: uint8;
     dcil?: uint8;
     scid?: bytes;
@@ -1544,9 +1546,19 @@ type QuicFrame = PaddingFrame | PingFrame | AckFrame | ResetStreamFrame | StopSe
 
 ### PaddingFrame
 
+In QUIC, PADDING frames are simply identified as a single byte of value 0. As
+such, each padding byte could be theoretically interpreted and logged as an
+individual PaddingFrame.
+
+However, as this leads to heavy logging overhead, implementations SHOULD instead
+emit just a single PaddingFrame and set the length property to the amount of
+PADDING bytes/frames included in the packet.
+
 ~~~
 class PaddingFrame{
     frame_type:string = "padding";
+
+    length?:uint32;
 }
 ~~~
 
@@ -1757,7 +1769,7 @@ class PathChallengeFrame{
 
 ~~~
 class PathResponseFrame{
-  frame_type:string = "patch_response";
+  frame_type:string = "path_response";
 
   data?:bytes; // always 64-bit
 }
@@ -1991,7 +2003,7 @@ type QPackInstruction = SetDynamicTableCapacityInstruction | InsertWithNameRefer
 class SetDynamicTableCapacityInstruction {
     instruction_type:string = "set_dynamic_table_capacity";
 
-    capacity:uint64;
+    capacity:uint32;
 }
 ~~~
 
@@ -2003,11 +2015,11 @@ class InsertWithNameReferenceInstruction {
 
     table_type:"static"|"dynamic";
 
-    name_index:uint64;
+    name_index:uint32;
 
     huffman_encoded_value:boolean;
 
-    value_length?:uint64;
+    value_length?:uint32;
     value?:string;
 }
 ~~~
@@ -2020,12 +2032,12 @@ class InsertWithoutNameReferenceInstruction {
 
     huffman_encoded_name:boolean;
 
-    name_length:uint64;
+    name_length?:uint32;
     name?:string;
 
     huffman_encoded_value:boolean;
 
-    value_length:uint64;
+    value_length?:uint32;
     value?:string;
 }
 ~~~
@@ -2036,7 +2048,7 @@ class InsertWithoutNameReferenceInstruction {
 class DuplicateInstruction {
     instruction_type:string = "duplicate";
 
-    index:uint64;
+    index:uint32;
 }
 ~~~
 
@@ -2066,7 +2078,7 @@ class StreamCancellationInstruction {
 class InsertCountIncrementInstruction {
     instruction_type:string = "insert_count_increment";
 
-    increment:uint64;
+    increment:uint32;
 }
 ~~~
 
@@ -2085,9 +2097,9 @@ class IndexedHeaderField {
     header_field_type:string = "indexed_header";
 
     table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
-    index:uint64;
+    index:uint32;
 
-    is_post_base?:boolean = false; // to represent the "indexed header field with post-base index" header field type
+    is_post_base:boolean = false; // to represent the "indexed header field with post-base index" header field type
 }
 ~~~
 
@@ -2101,13 +2113,13 @@ class LiteralHeaderFieldWithName {
 
     preserve_literal:boolean; // the 3rd "N" bit
     table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
-    name_index:uint64;
+    name_index:uint32;
 
     huffman_encoded_value:boolean;
-    value_length:uint64;
-    value:string;
+    value_length?:uint32;
+    value?:string;
 
-    is_post_base?:boolean = false; // to represent the "Literal header field with post-base name reference" header field type
+    is_post_base:boolean = false; // to represent the "Literal header field with post-base name reference" header field type
 }
 ~~~
 
@@ -2120,12 +2132,12 @@ class LiteralHeaderFieldWithoutName {
     preserve_literal:boolean; // the 3rd "N" bit
 
     huffman_encoded_name:boolean;
-    name_length:uint64;
-    name:string;
+    name_length?:uint32;
+    name?:string;
 
     huffman_encoded_value:boolean;
-    value_length:uint64;
-    value:string;
+    value_length?:uint32;
+    value?:string;
 }
 ~~~
 
@@ -2133,9 +2145,9 @@ class LiteralHeaderFieldWithoutName {
 
 ~~~
 class QPackHeaderBlockPrefix {
-    required_insert_count:uint64;
+    required_insert_count:uint32;
     sign_bit:boolean;
-    delta_base:uint64;
+    delta_base:uint32;
 }
 ~~~
 
@@ -2144,6 +2156,21 @@ class QPackHeaderBlockPrefix {
 ## Since draft-01:
 
 * Merged loss_timer events into one loss_timer_updated event
+* Field data types are now strongly defined (#10,#39,#36,#115)
+* Renamed qpack instruction_received and instruction_sent to instruction_created
+  and instruction_parsed (#114)
+* Updated qpack:dynamic_table_updated.update_type. It now has the value "inserted"
+  instead of "added" (#113)
+* Updated qpack:dynamic_table_updated. It now has an "owner" field to
+  differentiate encoder vs decoder state (#112)
+* Removed push_allowed from http:parameters_set (#110)
+* Removed explicit trigger field indications from events, since this was moved to
+  be a generic property of the "data" field (#80)
+* Updated transport:connection_id_updated to be more in line with other similar
+  events. Also dropped importance from Core to Base (#45)
+* Added length property to PaddingFrame (#34)
+* Added packet_number field to transport:frames_processed (#74)
+
 
 ## Since draft-00:
 
