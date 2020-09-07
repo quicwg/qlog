@@ -500,8 +500,10 @@ Data:
 
 ~~~
 {
-    packet_type:PacketType,
     header:PacketHeader,
+    packet_size?: uint32, // size of the full encrypted packet, including the AEAD tag
+    payload_size?: uint32, // size of the decoded payload, excluding the AEAD tag
+
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean, // default value is false
@@ -516,7 +518,7 @@ Data:
 ~~~
 
 Note: We do not explicitly log the encryption_level or packet_number_space: the
-packet_type specifies this by inference (assuming correct implementation)
+header.packet_type specifies this by inference (assuming correct implementation)
 
 Triggers:
 
@@ -535,8 +537,10 @@ Data:
 
 ~~~
 {
-    packet_type:PacketType,
     header:PacketHeader,
+    packet_size?: uint32, // size of the full encrypted packet, including the AEAD tag
+    payload_size?: uint32, // size of the payload, excluding the AEAD tag
+
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean,
@@ -551,7 +555,7 @@ Data:
 ~~~
 
 Note: We do not explicitly log the encryption_level or packet_number_space: the
-packet_type specifies this by inference (assuming correct implementation)
+header.packet_type specifies this by inference (assuming correct implementation)
 
 Triggers:
 
@@ -567,7 +571,8 @@ Data:
 
 ~~~
 {
-    packet_type?:PacketType,
+    header?:PacketHeader, // primarily packet_type should be filled here, as other fields might not be parseable
+
     raw_length?:uint32,
     raw?:bytes
 }
@@ -607,9 +612,9 @@ Data:
 
 ~~~
 {
-    packet_type:PacketType,
-    packet_number?:uint64,
-    packet_size?:uint32
+    header?:PacketHeader, // primarily packet_type and possible packet_number should be filled here, as other elements might not be available yet
+
+    packet_size?:uint32 // full encrypted packet size, including AEAD tag
 }
 ~~~
 
@@ -808,7 +813,6 @@ points, or the raw data might not be in a byte-array form). In these situations,
 implementers can decide to define new, in-context fields to aid in manual
 debugging.
 
-
 ## recovery
 
 Note: most of the events in this category are kept generic to support different
@@ -960,11 +964,9 @@ Data:
 
 ~~~
 {
-    packet_type:PacketType,
-    packet_number:uint64,
+    header?:PacketHeader, // should include at least the packet_type and packet_number
 
     // not all implementations will keep track of full packets, so these are optional
-    header?:PacketHeader,
     frames?:Array<QuicFrame> // see appendix for the definitions
 }
 ~~~
@@ -1512,9 +1514,10 @@ enum PacketNumberSpace {
 
 ~~~
 class PacketHeader {
+    packet_type: PacketType;
     packet_number: uint64;
-    packet_size?: uint32;
-    payload_length?: uint32;
+
+    flags?: uint8; // the bit flags of the packet headers (spin bit, key update bit, etc. up to and including the packet number length bits if present) interpreted as a single 8-bit integer
 
     // only if present in the header
     // if correctly using transport:connection_id_updated events,
@@ -2166,6 +2169,10 @@ class QPackHeaderBlockPrefix {
 Major changes:
 * Moved data_moved from http to transport. Also made the "from" and "to" fields
   flexible strings instead of an enum (#111,#65)
+* Moved packet_type fields to PacketHeader, and packet_size field out of
+  PacketHeader to individual events (#40)
+* Made events that need to log packet_type and packet_number use a header field
+  instead of logging these fields individually
 
 Smaller changes:
 * Merged loss_timer events into one loss_timer_updated event
@@ -2183,6 +2190,8 @@ Smaller changes:
   events. Also dropped importance from Core to Base (#45)
 * Added length property to PaddingFrame (#34)
 * Added packet_number field to transport:frames_processed (#74)
+* Added a way to generically log packet header flags (first 8 bits) to
+  PacketHeader
 
 
 ## Since draft-00:
