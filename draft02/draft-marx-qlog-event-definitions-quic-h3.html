@@ -987,6 +987,9 @@ level schema defined in <span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]<
                   <li class="toc compact ulEmpty" id="section-toc.1-1.5.2.3.2.10">
                     <p id="section-toc.1-1.5.2.3.2.10.1"><a href="#section-5.3.10" class="xref">5.3.10</a>. <a href="#name-frames_processed" class="xref">frames_processed</a><a href="#section-toc.1-1.5.2.3.2.10.1" class="pilcrow">¶</a></p>
 </li>
+                  <li class="toc compact ulEmpty" id="section-toc.1-1.5.2.3.2.11">
+                    <p id="section-toc.1-1.5.2.3.2.11.1"><a href="#section-5.3.11" class="xref">5.3.11</a>. <a href="#name-data_moved" class="xref">data_moved</a><a href="#section-toc.1-1.5.2.3.2.11.1" class="pilcrow">¶</a></p>
+</li>
                 </ul>
 </li>
               <li class="toc compact ulEmpty" id="section-toc.1-1.5.2.4">
@@ -1033,10 +1036,7 @@ level schema defined in <span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]<
                     <p id="section-toc.1-1.6.2.1.2.4.1"><a href="#section-6.1.4" class="xref">6.1.4</a>.  <a href="#name-frame_parsed" class="xref">frame_parsed</a><a href="#section-toc.1-1.6.2.1.2.4.1" class="pilcrow">¶</a></p>
 </li>
                   <li class="toc compact ulEmpty" id="section-toc.1-1.6.2.1.2.5">
-                    <p id="section-toc.1-1.6.2.1.2.5.1"><a href="#section-6.1.5" class="xref">6.1.5</a>.  <a href="#name-data_moved" class="xref">data_moved</a><a href="#section-toc.1-1.6.2.1.2.5.1" class="pilcrow">¶</a></p>
-</li>
-                  <li class="toc compact ulEmpty" id="section-toc.1-1.6.2.1.2.6">
-                    <p id="section-toc.1-1.6.2.1.2.6.1"><a href="#section-6.1.6" class="xref">6.1.6</a>.  <a href="#name-push_resolved" class="xref">push_resolved</a><a href="#section-toc.1-1.6.2.1.2.6.1" class="pilcrow">¶</a></p>
+                    <p id="section-toc.1-1.6.2.1.2.5.1"><a href="#section-6.1.5" class="xref">6.1.5</a>.  <a href="#name-push_resolved" class="xref">push_resolved</a><a href="#section-toc.1-1.6.2.1.2.5.1" class="pilcrow">¶</a></p>
 </li>
                 </ul>
 </li>
@@ -2158,6 +2158,52 @@ link this event to the packet_sent/received events.<a href="#section-5.3.10-6" c
 </div>
 </section>
 </div>
+<div id="datamoved">
+<section id="section-5.3.11">
+          <h4 id="name-data_moved">
+<a href="#section-5.3.11" class="section-number selfRef">5.3.11. </a><a href="#name-data_moved" class="section-name selfRef">data_moved</a>
+          </h4>
+<p id="section-5.3.11-1">Importance: Base<a href="#section-5.3.11-1" class="pilcrow">¶</a></p>
+<p id="section-5.3.11-2">Used to indicate when data moves between the different layers (for example passing
+from HTTP/3 to QUIC stream buffers and vice versa) or between HTTP/3 and the actual
+user application on top (for example a browser engine). This helps make clear the
+flow of data, how long data remains in various buffers and the overheads
+introduced by individual layers.<a href="#section-5.3.11-2" class="pilcrow">¶</a></p>
+<p id="section-5.3.11-3">For example, this helps make clear whether received data on a QUIC stream is moved
+to the HTTP layer immediately (for example per received packet) or in larger
+batches (for example, all QUIC packets are processed first and afterwards the HTTP
+layer reads from the streams with newly available data). This in turn can help
+identify bottlenecks or scheduling problems.<a href="#section-5.3.11-3" class="pilcrow">¶</a></p>
+<p id="section-5.3.11-4">Data:<a href="#section-5.3.11-4" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-5.3.11-5">
+<pre>
+{
+    stream_id?:uint64,
+    offset?:uint64,
+    length?:uint64,
+
+    from?:string, // typically: use either of "application","http","transport"
+    to?:string, // typically: use either of "application","http","transport"
+
+    raw_length?:uint64,
+    raw?:bytes
+}
+</pre><a href="#section-5.3.11-5" class="pilcrow">¶</a>
+</div>
+<p id="section-5.3.11-6">Note: we do not for example use a "direction" field (with values "up" and "down")
+to specify the data flow. This is because in some optimized implementations, data
+might skip some individual layers. Additionally, using explicit "from" and "to"
+fields is more flexible and allows the definition of other conceptual "layers"
+(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
+library ("security") or from HTTP/3 to QPACK ("qpack")).<a href="#section-5.3.11-6" class="pilcrow">¶</a></p>
+<p id="section-5.3.11-7">Note: this event type is part of the "transport" category, but really spans all
+the different layers. This means we have a few leaky abstractions here (for
+example, the stream_id or stream offset might not be available at some logging
+points, or the raw data might not be in a byte-array form). In these situations,
+implementers can decide to define new, in-context fields to aid in manual
+debugging.<a href="#section-5.3.11-7" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 <div id="recovery">
@@ -2538,56 +2584,17 @@ once for the frame header, and further streamed data is indicated using the
 data_moved event.<a href="#section-6.1.4-5" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="datamoved">
-<section id="section-6.1.5">
-          <h4 id="name-data_moved">
-<a href="#section-6.1.5" class="section-number selfRef">6.1.5. </a><a href="#name-data_moved" class="section-name selfRef">data_moved</a>
-          </h4>
-<p id="section-6.1.5-1">Importance: Base<a href="#section-6.1.5-1" class="pilcrow">¶</a></p>
-<p id="section-6.1.5-2">Used to indicate when data moves between the HTTP/3 and the transport layer (e.g.,
-passing from H3 to QUIC stream buffers and vice versa) or between HTTP/3 and the
-actual user application on top (e.g., a browser engine). This helps make clear the
-flow of data, how long data remains in various buffers and the overheads
-introduced by HTTP/3's framing layer.<a href="#section-6.1.5-2" class="pilcrow">¶</a></p>
-<p id="section-6.1.5-3">For example, when moving from application to http, the data will most likely be
-the raw request we wish to transmit. When then moving that request from http to
-transport, it will be compressed using QPACK and wrapped in an HTTP/3 HEADERS
-frame. Similarly, when receiving data from the transport layer, this will
-potentially include HTTP/3 headers, which are not passed on to the application
-layer. A final use case is making clear when only part of an HTTP/3 frame is
-received (e.g., only 1 or 2 bytes, while 3, 4 or more are needed to fully
-interpret an HTTP/3 frame).<a href="#section-6.1.5-3" class="pilcrow">¶</a></p>
-<p id="section-6.1.5-4">Data:<a href="#section-6.1.5-4" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-6.1.5-5">
-<pre>
-{
-    stream_id:uint64,
-    offset?:uint64,
-    length?:uint64,
-
-    from?:"application"|"transport",
-    to?:"application"|"transport",
-
-    raw_length?:uint64,
-    raw?:bytes
-}
-</pre><a href="#section-6.1.5-5" class="pilcrow">¶</a>
-</div>
-<p id="section-6.1.5-6">The "from" and "to" fields MUST NOT be set at the same time. The missing field is
-always implied to have the value "http".<a href="#section-6.1.5-6" class="pilcrow">¶</a></p>
-</section>
-</div>
 <div id="pushresolved">
-<section id="section-6.1.6">
+<section id="section-6.1.5">
           <h4 id="name-push_resolved">
-<a href="#section-6.1.6" class="section-number selfRef">6.1.6. </a><a href="#name-push_resolved" class="section-name selfRef">push_resolved</a>
+<a href="#section-6.1.5" class="section-number selfRef">6.1.5. </a><a href="#name-push_resolved" class="section-name selfRef">push_resolved</a>
           </h4>
-<p id="section-6.1.6-1">Importance: Extra<a href="#section-6.1.6-1" class="pilcrow">¶</a></p>
-<p id="section-6.1.6-2">This event is emitted when a pushed resource is successfully claimed (used) or,
+<p id="section-6.1.5-1">Importance: Extra<a href="#section-6.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-6.1.5-2">This event is emitted when a pushed resource is successfully claimed (used) or,
 conversely, abandoned (rejected) by the application on top of HTTP/3 (e.g., the
 web browser). This event is added to help debug problems with unexpected PUSH
-behaviour, which is commonplace with HTTP/2.<a href="#section-6.1.6-2" class="pilcrow">¶</a></p>
-<div class="artwork art-text alignLeft" id="section-6.1.6-3">
+behaviour, which is commonplace with HTTP/2.<a href="#section-6.1.5-2" class="pilcrow">¶</a></p>
+<div class="artwork art-text alignLeft" id="section-6.1.5-3">
 <pre>
 {
     push_id?:uint64,
@@ -2595,7 +2602,7 @@ behaviour, which is commonplace with HTTP/2.<a href="#section-6.1.6-2" class="pi
 
     decision:"claimed"|"abandoned"
 }
-</pre><a href="#section-6.1.6-3" class="pilcrow">¶</a>
+</pre><a href="#section-6.1.5-3" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
@@ -4083,33 +4090,25 @@ class QPackHeaderBlockPrefix {
         <h2 id="name-since-draft-01">
 <a href="#section-d.1" class="section-number selfRef">D.1. </a><a href="#name-since-draft-01" class="section-name selfRef">Since draft-01:</a>
         </h2>
-<ul class="normal">
-<li class="normal" id="section-d.1-1.1">Merged loss_timer events into one loss_timer_updated event<a href="#section-d.1-1.1" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.2">Field data types are now strongly defined (#10,#39,#36,#115)<a href="#section-d.1-1.2" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.3">Renamed qpack instruction_received and instruction_sent to instruction_created
-and instruction_parsed (#114)<a href="#section-d.1-1.3" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.4">Updated qpack:dynamic_table_updated.update_type. It now has the value "inserted"
-instead of "added" (#113)<a href="#section-d.1-1.4" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.5">Updated qpack:dynamic_table_updated. It now has an "owner" field to
-differentiate encoder vs decoder state (#112)<a href="#section-d.1-1.5" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.6">Removed push_allowed from http:parameters_set (#110)<a href="#section-d.1-1.6" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.7">Removed explicit trigger field indications from events, since this was moved to
-be a generic property of the "data" field (#80)<a href="#section-d.1-1.7" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.8">Updated transport:connection_id_updated to be more in line with other similar
-events. Also dropped importance from Core to Base (#45)<a href="#section-d.1-1.8" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.9">Added length property to PaddingFrame (#34)<a href="#section-d.1-1.9" class="pilcrow">¶</a>
-</li>
-          <li class="normal" id="section-d.1-1.10">Added packet_number field to transport:frames_processed (#74)<a href="#section-d.1-1.10" class="pilcrow">¶</a>
-</li>
-        </ul>
+<p id="section-d.1-1">Major changes:
+* Moved data_moved from http to transport. Also made the "from" and "to" fields
+  flexible strings instead of an enum (#111,#65)<a href="#section-d.1-1" class="pilcrow">¶</a></p>
+<p id="section-d.1-2">Smaller changes:
+* Merged loss_timer events into one loss_timer_updated event
+* Field data types are now strongly defined (#10,#39,#36,#115)
+* Renamed qpack instruction_received and instruction_sent to instruction_created
+  and instruction_parsed (#114)
+* Updated qpack:dynamic_table_updated.update_type. It now has the value "inserted"
+  instead of "added" (#113)
+* Updated qpack:dynamic_table_updated. It now has an "owner" field to
+  differentiate encoder vs decoder state (#112)
+* Removed push_allowed from http:parameters_set (#110)
+* Removed explicit trigger field indications from events, since this was moved to
+  be a generic property of the "data" field (#80)
+* Updated transport:connection_id_updated to be more in line with other similar
+  events. Also dropped importance from Core to Base (#45)
+* Added length property to PaddingFrame (#34)
+* Added packet_number field to transport:frames_processed (#74)<a href="#section-d.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="since-draft-00">
