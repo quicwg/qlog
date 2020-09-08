@@ -202,11 +202,11 @@ single connection.
 
 Note that this can make it difficult to match logs from different vantage points
 with each other. For example, from the client side, it is easy to log connections
-with version negotiation or stateless retry in the same trace, while on the server
-they would most likely be logged in separate traces. Servers can take extra
-efforts (and keep additional state) to keep these events combined in a single
-trace however (for example by also matching connections on their four-tuple
-instead of just the connection ID).
+with version negotiation or retry in the same trace, while on the server they
+would most likely be logged in separate traces. Servers can take extra efforts
+(and keep additional state) to keep these events combined in a single trace
+however (for example by also matching connections on their four-tuple instead of
+just the connection ID).
 
 # QUIC and HTTP/3 fields
 
@@ -250,7 +250,7 @@ Data:
     quic_versions?: Array<string>, // the application layer protocols this server supports
     alpn_values?: Array<string>, // the application layer protocols this server supports
 
-    stateless_reset_required?:boolean // server will always respond with stateless_reset for incoming initials
+    retry_required?:boolean // the server will always answer client initials with a retry (no 1-RTT connection setups by choice)
 }
 ~~~
 
@@ -508,8 +508,12 @@ Data:
 
     is_coalesced?:boolean, // default value is false
 
-    stateless_reset_token?:bytes, // only if PacketType === stateless_reset
-    supported_versions:Array<bytes>, // only if PacketType === version_negotiation
+    retry_token?:bytes, // only if header.packet_type === retry
+    retry_token_length?:uint32, // only if header.packet_type === retry
+
+    stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
+
+    supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
 
     raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
     raw_encrypted?:bytes, // for debugging purposes
@@ -545,8 +549,12 @@ Data:
 
     is_coalesced?:boolean,
 
-    stateless_reset_token?:bytes, // only if PacketType === stateless_reset
-    supported_versions:Array<bytes>, // only if PacketType === version_negotiation
+    retry_token?:bytes, // only if header.packet_type === retry
+    retry_token_length?:uint32, // only if header.packet_type === retry
+
+    stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
+
+    supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
 
     raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
     raw_encrypted?:bytes, // for debugging purposes
@@ -1519,6 +1527,9 @@ class PacketHeader {
 
     flags?: uint8; // the bit flags of the packet headers (spin bit, key update bit, etc. up to and including the packet number length bits if present) interpreted as a single 8-bit integer
 
+    token?: bytes, // only if packet_type == initial
+    token_length?:uint32, // only if packet_type == initial
+
     // only if present in the header
     // if correctly using transport:connection_id_updated events,
     // dcid can be skipped for 1RTT packets
@@ -1752,7 +1763,7 @@ class NewConnectionIDFrame{
   connection_id_length?:uint8;
   connection_id:bytes;
 
-  stateless_reset_token?:bytes; // is always 128-bit
+  stateless_reset_token?:bytes; // is always 128-bit in length
 }
 ~~~
 
@@ -2173,6 +2184,7 @@ Major changes:
   PacketHeader to individual events (#40)
 * Made events that need to log packet_type and packet_number use a header field
   instead of logging these fields individually
+* Added support for logging retry and initial tokens (#94,#86)
 
 Smaller changes:
 * Merged loss_timer events into one loss_timer_updated event
