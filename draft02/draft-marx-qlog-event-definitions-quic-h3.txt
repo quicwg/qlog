@@ -207,11 +207,11 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
        C.2.3.  LiteralHeaderFieldWithoutName . . . . . . . . . . . .  51
        C.2.4.  QPackHeaderBlockPrefix  . . . . . . . . . . . . . . .  51
    Appendix D.  Change Log . . . . . . . . . . . . . . . . . . . . .  51
-     D.1.  Since draft-01: . . . . . . . . . . . . . . . . . . . . .  51
+     D.1.  Since draft-01: . . . . . . . . . . . . . . . . . . . . .  52
      D.2.  Since draft-00: . . . . . . . . . . . . . . . . . . . . .  52
    Appendix E.  Design Variations  . . . . . . . . . . . . . . . . .  52
-   Appendix F.  Acknowledgements . . . . . . . . . . . . . . . . . .  52
-   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  52
+   Appendix F.  Acknowledgements . . . . . . . . . . . . . . . . . .  53
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  53
 
 
 
@@ -383,9 +383,9 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
    Note that this can make it difficult to match logs from different
    vantage points with each other.  For example, from the client side,
-   it is easy to log connections with version negotiation or stateless
-   retry in the same trace, while on the server they would most likely
-   be logged in separate traces.  Servers can take extra efforts (and
+   it is easy to log connections with version negotiation or retry in
+   the same trace, while on the server they would most likely be logged
+   in separate traces.  Servers can take extra efforts (and keep
 
 
 
@@ -394,9 +394,9 @@ Marx                      Expires 12 March 2021                 [Page 7]
 Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
 
-   keep additional state) to keep these events combined in a single
-   trace however (for example by also matching connections on their
-   four-tuple instead of just the connection ID).
+   additional state) to keep these events combined in a single trace
+   however (for example by also matching connections on their four-tuple
+   instead of just the connection ID).
 
 4.  QUIC and HTTP/3 fields
 
@@ -459,7 +459,7 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
     quic_versions?: Array<string>, // the application layer protocols this server supports
     alpn_values?: Array<string>, // the application layer protocols this server supports
 
-    stateless_reset_required?:boolean // server will always respond with stateless_reset for incoming initials
+    retry_required?:boolean // the server will always answer client initials with a retry (no 1-RTT connection setups by choice)
 }
 
    Note: some QUIC stacks do not handle sockets directly and are thus
@@ -801,8 +801,12 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
     is_coalesced?:boolean, // default value is false
 
-    stateless_reset_token?:bytes, // only if PacketType === stateless_reset
-    supported_versions:Array<bytes>, // only if PacketType === version_negotiation
+    retry_token?:bytes, // only if header.packet_type === retry
+    retry_token_length?:uint32, // only if header.packet_type === retry
+
+    stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
+
+    supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
 
     raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
     raw_encrypted?:bytes, // for debugging purposes
@@ -830,10 +834,6 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
    Importance: Core
 
-   Data:
-
-
-
 
 
 
@@ -841,6 +841,8 @@ Marx                      Expires 12 March 2021                [Page 15]
 
 Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
+
+   Data:
 
 {
     header:PacketHeader,
@@ -851,8 +853,12 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
     is_coalesced?:boolean,
 
-    stateless_reset_token?:bytes, // only if PacketType === stateless_reset
-    supported_versions:Array<bytes>, // only if PacketType === version_negotiation
+    retry_token?:bytes, // only if header.packet_type === retry
+    retry_token_length?:uint32, // only if header.packet_type === retry
+
+    stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
+
+    supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
 
     raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
     raw_encrypted?:bytes, // for debugging purposes
@@ -884,12 +890,6 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
     raw?:bytes
 }
 
-   For this event, the "trigger" field SHOULD be set (for example to one
-   of the values below), as this helps tremendously in debugging.
-
-   Triggers:
-
-   *  "key_unavailable"
 
 
 
@@ -897,6 +897,13 @@ Marx                      Expires 12 March 2021                [Page 16]
 
 Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
+
+   For this event, the "trigger" field SHOULD be set (for example to one
+   of the values below), as this helps tremendously in debugging.
+
+   Triggers:
+
+   *  "key_unavailable"
 
    *  "unknown_connection_id"
 
@@ -936,6 +943,17 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
    Data:
 
+
+
+
+
+
+
+Marx                      Expires 12 March 2021                [Page 17]
+
+Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
+
+
 {
     header?:PacketHeader, // primarily packet_type and possible packet_number should be filled here, as other elements might not be available yet
 
@@ -946,13 +964,6 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
    *  "backpressure" // indicates the parser cannot keep up, temporarily
       buffers packet for later processing
-
-
-
-Marx                      Expires 12 March 2021                [Page 17]
-
-Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
-
 
    *  "keys_unavailable" // if packet cannot be decrypted because the
       proper keys were not yet available
@@ -990,6 +1001,15 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
    Importance: Extra
 
+
+
+
+
+Marx                      Expires 12 March 2021                [Page 18]
+
+Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
+
+
    When we drop a UDP-level datagram.  This is typically if it does not
    contain a valid QUIC packet (in that case, use packet_dropped
    instead).
@@ -999,16 +1019,6 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
    {
        byte_length?:uint32
    }
-
-
-
-
-
-
-Marx                      Expires 12 March 2021                [Page 18]
-
-Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
-
 
 5.3.9.  stream_state_updated
 
@@ -1021,16 +1031,6 @@ Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
    changes.
 
    Data:
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2138,6 +2138,9 @@ class PacketHeader {
 
     flags?: uint8; // the bit flags of the packet headers (spin bit, key update bit, etc. up to and including the packet number length bits if present) interpreted as a single 8-bit integer
 
+    token?: bytes, // only if packet_type == initial
+    token_length?:uint32, // only if packet_type == initial
+
     // only if present in the header
     // if correctly using transport:connection_id_updated events,
     // dcid can be skipped for 1RTT packets
@@ -2175,9 +2178,6 @@ A.6.1.  PaddingFrame
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
    interpreted and logged as an individual PaddingFrame.
-
-
-
 
 
 
@@ -2389,7 +2389,7 @@ A.6.15.  NewConnectionIDFrame
      connection_id_length?:uint8;
      connection_id:bytes;
 
-     stateless_reset_token?:bytes; // is always 128-bit
+     stateless_reset_token?:bytes; // is always 128-bit in length
    }
 
 A.6.16.  RetireConnectionIDFrame
@@ -2842,14 +2842,14 @@ C.2.4.  QPackHeaderBlockPrefix
 
 Appendix D.  Change Log
 
-D.1.  Since draft-01:
 
-   Major changes: * Moved data_moved from http to transport.  Also made
-   the "from" and "to" fields flexible strings instead of an enum
-   (#111,#65) * Moved packet_type fields to PacketHeader, and
-   packet_size field out of PacketHeader to individual events (#40) *
-   Made events that need to log packet_type and packet_number use a
-   header field instead of logging these fields individually
+
+
+
+
+
+
+
 
 
 
@@ -2857,6 +2857,16 @@ Marx                      Expires 12 March 2021                [Page 51]
 
 Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
 
+
+D.1.  Since draft-01:
+
+   Major changes: * Moved data_moved from http to transport.  Also made
+   the "from" and "to" fields flexible strings instead of an enum
+   (#111,#65) * Moved packet_type fields to PacketHeader, and
+   packet_size field out of PacketHeader to individual events (#40) *
+   Made events that need to log packet_type and packet_number use a
+   header field instead of logging these fields individually * Added
+   support for logging retry and initial tokens (#94,#86)
 
    Smaller changes: * Merged loss_timer events into one
    loss_timer_updated event * Field data types are now strongly defined
@@ -2896,6 +2906,14 @@ Appendix E.  Design Variations
 
    TBD
 
+
+
+
+Marx                      Expires 12 March 2021                [Page 52]
+
+Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
+
+
 Appendix F.  Acknowledgements
 
    Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri
@@ -2905,28 +2923,10 @@ Appendix F.  Acknowledgements
 
 Author's Address
 
-
-
-
-
-Marx                      Expires 12 March 2021                [Page 52]
-
-Internet-Draft QUIC and HTTP/3 event definitions for qlog September 2020
-
-
    Robin Marx
    Hasselt University
 
    Email: robin.marx@uhasselt.be
-
-
-
-
-
-
-
-
-
 
 
 
