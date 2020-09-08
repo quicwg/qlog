@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-09-07T13:47:41.898669+00:00",
+  "timestamp": "2020-09-08T12:31:35.200600+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -22,6 +22,11 @@
       "name": "quic-http3-fields",
       "description": "",
       "color": "d6354a"
+    },
+    {
+      "name": "long-term",
+      "description": "issue will be tackled but not for the current iteration",
+      "color": "ea049d"
     }
   ],
   "issues": [
@@ -1401,15 +1406,15 @@
       "id": "MDU6SXNzdWU1Nzc0NTA0NzY=",
       "title": "packet_dropped header_decrypt_error should be header_parse_error",
       "url": "https://github.com/quiclog/internet-drafts/issues/60",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Header decryption can never fail: it's just an XOR with a byte mask (header protection is not authenticated). You'd drop a packet though if header parsing fails, so maybe we can rename the trigger?",
       "createdAt": "2020-03-08T05:51:31Z",
-      "updatedAt": "2020-03-08T05:51:31Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-08T12:30:28Z",
+      "closedAt": "2020-09-08T12:30:28Z",
       "comments": []
     },
     {
@@ -1464,15 +1469,15 @@
       "id": "MDU6SXNzdWU1ODA0MzkwMTU=",
       "title": "Change data_moved to the transport category",
       "url": "https://github.com/quiclog/internet-drafts/issues/65",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Currently, `data_moved` is in the HTTP category, but it's (application) protocol agnostic and can be used for other application-layer protocols as well.\r\n\r\ncc @marten-seemann ",
       "createdAt": "2020-03-13T08:11:40Z",
-      "updatedAt": "2020-04-10T17:34:54Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T19:40:28Z",
+      "closedAt": "2020-09-07T19:40:28Z",
       "comments": [
         {
           "author": "LPardue",
@@ -1891,10 +1896,12 @@
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "long-term"
+      ],
       "body": "For example, an application might have more data ready to send, but cannot due to Flow Control or Congestion Control or Anti-Amplification limits. \r\n\r\nThese are currently only observable for the Flow Control case and only if the sender sends *_BLOCKED frames (which is optional). \r\n\r\nI'm not sure in which category this type of event would belong though... maybe look at msquic's handling (they have this type of event for sure). \r\n\r\ncc @scw00",
       "createdAt": "2020-05-26T08:50:30Z",
-      "updatedAt": "2020-05-26T08:56:56Z",
+      "updatedAt": "2020-09-08T12:28:12Z",
       "closedAt": null,
       "comments": []
     },
@@ -2012,7 +2019,7 @@
       "labels": [],
       "body": "Currently we do not have many fields for indicating (compressed) sizes of things.\r\n\r\nWe have the `packet_size`, but this is in the wrong place (#40) and `payload_length` (though it's not well-defined whether packet_size includes the TLS suffix). \r\n\r\nHowever, we lack size indicators for datagrams and, especially frames. When creating the qvis packetization diagram, this was very annoying, as I'd have to reconstruct the encoded frame headers to properly render those (and even then there might be rounding issues if the sender didn't encode things in the absolute minimum of bytes allowed). \r\n\r\nIn comparison, wireshark output does include exact sizes for these fields for TCP/TLS/H2 and this was quite handy. \r\n\r\nAnother point: need some way to indicate the used TLS AEAD tag length (though that should be constant for the entire connection and depends on the used cipher IIUC. For TCP+TLS from Wireshark I also had to manually calculate this from the cipher definitions though, which was a PITA). \r\n\r\nFinally, make terminology consistent (_size vs _length)\r\n",
       "createdAt": "2020-07-08T08:46:33Z",
-      "updatedAt": "2020-08-06T14:10:11Z",
+      "updatedAt": "2020-09-07T20:00:22Z",
       "closedAt": null,
       "comments": [
         {
@@ -2021,6 +2028,13 @@
           "body": "From a discussion on slack, most are in favor of adding AEAD length to the general packet_size field (one reasons is because the tag also contributes to cwnd calculation)",
           "createdAt": "2020-08-06T14:10:11Z",
           "updatedAt": "2020-08-06T14:10:11Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "We have a bit of a weird situation with packet_size, payload_size and header_size, in that if you have 2, you can calculate the third from those... so do we want to specify all three? \r\n\r\nI would reckon that packet_size and payload_size will typically be readily available to implementations, but header_size might be more difficult to come by (as headers can be of varying sizes, while payload is \"the rest of the packet after the header has been processed\"). \r\n\r\nFinally, there is overlap with what we currently call \"raw_length\" if we're logging the full raw byte contents of the packet (in the \"raw\" field, which we currently name \"raw\" across all events for consistency). To keep naming consistent, you'd want this \"raw_length\" here as well, but you also kind of want \"packet_size\" to show the core semantics (especially as I'd suspect most won't log the raw values (and accompanying \"raw_length\") in most places, but do log packet_size). A similar remark for datagram_size in the datagram_* events... do we live with having the same field defined twice with different names or do we remove packet_size and datagram_size and explain that people should use raw_length for those instead (I'm personally tending to this latter option).\r\n\r\nCould use some input on this @marten-seemann, @huitema, @dtikhonov\r\n\r\n",
+          "createdAt": "2020-09-07T20:00:22Z",
+          "updatedAt": "2020-09-07T20:00:22Z"
         }
       ]
     },
@@ -2036,9 +2050,17 @@
       "labels": [],
       "body": "This would be *really* important for generating metrics.\r\n\r\nLogically, it's a congestion event, but I'm not sure if it would probably make sense to add this as a state to the `congestion_state_updated` event, because once you declare persistent congestion, your congestion controller enters either slow start or congestion avoidance (not sure which one, haven't implemented persistent congestion yet), which are already `congestion_state_updated` events.",
       "createdAt": "2020-07-08T08:54:37Z",
-      "updatedAt": "2020-07-08T08:54:37Z",
+      "updatedAt": "2020-09-08T12:26:45Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So currently this is done using a trigger of \"persistent_congestion\" on the `congestion_state_updated` event (i.e., https://quiclog.github.io/internet-drafts/draft02/draft-marx-qlog-event-definitions-quic-h3.html#name-congestion_state_updated).\r\n\r\nReading your issue above, that seems like all that's needed? I know you have more experience with persistent_congestion at this point, so wondering if that is enough or we need something else?  ",
+          "createdAt": "2020-09-08T12:26:44Z",
+          "updatedAt": "2020-09-08T12:26:44Z"
+        }
+      ]
     },
     {
       "number": 101,
@@ -2377,15 +2399,15 @@
       "id": "MDU6SXNzdWU2Nzk4MTU5OTY=",
       "title": "data_moved describes three layers, but only two are specified",
       "url": "https://github.com/quiclog/internet-drafts/issues/111",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "dtikhonov",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "> Used to indicate when data moves between the HTTP/3 and the transport layer (e.g., passing from H3 to QUIC stream buffers and vice versa) or between HTTP/3 and the actual user application on top (e.g., a browser engine). This helps make clear the flow of data, how long data remains in various buffers and the overheads introduced by HTTP/3's framing layer.\r\n\r\nThe paragraph above describes three layers: transport, HTTP/3, and user application.\r\n\r\nThe definition allows for only two layers:\r\n\r\n```\r\n    from?:\"application\"|\"transport\",\r\n    to?:\"application\"|\"transport\",\r\n```\r\n\r\nIn addition, the definition of \"application\" is ambiguous: it could be the application protocol (HTTP/3) or the user application.",
       "createdAt": "2020-08-16T19:58:10Z",
-      "updatedAt": "2020-09-07T13:40:36Z",
-      "closedAt": null,
+      "updatedAt": "2020-09-07T19:40:40Z",
+      "closedAt": "2020-09-07T19:40:40Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2571,10 +2593,12 @@
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "long-term"
+      ],
       "body": "In real deployments, getting some feedback on certificate validation events is useful (e.g., these are included in NetLog).\r\n\r\nI wonder if these can be done as triggers... but on what event would those triggers be logged then? Maybe on a connection close if validation fails? What if it succeeds? \r\n\r\nAs I've seen some discussion about these things being async and sometimes depend on remote fetches (e.g., for OCSP), it would probably be useful to have separate events though. \r\n\r\nI need to get a better overview of the types of events though to decide on how to log this. Probably add something simple for draft-02 and extend in -03. ",
       "createdAt": "2020-09-07T08:37:28Z",
-      "updatedAt": "2020-09-07T08:37:28Z",
+      "updatedAt": "2020-09-08T12:27:29Z",
       "closedAt": null,
       "comments": []
     }
@@ -2704,52 +2728,68 @@
       "id": "MDExOlB1bGxSZXF1ZXN0MzY0NDk4MTI4",
       "title": "move packet_size to events, move packet_type to PacketHeader",
       "url": "https://github.com/quiclog/internet-drafts/pull/41",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #40.",
       "createdAt": "2020-01-19T05:31:38Z",
-      "updatedAt": "2020-01-19T05:31:44Z",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "comments": [],
-      "reviews": [],
+      "updatedAt": "2020-09-07T20:14:49Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
       "baseRefOid": "b50635531bbbbcd059d9670b0b97f55069defb4f",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "udp-vs-quic-header",
       "headRefOid": "ce9b1690e05a31048d39ec171721febb1922d618",
-      "mergeCommit": null
+      "closedAt": "2020-09-07T20:14:49Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "This was a slightly bigger change than initially anticipated and made in https://github.com/quiclog/internet-drafts/commit/0cb1f02e3c8a60962bc39b387c5db9ba12210556. ",
+          "createdAt": "2020-09-07T20:14:49Z",
+          "updatedAt": "2020-09-07T20:14:49Z"
+        }
+      ],
+      "reviews": []
     },
     {
       "number": 61,
       "id": "MDExOlB1bGxSZXF1ZXN0Mzg1MjMwMjI3",
       "title": "rename header_decrypt_error to header_parse_error",
       "url": "https://github.com/quiclog/internet-drafts/pull/61",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #60.",
       "createdAt": "2020-03-08T05:53:58Z",
-      "updatedAt": "2020-03-08T05:53:58Z",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "comments": [],
-      "reviews": [],
+      "updatedAt": "2020-09-08T12:30:47Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
       "baseRefOid": "b50635531bbbbcd059d9670b0b97f55069defb4f",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "header-decrypt-error",
       "headRefOid": "359513a3bb236747fcbd71ee1f506e12199293ad",
-      "mergeCommit": null
+      "closedAt": "2020-09-08T12:30:47Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Made change manually in draft02 branch in https://github.com/quiclog/internet-drafts/commit/a578e935e4cae5d3415bb46358a7b668bf4a4356",
+          "createdAt": "2020-09-08T12:30:47Z",
+          "updatedAt": "2020-09-08T12:30:47Z"
+        }
+      ],
+      "reviews": []
     },
     {
       "number": 63,
