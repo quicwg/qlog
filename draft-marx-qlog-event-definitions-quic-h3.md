@@ -1809,10 +1809,10 @@ type ErrorSpace = "transport" | "application";
 class ConnectionCloseFrame{
     frame_type:string = "connection_close";
 
-    error_space:ErrorSpace;
-    error_code:TransportError | ApplicationError | uint32;
-    raw_error_code:uint32;
-    reason:string;
+    error_space?:ErrorSpace;
+    error_code?:TransportError | ApplicationError | uint32;
+    raw_error_code?:uint32;
+    reason?:string;
 
     trigger_frame_type?:uint64 | string; // For known frame types, the appropriate "frame_type" string. For unknown frame types, the hex encoded identifier value
 }
