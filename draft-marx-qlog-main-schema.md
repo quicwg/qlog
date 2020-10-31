@@ -573,14 +573,17 @@ include a timestamp in the "time" field.
 Events in each individual trace SHOULD be logged in strictly ascending timestamp
 order (though not necessarily absolute value, for the "delta" format). Tools CAN
 sort all events on the timestamp before processing them, though are not required
-to (as this could impose a significant processing overhead).
+to (as this could impose a significant processing overhead). This can be a problem
+especially for multi-threaded and/or streaming loggers, who could consider using a
+separate postprocesser to order qlog events in time if a tool do not provide this
+feature.
 
 Timestamps do not have to use the UNIX epoch timestamp as their reference. For
 example for privacy considerations, any initial reference timestamps (for example
 "endpoint uptime in ms" or "time since connection start in ms") can be chosen.
 Tools SHOULD NOT assume the ability to derive the absolute Unix timestamp from
 qlog traces, nor allow on them to relatively order events across two or more
-separate files (in this case, clock drift should also be taken into account).
+separate traces (in this case, clock drift should also be taken into account).
 
 ### category and event {#name-field}
 
