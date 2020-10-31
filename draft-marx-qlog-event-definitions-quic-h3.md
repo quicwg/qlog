@@ -110,21 +110,6 @@ definition language, inspired by JSON and TypeScript, and described in
 This document describes the values of the qlog "name" ("category" + "event") and
 "data" fields and their semantics for the QUIC and HTTP/3 protocols.
 
-Many of the events map directly to concepts seen in the QUIC and HTTP/3 documents,
-while others act as aggregating events that combine data from several possible
-protocol behaviours or code paths into one, to reduce the amount of different
-event definitions. Limiting the amount of different events is one of the main
-design goals for this document. As such, many events that can be directly inferred
-from data on the wire (for example flow control limit changes) if the
-implementation is bug-free, are not explicitly defined as stand-alone events.
-Exceptions can be made for common events that benefit from being easily
-identifiable or individually logged (for example the `packet_acked` event).
-
-Similarly, we prevent logging duplicate data as much as possible. As such,
-especially packet header value updates are split out into separate events (for
-example spin_bit_updated, connection_id_updated), as they are expected to change
-sparingly.
-
 This document assumes the usage of the encompassing main qlog schema defined in
 [QLOG-MAIN]. Each subsection below defines a separate category (for example
 connectivity, transport, http) and each subsubsection is an event type (for
@@ -135,13 +120,32 @@ accompanied by possible values for the optional "trigger" field. For the
 definition and semantics of "trigger", see the main schema document.
 
 Most of the complex datastructures, enums and re-usable definitions are grouped
-together on the bottom of the document for clarity.
+together on the bottom of this document for clarity.
 
 ## Importance
 
-Not all the listed events are of equal importance to achieve good debuggability.
-As such, each event has an "importance indicator" with one of three values, in
-decreasing order of importance and exptected usage:
+Many of the events defined in this document map directly to concepts seen in the
+QUIC and HTTP/3 documents, while others act as aggregating events that combine
+data from several possible protocol behaviours or code paths into one. This is
+done to reduce the amount of unique event definitions, as reflecting each possible
+protocol event as a separate qlog entity would cause an explosion of event types.
+Similarly, we prevent logging duplicate packet data as much as possible. As such,
+especially packet header value updates are split out into separate events (for
+example spin_bit_updated, connection_id_updated), as they are expected to change
+sparingly.
+
+Consequently, many events that can be directly inferred from data on the wire (for
+example flow control limit changes) if the implementation is bug-free, are
+currently not explicitly defined as stand-alone events. Exceptions can be made for
+common events that benefit from being easily identifiable or individually logged
+(for example the `packet_acked` event). This can in turn give rise to separate
+events logging similar data, where it is not always clear which event should be
+logged (for example the separate `connection_started` event, whereas the more
+general `connection_state_updated` event also allows indicating that a connection
+was started).
+
+To aid in this decision making, each event has an "importance indicator" with one
+of three values, in decreasing order of importance and exptected usage:
 
 * Core
 * Base
@@ -166,12 +170,16 @@ implementation, rather than the protocol. They allow more fine-grained tracking 
 internal behaviour. As such, they CAN be present in qlog files and tool
 implementers CAN add support for these, but they are not required to.
 
-Note that in some cases, implementers might not want to log frame-level details in
-the "Core" events due to performance considerations. In this case, they SHOULD use
-(a subset of) relevant "Base" events instead to ensure usability of the qlog
-output. As an example, implementations that do not log "packet_received" events
-and thus also not which (if any) ACK frames the packet contain, SHOULD log
-packets_acknowledged events instead.
+Note that in some cases, implementers might not want to log for example
+frame-level details in the "Core" events due to performance or privacy
+considerations. In this case, they SHOULD use (a subset of) relevant "Base" events
+instead to ensure usability of the qlog output. As an example, implementations
+that do not log "packet_received" events and thus also not which (if any) ACK
+frames the packet contain, SHOULD log `packet_acked` events instead.
+
+Finally, for event types who's data (partially) overlap with other event types'
+definitions, where necessary this document includes guidance on which to use in
+specific situations.
 
 ## Custom fields
 
@@ -2204,6 +2212,7 @@ Smaller changes:
 * Added packet_number field to transport:frames_processed (#74)
 * Added a way to generically log packet header flags (first 8 bits) to
   PacketHeader
+* Added additional guidance on which events to log in which situations (#53)
 
 
 ## Since draft-00:
