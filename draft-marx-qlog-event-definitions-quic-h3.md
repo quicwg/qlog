@@ -1344,23 +1344,29 @@ Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
 
-# General error, warning and debugging definitions
+# Generic events and Simulation indicators
 
-## error
+## generic
+
+The main goal of the events in this category is to allow implementations to fully
+replace their existing text-based logging by qlog. This is done by providing
+events to log generic strings for typical well-known logging levels (error,
+warning, info, debug, verbose).
 
 ### connection_error
 Importance: Core
 
-Logged when there is a connection error. Can be inferred from a CONNECTION_CLOSE
-frame, but one might refrain from sending a long string in that frame, while
-logging it here.
+Logged when there is a connection error. Can typically be inferred from a
+CONNECTION_CLOSE frame, but one might refrain from sending a long string or many
+details in that frame, while logging it here. Alternatively, some implementations
+do not want to leak the actual error to the outside in CONNECTION_CLOSE.
 
 Data:
 
 ~~~~
 {
     code?:TransportError | CryptoError | uint32,
-    description?:string
+    message?:string
 }
 ~~~~
 
@@ -1368,19 +1374,20 @@ Data:
 Importance: Core
 
 Logged when there is an application error. Can be inferred from a CONNECTION_CLOSE
-frame, but one might refrain from sending a long string in that frame, while
-logging it here.
+frame, but one might refrain from sending a long string or many details in that
+frame, while logging it here. Alternatively, some implementations do not want to
+leak the actual error to the outside in CONNECTION_CLOSE.
 
 Data:
 
 ~~~~
 {
     code?:ApplicationError | uint32,
-    description?:string
+    message?:string
 }
 ~~~~
 
-### internal_error
+### error
 Importance: Base
 
 Used to log details of an internal error that might get translated into a more
@@ -1391,13 +1398,11 @@ Data:
 ~~~~
 {
     code?:uint32,
-    description?:string
+    message?:string
 }
 ~~~~
 
-## warning
-
-### internal_warning
+### warning
 Importance: Base
 
 Used to log details of an internal warning that might not get reflected on the
@@ -1408,13 +1413,11 @@ Data:
 ~~~~
 {
     code?:uint32,
-    description?:string
+    message?:string
 }
 ~~~~
 
-## info
-
-### message
+### info
 Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
@@ -1428,9 +1431,7 @@ Data:
 }
 ~~~~
 
-## debug
-
-### message
+### debug
 Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
@@ -1444,9 +1445,7 @@ Data:
 }
 ~~~~
 
-## verbose
-
-### message
+### verbose
 Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
@@ -1462,18 +1461,38 @@ Data:
 
 ## simulation
 
-### marker
+When evaluating a protocol evaluation, one typically sets up a series of
+interoperability or benchmarking tests, in which the test situations can change
+over time. For example, the network bandwidth or latency can vary during the test,
+or the network can be fully disable for a short time. In these setups, it is
+useful to know when exactly these conditions are triggered, to allow for proper
+correlation with other events.
+
+### scenario
 Importance: Extra
 
-Used for when running an implementation in a form of simulation setup where
-specific emulation conditions are triggered at set times (e.g., at 3 seconds in 2%
-packet loss is introduced, at 10s a NAT rebind is triggered). Marker events can be
-added to the logs and visualizations to show clearly when underlying conditions
-have been changed.
+Used to specify which specific scenario is being tested at this particular
+instance. This could also be reflected in the top-level qlog's `summary` or
+`configuration` fields, but having a separate event allows easier aggregation of
+several simulations into one trace.
 
 ~~~~
 {
-    marker_type:string,
+    name?:string,
+    details?:any
+}
+~~~~
+
+### marker
+Importance: Extra
+
+Used to indicate when specific emulation conditions are triggered at set times
+(e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
+triggered).
+
+~~~~
+{
+    type?:string,
     message?:string
 }
 ~~~~
@@ -2193,6 +2212,7 @@ Major changes:
 * Made events that need to log packet_type and packet_number use a header field
   instead of logging these fields individually
 * Added support for logging retry and initial tokens (#94,#86)
+* Moved separate general event categories into a single category "generic" (#47)
 
 Smaller changes:
 * Merged loss_timer events into one loss_timer_updated event
@@ -2213,6 +2233,7 @@ Smaller changes:
 * Added a way to generically log packet header flags (first 8 bits) to
   PacketHeader
 * Added additional guidance on which events to log in which situations (#53)
+* Added "simulation:scenario" event to help indicate simulation details
 
 
 ## Since draft-00:
