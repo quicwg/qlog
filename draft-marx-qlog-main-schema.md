@@ -1042,6 +1042,9 @@ implementers SHOULD allow the last event entry of a qlog trace to be an empty
 object. This allows loggers to simply close the qlog file by appending "{}]}]}"
 after their last added event.
 
+Finally, while not specifically required by the JSON specification, all qlog field
+names in a JSON serialization MUST be lowercase.
+
 ## qlog to NDJSON mapping {#format-ndjson}
 
 One of the downsides of using pure JSON is that it is inherently a non-streamable
@@ -1096,6 +1099,9 @@ NDJSON serialization:
 ~~~~~~~~
 {: .language-json}
 {: #ndjson-example title="Top-level element"}
+
+Finally, while not specifically required by the NDJSON specification, all qlog
+field names in a NDJSON serialization MUST be lowercase.
 
 ### Supporting NDJSON in tooling
 
