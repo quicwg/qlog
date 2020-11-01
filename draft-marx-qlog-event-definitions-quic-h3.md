@@ -138,7 +138,7 @@ Consequently, many events that can be directly inferred from data on the wire (f
 example flow control limit changes) if the implementation is bug-free, are
 currently not explicitly defined as stand-alone events. Exceptions can be made for
 common events that benefit from being easily identifiable or individually logged
-(for example the `packet_acked` event). This can in turn give rise to separate
+(for example the `packets_acked` event). This can in turn give rise to separate
 events logging similar data, where it is not always clear which event should be
 logged (for example the separate `connection_started` event, whereas the more
 general `connection_state_updated` event also allows indicating that a connection
@@ -175,7 +175,7 @@ frame-level details in the "Core" events due to performance or privacy
 considerations. In this case, they SHOULD use (a subset of) relevant "Base" events
 instead to ensure usability of the qlog output. As an example, implementations
 that do not log "packet_received" events and thus also not which (if any) ACK
-frames the packet contain, SHOULD log `packet_acked` events instead.
+frames the packet contain, SHOULD log `packets_acked` events instead.
 
 Finally, for event types who's data (partially) overlap with other event types'
 definitions, where necessary this document includes guidance on which to use in
@@ -640,6 +640,28 @@ Triggers:
   packet for later processing
 * "keys_unavailable" // if packet cannot be decrypted because the proper keys were
   not yet available
+
+### packets_acked
+Importance: Extra
+
+This event is emitted when a (group of) sent packet(s) is acknowledged by the
+remote peer _for the first time_. This information could also be deduced from the
+contents of received ACK frames. However, ACK frames require additional processing
+logic to determine when a given packet is acknowledged for the first time, as QUIC
+uses ACK ranges which can include repeated ACKs. Additionally, this event can be
+used by implementations that do not log frame contents.
+
+Data:
+~~~
+{
+    packet_number_space?:PacketNumberSpace,
+    packet_numbers?:Array[uint64]
+}
+~~~
+
+Note: if packet_number_space is omitted, it assumes the default value of
+PacketNumberSpace.application_data, as this is by far the most prevalent packet
+number space a typical QUIC connection will use.
 
 ### datagrams_sent
 Importance: Extra
@@ -2234,6 +2256,7 @@ Smaller changes:
   PacketHeader
 * Added additional guidance on which events to log in which situations (#53)
 * Added "simulation:scenario" event to help indicate simulation details
+* Added "packets_acked" event (#107)
 
 
 ## Since draft-00:
