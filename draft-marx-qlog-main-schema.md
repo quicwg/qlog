@@ -21,7 +21,7 @@ author:
 normative:
   QLOG-QUIC-HTTP3:
     title: "QUIC and HTTP/3 event definitions for qlog"
-    date: 2020-09-15
+    date: 2020-11-02
     seriesinfo:
       Internet-Draft: draft-marx-qlog-event-definitions-quic-h3-02
     author:

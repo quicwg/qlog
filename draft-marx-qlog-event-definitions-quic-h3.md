@@ -22,8 +22,8 @@ normative:
   QUIC-TRANSPORT:
     title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-transport-29
-    date: 2020-06-10
+      Internet-Draft: draft-ietf-quic-transport-32
+    date: 2020-10-01
     author:
       -
         ins: J. Iyengar
@@ -37,9 +37,9 @@ normative:
         role: editor
   QUIC-HTTP:
     title: "Hypertext Transfer Protocol Version 3 (HTTP/3)"
-    date: 2020-06-10
+    date: 2020-10-01
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-29
+      Internet-Draft: draft-ietf-quic-http-32
     author:
       -
         ins: M. Bishop
@@ -48,9 +48,9 @@ normative:
         role: editor
   QUIC-QPACK:
     title: "QPACK: Header Compression for HTTP/3"
-    date: 2020-06-09
+    date: 2020-10-20
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-16
+      Internet-Draft: draft-ietf-quic-qpack-19
     author:
       -
         ins: A. Frindell
@@ -59,9 +59,9 @@ normative:
         role: editor
   QLOG-MAIN:
     title: "Main logging schema for qlog"
-    date: 2019-10-14
+    date: 2020-11-02
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-main-schema-01
+      Internet-Draft: draft-marx-qlog-main-schema-02
     author:
       -
         ins: R. Marx
