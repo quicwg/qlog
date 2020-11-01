@@ -525,7 +525,9 @@ Data:
 
     raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
     raw_encrypted?:bytes, // for debugging purposes
-    raw_decrypted?:bytes  // for debugging purposes
+    raw_decrypted?:bytes,  // for debugging purposes
+
+    datagram_id?:uint32
 }
 ~~~
 
@@ -541,6 +543,8 @@ Triggers:
 * "cc_bandwidth_probe" // needed for some CCs to figure out bandwidth allocations
   when there are no normal sends
 
+Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+when keeping track of packet coalescing.
 
 ### packet_received
 Importance: Core
@@ -566,7 +570,9 @@ Data:
 
     raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
     raw_encrypted?:bytes, // for debugging purposes
-    raw_decrypted?:bytes  // for debugging purposes,
+    raw_decrypted?:bytes,  // for debugging purposes
+
+    datagram_id?:uint32
 }
 ~~~
 
@@ -577,6 +583,9 @@ Triggers:
 
 * "keys_available" // if packet was buffered because it couldn't be decrypted
   before
+
+Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+when keeping track of packet coalescing.
 
 ### packet_dropped
 Importance: Base
@@ -590,7 +599,9 @@ Data:
     header?:PacketHeader, // primarily packet_type should be filled here, as other fields might not be parseable
 
     raw_length?:uint32,
-    raw?:bytes
+    raw?:bytes,
+
+    datagram_id?:uint32
 }
 ~~~
 
@@ -616,6 +627,9 @@ Note: sometimes packets are dropped before they can be associated with a
 particular connection (e.g., in case of "unsupported_version"). This situation is
 discussed more in {{handling-unknown-connections}}.
 
+Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+when keeping track of packet coalescing.
+
 
 ### packet_buffered
 Importance: Base
@@ -630,9 +644,14 @@ Data:
 {
     header?:PacketHeader, // primarily packet_type and possible packet_number should be filled here, as other elements might not be available yet
 
-    packet_size?:uint32 // full encrypted packet size, including AEAD tag
+    packet_size?:uint32, // full encrypted packet size, including AEAD tag
+
+    datagram_id?:uint32
 }
 ~~~
+
+Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+when keeping track of packet coalescing.
 
 Triggers:
 
@@ -655,7 +674,8 @@ Data:
 ~~~
 {
     packet_number_space?:PacketNumberSpace,
-    packet_numbers?:Array[uint64]
+
+    packet_numbers?:Array<uint64>
 }
 ~~~
 
@@ -663,7 +683,7 @@ Note: if packet_number_space is omitted, it assumes the default value of
 PacketNumberSpace.application_data, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
-### datagrams_sent
+### datagrams_sent {#datagram-id}
 Importance: Extra
 
 When we pass one or more UDP-level datagrams to the socket. This is useful for
@@ -674,9 +694,20 @@ Data:
 ~~~
 {
     count?:uint16, // to support passing multiple at once
-    byte_length?:uint32
+    byte_lengths?:Array<uint32>,
+
+    datagram_ids?:Array<uint32>
 }
 ~~~
+
+Note: QUIC itself does not have a concept of a "datagram_id". This field is a
+purely qlog-specific construct to allow tracking how multiple QUIC packets are
+coalesced inside of a single UDP datagram, which is an important optimization
+during the QUIC handshake. For this, implementations assign a (per-endpoint)
+unique ID to each datagram and keep track of which packets were coalesced into the
+same datagram. As packet coalescing typically only happens during the handshake
+(as it requires at least one long header packet), this can be done without much
+overhead.
 
 ### datagrams_received
 Importance: Extra
@@ -689,9 +720,13 @@ Data:
 ~~~
 {
     count?:uint16, // to support passing multiple at once
-    byte_length?:uint32
+    byte_lengths?:Array<uint32>,
+
+    datagram_ids?:Array<uint32>
 }
 ~~~
+
+Note: for more details on "datagram_ids", see {{datagram-id}}.
 
 ### datagram_dropped
 Importance: Extra
@@ -2227,6 +2262,7 @@ class QPackHeaderBlockPrefix {
 ## Since draft-01:
 
 Major changes:
+
 * Moved data_moved from http to transport. Also made the "from" and "to" fields
   flexible strings instead of an enum (#111,#65)
 * Moved packet_type fields to PacketHeader, and packet_size field out of
@@ -2237,6 +2273,7 @@ Major changes:
 * Moved separate general event categories into a single category "generic" (#47)
 
 Smaller changes:
+
 * Merged loss_timer events into one loss_timer_updated event
 * Field data types are now strongly defined (#10,#39,#36,#115)
 * Renamed qpack instruction_received and instruction_sent to instruction_created
@@ -2257,6 +2294,8 @@ Smaller changes:
 * Added additional guidance on which events to log in which situations (#53)
 * Added "simulation:scenario" event to help indicate simulation details
 * Added "packets_acked" event (#107)
+* Added "datagram_ids" to the datagram_X and packet_X events to allow tracking of
+  coalesced QUIC packets (#91)
 
 
 ## Since draft-00:
