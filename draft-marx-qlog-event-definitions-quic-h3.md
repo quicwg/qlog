@@ -566,6 +566,7 @@ Triggers:
 ## transport
 
 ### version_information
+Importance: Core
 
 QUIC endpoints each have their own list of of QUIC versions they support. The
 client uses the most likely version in their first initial. If the server does
@@ -600,6 +601,7 @@ Intended use:
   the next initial packet
 
 ### alpn_information
+Importance: Core
 
 QUIC implementations each have their own list of application level protocols and
 versions thereof they support. The client includes a list of their supported
@@ -649,9 +651,9 @@ settings from two sides, you MUST emit two separate event instances.
 
 In the case of connection resumption and 0-RTT, some of the server's parameters
 are stored up-front at the client and used for the initial connection startup.
-They are later updated with the server's reply. In these cases, these parameters
-are logged twice: once at the very start of the connection and once when the
-updated parameters become available.
+They are later updated with the server's reply. In these cases, utilize the
+separate `parameters_restored` event to indicate the initial values, and this
+event to indicate the updated values, as normal.
 
 Data:
 
@@ -701,8 +703,39 @@ interface PreferredAddress {
 
 Additionally, this event can contain any number of unspecified fields. This is to
 reflect setting of for example unknown (greased) transport parameters or employed
-(proprietary) extensions. In this case, the field name should be the hex-encoded
-value of the parameter name or identifier.
+(proprietary) extensions.
+
+### parameters_restored
+Importance: Base
+
+When using QUIC 0-RTT, clients are expected to remember and restore the server's
+transport parameters from the previous connection. This event is used to indicate
+which parameters were restored and to which values when utilizing 0-RTT. Note that
+not all transport parameters should be restored (many are even prohibited from
+being re-utilized). The ones listed here are the ones expected to be useful for
+correct 0-RTT usage.
+
+Data:
+
+~~~
+{
+    disable_active_migration?:boolean,
+
+    max_idle_timeout?:uint64,
+    max_udp_payload_size?:uint32,
+    active_connection_id_limit?:uint32,
+
+    initial_max_data?:uint64,
+    initial_max_stream_data_bidi_local?:uint64,
+    initial_max_stream_data_bidi_remote?:uint64,
+    initial_max_stream_data_uni?:uint64,
+    initial_max_streams_bidi?:uint64,
+    initial_max_streams_uni?:uint64,
+}
+~~~
+
+Note that, like parameters_set above, this event can contain any number of
+unspecified fields to allow for additional/custom parameters.
 
 ### packet_sent
 Importance: Core
@@ -1309,8 +1342,27 @@ should be logged using the frame_created and frame_parsed events below.
 
 Additionally, this event can contain any number of unspecified fields. This is to
 reflect setting of for example unknown (greased) settings or parameters of
-(proprietary) extensions. In this case, the field name should be the hex-encoded
-value of the setting identifier.
+(proprietary) extensions.
+
+### parameters_restored
+Importance: Base
+
+When using QUIC 0-RTT, clients are expected to remember and reuse the server's
+SETTINGs from the previous connection. This event is used to indicate which
+settings were restored and to which values when utilizing 0-RTT.
+
+Data:
+
+~~~
+{
+    max_header_list_size?:uint64,
+    max_table_capacity?:uint64,
+    blocked_streams_count?:uint64
+}
+~~~
+
+Note that, like for parameters_set above, this event can contain any number of
+unspecified fields to allow for additional and custom settings.
 
 ### stream_type_set
 Importance: Base
@@ -2460,6 +2512,7 @@ Major changes:
 * Moved separate general event categories into a single category "generic" (#47)
 * Added "transport:connection_closed" event (#43,#85,#78,#49)
 * Added version_information and alpn_information events (#85,#75,#28)
+* Added parameters_restored events to help clarify 0-RTT behaviour (#88)
 
 Smaller changes:
 
