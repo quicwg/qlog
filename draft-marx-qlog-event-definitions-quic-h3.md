@@ -393,6 +393,7 @@ Triggers:
 * error // this is called the "immediate close" in the QUIC specification
 * stateless_reset
 * version_mismatch
+* application // for example HTTP/3's GOAWAY frame
 
 
 ### connection_id_updated
@@ -440,37 +441,81 @@ TODO
 ### connection_state_updated
 Importance: Base
 
-Data:
+This event is used to track progress through QUIC's complex handshake and
+connection close procedures. It is intended to provide exhaustive options to log
+each state individually, but also provides a more basic, simpler set for
+implementations less interested in tracking each smaller state transition. As
+such, users should not expect to see -all- these states reflected in all qlogs and
+implementers should focus on support for the SimpleConnectionState set.
 
+Data:
 ~~~
 {
-    old?:ConnectionState,
-    new:ConnectionState
+    old?: ConnectionState | SimpleConnectionState,
+    new: ConnectionState | SimpleConnectionState
 }
 
 enum ConnectionState {
-    attempted, // client initial sent
-    reset, // stateless reset sent
-    handshake, // handshake in progress
-    active, // handshake successful, data exchange
-    keepalive, // no data for a longer period
-    draining, // CONNECTION_CLOSE sent
-    closed // connection actually fully closed, memory freed
+    attempted, // initial sent/received
+    peer_validated, // peer address validated by: client sent Handshake packet OR client used CONNID chosen by the server. transport-draft-32, section-8.1
+    handshake_started,
+    early_write, // 1 RTT can be sent, but handshake isn't done yet
+    handshake_complete, // TLS handshake complete: Finished received and sent. tls-draft-32, section-4.1.1
+    handshake_confirmed, // HANDSHAKE_DONE sent/received (connection is now "active", 1RTT can be sent). tls-draft-32, section-4.1.2
+    closing,
+    draining, // connection_close sent/received
+    closed // draining period done, connection state discarded
 }
 
+enum SimpleConnectionState {
+    attempted,
+    handshake_started,
+    handshake_confirmed,
+    closed
+}
 ~~~
 
-Note: connection_state_changed with a new state of "attempted" is the same
+These states correspond to the following transitions for both client and server:
+
+**Client:**
+
+- send initial
+    - state = attempted
+- get initial
+    - state = validated _(not really "needed" at the client, but somewhat useful to indicate progress nonetheless)_
+- get first Handshake packet
+    - state = handshake_started
+- get Handshake packet containing ServerFinished
+    - state = handshake_complete
+- send ClientFinished
+    - state = early_write
+    (1RTT can now be sent)
+- get HANDSHAKE_DONE
+    - state = handshake_confirmed
+
+**Server:**
+
+- get initial
+    - state = attempted
+- send initial _(don't think this needs a separate state, since some handshake will always be sent in the same flight as this?)_
+- send handshake EE, CERT, CV, ...
+    - state = handshake_started
+- send ServerFinished
+    - state = early_write
+    (1RTT can now be sent)
+- get first handshake packet / something using a server-issued CID of min length
+    - state = validated
+- get handshake packet containing ClientFinished
+    - state = handshake_complete
+- send HANDSHAKE_DONE
+    - state = handshake_confirmed
+
+Note:
+
+: connection_state_changed with a new state of "attempted" is the same
 conceptual event as the connection_started event above from the client's
-perspective.
-
-Triggers:
-
-* "error" // when closing because of an unexpected event
-* "clean" // when closing normally
-* "application" // e.g., HTTP/3's GOAWAY frame
-* "stateless_reset" // because a stateless reset was received
-* "version_negotiation" // because there's no mutually supported version
+perspective. Similarly, a state of "closing" or "draining" corresponds to the
+connection_closed event.
 
 ### MIGRATION-related events
 e.g., path_updated
@@ -2381,6 +2426,7 @@ Smaller changes:
 * Added "packets_acked" event (#107)
 * Added "datagram_ids" to the datagram_X and packet_X events to allow tracking of
   coalesced QUIC packets (#91)
+* Extended connection_state_updated with more fine-grained states (#49)
 
 
 ## Since draft-00:
