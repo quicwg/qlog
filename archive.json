@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-11-01T13:04:13.054838+00:00",
+  "timestamp": "2020-11-02T16:47:11.437104+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -883,11 +883,11 @@
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [
-        "current-version"
+        "future-versions"
       ],
       "body": "@marten-seemann asked how to best approach logging from a server's perspective, given that things like version negotiation and stateless retry are not inherently tied to a single connection. We should add some informative guidance on how to best approach this to the spec, depending on how much state you're willing to keep around \r\n\r\nSome options:\r\n\r\n1. low state: keep a separate qlog file for the entire server. This logs vneg, retry, etc.. Then, when a connection is truly accepted, start a new .qlog for the individual connection, containing all events thereafter. The server.qlog can then also contain an event signalling the acceptance of a new connection for later cross-linking between the files.\r\n2. low state: keep a single huge qlog file for everything, using the \"group_id\" field to allow later de-multiplexing into separate connections (I believe quant does this atm)\r\n3. stateful: if you already track vneg/retry and link them up with the final connection, you can output them in the per-connection qlog file as well\r\n\r\nMaybe also shortly talk about some of the trade-offs in each option. Also talk about how to approach server-level events like server_listening and packet_dropped in separate scenarios. ",
       "createdAt": "2020-01-18T10:33:53Z",
-      "updatedAt": "2020-10-31T14:00:59Z",
+      "updatedAt": "2020-11-01T13:04:40Z",
       "closedAt": null,
       "comments": []
     },
@@ -1055,9 +1055,24 @@
       ],
       "body": "Currently, we rely on packet_* with a CONNECTION_CLOSE frame, but that's not always enough. E.g., the server can decide to drop a connection after a long timeout without sending a CONNECTION_CLOSE. Or, we might want additional information of when a connection is effectively dropped completely (according to @marten-seemann: is supposed to happen 3 PTOs after it is retired)\r\n\r\nMaybe a connection_closed event with a trigger field suffices? Should this be importance Base or Extra?",
       "createdAt": "2020-01-21T10:23:18Z",
-      "updatedAt": "2020-10-31T13:59:46Z",
+      "updatedAt": "2020-11-02T08:07:26Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So I'm currently breaking my head on this one as there are a lot of aspects to closing connections in QUIC:\r\n\r\n1. there are three different states: closing, draining, actually closed\r\n2. there are many different reasons for \"closing\": idle timeout/handshake timeout, \"immediate close\", stateless reset, no overlapping versions, ...\r\n3. within immediate close, there are different error spaces: connection errors, application errors (which don't always reflect the actual internal error properly)\r\n\r\nCurrently (see draft02 branch), these things are kind of spread out across three different events:\r\n- connectivity:connection_state_updated\r\n- generic:connection_error\r\n- generic:application_error\r\n\r\nCombining this into a single `connection_closed` event with all that flexibility would thus lead to some serious duplication across the board..., not to mention a very complex event\r\n\r\nHowever, looking at https://github.com/lucas-clemente/quic-go/pull/2501/files, which seems the main use case for @marten-seemann at least, all he really cares about is logging a free-form string \"reason\" for a connection_closed event, as well as having a separate event type so it's easy to query just the `connection_closed`, instead of having to sift through `connection_state_updated`. \r\n\r\nSo, my proposal would be to add `connection_closed` as a quite high-level event, mainly useful for manual interpretation, referring to the other existing events if the need arises to log more fine-grained info. \r\n\r\nThus, the proposed design of `connection_closed` for draft-02:\r\n\r\n```\r\n{\r\n        owner?:\"local\"|\"remote\",\r\n\r\n        connection_error_code?:uint32,\r\n        application_error_code?:uint32,\r\n     \r\n        reason?:string\r\n}\r\n\r\nTriggers:\r\n* clean\r\n* handshake_timeout\r\n* idle_timeout\r\n* error // basically the \"immediate close\" case\r\n* stateless_reset\r\n* version_mismatch\r\n```\r\n(reminder, in qlog, each event has an implicit trigger field, which can contain any string value, so other triggers would be valid here as well)\r\n\r\nI'm not particularly happy with this design, but it's better than others I could come up with.\r\n\r\nDoes this suit your use case @marten-seemann? Can you let me know by tomorrow evening (2nd November)? Thanks! \r\n\r\n",
+          "createdAt": "2020-11-01T15:39:58Z",
+          "updatedAt": "2020-11-01T15:39:58Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Why do we need `generic:connection_error` and a `generic:application_error`?",
+          "createdAt": "2020-11-02T08:07:26Z",
+          "updatedAt": "2020-11-02T08:07:26Z"
+        }
+      ]
     },
     {
       "number": 44,
@@ -1575,7 +1590,7 @@
       "id": "MDU6SXNzdWU1ODM1Njc3NDk=",
       "title": "relax ordering requirement",
       "url": "https://github.com/quiclog/internet-drafts/issues/66",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -1584,8 +1599,8 @@
       ],
       "body": "The spec currently says:\r\n> Events in each individual trace MUST be logged in strictly ascending timestamp order (though not necessarily absolute value, for the \"delta_time\" setup). Tools are NOT expected to sort all events on the timestamp before processing them.\r\n\r\nThis poses problems for multi-threaded implementations that implement a streaming encoder. Since qlogs take up a lot of memory for long-lived / active connections, implementing a streaming encoder is the only way to run qlog in production, without risking to overflow the host's memory.\r\n\r\nIf you have a multithreaded application, it's not possible to guarantee that the events will be strictly ordered by timestamp.",
       "createdAt": "2020-03-18T08:51:22Z",
-      "updatedAt": "2020-10-31T13:55:55Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-01T13:04:52Z",
+      "closedAt": "2020-11-01T13:04:52Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1711,7 +1726,7 @@
       ],
       "body": "Currently, there is no way to do this.\r\n\r\nPossible approaches:\r\n1. add `supported_versions:Array<string>` to `parameters_set` (similar to ALPN in #28)\r\n2. add `supported_versions:Array<string>` to the `packet_*` events (similar to how we do stateless_reset\r\n\r\nI personally have a preference for nr. 2, since it's consistent with how other packets are handled. ALPN is after all indeed a parameter, not a full packet. \r\n\r\ncc @mpiraux",
       "createdAt": "2020-03-30T11:09:53Z",
-      "updatedAt": "2020-10-31T13:56:38Z",
+      "updatedAt": "2020-11-01T20:02:23Z",
       "closedAt": null,
       "comments": [
         {
@@ -1727,6 +1742,13 @@
           "body": "Related to #62 ",
           "createdAt": "2020-10-31T13:56:38Z",
           "updatedAt": "2020-10-31T13:56:38Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Option 2 was introduced in commit ac00848b50c1da3feaf50f43938e962a091396b0.\r\n\r\nHowever, we currently still lack a way to indicate which versions each endpoint supports by themselves (which is not always communicated over the wire). ",
+          "createdAt": "2020-11-01T20:02:23Z",
+          "updatedAt": "2020-11-01T20:02:23Z"
         }
       ]
     },
@@ -1885,7 +1907,7 @@
       ],
       "body": "This is a high-level observation based on my experience of 1. adding qlog support for quic-go and 2. writing some tooling to sift through a pile of logs.\r\n\r\nWhen adding qlog support for quic-go, I already found it confusing that qlog bundles things that have little to do with each other into the same event. Examples for these are:\r\n* The values in `parameters_set` event in `transport` that are not part of the QUIC transport parameters.\r\n* The `pto_count` in `metrics_updated`.\r\n* The `connection_state_updated` event. This is the worst in this list.\r\n\r\nIn my implementation, I worked around this by exposing an API that exposes different functions, which then would encode the same qlog event (with the respective fields set). For example, I have a `qlog.UpdatedPTOCount()` and a `qlog.UpdatedMetrics()`, which both emit a `metrics_updated` event.\r\n\r\nWriting my own qlog parser, I'm now encountering the same problem again. For example, one interesting thing to monitor on a production system would be the reason why a connection was closed (to see if there are any PROTOCOL_VIOLATIONS, for example). It would make filtering much easier if there was a `connection_closed` event, instead of having to look at optional fields in all the `connection_state_updated` events emitted over the lifetime of the connection. A similar argument applies to the PTO count (Connections that experience a lot of PTO events might be interesting to look at. Connections that collect many RTT samples are not).\r\n\r\nFrom my discussions with @rmarx (and I hope that I'm paraphrasing him correctly here), the main argument for having fewer events was that it makes things easier to implement. I hope that I laid out my argument here that the opposite is the case.",
       "createdAt": "2020-04-21T03:43:01Z",
-      "updatedAt": "2020-10-31T13:50:25Z",
+      "updatedAt": "2020-11-02T08:19:17Z",
       "closedAt": null,
       "comments": [
         {
@@ -1908,6 +1930,20 @@
           "body": "After further discussion on slack, I think @marten-seemann's overall viewpoint is:\r\n\r\n- Events can be grouped, but only if they (a) logically belong together and/or (b) share the same fields\r\n\r\nThis leads to the following concrete example changes:\r\n- In the example of `connection_state_updated`, if there is a `reason` for the `connection_close` (see #78), that reason won't be present for `connection_attempted` and so it makes sense to split up those events.\r\n- In the example of `metrics_updated`, almost everything happens as the result of receiving an ACK, but `pto_count` does not (due to timer firing), so they should be split up as well. (tangent: max_ack_delay is a constant and should probably be in a `parameters_set` recovery equivalent)\r\n\r\nTentative conclusion: we don't need to split up everything as it stands now, just go through the events and make sure they adhere to the general principle above. I tend to agree with that. \r\n\r\nA prime candidate for re-evaluation is `transport:parameters_set`\r\n\r\n",
           "createdAt": "2020-07-08T08:38:47Z",
           "updatedAt": "2020-07-08T08:48:23Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "As indicated in the last comment above, I understand the arguments behind wanting to split up connection_state_updated and metrics_updated. \r\n\r\nI have now however spent a considerable amount of time thinking about splitting up `transport:parameters_set`, and I just don't see how it can be improved practically without introducing a large amount of one-of events or ending up with 2 very similar events in concept. \r\n\r\nConcretely, if parameters_set would indeed only contain the actual TLS-transport \"transport parameters\" from the QUIC draft, we'd need either:\r\n1. a separate `settings_set` event (or `configuration_chosen` or something) to contain other things in there (like chosen ALPN value, chosen version, chosen cipher, whether a retry is always required (e.g., DDoS prevention mode), whether early data is supported, etc.)\r\n2. multiple separate events, one for each thing: `version_selected`, `alpn_selected`, `cipher_selected`, ... etc. \r\n\r\nThis is then made more complicated by other issues that I can't seem to place easily either:\r\n- #28: how to list which ALPNs an endpoint supports (not the same as the one it actually sends/chooses)\r\n- #75: similar for the versions an endpoint supports (especially needed as not all connections send a VNEG containing (some of) this info)\r\n- #88: indicate which parameters were restored for 0-RTT (in that issue, @marten-seemann even advocates splitting up `parameters_set` into `parameters_sent` and `parameters_restored`, creating even more event types). \r\n\r\nAll these things could (for me) conceptually just be part of `parameters_set` (e.g., new `supported_versions` and `chosen_version` fields, logged at appropriate times with the correct owner). \r\nThe other option would be to split this out into several events, ending up with `local_configuration_set`, `configuration_chosen`, `parameters_restored`, etc. next to `parameters_set`... which, tbh, when listing it like that, I'm not sure is less confusing in the long run than having the single `parameters_set`.\r\n\r\nI somewhat have the feeling that I don't understand @marten-seemann's motivations for wanting to split up `parameters_set` the same way I do the two other examples in the first comment of this issue. At the moment, it feels mostly because of the semantics of the term `parameters` which is used for an explicit purpose in the QUIC drafts. Put differently: if we just renamed `parameters_set` to `configuration_chosen` (or similar), would you then still advocate for splitting the event? \r\n\r\nIf the answer is yes, I'd really like a concrete proposal for how to split them up exactly (mainly: how many different events would need to be created? option 1 or 2 above? and why?). \r\n\r\nInput from others in this is of course also greatly appreciated, as currently it seems mostly me and @marten-seemann having conflicting viewpoints. If we can't resolve this easily by tomorrow, I will punt this to draft-03. \r\n",
+          "createdAt": "2020-11-01T20:01:16Z",
+          "updatedAt": "2020-11-01T20:01:16Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> Put differently: if we just renamed parameters_set to configuration_chosen (or similar), would you then still advocate for splitting the event?\r\n\r\nYes, definitely! This is not about the name, but by the confusing created by stuffing unrelated things into the same event. I'm not sure I understand the motivation for keeping the number of events small, event types are cheap (both in terms of specifying them, in terms of implementing them). \r\nWhat's not cheap is writing tooling that needs to figure out what actual event a \"catch-all\" event like `parameters_set` corresponds to. I doubt that this will be possible without some complicated heuristics. How do I distinguish between TPs restored and TPs taken from a default configuration? Can a tool rely on a `parameters_set` that sets the ALPN doesn't at the same time set QUIC TPs?",
+          "createdAt": "2020-11-02T08:18:52Z",
+          "updatedAt": "2020-11-02T08:19:17Z"
         }
       ]
     },
@@ -2020,7 +2056,7 @@
       "id": "MDU6SXNzdWU2MjQ3MTQ4MzM=",
       "title": "Add mechanism for tracking coalesced packets",
       "url": "https://github.com/quiclog/internet-drafts/issues/91",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -2029,8 +2065,8 @@
       ],
       "body": "Currently, this can be done implicitly by looking at `datagrams_sent` and `datagrams_received` events, but: a) these are very chatty if enabled for the entire connection and b) it's still implicit.\r\n\r\nOne proposed option (cc @marten-seemann) would be to add an optional `datagram_id` field to the `packet_*` and `datagrams_*` events that allows explicit correlation. This id would be an implementation-specific thing though, since QUIC itself does not define it (can be as easy as an implementation incrementing a counter).\r\n\r\nAnother point from Marten:\r\n> Note that this would also allow to correlate packets that processed at different times: assume that one packet contained in a datagram can be processed immediately, but it is coalesced with a packet of an encyrption level that the endpoint doesn\u2019t have keys for, and needs to buffer first\r\n\r\nIn that case, we probably also need to add the datagram_id to the `packet_buffered` event",
       "createdAt": "2020-05-26T08:54:28Z",
-      "updatedAt": "2020-10-31T13:51:12Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-01T20:32:43Z",
+      "closedAt": "2020-11-01T20:32:43Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -2388,7 +2424,7 @@
       "id": "MDU6SXNzdWU2NTU1NjA4MzM=",
       "title": "Do we need an acked_packet event?",
       "url": "https://github.com/quiclog/internet-drafts/issues/107",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -2397,8 +2433,8 @@
       ],
       "body": "We have a `lost_packet` event, but no corresponding `acked_packet` event. That event would fire when a packet is acknowledged and removed from the map of sent packets.\r\n\r\nA parser that wants to track when a packet is (first) acknowledged would have to build a map of sent packets, and remove packets from that map when they are either acknowledged, declared lost or when the packet number space is lost.",
       "createdAt": "2020-07-13T03:49:47Z",
-      "updatedAt": "2020-10-31T13:54:37Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-01T20:34:19Z",
+      "closedAt": "2020-11-01T20:34:19Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2825,6 +2861,24 @@
       "body": "Currently, `connection_started` utilizes `src_ip` and `dst_ip` (and equivalent for ports), where the intended meaning is that src means the initiator (typically client) and dst the server. \r\n\r\nHowever, this is a) unclear and b) it does not allow deducing what the \"local\" ip is for where this trace was captured without correlating client/server with the vantagepoint (and if that vantagepoint is network, it becomes more murky). \r\n\r\nSome options for solving:\r\n1. rename fields to `local_ip` and `remote_ip`  \r\n2. add `initiator` field (e.g., with values 'local' and 'peer')\r\n3. completely revise how we log paths/IPs and potentially decouple from `connection_started` (also good in terms of privacy, migration, multipath, ...). \r\n\r\nOption 3 is probably best, should revisit when properly fixing migration in qlog (see also #79 and #57)\r\n\r\ncc @marten-seemann \r\n",
       "createdAt": "2020-10-31T13:47:19Z",
       "updatedAt": "2020-10-31T13:53:08Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 120,
+      "id": "MDU6SXNzdWU3MzQ1ODAxNDQ=",
+      "title": "Allow logging of TLS internals",
+      "url": "https://github.com/quiclog/internet-drafts/issues/120",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "future-versions"
+      ],
+      "body": "Depending on some TLS parameters, things might behave strangely on a QUIC level.\r\n\r\nFor example, TLS key shares can apparently use different \"group types\", e.g., p-256 or x25519 (this is somehow separate from the cipher it uses... I really need to brush up on my TLS understanding). The client chooses one of the groups that it thinks the server will support. If it doesn't the server will send an initial back, to which the client replies with another ClientHello using the correct group type, leading to a 2RTT QUIC handshake instead of 1RTT. An example can be seen in https://quic-tracker.info.ucl.ac.be/traces/20201101/2 (or if that's not longer available, a quic-tracker to mvfst connection setup, which seems to do this consistently).\r\n\r\nThis example above has already caught two separate researchers by surprise, and it should really be possible to expose this in qlog for easier debugging. \r\n\r\nIn general, I think we can do with providing more options for logging TLS-level information, but for that I first need to understand the variables better (or find someone to propose the concrete things to surface in qlog for that). ",
+      "createdAt": "2020-11-02T15:05:32Z",
+      "updatedAt": "2020-11-02T15:07:02Z",
       "closedAt": null,
       "comments": []
     }
