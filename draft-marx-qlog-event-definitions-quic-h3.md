@@ -356,6 +356,45 @@ Data:
 Note: some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
+### connection_closed
+Importance: Base
+
+Used for logging when a connection was closed, typically when an error or timeout
+occurred. Note that this event has overlap with
+connectivity:connection_state_updated, as well as the CONNECTION_CLOSE frame.
+However, in practice, when analyzing large deployments, it can be useful to have a
+single event representing a connection_closed event, which also includes an
+additional reason field to provide additional information. Additionally, it is
+useful to log closures due to timeouts, which are difficult to reflect using the
+other options.
+
+In QUIC there are two main connection-closing error categories: connection and
+application errors. They have well-defined error codes and semantics. Next to
+these however, there can be internal errors that occur that may or may not get
+mapped to the official error codes in implementation-specific ways. As such,
+multiple error codes can be set on the same event to reflect this.
+
+~~~
+{
+    owner?:"local"|"remote", // which side closed the connection
+
+    connection_code?:TransportError | CryptoError | uint32,
+    application_code?:ApplicationError | uint32,
+    internal_code?:uint32,
+
+    reason?:string
+}
+~~~
+
+Triggers:
+* clean
+* handshake_timeout
+* idle_timeout
+* error // this is called the "immediate close" in the QUIC specification
+* stateless_reset
+* version_mismatch
+
+
 ### connection_id_updated
 Importance: Base
 
@@ -1452,45 +1491,13 @@ replace their existing text-based logging by qlog. This is done by providing
 events to log generic strings for typical well-known logging levels (error,
 warning, info, debug, verbose).
 
-### connection_error
-Importance: Core
-
-Logged when there is a connection error. Can typically be inferred from a
-CONNECTION_CLOSE frame, but one might refrain from sending a long string or many
-details in that frame, while logging it here. Alternatively, some implementations
-do not want to leak the actual error to the outside in CONNECTION_CLOSE.
-
-Data:
-
-~~~~
-{
-    code?:TransportError | CryptoError | uint32,
-    message?:string
-}
-~~~~
-
-### application_error
-Importance: Core
-
-Logged when there is an application error. Can be inferred from a CONNECTION_CLOSE
-frame, but one might refrain from sending a long string or many details in that
-frame, while logging it here. Alternatively, some implementations do not want to
-leak the actual error to the outside in CONNECTION_CLOSE.
-
-Data:
-
-~~~~
-{
-    code?:ApplicationError | uint32,
-    message?:string
-}
-~~~~
-
 ### error
-Importance: Base
+Importance: Core
 
-Used to log details of an internal error that might get translated into a more
-generic error on the wire (e.g., protocol_violation)
+Used to log details of an internal error. For errors that effectively lead to the
+closure of a QUIC connection, it is recommended to use transport:connection_closed
+instead.
+
 
 Data:
 
@@ -2348,6 +2355,7 @@ Major changes:
   instead of logging these fields individually
 * Added support for logging retry, stateless reset and initial tokens (#94,#86,#117)
 * Moved separate general event categories into a single category "generic" (#47)
+* Added "transport:connection_closed" event (#43,#85,#78,#49)
 
 Smaller changes:
 
