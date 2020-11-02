@@ -526,7 +526,7 @@ Data:
     original_destination_connection_id?:bytes,
     initial_source_connection_id?:bytes,
     retry_source_connection_id?:bytes,
-    stateless_reset_token?:bytes,
+    stateless_reset_token?:Token,
     disable_active_migration?:boolean,
 
     max_idle_timeout?:uint64,
@@ -553,7 +553,7 @@ interface PreferredAddress {
     port_v6:uint16,
 
     connection_id:bytes,
-    stateless_reset_token:bytes
+    stateless_reset_token:Token
 }
 ~~~
 
@@ -575,8 +575,7 @@ Data:
 
     is_coalesced?:boolean, // default value is false
 
-    retry_token?:bytes, // only if header.packet_type === retry
-    retry_token_length?:uint32, // only if header.packet_type === retry
+    retry_token?:Token, // only if header.packet_type === retry
 
     stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
 
@@ -615,8 +614,7 @@ Data:
 
     is_coalesced?:boolean,
 
-    retry_token?:bytes, // only if header.packet_type === retry
-    retry_token_length?:uint32, // only if header.packet_type === retry
+    retry_token?:Token, // only if header.packet_type === retry
 
     stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
 
@@ -1657,8 +1655,7 @@ class PacketHeader {
 
     flags?: uint8; // the bit flags of the packet headers (spin bit, key update bit, etc. up to and including the packet number length bits if present) interpreted as a single 8-bit integer
 
-    token?: bytes, // only if packet_type == initial
-    token_length?:uint32, // only if packet_type == initial
+    token?:Token; // only if packet_type == initial
 
     length?: uint16, // only if packet_type == initial || handshake || 0RTT. Signifies length of the packet_number plus the payload.
 
@@ -1672,6 +1669,27 @@ class PacketHeader {
     dcid?: bytes;
 }
 ~~~
+
+## Token
+
+~~~
+class Token {
+    type?:"retry"|"resumption"|"stateless_reset";
+
+    length?:uint32; // byte length of the token
+    data?:bytes; // raw byte value of the token
+
+    details?:any; // decoded fields included in the token (typically: peer's IP address, creation time)
+}
+~~~
+
+The token carried in an Initial packet can either be a retry token from a Retry
+packet, a stateless reset token from a Stateless Reset packet or one originally
+provided by the server in a NEW_TOKEN frame used when resuming a connection (e.g.,
+for address validation purposes). Retry and resumption tokens typically contain
+encoded metadata to check the token's validity when it is used, but this metadata
+and its format is implementation specific. For that, this field includes a
+general-purpose "details" field.
 
 ## KeyType
 ~~~
@@ -1803,8 +1821,7 @@ class CryptoFrame{
 class NewTokenFrame{
   frame_type:string = "new_token";
 
-  token_length?:uint32;
-  token?:bytes;
+  token:Token
 }
 ~~~
 
@@ -1907,7 +1924,7 @@ class NewConnectionIDFrame{
   connection_id_length?:uint8;
   connection_id:bytes;
 
-  stateless_reset_token?:bytes; // is always 128-bit in length
+  stateless_reset_token?:Token;
 }
 ~~~
 
@@ -2329,7 +2346,7 @@ Major changes:
   PacketHeader to RawInfo:length (#40)
 * Made events that need to log packet_type and packet_number use a header field
   instead of logging these fields individually
-* Added support for logging retry and initial tokens (#94,#86)
+* Added support for logging retry, stateless reset and initial tokens (#94,#86,#117)
 * Moved separate general event categories into a single category "generic" (#47)
 
 Smaller changes:
