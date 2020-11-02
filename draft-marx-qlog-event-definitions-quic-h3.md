@@ -232,6 +232,66 @@ used as the qlog filename or file identifier, potentially suffixed by the
 vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
 trace of the connection with ODCID abcd1234).
 
+## Raw packet and frame information
+
+While qlog is a more high-level logging format, it also allows the inclusion of
+most raw wire image information, such as byte lengths and even raw byte values.
+This can be useful when for example investigating or tuning packetization
+behaviour or determining encoding/framing overheads. However, these fields are not
+always necessary and can take up considerable space if logged for each packet or
+frame. As such, they are grouped in a separate optional field called "raw" of type
+RawInfo (where applicable).
+
+~~~
+class RawInfo {
+    length?:uint64; // full packet/frame length, including header and AEAD authentication tag lengths (where applicable)
+    payload_length?:uint64; // length of the packet/frame payload, excluding AEAD tag. For many control frames, this will have a value of zero
+
+    data?:bytes; // full packet/frame contents, including header and AEAD authentication tag (where applicable)
+}
+~~~
+
+Note:
+
+: QUIC packets always include an AEAD authentication tag at the end. As this
+tag is always the same size for a given connection (it depends on the used TLS
+cipher), we do not have a separate "aead_tag_length" field here. Instead, this
+field is reflected in "transport:parameters_set" and can be logged only once.
+
+Note:
+
+: There is intentionally no explicit header_length field in RawInfo. QUIC and
+HTTP/3 use many Variable-Length Integer Encoded (VLIE) values in their packet and
+frame headers, which are of a dynamic length. Note too that because of this, we
+cannot deterministally reconstruct the header encoding/length from qlog data, as
+implementations might not necessarily employ the most efficient VLIE scheme for
+all values. As such, it is typically easier to log just the total packet/frame
+length and the payload length. The header length can be calculated by tools as:
+
+: For QUIC packets: header_length = length - payload_length - aead_tag_length
+
+: For QUIC and HTTP/3 frames: header_length = length - payload_length
+
+: For UDP datagrams: header_length = length - payload_length
+
+Note:
+
+: In some cases, the length fields are also explicitly reflected inside of
+frame/packet headers. For example, the QUIC STREAM frame has a "length" field
+indicating its payload size. Similarly, all HTTP/3 frames include their explicit
+payload lengths in the frame header. Finally, the QUIC Long Header has a "length"
+field which is equal to the payload length plus the packet number length. In these
+cases, those fields are intentionally preserved in the event definitions. Even
+though this can lead to duplicate data when the full RawInfo is logged, it allows
+a more direct mapping of the QUIC and HTTP/3 specifications to qlog, making it
+easier for users to interpret.
+
+Note:
+
+: as described in [QLOG-MAIN], the RawInfo:data field can be truncated for privacy
+or security purposes (for example excluding payload data). In this case, the
+length properties should still indicate the non-truncated lengths.
+
 # QUIC event definitions
 
 Each subheading in this section is a qlog event category, while each
@@ -460,6 +520,7 @@ Data:
     alpn?:string,
     version?:bytes,
     tls_cipher?:string, // (e.g., "AES_128_GCM_SHA256")
+    aead_tag_length?:uint8, // depends on the TLS cipher, but it's easier to be explicit. Default value is 16
 
     // transport parameters from the TLS layer:
     original_destination_connection_id?:bytes,
@@ -509,8 +570,6 @@ Data:
 ~~~
 {
     header:PacketHeader,
-    packet_size?: uint32, // size of the full encrypted packet, including the AEAD tag
-    payload_size?: uint32, // size of the decoded payload, excluding the AEAD tag
 
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
@@ -523,10 +582,7 @@ Data:
 
     supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
 
-    raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
-    raw_encrypted?:bytes, // for debugging purposes
-    raw_decrypted?:bytes,  // for debugging purposes
-
+    raw?:RawInfo,
     datagram_id?:uint32
 }
 ~~~
@@ -554,8 +610,6 @@ Data:
 ~~~
 {
     header:PacketHeader,
-    packet_size?: uint32, // size of the full encrypted packet, including the AEAD tag
-    payload_size?: uint32, // size of the payload, excluding the AEAD tag
 
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
@@ -568,10 +622,7 @@ Data:
 
     supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
 
-    raw_length?:uint32, // includes the AEAD authentication tag length and packet header length
-    raw_encrypted?:bytes, // for debugging purposes
-    raw_decrypted?:bytes,  // for debugging purposes
-
+    raw?:RawInfo,
     datagram_id?:uint32
 }
 ~~~
@@ -598,9 +649,7 @@ Data:
 {
     header?:PacketHeader, // primarily packet_type should be filled here, as other fields might not be parseable
 
-    raw_length?:uint32,
-    raw?:bytes,
-
+    raw?:RawInfo,
     datagram_id?:uint32
 }
 ~~~
@@ -630,7 +679,6 @@ discussed more in {{handling-unknown-connections}}.
 Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
 when keeping track of packet coalescing.
 
-
 ### packet_buffered
 Importance: Base
 
@@ -644,8 +692,7 @@ Data:
 {
     header?:PacketHeader, // primarily packet_type and possible packet_number should be filled here, as other elements might not be available yet
 
-    packet_size?:uint32, // full encrypted packet size, including AEAD tag
-
+    raw?:RawInfo,
     datagram_id?:uint32
 }
 ~~~
@@ -694,7 +741,7 @@ Data:
 ~~~
 {
     count?:uint16, // to support passing multiple at once
-    byte_lengths?:Array<uint32>,
+    raw?:Array<RawInfo>, // RawInfo:length field indicates total length of the datagrams, including UDP header length
 
     datagram_ids?:Array<uint32>
 }
@@ -720,7 +767,7 @@ Data:
 ~~~
 {
     count?:uint16, // to support passing multiple at once
-    byte_lengths?:Array<uint32>,
+    raw?:Array<RawInfo>, // RawInfo:length field indicates total length of the datagrams, including UDP header length
 
     datagram_ids?:Array<uint32>
 }
@@ -738,7 +785,7 @@ Data:
 
 ~~~
 {
-    byte_length?:uint32
+    raw?:RawInfo
 }
 ~~~
 
@@ -862,13 +909,12 @@ Data:
 {
     stream_id?:uint64,
     offset?:uint64,
-    length?:uint64,
+    length?:uint64, // byte length of the moved data
 
     from?:string, // typically: use either of "application","http","transport"
     to?:string, // typically: use either of "application","http","transport"
 
-    raw_length?:uint64,
-    raw?:bytes
+    data?:bytes // raw bytes that were transferred
 }
 ~~~~
 
@@ -1173,11 +1219,10 @@ Data:
 ~~~
 {
     stream_id:uint64,
-    frame:HTTP3Frame // see appendix for the definitions,
-    byte_length?:uint64,
+    length?:uint64, // payload byte length of the frame
+    frame:HTTP3Frame, // see appendix for the definitions,
 
-    raw_length?:uint64,
-    raw?:bytes
+    raw?:RawInfo
 }
 ~~~
 
@@ -1200,11 +1245,10 @@ Data:
 ~~~
 {
     stream_id:uint64,
-    frame:HTTP3Frame // see appendix for the definitions,
-    byte_length?:uint64,
+    length?:uint64, // payload byte length of the frame
+    frame:HTTP3Frame, // see appendix for the definitions,
 
-    raw_length?:uint64,
-    raw?:bytes
+    raw?:RawInfo
 }
 ~~~
 
@@ -1330,7 +1374,7 @@ Data:
     block_prefix:QPackHeaderBlockPrefix,
     header_block:Array<QPackHeaderBlockRepresentation>,
 
-    raw_length?:uint32,
+    length?:uint32,
     raw?:bytes
 }
 ~~~~
@@ -1355,7 +1399,7 @@ Data:
     block_prefix:QPackHeaderBlockPrefix,
     header_block:Array<QPackHeaderBlockRepresentation>,
 
-    raw_length?:uint32,
+    length?:uint32,
     raw?:bytes
 }
 ~~~~
@@ -1372,7 +1416,7 @@ Data:
 {
     instruction:QPackInstruction // see appendix for the definitions,
 
-    raw_length?:uint32,
+    length?:uint32,
     raw?:bytes
 }
 ~~~
@@ -1392,7 +1436,7 @@ Data:
 {
     instruction:QPackInstruction // see appendix for the definitions,
 
-    raw_length?:uint32,
+    length?:uint32,
     raw?:bytes
 }
 ~~~
@@ -1606,6 +1650,8 @@ enum PacketNumberSpace {
 
 ~~~
 class PacketHeader {
+    // Note: short vs long header is implicit through PacketType
+
     packet_type: PacketType;
     packet_number: uint64;
 
@@ -1613,6 +1659,8 @@ class PacketHeader {
 
     token?: bytes, // only if packet_type == initial
     token_length?:uint32, // only if packet_type == initial
+
+    length?: uint16, // only if packet_type == initial || handshake || 0RTT. Signifies length of the packet_number plus the payload.
 
     // only if present in the header
     // if correctly using transport:connection_id_updated events,
@@ -1622,8 +1670,6 @@ class PacketHeader {
     dcil?: uint8;
     scid?: bytes;
     dcid?: bytes;
-
-    // Note: short vs long header is implicit through PacketType
 }
 ~~~
 
@@ -1657,14 +1703,15 @@ such, each padding byte could be theoretically interpreted and logged as an
 individual PaddingFrame.
 
 However, as this leads to heavy logging overhead, implementations SHOULD instead
-emit just a single PaddingFrame and set the length property to the amount of
-PADDING bytes/frames included in the packet.
+emit just a single PaddingFrame and set the payload_length property to the amount
+of PADDING bytes/frames included in the packet.
 
 ~~~
 class PaddingFrame{
     frame_type:string = "padding";
 
-    length?:uint32;
+    length?:uint32; // total frame length, including frame header
+    payload_length?:uint32;
 }
 ~~~
 
@@ -1673,6 +1720,9 @@ class PaddingFrame{
 ~~~
 class PingFrame{
     frame_type:string = "ping";
+
+    length?:uint32; // total frame length, including frame header
+    payload_length?:uint32;
 }
 ~~~
 
@@ -1693,6 +1743,9 @@ class AckFrame{
     ect1?:uint64;
     ect0?:uint64;
     ce?:uint64;
+
+    length?:uint32; // total frame length, including frame header
+    payload_length?:uint32;
 }
 ~~~
 
@@ -1711,6 +1764,9 @@ class ResetStreamFrame{
     stream_id:uint64;
     error_code:ApplicationError | uint32;
     final_size:uint64; // in bytes
+
+    length?:uint32; // total frame length, including frame header
+    payload_length?:uint32;
 }
 ~~~
 
@@ -1722,6 +1778,9 @@ class StopSendingFrame{
 
     stream_id:uint64;
     error_code:ApplicationError | uint32;
+
+    length?:uint32; // total frame length, including frame header
+    payload_length?:uint32;
 }
 ~~~
 
@@ -1729,10 +1788,12 @@ class StopSendingFrame{
 
 ~~~
 class CryptoFrame{
-  frame_type:string = "crypto";
+    frame_type:string = "crypto";
 
-  offset:uint64;
-  length:uint64;
+    offset:uint64;
+    length:uint64;
+
+    payload_length?:uint32;
 }
 ~~~
 
@@ -1765,7 +1826,6 @@ class StreamFrame{
     // if absent, the value MUST be assumed to be "false"
     fin?:boolean;
 
-    raw_length?:uint32; // STREAM frames cannot span more than 1 QUIC packet
     raw?:bytes;
 }
 ~~~
@@ -2265,8 +2325,8 @@ Major changes:
 
 * Moved data_moved from http to transport. Also made the "from" and "to" fields
   flexible strings instead of an enum (#111,#65)
-* Moved packet_type fields to PacketHeader, and packet_size field out of
-  PacketHeader to individual events (#40)
+* Moved packet_type fields to PacketHeader. Moved packet_size field out of
+  PacketHeader to RawInfo:length (#40)
 * Made events that need to log packet_type and packet_number use a header field
   instead of logging these fields individually
 * Added support for logging retry and initial tokens (#94,#86)
