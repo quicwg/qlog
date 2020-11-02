@@ -315,9 +315,6 @@ Data:
     port_v4?: uint32,
     port_v6?: uint32,
 
-    quic_versions?: Array<string>, // the application layer protocols this server supports
-    alpn_values?: Array<string>, // the application layer protocols this server supports
-
     retry_required?:boolean // the server will always answer client initials with a retry (no 1-RTT connection setups by choice)
 }
 ~~~
@@ -345,11 +342,9 @@ Data:
     src_port?: uint32,
     dst_port?: uint32,
 
-    quic_version?: bytes, // e.g., ff00001d for draft-29
     src_cid?: bytes,
     dst_cid?: bytes,
 
-    alpn_values?: Array<string> // ALPN values offered by the client / received by the server. Use parameters_set to log the actually selected alp
 }
 ~~~
 
@@ -570,13 +565,78 @@ Triggers:
 
 ## transport
 
+### version_information
+
+QUIC endpoints each have their own list of of QUIC versions they support. The
+client uses the most likely version in their first initial. If the server does
+support that version, it replies with a version_negotiation packet, containing
+supported versions. From this, the client selects a version. This event aggregates
+all this information in a single event type. It also allows logging of supported
+versions at an endpoint without actual version negotiation needing to happen.
+
+Data:
+
+~~~
+{
+    server_versions?:Array<bytes>,
+    client_versions?:Array<bytes>,
+    chosen_version?:bytes
+}
+~~~
+
+Intended use:
+
+- When sending an initial, the client logs this event with client_versions and
+  chosen_version set
+- Upon receiving a client initial with a supported version, the server logs this
+  event with server_versions and chosen_version set
+- Upon receiving a client initial with an unsupported version, the server logs
+  this event with server_versions set and client_versions to the
+  single-element array containing the client's attempted version. The absence of
+  chosen_version implies no overlap was found.
+- Upon receiving a version negotiation packet from the server, the client logs
+  this event with client_versions set and server_versions to the versions in
+  the version negotiation packet and chosen_version to the version it will use for
+  the next initial packet
+
+### alpn_information
+
+QUIC implementations each have their own list of application level protocols and
+versions thereof they support. The client includes a list of their supported
+options in its first initial as part of the TLS Application Layer Protocol
+Negotiation (alpn) extension. If there are common option(s), the server chooses
+the most optimal one and communicates this back to the client. If not, the
+connection is closed.
+
+Data:
+
+~~~
+{
+    server_alpns?:Array<string>,
+    client_alpns?:Array<string>,
+    chosen_alpn?:string
+}
+~~~
+
+Intended use:
+
+- When sending an initial, the client logs this event with client_alpns set
+- When receiving an initial with a supported alpn, the server logs this event with
+  server_alpns set, client_alpns equalling the client-provided list, and
+  chosen_alpn to the value it will send back to the client.
+- When receiving an initial with an alpn, the client logs this event with
+  chosen_alpn to the received value.
+- Alternatively, a client can choose to not log the first event, but wait for the
+  receipt of the server initial to log this event with both client_alpns and
+  chosen_alpn set.
+
 ### parameters_set
 Importance: Core
 
-This event groups settings from many different sources (transport parameters,
-version negotiation, ALPN selection, TLS ciphers, etc.) into a single event. This
-is done to minimize the amount of events and to decouple conceptual setting
-impacts from their underlying mechanism for easier high-level reasoning.
+This event groups settings from several different sources (transport parameters,
+TLS ciphers, etc.) into a single event. This is done to minimize the amount of
+events and to decouple conceptual setting impacts from their underlying mechanism
+for easier high-level reasoning.
 
 All these settings are typically set once and never change. However, they are
 typically set at different times during the connection, so there will typically be
@@ -597,12 +657,10 @@ Data:
 
 ~~~
 {
-    owner?:"local" | "remote", // can be left for bidirectionally negotiated parameters, e.g. ALPN
+    owner?:"local" | "remote",
 
     resumption_allowed?:boolean, // valid session ticket was received
     early_data_enabled?:boolean, // early data extension was enabled on the TLS layer
-    alpn?:string,
-    version?:bytes,
     tls_cipher?:string, // (e.g., "AES_128_GCM_SHA256")
     aead_tag_length?:uint8, // depends on the TLS cipher, but it's easier to be explicit. Default value is 16
 
@@ -2401,6 +2459,7 @@ Major changes:
 * Added support for logging retry, stateless reset and initial tokens (#94,#86,#117)
 * Moved separate general event categories into a single category "generic" (#47)
 * Added "transport:connection_closed" event (#43,#85,#78,#49)
+* Added version_information and alpn_information events (#85,#75,#28)
 
 Smaller changes:
 
