@@ -145,7 +145,7 @@ A qlog file should be able to contain several indivdual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
-MUST have a value of "draft-02-RC1".
+MUST have a value of "draft-02".
 
 As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
 indicate which serialization option was chosen. Its value MUST either be one of
@@ -173,7 +173,7 @@ class QlogFile {
 JSON serialization:
 
 {
-    "qlog_version": "draft-02-RC1",
+    "qlog_version": "draft-02",
     "qlog_format": "JSON",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
