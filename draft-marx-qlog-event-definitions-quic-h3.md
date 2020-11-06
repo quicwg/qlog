@@ -670,7 +670,7 @@ Data:
     original_destination_connection_id?:bytes,
     initial_source_connection_id?:bytes,
     retry_source_connection_id?:bytes,
-    stateless_reset_token?:Token,
+    stateless_reset_token?:bytes,
     disable_active_migration?:boolean,
 
     max_idle_timeout?:uint64,
@@ -697,7 +697,7 @@ interface PreferredAddress {
     port_v6:uint16,
 
     connection_id:bytes,
-    stateless_reset_token:Token
+    stateless_reset_token:bytes
 }
 ~~~
 
@@ -2086,7 +2086,7 @@ class NewConnectionIDFrame{
   connection_id_length?:uint8;
   connection_id:bytes;
 
-  stateless_reset_token?:Token;
+  stateless_reset_token?:bytes;
 }
 ~~~
 
