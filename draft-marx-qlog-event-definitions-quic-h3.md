@@ -750,8 +750,6 @@ Data:
 
     is_coalesced?:boolean, // default value is false
 
-    retry_token?:Token, // only if header.packet_type === retry
-
     stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
 
     supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
@@ -788,8 +786,6 @@ Data:
     frames?:Array<QuicFrame>, // see appendix for the definitions
 
     is_coalesced?:boolean,
-
-    retry_token?:Token, // only if header.packet_type === retry
 
     stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
 
@@ -1817,7 +1813,7 @@ class PacketHeader {
 
     flags?: uint8; // the bit flags of the packet headers (spin bit, key update bit, etc. up to and including the packet number length bits if present) interpreted as a single 8-bit integer
 
-    token?:Token; // only if packet_type == initial
+    token?:Token; // only if packet_type == initial || retry
 
     length?: uint16, // only if packet_type == initial || handshake || 0RTT. Signifies length of the packet_number plus the payload.
 
