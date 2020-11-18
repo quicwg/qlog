@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-11-02T16:47:11.437104+00:00",
+  "timestamp": "2020-11-18T10:21:30.237073+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -633,7 +633,7 @@
       "id": "MDU6SXNzdWU1MDkwNTI3Mzg=",
       "title": "Lacking a way to indicate ALPN list for client",
       "url": "https://github.com/quiclog/internet-drafts/issues/28",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -642,8 +642,8 @@
       ],
       "body": "Currently, we can log a list of supported ALPN values for the server in \"server_listening\" and log the finally selected ALPN in \"parameters_set\". However, we lack a way to log the list of ALPN values the client supports (and offers the server).\r\n\r\nOptions:\r\n- add `alpn_values?: Array<string> // ALPN values offered by the client / received by the server. Use parameters_set to log the actually selected alp` to \"connection_started\"\r\n- make \"alpn\" in \"parameters_set\" an array instead of a string\r\n\r\nI personally prefer the 1st option, since the second doesn't match the semantics of \"set\" (since it would be emitted twice) and logging the negotiation options should be optional in a \"Base\" (while the final value is in a \"Core\" event).\r\n\r\nCC @jlaine ",
       "createdAt": "2019-10-18T12:35:44Z",
-      "updatedAt": "2020-10-31T13:55:35Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-03T11:51:22Z",
+      "closedAt": "2020-11-03T11:51:21Z",
       "comments": [
         {
           "author": "huitema",
@@ -665,6 +665,13 @@
           "body": "I like the idea of strictly distinguishing offer values and the negotiated one. Alternative possible names (no strong feelings about this):\r\n\r\n```\r\n\"alpn_offer\": [\"a\", \"b\", \"c\"]\r\n\"alpn_answer\": \"a\"\r\n```",
           "createdAt": "2020-03-08T11:13:13Z",
           "updatedAt": "2020-03-08T11:13:28Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Added a separate `alpn_information` event for this. Not sure this is the best approach overall, but will see. Discussion on this continues in #85. ",
+          "createdAt": "2020-11-03T11:51:21Z",
+          "updatedAt": "2020-11-03T11:51:21Z"
         }
       ]
     },
@@ -1002,17 +1009,17 @@
       "id": "MDU6SXNzdWU1NTE4Njk2MDE=",
       "title": "packet_size doesn't belong in the PacketHeader, but PacketType does",
       "url": "https://github.com/quiclog/internet-drafts/issues/40",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
-      "authorAssociation": "CONTRIBUTOR",
+      "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [
         "current-version"
       ],
       "body": "In my interpretation, the `PacketHeader` is a QUIC packet header. Therefore, it should contain the QUIC packet type.\r\nHowever, the `packet_size` (as opposed to the `payload_length`, which is the length of the QUIC payload e.g. in a coalesced packet), is a property of the UDP packet, and therefore should a property of the `packet_sent` / `packet_received` event.",
       "createdAt": "2020-01-19T05:27:36Z",
-      "updatedAt": "2020-10-31T14:00:30Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-02T16:57:19Z",
+      "closedAt": "2020-11-02T16:57:19Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1020,6 +1027,13 @@
           "body": "While I -think- I agree with the general sentiment, this is a major departure from the current setup as implemented in most qlog setups. Additionally, many qvis visualizations actively use these fields.\r\n\r\nI propose to keep the issue and PR open until when I can update qvis to deal with this change, so that I don't forget to do just that. Definitely before draft-02 lands of course.\r\n\r\nAdditionally, `packet_size` is intended to mean the entire size of the QUIC packet (header + payload), not the UDP datagram size (which can span multiple coalesced QUIC packets as you indicate). I felt the separate packet_size was needed to get an estimate of the header size, since that can differ quite a bit depending on the chosen encodings, pn-length etc. That does bring up the question if we need a `datagram_size/length` outside of the `datagram_*` events as well (though I personally would say not).",
           "createdAt": "2020-01-19T10:31:18Z",
           "updatedAt": "2020-01-19T10:31:18Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I initially moved `packet_size` to `packet_sent` and `packet_received`, which was the simplest solution. \r\n\r\nHowever, when considering other issues around indicating packet and frame sizing, I ended up deciding to go for a generalized solution by using a shared RawInfo struct. This means that packet lengths are now logged as `packet_sent:raw.length` instead of `packet_sent:packet_size`. This isn't as clear, I agree, but it is consistent with how we log lengths for other things in qlog, which was more important for me at this time. Given that implementers have to move the packet_size field out of PacketHeader anyway, it shouldn't matter too much if they move it to `raw.length` I'd expect. ",
+          "createdAt": "2020-11-02T16:57:19Z",
+          "updatedAt": "2020-11-02T16:57:19Z"
         }
       ]
     },
@@ -1046,7 +1060,7 @@
       "id": "MDU6SXNzdWU1NTI3ODIwOTc=",
       "title": "Add connection_closed or connection_dropped event",
       "url": "https://github.com/quiclog/internet-drafts/issues/43",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -1055,8 +1069,8 @@
       ],
       "body": "Currently, we rely on packet_* with a CONNECTION_CLOSE frame, but that's not always enough. E.g., the server can decide to drop a connection after a long timeout without sending a CONNECTION_CLOSE. Or, we might want additional information of when a connection is effectively dropped completely (according to @marten-seemann: is supposed to happen 3 PTOs after it is retired)\r\n\r\nMaybe a connection_closed event with a trigger field suffices? Should this be importance Base or Extra?",
       "createdAt": "2020-01-21T10:23:18Z",
-      "updatedAt": "2020-11-02T08:07:26Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-02T20:14:21Z",
+      "closedAt": "2020-11-02T20:14:21Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1067,10 +1081,17 @@
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "Why do we need `generic:connection_error` and a `generic:application_error`?",
           "createdAt": "2020-11-02T08:07:26Z",
           "updatedAt": "2020-11-02T08:07:26Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Merged connection_error and application_error with connection_closed, as that indeed makes more sense here. \r\n\r\nClosing for now, open to revisiting this for draft-03. ",
+          "createdAt": "2020-11-02T20:14:21Z",
+          "updatedAt": "2020-11-02T20:14:21Z"
         }
       ]
     },
@@ -1203,7 +1224,7 @@
       "id": "MDU6SXNzdWU1NTk2NjMwNTQ=",
       "title": "More fine-grained connection states",
       "url": "https://github.com/quiclog/internet-drafts/issues/49",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -1212,8 +1233,8 @@
       ],
       "body": "Per @huitema:\r\n\r\n` I would split the active state between \"start\" and \"confirmed\", and the handshake start on the server side between \"received a request\" and \"address validated\".`\r\n\r\n```\r\nThe server will go through the \"anti dos mitigation\" phase until the client's address is validated. That's important, because the server behavior in that state is restricted. Once it has sent all the handshake packets, the server goes to a \"false start\" phase in which it can send 1-RTT packets but (should) not receive. And then once it receives the client finished and sends the \"handshake done\", it moves to a confirmed state, at which point it can deal with migration and key update.\r\n\r\nClient is kind of the same. It goes from initiating to handshake, then to an \"almost ready\" phase after sending the \"client finished\" and getting the 1rtt keys. But it will only become really active once it receives the \"handshake done\" or an equivalent.\r\n```",
       "createdAt": "2020-02-04T11:40:06Z",
-      "updatedAt": "2020-11-01T01:19:35Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-03T11:50:32Z",
+      "closedAt": "2020-11-03T11:50:32Z",
       "comments": [
         {
           "author": "huitema",
@@ -1224,14 +1245,14 @@
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "I like the addition of `validated`. That can be really useful when debugging the early handshake stages.\r\n\r\n> * almost ready (1RTT keys received, but handshake done not received yet)\r\n> * ready (or active) (handshake done received from server, or equivalent)\r\n\r\nThis could be `handshake_completed` and `handshake_confimred`. Both of them would work for client as well as the server.\r\n\r\n> false start (1RTT keys write received, but handshake not complete yet)\r\n\r\nNot sure if we need this. We already have a `key_updated` event.",
           "createdAt": "2020-04-12T12:08:56Z",
           "updatedAt": "2020-04-12T12:10:01Z"
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "Here's my proposal:\r\n\r\n```\r\nenum ConnectionState {\r\n    validated, // only for the server, when the client's IP has been validated\r\n    handshake_completed, // TLS handshake successful\r\n    handshake_confirmed, // handshake confirmed, see sec. 4.1.2 of the QUIC-TLS draft\r\n    draining, // CONNECTION_CLOSE sent\r\n    closed // connection actually fully closed, memory freed\r\n}\r\n```\r\n\r\n@rmarx, @huitema What do you think?",
           "createdAt": "2020-04-12T12:17:13Z",
           "updatedAt": "2020-04-12T12:17:13Z"
@@ -1245,7 +1266,7 @@
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "> Also, per 4.1.2, handshake confirmed on the server happens at exactly the same time as handshake confirmed.\r\n\r\nTrue. This event would be kind of redundant for the server. It's also kind of redundant redundant for the client, since this is the time when the client drops Handshake keys.\r\n\r\n> @marten-seemann I think that's too coarse. You have to consider scenarios in which Initial packets are exchanged for some time before handshake keys are available, e.g., for post quantum, and scenarios in which handshake packets are exchanged for some time before 1RTT keys are available, e.g., client auth. [...] That's why I use a \"false start\" state for the server.\r\n\r\nFirst of all, I don't understand the name \"false start\". My point in https://github.com/quiclog/internet-drafts/issues/49#issuecomment-612604685 was that we already have an event for this: it's the [key updated](https://quiclog.github.io/internet-drafts/draft-marx-qlog-event-definitions-quic-h3.html#name-key_updated) event.\r\n\r\nNow it seems like both \"false start\", `handshake_comfirmed` and `handshake_completed` are all redundant, since they all accompanied by key generation / key discarding events. Not sure what to make of that...",
           "createdAt": "2020-04-13T09:55:26Z",
           "updatedAt": "2020-04-13T09:55:26Z"
@@ -1270,6 +1291,13 @@
           "body": "Our implementation has \"waiting for initial\", which roughly corresponds to your \"attempted\", but also encapsulates the server side prior to receiving the initial.  We don't keep that state very long server side; your description implies that it persists, but I don't think that is helpful.\r\n\r\nThen we have \"handshaking\", which we keep orthogonal to the states where various keys are available.  Keeping key availability separate is better than trying to enumerate the various availability options.  false_start is a problem, I think in that it implies something else; an \"early write\" state is fine.  In this state you can sometimes send, based on what keys are available, but you can never receive.  Also, trying to conflate address validation state with handshake state will likely complicate things more than necessary.\r\n\r\nThen we have \"complete\" where TLS is done.  And \"confirmed\" where you have thrown out handshaking state.\r\n\r\nWe use the states from the spec for closing, which is not a single state, but three.\r\n\r\nSo aside from your closed state, the summary form is probably best.  Logging both address validation and key availability independently would be good.",
           "createdAt": "2020-11-01T01:19:35Z",
           "updatedAt": "2020-11-01T01:19:35Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Thank you both @huitema and @martinthomson for your input! \r\n\r\nChanges I've made for -02:\r\n1. renamed \"false_start\" to \"early_write\". I appreciate that this is potentially not entirely the correct term, but I was thinking mainly of non-protocol experts trying to following along and \"early write\" seemed easiest to grok. Open to other suggestions for -03. \r\n2. changed to having 3 closing states: closing, draining, closed\r\n3. added explicit guidance to support the condensed/simpler set \r\n\r\n@martinthomson: we keep support for logging the key updates separately as well. WRT address validation, this will be re-evaluated once I add proper support for connection migration/path management. For now, I'm keeping it in there because @huitema suggested it above and it's the most logical place to put it at this point. \r\n\r\n@martinthomson: I do not have anything before \"attempted\" because this event is connection scoped and IIUC servers don't have a connection concept before the first initial from the client arrives (similar for the client). In qlog, this is more generally reflected by other events like `server_listening` atm.  \r\n\r\n",
+          "createdAt": "2020-11-03T11:50:32Z",
+          "updatedAt": "2020-11-03T11:50:32Z"
         }
       ]
     },
@@ -1358,11 +1386,12 @@
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [
+        "design",
         "future-versions"
       ],
       "body": "At the moment, it's not entirely clear how qlog is \"supposed to be used\".\r\n\r\nFor example, it's not clear to implementers why some fields (e.g., quic version) are duplicated across `connection_started` and also the PacketHeader.\r\n\r\nWe should provide some examples of what things look like if you implement \"all of qlog\" and what should happen if you only implement the Core events (i.e., some fields in the Core events can be skipped if you're using the Base or Extra events instead). This is also important info for tool implementers. \r\n\r\nThis also depends on the use case: tracing while debugging vs production-level logging. ",
       "createdAt": "2020-02-18T14:05:55Z",
-      "updatedAt": "2020-10-31T16:36:44Z",
+      "updatedAt": "2020-11-03T11:59:06Z",
       "closedAt": null,
       "comments": [
         {
@@ -1413,7 +1442,7 @@
       "id": "MDU6SXNzdWU1NzExOTg5Njk=",
       "title": "Allow logging of partial raw data",
       "url": "https://github.com/quiclog/internet-drafts/issues/56",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -1422,8 +1451,8 @@
       ],
       "body": "Currently, we use the `raw` field in multiple events to allow logging of the raw data.\r\n\r\nIt would be interesting to allow logging for only the first x bytes, which can help in debugging.\r\n\r\nSome options:\r\n\r\n1. New `raw_partial` field, containing the partial hex-encoded data\r\n2. New `raw_length` field, indicating the length of the `raw` field. If it doesn't match the `length` parameter (or equivalent), we know `raw` is truncated\r\n3. No new fields: we can derive `raw`'s length from the size of the string. Then use similar logic as 2) to detect truncation\r\n4. No new fields, end `raw` field with `...` at the end of the string. Perfectly human readable, bit of a hassle when decoding the bytes to e.g., ASCII + less optimal for a potential binary format\r\n\r\nPersonally, I would prefer 3. We will strongly advise AGAINST logging `raw` in typical usage scenarios anyway: it's only to be used for core debugging. In these latter cases, the person debugging probably knows the stack a bit more deeply and understands that it's logging just partial raw values. \r\n\r\ncc @huitema",
       "createdAt": "2020-02-26T09:43:23Z",
-      "updatedAt": "2020-10-31T13:57:06Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-02T17:05:28Z",
+      "closedAt": "2020-11-02T17:05:28Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1431,6 +1460,13 @@
           "body": "Related to #104 and #102",
           "createdAt": "2020-09-08T15:47:58Z",
           "updatedAt": "2020-09-08T15:47:58Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Solved by allowing truncated values and specifying a separate length field (so basically option 2 above). ",
+          "createdAt": "2020-11-02T17:05:28Z",
+          "updatedAt": "2020-11-02T17:05:28Z"
         }
       ]
     },
@@ -1517,7 +1553,7 @@
       "id": "MDU6SXNzdWU1Nzc1Mzk2MjY=",
       "title": "Logging of Retry and Version Negotiation packets",
       "url": "https://github.com/quiclog/internet-drafts/issues/62",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "huitema",
       "authorAssociation": "NONE",
       "assignees": [],
@@ -1526,9 +1562,17 @@
       ],
       "body": "Initial, Handshake, 0-RTT and 1-RTT packets have a payload composed of a set of frames. Retry and Version Negotiation packets don't. The payload of retry packets is a retry token; the version negotiation packets contain a list of proposed versions. I wonder what the proper logging should be.\r\n\r\nStaying close to the transport spec would get:\r\n```\r\n[118740, \"TRANSPORT\", \"PACKET_RECEIVED\", { \r\n    \"packet_type\": \"version\",\r\n    \"header\": { \r\n        \"packet_number\": \"0\",\r\n        \"packet_size\": 43,\r\n        \"payload_length\": 20,\r\n        \"scid\": \"96f7ef87d6603a79\",\r\n        \"dcid\": \"130b28a505315b13\" },\r\n    \"proposed_versions\": [ \"ff00001b\", \"ff000019\", \"8aca3a8a\" ]}]\r\n\r\n[113660, \"TRANSPORT\", \"PACKET_RECEIVED\", {\r\n    \"packet_type\": \"retry\",\r\n    \"header\": {\r\n        \"packet_number\": \"0\",\r\n        \"packet_size\": 80,\r\n        \"payload_length\": 32,\r\n        \"scid\": \"fa49f056d84c11c1\",\r\n        \"dcid\": \"5bdfe3c33300b8b8\" },\r\n    \"retry_token\": \"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\" }]\r\n```\r\nDoes this look right?",
       "createdAt": "2020-03-08T18:01:06Z",
-      "updatedAt": "2020-10-31T13:56:13Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2020-11-02T17:08:27Z",
+      "closedAt": "2020-11-02T17:08:27Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Was solved by including `supported_versions`, `retry_token`, `retry_token_length` and `stateless_reset_token` directly on `packet_sent` and `packet_received` (as this can conceptually be seen as being part of the \"payload\" of those special purpose packets, rather than their headers)",
+          "createdAt": "2020-11-02T17:08:27Z",
+          "updatedAt": "2020-11-02T17:08:27Z"
+        }
+      ]
     },
     {
       "number": 64,
@@ -1673,16 +1717,16 @@
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [
-        "current-version"
+        "future-versions"
       ],
       "body": "When looking at a qlog at this time, if there is a certain event type missing, you don't know if it's because those events never occurred or if the implementation simply doesn't support/log that event type. \r\n\r\nThis is especially troublesome if you want to selectively enable/disable certain types to reduce overhead when you're doing targeted \"live\" debugging on a deployed system.\r\n\r\nThe simplest solution I can see is to add a new field to `configuration`, for example:\r\n\r\n> supportedEvents:Array\\<string\\> // each string is category:event_type (e.g., transport:packet_sent)\r\n\r\nSome bikeshedding can help to decide if we need two separate fields (supportedCategories separately for example) or if we can cut out the category in here completely (as there is little overlap in event names atm).\r\n\r\nThis would also be interesting for doing a fast \"is this trace compatible with this visualization\"-check in qvis and others tools. \r\n\r\nThanks to @mjoras for reporting.",
       "createdAt": "2020-03-28T10:36:52Z",
-      "updatedAt": "2020-10-31T13:51:00Z",
+      "updatedAt": "2020-11-02T19:49:42Z",
       "closedAt": null,
       "comments": [
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "This only captures a subset of the possible changes. For example, you wouldn't be able to tell if a  qlog implementation already supported the recently added `stateless_reset` packet type or not.\r\n\r\nIn the end, I think it makes more sense to add some kind of versioning scheme to your qlog file (which is orthogonal to the `qlog_version`), and would not be interpreted by tools.",
           "createdAt": "2020-03-29T08:53:36Z",
           "updatedAt": "2020-03-29T08:53:36Z"
@@ -1717,7 +1761,7 @@
       "id": "MDU6SXNzdWU1OTAyMDI5MDU=",
       "title": "Add way to log contents of version negotiation packet",
       "url": "https://github.com/quiclog/internet-drafts/issues/75",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -1726,12 +1770,12 @@
       ],
       "body": "Currently, there is no way to do this.\r\n\r\nPossible approaches:\r\n1. add `supported_versions:Array<string>` to `parameters_set` (similar to ALPN in #28)\r\n2. add `supported_versions:Array<string>` to the `packet_*` events (similar to how we do stateless_reset\r\n\r\nI personally have a preference for nr. 2, since it's consistent with how other packets are handled. ALPN is after all indeed a parameter, not a full packet. \r\n\r\ncc @mpiraux",
       "createdAt": "2020-03-30T11:09:53Z",
-      "updatedAt": "2020-11-01T20:02:23Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-03T11:08:57Z",
+      "closedAt": "2020-11-03T11:08:57Z",
       "comments": [
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "I'd argue that we need both. The supported versions is a parameter of the server that's interesting to know independent of if version negotiation was ever performed or not.\r\n\r\nFor the client, it's important to have a way to log the contents of a version negotiation packet, so adding it to the `packet_received` event makes sense.",
           "createdAt": "2020-04-14T09:37:13Z",
           "updatedAt": "2020-04-14T09:37:13Z"
@@ -1749,6 +1793,13 @@
           "body": "Option 2 was introduced in commit ac00848b50c1da3feaf50f43938e962a091396b0.\r\n\r\nHowever, we currently still lack a way to indicate which versions each endpoint supports by themselves (which is not always communicated over the wire). ",
           "createdAt": "2020-11-01T20:02:23Z",
           "updatedAt": "2020-11-01T20:02:23Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "This was resolved for now by adding the new `version_information` event. Per #85, I'm not entirely sure that's the best approach here though. Closing this for now and keeping that issue open for general discussion. We can revisit this later depending on the outcome. \r\n\r\n",
+          "createdAt": "2020-11-03T11:08:57Z",
+          "updatedAt": "2020-11-03T11:08:57Z"
         }
       ]
     },
@@ -1781,17 +1832,17 @@
       "id": "MDU6SXNzdWU1OTg0MDUzODI=",
       "title": "revisit connection_state_updated",
       "url": "https://github.com/quiclog/internet-drafts/issues/78",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
-      "authorAssociation": "CONTRIBUTOR",
+      "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [
         "current-version"
       ],
       "body": "I see the following problems with the `connection_state_updated` event:\r\n1. `attempted` seems to be a duplicate of `connection_started` for the client (i.e. the two events would always be emitted at the same time)\r\n2. `reset` is impossible to log. You send a stateless reset if you lost state for a connection (after a crash or reboot, or if a packet was misrouted to the wrong backend server). In any case, there\u2019s no connection state to update by definition.\r\n3. `handshake` seems to be a duplicate of connection_started for both sides.\r\n\r\nI think these events could be removed without losing any information in the log.\r\n\r\nI suggest adding a new event for [confirmation of the handshake](https://quicwg.org/base-drafts/draft-ietf-quic-tls.html#name-handshake-confirmed). Maybe it would make sense to rename `active` to `handshake_completed` and add a `handshake_confirmed`?",
       "createdAt": "2020-04-12T04:01:04Z",
-      "updatedAt": "2020-10-31T14:00:18Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-02T20:37:30Z",
+      "closedAt": "2020-11-02T20:37:30Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1809,7 +1860,7 @@
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "Adding to my list, `keepalive` should probably not be a connection state. The QUIC specification doesn't  say a lot about keep-alives other than you can send a packet once in a while if you have nothing else to send.\r\nMaybe it's enough to set this as a `trigger` on the `packet_sent` event?",
           "createdAt": "2020-04-12T12:16:04Z",
           "updatedAt": "2020-04-12T12:16:04Z"
@@ -1823,7 +1874,7 @@
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "Here's my suggestion for a better `connection_state_updated` definition:\r\n```\r\nenum ConnectionState {\r\n    client_address_verified, // when the server considers the client's source address verified\r\n    handshake_complete, // handshake completed\r\n    handshake_confirmed, // handshake confirmed\r\n    draining, // CONNECTION_CLOSE sent\r\n    closed // connection actually fully closed, memory freed\r\n}\r\n```\r\n\r\nI added a `client_address_verified` to my earlier suggestion, since with https://github.com/quicwg/base-drafts/pull/3924, servers can make this decision based on multiple different criteria.\r\n\r\n@rmarx What do you think?",
           "createdAt": "2020-07-27T04:18:33Z",
           "updatedAt": "2020-07-27T04:18:33Z"
@@ -1848,6 +1899,13 @@
           "body": "Related to #43 ",
           "createdAt": "2020-10-31T14:00:18Z",
           "updatedAt": "2020-10-31T14:00:18Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Closing this and moving to #43 as the main tracking issue for this. ",
+          "createdAt": "2020-11-02T20:37:30Z",
+          "updatedAt": "2020-11-02T20:37:30Z"
         }
       ]
     },
@@ -1900,14 +1958,15 @@
       "url": "https://github.com/quiclog/internet-drafts/issues/85",
       "state": "OPEN",
       "author": "marten-seemann",
-      "authorAssociation": "CONTRIBUTOR",
+      "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [
-        "current-version"
+        "current-version",
+        "design"
       ],
       "body": "This is a high-level observation based on my experience of 1. adding qlog support for quic-go and 2. writing some tooling to sift through a pile of logs.\r\n\r\nWhen adding qlog support for quic-go, I already found it confusing that qlog bundles things that have little to do with each other into the same event. Examples for these are:\r\n* The values in `parameters_set` event in `transport` that are not part of the QUIC transport parameters.\r\n* The `pto_count` in `metrics_updated`.\r\n* The `connection_state_updated` event. This is the worst in this list.\r\n\r\nIn my implementation, I worked around this by exposing an API that exposes different functions, which then would encode the same qlog event (with the respective fields set). For example, I have a `qlog.UpdatedPTOCount()` and a `qlog.UpdatedMetrics()`, which both emit a `metrics_updated` event.\r\n\r\nWriting my own qlog parser, I'm now encountering the same problem again. For example, one interesting thing to monitor on a production system would be the reason why a connection was closed (to see if there are any PROTOCOL_VIOLATIONS, for example). It would make filtering much easier if there was a `connection_closed` event, instead of having to look at optional fields in all the `connection_state_updated` events emitted over the lifetime of the connection. A similar argument applies to the PTO count (Connections that experience a lot of PTO events might be interesting to look at. Connections that collect many RTT samples are not).\r\n\r\nFrom my discussions with @rmarx (and I hope that I'm paraphrasing him correctly here), the main argument for having fewer events was that it makes things easier to implement. I hope that I laid out my argument here that the opposite is the case.",
       "createdAt": "2020-04-21T03:43:01Z",
-      "updatedAt": "2020-11-02T08:19:17Z",
+      "updatedAt": "2020-11-03T16:23:37Z",
       "closedAt": null,
       "comments": [
         {
@@ -1940,10 +1999,24 @@
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "> Put differently: if we just renamed parameters_set to configuration_chosen (or similar), would you then still advocate for splitting the event?\r\n\r\nYes, definitely! This is not about the name, but by the confusing created by stuffing unrelated things into the same event. I'm not sure I understand the motivation for keeping the number of events small, event types are cheap (both in terms of specifying them, in terms of implementing them). \r\nWhat's not cheap is writing tooling that needs to figure out what actual event a \"catch-all\" event like `parameters_set` corresponds to. I doubt that this will be possible without some complicated heuristics. How do I distinguish between TPs restored and TPs taken from a default configuration? Can a tool rely on a `parameters_set` that sets the ALPN doesn't at the same time set QUIC TPs?",
           "createdAt": "2020-11-02T08:18:52Z",
           "updatedAt": "2020-11-02T08:19:17Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I decided to take the middle road for draft-02 to see how it feels.\r\n\r\nI have now split out QUIC versions and ALPN to separate events (`version_information` and `alpn_information`) as those were the two most pressing fields in need of treatment (see also their specific issues, e.g., #74, #28). This does make these things easier to grok and log, I admit. However, doing this for other similar stuff (especially things like TLS ciphers, key share groups, signature algo's, ...) will cause many more event types. \r\n\r\nWhile I agree that event types are cheap in concept, I've always been afraid that adding all these fine-grained events will feel daunting for new qlog implementers or people updating to a new draft or, especially, new tooling implementers (though there haven't been many of those). If most things are in the `parameters_set` event, which they probably want to support anyway, it should feel like less effort to also support additional fields. I'm not saying that's correct in practice, but just to explain why I've been somewhat hesitant to add many new event types. \r\n\r\nI feel that the relatively small scope of qlog in -00 and -01 has contributed to the adoption levels we're seeing, but maybe the argument can be made that now that we have a \"critical mass\" we can start splitting things out, expecting people to incrementally follow along. It does also probably make it easier to make \"dumb\" tools that just plot the data instead of those that do considerably more processing/logic in the tools like qvis (which is the type of tool @marten-seemann is most interested in, IIUC). \r\n\r\nIn short, I'm keeping this open, as this is a main general design decision going forward. \r\n\r\n\r\n",
+          "createdAt": "2020-11-03T11:24:58Z",
+          "updatedAt": "2020-11-03T11:24:58Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "I think one high level design decision needs to be made here first. Is the format of the logs supposed to be optimized for the performance of implementations generating them or for tools that are processing them? Generally, I believe it should be optimized for the ones generating them. Tools can afford the extra time and complexity because they're not in the production loop.\r\n\r\nAssuming there's general agreement with optimizing for the implementations and not the tools, then splitting up events makes sense in my opinion. For most of these things, the instantaneous action/operation that would trigger these events is very often isolated from much of everything else. Therefore trying to force extra packaging or coalescing requires implementations that don't already have it, to manage additional state.\r\n\r\nAs to the worry that all the individual events will make it feel daunting for new users/implementers of qlog, this is not unfounded, but things should be structured such that generally as many events as possible are optional, but you only get the full benefit out of the tools if you implement them all. In my opinion, tools should be **very** resilient to missing events for several reasons:\r\n\r\n1. Not all may be implemented (yet?).\r\n2. Filtering at collection time may be enabled (e.g. for performance reasons).\r\n3. Events may be lost at collection time (log buffer overflows are **very** common).\r\n4. Events containing PII data may not be allowed to be collected in production.\r\n\r\nThis obviously makes things much more complicated for the tool, but that's just unfortunately how things are.",
+          "createdAt": "2020-11-03T16:22:39Z",
+          "updatedAt": "2020-11-03T16:23:37Z"
         }
       ]
     },
@@ -1968,18 +2041,26 @@
       "id": "MDU6SXNzdWU2MjM4MTk0NDk=",
       "title": "How to log transport parameters restored for 0-RTT",
       "url": "https://github.com/quiclog/internet-drafts/issues/88",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
-      "authorAssociation": "CONTRIBUTOR",
+      "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [
         "current-version"
       ],
       "body": "When initiating a 0-RTT connection, the client restores transport parameters that it remembers from the last connection. Currently, it has to use the `parameters_set` event for this, with `owner` equal to `server`.\r\n\r\nAs I've already argued in #85, the `parameters_set` event would benefit from being split up. Taking this issue into consideration, maybe `parameters_sent`, `parameters_received` and `parameters_restored` would be a good fit?",
       "createdAt": "2020-05-24T08:24:27Z",
-      "updatedAt": "2020-10-31T13:49:28Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2020-11-03T11:27:29Z",
+      "closedAt": "2020-11-03T11:27:29Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I have now added `transport:parameters_restored` and `http:parameters_restored` to help deal with this. I'm personally still not convinced this is better than simply logging them with \"owner\" equal to \"server\" as was the intent for draft-01, but do like the fact that it's more explicit this way. \r\n\r\nIt will depend a bit on how we're going to end up doing `parameters_set` in general (see #85). If we keep that, maybe an \"owner\" value of \"restored\" would be an interesting middle ground. Closing for now though. ",
+          "createdAt": "2020-11-03T11:27:27Z",
+          "updatedAt": "2020-11-03T11:27:27Z"
+        }
+      ]
     },
     {
       "number": 89,
@@ -2082,7 +2163,7 @@
       "id": "MDU6SXNzdWU2NDIzNTgwMDc=",
       "title": "Add support for retry token and integrity tag",
       "url": "https://github.com/quiclog/internet-drafts/issues/94",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -2091,19 +2172,19 @@
       ],
       "body": "Related to #86 , probably also best at home in the PacketHeader struct.\r\n\r\nProposal:\r\n- use a single `token` field for both retry and initial tokens\r\n- use a single `token_length` field for initial (explicit) and retry (implicit), `integrity_tag` field for retry",
       "createdAt": "2020-06-20T11:16:37Z",
-      "updatedAt": "2020-09-08T15:37:27Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-18T10:19:57Z",
+      "closedAt": "2020-11-18T10:19:57Z",
       "comments": [
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "I don\u2019t think we need to log the integrity tag. We also don\u2019t log the AEAD tag for normal packets.",
           "createdAt": "2020-06-20T12:37:16Z",
           "updatedAt": "2020-06-20T12:37:16Z"
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "It would probably be interesting to log if the token is a Retry token or a NEW_TOKEN token.\r\nFor the client, this bit of information is trivially available, for the server it is after it unprotects the token (assuming unprotecting succeeds), as servers are required to be able to distinguish between Retry and NEW_TOKEN tokens.",
           "createdAt": "2020-07-08T08:58:20Z",
           "updatedAt": "2020-07-08T08:58:20Z"
@@ -2169,7 +2250,7 @@
       "id": "MDU6SXNzdWU2NTMxMTA2OTA=",
       "title": "Indicate (encoded) sizes",
       "url": "https://github.com/quiclog/internet-drafts/issues/97",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -2178,8 +2259,8 @@
       ],
       "body": "Currently we do not have many fields for indicating (compressed) sizes of things.\r\n\r\nWe have the `packet_size`, but this is in the wrong place (#40) and `payload_length` (though it's not well-defined whether packet_size includes the TLS suffix). \r\n\r\nHowever, we lack size indicators for datagrams and, especially frames. When creating the qvis packetization diagram, this was very annoying, as I'd have to reconstruct the encoded frame headers to properly render those (and even then there might be rounding issues if the sender didn't encode things in the absolute minimum of bytes allowed). \r\n\r\nIn comparison, wireshark output does include exact sizes for these fields for TCP/TLS/H2 and this was quite handy. \r\n\r\nAnother point: need some way to indicate the used TLS AEAD tag length (though that should be constant for the entire connection and depends on the used cipher IIUC. For TCP+TLS from Wireshark I also had to manually calculate this from the cipher definitions though, which was a PITA). \r\n\r\nFinally, make terminology consistent (_size vs _length)\r\n",
       "createdAt": "2020-07-08T08:46:33Z",
-      "updatedAt": "2020-10-31T13:51:31Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-02T16:54:20Z",
+      "closedAt": "2020-11-02T16:54:20Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2194,6 +2275,13 @@
           "body": "We have a bit of a weird situation with packet_size, payload_size and header_size, in that if you have 2, you can calculate the third from those... so do we want to specify all three? \r\n\r\nI would reckon that packet_size and payload_size will typically be readily available to implementations, but header_size might be more difficult to come by (as headers can be of varying sizes, while payload is \"the rest of the packet after the header has been processed\"). \r\n\r\nFinally, there is overlap with what we currently call \"raw_length\" if we're logging the full raw byte contents of the packet (in the \"raw\" field, which we currently name \"raw\" across all events for consistency). To keep naming consistent, you'd want this \"raw_length\" here as well, but you also kind of want \"packet_size\" to show the core semantics (especially as I'd suspect most won't log the raw values (and accompanying \"raw_length\") in most places, but do log packet_size). A similar remark for datagram_size in the datagram_* events... do we live with having the same field defined twice with different names or do we remove packet_size and datagram_size and explain that people should use raw_length for those instead (I'm personally tending to this latter option).\r\n\r\nCould use some input on this @marten-seemann, @huitema, @dtikhonov\r\n\r\n",
           "createdAt": "2020-09-07T20:00:22Z",
           "updatedAt": "2020-09-07T20:00:22Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Ended up not logging the header_length and writing out how it can be calculated from total length and payload length and aead length.\r\n\r\nCurrently, aead length is logged separately in `transport:parameters_set`, which is not optimal, but good enough for now until we figure out what to do with that event and how to split it up (see #85)\r\n\r\n\r\nFinally, I ended up keeping explicit length fields when they are used in the QUIC/H3 drafts. This is not the case for the `packet_size` field, so that has now been changed to `raw.length` instead. I'm not entirely enamored by this, as arguably .packet_size was clearer, but since we're moving packet_size out of Header anyway (see #40), it felt best to keep things consistent and punt this to the new RawInfo approach. \r\n",
+          "createdAt": "2020-11-02T16:54:20Z",
+          "updatedAt": "2020-11-02T16:54:20Z"
         }
       ]
     },
@@ -2259,17 +2347,17 @@
       "id": "MDU6SXNzdWU2NTMxMjQ1OTY=",
       "title": "remove redundant length fields",
       "url": "https://github.com/quiclog/internet-drafts/issues/102",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
-      "authorAssociation": "CONTRIBUTOR",
+      "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [
         "current-version"
       ],
       "body": "Once we require hex-encoding for byte-fields (which, as far as I can see from other peoples' qlogs, is already the de-facto standard), we don't need length fields any more. This applies to the `scil` and `dcil` in the `Header` (as well as the proposed token length in #94), the `NewTokenFrame`, `NewConnectionIDFrame` (and probably also the QPACK events, but I'm not an expert on those).",
       "createdAt": "2020-07-08T09:05:51Z",
-      "updatedAt": "2020-10-31T13:52:36Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-02T16:50:46Z",
+      "closedAt": "2020-11-02T16:50:45Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2280,10 +2368,17 @@
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "Good point. I can see why you want to log tokens (since they create a correlation spanning two separate connections).\r\n\r\n> I do think we could add text stating something like \"if you log the raw values in hex, the length field is redundant, and tools SHOULD be able to derive length from hex\"?\r\n\r\nI'd make this an even stronger statement: \"\"if you log the raw values in hex, the length field is redundant and SHOULD (or MUST?) be omitted. Tools MUST be able to derive length from hex\".",
           "createdAt": "2020-07-08T09:20:09Z",
           "updatedAt": "2020-07-08T09:22:53Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Fixed by above commits.\r\n\r\nMain draft now explains how truncated raw byte values should be accompanied by a length field and that tools should be able to derive the length field from the raw byte values. \r\n\r\nEvent definitions draft references this explicitly when discussing the RawInfo approach. ",
+          "createdAt": "2020-11-02T16:50:45Z",
+          "updatedAt": "2020-11-02T16:50:45Z"
         }
       ]
     },
@@ -2294,14 +2389,14 @@
       "url": "https://github.com/quiclog/internet-drafts/issues/104",
       "state": "OPEN",
       "author": "marten-seemann",
-      "authorAssociation": "CONTRIBUTOR",
+      "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [
-        "current-version"
+        "future-versions"
       ],
       "body": "I can't see how logging the exact contents of a STREAM frame could facilitate debugging / analysis of QUIC connections.\r\n\r\nArguably, a transport-level logging system should not log application data exchanged, as this might expose user data to places where it doesn't belong. While qlog can't prevent implementations from adding additional JSON fields to existing events, it should not encourage this behavior.",
       "createdAt": "2020-07-08T09:14:00Z",
-      "updatedAt": "2020-10-31T13:55:04Z",
+      "updatedAt": "2020-11-02T16:49:14Z",
       "closedAt": null,
       "comments": [
         {
@@ -2310,6 +2405,13 @@
           "body": "While I agree from a security/privacy perspective that it shouldn't be encouraged, I disagree somewhat about the non-usefulness in debugging (esp. if you go beyond just H3 and look at things like DoQ or MASQUE). \r\n\r\nTwo direct alternatives I can see at the moment:\r\n- Remove from QUIC STREAM, but keep it on H3 DATA (though this means people can't easily get this without also logging H3/app-layer events, which e.g., things like quant might not like)\r\n- Add a generic `raw` and/or `raw_payload` field for all events to use (much like what we have for `trigger`). This makes it less obvious per-event (so less encouraged you might say) while still keeping a common name for interoperable tooling. \r\n\r\nOverall though, I'd vote to just keep it as-is. While it shouldn't be encouraged, it should imo be -possible- to express in the format for specific use cases. I'd even go one step further and add an explicit `raw` field to the datagram_* events (especially `datagram_dropped`) as I've seen several times in the slack that packets aren't being decoded correctly and having the raw values available could help there. \r\n\r\nIf we do keep `raw`, I'd propose to work out a scheme to allow logging only the first x-bytes though (e.g., `raw: 0xABABCD...(436)` indicating there were 436 more bytes not logged). ",
           "createdAt": "2020-07-08T09:23:36Z",
           "updatedAt": "2020-07-08T09:27:44Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Added a generic \"RawInfo:data\" field in the last commit. Byte-fields can be logged in a truncated form now as well (see main draft), which alleviates some of the privacy issues. \r\n\r\nKeeping this issue open to remember to add stringent prohibitions on logging/exposing raw data in the privacy section later. \r\n",
+          "createdAt": "2020-11-02T16:49:14Z",
+          "updatedAt": "2020-11-02T16:49:14Z"
         }
       ]
     },
@@ -2792,17 +2894,17 @@
       "id": "MDU6SXNzdWU3MDE1OTAxNTE=",
       "title": "token logging",
       "url": "https://github.com/quiclog/internet-drafts/issues/117",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
-      "authorAssociation": "CONTRIBUTOR",
+      "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [
         "current-version"
       ],
       "body": "Currently (in draft-02) tokens are logged like this:\r\n```\r\n    retry_token?:bytes, // only if header.packet_type === retry\r\n    retry_token_length?:uint32, // only if header.packet_type === retry\r\n```\r\n\r\nIt would be nice if it was possible if the server could also log tokens received on Initial packets. More interesting than the raw byte representation of a token would be the data encoded in a token. The most interesting bit is probably if the token is a Retry token or a NEW_TOKEN token. Implementations could then add more fields and fill them with data that's encoded into the token.",
       "createdAt": "2020-09-15T04:07:02Z",
-      "updatedAt": "2020-10-31T13:53:44Z",
-      "closedAt": null,
+      "updatedAt": "2020-11-02T19:48:52Z",
+      "closedAt": "2020-11-02T19:48:52Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2813,10 +2915,17 @@
         },
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "> Then, tokens included in the initial, are logged in the PacketHeader struct (see https://quiclog.github.io/internet-drafts/draft02/draft-marx-qlog-event-definitions-quic-h3.html#name-packetheader). There is no specified way in the spec to know whether the initial token is retry or NEW_TOKEN, except for the semantics of the connection state at that time, so that's what the current setup is with qlog as well (which, I agree, is suboptimal).\r\n\r\nThat's not true. An implementation MUST be able to distinguish between them, see https://quicwg.org/base-drafts/draft-ietf-quic-transport.html#name-token-construction:\r\n> A token sent in a NEW_TOKEN frames or a Retry packet MUST be constructed in a way that allows the server to identify how it was provided to a client. These tokens are carried in the same field, but require different handling from servers.\r\n\r\n> As for the \"what exactly is in a token\"... this is hyper implementation-specific, so you couldn't make interoperable tools for that anyway.\r\n\r\nIn principle, yes, although the spec imposes a few restrictions:\r\n> Tokens sent in NEW_TOKEN frames MUST include information that allows the server to verify that the client IP address has not changed from when the token was issued.\r\n\r\nand\r\n> Servers SHOULD ensure that tokens sent in Retry packets are only accepted for a short time. \r\n\r\nVery likely, implementations will save the creation time and the peer's remote address into the token.",
           "createdAt": "2020-09-15T09:45:03Z",
           "updatedAt": "2020-09-15T09:45:14Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Fixed for draft-02 by extracting out a separate Token class. Open to revisiting this for draft-03. ",
+          "createdAt": "2020-11-02T19:48:52Z",
+          "updatedAt": "2020-11-02T19:48:52Z"
         }
       ]
     },
@@ -2881,6 +2990,57 @@
       "updatedAt": "2020-11-02T15:07:02Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 121,
+      "id": "MDU6SXNzdWU3MzQ5MDEwNDI=",
+      "title": "Allow the logging of Session Ticket contents and stored transport params/SETTINGS",
+      "url": "https://github.com/quiclog/internet-drafts/issues/121",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "future-versions"
+      ],
+      "body": "Currently, we can log which params/settings were restored upon attempting 0-RTT, but not which ones were actually stored at the end of a connection (though we might assume it were the correct ones, using the values from `parameters_set`).\r\n\r\nFor a server which encodes this information in for example the SessionTicket, we also cannot log which values are in the ticket when sending it, nor when receiving it, nor if early data was denied because of a mismatch therein. ",
+      "createdAt": "2020-11-02T23:14:15Z",
+      "updatedAt": "2020-11-02T23:14:22Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 122,
+      "id": "MDU6SXNzdWU3MzQ5ODg0NjA=",
+      "title": "the new Token is confusing",
+      "url": "https://github.com/quiclog/internet-drafts/issues/122",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [
+        "future-versions"
+      ],
+      "body": "The `Token` introduced in https://github.com/quiclog/internet-drafts/commit/60690f4033624006b5bbac8797e69b8a78331ce3 doesn't make sense to me. I don't see the motivation for bundling stateless resets and Retry tokens into the same struct (other than incidentally, the spec calls them tokens).\r\n\r\nStateless reset tokens are by definition random values (or rather, a deterministic pseudorandom value derived from the connection ID). They are always 16 bytes and never contain any other information.\r\n\r\nOn the other hand, the token sent on the Initial can be a Retry token or a NEW_TOKEN token (I guess that's what a resumption token is). This token typically does contain additional information encoded into the value (in fact, as I've described in https://github.com/quiclog/internet-drafts/issues/117#issuecomment-692603028, the spec mandates that you encode a bunch of values into that token). I would have wished that at least those mandatory fields are clearly defined in the `Token`.",
+      "createdAt": "2020-11-03T03:30:41Z",
+      "updatedAt": "2020-11-03T12:28:03Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "From a discussion on Slack, @marten-seemann is in favor of splitting stateless reset tokens from the Token class and logging them as a `stateless_reset_token?:bytes` (which is the approach we had before and works well because the reset token is always 128 bits in length).\r\n\r\nWrt to specifying detail fields, from what I can gather there are two main ones:\r\n- `remote_address?:IPAddress` for a NEW_TOKEN \r\n- `timeout?:uint32` for a retry token\r\n\r\nAre there others that would benefit from being specified explicitly? ",
+          "createdAt": "2020-11-03T11:06:25Z",
+          "updatedAt": "2020-11-03T11:06:25Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think most implementations encode the timestamp (and not the timeout) when the token was generated into the token, so they can decide if they want to accept a token based on current conditions.",
+          "createdAt": "2020-11-03T12:28:03Z",
+          "updatedAt": "2020-11-03T12:28:03Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -3405,31 +3565,38 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NDAzNTMwMzQ5",
       "title": "add a timeout trigger for the closed connection_state_updated event",
       "url": "https://github.com/quiclog/internet-drafts/pull/83",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
-      "authorAssociation": "CONTRIBUTOR",
+      "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2020-04-15T04:12:58Z",
-      "updatedAt": "2020-04-15T07:43:32Z",
+      "updatedAt": "2020-11-03T11:42:33Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
       "baseRefOid": "b0880b8a5ff7a9e856e321ff12465fd4be15cf5f",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "connection-state-timeout",
       "headRefOid": "08e4ca6944c39f416b951adba3dd03d30af326a7",
-      "closedAt": null,
+      "closedAt": "2020-11-03T11:42:33Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [
         {
           "author": "marten-seemann",
-          "authorAssociation": "CONTRIBUTOR",
+          "authorAssociation": "COLLABORATOR",
           "body": "I'm unsure about this PR. In my implementation, I have an idle timeout as well as a handshake timeout (the handshake timeout way shorter than the idle timeout).\r\nWould it make sense to add a value for both? Or a separate field for trigger details?",
           "createdAt": "2020-04-15T07:43:32Z",
           "updatedAt": "2020-04-15T07:43:32Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "In draft-02, I added a trigger value for both generic timeout and handshake_timeout based on quic-go's implementation. ",
+          "createdAt": "2020-11-03T11:42:33Z",
+          "updatedAt": "2020-11-03T11:42:33Z"
         }
       ],
       "reviews": []
@@ -3670,6 +3837,53 @@
       },
       "comments": [],
       "reviews": []
+    },
+    {
+      "number": 123,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTE2NTY1NjM5",
+      "title": "token-related fixes",
+      "url": "https://github.com/quiclog/internet-drafts/pull/123",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #122.\r\n\r\nThis PR contains 2 fixes:\r\n\r\n- stateless reset tokens are not tokens\r\n- `PacketHeader` already contains a `Token`, so we don't need another field on the `packet_sent` and `packet_received` event",
+      "createdAt": "2020-11-06T07:36:26Z",
+      "updatedAt": "2020-11-09T11:23:59Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "draft02",
+      "baseRefOid": "197532463830d19b3e5b854f692951fc9a30ce9a",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "token-fixes",
+      "headRefOid": "24a5388171711b68cae7430aa63e9e98c679e842",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTI2MTU3MzQ2",
+          "commit": {
+            "abbreviatedOid": "24a5388"
+          },
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2020-11-09T11:23:50Z",
+          "updatedAt": "2020-11-09T11:23:59Z",
+          "comments": [
+            {
+              "originalPosition": 41,
+              "body": "So this is a bit of a difficult one imo. \r\nI'd put retry_token outside, since it's encapsulated in its own packet type, and so it can be considered to be part of the \"payload\" rather than the header. \r\nThis is different from the initial token, which is clearly part of the header.\r\n\r\nIf we do put the retry token in the PacketHeader struct, imo it would make sense to do the same for the stateless_reset_token as well, since from the same logic, you could say that that is part of the Stateless Reset Packet header as well, rater than its payload. \r\n\r\nI think it's probably cleaner to have all three in the PacketHeader then, with token?:Token covering both initial and retry as you proposed here. \r\n",
+              "createdAt": "2020-11-09T11:23:51Z",
+              "updatedAt": "2020-11-09T11:23:59Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
