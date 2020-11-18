@@ -145,7 +145,7 @@ A qlog file should be able to contain several indivdual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
-MUST have a value of "draft-02".
+MUST have a value of "draft-03-WIP".
 
 As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
 indicate which serialization option was chosen. Its value MUST either be one of
@@ -173,7 +173,7 @@ class QlogFile {
 JSON serialization:
 
 {
-    "qlog_version": "draft-02",
+    "qlog_version": "draft-03-WIP",
     "qlog_format": "JSON",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
@@ -1093,7 +1093,7 @@ class QlogFileNDJSON {
 
 NDJSON serialization:
 
-{"qlog_format":"NDJSON","qlog_version":"draft-02","title":"Name of this particular NDJSON qlog file (short)","description":"Description for this NDJSON qlog file (long)","trace":{"common_fields":{"protocol_type":"QUIC_HTTP3","group_id":"127ecc830d98f9d54a42c4f0842aa87e181a","time_format":"relative","reference_time":"1553986553572"},"vantage_point":{"name":"backend-67","type":"server"}}}
+{"qlog_format":"NDJSON","qlog_version":"draft-03-WIP","title":"Name of this particular NDJSON qlog file (short)","description":"Description for this NDJSON qlog file (long)","trace":{"common_fields":{"protocol_type":"QUIC_HTTP3","group_id":"127ecc830d98f9d54a42c4f0842aa87e181a","time_format":"relative","reference_time":"1553986553572"},"vantage_point":{"name":"backend-67","type":"server"}}}
 {"time": 2, "name": "transport:packet_received", "data": { ... } }
 {"time": 7, "name": "http:frame_parsed", "data": { ... } }
 ~~~~~~~~
