@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-11-18T10:21:30.237073+00:00",
+  "timestamp": "2020-12-03T09:06:10.683074+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -1391,7 +1391,7 @@
       ],
       "body": "At the moment, it's not entirely clear how qlog is \"supposed to be used\".\r\n\r\nFor example, it's not clear to implementers why some fields (e.g., quic version) are duplicated across `connection_started` and also the PacketHeader.\r\n\r\nWe should provide some examples of what things look like if you implement \"all of qlog\" and what should happen if you only implement the Core events (i.e., some fields in the Core events can be skipped if you're using the Base or Extra events instead). This is also important info for tool implementers. \r\n\r\nThis also depends on the use case: tracing while debugging vs production-level logging. ",
       "createdAt": "2020-02-18T14:05:55Z",
-      "updatedAt": "2020-11-03T11:59:06Z",
+      "updatedAt": "2020-11-27T17:22:29Z",
       "closedAt": null,
       "comments": [
         {
@@ -1400,6 +1400,13 @@
           "body": "Thinking about this more, this seems to have become an untenable situation going forward to -03. \r\nqlog straddles the weird line between being a replacement for pcaps, as well as having to provide events for logging conceptual events not reflected in pcaps. \r\n\r\nThis was fine in the beginning, as everyone can/did log packet contents (e.g., ACK frames) and we could skip many events related to things clear from the wire (e.g., `packet_acked` or `flow_control_updated` etc.). However, for implementations that would not want to log the wire image itself, we would have to add these latter types of events for everything... (ref #107). Tools would then also have to be flexible enough to get this info both from frames and these other events. \r\n\r\nLong story short: we're tying to be a one-stop-shop, defining everything. That might be fine, but then we probably need to explicitly and quite clearly split up the wire-image events from the conceptual events (and provide alternatives for all and clear guidance). \r\n\r\nThis really could use wider discussion. \r\n\r\n",
           "createdAt": "2020-10-31T16:36:39Z",
           "updatedAt": "2020-10-31T16:36:39Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "We had a clear example today of how a separate `flow_control_updated` event is useful. A misbehaving client was lowering flow control limits (probably because it retransmits FC frames as they were in the past, rather than create a new FC update with new limits). qvis showed this as lowering the limits, even though the server probably didn't actually apply the lower limits at its end. It was good that qvis showed the limits (leading to the discovery of this problem), but it again highlights that there is a difference between receipt of a given frame and how that's actually applied in the implementation. ",
+          "createdAt": "2020-11-27T17:22:29Z",
+          "updatedAt": "2020-11-27T17:22:29Z"
         }
       ]
     },
@@ -3041,6 +3048,37 @@
           "updatedAt": "2020-11-03T12:28:03Z"
         }
       ]
+    },
+    {
+      "number": 124,
+      "id": "MDU6SXNzdWU3NDY3MjcwMTU=",
+      "title": "Add support for QUIC DATAGRAM and HTTP/3 DATAGRAM frames",
+      "url": "https://github.com/quiclog/internet-drafts/issues/124",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "[QUIC DATAGRAM spec](https://tools.ietf.org/html/draft-ietf-quic-datagram-01)\r\n\r\n[HTTP/3 DATAGRAM spec ](https://tools.ietf.org/html/draft-schinazi-quic-h3-datagram-05)\r\n\r\nAn interesting point was made about this by @lpardue, in that these frames are almost identical, with the H3 layer just adding a flow_id. \r\nFor this, their implementation somewhat abstracts away the difference between these two, and their H3 code doesn't really have the concept of a DATAGRAM frame. \r\nFor this, it would be interesting to have the flow_id field defined on the QUIC-level DATAGRAM as well, not just the HTTP/3 frame. \r\n\r\nTo me, this feels a bit dirty, qlog not mirroring the specs to make implementation/logging easier. Still, it's something to consider.\r\n\r\nAn alternative is to implement this purely in the tooling. For example, qvis could just look for a flow_id field on the QUIC DATAGRAM frame, even though it's not defined in qlog proper. Alternatively, it could parse raw.data and extract the flow-id from that (which is worse...). \r\n\r\nThis raises an overall point about the robustness of the tooling and whether we should mention something like this in the qlog texts. ",
+      "createdAt": "2020-11-19T16:19:40Z",
+      "updatedAt": "2020-11-19T16:59:53Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "I think there is a place for the H3 DATAGRAM frame qlog object. The quiche implementation, at present, only provides transport layer logging but it would be logical to log an H3 layer frame if we supported it.\r\n\r\nWith what quiche has today, I would not implement flow_id logging for transport DATAGRAM. That would require me to do some layering violation and means the generic transport code suddenly becomes application aware. Its unfair to ask someone else to do the same violation I'm not willing to do and they might well reject it just as I have done. But implementations often have different incentives \ud83d\ude00",
+          "createdAt": "2020-11-19T16:53:02Z",
+          "updatedAt": "2020-11-19T16:53:02Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "There is some overlap here with discussion in the draft repo about whether a flow-id should go in the transport. One comment there described a TAPS concept where interface boundaries can accept a function that can be executed on behalf of the caller. Qvis could for instance by default just plot all datagrams as 1 \"series\", or plot multiple \"series\" based on a user supplied transform function such as varint(dgram_frame.bytes[])",
+          "createdAt": "2020-11-19T16:59:52Z",
+          "updatedAt": "2020-11-19T16:59:52Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -3884,6 +3922,42 @@
           ]
         }
       ]
+    },
+    {
+      "number": 125,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTMxNDA0NzMy",
+      "title": "Field name consistency with QUIC draft 32",
+      "url": "https://github.com/quiclog/internet-drafts/pull/125",
+      "state": "MERGED",
+      "author": "toru",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently there's a mix of `limit` and `maximum` in the QLog spec, such that:\r\n\r\n```\r\nclass DataBlockedFrame{\r\n  frame_type:string = \"data_blocked\";\r\n\r\n  limit:uint64;\r\n}\r\n\r\n...\r\n\r\n class MaxDataFrame{\r\n   frame_type:string = \"max_data\";\r\n\r\n   maximum:string;\r\n }\r\n```\r\n\r\nI was kindly informed in the QLog chatroom that this was inherited from `h3-27`. Fast forward to `h3-32` these fields have been unified to `maximum`. Therefore let's update the spec for consistency (with QUIC and within QLog itself).",
+      "createdAt": "2020-12-03T02:06:08Z",
+      "updatedAt": "2020-12-03T09:05:29Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "draft02",
+      "baseRefOid": "197532463830d19b3e5b854f692951fc9a30ce9a",
+      "headRepository": "toru/internet-drafts",
+      "headRefName": "limit-to-maximum",
+      "headRefOid": "9a655f213f4e5cf8dff12d83116cbdaaac028c4b",
+      "closedAt": "2020-12-03T09:05:22Z",
+      "mergedAt": "2020-12-03T09:05:22Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "153756069ad5d56a720bf730d673f2c74cf1c2cb"
+      },
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Yeah, this is clearly an oversight.\r\nEspecially for this type of event/frame, the goal is to be fully consistent with the terminology in the QUIC texts. I just missed they re-named it there. \r\n\r\nThanks for the PR!",
+          "createdAt": "2020-12-03T09:05:29Z",
+          "updatedAt": "2020-12-03T09:05:29Z"
+        }
+      ],
+      "reviews": []
     }
   ]
 }
