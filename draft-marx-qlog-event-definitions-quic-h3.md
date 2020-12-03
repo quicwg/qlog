@@ -2047,7 +2047,7 @@ class MaxStreamsFrame{
 class DataBlockedFrame{
   frame_type:string = "data_blocked";
 
-  limit:uint64;
+  maximum:uint64;
 }
 ~~~
 
@@ -2058,7 +2058,7 @@ class StreamDataBlockedFrame{
   frame_type:string = "stream_data_blocked";
 
   stream_id:uint64;
-  limit:uint64;
+  maximum:uint64;
 }
 ~~~
 
@@ -2069,7 +2069,7 @@ class StreamsBlockedFrame{
   frame_type:string = "streams_blocked";
 
   stream_type:string = "bidirectional" | "unidirectional";
-  limit:uint64;
+  maximum:uint64;
 }
 ~~~
 
