@@ -376,6 +376,7 @@ multiple error codes can be set on the same event to reflect this.
     connection_code?:TransportError | CryptoError | uint32,
     application_code?:ApplicationError | uint32,
     internal_code?:uint32,
+    version_negotiation: Array<bytes>,
 
     reason?:string
 }
