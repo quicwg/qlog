@@ -17,6 +17,12 @@ author:
     name: Robin Marx
     org: Hasselt University
     email: robin.marx@uhasselt.be
+  -
+    ins: L. Niccolini
+    name: Luca Niccolini
+    org: Facebook
+    email: lniccolini@fb.com
+    role: editor
 
 normative:
   QUIC-TRANSPORT:

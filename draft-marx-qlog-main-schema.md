@@ -30,6 +30,13 @@ normative:
         name: Robin Marx
         org: Hasselt University
         role: editor
+      -
+        ins: L. Niccolini
+        name: Luca Niccolini
+        org: Facebook
+        email: lniccolini@fb.com
+        role: editor
+
 
 informative:
 
