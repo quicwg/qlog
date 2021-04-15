@@ -512,7 +512,6 @@ JSON serialization:
     time: 1553986553572,
 
     name: "transport:packet_sent",
-    event: "packet_sent",
     data: { ... }
 
     protocol_type:  "QUIC_HTTP3",
