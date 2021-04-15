@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2020-12-03T09:06:10.683074+00:00",
+  "timestamp": "2021-04-15T08:37:33.236595+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -3079,6 +3079,699 @@
           "updatedAt": "2020-11-19T16:59:52Z"
         }
       ]
+    },
+    {
+      "number": 126,
+      "id": "MDU6SXNzdWU3NTg5NjU5NTg=",
+      "title": "QuicFrame length and payload_length",
+      "url": "https://github.com/quiclog/internet-drafts/issues/126",
+      "state": "OPEN",
+      "author": "kixelated",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [
+        "current-version"
+      ],
+      "body": "I recently implemented draft 2 and was very confused about the these two fields, found in some of the QuicFrame classes.\r\n\r\n1. What does it mean when a frame has both `payload_length` and `length` (total frame size)? \r\nex. `PaddingFrame`, `PingFrame`, `AckFrame`, `ResetStreamFrame`, `StopSendingFrame`\r\n\r\nDoes `length` include the frame type while `payload_length` is the rest? That doesn't seem true for `PingFrame` and `PaddingFrame`, as `payload_length` == `length`. Also the frame type [must use the minimum size](https://www.ietf.org/archive/id/draft-ietf-quic-transport-32.html#section-12.4-16), so they're just going to be off by 1. Or does `payload_length` measure something else?\r\n\r\n\r\n====\r\n\r\n2. What about frames with both `payload_length` and `length` (not total frame size)?\r\nex. `CryptoFrame`, `StreamFrame`\r\n\r\nDo I need to make an exception for these frames? Is `payload_length` the aforementioned total length - 1, or is it the length of the STREAM/CRYPTO data? \r\n\r\nThe RFC says: > payload_length: length of the packet/frame payload, excluding AEAD tag. For many control frames, this will have a value of zero\r\n\r\nThat implies that `payload_length == length` for these frames, and `payload_length == 0` for every other type of frame???\r\n\r\n====\r\n\r\n3. What about frames with no `length` or `payload_length`?\r\nex. `NewTokenFrame`, `MaxDataFrame`, `MaxStreamDataFrame`, `MaxStreamsFrame`, ... \r\n\r\nIs there no way to measure the size or these frames? The length of most of them don't matter, although you can make the same argument for `ResetStreamFrame` and `StopSendingFrame`. It seems like somebody got distracted while going down the list.\r\n\r\n====\r\n\r\n4. What about classes with `raw_length`?\r\nex. `UnknownFrame`\r\n\r\nSeems inconsistent!",
+      "createdAt": "2020-12-08T00:50:13Z",
+      "updatedAt": "2020-12-20T10:12:23Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Hello Luke,\r\n\r\nThanks for opening this issue, because you're correct that there are some problems with this, as the design for how to do this has changed over time and there seem to be some leftovers/oversights. The person who \"got distracted going down the list\" was me ;) \r\n\r\nThe (currently) intended approach is to log actual lengths and payload lengths as part of an optional \"raw\" field, as described in https://tools.ietf.org/html/draft-marx-qlog-event-definitions-quic-h3-02#section-4.1. This is because many implementations won't log this info and it's only really useful for doing packetization analysis, which you don't always need, so it makes sense to split this up a bit. \r\n\r\nAs such, the `payload_length` and `length` fields on PingFrame, AckFrame, ResetStreamFrame, and StopSendingFrame and the `payload_length` field on PaddingFrame and CryptoFrame **should be removed and instead `raw.payload_length` and `raw.length` should be used**. \r\n\r\nThe `length` fields on Crypto and Stream remain and reflect the fields as defined in the QUIC docs, to make it easier to map them to qlog (this means that frame.length will be the same as raw.payload_length, but so be it...)\r\n\r\n_I'm not sure what to do with PaddingFrame. It doesn't have a length in the spec, but that would be useful to have in qlog. You could say implementations should then just log `raw.payload_length`, but not everyone has that type of flexible stack where that's easy to do if you don't log the `raw` field everywhere, so I'm in favor of keeping `length` on PaddingFrame as well._\r\n\r\nFinally, for UnknownFrame, `raw_length` and `raw` should also be changed to just use the generic `raw` field. \r\n\r\nKeeping this open to tackle for draft-03. Feel free to open a PR, otherwise I'll make the fixes over time. \r\n\r\n---\r\n\r\nAs I said in the other issue you opened in qvis, it's great to have this type of feedback. It can be tough keeping every detail consistent in this type of document and I find I tend to overlook things like this. If you find anything else that seems strange, don't hesitate to open an issue. \r\n\r\n\r\n\r\n\r\n",
+          "createdAt": "2020-12-08T10:57:11Z",
+          "updatedAt": "2020-12-08T10:57:11Z"
+        },
+        {
+          "author": "ptrd",
+          "authorAssociation": "NONE",
+          "body": "My 2 cents:\r\n- IMHO Padding should contain a length field (in kwik i do the same optimisation of combining padding bytes into one frame; i guess more people are doing so ;-))\r\n- for frames, having both length and payload_length wouldn't be very useful, would it? One can easily computed from the other (where \"easily\" is even an understatement ;-))",
+          "createdAt": "2020-12-20T10:12:23Z",
+          "updatedAt": "2020-12-20T10:12:23Z"
+        }
+      ]
+    },
+    {
+      "number": 127,
+      "id": "MDU6SXNzdWU3ODA3NDYzNTg=",
+      "title": "Properly add double quotes for JSON keys as well",
+      "url": "https://github.com/quiclog/internet-drafts/issues/127",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "I've been lazy and didn't add double quotes for JSON keys, just for string field values.\r\nFor a more formal version, this should be changed. ",
+      "createdAt": "2021-01-06T18:05:52Z",
+      "updatedAt": "2021-01-06T18:05:52Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 128,
+      "id": "MDU6SXNzdWU3ODExNzcyOTM=",
+      "title": "Remove implementation detail from PacketType enum",
+      "url": "https://github.com/quiclog/internet-drafts/issues/128",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "At the moment, the PacketType enum has `onertt = \"1RTT\"` (and similar for 0RTT) because in most programming languages, enum keys cannot start with numerical characters. This has however led to some confusion in some cases, so it's probably best to leave out this implementation detail in the spec.\r\n\r\nSee also https://github.com/p-quic/pquic/issues/18#issuecomment-756005163",
+      "createdAt": "2021-01-07T09:44:36Z",
+      "updatedAt": "2021-01-07T09:44:36Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 129,
+      "id": "MDU6SXNzdWU3ODE3NDY3NTk=",
+      "title": "TransportError",
+      "url": "https://github.com/quiclog/internet-drafts/issues/129",
+      "state": "OPEN",
+      "author": "kazu-yamamoto",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": " A.7.22.  `TransportError` should catch up the latest transport draft. Probably four errors are missing.",
+      "createdAt": "2021-01-08T00:34:45Z",
+      "updatedAt": "2021-01-08T00:34:45Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 130,
+      "id": "MDU6SXNzdWU3ODc2NjEzODk=",
+      "title": "Formal definition of CommonFields seems to be missing",
+      "url": "https://github.com/quiclog/internet-drafts/issues/130",
+      "state": "OPEN",
+      "author": "ptrd",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Section https://tools.ietf.org/html/draft-marx-qlog-main-schema-02#section-3.3 defines class Trace that has a field\r\n`common_fields?: CommonFields`, \r\nhowever, the class CommonFields is not defined in the document.",
+      "createdAt": "2021-01-17T08:50:09Z",
+      "updatedAt": "2021-01-17T08:56:34Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "ptrd",
+          "authorAssociation": "NONE",
+          "body": "Hmm, 3.4.8 defines it. I missed it because i did a text search on \"CommonFields\", which occurs only once in the text.\r\nEven though it is defined as a dictionary that can contains anything, personally, i would still like to see a class definition of CommonFields in the text. This could at least define the 4 default fields.",
+          "createdAt": "2021-01-17T08:56:34Z",
+          "updatedAt": "2021-01-17T08:56:34Z"
+        }
+      ]
+    },
+    {
+      "number": 131,
+      "id": "MDU6SXNzdWU3ODc2Njc0NTk=",
+      "title": "Improve definition of event and data",
+      "url": "https://github.com/quiclog/internet-drafts/issues/131",
+      "state": "OPEN",
+      "author": "ptrd",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "As discussed on Slack, i find definition of event and data object a bit confusing. \r\nSome suggestions for improvement:\r\n- https://tools.ietf.org/html/draft-marx-qlog-main-schema-02#section-3.4.3: TransportPacketSentEvent is not an event in the terminology of this document, but an example of data object; as such, i'd suggest to name it TransportPacketSentData\r\n- it would help if the data serialization example in the same section would also show how the data object fits into the event (i.e. include the event in the example)\r\n- https://tools.ietf.org/html/draft-marx-qlog-event-definitions-quic-h3-02#section-5: i'd suggest to also mention each subsubheading / event-type will define the data class that is referred to in main-schema\r\n- why not use the more formal way of defining a data class used in the main-schema document (e.g. class TransportPacketSentData) in stead of the informal \"Data\" label this is now used in quic-schema? The latter confuses me, because it makes me wonder how it fits in the formal definition of event. Also, it would be helpful as one can find the QUIC example in main-schema (TransportPacketSentEvent) in the QUIC-document; currently this example cannot be found in the quic-doc, which is a bit confusing also as it states the example is taken from QUIC ;-)\r\n- the definition (example) of TransportPacketSentEvent in main-schema does not match the definition in quic-doc  section 3.5.3; either make them equal or add a note in the main-schema document that it is only partial.",
+      "createdAt": "2021-01-17T09:33:04Z",
+      "updatedAt": "2021-01-17T09:33:04Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 132,
+      "id": "MDU6SXNzdWU3OTAxNTM0NTY=",
+      "title": "Add events to explicitly indicate send blocking",
+      "url": "https://github.com/quiclog/internet-drafts/issues/132",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "msquic has separate events that indicate if the sender was blocked/delayed/idle and due to which cause (e.g., pacing, flow control limited, cwnd limited, etc.).\r\n\r\nThis is quite useful for debugging. While some of this can be deduced from looking at other existing qlog events, adding some more explicit events for this could be interesting. \r\n\r\n@nibanks: maybe you could give some pointers/links to where these events are defined for msquic for reference? \r\n\r\ncc @lpardue",
+      "createdAt": "2021-01-20T16:56:04Z",
+      "updatedAt": "2021-01-20T17:01:43Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "As far as I could intuit, MS had events for blocked and unblocked. \r\n\r\nThis seemed to be an application/  implementation event, rather than something strictly transport related. So I wonder what type of category it would fit into.",
+          "createdAt": "2021-01-20T17:00:15Z",
+          "updatedAt": "2021-01-20T17:00:15Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "https://github.com/microsoft/msquic/blob/main/src/inc/quic_trace.h#L44\r\n```C\r\ntypedef enum QUIC_FLOW_BLOCK_REASON {\r\n    QUIC_FLOW_BLOCKED_SCHEDULING            = 0x01,\r\n    QUIC_FLOW_BLOCKED_PACING                = 0x02,\r\n    QUIC_FLOW_BLOCKED_AMPLIFICATION_PROT    = 0x04,\r\n    QUIC_FLOW_BLOCKED_CONGESTION_CONTROL    = 0x08,\r\n    QUIC_FLOW_BLOCKED_CONN_FLOW_CONTROL     = 0x10,\r\n    QUIC_FLOW_BLOCKED_STREAM_ID_FLOW_CONTROL= 0x20,\r\n    QUIC_FLOW_BLOCKED_STREAM_FLOW_CONTROL   = 0x40,\r\n    QUIC_FLOW_BLOCKED_APP                   = 0x80\r\n} QUIC_FLOW_BLOCK_REASON;\r\n```\r\nThe lack of any flags means it's unblocked.",
+          "createdAt": "2021-01-20T17:00:52Z",
+          "updatedAt": "2021-01-20T17:00:52Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "And the connection has a set of flags, as well as each stream has its own set.",
+          "createdAt": "2021-01-20T17:01:43Z",
+          "updatedAt": "2021-01-20T17:01:43Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "I guess my intuit was a bit off \ud83d\ude1c",
+          "createdAt": "2021-01-20T17:01:43Z",
+          "updatedAt": "2021-01-20T17:01:43Z"
+        }
+      ]
+    },
+    {
+      "number": 133,
+      "id": "MDU6SXNzdWU3OTUwODc3OTM=",
+      "title": "Clarify that Retry, VNEG, and Stateless Reset packets don't have packet numbers",
+      "url": "https://github.com/quiclog/internet-drafts/issues/133",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "With draft-02, we moved packet_number to PacketHeader and used that field for all types of packets as well. \r\nHowever, packet_number is currently a required field, but Retry, Version Negotiation and Stateless Reset packets don't actually use packet numbers.\r\n\r\nI don't want to just make the packet_number field generally optional, since imo it shouldn't be for other packet types. Better (best?) solution is to add an explicit comment indicating the field MUST be omitted for the 3 exceptions and MUST be included for all others. ",
+      "createdAt": "2021-01-27T13:10:01Z",
+      "updatedAt": "2021-01-27T13:10:01Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 134,
+      "id": "MDU6SXNzdWU3OTUwOTU4NTU=",
+      "title": "Multipath support",
+      "url": "https://github.com/quiclog/internet-drafts/issues/134",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "With the multipath conversation gaining traction in the QUIC wg, it's time to start thinking more seriously about adding (rough) multipath support to qlog and qvis to aid practical implementation efforts (e.g., see https://huitema.wordpress.com/2021/01/26/implementing-multipath-in-quic).\r\n\r\nThe simplest approach that I can see would be to associate a `path_id` with each qlog event:\r\n\r\n```\r\nEvent definition without multipath:\r\nclass Event {\r\n    time: number,\r\n    name:string,\r\n    data:any\r\n}\r\n\r\nEvent definition with multipath:\r\nclass Event {\r\n    time:number,\r\n    name:string,\r\n    path_id:number | string,\r\n    data:any\r\n}\r\n```\r\n\r\nThis would allow users to log all events belonging to a single \"connection\" to differentiate per-path events without having to split them up in separate qlog Trace objects. Additionally, it prevents from having to overload the existing `group_id` field with an additional meaning.\r\n\r\nHowever, the main problem I can see is that the `path_id` (which can be anything, preferably an opaque/obscured value) is not available everywhere in the code that wants to output a qlog event. For example, a congestion controller will wish to output the `recovery:metrics_updated` event, but might not necessarily have the `path_id` available in the code path where these metrics are calculated/available (e.g., if a congestion control method is re-used as-is between single-path and multi-path QUIC). Similar concerns exist for other events (e.g., ACK processing or event `packet_sent` if this is logged before the packet scheduler decides which path to take). \r\n\r\nWhile there are of course always solutions to this (e.g., pass the path_id as extra parameter/as global variable/put it on a stack/put it on a logging object reference/etc.) it is at this time unclear if this is an actual problem and if implementers would wish to add these patchwork \"solutions\" if required, just to get proper qlog output.\r\n\r\nCC @huitema @mpiraux\r\n\r\n\r\n",
+      "createdAt": "2021-01-27T13:20:50Z",
+      "updatedAt": "2021-02-07T02:52:17Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "I will try implement that and give you feedback. I think this is natural for QUIC level events, not so much for application level events.",
+          "createdAt": "2021-01-27T20:25:29Z",
+          "updatedAt": "2021-01-27T20:25:29Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Excellent! Having implementation experience will help here, while example output traces will help get something into qvis. \r\n\r\nThe `path_id` would indeed only be for transport-layer events. For application-layer events, I was thinking to either omit the `path_id` (and specify that events without path_id should be considered cross-path/valid for all paths/...) or give a special `path_id` value (e.g., \"app\"), though omitting it seems cleanest and most optimized. ",
+          "createdAt": "2021-01-28T10:53:35Z",
+          "updatedAt": "2021-01-28T10:53:35Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "I am finding a first difficulty: how does one define the path identifier? The uniflo ID in draft-deconinck and the DCID sequence number in draft-liu have very similar properties: they define flows in only one direction. But the numbers derived from the DCID are place holders. The \"actual path\" is defined by the addresses and ports from and to which packets are sent. The DCID maps to that when it is present, but what if is not? Today, a popular setup is for clients (but not servers) to use NULL connection IDs -- this minimizes overhead in the server-to-client direction. The solution that I presented in draft-huitema allows that; my implementation of draft-liu also allows it. But if there is no DCID in the packets sent from server to client, how shall I define the path-id?\r\n\r\nFor picoquic, I could use the DCID ID sequence number when the DCID is present, and an arbitrary \"path number\" when it is not. But doing that will not result in a good log, because if the choice is arbitrary the path-id in the client log may not match the path-id in the server log. We do want to be able to match events from client and server log, so we have to do something better. My take is the following:\r\n\r\n* If the DCID is present, use the number associated with it.\r\n* If the DCID is NULL, check whether there is a CID used in the reverse direction. If it is present, use the number associated with that CID.\r\n* If the DCID is NULL in both direction, use the number 0.\r\n\r\nNote that if solutions allow the use of NULL DCID, they will need to somehow provide a way to identify the paths -- if only because they need to ask the peer to \"abandon path X\" when they loose connectivity on that path, and they need an identifier for that. It is just that the proposals are not quite mature enough...\r\n\r\n ",
+          "createdAt": "2021-01-29T00:40:40Z",
+          "updatedAt": "2021-01-29T00:40:40Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "That is some very useful feedback! \r\n\r\nI hadn't considered that we need to define a way to choose the `path_id` to make it possible to sync up client and server-side traces purely on `path_id`... I think your proposal makes sense, though we would have to specify concretely how to derive the `path_id` \"number\" from the connection ID (i.e., simply taking the first/last 8 bits or similar is simple enough, but might not be optimal considering privacy down the line (e.g., in setups where you don't even want to log the real CIDs)). \r\n\r\nAn alternative approach would be to shift the client/server path correlation to the tools themselves (i.e., have them use knowledge about the Multipath extension and IP+port info to link `path_id`s), but that has similar privacy issues...\r\n\r\nIt seems like the final solution would indeed depend on the chosen Multipath design (e.g., if that always requires a DCID + seq nr or Uniflow ID, we can just use that). For now, we can probably make due with a simpler scheme like the one you propose to get implementation experience. \r\n\r\n\r\n\r\n\r\n",
+          "createdAt": "2021-01-29T16:15:45Z",
+          "updatedAt": "2021-01-29T16:15:45Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "Personally, I'd add a PathCreated event, that defines an arbitrary ID and all the parameters necessary to describe it. You might also want a PathUpdated event if you need to modify any of those parameters before the PathDestroyed event. For all other events that must represent \"the path\" they merely use the arbitrary ID.\r\n\r\nWe generally try to use this model for all event logging in MsQuic, though, much of the time, we use the object * for the ID for additional usefulness when live debugging.",
+          "createdAt": "2021-01-29T16:42:52Z",
+          "updatedAt": "2021-01-29T16:43:16Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "@nibanks with arbitrary identifiers, how do you reconcile client log and server log?",
+          "createdAt": "2021-01-29T16:45:39Z",
+          "updatedAt": "2021-01-29T16:45:39Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "You obviously cannot just use the ID value. You must search for two paths with the same parameters and associate those path objects.",
+          "createdAt": "2021-01-29T16:46:39Z",
+          "updatedAt": "2021-01-29T16:46:39Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "That seems tantamount to the second option I described @nibanks, but the question then becomes: what are those parameters? IIUC those would mainly be IP+port info, which is not something a privacy-aware endpoint would want to include in their qlogs. ",
+          "createdAt": "2021-01-29T16:50:07Z",
+          "updatedAt": "2021-01-29T16:50:07Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "If you're warry of PII, you simply include a hash of the information. Then your parser must understand both raw data format and hash format. If one side includes raw and the other a hash, then the parser converts raw to hash and does the comparison.",
+          "createdAt": "2021-01-29T16:56:43Z",
+          "updatedAt": "2021-01-29T16:56:43Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So that is a more general question I'm struggling with wrt qlog privacy and whether hashing is enough. Conceptually, if the attacker is looking for a specific (set of) IP(s) or users, and the hashing function is known (which it has to be to correlate independent client-server logs), they could still derive if a trace was for a given IP/user or not by generating hashes for all IPs/users under consideration. \r\n\r\nI'm not at all sure if that's an actual concern in practice or even something that can be worked around (I need to do more reading on data anonymization). It's also a bit esoteric, as you'd only need to use that type of hashing if you know you want to cross-correlate logs (which you probably don't want to do in production?), otherwise you can just use internal opaque IDs. But that's a potential issue here imo, and one that could require a rework of the mechanism should we choose the hashing approach now and it is deemed too \"dangerous\" later. \r\n\r\nAs I've said however, for now to allow us to make progress, I have no qualms choosing this type of approach to get experience. I also feel some generic path-related events are needed (e.g., path_created, path_updated, path_removed etc.) besides just the `path_id`. ",
+          "createdAt": "2021-01-29T17:18:20Z",
+          "updatedAt": "2021-01-29T17:18:20Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "First off, I think the notion of privacy should be a separate Issue and not discussed here. Still, I don't think you're going to be able to completely solve this without exchanging a completely arbitrary value on the wire. If you want two independent parties to log the same thing, they have to agree on a mechanism to turn PII_DATA -> ANONYMIZED_DATA. So you have to standardize a mechanism to do that. If it's standardized then anyone who knows of a particular PII_DATA can convert it as well. The best you can do is have the method be key based, but that only helps if 1) both the client and server know the key and 2) the person you want to view the logs but not be able to correlate **not** know the key. I'm not sure how you'd achieve that.",
+          "createdAt": "2021-01-29T17:23:36Z",
+          "updatedAt": "2021-01-29T17:23:36Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "Yes, the tools could rely on addresses and ports to match paths. But in the presence of NAT the values changes. You end up requiring heuristics.\r\n\r\nAs for going to anonymized data, there is a whole body of literature on the subject, and it is not easy to be both anonymous and useful. Plus there is an interesting problem of comparing hashes after NAT.",
+          "createdAt": "2021-01-29T18:00:34Z",
+          "updatedAt": "2021-01-29T18:00:34Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "Another question regarding default values. What happens if there is path_id specified for some events, but not for others?\r\n\r\nAsking that because I would like to not include a path_id in the qlog files if not using multipath. My preference would be using a default \"path_id = 0\" when the element is absent.",
+          "createdAt": "2021-01-30T06:53:47Z",
+          "updatedAt": "2021-01-30T06:53:47Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "As I mentioned above (https://github.com/quiclog/internet-drafts/issues/134#issuecomment-768970236), I indeed feel you should be able to omit `path_id` on events that do not require it and that a single trace can perfectly contain events with and without `path_id` set. \r\n\r\nI don't fully agree with the semantics of making an omission imply a default path_id value though, as e.g., HTTP/3 events will probably always lack a `path_id` as they belong to \"all paths\" concurrently. \r\n\r\nPut differently: there is a (subtle) difference between \"omission = default value\" and \"omission = belongs to all paths\", and I'd prefer the latter. This also holds up in the non-multipath case.",
+          "createdAt": "2021-01-30T10:40:33Z",
+          "updatedAt": "2021-01-30T10:40:33Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "I have a bit of a situational argument. I have logging tests that simulate a connection, generate a log, and compare the log to the reference value. As I am implementing multipath log, I am running these monopaths tests and verifying that \"nothing changed\". The alternative would be to allow that something changes (allow path_id=0 here and there), and then check the result line by line to verify that the difference with the reference is as expected. Of course that's doable to. It is just way more time consuming...",
+          "createdAt": "2021-01-30T23:57:20Z",
+          "updatedAt": "2021-01-30T23:57:20Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "OK. At that point, I need some advice on the JSON formatting. In the traces, the events look like:\r\n```\r\n[0, \"recovery\", \"metrics_updated\", {\"bytes_in_flight\": 3202}],\r\n```\r\nAs you can see, we have a simplified notation, in which the headers are omitted. The simplification is defined in the header element:\r\n```\r\n\"event_fields\":[\"relative_time\",\"category\",\"event\",\"data\"],\r\n```\r\nOnce I have defined the \"events fields\", it appears that writing something like this is invalid:\r\n```\r\n[70892, \"path_id\": 1, \"recovery\", \"metrics_updated\", {\"bytes_in_flight\": 2747,\"smoothed_rtt\": 25681}],\r\n```\r\nI suppose that my only option would be to write:\r\n```\r\n\"event_fields\":[\"relative_time\",\"path_id\",\"category\",\"event\",\"data\"],\r\n...\r\n[70892, 1, \"recovery\", \"metrics_updated\", {\"bytes_in_flight\": 2747,\"smoothed_rtt\": 25681}],\r\n```\r\nWhich requires writing the path ID on every event. Is that correct?",
+          "createdAt": "2021-01-31T02:06:26Z",
+          "updatedAt": "2021-01-31T02:41:43Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "OK, so I went ahead and updated the picoquic qlog code to add a path_id to the event header when multipath is being negotiated. Although conceptually simple, that changes a lot of code in a lot of places. The PR is at https://github.com/private-octopus/picoquic/pull/1124.\r\n\r\nHere is an example of multipath log:\r\n[multipath_qlog_ref.txt](https://github.com/quiclog/internet-drafts/files/5899304/multipath_qlog_ref.txt)\r\n \r\n\r\n",
+          "createdAt": "2021-01-31T06:58:30Z",
+          "updatedAt": "2021-01-31T06:58:30Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "This is another example of qlog with multipath traffic: \r\n[simple_multipath_qlog_ref.txt](https://github.com/quiclog/internet-drafts/files/5938171/simple_multipath_qlog_ref.txt). This one uses the \"simple multipath\" option that I defined in my original draft, which uses a single packet number space. As you will see, the sequence displays well with qvis, although some visualisation of path-id would be nice. The congestion graph, on the other hand, is also wrong. Maybe less wrong than the previous multipath variant, but there really should be one graph per path for congestion window, bytes in flight, etc.",
+          "createdAt": "2021-02-07T02:52:17Z",
+          "updatedAt": "2021-02-07T02:52:17Z"
+        }
+      ]
+    },
+    {
+      "number": 135,
+      "id": "MDU6SXNzdWU4MDE4MDg0MTI=",
+      "title": "DPLPMTUD events",
+      "url": "https://github.com/quiclog/internet-drafts/issues/135",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "While DPLPMTUD is optional, there's an [entire section](https://quicwg.org/base-drafts/draft-ietf-quic-transport.html#name-datagram-packetization-laye) about it in QUIC transport.\r\n\r\nMinimal support for this in qlog would define an event `mtu_increased` for every increase of the MTU:\r\n```\r\n{\r\n     new_mtu: uint16\r\n}\r\n```\r\n\r\nI don't think we need a separate event for the sending of an MTU probe packet, but we should probably standardize a `trigger` for this. Suggestion: `mtu_probe`.\r\n\r\nOpen question: Do we want a separate failure event? Failure would be either the loss of an MTU probe packet, or (for implementations that pay attention to ICMP packets) the receipt of an ICMP Packet Too Big (PTB) message.",
+      "createdAt": "2021-02-05T03:23:23Z",
+      "updatedAt": "2021-02-09T13:41:25Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I agree it would be useful to have this information in qlog.\r\n\r\nIn terms of design, as always there are several options:\r\n1) have separate events for this (`mtu_updated`, `mtu_probe_sent`, `mtu_probe_lost`, etc.)\r\n2) integrate them into existing events( triggers on `packet_sent` and `packet_lost`, new `mtu` field in `metrics_updated`)\r\n3) a combination of these approaches (which is what you suggest IIUC)\r\n\r\nThis is imo a good example of where we need clear design guidelines on how to add new information/events to qlog. \r\n",
+          "createdAt": "2021-02-09T13:41:25Z",
+          "updatedAt": "2021-02-09T13:41:25Z"
+        }
+      ]
+    },
+    {
+      "number": 136,
+      "id": "MDU6SXNzdWU4MDI5Mjc3MTg=",
+      "title": "add a field to log the code version",
+      "url": "https://github.com/quiclog/internet-drafts/issues/136",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "With many iterations of my qlog implementation running in production now, it would be helpful if there was a way to tell which version of my code generated any particular qlog file (even better if qvis could display it somewhere).\r\n\r\nI suggest adding an optional `code_version` to the `Trace` container. Implementations could fill this field with whatever they want. In quic-go, I'd probably use something like `quic-go $(git describe --long --dirty)`.",
+      "createdAt": "2021-02-07T11:14:07Z",
+      "updatedAt": "2021-02-09T13:57:56Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "A similar argument applies to architecture information. It would be useful to have a field to log OS / architecture / kernel information / compiler version.",
+          "createdAt": "2021-02-07T11:36:20Z",
+          "updatedAt": "2021-02-07T11:36:20Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I agree this is useful information, but I'm not 100% sure it makes sense to standardize this, as I'd assume the handling of this field would depend on the company/deployment/tool and as you say, the contents can also differ wildly. Note that it's in my opinion perfectly acceptable to have qvis display a field that isn't defined in the qlog docs as such (i.e., qvis is broader than qlog). \r\n\r\nIf we do want to include this type of thing in qlog proper, I'd propose putting it beneath the existing `configuration` field, or add a new `environment` field. ",
+          "createdAt": "2021-02-09T13:45:45Z",
+          "updatedAt": "2021-02-09T13:45:45Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Note that it's in my opinion perfectly acceptable to have qvis display a field that isn't defined in the qlog docs as such\r\n\r\nAre you suggesting that qvis defines additional fields / events? That's an interesting idea.\r\nIn this case though, I'd argue that `environment` (which is a lot better name than the `code_version` I suggested) is something that would be a useful thing to display for a variety of tools, so it would probably make sense to define it here.",
+          "createdAt": "2021-02-09T13:57:56Z",
+          "updatedAt": "2021-02-09T13:57:56Z"
+        }
+      ]
+    },
+    {
+      "number": 137,
+      "id": "MDU6SXNzdWU4MjAxNTgzNDQ=",
+      "title": "Prepare for adoption",
+      "url": "https://github.com/quiclog/internet-drafts/issues/137",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "List of thinks to keep in mind when preparing for QUIC wg adoption:\r\n- Split QUIC and HTTP/3 event definitions into separate drafts (ensure proper cross-reference)\r\n- Update editor names and affiliations\r\n- Move shared stuff to the main schema document\r\n  - RawInfo (though not 100% sure that's generic enough for all protocols?)\r\n  - The whole \"generic\" category (error, warning, verbose, etc.)\r\n  - Potentially the \"Importance\" indicators (Core, Base, Extra)\r\n- rename master branch to main #140 \r\n\r\nConcrete steps for splitting / preparing the drafts according to @lpardue:\r\n\r\n```\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-h3-events.md\r\n\r\n# add comment into draft-marx-qlog-event-definitions-quic-h3.md saying \"beginning the split\"\r\n\r\ngit add draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"starting document split\"\r\n\r\n# then delete all the non-relevant text in draft-marx-qlog-quic-events.md and draft-marx-qlog-h3-events.md, and move necessary text to main-schema, then\r\n\r\ngit -rm draft-marx-qlog-event-definitions-quic-h3.md\r\ngit add draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"complete document split\"\r\n\r\n# then update editors and other metadata in the 3 documents\r\n\r\ngit commit -m \"prepare for adoption\"\r\n\r\n# then submit 03, 00, 00 as individual I-Ds that we can issue a call for adoption on\r\n```\r\n\r\n",
+      "createdAt": "2021-03-02T16:04:51Z",
+      "updatedAt": "2021-03-31T08:06:18Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "I hadn't appreciated you might need to also move stuff into the main schema. If that is too onerous a task at this stage then you could just mark it in the docs and leave it there for the being.\r\n\r\nThe important thing is the get the overall structure in place and agreed. The content of each document can then be evolved through the working group.",
+          "createdAt": "2021-03-18T18:21:32Z",
+          "updatedAt": "2021-03-18T18:21:32Z"
+        }
+      ]
+    },
+    {
+      "number": 139,
+      "id": "MDU6SXNzdWU4MzQ3MDkwODQ=",
+      "title": "How to deal with (aggregated) measurements",
+      "url": "https://github.com/quiclog/internet-drafts/issues/139",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "The [spindump project](https://github.com/EricssonResearch/spindump) provides (aggregated) protocol measurements (e.g., RTT, loss, connection count, etc.) from middleboxes. They would like to use qlog as an output format and have [prototyped](https://github.com/EricssonResearch/spindump/blob/master/src/spindump_event_printer_qlog.c) what that [might look like](https://github.com/EricssonResearch/spindump/blob/master/Format.md#qlog-format).\r\n\r\nExample of their current output:\r\n```\r\n$ src/spindump --input-file src/../test/trace_quic_rfc_quant_long_qlog.pcap --textual --format text --not-report-notes --format qlog\r\n\r\n{\"qlog_version\": \"draft-02\", \"qlog_format\": \"JSON\", \"description\": \"Spindump measurements\", \"traces\": [\r\n\r\n { \"vantage_point\": { \"type\": \"network\" }, \"events\": [\r\n\r\n     {\"time\": 1614616215488286, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"connection_started\", \r\n\r\n      \"ip_version\": \"ipv4\", \"src_ip\": \"10.30.0.167\", \"dst_ip\": \"91.190.195.94\", \"src_port\": \"49702\", \"dst_port\": \"4433\", \"src_cid\": \"041d0cd3\", \"dst_cid\": \"c2e9970d6b5925175646\", \r\n\r\n      \"data\": {\"packets1\": 0, \"packets2\": 0, \"bytes1\": 0, \"bytes2\": 0}},\r\n\r\n     {\"time\": 1614616216598876, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"connection_started\", \r\n\r\n      \"ip_version\": \"ipv4\", \"src_ip\": \"10.30.0.167\", \"dst_ip\": \"91.190.195.94\", \"src_port\": \"49702\", \"dst_port\": \"4433\", \"src_cid\": \"041d0cd3\", \"dst_cid\": \"0487c887\", \r\n\r\n      \"data\": {\"packets1\": 2, \"packets2\": 1, \"bytes1\": 2728, \"bytes2\": 298, \"bandwidth1\": 1500, \"bandwidth2\": 298}},\r\n\r\n     {\"time\": 1614616216598876, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 2, \"packets2\": 1, \"bytes1\": 2728, \"bytes2\": 298, \"bandwidth1\": 1500, \"bandwidth2\": 298, \"right_rtt\": 109806}},\r\n\r\n     {\"time\": 1614616217177621, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 18, \"bytes1\": 3159, \"bytes2\": 21320, \"bandwidth1\": 1500, \"bandwidth2\": 21320, \"right_rtt\": 70432}},\r\n\r\n     {\"time\": 1614616217178198, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 19, \"bytes1\": 3159, \"bytes2\": 21415, \"bandwidth1\": 1500, \"bandwidth2\": 21415, \"left_rtt\": 577}},\r\n\r\n     {\"time\": 1614616217178198, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 19, \"bytes1\": 3159, \"bytes2\": 21415, \"bandwidth1\": 1500, \"bandwidth2\": 21415, \"full_rtt_initiator\": 71009}},\r\n\r\n     {\"time\": 1614616217545056, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 26, \"bytes1\": 3275, \"bytes2\": 30375, \"bandwidth1\": 1500, \"bandwidth2\": 30375, \"right_rtt\": 366858}},\r\n\r\n     {\"time\": 1614616217545056, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 26, \"bytes1\": 3275, \"bytes2\": 30375, \"bandwidth1\": 1500, \"bandwidth2\": 30375, \"full_rtt_responder\": 367435}},\r\n\r\n     {\"time\": 1614616217546034, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 30, \"bytes1\": 3275, \"bytes2\": 34607, \"bandwidth1\": 1500, \"bandwidth2\": 34607, \"left_rtt\": 978}},\r\n\r\n     {\"time\": 1614616217546034, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 30, \"bytes1\": 3275, \"bytes2\": 34607, \"bandwidth1\": 1500, \"bandwidth2\": 34607, \"full_rtt_initiator\": 367836}},\r\n\r\n     {\"time\": 1614616217643280, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 11, \"packets2\": 30, \"bytes1\": 3386, \"bytes2\": 34607, \"bandwidth1\": 1775, \"bandwidth2\": 34607, \"right_rtt\": 97246}},\r\n\r\n     {\"time\": 1614616217643280, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 11, \"packets2\": 30, \"bytes1\": 3386, \"bytes2\": 34607, \"bandwidth1\": 1775, \"bandwidth2\": 34607, \"full_rtt_responder\": 98224}}  \r\n\r\n ]}]}\r\n```\r\n\r\nThe semantics of logging measurements from a middlebox can differ from logging endpoint events, as the middlebox doesn't have all the contextual information.\r\n\r\nOne example is the `connection_started` event vs possible events like `connection_migrated` or `tuple_changed` (which we don't have yet, but will someday #79). The middlebox can't really tell the difference for a protocol like QUIC, and always logging either `_started` or `_changed` is semantically not 100% correct (it's more like \"first observed\").\r\n\r\nSomething similar can be said for using `recovery:metrics_updated` to log changes to e.g., RTT or loss rates. They have now defined a custom `measurement` event, which I feel is maybe too generic. You could also question if logging all measurement fields together in a single event is optimal (though this is the approach we do take with things like `metrics_updated`. See #85 for more discussion).\r\n\r\nAnother interesting observation is the need to log metrics in two directions, as the middlebox is somewhere in between 2 endpoints in the network. This all seems to indicate measurement-specific events is the way to go (i.e., not re-using existing qlog  endpoint events), as it would be confusing to have those semantics in endpoint events. \r\n\r\nSomething not yet reflected in here are the possibility to log percentiles, which seems interesting as a generic option for (aggregated) measurement logging. \r\n\r\nCC @jariarkko @ihlar\r\n\r\n ",
+      "createdAt": "2021-03-18T11:40:32Z",
+      "updatedAt": "2021-03-18T18:03:08Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 140,
+      "id": "MDU6SXNzdWU4MzQ4NjYwNTY=",
+      "title": "Move default git branch from master to main",
+      "url": "https://github.com/quiclog/internet-drafts/issues/140",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "In preparation of QUIC wg adoption (which plans to take over ownership of this entire repo), we should make \"main\" the default branch instead of \"master\". \r\n\r\nI plan to do this sometime over the coming weeks; this is just a heads-up so people don't suddenly see local checkouts breaking. ",
+      "createdAt": "2021-03-18T14:15:03Z",
+      "updatedAt": "2021-03-18T14:15:03Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 141,
+      "id": "MDU6SXNzdWU4MzQ5Mzc1ODU=",
+      "title": "Fix up TypeScript-based data definition language",
+      "url": "https://github.com/quiclog/internet-drafts/issues/141",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "There are some problems with the current definition in -02, mostly identified by @mikkelfj.\r\nIt will depend on if we stick with this approach later whether these comments need to be addressed or not. Some of them are relevant to other data definition languages as well.\r\n\r\n1. we define booleans as strings \"true\" / \"false\", while JSON has native true/false\r\n2. we currently have many mixed-type fields (e.g., things that are string | uint32). While e.g., binary serializers (say protocol buffers/flatbuffers) are free to choose which type/types is/are most appropriate for them to support, we should probably indicate which of the options is the \"main\" type.\r\n3. Similarly to 2., where we use the `any` type, we should indicate a `default` option or example of what might be expected/used in the typical case\r\n4. The packetType enum that uses onertt = \"1RTT\" and zerortt = \"0RTT\" does so for a purely JavaScript-esque reason which shouldn't be reflected in the draft",
+      "createdAt": "2021-03-18T15:22:42Z",
+      "updatedAt": "2021-03-18T15:22:42Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 142,
+      "id": "MDU6SXNzdWU4NDYyMTYxNjg=",
+      "title": "Provide clear privacy and security guidelines",
+      "url": "https://github.com/quiclog/internet-drafts/issues/142",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "qlog should be specific about which fields are potentially privacy sensitive and the possible actions that can be taken to mitigate these issues (e.g., hashing, exclusion, mapping, ...). \r\n\r\nThe current proposal is to work with multiple sanitization levels, depending on the intended use case. \r\nThe way this is expressed in the drafts depends on the data definition format we end up adopting. \r\n\r\nOne potential source of inspiration is https://www.tracewrangler.com, which anonymizes pcaps. \r\n\r\nOther related considerations are whether to provide options to encrypt qlogs themselves.\r\n\r\nThis is intended to be an overarching summary issue, with sub-issues expected for specific approaches/proposals. ",
+      "createdAt": "2021-03-31T08:50:43Z",
+      "updatedAt": "2021-03-31T14:20:40Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "On the topic of encrypting the logs themselves, I think that shouldn't be specified. How ever the owner of the log wants to secure the file at rest should be up to them.",
+          "createdAt": "2021-03-31T14:07:00Z",
+          "updatedAt": "2021-03-31T14:07:00Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I think that makes sense. I feel some of the remarks on this point were mainly tied to the serialization format selection. i.e., if we use CBOR, we get COSE (https://tools.ietf.org/html/rfc8152) \"for free\", which in turn might be an additional reason to chose CBOR as basic format, as that gives a standard/default option for encryption for people that don't have a specific opinion on how they'd want to do it otherwise. ",
+          "createdAt": "2021-03-31T14:13:30Z",
+          "updatedAt": "2021-03-31T14:13:30Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "Ok. Well, see the other issue on my feelings about a complicated format. :) Keep it simple, IMO.",
+          "createdAt": "2021-03-31T14:20:40Z",
+          "updatedAt": "2021-03-31T14:20:40Z"
+        }
+      ]
+    },
+    {
+      "number": 143,
+      "id": "MDU6SXNzdWU4NDYyMjQwNzA=",
+      "title": "Change data definition format",
+      "url": "https://github.com/quiclog/internet-drafts/issues/143",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "We currently use a custom DDL inspired by TypeScript to specify events.\r\nThis should probably be changed to a format already defined by the IETF. This would also potentially remove the need to specify a custom JSON mapping.\r\n\r\nCurrently, YANG and especially CDDL seem to be the most attractive options for this purpose. \r\n\r\nExisting discussion was mainly in https://mailarchive.ietf.org/arch/msg/quic/H_inwB1oLh4fr1-i7JyUb-8U5Gg",
+      "createdAt": "2021-03-31T08:55:23Z",
+      "updatedAt": "2021-03-31T14:23:39Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "I have the following comments on format:\r\n\r\n1. If it's not binary (or extremely efficient to generate and process even at extremely large scale) then I can't use it at run time. The best I can do is support a post processor to convert to qlog later. The tools will likely have problem with large files as well.\r\n2. IMO, it **must** be simple to write a custom converter to the format. Please no super complicated protocols just around format. If I have to include an external library just to deal with the file format, then it's likely it won't be supported.",
+          "createdAt": "2021-03-31T14:13:39Z",
+          "updatedAt": "2021-03-31T14:13:39Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "To clarify, there are two types of formats we need to consider: \r\n1. The data definition format: how we define events and member data types in the drafts (that's what this issue is intended to be about)\r\n2. The serialization format(s): what a qlog file actually looks like in string/binary form (I realized we no longer had an issue to discuss that, so I've made https://github.com/quiclog/internet-drafts/issues/144)\r\n\r\nI think your comments mainly reflect on the 2nd point, though they are of course somewhat tied: for example, CDDL makes it easy to express JSON and CBOR, but potentially more difficult to define other (binary) serialization formats. ",
+          "createdAt": "2021-03-31T14:23:39Z",
+          "updatedAt": "2021-03-31T14:23:39Z"
+        }
+      ]
+    },
+    {
+      "number": 144,
+      "id": "MDU6SXNzdWU4NDY3NjI1MTU=",
+      "title": "Revisit serialization format decision",
+      "url": "https://github.com/quiclog/internet-drafts/issues/144",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "In draft-02, we decided to keep using JSON as the main serialization format, with NDJSON as a streaming option. We did update the data definition language used in the draft to make it easier to define custom serializations into e.g., binary formats, if others want a more performant option. \r\n\r\nIt might be needed to revisit this decision and to still go for a binary format by default. CBOR has so far been named most as a potential option, as it's an IETF standard (as opposed to e.g., protocol buffers or flatbuffers and similar) and has proved itself for other protocol-related use cases as well. \r\n\r\nThe question remains: do we consciously limit ourselves to a select few serialization formats? and even if we don't, which \"default\" formats do we commit to in the texts? \r\n\r\nSeveral people are of the opinion it's enough to stick with for example JSON as the main format in the qlog specification and to have people write converters from/to JSON for more performant options themselves. This because even with something like CBOR, not all applications will want to employ that directly, and converters would still be needed.",
+      "createdAt": "2021-03-31T14:22:01Z",
+      "updatedAt": "2021-04-07T15:42:06Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Another simple way of viewing this (and one of the main questions I feel we need to answer ASAP post-adoption), is what the main goal of qlog is:\r\n\r\n1) Define a logging format that makes it easy for **protocol implementations** to log data (efficiently, at scale)\r\n2) Define a logging format that makes it easy to create **reusable tooling** \r\n\r\n(I think it was @nibanks who put it like this, but for the life of me, I can't find the source). \r\n\r\nIf 1), we probably need to go full binary and optimize for write speed/size. 2) is imo what we have now, with a relatively verbose JSON setup. If we want to go for both at the same time (which I'm not sure is possible, might lead to \"worst of both worlds\") we'd probably end up with something like CBOR. \r\n\r\nIn my personal experience, it's the tooling part that's difficult and something that most parties don't want to invest in themselves/don't have the necessary expertise for in the networking/protocol teams. Making tooling easier (e.g., even using things like `jq` or simple python) and more reusable seems like it should stay the main goal. While the current qvis toolsuite doesn't deal well with larger qlog files, that's mainly because it's web-based, not because JSON can't scale to hundreds of MBs or even Gigabytes in a native tool. Of course, that's just my opinion :) ",
+          "createdAt": "2021-04-07T15:20:32Z",
+          "updatedAt": "2021-04-07T15:20:32Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "I think we can create translation libraries/tools easily enough between formats. The question then becomes what do you want to do?\r\n\r\na) **Optimize for tools** - Standardize around a single format (JSON most likely?) that tools can easily use. QUIC implementations then have the choice to either write directly to that format, or have a custom format, and a custom post processing tool to convert to the tool format.\r\n\r\nb) **Optimize for implementations** - Standardize around a binary format (and helper library(s)?) for QUIC implementations to efficiently write to. Tools can either read from that format or perhaps someone could write a helper library to convert to some more easily consumed format. While I like the idea of trying to optimize for implementations, I wonder if it's just going to open a bigger can of worms. A lot of folks will have strong opinions here, and likely already have some solution they use for other performant logging anyways.\r\n\r\nThe more I think about it, I kind of lean towards a). Implementations can (and will) do what they want. If JSON is optimal enough for them (it seems it is for FB?) then they can use it. If they want something more/different, they can implement a translation layer/tool (what MsQuic partially has). And best of all, it makes the standardization process simpler.\r\n\r\nOne last thought though, is that while web-based solutions are currently the reason the tools are slow, I do expect JSON parsing to be significantly slower than a binary format, especially at GB file sizes. It'd be interesting to see a perf comparison. The best way I could think is to add qlog file format support to WPA, and update MsQuic's qlog translation layer. Then grab a large trace from MsQuic (binary ETW) and convert it to qlog. Then separately open the binary version and the qlog version and measure how long either takes.",
+          "createdAt": "2021-04-07T15:42:06Z",
+          "updatedAt": "2021-04-07T15:42:06Z"
+        }
+      ]
+    },
+    {
+      "number": 146,
+      "id": "MDU6SXNzdWU4NDkyNjQ4ODk=",
+      "title": "Make protocol_type more well defined",
+      "url": "https://github.com/quiclog/internet-drafts/issues/146",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, `protocol_type` is a single string which typically has the value \"QUIC_HTTP3\". \r\n\r\nHowever, this doesn't particularly scale to aggregated logs down the line (e.g., in #139 we can have a plethora of different protocols represented), and it isn't clear how to define new strings for new protocol types (e.g., is it TCP_HTTP2 or TCP_TLS_HTTP2 and in that case, why isn't it QUIC_TLS_HTTP3? etc.)\r\n\r\nOne direct solution might be to make the field an array of individual values (i.e., `protocol_type = [\"QUIC\", \"HTTP3\"]`), but that potentially adds additional overhead if the field is logged for each event individually. \r\n\r\nAnother option would be to prefix event names with the protocol (e.g., `transport:packet_sent` becomes `quic:transport:packet_sent`) but that reduces the future potential to re-use events across protocols (not a big deal for QUIC vs TCP probably, but higher level logic events (say, `recovery:metrics_updated`) could suffer). \r\n\r\nThis is somewhat tied to #85, as some events will be implicitly tied to a particular protocol anyway. ",
+      "createdAt": "2021-04-02T14:55:11Z",
+      "updatedAt": "2021-04-02T15:13:31Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "Personally, I think events **should** be tied to protocol, and \"sharing\" them should not be a goal. IMO that's going to make things harder and more confusing to interpret, especially if you end up having both protocols in the same log. For Windows, we regularly use well-defined events and they are always specific to a particular component. Even if things might look similar now, that doesn't mean they would stay that way in the future. Forcing things to be the same would then limit the development of the one that wants to evolve.",
+          "createdAt": "2021-04-02T15:08:20Z",
+          "updatedAt": "2021-04-02T15:08:20Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "And one more data point for you, we generally follow a pattern for events to be named something along the line of <Component/Protocol><Object/Qualifier><Action>, such as `QuicConnVersionSet` and `QuicStreamCreated`. It allows for events to be globally unique and descriptive enough that you don't need too much follow up to explain what it is doing.",
+          "createdAt": "2021-04-02T15:13:31Z",
+          "updatedAt": "2021-04-02T15:13:31Z"
+        }
+      ]
+    },
+    {
+      "number": 147,
+      "id": "MDU6SXNzdWU4NTE0MjkyNjE=",
+      "title": "How to log handshake cancelations?",
+      "url": "https://github.com/quiclog/internet-drafts/issues/147",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I didn't think of this back when we defined the triggers for `connection_closed`, but this is happening **a lot** in production: When dialing a new peer, libp2p races connections to that peer on all advertised addresses and transports, and uses whichever connection returns first. All the other connection attempts are canceled.\r\n\r\nIt would be nice if there was a trigger \"the user aborted this connection attempt before handshake completion\".",
+      "createdAt": "2021-04-06T13:32:43Z",
+      "updatedAt": "2021-04-07T07:50:37Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Good point!\r\n\r\nDo you think a generic `aborted` trigger is enough, or would it make sense to go with something more fine-grained like `aborted_racing` (potentially having an `aborted` generic as well?)?\r\n\r\nWould it be useful to have a way to indicate to which other connection (6-tuple?) this one \"lost\" in the race (and by how much etc.)? Would that need a separate event or should that be included in the `connection_closed`? I'd tend towards a separate event for that one myself. ",
+          "createdAt": "2021-04-07T07:50:37Z",
+          "updatedAt": "2021-04-07T07:50:37Z"
+        }
+      ]
+    },
+    {
+      "number": 148,
+      "id": "MDU6SXNzdWU4NTI2NjAzMzg=",
+      "title": "Format text to a certain width and avoid inline comments",
+      "url": "https://github.com/quiclog/internet-drafts/issues/148",
+      "state": "OPEN",
+      "author": "toidiu",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Inline comments force the reader to scroll sideways and makes it more difficult to read.\r\n\r\nAdditionally while this is possibly fine for html, the rendering in pdf is much worse since scrolling is not supported.\r\n\r\n**html example**: https://quiclog.github.io/internet-drafts/draft-marx-qlog-event-definitions-quic-h3.html#section-a.1\r\n\r\n **pdf example**:\r\n![pdf_rendering](https://user-images.githubusercontent.com/4350690/113912463-00d55d80-9790-11eb-9c05-e5abfea0b81e.png)\r\n",
+      "createdAt": "2021-04-07T17:58:36Z",
+      "updatedAt": "2021-04-08T16:41:48Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Hello @toidiu,\r\n\r\nThank you for this very valid comment. \r\nWe will take this into account when re-formatting the qlog documents after adoption by the QUIC wg. \r\n\r\nI hope it doesn't cause too much of an inconvenience in the mean time? ",
+          "createdAt": "2021-04-08T13:28:31Z",
+          "updatedAt": "2021-04-08T13:28:31Z"
+        },
+        {
+          "author": "toidiu",
+          "authorAssociation": "NONE",
+          "body": "Great thanks for the reply and all your work. I can use the html version of the draft in the meanwhile. ",
+          "createdAt": "2021-04-08T16:41:48Z",
+          "updatedAt": "2021-04-08T16:41:48Z"
+        }
+      ]
+    },
+    {
+      "number": 149,
+      "id": "MDU6SXNzdWU4NTgyNjM2NjE=",
+      "title": "[draft 02] Fix JSON serialization example under the Field name semantics section",
+      "url": "https://github.com/quiclog/internet-drafts/issues/149",
+      "state": "OPEN",
+      "author": "JorisHerbots",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "**Problem**\r\nThe section about \"Field name semantics\" in draft 02 contains the following example:\r\n```\r\nJSON serialization:\r\n\r\n{\r\n    time: 1553986553572,\r\n\r\n    name: \"transport:packet_sent\",\r\n    event: \"packet_sent\",\r\n    data: { ... }\r\n\r\n    protocol_type:  \"QUIC_HTTP3\",\r\n    group_id: \"127ecc830d98f9d54a42c4f0842aa87e181a\",\r\n\r\n    time_format: \"absolute\",\r\n\r\n    ODCID: \"127ecc830d98f9d54a42c4f0842aa87e181a\", // QUIC specific\r\n}\r\n```\r\nThe QLOG specification lists the use of `category` and `type` fields or their concatenation under the `name` field. The above example, however, seems to hint that there also exists an `event` field. \r\n\r\n**Suggested fix**\r\n ```\r\nJSON serialization:\r\n\r\n{\r\n    time: 1553986553572,\r\n\r\n    name: \"transport:packet_sent\",\r\n    data: { ... }\r\n\r\n    protocol_type:  \"QUIC_HTTP3\",\r\n    group_id: \"127ecc830d98f9d54a42c4f0842aa87e181a\",\r\n\r\n    time_format: \"absolute\",\r\n\r\n    ODCID: \"127ecc830d98f9d54a42c4f0842aa87e181a\", // QUIC specific\r\n}\r\n```\r\nOr\r\n\r\n ```\r\nJSON serialization:\r\n\r\n{\r\n    time: 1553986553572,\r\n\r\n    category: \"transport\",\r\n    type: \"packet_sent\",\r\n    data: { ... }\r\n\r\n    protocol_type:  \"QUIC_HTTP3\",\r\n    group_id: \"127ecc830d98f9d54a42c4f0842aa87e181a\",\r\n\r\n    time_format: \"absolute\",\r\n\r\n    ODCID: \"127ecc830d98f9d54a42c4f0842aa87e181a\", // QUIC specific\r\n}\r\n```",
+      "createdAt": "2021-04-14T21:05:37Z",
+      "updatedAt": "2021-04-15T08:18:26Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Thanks for noticing this. The correct fix is the first (the omission of the `event` field). I will open a PR for that. ",
+          "createdAt": "2021-04-15T08:18:26Z",
+          "updatedAt": "2021-04-15T08:18:26Z"
+        }
+      ]
+    },
+    {
+      "number": 150,
+      "id": "MDU6SXNzdWU4NTgyNzI5OTA=",
+      "title": "[draft 02] \"events\" field minimum requirements",
+      "url": "https://github.com/quiclog/internet-drafts/issues/150",
+      "state": "OPEN",
+      "author": "JorisHerbots",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "**Issue**\r\nThe specification mentions the following under the \"Field name semantics\" section (ID: field-name-semantics): \r\n\r\n> Each qlog event at minimum requires the \"time\" ({{time-based-fields}}), \"name\" ({{name-field}}) and \"data\" ({{data-field}}) fields.\r\n\r\nAccording to the section \"category and event\" (ID: name-field), `name` is the concatenation of the `category` and `type` fields. This should be reflected in the line above.\r\n\r\n**Suggestion**\r\n> Each qlog event at minimum requires the \"time\" ({{time-based-fields}}), \"name\" (or \"category\" and \"type\") ({{name-field}}) and \"data\" ({{data-field}}) fields.",
+      "createdAt": "2021-04-14T21:20:23Z",
+      "updatedAt": "2021-04-15T08:29:17Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So this is a bit of a difficult one... As explained in section `name-field`, category+type were used in qlog draft 01 but in 02 it's preferred to use the concatenated version: `As such, the default approach in qlog is to concatenate both field values`\r\n\r\nIt's highly uncertain at this point how/if these fields will continue to exist in this form (see also #146, which means we might go to quic:packet_sent instead of transport:packet_sent in time for example).\r\n\r\nSo for now, I'd like to keep the text as-is (encourage concatenated form). \r\n\r\nNote: qvis -should- still support both category + event for draft02 for easier backwards compat though. If that's not the case, then that should be fixed. ",
+          "createdAt": "2021-04-15T08:29:17Z",
+          "updatedAt": "2021-04-15T08:29:17Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -3957,6 +4650,73 @@
           "updatedAt": "2020-12-03T09:05:29Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 138,
+      "id": "MDExOlB1bGxSZXF1ZXN0NTkyNjg5Mzk3",
+      "title": "introduce a VersionNegotiationError",
+      "url": "https://github.com/quiclog/internet-drafts/pull/138",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "When a client receives a Version Negotiation packet indicating that there's no commonly supported version, it aborts the connection attempt. Currently, qlog doesn't allow to log this.",
+      "createdAt": "2021-03-15T02:43:58Z",
+      "updatedAt": "2021-03-18T14:55:25Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "d4b62cd84b73338c8be1b749f7686cccd2754967",
+      "headRepository": "marten-seemann/internet-drafts",
+      "headRefName": "version-negotiation-error",
+      "headRefOid": "d532844064683e5a3c229d64ff1df541d99bfd2a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Thinking about it, I'm not so sure about it any more. For stateless reset, we already use the `trigger` field. Maybe we should do the same for VN? Then we could close this PR.",
+          "createdAt": "2021-03-15T05:28:52Z",
+          "updatedAt": "2021-03-15T05:28:52Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "I think my intention here was that:\r\n- client logs `connection_closed` with trigger of value `version_mismatch` (which is already in -02, though potentially not perfectly named). Did you maybe miss that trigger? \r\n- to know which versions were offered and supported by both sides, you'd use the `version_information` event and `supported_versions` fields of `packet_sent/received` (see discussion in https://github.com/quiclog/internet-drafts/issues/75)\r\n\r\nI agree this is slightly more tedious than having all of that together in a single event, but IIUC your last reply here, that isn't very critical. \r\n",
+          "createdAt": "2021-03-18T14:55:25Z",
+          "updatedAt": "2021-03-18T14:55:25Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 145,
+      "id": "MDExOlB1bGxSZXF1ZXN0NjA2MDQ1Nzc0",
+      "title": "Add myself as editor",
+      "url": "https://github.com/quiclog/internet-drafts/pull/145",
+      "state": "OPEN",
+      "author": "lnicco",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-03-31T17:22:06Z",
+      "updatedAt": "2021-03-31T17:22:06Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "d4b62cd84b73338c8be1b749f7686cccd2754967",
+      "headRepository": "lnicco/internet-drafts",
+      "headRefName": "luca_author",
+      "headRefOid": "1cfa1f014ae74189b8a4b7fb7f14b3944e95f021",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
