@@ -19,16 +19,48 @@ author:
     email: robin.marx@uhasselt.be
 
 normative:
-  QLOG-QUIC-HTTP3:
-    title: "QUIC and HTTP/3 event definitions for qlog"
-    date: 2020-11-02
+  QLOG-QUIC:
+    title: "QUIC event definitions for qlog"
+    date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-event-definitions-quic-h3-02
+      Internet-Draft: draft-marx-qlog-quic-events-latest
     author:
       -
         ins: R. Marx
         name: Robin Marx
-        org: Hasselt University
+        org: KU Leuven
+        role: editor
+      -
+        ins: L. Niccolini
+        name: Luca Niccolini
+        org: Facebook
+        role: editor
+      -
+        ins: M. Seemann
+        name: Marten Seemann
+        org: Protocol Labs
+        role: editor
+
+  QLOG-H3:
+    title: "HTTP/3 and QPACK event definitions for qlog"
+    date: {DATE}
+    seriesinfo:
+      Internet-Draft: draft-marx-qlog-h3-events-latest
+    author:
+      -
+        ins: R. Marx
+        name: Robin Marx
+        org: KU Leuven
+        role: editor
+      -
+        ins: L. Niccolini
+        name: Luca Niccolini
+        org: Facebook
+        role: editor
+      -
+        ins: M. Seemann
+        name: Marten Seemann
+        org: Protocol Labs
         role: editor
 
 informative:
@@ -55,7 +87,8 @@ This document aims to provide a high-level schema and harness that describes the
 general layout of an easily usable, shareable, aggregatable and structured logging
 format. This high-level schema is protocol agnostic, with logging entries for
 specific protocols and use cases being defined in other documents (see for example
-[QLOG-QUIC-HTTP3] for QUIC and HTTP/3-related event definitions).
+[QLOG-QUIC] for QUIC and [QLOG-H3] for HTTP/3 and QPACK-related event
+definitions).
 
 The goal of this high-level schema is to provide amenities and default
 characteristics that each logging file should contain (or should be able to
@@ -480,12 +513,12 @@ they are normally logged separately in the "common_fields" ({{common-fields}}).
 
 The specific values for each of these fields and their semantics are defined in
 separate documents, specific per protocol or use case. For example: event
-definitions for QUIC and HTTP/3 can be found in [QLOG-QUIC-HTTP3].
+definitions for QUIC, HTTP/3 and QPACK can be found in [QLOG-QUIC] and [QLOG-H3].
 
 Other fields are explicitly allowed by the qlog approach, and tools SHOULD allow
 for the presence of unknown event fields, but their semantics depend on the
 context of the log usage (e.g., for QUIC, the ODCID field is used), see
-[QLOG-QUIC-HTTP3].
+[QLOG-QUIC].
 
 An example of a qlog event with its component fields is shown in
 {{event-definition}}.
@@ -629,7 +662,7 @@ encouraged to employ the concatenated "name" field for efficiency.
 
 The data field is a generic object. It contains the per-event metadata and its
 form and semantics are defined per specific sort of event. For example, data field
-value definitons for QUIC and HTTP/3, see [QLOG-QUIC-HTTP3].
+value definitons for QUIC and HTTP/3 can be found in [QLOG-QUIC] and [QLOG-H3].
 
 One purely illustrative example for a QUIC "packet_sent" event is shown in
 {{data-example}}.
@@ -678,15 +711,6 @@ For example, QUIC and HTTP/3 events have the "QUIC_HTTP3" protocol_type value, s
 
 Typically however, all events in a single trace are of the same protocol, and this
 field is logged once in "common_fields", see {{common-fields}}.
-
-### custom fields
-
-Note that qlog files can always contain custom fields (e.g., a per-event field
-indicating its privacy properties or path_id in multipath protocols) and assign
-custom values to existing fields (e.g., new categories/types for
-implemenation-specific events). Loggers are free to add such fields and field
-values and tools MUST either ignore these unknown fields or show them in a generic
-fashion.
 
 ### triggers {#trigger-field}
 
@@ -865,6 +889,104 @@ individually or combined in common_fields. Note that if at least one event in a
 trace has a different value for a given field, this field MUST NOT be added to
 common_fields but instead defined on each event individually. Good example of such
 fields are "time" and "data", who are divergent by nature.
+
+# Guidelines for event definition documents
+
+This document only defines the main schema for the qlog format. This is intended
+to be used together with specific, per-protocol event definitions that specify the
+name (category + type) and data needed for each individual event. This is with the
+intent to allow the qlog main schema to be easily re-used for several protocols.
+Examples include the QUIC event definitions [QLOG-QUIC] and HTTP/3 and QPACK
+event definitions [QLOG-H3].
+
+This section defines some basic annotations and concepts the creators of event
+definition documents should follow to ensure a measure of consistency, making it
+easier for qlog implementers to extrapolate from one protocol to another.
+
+## Event design guidelines
+
+TODO: pending QUIC working group discussion. This text reflects the initial (qlog
+draft 01 and 02) setup.
+
+There are several ways of defining qlog events. In practice, we have seen two main
+types used so far: a) those that map directly to concepts seen in the protocols
+(e.g., `packet_sent`) and b) those that act as aggregating events that combine
+data from several possible protocol behaviours or code paths into one (e.g.,
+`parameters_set`). The latter are typically used as a means to reduce the amount
+of unique event definitions, as reflecting each possible protocol event as a
+separate qlog entity would cause an explosion of event types.
+
+Additionally, logging duplicate data is typically prevented as much as possible.
+For example, packet header values that remain consistent across many packets are
+split into separate events (for example `spin_bit_updated` or
+`connection_id_updated` for QUIC).
+
+Finally, we have typically refrained from adding additional state change events if
+those state changes can be directly inferred from data on the wire (for example
+flow control limit changes) if the implementation is bug-free and spec-compliant.
+Exceptions have been made for common events that benefit from being easily
+identifiable or individually logged (for example `packets_acked`).
+
+## Event importance indicators
+
+Depending on how events are designed, it may be that several events allow the
+logging of similar or overlapping data. For example the separate QUIC
+`connection_started` event overlaps with the more generic
+`connection_state_updated`. In these cases, it is not always clear which event
+should be logged or used, and which event should take precedence if e.g., both are
+present and provide conflicting information.
+
+To aid in this decision making, we recommend that each event SHOULD have an
+"importance indicator" with one of three values, in decreasing order of importance
+and exptected usage:
+
+* Core
+* Base
+* Extra
+
+The "Core" events are the events that SHOULD be present in all qlog files for a
+given protocol. These are typically tied to basic packet and frame parsing and
+creation, as well as listing basic internal metrics. Tool implementers SHOULD
+expect and add support for these events, though SHOULD NOT expect all Core events
+to be present in each qlog trace.
+
+The "Base" events add additional debugging options and CAN be present in qlog
+files. Most of these can be implicitly inferred from data in Core events (if those
+contain all their properties), but for many it is better to log the events
+explicitly as well, making it clearer how the implementation behaves. These events
+are for example tied to passing data around in buffers, to how internal state
+machines change and help show when decisions are actually made based on received
+data. Tool implementers SHOULD at least add support for showing the contents of
+these events, if they do not handle them explicitly.
+
+The "Extra" events are considered mostly useful for low-level debugging of the
+implementation, rather than the protocol. They allow more fine-grained tracking of
+internal behaviour. As such, they CAN be present in qlog files and tool
+implementers CAN add support for these, but they are not required to.
+
+Note that in some cases, implementers might not want to log for example data
+content details in the "Core" events due to performance or privacy considerations.
+In this case, they SHOULD use (a subset of) relevant "Base" events instead to
+ensure usability of the qlog output. As an example, implementations that do not
+log QUIC `packet_received` events and thus also not which (if any) ACK frames the
+packet contains, SHOULD log `packets_acked` events instead.
+
+Finally, for event types whose data (partially) overlap with other event types'
+definitions, where necessary the event definition document should include explicit
+guidance on which to use in specific situations.
+
+## Custom fields
+
+Event definition documents are free to define new category and event types,
+top-level fields (e.g., a per-event field indicating its privacy properties or
+path_id in multipath protocols), as well as values for the "trigger" property
+within the "data" field, or other member fields of the "data" field, as they see
+fit.
+
+They however SHOULD NOT expect non-specialized tools to recognize or visualize
+this custom data. However, tools SHOULD make an effort to visualize even unknown
+data if possible in the specific tool's context. If they do not, they MUST ignore
+these unknown fields.
 
 # Serializing qlog {#concrete-formats}
 
@@ -1267,11 +1389,9 @@ file size reductions event with binary formats, we feel the more flexible
 compressed textual JSON options are a better default for the qlog format in
 general.
 
-{::comment}
-The definition of the qlog main schema and existing event type
-documents (for example [QLOG-QUIC-HTTP3]) should allow a relatively easy qlog
-definition in a variety of binary format schemas.
-{:/comment}
+{::comment} The definition of the qlog main schema and existing event type
+documents (for example [QLOG-QUIC] [QLOG-H3]) should allow a relatively easy qlog
+definition in a variety of binary format schemas. {:/comment}
 
 ### Overview and summary {#format-summary}
 

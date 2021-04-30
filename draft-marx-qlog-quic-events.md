@@ -94,6 +94,16 @@ normative:
         name: Robin Marx
         org: KU Leuven
         role: editor
+      -
+        ins: L. Niccolini
+        name: Luca Niccolini
+        org: Facebook
+        role: editor
+      -
+        ins: M. Seemann
+        name: Marten Seemann
+        org: Protocol Labs
+        role: editor
 
   QLOG-H3:
     title: "HTTP/3 and QPACK event definitions for qlog"
@@ -163,78 +173,11 @@ example `packet_received`).
 
 For each event type, its importance and data definition is laid out, often
 accompanied by possible values for the optional "trigger" field. For the
-definition and semantics of "trigger", see the main schema document.
+definition and semantics of "importance" and "trigger", see the main schema
+document.
 
 Most of the complex datastructures, enums and re-usable definitions are grouped
 together on the bottom of this document for clarity.
-
-## Importance
-
-Many of the events defined in this document map directly to concepts seen in the
-QUIC and HTTP/3 documents, while others act as aggregating events that combine
-data from several possible protocol behaviours or code paths into one. This is
-done to reduce the amount of unique event definitions, as reflecting each possible
-protocol event as a separate qlog entity would cause an explosion of event types.
-Similarly, we prevent logging duplicate packet data as much as possible. As such,
-especially packet header value updates are split out into separate events (for
-example spin_bit_updated, connection_id_updated), as they are expected to change
-sparingly.
-
-Consequently, many events that can be directly inferred from data on the wire (for
-example flow control limit changes) if the implementation is bug-free, are
-currently not explicitly defined as stand-alone events. Exceptions can be made for
-common events that benefit from being easily identifiable or individually logged
-(for example the `packets_acked` event). This can in turn give rise to separate
-events logging similar data, where it is not always clear which event should be
-logged (for example the separate `connection_started` event, whereas the more
-general `connection_state_updated` event also allows indicating that a connection
-was started).
-
-To aid in this decision making, each event has an "importance indicator" with one
-of three values, in decreasing order of importance and exptected usage:
-
-* Core
-* Base
-* Extra
-
-The "Core" events are the events that SHOULD be present in all qlog files. These
-are mostly tied to basic packet and frame parsing and creation, as well as listing
-basic internal metrics. Tool implementers SHOULD expect and add support for these
-events, though SHOULD NOT expect all Core events to be present in each qlog trace.
-
-The "Base" events add additional debugging options and CAN be present in qlog
-files. Most of these can be implicitly inferred from data in Core events (if those
-contain all their properties), but for many it is better to log the events
-explicitly as well, making it clearer how the implementation behaves. These events
-are for example tied to passing data around in buffers, to how internal state
-machines change and help show when decisions are actually made based on received
-data. Tool implementers SHOULD at least add support for showing the contents of
-these events, if they do not handle them explicitly.
-
-The "Extra" events are considered mostly useful for low-level debugging of the
-implementation, rather than the protocol. They allow more fine-grained tracking of
-internal behaviour. As such, they CAN be present in qlog files and tool
-implementers CAN add support for these, but they are not required to.
-
-Note that in some cases, implementers might not want to log for example
-frame-level details in the "Core" events due to performance or privacy
-considerations. In this case, they SHOULD use (a subset of) relevant "Base" events
-instead to ensure usability of the qlog output. As an example, implementations
-that do not log "packet_received" events and thus also not which (if any) ACK
-frames the packet contain, SHOULD log `packets_acked` events instead.
-
-Finally, for event types who's data (partially) overlap with other event types'
-definitions, where necessary this document includes guidance on which to use in
-specific situations.
-
-## Custom fields
-
-Note that implementers are free to define new category and event types, as well as
-values for the "trigger" property within the "data" field, or other member fields
-of the "data" field, as they see fit. They SHOULD NOT however expect
-non-specialized tools to recognize or visualize this custom data. However, tools
-SHOULD make an effort to visualize even unknown data if possible in the specific
-tool's context.
 
 # Events not belonging to a single connection {#handling-unknown-connections}
 
