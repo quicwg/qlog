@@ -73,8 +73,6 @@ informative:
 
 --- abstract
 
- === beginning the split into two separate documents for quicwg adoption ===
-
 This document describes concrete qlog event definitions and their metadata for
 QUIC and HTTP/3-related events. These events can then be embedded in the higher
 level schema defined in [QLOG-MAIN].
