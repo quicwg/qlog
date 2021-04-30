@@ -1,6 +1,6 @@
 ---
-title: QUIC and HTTP/3 event definitions for qlog
-docname: draft-marx-qlog-event-definitions-quic-h3-latest
+title: HTTP/3 and QPACK event definitions for qlog
+docname: draft-marx-qlog-h3-events-latest
 category: std
 
 ipr: trust200902
@@ -15,58 +15,87 @@ author:
   -
     ins: R. Marx
     name: Robin Marx
-    org: Hasselt University
-    email: robin.marx@uhasselt.be
+    org: KU Leuven
+    email: robin.marx@kuleuven.be
+  -
+    ins: L. Niccolini
+    name: Luca Niccolini
+    org: Facebook
+    email: lniccolini@fb.com
+    role: editor
+  -
+    ins: M. Seemann
+    name: Marten Seemann
+    org: Protocol Labs
+    email: martenseemann@gmail.com
+    role: editor
 
 normative:
-  QUIC-TRANSPORT:
-    title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-transport-32
-    date: 2020-10-01
-    author:
-      -
-        ins: J. Iyengar
-        name: Jana Iyengar
-        org: Fastly
-        role: editor
-      -
-        ins: M. Thomson
-        name: Martin Thomson
-        org: Mozilla
-        role: editor
+
   QUIC-HTTP:
     title: "Hypertext Transfer Protocol Version 3 (HTTP/3)"
-    date: 2020-10-01
+    date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-32
+      Internet-Draft: draft-ietf-quic-http-latest
     author:
       -
-        ins: M. Bishop
-        name: Mike Bishop
-        org: Akamai
-        role: editor
+          ins: M. Bishop
+          name: Mike Bishop
+          org: Akamai Technologies
+          role: editor
+
   QUIC-QPACK:
-    title: "QPACK: Header Compression for HTTP/3"
-    date: 2020-10-20
+    title: "QPACK: Header Compression for HTTP over QUIC"
+    date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-qpack-19
+      Internet-Draft: draft-ietf-quic-qpack-latest
     author:
       -
-        ins: A. Frindell
-        name: Alan Frindell
-        org: Facebook
-        role: editor
+          ins: C. Krasic
+          name: Charles 'Buck' Krasic
+          org: Google, Inc
+      -
+          ins: M. Bishop
+          name: Mike Bishop
+          org: Akamai Technologies
+      -
+          ins: A. Frindell
+          name: Alan Frindell
+          org: Facebook
+          role: editor
+
   QLOG-MAIN:
     title: "Main logging schema for qlog"
-    date: 2020-11-02
+    date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-main-schema-02
+      Internet-Draft: draft-marx-qlog-main-schema-latest
     author:
       -
         ins: R. Marx
         name: Robin Marx
-        org: Hasselt University
+        org: KU Leuven
+        role: editor
+
+  QLOG-QUIC:
+    title: "QUIC event definitions for qlog"
+    date: {DATE}
+    seriesinfo:
+      Internet-Draft: draft-marx-qlog-quic-events-latest
+    author:
+      -
+        ins: R. Marx
+        name: Robin Marx
+        org: KU Leuven
+        role: editor
+      -
+        ins: L. Niccolini
+        name: Luca Niccolini
+        org: Facebook
+        role: editor
+      -
+        ins: M. Seemann
+        name: Marten Seemann
+        org: Protocol Labs
         role: editor
 
 informative:
@@ -74,7 +103,7 @@ informative:
 --- abstract
 
 This document describes concrete qlog event definitions and their metadata for
-QUIC and HTTP/3-related events. These events can then be embedded in the higher
+HTTP/3 and QPACK-related events. These events can then be embedded in the higher
 level schema defined in [QLOG-MAIN].
 
 --- middle
@@ -82,14 +111,13 @@ level schema defined in [QLOG-MAIN].
 # Introduction
 
 This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the QUIC and HTTP/3 protocols. This document
-is based on draft-29 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT] [QUIC-HTTP] and
-draft-16 of the QPACK I-D [QUIC-QPACK].
+"data" fields and their semantics for the HTTP/3 and QPACK protocols. This
+document is based on draft-34 of the HTTP/3 I-D [QUIC-HTTP] and draft-21 of the
+QPACK I-D [QUIC-QPACK]. QUIC events are defined in a separate document
+[QLOG-QUIC].
 
-Feedback and discussion welcome at
-[https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
-Readers are advised to refer to the "editor's draft" at that URL for an
-up-to-date version of this document.
+Feedback and discussion welcome at [TODO](TODO). Readers are advised to refer to
+the "editor's draft" at that URL for an up-to-date version of this document.
 
 Concrete examples of integrations of this schema in
 various programming languages can be found at
@@ -108,12 +136,11 @@ definition language, inspired by JSON and TypeScript, and described in
 # Overview
 
 This document describes the values of the qlog "name" ("category" + "event") and
-"data" fields and their semantics for the QUIC and HTTP/3 protocols.
+"data" fields and their semantics for the HTTP/3 and QPACK protocols.
 
 This document assumes the usage of the encompassing main qlog schema defined in
-[QLOG-MAIN]. Each subsection below defines a separate category (for example
-connectivity, transport, http) and each subsubsection is an event type (for
-example `packet_received`).
+[QLOG-MAIN]. Each subsection below defines a separate category (for example http,
+qpack) and each subsubsection is an event type (for example `frame_created`).
 
 For each event type, its importance and data definition is laid out, often
 accompanied by possible values for the optional "trigger" field. For the
