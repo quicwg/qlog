@@ -1043,6 +1043,132 @@ explicit lengths in RawInfo rather than reconstructing them from other qlog data
 Similarly, tool developers should only utilize RawInfo (and related information)
 in such tools to prevent errors.
 
+## Generic events
+
+In typical logging setups, users utilize a discrete number of well-defined logging
+categories, levels or severities to log freeform (string) data. This generic
+events category replicates this approach to allow implementations to fully replace
+their existing text-based logging by qlog. This is done by providing events to log
+generic strings for the typical well-known logging levels (error, warning, info,
+debug, verbose).
+
+For the events defined below, the "category" is "generic" and their "type" is the
+name of the heading in lowercase (e.g., the "name" of the error event is
+"generic:error").
+
+### error
+Importance: Core
+
+Used to log details of an internal error that might not get reflected on the wire.
+
+Data:
+
+~~~~
+{
+    code?:uint32,
+    message?:string
+}
+~~~~
+
+### warning
+Importance: Base
+
+Used to log details of an internal warning that might not get reflected on the
+wire.
+
+Data:
+
+~~~~
+{
+    code?:uint32,
+    message?:string
+}
+~~~~
+
+### info
+Importance: Extra
+
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages.
+
+Data:
+
+~~~~
+{
+    message:string
+}
+~~~~
+
+### debug
+Importance: Extra
+
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages.
+
+Data:
+
+~~~~
+{
+    message:string
+}
+~~~~
+
+### verbose
+Importance: Extra
+
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages.
+
+Data:
+
+~~~~
+{
+    message:string
+}
+~~~~
+
+## Simulation events
+
+When evaluating a protocol implementation, one typically sets up a series of
+interoperability or benchmarking tests, in which the test situations can change
+over time. For example, the network bandwidth or latency can vary during the test,
+or the network can be fully disable for a short time. In these setups, it is
+useful to know when exactly these conditions are triggered, to allow for proper
+correlation with other events.
+
+For the events defined below, the "category" is "simulation" and their "type" is
+the name of the heading in lowercase (e.g., the "name" of the scenario event is
+"simulation:scenario").
+
+### scenario
+Importance: Extra
+
+Used to specify which specific scenario is being tested at this particular
+instance. This could also be reflected in the top-level qlog's `summary` or
+`configuration` fields, but having a separate event allows easier aggregation of
+several simulations into one trace (e.g., split by `group_id`).
+
+~~~~
+{
+    name?:string,
+    details?:any
+}
+~~~~
+
+### marker
+Importance: Extra
+
+Used to indicate when specific emulation conditions are triggered at set times
+(e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
+triggered).
+
+~~~~
+{
+    type?:string,
+    message?:string
+}
+~~~~
+
 # Serializing qlog {#concrete-formats}
 
 This document and other related qlog schema definitions are intentionally
@@ -1641,6 +1767,14 @@ TODO: primarily the .well-known URI
 
 # Change Log
 
+## Since draft-marx-qlog-main-schema-draft-02:
+
+* These changes were done in preparation of the adoption of the drafts by the QUIC
+  working group (#137)
+* Moved RawInfo, Importance, Generic events and Simulation events to this document.
+* Added basic event definition guidelines
+* Made protocol_type an array instead of a string (#146)
+
 ## Since draft-marx-qlog-main-schema-01:
 
 * Decoupled qlog from the JSON format and described a mapping instead (#89)
@@ -1680,6 +1814,8 @@ The idea is that qlog is able to encompass the use cases for both of these
 alternate designs and that all tooling converges on the qlog standard.
 
 # Acknowledgements
+
+Much of the initial work by Robin Marx was done at Hasselt University.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé and Lucas

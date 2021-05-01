@@ -1547,129 +1547,6 @@ Data:
 Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
-
-# Generic events and Simulation indicators
-
-## generic
-
-The main goal of the events in this category is to allow implementations to fully
-replace their existing text-based logging by qlog. This is done by providing
-events to log generic strings for typical well-known logging levels (error,
-warning, info, debug, verbose).
-
-### error
-Importance: Core
-
-Used to log details of an internal error. For errors that effectively lead to the
-closure of a QUIC connection, it is recommended to use transport:connection_closed
-instead.
-
-
-Data:
-
-~~~~
-{
-    code?:uint32,
-    message?:string
-}
-~~~~
-
-### warning
-Importance: Base
-
-Used to log details of an internal warning that might not get reflected on the
-wire.
-
-Data:
-
-~~~~
-{
-    code?:uint32,
-    message?:string
-}
-~~~~
-
-### info
-Importance: Extra
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Data:
-
-~~~~
-{
-    message:string
-}
-~~~~
-
-### debug
-Importance: Extra
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Data:
-
-~~~~
-{
-    message:string
-}
-~~~~
-
-### verbose
-Importance: Extra
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Data:
-
-~~~~
-{
-    message:string
-}
-~~~~
-
-## simulation
-
-When evaluating a protocol evaluation, one typically sets up a series of
-interoperability or benchmarking tests, in which the test situations can change
-over time. For example, the network bandwidth or latency can vary during the test,
-or the network can be fully disable for a short time. In these setups, it is
-useful to know when exactly these conditions are triggered, to allow for proper
-correlation with other events.
-
-### scenario
-Importance: Extra
-
-Used to specify which specific scenario is being tested at this particular
-instance. This could also be reflected in the top-level qlog's `summary` or
-`configuration` fields, but having a separate event allows easier aggregation of
-several simulations into one trace.
-
-~~~~
-{
-    name?:string,
-    details?:any
-}
-~~~~
-
-### marker
-Importance: Extra
-
-Used to indicate when specific emulation conditions are triggered at set times
-(e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered).
-
-~~~~
-{
-    type?:string,
-    message?:string
-}
-~~~~
-
-
 # Security Considerations
 
 TBD
@@ -2409,7 +2286,15 @@ class QPackHeaderBlockPrefix {
 
 # Change Log
 
-## Since draft-01:
+## Since draft-marx-qlog-event-definitions-quic-h3-02:
+
+* These changes were done in preparation of the adoption of the drafts by the QUIC
+  working group (#137)
+* Split QUIC and HTTP/3 events into two separate documents
+* Moved RawInfo, Importance, Generic events and Simulation events to the main
+  schema document.
+
+## Since draft-marx-qlog-event-definitions-quic-h3-01:
 
 Major changes:
 
@@ -2452,7 +2337,7 @@ Smaller changes:
 * Extended connection_state_updated with more fine-grained states (#49)
 
 
-## Since draft-00:
+## Since draft-marx-qlog-event-definitions-quic-h3-00:
 
 * Event and category names are now all lowercase
 * Added many new events and their definitions
@@ -2467,6 +2352,8 @@ Smaller changes:
 TBD
 
 # Acknowledgements
+
+Much of the initial work by Robin Marx was done at Hasselt University.
 
 Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
 Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy
