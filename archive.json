@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-04-15T08:37:33.236595+00:00",
+  "timestamp": "2021-05-01T13:18:15.114483+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -1973,7 +1973,7 @@
       ],
       "body": "This is a high-level observation based on my experience of 1. adding qlog support for quic-go and 2. writing some tooling to sift through a pile of logs.\r\n\r\nWhen adding qlog support for quic-go, I already found it confusing that qlog bundles things that have little to do with each other into the same event. Examples for these are:\r\n* The values in `parameters_set` event in `transport` that are not part of the QUIC transport parameters.\r\n* The `pto_count` in `metrics_updated`.\r\n* The `connection_state_updated` event. This is the worst in this list.\r\n\r\nIn my implementation, I worked around this by exposing an API that exposes different functions, which then would encode the same qlog event (with the respective fields set). For example, I have a `qlog.UpdatedPTOCount()` and a `qlog.UpdatedMetrics()`, which both emit a `metrics_updated` event.\r\n\r\nWriting my own qlog parser, I'm now encountering the same problem again. For example, one interesting thing to monitor on a production system would be the reason why a connection was closed (to see if there are any PROTOCOL_VIOLATIONS, for example). It would make filtering much easier if there was a `connection_closed` event, instead of having to look at optional fields in all the `connection_state_updated` events emitted over the lifetime of the connection. A similar argument applies to the PTO count (Connections that experience a lot of PTO events might be interesting to look at. Connections that collect many RTT samples are not).\r\n\r\nFrom my discussions with @rmarx (and I hope that I'm paraphrasing him correctly here), the main argument for having fewer events was that it makes things easier to implement. I hope that I laid out my argument here that the opposite is the case.",
       "createdAt": "2020-04-21T03:43:01Z",
-      "updatedAt": "2020-11-03T16:23:37Z",
+      "updatedAt": "2021-04-23T07:58:18Z",
       "closedAt": null,
       "comments": [
         {
@@ -2024,6 +2024,13 @@
           "body": "I think one high level design decision needs to be made here first. Is the format of the logs supposed to be optimized for the performance of implementations generating them or for tools that are processing them? Generally, I believe it should be optimized for the ones generating them. Tools can afford the extra time and complexity because they're not in the production loop.\r\n\r\nAssuming there's general agreement with optimizing for the implementations and not the tools, then splitting up events makes sense in my opinion. For most of these things, the instantaneous action/operation that would trigger these events is very often isolated from much of everything else. Therefore trying to force extra packaging or coalescing requires implementations that don't already have it, to manage additional state.\r\n\r\nAs to the worry that all the individual events will make it feel daunting for new users/implementers of qlog, this is not unfounded, but things should be structured such that generally as many events as possible are optional, but you only get the full benefit out of the tools if you implement them all. In my opinion, tools should be **very** resilient to missing events for several reasons:\r\n\r\n1. Not all may be implemented (yet?).\r\n2. Filtering at collection time may be enabled (e.g. for performance reasons).\r\n3. Events may be lost at collection time (log buffer overflows are **very** common).\r\n4. Events containing PII data may not be allowed to be collected in production.\r\n\r\nThis obviously makes things much more complicated for the tool, but that's just unfortunately how things are.",
           "createdAt": "2020-11-03T16:22:39Z",
           "updatedAt": "2020-11-03T16:23:37Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Linking this to #107 for future reference, since that also contains a piece of this puzzle. ",
+          "createdAt": "2021-04-23T07:58:18Z",
+          "updatedAt": "2021-04-23T07:58:18Z"
         }
       ]
     },
@@ -3477,9 +3484,9 @@
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
-      "body": "List of thinks to keep in mind when preparing for QUIC wg adoption:\r\n- Split QUIC and HTTP/3 event definitions into separate drafts (ensure proper cross-reference)\r\n- Update editor names and affiliations\r\n- Move shared stuff to the main schema document\r\n  - RawInfo (though not 100% sure that's generic enough for all protocols?)\r\n  - The whole \"generic\" category (error, warning, verbose, etc.)\r\n  - Potentially the \"Importance\" indicators (Core, Base, Extra)\r\n- rename master branch to main #140 \r\n\r\nConcrete steps for splitting / preparing the drafts according to @lpardue:\r\n\r\n```\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-h3-events.md\r\n\r\n# add comment into draft-marx-qlog-event-definitions-quic-h3.md saying \"beginning the split\"\r\n\r\ngit add draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"starting document split\"\r\n\r\n# then delete all the non-relevant text in draft-marx-qlog-quic-events.md and draft-marx-qlog-h3-events.md, and move necessary text to main-schema, then\r\n\r\ngit -rm draft-marx-qlog-event-definitions-quic-h3.md\r\ngit add draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"complete document split\"\r\n\r\n# then update editors and other metadata in the 3 documents\r\n\r\ngit commit -m \"prepare for adoption\"\r\n\r\n# then submit 03, 00, 00 as individual I-Ds that we can issue a call for adoption on\r\n```\r\n\r\n",
+      "body": "List of thinks to keep in mind when preparing for QUIC wg adoption:\r\n- Split QUIC and HTTP/3 event definitions into separate drafts (ensure proper cross-reference)\r\n- Update editor names and affiliations\r\n- Specify which value of `protocol_type` to use for each document (and change to array-based already?)\r\n- Move shared stuff to the main schema document\r\n  - RawInfo (though not 100% sure that's generic enough for all protocols?)\r\n  - The whole \"generic\" category (error, warning, verbose, etc.)\r\n  - Potentially the \"Importance\" indicators (Core, Base, Extra)\r\n- rename master branch to main #140 \r\n\r\nConcrete steps for splitting / preparing the drafts according to @lpardue:\r\n\r\n```\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-h3-events.md\r\n\r\n# add comment into draft-marx-qlog-event-definitions-quic-h3.md saying \"beginning the split\"\r\n\r\ngit add draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"starting document split\"\r\n\r\n# then delete all the non-relevant text in draft-marx-qlog-quic-events.md and draft-marx-qlog-h3-events.md, and move necessary text to main-schema, then\r\n\r\ngit -rm draft-marx-qlog-event-definitions-quic-h3.md\r\ngit add draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"complete document split\"\r\n\r\n# then update editors and other metadata in the 3 documents\r\n\r\ngit commit -m \"prepare for adoption\"\r\n\r\n# then submit 03, 00, 00 as individual I-Ds that we can issue a call for adoption on\r\n```\r\n\r\n",
       "createdAt": "2021-03-02T16:04:51Z",
-      "updatedAt": "2021-03-31T08:06:18Z",
+      "updatedAt": "2021-04-30T15:43:47Z",
       "closedAt": null,
       "comments": [
         {
@@ -3730,15 +3737,15 @@
       "id": "MDU6SXNzdWU4NTgyNjM2NjE=",
       "title": "[draft 02] Fix JSON serialization example under the Field name semantics section",
       "url": "https://github.com/quiclog/internet-drafts/issues/149",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "JorisHerbots",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "**Problem**\r\nThe section about \"Field name semantics\" in draft 02 contains the following example:\r\n```\r\nJSON serialization:\r\n\r\n{\r\n    time: 1553986553572,\r\n\r\n    name: \"transport:packet_sent\",\r\n    event: \"packet_sent\",\r\n    data: { ... }\r\n\r\n    protocol_type:  \"QUIC_HTTP3\",\r\n    group_id: \"127ecc830d98f9d54a42c4f0842aa87e181a\",\r\n\r\n    time_format: \"absolute\",\r\n\r\n    ODCID: \"127ecc830d98f9d54a42c4f0842aa87e181a\", // QUIC specific\r\n}\r\n```\r\nThe QLOG specification lists the use of `category` and `type` fields or their concatenation under the `name` field. The above example, however, seems to hint that there also exists an `event` field. \r\n\r\n**Suggested fix**\r\n ```\r\nJSON serialization:\r\n\r\n{\r\n    time: 1553986553572,\r\n\r\n    name: \"transport:packet_sent\",\r\n    data: { ... }\r\n\r\n    protocol_type:  \"QUIC_HTTP3\",\r\n    group_id: \"127ecc830d98f9d54a42c4f0842aa87e181a\",\r\n\r\n    time_format: \"absolute\",\r\n\r\n    ODCID: \"127ecc830d98f9d54a42c4f0842aa87e181a\", // QUIC specific\r\n}\r\n```\r\nOr\r\n\r\n ```\r\nJSON serialization:\r\n\r\n{\r\n    time: 1553986553572,\r\n\r\n    category: \"transport\",\r\n    type: \"packet_sent\",\r\n    data: { ... }\r\n\r\n    protocol_type:  \"QUIC_HTTP3\",\r\n    group_id: \"127ecc830d98f9d54a42c4f0842aa87e181a\",\r\n\r\n    time_format: \"absolute\",\r\n\r\n    ODCID: \"127ecc830d98f9d54a42c4f0842aa87e181a\", // QUIC specific\r\n}\r\n```",
       "createdAt": "2021-04-14T21:05:37Z",
-      "updatedAt": "2021-04-15T08:18:26Z",
-      "closedAt": null,
+      "updatedAt": "2021-04-15T09:28:33Z",
+      "closedAt": "2021-04-15T09:28:33Z",
       "comments": [
         {
           "author": "rmarx",
@@ -3770,6 +3777,91 @@
           "body": "So this is a bit of a difficult one... As explained in section `name-field`, category+type were used in qlog draft 01 but in 02 it's preferred to use the concatenated version: `As such, the default approach in qlog is to concatenate both field values`\r\n\r\nIt's highly uncertain at this point how/if these fields will continue to exist in this form (see also #146, which means we might go to quic:packet_sent instead of transport:packet_sent in time for example).\r\n\r\nSo for now, I'd like to keep the text as-is (encourage concatenated form). \r\n\r\nNote: qvis -should- still support both category + event for draft02 for easier backwards compat though. If that's not the case, then that should be fixed. ",
           "createdAt": "2021-04-15T08:29:17Z",
           "updatedAt": "2021-04-15T08:29:17Z"
+        }
+      ]
+    },
+    {
+      "number": 152,
+      "id": "MDU6SXNzdWU4NTg5ODYxNTc=",
+      "title": "Add ability to log CPU/threading info",
+      "url": "https://github.com/quiclog/internet-drafts/issues/152",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "In msquic, events all contain the current CPU ID, Process ID and Thread ID (https://github.com/microsoft/msquic/blob/main/src/plugins/wpa/DataModel/QuicEvent.cs), which allows them to do advanced debugging of threading and CPU allocation issues (https://github.com/microsoft/msquic/blob/main/docs/TSG.md#diagnosing-rss-issues).\r\n\r\nIt would potentially be interesting to have this type of metadata well-defined in qlog as well.\r\n\r\nCC @nibanks",
+      "createdAt": "2021-04-15T15:15:55Z",
+      "updatedAt": "2021-04-15T15:33:24Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "nibanks",
+          "authorAssociation": "NONE",
+          "body": "Here's an example scenario where having CPU information per event is key to diagnosing issues: https://github.com/microsoft/msquic/blob/main/docs/TSG.md#diagnosing-rss-issues",
+          "createdAt": "2021-04-15T15:33:24Z",
+          "updatedAt": "2021-04-15T15:33:24Z"
+        }
+      ]
+    },
+    {
+      "number": 153,
+      "id": "MDU6SXNzdWU4NjM2MDE2OTk=",
+      "title": "Revisit category/type/name setup",
+      "url": "https://github.com/quiclog/internet-drafts/issues/153",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Prior to draft-02, we had separate category and type fields. The idea was that this would be easier to filter on (e.g., show me only events in the `transport` category). I'm still not sure people actually use it this way. \r\n\r\nWith the move to normal JSON in -02, I introduced the `name` field, which concatenates to `category:type`. The motivation for that was mainly reducing JSON overhead by not having to repeat `\"category\"` and `\"type\"` strings for each event. \r\n\r\nNow, we have the discussion around `protocol_type` in #85, indicating it might make more sense to tie events more closely to protocols and not have generic/high-level categories (instead of `transport:packet_sent` and a separate `protocol_type` of QUIC, we would for example have `quic_packet_sent` and `tcp_packet_sent`). \r\n\r\nI guess the main question is if there's value in splitting up events in type + category for high-level filtering, or if that's not necessary in practice. From my experience in qvis, it isn't all that useful, since filtering on category still requires looping over all events (and keeping things in lookup maps is also possible without explicit qlog-level categories).",
+      "createdAt": "2021-04-21T08:44:56Z",
+      "updatedAt": "2021-04-21T08:44:56Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 154,
+      "id": "MDU6SXNzdWU4NjUzOTY0Njg=",
+      "title": "the frames_processed fails to capture received and sent frames",
+      "url": "https://github.com/quiclog/internet-drafts/issues/154",
+      "state": "OPEN",
+      "author": "toidiu",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The [`frames_processed`](https://tools.ietf.org/html/draft-marx-qlog-event-definitions-quic-h3-02#section-5.3.14) event fails to capture the sending and receiving of frames since it only specified a single `packet_number` field.\r\n\r\nAccording to the [transport rfc](https://tools.ietf.org/html/draft-ietf-quic-transport-32#section-12.3):\r\n>  Each endpoint maintains a separate packet number for sending and receiving.\r\n\r\nI feel mirroring the packet events would be consistent and result in two events: `frames_sent` and `frames_received` which will be easier to match on.",
+      "createdAt": "2021-04-22T19:31:20Z",
+      "updatedAt": "2021-04-26T19:59:07Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "So the idea is that send/receive semantics for frames are done in the `packet_sent` and `packet_received` events. These not only log e.g., the packet header, but also the frames and their contents. \r\n\r\nThe `frames_processed` event is an additional one to be used to signify exactly that: when the frames are -processed- (as this does not necessarily happen directly after/before send/receive). This is mostly in the cases where a) the processing code is decoupled heavily from the send/recv code or b) you don't want to log full packets, but are mainly interested in e.g., how stream frames are handled. The `packet_number` is just to have -a- way of correlating this info to the packet carrying the frames for later cross-reference, but not intended to replace the `packet_sent` and `packet_received` events (which log the packet numbers as well of course).\r\n\r\nIf you would only want to log the frames (e.g., have pure `frames_sent` and `frames_received`), you could just use `packet_sent` and `packet_received` and omit packet-level information from these instead. \r\n\r\nFrom your issue, I assume this wasn't clear when reading the draft and that we should clarify it. However, I feel like the setup works as you desire/describe, so I don't think there's a design issue. If you disagree, please let us know.\r\n\r\n(note: it's likely that the `frames_processed` event will be replaced with a number of more specific events like `acks_processed`, see #85)",
+          "createdAt": "2021-04-23T07:53:24Z",
+          "updatedAt": "2021-04-23T07:54:17Z"
+        },
+        {
+          "author": "toidiu",
+          "authorAssociation": "NONE",
+          "body": "Thanks for the explanation. The intention of frame_processed makes sense but there is text that added to my confusion. There might still be a good usecase for frame_sent/recv event and I listed the pros/cons for that.\r\n\r\n> Note: in some implementations, it can be difficult to log frames\r\n   directly, even when using packet_sent and packet_received events.\r\n   For these cases, this event also contains the direct packet_number\r\n   field, which can be used to more explicitly link this event to the\r\n   packet_sent/received events.\r\n\r\n**note and packet_number confusion**\r\nThe quote from the draft specifically calls out sending and receiving and how the packet_number can be used to link the event to the packet event.\r\n\r\nIf this event is meant for processing of received events, as you described, then it might be good to call that out explicitly and remove the packet_sent part.\r\n \r\n**difficulty in logging frames in packet event**\r\nThe quote describes our use case pretty well (difficult to log frames directly, even when using packet_sent and packet_received events). So we plan to emit the packet event with sparse info and another event which captures the frame info. Given that I see two options:\r\n\r\n- using packet_sent/recv\r\n  - pros: this will allow us to reuse the event.\r\n  - cons: low granularity of the logs. There is more data in a frame_event vs a packet_event. Customers only wishing to consume packet_events will need to do their own parsing or opt into both events; this can be noisy/cumbersome. \r\n- adding and using new frame_sent/recv\r\n  - pros: this will allow users to easily consume packet_events vs frame_event.\r\n  - cons: more events and possibly duplication.\r\n",
+          "createdAt": "2021-04-23T19:07:25Z",
+          "updatedAt": "2021-04-23T19:14:34Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Thank you for the additional information. I now understand the root of your issue (I think) and agree that there's a semantic mismatch (at minimum in the use of the verb \"processed\" vs parsed/created).\r\n\r\nI also understand the arguments for separate frame_* events, but I'm unsure if it's still possible to make such a change. The packet_* events are at the core of qlog and implemented by all stacks that do qlog (that I know of). All the tooling also utilizes this. Splitting this up by default would mean lots of code churn (one of the reasons we added a separate `frames_processed` in the first place). \r\n\r\nAm I correct in understanding you have a concrete need for this split in your own stack (i.e., it's difficult to emit everything in `packet_sent/received` and you really _need_ separate events?) or this this mainly a theoretical exercise? In the first case, could you provide a few more details on how/why it works that way? Thanks!\r\n",
+          "createdAt": "2021-04-26T09:37:30Z",
+          "updatedAt": "2021-04-26T09:37:30Z"
+        },
+        {
+          "author": "toidiu",
+          "authorAssociation": "NONE",
+          "body": "> All the tooling also utilizes this. Splitting this up by default would mean lots of code churn (one of the reasons we added a separate frames_processed in the first place).\r\n\r\nI wanted to make sure we were on the same page. I was suggesting that we keep the `frames` field in the packet_* events and introduce frame_* events. This might introduce duplication but also not break existing tooling.\r\n\r\nWe do have a need for this in our stack. Emitting the packet_* with the `frames` info would force us to have extra allocation; which we need to avoid in a networking library (QUIC). \r\n\r\n---\r\n\r\nIf its not possible to add frame_*:\r\n\r\nThe alternative is that we emit the `packet_*` with just the packet related info and then later on emit another `packet_*` with frames related info. However, I do wonder if qlog tools are flexible enough to expect this behavior and match the 'separated' packet events?\r\n\r\nThis still doesn't address easy filtering of packet vs frame events, so we would likely add a custom field to indicate and filter that easily.\r\n\r\n---\r\n\r\nAside:\r\nI am not familiar with the existing tooling and how easy/difficult they would be to update, but I wonder if there is a way to mark fields as deprecated so that new tools opt into the preferred usage (streamline and remove duplication).\r\n\r\nI also wonder if breaking tools might be acceptable since this is still in draft. But I am new here so defer the decision to you and others; also thats is a much larger conversation.",
+          "createdAt": "2021-04-26T19:57:07Z",
+          "updatedAt": "2021-04-26T19:59:07Z"
         }
       ]
     }
@@ -4718,6 +4810,48 @@
       "mergeCommit": null,
       "comments": [],
       "reviews": []
+    },
+    {
+      "number": 151,
+      "id": "MDExOlB1bGxSZXF1ZXN0NjE1ODQ3ODA1",
+      "title": "Remove event field (only name is preferred in draft-02)",
+      "url": "https://github.com/quiclog/internet-drafts/pull/151",
+      "state": "MERGED",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #149 ",
+      "createdAt": "2021-04-15T08:37:38Z",
+      "updatedAt": "2021-04-15T09:28:33Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "d4b62cd84b73338c8be1b749f7686cccd2754967",
+      "headRepository": "quiclog/internet-drafts",
+      "headRefName": "remove-extra-events",
+      "headRefOid": "1862d3f97ca9298a380931ac74d4c895416f8a8f",
+      "closedAt": "2021-04-15T09:28:33Z",
+      "mergedAt": "2021-04-15T09:28:33Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "d820822898dc3cd9030d32f491d7c3b1cb964cac"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NjM2NDUxNTg1",
+          "commit": {
+            "abbreviatedOid": "1862d3f"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-04-15T09:06:25Z",
+          "updatedAt": "2021-04-15T09:06:25Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
