@@ -179,7 +179,57 @@ document.
 Most of the complex datastructures, enums and re-usable definitions are grouped
 together on the bottom of this document for clarity.
 
-# Events not belonging to a single connection {#handling-unknown-connections}
+## Links to the main schema
+
+This document re-uses all the fields defined in the main qlog schema (e.g., name,
+category, type, data, group_id, protocol_type, the time-related fields,
+importance, RawInfo, etc.).
+
+One entry in the "protocol_type" qlog array field MUST be "QUIC" if events from
+this document are included in a qlog trace.
+
+When the qlog "group_id" field is used, it is recommended to use QUIC's Original
+Destination Connection ID (ODCID, the CID chosen by the client when first
+contacting the server), as this is the only value that does not change over the
+course of the connection and can be used to link more advanced QUIC packets (e.g.,
+Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
+used as the qlog filename or file identifier, potentially suffixed by the
+vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
+trace of the connection with ODCID abcd1234).
+
+### Raw packet and frame information
+
+This document re-uses the definition of the RawInfo data class from [QLOG-MAIN].
+
+Note:
+
+: QUIC packets always include an AEAD authentication tag ("trailer") at the end.
+As this tag is always the same size for a given connection (it depends on the used
+TLS cipher), this document does not define a separate "RawInfo:aead_tag_length"
+field here. Instead, this field is reflected in "transport:parameters_set" and can
+be logged only once.
+
+Note:
+
+: As QUIC uses trailers in packets, packet header_lengths can be calculated as:
+
+: header_length = length - payload_length - aead_tag_length
+
+: For UDP datagrams, the calulation is simpler:
+
+: header_length = length - payload_length
+
+Note:
+
+: In some cases, the length fields are also explicitly reflected inside of packet
+headers. For example, the QUIC STREAM frame has a "length" field indicating its
+payload size. Similarly, the QUIC Long Header has a "length" field which is equal
+to the payload length plus the packet number length. In these cases, those fields
+are intentionally preserved in the event definitions. Even though this can lead to
+duplicate data when the full RawInfo is logged, it allows a more direct mapping of
+the QUIC specifications to qlog, making it easier for users to interpret.
+
+### Events not belonging to a single connection {#handling-unknown-connections}
 
 For several types of events, it is sometimes impossible to tie them to a specific
 conceptual QUIC connection (e.g., a packet_dropped event triggered because the
@@ -205,81 +255,7 @@ would most likely be logged in separate traces. Servers can take extra efforts
 however (for example by also matching connections on their four-tuple instead of
 just the connection ID).
 
-# QUIC and HTTP/3 fields
 
-This document re-uses all the fields defined in the main qlog schema (e.g., name,
-category, type, data, group_id, protocol_type, the time-related fields, etc.).
-
-The value of the "protocol_type" qlog field MUST be "QUIC_HTTP3".
-
-When the qlog "group_id" field is used, it is recommended to use QUIC's Original
-Destination Connection ID (ODCID, the CID chosen by the client when first
-contacting the server), as this is the only value that does not change over the
-course of the connection and can be used to link more advanced QUIC packets (e.g.,
-Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
-used as the qlog filename or file identifier, potentially suffixed by the
-vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
-trace of the connection with ODCID abcd1234).
-
-## Raw packet and frame information
-
-While qlog is a more high-level logging format, it also allows the inclusion of
-most raw wire image information, such as byte lengths and even raw byte values.
-This can be useful when for example investigating or tuning packetization
-behaviour or determining encoding/framing overheads. However, these fields are not
-always necessary and can take up considerable space if logged for each packet or
-frame. As such, they are grouped in a separate optional field called "raw" of type
-RawInfo (where applicable).
-
-~~~
-class RawInfo {
-    length?:uint64; // full packet/frame length, including header and AEAD authentication tag lengths (where applicable)
-    payload_length?:uint64; // length of the packet/frame payload, excluding AEAD tag. For many control frames, this will have a value of zero
-
-    data?:bytes; // full packet/frame contents, including header and AEAD authentication tag (where applicable)
-}
-~~~
-
-Note:
-
-: QUIC packets always include an AEAD authentication tag at the end. As this
-tag is always the same size for a given connection (it depends on the used TLS
-cipher), we do not have a separate "aead_tag_length" field here. Instead, this
-field is reflected in "transport:parameters_set" and can be logged only once.
-
-Note:
-
-: There is intentionally no explicit header_length field in RawInfo. QUIC and
-HTTP/3 use many Variable-Length Integer Encoded (VLIE) values in their packet and
-frame headers, which are of a dynamic length. Note too that because of this, we
-cannot deterministally reconstruct the header encoding/length from qlog data, as
-implementations might not necessarily employ the most efficient VLIE scheme for
-all values. As such, it is typically easier to log just the total packet/frame
-length and the payload length. The header length can be calculated by tools as:
-
-: For QUIC packets: header_length = length - payload_length - aead_tag_length
-
-: For QUIC and HTTP/3 frames: header_length = length - payload_length
-
-: For UDP datagrams: header_length = length - payload_length
-
-Note:
-
-: In some cases, the length fields are also explicitly reflected inside of
-frame/packet headers. For example, the QUIC STREAM frame has a "length" field
-indicating its payload size. Similarly, all HTTP/3 frames include their explicit
-payload lengths in the frame header. Finally, the QUIC Long Header has a "length"
-field which is equal to the payload length plus the packet number length. In these
-cases, those fields are intentionally preserved in the event definitions. Even
-though this can lead to duplicate data when the full RawInfo is logged, it allows
-a more direct mapping of the QUIC and HTTP/3 specifications to qlog, making it
-easier for users to interpret.
-
-Note:
-
-: as described in [QLOG-MAIN], the RawInfo:data field can be truncated for privacy
-or security purposes (for example excluding payload data). In this case, the
-length properties should still indicate the non-truncated lengths.
 
 # QUIC event definitions
 

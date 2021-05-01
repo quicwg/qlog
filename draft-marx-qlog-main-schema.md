@@ -531,7 +531,7 @@ class Event {
     name: string,
     data: any,
 
-    protocol_type?: string,
+    protocol_type?: Array<string>,
     group_id?: string|uint32,
 
     time_format?: "absolute"|"delta"|"relative",
@@ -547,7 +547,7 @@ JSON serialization:
     name: "transport:packet_sent",
     data: { ... }
 
-    protocol_type:  "QUIC_HTTP3",
+    protocol_type:  ["QUIC","HTTP3"],
     group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
 
     time_format: "absolute",
@@ -701,16 +701,16 @@ JSON serialization:
 
 ### protocol_type {#protocol-type-field}
 
-The "protocol_type" field indicates to which protocol (or protocol "stack") this
-event belongs. This allows a single qlog file to aggregate traces of different
-protocols (e.g., a web server offering both TCP+HTTP/2 and QUIC+HTTP/3
-connections).
+The "protocol_type" array field indicates to which protocols (or protocol
+"stacks") this event belongs. This allows a single qlog file to aggregate traces
+of different protocols (e.g., a web server offering both TCP+HTTP/2 and
+QUIC+HTTP/3 connections).
 
-For example, QUIC and HTTP/3 events have the "QUIC_HTTP3" protocol_type value, see
-[QLOG-QUIC-HTTP3].
+For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
+entry values, see [QLOG-QUIC] and [QLOG-H3].
 
-Typically however, all events in a single trace are of the same protocol, and this
-field is logged once in "common_fields", see {{common-fields}}.
+Typically however, all events in a single trace are of the same few protocols, and
+this array field is logged once in "common_fields", see {{common-fields}}.
 
 ### triggers {#trigger-field}
 
@@ -777,14 +777,14 @@ JSON serialization for events grouped by four tuples and QUIC connection IDs:
 events: [
     {
         time: 1553986553579,
-        protocol_type: "TCP_HTTPS2",
+        protocol_type: ["TCP", "HTTPS2"],
         group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
         name: "transport:packet_received",
         data: { ... },
     },
     {
         time: 1553986553581,
-        protocol_type: "QUIC_HTTP3",
+        protocol_type: ["QUIC","HTTP3"],
         group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
         name: "transport:packet_sent",
         data: { ... },
@@ -825,7 +825,7 @@ JSON serialization with repeated field values per-event instance:
 {
     events: [{
             group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-            protocol_type: "QUIC_HTTP3",
+            protocol_type: ["QUIC","HTTP3"],
             time_format: "relative",
             reference_time: "1553986553572",
 
@@ -834,7 +834,7 @@ JSON serialization with repeated field values per-event instance:
             data: { ... }
         },{
             group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-            protocol_type: "QUIC_HTTP3",
+            protocol_type: ["QUIC","HTTP3"],
             time_format: "relative",
             reference_time: "1553986553572",
 
@@ -850,7 +850,7 @@ JSON serialization with repeated field values extracted to common_fields:
 {
     common_fields: {
         group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-        protocol_type:  "QUIC_HTTP3",
+        protocol_type: ["QUIC","HTTP3"],
         time_format: "relative",
         reference_time: "1553986553572"
     },
@@ -987,6 +987,61 @@ They however SHOULD NOT expect non-specialized tools to recognize or visualize
 this custom data. However, tools SHOULD make an effort to visualize even unknown
 data if possible in the specific tool's context. If they do not, they MUST ignore
 these unknown fields.
+
+# Generic events and data classes
+
+There are some event types and data classes that are common across protocols,
+applications and use cases that benefit from being defined in a single location.
+This section specifies such common definitions.
+
+## Raw packet and frame information
+
+While qlog is a more high-level logging format, it also allows the inclusion of
+most raw wire image information, such as byte lengths and even raw byte values.
+This can be useful when for example investigating or tuning packetization
+behaviour or determining encoding/framing overheads. However, these fields are not
+always necessary and can take up considerable space if logged for each packet or
+frame. They can also have a considerable privacy and security impact. As such,
+they are grouped in a separate optional field called "raw" of type RawInfo (where
+applicable).
+
+~~~
+class RawInfo {
+    length?:uint64; // the full byte length of the entity (e.g., packet or frame) including headers and trailers
+    payload_length?:uint64; // the byte length of the entity's payload, without headers or trailers
+
+    data?:bytes; // the contents of the full entity, including headers and trailers
+}
+~~~
+
+Note:
+
+: The RawInfo:data field can be truncated for privacy or security purposes
+(for example excluding payload data). In this case, the length properties should
+still indicate the non-truncated lengths.
+
+Note:
+
+: We do not specify explicit header_length or trailer_length fields. In
+most protocols, header_length can be calculated by subtracing the payload_length
+from the length (e.g., if trailer_length is always 0). In protocols with trailers
+(e.g., QUIC's AEAD tag), event definitions documents SHOULD define other ways of
+logging the trailer_length to make the header_length calculation possible.
+
+: The exact definitions entities, headers, trailers and payloads depend on the
+protocol used. If this is non-trivial, event definitions documents SHOULD include
+a clear explanation of how entities are mapped into the RawInfo structure.
+
+Note:
+
+: Relatedly, many modern protocols use Variable-Length Integer Encoded (VLIE) values
+in their headers, which are of a dynamic length. Because of this, we cannot
+deterministally reconstruct the header encoding/length from non-RawInfo qlog data,
+as implementations might not necessarily employ the most efficient VLIE scheme for
+all values. As such, to make exact size-analysis possible, implementers should use
+explicit lengths in RawInfo rather than reconstructing them from other qlog data.
+Similarly, tool developers should only utilize RawInfo (and related information)
+in such tools to prevent errors.
 
 # Serializing qlog {#concrete-formats}
 
@@ -1214,7 +1269,7 @@ class QlogFileNDJSON {
 
 NDJSON serialization:
 
-{"qlog_format":"NDJSON","qlog_version":"draft-03-WIP","title":"Name of this particular NDJSON qlog file (short)","description":"Description for this NDJSON qlog file (long)","trace":{"common_fields":{"protocol_type":"QUIC_HTTP3","group_id":"127ecc830d98f9d54a42c4f0842aa87e181a","time_format":"relative","reference_time":"1553986553572"},"vantage_point":{"name":"backend-67","type":"server"}}}
+{"qlog_format":"NDJSON","qlog_version":"draft-03-WIP","title":"Name of this particular NDJSON qlog file (short)","description":"Description for this NDJSON qlog file (long)","trace":{"common_fields":{"protocol_type": ["QUIC","HTTP3"],"group_id":"127ecc830d98f9d54a42c4f0842aa87e181a","time_format":"relative","reference_time":"1553986553572"},"vantage_point":{"name":"backend-67","type":"server"}}}
 {"time": 2, "name": "transport:packet_received", "data": { ... } }
 {"time": 7, "name": "http:frame_parsed", "data": { ... } }
 ~~~~~~~~
