@@ -800,7 +800,7 @@ JSON serialization for events grouped by four tuples and QUIC connection IDs:
 events: [
     {
         time: 1553986553579,
-        protocol_type: ["TCP", "HTTPS2"],
+        protocol_type: ["TCP", "TLS", "HTTP2"],
         group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
         name: "transport:packet_received",
         data: { ... },
@@ -923,7 +923,7 @@ Examples include the QUIC event definitions [QLOG-QUIC] and HTTP/3 and QPACK
 event definitions [QLOG-H3].
 
 This section defines some basic annotations and concepts the creators of event
-definition documents should follow to ensure a measure of consistency, making it
+definition documents SHOULD follow to ensure a measure of consistency, making it
 easier for qlog implementers to extrapolate from one protocol to another.
 
 ## Event design guidelines
