@@ -111,7 +111,7 @@ with logs from a variety of different protocols and use cases.
 As such, this document contains concepts such as versioning, metadata inclusion,
 log aggregation, event grouping and log file size reduction techniques.
 
-Feedback and discussion welcome at
+Feedback and discussion are welcome at
 [https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
 Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
 version of this document.

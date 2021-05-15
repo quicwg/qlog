@@ -126,8 +126,10 @@ document is based on draft-34 of the HTTP/3 I-D [QUIC-HTTP] and draft-21 of the
 QPACK I-D [QUIC-QPACK]. QUIC events are defined in a separate document
 [QLOG-QUIC].
 
-Feedback and discussion welcome at [TODO](TODO). Readers are advised to refer to
-the "editor's draft" at that URL for an up-to-date version of this document.
+Feedback and discussion are welcome at
+[https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
+Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
+version of this document.
 
 Concrete examples of integrations of this schema in
 various programming languages can be found at
