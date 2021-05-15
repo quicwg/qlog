@@ -15,8 +15,21 @@ author:
   -
     ins: R. Marx
     name: Robin Marx
-    org: Hasselt University
-    email: robin.marx@uhasselt.be
+    org: KU Leuven
+    email: robin.marx@kuleuven.be
+    role: editor
+  -
+    ins: L. Niccolini
+    name: Luca Niccolini
+    org: Facebook
+    email: lniccolini@fb.com
+    role: editor
+  -
+    ins: M. Seemann
+    name: Marten Seemann
+    org: Protocol Labs
+    email: marten@protocol.ai
+    role: editor
 
 normative:
   QLOG-QUIC:
