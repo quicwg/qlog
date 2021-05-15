@@ -1,6 +1,6 @@
 ---
-title: QUIC and HTTP/3 event definitions for qlog
-docname: draft-marx-qlog-event-definitions-quic-h3-latest
+title: QUIC event definitions for qlog
+docname: draft-marx-qlog-quic-events-latest
 category: std
 
 ipr: trust200902
@@ -15,15 +15,28 @@ author:
   -
     ins: R. Marx
     name: Robin Marx
-    org: Hasselt University
-    email: robin.marx@uhasselt.be
+    org: KU Leuven
+    email: robin.marx@kuleuven.be
+  -
+    ins: L. Niccolini
+    name: Luca Niccolini
+    org: Facebook
+    email: lniccolini@fb.com
+    role: editor
+  -
+    ins: M. Seemann
+    name: Marten Seemann
+    org: Protocol Labs
+    email: marten@protocol.ai
+    role: editor
 
 normative:
+
   QUIC-TRANSPORT:
     title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
+    date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-transport-32
-    date: 2020-10-01
+      Internet-Draft: draft-ietf-quic-transport-latest
     author:
       -
         ins: J. Iyengar
@@ -35,38 +48,83 @@ normative:
         name: Martin Thomson
         org: Mozilla
         role: editor
-  QUIC-HTTP:
-    title: "Hypertext Transfer Protocol Version 3 (HTTP/3)"
-    date: 2020-10-01
+
+  QUIC-RECOVERY:
+    title: "QUIC Loss Detection and Congestion Control"
+    date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-32
+      Internet-Draft: draft-ietf-quic-recovery-latest
     author:
       -
-        ins: M. Bishop
-        name: Mike Bishop
-        org: Akamai
+        ins: J. Iyengar
+        name: Jana Iyengar
+        org: Fastly
         role: editor
-  QUIC-QPACK:
-    title: "QPACK: Header Compression for HTTP/3"
-    date: 2020-10-20
+      -
+        ins: I. Swett
+        name: Ian Swett
+        org: Google
+        role: editor
+
+  QUIC-TLS:
+    title: "Using Transport Layer Security (TLS) to Secure QUIC"
+    date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-qpack-19
+      Internet-Draft: draft-ietf-quic-tls-latest
     author:
       -
-        ins: A. Frindell
-        name: Alan Frindell
-        org: Facebook
+        ins: M. Thomson
+        name: Martin Thomson
+        org: Mozilla
         role: editor
+      -
+        ins: S. Turner
+        name: Sean Turner
+        org: sn3rd
+        role: editor
+
   QLOG-MAIN:
     title: "Main logging schema for qlog"
-    date: 2020-11-02
+    date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-main-schema-02
+      Internet-Draft: draft-marx-qlog-main-schema-latest
     author:
       -
         ins: R. Marx
         name: Robin Marx
-        org: Hasselt University
+        org: KU Leuven
+        role: editor
+      -
+        ins: L. Niccolini
+        name: Luca Niccolini
+        org: Facebook
+        role: editor
+      -
+        ins: M. Seemann
+        name: Marten Seemann
+        org: Protocol Labs
+        role: editor
+
+  QLOG-H3:
+    title: "HTTP/3 and QPACK event definitions for qlog"
+    date: {DATE}
+    seriesinfo:
+      Internet-Draft: draft-marx-qlog-h3-events-latest
+    author:
+      -
+        ins: R. Marx
+        name: Robin Marx
+        org: KU Leuven
+        role: editor
+      -
+        ins: L. Niccolini
+        name: Luca Niccolini
+        org: Facebook
+        role: editor
+      -
+        ins: M. Seemann
+        name: Marten Seemann
+        org: Protocol Labs
         role: editor
 
 informative:
@@ -74,22 +132,22 @@ informative:
 --- abstract
 
 This document describes concrete qlog event definitions and their metadata for
-QUIC and HTTP/3-related events. These events can then be embedded in the higher
-level schema defined in [QLOG-MAIN].
+QUIC events. These events can then be embedded in the higher level schema defined
+in [QLOG-MAIN].
 
 --- middle
 
 # Introduction
 
 This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the QUIC and HTTP/3 protocols. This document
-is based on draft-29 of the QUIC and HTTP/3 I-Ds [QUIC-TRANSPORT] [QUIC-HTTP] and
-draft-16 of the QPACK I-D [QUIC-QPACK].
+"data" fields and their semantics for the QUIC protocol. This document is based on
+draft-34 of the QUIC I-Ds [QUIC-TRANSPORT] [QUIC-RECOVERY] [QUIC-TLS]. HTTP/3 and
+QPACK events are defined in a separate document [QLOG-H3].
 
-Feedback and discussion welcome at
+Feedback and discussion are welcome at
 [https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
-Readers are advised to refer to the "editor's draft" at that URL for an
-up-to-date version of this document.
+Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
+version of this document.
 
 Concrete examples of integrations of this schema in
 various programming languages can be found at
@@ -108,89 +166,72 @@ definition language, inspired by JSON and TypeScript, and described in
 # Overview
 
 This document describes the values of the qlog "name" ("category" + "event") and
-"data" fields and their semantics for the QUIC and HTTP/3 protocols.
+"data" fields and their semantics for the QUIC protocol.
 
 This document assumes the usage of the encompassing main qlog schema defined in
 [QLOG-MAIN]. Each subsection below defines a separate category (for example
-connectivity, transport, http) and each subsubsection is an event type (for
+connectivity, transport, recovery) and each subsubsection is an event type (for
 example `packet_received`).
 
 For each event type, its importance and data definition is laid out, often
 accompanied by possible values for the optional "trigger" field. For the
-definition and semantics of "trigger", see the main schema document.
+definition and semantics of "importance" and "trigger", see the main schema
+document.
 
 Most of the complex datastructures, enums and re-usable definitions are grouped
 together on the bottom of this document for clarity.
 
-## Importance
+## Links to the main schema
 
-Many of the events defined in this document map directly to concepts seen in the
-QUIC and HTTP/3 documents, while others act as aggregating events that combine
-data from several possible protocol behaviours or code paths into one. This is
-done to reduce the amount of unique event definitions, as reflecting each possible
-protocol event as a separate qlog entity would cause an explosion of event types.
-Similarly, we prevent logging duplicate packet data as much as possible. As such,
-especially packet header value updates are split out into separate events (for
-example spin_bit_updated, connection_id_updated), as they are expected to change
-sparingly.
+This document re-uses all the fields defined in the main qlog schema (e.g., name,
+category, type, data, group_id, protocol_type, the time-related fields,
+importance, RawInfo, etc.).
 
-Consequently, many events that can be directly inferred from data on the wire (for
-example flow control limit changes) if the implementation is bug-free, are
-currently not explicitly defined as stand-alone events. Exceptions can be made for
-common events that benefit from being easily identifiable or individually logged
-(for example the `packets_acked` event). This can in turn give rise to separate
-events logging similar data, where it is not always clear which event should be
-logged (for example the separate `connection_started` event, whereas the more
-general `connection_state_updated` event also allows indicating that a connection
-was started).
+One entry in the "protocol_type" qlog array field MUST be "QUIC" if events from
+this document are included in a qlog trace.
 
-To aid in this decision making, each event has an "importance indicator" with one
-of three values, in decreasing order of importance and exptected usage:
+When the qlog "group_id" field is used, it is recommended to use QUIC's Original
+Destination Connection ID (ODCID, the CID chosen by the client when first
+contacting the server), as this is the only value that does not change over the
+course of the connection and can be used to link more advanced QUIC packets (e.g.,
+Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
+used as the qlog filename or file identifier, potentially suffixed by the
+vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
+trace of the connection with ODCID abcd1234).
 
-* Core
-* Base
-* Extra
+### Raw packet and frame information
 
-The "Core" events are the events that SHOULD be present in all qlog files. These
-are mostly tied to basic packet and frame parsing and creation, as well as listing
-basic internal metrics. Tool implementers SHOULD expect and add support for these
-events, though SHOULD NOT expect all Core events to be present in each qlog trace.
+This document re-uses the definition of the RawInfo data class from [QLOG-MAIN].
 
-The "Base" events add additional debugging options and CAN be present in qlog
-files. Most of these can be implicitly inferred from data in Core events (if those
-contain all their properties), but for many it is better to log the events
-explicitly as well, making it clearer how the implementation behaves. These events
-are for example tied to passing data around in buffers, to how internal state
-machines change and help show when decisions are actually made based on received
-data. Tool implementers SHOULD at least add support for showing the contents of
-these events, if they do not handle them explicitly.
+Note:
 
-The "Extra" events are considered mostly useful for low-level debugging of the
-implementation, rather than the protocol. They allow more fine-grained tracking of
-internal behaviour. As such, they CAN be present in qlog files and tool
-implementers CAN add support for these, but they are not required to.
+: QUIC packets always include an AEAD authentication tag ("trailer") at the end.
+As this tag is always the same size for a given connection (it depends on the used
+TLS cipher), this document does not define a separate "RawInfo:aead_tag_length"
+field here. Instead, this field is reflected in "transport:parameters_set" and can
+be logged only once.
 
-Note that in some cases, implementers might not want to log for example
-frame-level details in the "Core" events due to performance or privacy
-considerations. In this case, they SHOULD use (a subset of) relevant "Base" events
-instead to ensure usability of the qlog output. As an example, implementations
-that do not log "packet_received" events and thus also not which (if any) ACK
-frames the packet contain, SHOULD log `packets_acked` events instead.
+Note:
 
-Finally, for event types who's data (partially) overlap with other event types'
-definitions, where necessary this document includes guidance on which to use in
-specific situations.
+: As QUIC uses trailers in packets, packet header_lengths can be calculated as:
 
-## Custom fields
+: header_length = length - payload_length - aead_tag_length
 
-Note that implementers are free to define new category and event types, as well as
-values for the "trigger" property within the "data" field, or other member fields
-of the "data" field, as they see fit. They SHOULD NOT however expect
-non-specialized tools to recognize or visualize this custom data. However, tools
-SHOULD make an effort to visualize even unknown data if possible in the specific
-tool's context.
+: For UDP datagrams, the calulation is simpler:
 
-# Events not belonging to a single connection {#handling-unknown-connections}
+: header_length = length - payload_length
+
+Note:
+
+: In some cases, the length fields are also explicitly reflected inside of packet
+headers. For example, the QUIC STREAM frame has a "length" field indicating its
+payload size. Similarly, the QUIC Long Header has a "length" field which is equal
+to the payload length plus the packet number length. In these cases, those fields
+are intentionally preserved in the event definitions. Even though this can lead to
+duplicate data when the full RawInfo is logged, it allows a more direct mapping of
+the QUIC specifications to qlog, making it easier for users to interpret.
+
+### Events not belonging to a single connection {#handling-unknown-connections}
 
 For several types of events, it is sometimes impossible to tie them to a specific
 conceptual QUIC connection (e.g., a packet_dropped event triggered because the
@@ -216,81 +257,7 @@ would most likely be logged in separate traces. Servers can take extra efforts
 however (for example by also matching connections on their four-tuple instead of
 just the connection ID).
 
-# QUIC and HTTP/3 fields
 
-This document re-uses all the fields defined in the main qlog schema (e.g., name,
-category, type, data, group_id, protocol_type, the time-related fields, etc.).
-
-The value of the "protocol_type" qlog field MUST be "QUIC_HTTP3".
-
-When the qlog "group_id" field is used, it is recommended to use QUIC's Original
-Destination Connection ID (ODCID, the CID chosen by the client when first
-contacting the server), as this is the only value that does not change over the
-course of the connection and can be used to link more advanced QUIC packets (e.g.,
-Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
-used as the qlog filename or file identifier, potentially suffixed by the
-vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
-trace of the connection with ODCID abcd1234).
-
-## Raw packet and frame information
-
-While qlog is a more high-level logging format, it also allows the inclusion of
-most raw wire image information, such as byte lengths and even raw byte values.
-This can be useful when for example investigating or tuning packetization
-behaviour or determining encoding/framing overheads. However, these fields are not
-always necessary and can take up considerable space if logged for each packet or
-frame. As such, they are grouped in a separate optional field called "raw" of type
-RawInfo (where applicable).
-
-~~~
-class RawInfo {
-    length?:uint64; // full packet/frame length, including header and AEAD authentication tag lengths (where applicable)
-    payload_length?:uint64; // length of the packet/frame payload, excluding AEAD tag. For many control frames, this will have a value of zero
-
-    data?:bytes; // full packet/frame contents, including header and AEAD authentication tag (where applicable)
-}
-~~~
-
-Note:
-
-: QUIC packets always include an AEAD authentication tag at the end. As this
-tag is always the same size for a given connection (it depends on the used TLS
-cipher), we do not have a separate "aead_tag_length" field here. Instead, this
-field is reflected in "transport:parameters_set" and can be logged only once.
-
-Note:
-
-: There is intentionally no explicit header_length field in RawInfo. QUIC and
-HTTP/3 use many Variable-Length Integer Encoded (VLIE) values in their packet and
-frame headers, which are of a dynamic length. Note too that because of this, we
-cannot deterministally reconstruct the header encoding/length from qlog data, as
-implementations might not necessarily employ the most efficient VLIE scheme for
-all values. As such, it is typically easier to log just the total packet/frame
-length and the payload length. The header length can be calculated by tools as:
-
-: For QUIC packets: header_length = length - payload_length - aead_tag_length
-
-: For QUIC and HTTP/3 frames: header_length = length - payload_length
-
-: For UDP datagrams: header_length = length - payload_length
-
-Note:
-
-: In some cases, the length fields are also explicitly reflected inside of
-frame/packet headers. For example, the QUIC STREAM frame has a "length" field
-indicating its payload size. Similarly, all HTTP/3 frames include their explicit
-payload lengths in the frame header. Finally, the QUIC Long Header has a "length"
-field which is equal to the payload length plus the packet number length. In these
-cases, those fields are intentionally preserved in the event definitions. Even
-though this can lead to duplicate data when the full RawInfo is logged, it allows
-a more direct mapping of the QUIC and HTTP/3 specifications to qlog, making it
-easier for users to interpret.
-
-Note:
-
-: as described in [QLOG-MAIN], the RawInfo:data field can be truncated for privacy
-or security purposes (for example excluding payload data). In this case, the
-length properties should still indicate the non-truncated lengths.
 
 # QUIC event definitions
 
@@ -1037,10 +1004,9 @@ event).
 
 Note: Implementations logging "packet_received" and which include all of the
 packet's constituent frames therein, are not expected to emit this
-"frames_processed" event (contrary to the HTTP-level "frames_parsed" event).
-Rather, implementations not wishing to log full packets or that wish to explicitly
-convey extra information about when frames are processed (if not directly tied to
-their reception) can use this event.
+"frames_processed" event. Rather, implementations not wishing to log full packets
+or that wish to explicitly convey extra information about when frames are
+processed (if not directly tied to their reception) can use this event.
 
 Note: for some events, this approach will lose some information (e.g., for which
 encryption level are packets being acknowledged?). If this information is
@@ -1065,16 +1031,17 @@ Data:
 Importance: Base
 
 Used to indicate when data moves between the different layers (for example passing
-from HTTP/3 to QUIC stream buffers and vice versa) or between HTTP/3 and the actual
-user application on top (for example a browser engine). This helps make clear the
-flow of data, how long data remains in various buffers and the overheads
-introduced by individual layers.
+from the application protocol (e.g., HTTP) to QUIC stream buffers and vice versa)
+or between the application protocol (e.g., HTTP) and the actual user application
+on top (for example a browser engine). This helps make clear the flow of data, how
+long data remains in various buffers and the overheads introduced by individual
+layers.
 
 For example, this helps make clear whether received data on a QUIC stream is moved
-to the HTTP layer immediately (for example per received packet) or in larger
-batches (for example, all QUIC packets are processed first and afterwards the HTTP
-layer reads from the streams with newly available data). This in turn can help
-identify bottlenecks or scheduling problems.
+to the application protocol immediately (for example per received packet) or in
+larger batches (for example, all QUIC packets are processed first and afterwards
+the application layer reads from the streams with newly available data). This in
+turn can help identify bottlenecks or scheduling problems.
 
 Data:
 
@@ -1084,8 +1051,8 @@ Data:
     offset?:uint64,
     length?:uint64, // byte length of the moved data
 
-    from?:string, // typically: use either of "application","http","transport"
-    to?:string, // typically: use either of "application","http","transport"
+    from?:string, // typically: use either of "user","application","transport","network"
+    to?:string, // typically: use either of "user","application","transport","network"
 
     data?:bytes // raw bytes that were transferred
 }
@@ -1301,463 +1268,6 @@ Data:
     frames:Array<QuicFrame>, // see appendix for the definitions
 }
 ~~~
-
-# HTTP/3 event definitions
-
-## http
-
-Note: like all category values, the "http" category is written in lowercase.
-
-### parameters_set
-Importance: Base
-
-This event contains HTTP/3 and QPACK-level settings, mostly those received from
-the HTTP/3 SETTINGS frame. All these parameters are typically set once and never
-change. However, they are typically set at different times during the connection,
-so there can be several instances of this event with different fields set.
-
-Note that some settings have two variations (one set locally, one requested by the
-remote peer). This is reflected in the "owner" field. As such, this field MUST be
-correct for all settings included a single event instance. If you need to log
-settings from two sides, you MUST emit two separate event instances.
-
-Data:
-
-~~~
-{
-    owner?:"local" | "remote",
-
-    max_header_list_size?:uint64, // from SETTINGS_MAX_HEADER_LIST_SIZE
-    max_table_capacity?:uint64, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
-    blocked_streams_count?:uint64, // from SETTINGS_QPACK_BLOCKED_STREAMS
-
-    // qlog-defined
-    waits_for_settings?:boolean // indicates whether this implementation waits for a SETTINGS frame before processing requests
-}
-~~~
-
-Note: enabling server push is not explicitly done in HTTP/3 by use of a setting or
-parameter. Instead, it is communicated by use of the MAX_PUSH_ID frame, which
-should be logged using the frame_created and frame_parsed events below.
-
-Additionally, this event can contain any number of unspecified fields. This is to
-reflect setting of for example unknown (greased) settings or parameters of
-(proprietary) extensions.
-
-### parameters_restored
-Importance: Base
-
-When using QUIC 0-RTT, clients are expected to remember and reuse the server's
-SETTINGs from the previous connection. This event is used to indicate which
-settings were restored and to which values when utilizing 0-RTT.
-
-Data:
-
-~~~
-{
-    max_header_list_size?:uint64,
-    max_table_capacity?:uint64,
-    blocked_streams_count?:uint64
-}
-~~~
-
-Note that, like for parameters_set above, this event can contain any number of
-unspecified fields to allow for additional and custom settings.
-
-### stream_type_set
-Importance: Base
-
-Emitted when a stream's type becomes known. This is typically when a stream is
-opened and the stream's type indicator is sent or received.
-
-Note: most of this information can also be inferred by looking at a stream's id,
-since id's are strictly partitioned at the QUIC level. Even so, this event has a
-"Base" importance because it helps a lot in debugging to have this information
-clearly spelled out.
-
-Data:
-
-~~~~
-{
-    stream_id:uint64,
-
-    owner?:"local"|"remote"
-
-    old?:StreamType,
-    new:StreamType,
-
-    associated_push_id?:uint64 // only when new == "push"
-}
-
-enum StreamType {
-    data, // bidirectional request-response streams
-    control,
-    push,
-    reserved,
-    qpack_encode,
-    qpack_decode
-}
-~~~~
-
-### frame_created
-Importance: Core
-
-HTTP equivalent to the packet_sent event. This event is emitted when the HTTP/3
-framing actually happens. Note: this is not necessarily the same as when the
-HTTP/3 data is passed on to the QUIC layer. For that, see the "data_moved" event.
-
-Data:
-
-~~~
-{
-    stream_id:uint64,
-    length?:uint64, // payload byte length of the frame
-    frame:HTTP3Frame, // see appendix for the definitions,
-
-    raw?:RawInfo
-}
-~~~
-
-Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
-header overhead. As such, DATA frames can span many QUIC packets and can be
-created in a streaming fashion. In this case, the frame_created event is emitted
-once for the frame header, and further streamed data is indicated using the
-data_moved event.
-
-### frame_parsed
-Importance: Core
-
-HTTP equivalent to the packet_received event. This event is emitted when we
-actually parse the HTTP/3 frame. Note: this is not necessarily the same as when
-the HTTP/3 data is actually received on the QUIC layer. For that, see the
-"data_moved" event.
-
-Data:
-
-~~~
-{
-    stream_id:uint64,
-    length?:uint64, // payload byte length of the frame
-    frame:HTTP3Frame, // see appendix for the definitions,
-
-    raw?:RawInfo
-}
-~~~
-
-Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
-header overhead. As such, DATA frames can span many QUIC packets and can be
-processed in a streaming fashion. In this case, the frame_parsed event is emitted
-once for the frame header, and further streamed data is indicated using the
-data_moved event.
-
-### push_resolved
-Importance: Extra
-
-This event is emitted when a pushed resource is successfully claimed (used) or,
-conversely, abandoned (rejected) by the application on top of HTTP/3 (e.g., the
-web browser). This event is added to help debug problems with unexpected PUSH
-behaviour, which is commonplace with HTTP/2.
-
-~~~
-{
-    push_id?:uint64,
-    stream_id?:uint64, // in case this is logged from a place that does not have access to the push_id
-
-    decision:"claimed"|"abandoned"
-}
-~~~
-
-## qpack
-
-Note: like all category values, the "qpack" category is written in lowercase.
-
-The QPACK events mainly serve as an aid to debug low-level QPACK issues. The
-higher-level, plaintext header values SHOULD (also) be logged in the
-http.frame_created and http.frame_parsed event data (instead).
-
-Note: qpack does not have its own parameters_set event. This was merged with
-http.parameters_set for brevity, since qpack is a required extension for HTTP/3
-anyway. Other HTTP/3 extensions MAY also log their SETTINGS fields in
-http.parameters_set or MAY define their own events.
-
-### state_updated
-Importance: Base
-
-This event is emitted when one or more of the internal QPACK variables changes
-value. Note that some variables have two variations (one set locally, one
-requested by the remote peer). This is reflected in the "owner" field. As such,
-this field MUST be correct for all variables included a single event instance. If
-you need to log settings from two sides, you MUST emit two separate event
-instances.
-
-Data:
-
-~~~
-{
-    owner:"local" | "remote",
-
-    dynamic_table_capacity?:uint64,
-    dynamic_table_size?:uint64, // effective current size, sum of all the entries
-
-    known_received_count?:uint64,
-    current_insert_count?:uint64
-}
-~~~
-
-### stream_state_updated
-Importance: Core
-
-This event is emitted when a stream becomes blocked or unblocked by header
-decoding requests or QPACK instructions.
-
-Note: This event is of "Core" importance, as it might have a large impact on
-HTTP/3's observed performance.
-
-Data:
-
-~~~
-{
-    stream_id:uint64,
-
-    state:"blocked"|"unblocked" // streams are assumed to start "unblocked" until they become "blocked"
-}
-~~~
-
-### dynamic_table_updated
-Importance: Extra
-
-This event is emitted when one or more entries are inserted or evicted from QPACK's dynamic table.
-
-Data:
-
-~~~
-{
-    owner:"local" | "remote", // local = the encoder's dynamic table. remote = the decoder's dynamic table
-
-    update_type:"inserted"|"evicted",
-
-    entries:Array<DynamicTableEntry>
-}
-
-class DynamicTableEntry {
-    index:uint64;
-    name?:string | bytes;
-    value?:string | bytes;
-}
-~~~
-
-### headers_encoded
-Importance: Base
-
-This event is emitted when an uncompressed header block is encoded successfully.
-
-Note: this event has overlap with http.frame_created for the HeadersFrame type.
-When outputting both events, implementers MAY omit the "headers" field in this
-event.
-
-Data:
-
-~~~~
-{
-    stream_id?:uint64,
-
-    headers?:Array<HTTPHeader>,
-
-    block_prefix:QPackHeaderBlockPrefix,
-    header_block:Array<QPackHeaderBlockRepresentation>,
-
-    length?:uint32,
-    raw?:bytes
-}
-~~~~
-
-### headers_decoded
-Importance: Base
-
-This event is emitted when a compressed header block is decoded successfully.
-
-Note: this event has overlap with http.frame_parsed for the HeadersFrame type.
-When outputting both events, implementers MAY omit the "headers" field in this
-event.
-
-Data:
-
-~~~~
-{
-    stream_id?:uint64,
-
-    headers?:Array<HTTPHeader>,
-
-    block_prefix:QPackHeaderBlockPrefix,
-    header_block:Array<QPackHeaderBlockRepresentation>,
-
-    length?:uint32,
-    raw?:bytes
-}
-~~~~
-
-### instruction_created
-Importance: Base
-
-This event is emitted when a QPACK instruction (both decoder and encoder) is
-created and added to the encoder/decoder stream.
-
-Data:
-
-~~~
-{
-    instruction:QPackInstruction // see appendix for the definitions,
-
-    length?:uint32,
-    raw?:bytes
-}
-~~~
-
-Note: encoder/decoder semantics and stream_id's are implicit in either the
-instruction types or can be logged via other events (e.g., http.stream_type_set)
-
-### instruction_parsed
-Importance: Base
-
-This event is emitted when a QPACK instruction (both decoder and encoder) is read
-from the encoder/decoder stream.
-
-Data:
-
-~~~
-{
-    instruction:QPackInstruction // see appendix for the definitions,
-
-    length?:uint32,
-    raw?:bytes
-}
-~~~
-
-Note: encoder/decoder semantics and stream_id's are implicit in either the
-instruction types or can be logged via other events (e.g., http.stream_type_set)
-
-
-# Generic events and Simulation indicators
-
-## generic
-
-The main goal of the events in this category is to allow implementations to fully
-replace their existing text-based logging by qlog. This is done by providing
-events to log generic strings for typical well-known logging levels (error,
-warning, info, debug, verbose).
-
-### error
-Importance: Core
-
-Used to log details of an internal error. For errors that effectively lead to the
-closure of a QUIC connection, it is recommended to use transport:connection_closed
-instead.
-
-
-Data:
-
-~~~~
-{
-    code?:uint32,
-    message?:string
-}
-~~~~
-
-### warning
-Importance: Base
-
-Used to log details of an internal warning that might not get reflected on the
-wire.
-
-Data:
-
-~~~~
-{
-    code?:uint32,
-    message?:string
-}
-~~~~
-
-### info
-Importance: Extra
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Data:
-
-~~~~
-{
-    message:string
-}
-~~~~
-
-### debug
-Importance: Extra
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Data:
-
-~~~~
-{
-    message:string
-}
-~~~~
-
-### verbose
-Importance: Extra
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Data:
-
-~~~~
-{
-    message:string
-}
-~~~~
-
-## simulation
-
-When evaluating a protocol evaluation, one typically sets up a series of
-interoperability or benchmarking tests, in which the test situations can change
-over time. For example, the network bandwidth or latency can vary during the test,
-or the network can be fully disable for a short time. In these setups, it is
-useful to know when exactly these conditions are triggered, to allow for proper
-correlation with other events.
-
-### scenario
-Importance: Extra
-
-Used to specify which specific scenario is being tested at this particular
-instance. This could also be reflected in the top-level qlog's `summary` or
-`configuration` fields, but having a separate event allows easier aggregation of
-several simulations into one trace.
-
-~~~~
-{
-    name?:string,
-    details?:any
-}
-~~~~
-
-### marker
-Importance: Extra
-
-Used to indicate when specific emulation conditions are triggered at set times
-(e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered).
-
-~~~~
-{
-    type?:string,
-    message?:string
-}
-~~~~
-
 
 # Security Considerations
 
@@ -2199,306 +1709,18 @@ enum CryptoError {
 }
 ~~~
 
-# HTTP/3 data field definitions
-
-## HTTP/3 Frames
-
-~~~
-type HTTP3Frame = DataFrame | HeadersFrame | PriorityFrame | CancelPushFrame | SettingsFrame | PushPromiseFrame | GoAwayFrame | MaxPushIDFrame | DuplicatePushFrame | ReservedFrame | UnknownFrame;
-~~~
-
-### DataFrame
-~~~
-class DataFrame{
-    frame_type:string = "data";
-
-    raw?:bytes;
-}
-~~~
-
-### HeadersFrame
-
-This represents an *uncompressed*, plaintext HTTP Headers frame (e.g., no QPACK
-compression is applied).
-
-For example:
-
-~~~
-headers: [{"name":":path","value":"/"},{"name":":method","value":"GET"},{"name":":authority","value":"127.0.0.1:4433"},{"name":":scheme","value":"https"}]
-~~~
-
-~~~
-class HeadersFrame{
-    frame_type:string = "header";
-    headers:Array<HTTPHeader>;
-}
-
-class HTTPHeader {
-    name:string;
-    value:string;
-}
-~~~
-
-### CancelPushFrame
-~~~
-class CancelPushFrame{
-    frame_type:string = "cancel_push";
-    push_id:uint64;
-}
-~~~
-
-### SettingsFrame
-~~~
-class SettingsFrame{
-    frame_type:string = "settings";
-    settings:Array<Setting>;
-}
-
-class Setting{
-    name:string;
-    value:string;
-}
-~~~
-
-### PushPromiseFrame
-
-~~~
-class PushPromiseFrame{
-    frame_type:string = "push_promise";
-    push_id:uint64;
-
-    headers:Array<HTTPHeader>;
-}
-~~~
-
-### GoAwayFrame
-~~~
-class GoAwayFrame{
-    frame_type:string = "goaway";
-    stream_id:uint64;
-}
-~~~
-
-### MaxPushIDFrame
-~~~
-class MaxPushIDFrame{
-    frame_type:string = "max_push_id";
-    push_id:uint64;
-}
-~~~
-
-### DuplicatePushFrame
-~~~
-class DuplicatePushFrame{
-    frame_type:string = "duplicate_push";
-    push_id:uint64;
-}
-~~~
-
-### ReservedFrame
-~~~
-class ReservedFrame{
-    frame_type:string = "reserved";
-}
-~~~
-
-### UnknownFrame
-
-HTTP/3 re-uses QUIC's UnknownFrame definition, since their values and usage
-overlaps.
-
-
-## ApplicationError
-~~~
-enum ApplicationError{
-    http_no_error,
-    http_general_protocol_error,
-    http_internal_error,
-    http_stream_creation_error,
-    http_closed_critical_stream,
-    http_frame_unexpected,
-    http_frame_error,
-    http_excessive_load,
-    http_id_error,
-    http_settings_error,
-    http_missing_settings,
-    http_request_rejected,
-    http_request_cancelled,
-    http_request_incomplete,
-    http_early_response,
-    http_connect_error,
-    http_version_fallback
-}
-~~~
-
-# QPACK DATA type definitions
-
-## QPACK Instructions
-
-Note: the instructions do not have explicit encoder/decoder types, since there is
-no overlap between the insturctions of both types in neither name nor function.
-
-~~~
-type QPackInstruction = SetDynamicTableCapacityInstruction | InsertWithNameReferenceInstruction | InsertWithoutNameReferenceInstruction | DuplicateInstruction | HeaderAcknowledgementInstruction | StreamCancellationInstruction | InsertCountIncrementInstruction;
-~~~
-
-### SetDynamicTableCapacityInstruction
-
-~~~
-class SetDynamicTableCapacityInstruction {
-    instruction_type:string = "set_dynamic_table_capacity";
-
-    capacity:uint32;
-}
-~~~
-
-### InsertWithNameReferenceInstruction
-
-~~~
-class InsertWithNameReferenceInstruction {
-    instruction_type:string = "insert_with_name_reference";
-
-    table_type:"static"|"dynamic";
-
-    name_index:uint32;
-
-    huffman_encoded_value:boolean;
-
-    value_length?:uint32;
-    value?:string;
-}
-~~~
-
-### InsertWithoutNameReferenceInstruction
-
-~~~
-class InsertWithoutNameReferenceInstruction {
-    instruction_type:string = "insert_without_name_reference";
-
-    huffman_encoded_name:boolean;
-
-    name_length?:uint32;
-    name?:string;
-
-    huffman_encoded_value:boolean;
-
-    value_length?:uint32;
-    value?:string;
-}
-~~~
-
-### DuplicateInstruction
-
-~~~
-class DuplicateInstruction {
-    instruction_type:string = "duplicate";
-
-    index:uint32;
-}
-~~~
-
-### HeaderAcknowledgementInstruction
-
-~~~
-class HeaderAcknowledgementInstruction {
-    instruction_type:string = "header_acknowledgement";
-
-    stream_id:uint64;
-}
-~~~
-
-### StreamCancellationInstruction
-
-~~~
-class StreamCancellationInstruction {
-    instruction_type:string = "stream_cancellation";
-
-    stream_id:uint64;
-}
-~~~
-
-### InsertCountIncrementInstruction
-
-~~~
-class InsertCountIncrementInstruction {
-    instruction_type:string = "insert_count_increment";
-
-    increment:uint32;
-}
-~~~
-
-## QPACK Header compression
-
-~~~
-type QPackHeaderBlockRepresentation = IndexedHeaderField | LiteralHeaderFieldWithName | LiteralHeaderFieldWithoutName;
-~~~
-
-### IndexedHeaderField
-
-Note: also used for "indexed header field with post-base index"
-
-~~~
-class IndexedHeaderField {
-    header_field_type:string = "indexed_header";
-
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
-    index:uint32;
-
-    is_post_base:boolean = false; // to represent the "indexed header field with post-base index" header field type
-}
-~~~
-
-### LiteralHeaderFieldWithName
-
-Note: also used for "Literal header field with post-base name reference"
-
-~~~
-class LiteralHeaderFieldWithName {
-    header_field_type:string = "literal_with_name";
-
-    preserve_literal:boolean; // the 3rd "N" bit
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
-    name_index:uint32;
-
-    huffman_encoded_value:boolean;
-    value_length?:uint32;
-    value?:string;
-
-    is_post_base:boolean = false; // to represent the "Literal header field with post-base name reference" header field type
-}
-~~~
-
-### LiteralHeaderFieldWithoutName
-
-~~~
-class LiteralHeaderFieldWithoutName {
-    header_field_type:string = "literal_without_name";
-
-    preserve_literal:boolean; // the 3rd "N" bit
-
-    huffman_encoded_name:boolean;
-    name_length?:uint32;
-    name?:string;
-
-    huffman_encoded_value:boolean;
-    value_length?:uint32;
-    value?:string;
-}
-~~~
-
-### QPackHeaderBlockPrefix
-
-~~~
-class QPackHeaderBlockPrefix {
-    required_insert_count:uint32;
-    sign_bit:boolean;
-    delta_base:uint32;
-}
-~~~
-
 # Change Log
 
-## Since draft-01:
+## Since draft-marx-qlog-event-definitions-quic-h3-02:
+
+* These changes were done in preparation of the adoption of the drafts by the QUIC
+  working group (#137)
+* Split QUIC and HTTP/3 events into two separate documents
+* Moved RawInfo, Importance, Generic events and Simulation events to the main
+  schema document.
+* Changed to/from value options of the `data_moved` event
+
+## Since draft-marx-qlog-event-definitions-quic-h3-01:
 
 Major changes:
 
@@ -2541,7 +1763,7 @@ Smaller changes:
 * Extended connection_state_updated with more fine-grained states (#49)
 
 
-## Since draft-00:
+## Since draft-marx-qlog-event-definitions-quic-h3-00:
 
 * Event and category names are now all lowercase
 * Added many new events and their definitions
@@ -2556,6 +1778,8 @@ Smaller changes:
 TBD
 
 # Acknowledgements
+
+Much of the initial work by Robin Marx was done at Hasselt University.
 
 Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
 Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy
