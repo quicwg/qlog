@@ -191,7 +191,17 @@ A qlog file should be able to contain several indivdual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
-MUST have a value of "draft-03-WIP".
+MUST have a value of "qlog-03-WIP".
+
+Note:
+
+: there have been several previously broadly deployed qlog versions based on older
+drafts of this document (see draft-marx-qlog-main-schema). The old values for the
+"qlog_version" field were "draft-00", "draft-01" and "draft-02". When qlog was
+moved to the QUIC working group, we decided to increment the existing counter,
+rather than reverting back to -00. As such, any numbering indicating in the
+"qlog_version" field is explicitly not tied to a particular version of the draft
+documents.
 
 As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
 indicate which serialization option was chosen. Its value MUST either be one of
