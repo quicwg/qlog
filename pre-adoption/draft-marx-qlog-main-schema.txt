@@ -2,10 +2,13 @@
 
 
 
-QUIC                                                             R. Marx
-Internet-Draft                                        Hasselt University
-Intended status: Standards Track                              1 May 2021
-Expires: 2 November 2021
+QUIC                                                        R. Marx, Ed.
+Internet-Draft                                                 KU Leuven
+Intended status: Standards Track                       L. Niccolini, Ed.
+Expires: 16 November 2021                                       Facebook
+                                                         M. Seemann, Ed.
+                                                           Protocol Labs
+                                                             15 May 2021
 
 
                       Main logging schema for qlog
@@ -36,32 +39,25 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 November 2021.
+   This Internet-Draft will expire on 16 November 2021.
 
 Copyright Notice
 
    Copyright (c) 2021 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
-
-
-
-
-
-
-
-
-
-
-Marx                     Expires 2 November 2021                [Page 1]
-
-Internet-Draft        Main logging schema for qlog              May 2021
-
-
    This document is subject to BCP 78 and the IETF Trust's Legal
    Provisions Relating to IETF Documents (https://trustee.ietf.org/
    license-info) in effect on the date of publication of this document.
    Please review these documents carefully, as they describe your rights
+
+
+
+Marx, et al.            Expires 16 November 2021                [Page 1]
+
+Internet-Draft        Main logging schema for qlog              May 2021
+
+
    and restrictions with respect to this document.  Code Components
    extracted from this document must include Simplified BSD License text
    as described in Section 4.e of the Trust Legal Provisions and are
@@ -106,18 +102,18 @@ Table of Contents
        6.1.1.  numbers . . . . . . . . . . . . . . . . . . . . . . .  30
        6.1.2.  bytes . . . . . . . . . . . . . . . . . . . . . . . .  31
        6.1.3.  Summarizing table . . . . . . . . . . . . . . . . . .  33
-
-
-
-Marx                     Expires 2 November 2021                [Page 2]
-
-Internet-Draft        Main logging schema for qlog              May 2021
-
-
        6.1.4.  Other JSON specifics  . . . . . . . . . . . . . . . .  33
      6.2.  qlog to NDJSON mapping  . . . . . . . . . . . . . . . . .  34
        6.2.1.  Supporting NDJSON in tooling  . . . . . . . . . . . .  35
      6.3.  Other optimizated formatting options  . . . . . . . . . .  35
+
+
+
+Marx, et al.            Expires 16 November 2021                [Page 2]
+
+Internet-Draft        Main logging schema for qlog              May 2021
+
+
        6.3.1.  Data structure optimizations  . . . . . . . . . . . .  36
        6.3.2.  Compression . . . . . . . . . . . . . . . . . . . . .  37
        6.3.3.  Binary formats  . . . . . . . . . . . . . . . . . . .  38
@@ -139,7 +135,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
      A.3.  Since draft-marx-qlog-main-schema-00: . . . . . . . . . .  46
    Appendix B.  Design Variations  . . . . . . . . . . . . . . . . .  46
    Appendix C.  Acknowledgements . . . . . . . . . . . . . . . . . .  46
-   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  47
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  47
 
 1.  Introduction
 
@@ -163,18 +159,18 @@ Internet-Draft        Main logging schema for qlog              May 2021
    can be created that can deal with logs from a variety of different
    protocols and use cases.
 
-
-
-Marx                     Expires 2 November 2021                [Page 3]
-
-Internet-Draft        Main logging schema for qlog              May 2021
-
-
    As such, this document contains concepts such as versioning, metadata
    inclusion, log aggregation, event grouping and log file size
    reduction techniques.
 
-   Feedback and discussion welcome at https://github.com/quiclog/
+
+
+Marx, et al.            Expires 16 November 2021                [Page 3]
+
+Internet-Draft        Main logging schema for qlog              May 2021
+
+
+   Feedback and discussion are welcome at https://github.com/quiclog/
    internet-drafts (https://github.com/quiclog/internet-drafts).
    Readers are advised to refer to the "editor's draft" at that URL for
    an up-to-date version of this document.
@@ -218,17 +214,17 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
    *  int8 : signed 8-bit integer
 
-
-
-
-Marx                     Expires 2 November 2021                [Page 4]
-
-Internet-Draft        Main logging schema for qlog              May 2021
-
-
    *  int16 : signed 16-bit integer
 
    *  int32 : signed 32-bit integer
+
+
+
+
+Marx, et al.            Expires 16 November 2021                [Page 4]
+
+Internet-Draft        Main logging schema for qlog              May 2021
+
 
    *  int64 : signed 64-bit integer
 
@@ -274,16 +270,17 @@ Internet-Draft        Main logging schema for qlog              May 2021
    *  Flexibility in the format, complexity in the tooling (e.g., few
       components are a MUST, tools need to deal with this)
 
+   *  Extensible and pragmatic (e.g., no complex fixed schema with
+      extension points)
 
 
 
-Marx                     Expires 2 November 2021                [Page 5]
+
+
+Marx, et al.            Expires 16 November 2021                [Page 5]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
-
-   *  Extensible and pragmatic (e.g., no complex fixed schema with
-      extension points)
 
    *  Aggregation and transformation friendly (e.g., the top-level
       element is a container for individual traces, group_id can be used
@@ -298,7 +295,16 @@ Internet-Draft        Main logging schema for qlog              May 2021
    that end, the top-level element in the qlog schema defines only a
    small set of "header" fields and an array of component traces.  For
    this document, the required "qlog_version" field MUST have a value of
-   "draft-03-WIP".
+   "qlog-03-WIP".
+
+   Note:  there have been several previously broadly deployed qlog
+      versions based on older drafts of this document (see draft-marx-
+      qlog-main-schema).  The old values for the "qlog_version" field
+      were "draft-00", "draft-01" and "draft-02".  When qlog was moved
+      to the QUIC working group, we decided to increment the existing
+      counter, rather than reverting back to -00.  As such, any
+      numbering indicating in the "qlog_version" field is explicitly not
+      tied to a particular version of the draft documents.
 
    As qlog can be serialized in a variety of ways, the "qlog_format"
    field is used to indicate which serialization option was chosen.  Its
@@ -327,13 +333,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-
-
-
-
-
-
-Marx                     Expires 2 November 2021                [Page 6]
+Marx, et al.            Expires 16 November 2021                [Page 6]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -389,7 +389,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021                [Page 7]
+Marx, et al.            Expires 16 November 2021                [Page 7]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -445,7 +445,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021                [Page 8]
+Marx, et al.            Expires 16 November 2021                [Page 8]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -501,7 +501,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021                [Page 9]
+Marx, et al.            Expires 16 November 2021                [Page 9]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -557,7 +557,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 10]
+Marx, et al.            Expires 16 November 2021               [Page 10]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -613,7 +613,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 11]
+Marx, et al.            Expires 16 November 2021               [Page 11]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -669,7 +669,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 12]
+Marx, et al.            Expires 16 November 2021               [Page 12]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -725,7 +725,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 13]
+Marx, et al.            Expires 16 November 2021               [Page 13]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -781,7 +781,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 14]
+Marx, et al.            Expires 16 November 2021               [Page 14]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -837,7 +837,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 15]
+Marx, et al.            Expires 16 November 2021               [Page 15]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -893,7 +893,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 16]
+Marx, et al.            Expires 16 November 2021               [Page 16]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -949,7 +949,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 17]
+Marx, et al.            Expires 16 November 2021               [Page 17]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1005,7 +1005,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 18]
+Marx, et al.            Expires 16 November 2021               [Page 18]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1061,7 +1061,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 19]
+Marx, et al.            Expires 16 November 2021               [Page 19]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1100,7 +1100,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
    events: [
        {
            time: 1553986553579,
-           protocol_type: ["TCP", "HTTPS2"],
+           protocol_type: ["TCP", "TLS", "HTTP2"],
            group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
            name: "transport:packet_received",
            data: { ... },
@@ -1117,7 +1117,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 20]
+Marx, et al.            Expires 16 November 2021               [Page 20]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1173,7 +1173,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 21]
+Marx, et al.            Expires 16 November 2021               [Page 21]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1229,7 +1229,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 22]
+Marx, et al.            Expires 16 November 2021               [Page 22]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1270,7 +1270,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
    event definitions [QLOG-H3].
 
    This section defines some basic annotations and concepts the creators
-   of event definition documents should follow to ensure a measure of
+   of event definition documents SHOULD follow to ensure a measure of
    consistency, making it easier for qlog implementers to extrapolate
    from one protocol to another.
 
@@ -1285,7 +1285,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 23]
+Marx, et al.            Expires 16 November 2021               [Page 23]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1341,7 +1341,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 24]
+Marx, et al.            Expires 16 November 2021               [Page 24]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1397,7 +1397,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 25]
+Marx, et al.            Expires 16 November 2021               [Page 25]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1453,7 +1453,7 @@ class RawInfo {
 
 
 
-Marx                     Expires 2 November 2021               [Page 26]
+Marx, et al.            Expires 16 November 2021               [Page 26]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1509,7 +1509,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 27]
+Marx, et al.            Expires 16 November 2021               [Page 27]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1565,7 +1565,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 28]
+Marx, et al.            Expires 16 November 2021               [Page 28]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1621,7 +1621,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 29]
+Marx, et al.            Expires 16 November 2021               [Page 29]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1677,7 +1677,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 30]
+Marx, et al.            Expires 16 November 2021               [Page 30]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1733,7 +1733,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 31]
+Marx, et al.            Expires 16 November 2021               [Page 31]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1789,7 +1789,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 32]
+Marx, et al.            Expires 16 November 2021               [Page 32]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1845,7 +1845,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 33]
+Marx, et al.            Expires 16 November 2021               [Page 33]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1901,7 +1901,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 34]
+Marx, et al.            Expires 16 November 2021               [Page 34]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -1957,7 +1957,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 35]
+Marx, et al.            Expires 16 November 2021               [Page 35]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2013,7 +2013,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 36]
+Marx, et al.            Expires 16 November 2021               [Page 36]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2069,7 +2069,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 37]
+Marx, et al.            Expires 16 November 2021               [Page 37]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2125,7 +2125,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 38]
+Marx, et al.            Expires 16 November 2021               [Page 38]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2181,7 +2181,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 39]
+Marx, et al.            Expires 16 November 2021               [Page 39]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2237,7 +2237,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 40]
+Marx, et al.            Expires 16 November 2021               [Page 40]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2293,7 +2293,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 41]
+Marx, et al.            Expires 16 November 2021               [Page 41]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2349,7 +2349,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 42]
+Marx, et al.            Expires 16 November 2021               [Page 42]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2405,7 +2405,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 43]
+Marx, et al.            Expires 16 November 2021               [Page 43]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2461,7 +2461,7 @@ Internet-Draft        Main logging schema for qlog              May 2021
 
 
 
-Marx                     Expires 2 November 2021               [Page 44]
+Marx, et al.            Expires 16 November 2021               [Page 44]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2517,7 +2517,7 @@ A.2.  Since draft-marx-qlog-main-schema-01:
 
 
 
-Marx                     Expires 2 November 2021               [Page 45]
+Marx, et al.            Expires 16 November 2021               [Page 45]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2573,7 +2573,7 @@ Appendix C.  Acknowledgements
 
 
 
-Marx                     Expires 2 November 2021               [Page 46]
+Marx, et al.            Expires 16 November 2021               [Page 46]
 
 Internet-Draft        Main logging schema for qlog              May 2021
 
@@ -2583,26 +2583,24 @@ Internet-Draft        Main logging schema for qlog              May 2021
    Kuehlewind, Jeremy Laine and Lucas Pardue for their feedback and
    suggestions.
 
-Author's Address
+Authors' Addresses
 
-   Robin Marx
-   Hasselt University
+   Robin Marx (editor)
+   KU Leuven
 
-   Email: robin.marx@uhasselt.be
-
-
+   Email: robin.marx@kuleuven.be
 
 
+   Luca Niccolini (editor)
+   Facebook
+
+   Email: lniccolini@fb.com
 
 
+   Marten Seemann (editor)
+   Protocol Labs
 
-
-
-
-
-
-
-
+   Email: marten@protocol.ai
 
 
 
@@ -2629,4 +2627,6 @@ Author's Address
 
 
 
-Marx                     Expires 2 November 2021               [Page 47]
+
+
+Marx, et al.            Expires 16 November 2021               [Page 47]
