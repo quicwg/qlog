@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-05-01T13:18:15.114483+00:00",
+  "timestamp": "2021-05-15T19:26:46.189099+00:00",
   "repo": "quiclog/internet-drafts",
   "labels": [
     {
@@ -3484,9 +3484,9 @@
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
-      "body": "List of thinks to keep in mind when preparing for QUIC wg adoption:\r\n- Split QUIC and HTTP/3 event definitions into separate drafts (ensure proper cross-reference)\r\n- Update editor names and affiliations\r\n- Specify which value of `protocol_type` to use for each document (and change to array-based already?)\r\n- Move shared stuff to the main schema document\r\n  - RawInfo (though not 100% sure that's generic enough for all protocols?)\r\n  - The whole \"generic\" category (error, warning, verbose, etc.)\r\n  - Potentially the \"Importance\" indicators (Core, Base, Extra)\r\n- rename master branch to main #140 \r\n\r\nConcrete steps for splitting / preparing the drafts according to @lpardue:\r\n\r\n```\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-h3-events.md\r\n\r\n# add comment into draft-marx-qlog-event-definitions-quic-h3.md saying \"beginning the split\"\r\n\r\ngit add draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"starting document split\"\r\n\r\n# then delete all the non-relevant text in draft-marx-qlog-quic-events.md and draft-marx-qlog-h3-events.md, and move necessary text to main-schema, then\r\n\r\ngit -rm draft-marx-qlog-event-definitions-quic-h3.md\r\ngit add draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"complete document split\"\r\n\r\n# then update editors and other metadata in the 3 documents\r\n\r\ngit commit -m \"prepare for adoption\"\r\n\r\n# then submit 03, 00, 00 as individual I-Ds that we can issue a call for adoption on\r\n```\r\n\r\n",
+      "body": "List of thinks to keep in mind when preparing for QUIC wg adoption:\r\n- Split QUIC and HTTP/3 event definitions into separate drafts (ensure proper cross-reference)\r\n- Update editor names and affiliations\r\n- Specify which value of `protocol_type` to use for each document (and change to array-based already?)\r\n- Move shared stuff to the main schema document\r\n  - RawInfo (though not 100% sure that's generic enough for all protocols?)\r\n  - The whole \"generic\" category (error, warning, verbose, etc.)\r\n  - Potentially the \"Importance\" indicators (Core, Base, Extra)\r\n- Add more information about \"previous versions\" (e.g., two main versions in production, -01 and -02, those pre-date these adopted documents)\r\n- Define a new version codepoint for the adopted drafts (now it's still draft-03-wip, but we also can't just do draft-00 or we'll overlap soon. Maybe qlog-0x?)\r\n- rename master branch to main #140 \r\n- Send e-mail to mailing list detailing the changes. Chairs will send a separate email with call for adoption afterwards.\r\n\r\nConcrete steps for splitting / preparing the drafts according to @lpardue:\r\n\r\n```\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md\r\ncp draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-h3-events.md\r\n\r\n# add comment into draft-marx-qlog-event-definitions-quic-h3.md saying \"beginning the split\"\r\n\r\ngit add draft-marx-qlog-event-definitions-quic-h3.md draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"starting document split\"\r\n\r\n# then delete all the non-relevant text in draft-marx-qlog-quic-events.md and draft-marx-qlog-h3-events.md, and move necessary text to main-schema, then\r\n\r\ngit -rm draft-marx-qlog-event-definitions-quic-h3.md\r\ngit add draft-marx-qlog-quic-events.md draft-marx-qlog-h3-events.md\r\n\r\ngit commit -m \"complete document split\"\r\n\r\n# then update editors and other metadata in the 3 documents\r\n\r\ngit commit -m \"prepare for adoption\"\r\n\r\n# then submit 03, 00, 00 as individual I-Ds that we can issue a call for adoption on\r\n```\r\n\r\n",
       "createdAt": "2021-03-02T16:04:51Z",
-      "updatedAt": "2021-04-30T15:43:47Z",
+      "updatedAt": "2021-05-03T12:42:02Z",
       "closedAt": null,
       "comments": [
         {
@@ -3832,7 +3832,7 @@
       "labels": [],
       "body": "The [`frames_processed`](https://tools.ietf.org/html/draft-marx-qlog-event-definitions-quic-h3-02#section-5.3.14) event fails to capture the sending and receiving of frames since it only specified a single `packet_number` field.\r\n\r\nAccording to the [transport rfc](https://tools.ietf.org/html/draft-ietf-quic-transport-32#section-12.3):\r\n>  Each endpoint maintains a separate packet number for sending and receiving.\r\n\r\nI feel mirroring the packet events would be consistent and result in two events: `frames_sent` and `frames_received` which will be easier to match on.",
       "createdAt": "2021-04-22T19:31:20Z",
-      "updatedAt": "2021-04-26T19:59:07Z",
+      "updatedAt": "2021-05-04T04:48:51Z",
       "closedAt": null,
       "comments": [
         {
@@ -3862,8 +3862,45 @@
           "body": "> All the tooling also utilizes this. Splitting this up by default would mean lots of code churn (one of the reasons we added a separate frames_processed in the first place).\r\n\r\nI wanted to make sure we were on the same page. I was suggesting that we keep the `frames` field in the packet_* events and introduce frame_* events. This might introduce duplication but also not break existing tooling.\r\n\r\nWe do have a need for this in our stack. Emitting the packet_* with the `frames` info would force us to have extra allocation; which we need to avoid in a networking library (QUIC). \r\n\r\n---\r\n\r\nIf its not possible to add frame_*:\r\n\r\nThe alternative is that we emit the `packet_*` with just the packet related info and then later on emit another `packet_*` with frames related info. However, I do wonder if qlog tools are flexible enough to expect this behavior and match the 'separated' packet events?\r\n\r\nThis still doesn't address easy filtering of packet vs frame events, so we would likely add a custom field to indicate and filter that easily.\r\n\r\n---\r\n\r\nAside:\r\nI am not familiar with the existing tooling and how easy/difficult they would be to update, but I wonder if there is a way to mark fields as deprecated so that new tools opt into the preferred usage (streamline and remove duplication).\r\n\r\nI also wonder if breaking tools might be acceptable since this is still in draft. But I am new here so defer the decision to you and others; also thats is a much larger conversation.",
           "createdAt": "2021-04-26T19:57:07Z",
           "updatedAt": "2021-04-26T19:59:07Z"
+        },
+        {
+          "author": "toidiu",
+          "authorAssociation": "NONE",
+          "body": "Hi, wanted to make sure someone saw the above comment. \r\n\r\nWould be good to know which way the draft design will lean so that we can remain compatible.",
+          "createdAt": "2021-05-03T18:50:27Z",
+          "updatedAt": "2021-05-03T18:50:59Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Hey toidiu,\r\n\r\nThanks for following up. I did see your previous post, and thanks for confirming this is an issue in your stack.\r\n\r\nAt this point, we are preparing for adoption of the qlog drafts in the IETF QUIC working group, where one of the discussions to be had is indeed the amount and fine-grainedness of events. Your input will be useful then. However, at this time, I cannot guarantee new frame_* events will be added, nor that they won't... It's safe to say they won't be added anytime soon though. \r\n\r\nFor now, I'd say the best approach is to log two `packet_*` events then (as those should be easy to merge automatically by tooling). \r\n\r\nAt this point, there isn't all that much (public/open-source) tooling that I'm aware of. The biggest toolsuite is qvis (https://github.com/quiclog/qvis), which is incidentally also maintained by myself. I can say that currently logging separate `packet_*` events for the same packet (one with, one without frames) won't auto-merge the two in qvis (and I don't expect any other tooling to do this atm). Conceptually this is something I could add, but all that would do is choose either the first or the last and pretend that's the only event in there, loosing timing info (though maybe that's enough for what you need atm?). If that's a needed workaround for you at this time, let me know at https://github.com/quiclog/qvis/issues and I'll add that. \r\n\r\nIn general, I don't worry too much about breaking tooling at this point (since we're still in draft), but I'm not at all certain `frame_*` events will ever be added and re-writing tools to deal with them **properly** would be too much work at the moment (As a quick hack, I would support them by merging them with `packet_*` events, just as I would do when not using separate `frame_*` events).\r\n\r\nI hope that answers your questions. If not, feel free to let us know!  \r\n\r\n\r\n\r\n\r\n\r\n",
+          "createdAt": "2021-05-03T19:34:26Z",
+          "updatedAt": "2021-05-03T19:34:26Z"
+        },
+        {
+          "author": "toidiu",
+          "authorAssociation": "NONE",
+          "body": "> For now, I'd say the best approach is to log two packet_* events then (as those should be easy to merge automatically by tooling). \r\n\r\nThanks @rmarx for the reply on how to proceed. Your reasoning makes sense in light of upcoming adoption and the unknowns. \r\n\r\nPlease feel free to close the issue.\r\n\r\n",
+          "createdAt": "2021-05-04T04:48:50Z",
+          "updatedAt": "2021-05-04T04:48:50Z"
         }
       ]
+    },
+    {
+      "number": 156,
+      "id": "MDU6SXNzdWU4OTI1MTg4NzE=",
+      "title": "Discuss versioning",
+      "url": "https://github.com/quiclog/internet-drafts/issues/156",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, we have only a single version field in `qlog_version`. This is somewhat inflexible, as it for example doesn't allow indicating updated versions of event definitions for individual protocols (say we have main schema version 2, but HTTP/3's events are already at 5, while you can also use 2, 3 and 4 with main schema 2).\r\n\r\nI'm not entirely sure we need to go very fine-grained in this (e.g., indicating for each event which version it belongs to seems overkill), but a more advanced scheme than what we have currently is probably needed.\r\n\r\nOriginal remark from @lpardue:\r\n\r\n> Do we also need independent versioning of the different schema? How does qlog evolve over the years? For example, say the main schema got published as 1.0, and then work commenced on 2.0. Can there be a QUIC qlog event definitions 1.1 (which is updated say to support QUIC v2) and a 2.1 (which is updated to support QUIC v2 and a new main schema format)?\r\n",
+      "createdAt": "2021-05-15T19:17:44Z",
+      "updatedAt": "2021-05-15T19:17:44Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -4790,25 +4827,33 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NjA2MDQ1Nzc0",
       "title": "Add myself as editor",
       "url": "https://github.com/quiclog/internet-drafts/pull/145",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "lnicco",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2021-03-31T17:22:06Z",
-      "updatedAt": "2021-03-31T17:22:06Z",
+      "updatedAt": "2021-05-01T13:26:41Z",
       "baseRepository": "quiclog/internet-drafts",
       "baseRefName": "master",
       "baseRefOid": "d4b62cd84b73338c8be1b749f7686cccd2754967",
       "headRepository": "lnicco/internet-drafts",
       "headRefName": "luca_author",
       "headRefOid": "1cfa1f014ae74189b8a4b7fb7f14b3944e95f021",
-      "closedAt": null,
+      "closedAt": "2021-05-01T13:26:41Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Forgot to merge this before starting a separate branch for the pre-adoption changes, so made the changes manually in #155 :) ",
+          "createdAt": "2021-05-01T13:26:41Z",
+          "updatedAt": "2021-05-01T13:26:41Z"
+        }
+      ],
       "reviews": []
     },
     {
@@ -4850,6 +4895,180 @@
           "createdAt": "2021-04-15T09:06:25Z",
           "updatedAt": "2021-04-15T09:06:25Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 155,
+      "id": "MDExOlB1bGxSZXF1ZXN0NjI4NDMxNzY4",
+      "title": "Prepare for adoption",
+      "url": "https://github.com/quiclog/internet-drafts/pull/155",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "This PR tracks the changes necessary to prepare for adoption by the QUIC wg as defined in #137.\r\n\r\nIt currently contains all the text changes, still requiring a few other things after they are approved (remove old document files, switch master branch to main, submit updated docs as individual drafts for the adoption call.",
+      "createdAt": "2021-05-01T13:19:29Z",
+      "updatedAt": "2021-05-15T19:26:12Z",
+      "baseRepository": "quiclog/internet-drafts",
+      "baseRefName": "master",
+      "baseRefOid": "d820822898dc3cd9030d32f491d7c3b1cb964cac",
+      "headRepository": "quiclog/internet-drafts",
+      "headRefName": "pre-adoption",
+      "headRefOid": "8953dda487e4492c2d47e9778f22452283e7ea71",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "For those of you who don't use a local checkout of this to view the resulting HTML after the changes, I've attached them separately:\r\n\r\n[pre-adoption-html-v1.zip](https://github.com/quiclog/internet-drafts/files/6409599/pre-adoption-html-v1.zip)\r\n",
+          "createdAt": "2021-05-01T13:23:01Z",
+          "updatedAt": "2021-05-01T13:23:01Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "body": "Two other points raised by Lucas:\r\n- Add more information about \"previous versions\" (e.g., two main versions in production, -01 and -02, those pre-date these adopted documents)\r\n- Define a new version codepoint for the adopted drafts (now it's still draft-03-wip, but we also can't just do draft-00 or we'll overlap soon. Maybe qlog-0x?)",
+          "createdAt": "2021-05-03T12:37:59Z",
+          "updatedAt": "2021-05-03T12:37:59Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "body": "Do we  also need independent versioning of the different schema? How does qlog evolve over the years? For example, say the main schema got published as 1.0, and then work commenced on 2.0. Can there be a QUIC qlog event definitions 1.1 (which is updated say to support QUIC v2) and a 2.1 (which is updated to support QUIC v2 and a new main schema format)? \r\n\r\nThere's a lot of possible bikeshedding here. For now, maybe you just want to keep your linear versioning scheme (qlog 01, 02, and next 03) and make it clear that it is decoupled from any document draft id version.\r\n",
+          "createdAt": "2021-05-05T23:45:34Z",
+          "updatedAt": "2021-05-05T23:45:34Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NjUwMjg4NzQ4",
+          "commit": {
+            "abbreviatedOid": "8fb4412"
+          },
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-05-03T12:03:26Z",
+          "updatedAt": "2021-05-03T12:03:26Z",
+          "comments": [
+            {
+              "originalPosition": 129,
+              "body": "You could still point people to this repo in order to collect any adoption call feedback. Then, any and all issues can be brought across to the QUIC WG org when the repo is transferred. And we can update the URL to that new one when the adopted `-00` gets published.",
+              "createdAt": "2021-05-03T12:03:26Z",
+              "updatedAt": "2021-05-03T12:03:42Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NjUwMjkyOTUx",
+          "commit": {
+            "abbreviatedOid": "8fb4412"
+          },
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-05-03T12:10:31Z",
+          "updatedAt": "2021-05-03T12:10:31Z",
+          "comments": [
+            {
+              "originalPosition": 4,
+              "body": "Is the intent to delete this file?",
+              "createdAt": "2021-05-03T12:10:31Z",
+              "updatedAt": "2021-05-03T12:10:31Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NjUwMzE5NzM0",
+          "commit": {
+            "abbreviatedOid": "8fb4412"
+          },
+          "author": "rmarx",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-05-03T12:50:34Z",
+          "updatedAt": "2021-05-03T12:50:34Z",
+          "comments": [
+            {
+              "originalPosition": 4,
+              "body": "Indeed, this one is removed and replaced by the two new ones.",
+              "createdAt": "2021-05-03T12:50:34Z",
+              "updatedAt": "2021-05-03T12:50:34Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NjUyODUyNjc5",
+          "commit": {
+            "abbreviatedOid": "8fb4412"
+          },
+          "author": "LPardue",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-05-05T23:36:44Z",
+          "updatedAt": "2021-05-05T23:36:45Z",
+          "comments": [
+            {
+              "originalPosition": 4,
+              "body": "so uhh, why isn't it `git rm`'d ? :D",
+              "createdAt": "2021-05-05T23:36:44Z",
+              "updatedAt": "2021-05-05T23:36:45Z"
+            }
+          ]
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NjU1MDgwNDM3",
+          "commit": {
+            "abbreviatedOid": "8fb4412"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "LGTM, but as @LPardue pointed out, don't we need to delete the old documents?",
+          "createdAt": "2021-05-09T13:46:54Z",
+          "updatedAt": "2021-05-09T13:46:54Z",
+          "comments": []
+        },
+        {
+          "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NjU1ODU1MjE0",
+          "commit": {
+            "abbreviatedOid": "8fb4412"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Looks good to me. Thanks Robin for doing this.\r\n\r\nI have a couple minor comments and a generic comment about considering making the document more strict in the future. \r\nRight now it reads like a \"hands on experience\" document, which is a great start but I think the end goal could be to make some of the text more strict to provide more precise guidelines to QLOG (and QLOG tools) implementors. \r\n\r\nBut that's a separate discussion. \r\nShip it!",
+          "createdAt": "2021-05-10T16:44:54Z",
+          "updatedAt": "2021-05-10T20:19:40Z",
+          "comments": [
+            {
+              "originalPosition": 145,
+              "body": "why is HTTPS2 and HTTP3 ? \r\nIf Secure is implicit with QUIC but not with TCP, maybe this should be `[\"TCP\", \"TLS\", \"HTTP2\"]` ? ",
+              "createdAt": "2021-05-10T16:44:55Z",
+              "updatedAt": "2021-05-10T20:19:40Z"
+            },
+            {
+              "originalPosition": 206,
+              "body": "I think this is fine for now, but it could be more prescriptive in the future. \r\nAllowing total freedom in the events definition can make the development of generic tools harder. ",
+              "createdAt": "2021-05-10T17:24:57Z",
+              "updatedAt": "2021-05-10T20:19:40Z"
+            },
+            {
+              "originalPosition": 198,
+              "body": "is this a SHOULD ? not sure",
+              "createdAt": "2021-05-10T20:13:59Z",
+              "updatedAt": "2021-05-10T20:19:40Z"
+            }
+          ]
         }
       ]
     }
