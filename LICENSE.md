@@ -1,4 +1,4 @@
 # License
 
 See the
-[guidelines for contributions](https://github.com/quiclog/internet-drafts/blob/master/CONTRIBUTING.md).
+[guidelines for contributions](https://github.com/quicwg/qlog/blob/main/CONTRIBUTING.md).

@@ -20,12 +20,12 @@ subject to a Simplified BSD License) in Contributions.
 ## Other Resources
 
 Discussion of this work occurs on the
-[quic working group mailing list](https://mailarchive.ietf.org/arch/browse/quic/)
-([subscribe](https://www.ietf.org/mailman/listinfo/quic)).  In addition to
+[{WG_NAME} working group mailing list](https://mailarchive.ietf.org/arch/browse/{WG_NAME}/)
+([subscribe](https://www.ietf.org/mailman/listinfo/{WG_NAME})).  In addition to
 contributions in GitHub, you are encouraged to participate in discussions there.
 
 **Note**: Some working groups adopt a policy whereby substantive discussion of
 technical issues needs to occur on the mailing list.
 
 You might also like to familiarize yourself with other
-[working group documents](https://datatracker.ietf.org/wg/quic/documents/).
+[working group documents](https://datatracker.ietf.org/wg/{WG_NAME}/documents/).
