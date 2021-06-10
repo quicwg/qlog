@@ -16,11 +16,11 @@ intended to be protocol-agnostic. Separate documents specify how the format shou
 be used for specific protocol data. The schema is also format-agnostic, and can be
 represented in for example JSON, csv or protobuf. 
     " name="description">
-<meta content="xml2rfc 3.7.0" name="generator">
+<meta content="xml2rfc 3.8.0" name="generator">
 <meta content="Internet-Draft" name="keyword">
-<meta content="draft-marx-qlog-main-schema-latest" name="ietf.draft">
+<meta content="draft-ietf-quic-qlog-main-schema" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.7.0
+  xml2rfc 3.8.0
     Python 3.8.10
     appdirs 1.4.4
     ConfigArgParse 1.2.3
@@ -32,12 +32,12 @@ represented in for example JSON, csv or protobuf.
     lxml 4.6.3
     pycountry 20.7.3
     pyflakes 2.2.0
-    PyYAML 5.4.1
+    PyYAML 5.3.1
     requests 2.25.1
     setuptools 51.3.3
     six 1.15.0
 -->
-<link href="draft-marx-qlog-main-schema.xml" rel="alternate" type="application/rfc+xml">
+<link href="draft-ietf-quic-qlog-main-schema.xml" rel="alternate" type="application/rfc+xml">
 <link href="#copyright" rel="license">
 <style type="text/css">@import url('https://martinthomson.github.io/i-d-template/fonts.css');
 
@@ -48,7 +48,23 @@ html {
   --link-color: #2a6496;
   --highlight-color: #f9f9f9;
   --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
   --small-font-size: 14.5px;
+  scrollbar-color: #bbb #eee;
+}
+@media (prefers-color-scheme: dark) {
+html {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
 }
 body {
   max-width: 600px;
@@ -73,18 +89,24 @@ body {
   color: var(--title-color);
 }
 #title {
-  padding: 1em 0 0.2em;
   font-size: 32px;
   line-height: 40px;
   clear: both;
 }
+#title, #rfcnum {
+  margin: 1.5em 0 0.2em;
+}
+#rfcnum + #title {
+  margin: 0.2em 0;
+}
+
 h1, h2, h3 {
   font-size: 22px;
-  line-height: 26px;
+  line-height: 27px;
 }
 h4, h5, h6 {
-  font-size: 18px;
-  line-height: 22px;
+  font-size: 20px;
+  line-height: 24px;
 }
 
 /* general structure */
@@ -157,7 +179,7 @@ svg {
 /* lists */
 ol, ul {
   padding: 0;
-  margin: 0 0 1em 2em;
+  margin: 0 0 0.5em 2em;
 }
 ol ol, ul ul, ol ul, ul ol {
   margin-left: 1em;
@@ -240,6 +262,7 @@ img {
 }
 figure {
   margin: 0.5em 0;
+  padding: 0;
 }
 figure blockquote {
   margin: 0.8em 0.4em 0.4em;
@@ -264,10 +287,6 @@ figcaption, caption {
     display: inline-block;
     vertical-align: text-bottom;
     padding-bottom: 8px;
-  }
-  table {
-    display: inline-block;
-    overflow-x: auto;
   }
 }
 
@@ -330,7 +349,7 @@ thead+tbody > tr:nth-child(2n+1) > td {
 }
 table caption {
   margin: 0;
-  padding: 3px 1em;
+  padding: 3px 0 3px 1em;
 }
 table p {
   margin: 0;
@@ -339,17 +358,23 @@ table p {
 /* pilcrow */
 a.pilcrow {
   margin-left: 3px;
-  visibility: hidden;
+  opacity: 0.2;
   user-select: none;
 }
-a.pilcrow[href] { color: #ddd; }
+a.pilcrow[href] { color: var(--pilcrow-weak); }
 a.pilcrow[href]:hover { text-decoration: none; }
-@media screen {
+@media not print {
   :hover > a.pilcrow {
-    visibility: visible;
+    opacity: 1;
   }
-  a.pilcrow:hover {
+  a.pilcrow[href]:hover {
+    color: var(--pilcrow-strong);
     background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
   }
 }
 
@@ -818,7 +843,7 @@ address div.right {
   font-size: 0.9em;
 }
 </style>
-<link href="rfc-local.css" rel="stylesheet" type="text/css">
+
 </head>
 <body>
 <table class="ears">
@@ -829,7 +854,7 @@ address div.right {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 4 December 2021</td>
+<td class="center">Expires 12 December 2021</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -839,15 +864,15 @@ address div.right {
 <dt class="label-workgroup">Workgroup:</dt>
 <dd class="workgroup">QUIC</dd>
 <dt class="label-internet-draft">Internet-Draft:</dt>
-<dd class="internet-draft">draft-marx-qlog-main-schema-latest</dd>
+<dd class="internet-draft">draft-ietf-quic-qlog-main-schema</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2021-06-02" class="published">2 June 2021</time>
+<time datetime="2021-06-10" class="published">10 June 2021</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2021-12-04">4 December 2021</time></dd>
+<dd class="expires"><time datetime="2021-12-12">12 December 2021</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -897,7 +922,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 4 December 2021.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 12 December 2021.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -928,8 +953,8 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 <nav class="toc"><ul class="ulEmpty compact toc">
 <li class="ulEmpty compact toc" id="section-toc.1-1.1">
             <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.1.2.1">
+<ul class="ulEmpty compact toc">
+<li class="ulEmpty compact toc" id="section-toc.1-1.1.2.1">
                 <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="xref">1.1</a>.  <a href="#name-notational-conventions" class="xref">Notational Conventions</a></p>
 </li>
             </ul>
@@ -939,14 +964,14 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
           <li class="ulEmpty compact toc" id="section-toc.1-1.3">
             <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-the-high-level-qlog-schema" class="xref">The high level qlog schema</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.3.2.1">
+<ul class="ulEmpty compact toc">
+<li class="ulEmpty compact toc" id="section-toc.1-1.3.2.1">
                 <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-summary" class="xref">summary</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.2">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.3.2.2">
                 <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-traces" class="xref">traces</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.3">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.3.2.3">
                 <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="xref">3.3</a>.  <a href="#name-individual-trace-containers" class="xref">Individual Trace containers</a></p>
 <ul class="ulEmpty compact toc">
 <li class="ulEmpty compact toc" id="section-toc.1-1.3.2.3.2.1">
@@ -957,7 +982,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
                 </ul>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.3.2.4">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.3.2.4">
                 <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="xref">3.4</a>.  <a href="#name-field-name-semantics" class="xref">Field name semantics</a></p>
 <ul class="ulEmpty compact toc">
 <li class="ulEmpty compact toc" id="section-toc.1-1.3.2.4.2.1">
@@ -987,25 +1012,25 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
           <li class="ulEmpty compact toc" id="section-toc.1-1.4">
             <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-guidelines-for-event-defini" class="xref">Guidelines for event definition documents</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.4.2.1">
+<ul class="ulEmpty compact toc">
+<li class="ulEmpty compact toc" id="section-toc.1-1.4.2.1">
                 <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="xref">4.1</a>.  <a href="#name-event-design-guidelines" class="xref">Event design guidelines</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.4.2.2">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.4.2.2">
                 <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="xref">4.2</a>.  <a href="#name-event-importance-indicators" class="xref">Event importance indicators</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.4.2.3">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.4.2.3">
                 <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="xref">4.3</a>.  <a href="#name-custom-fields-2" class="xref">Custom fields</a></p>
 </li>
             </ul>
 </li>
           <li class="ulEmpty compact toc" id="section-toc.1-1.5">
             <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-generic-events-and-data-cla" class="xref">Generic events and data classes</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.5.2.1">
+<ul class="ulEmpty compact toc">
+<li class="ulEmpty compact toc" id="section-toc.1-1.5.2.1">
                 <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="xref">5.1</a>.  <a href="#name-raw-packet-and-frame-inform" class="xref">Raw packet and frame information</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.5.2.2">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.5.2.2">
                 <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="xref">5.2</a>.  <a href="#name-generic-events" class="xref">Generic events</a></p>
 <ul class="ulEmpty compact toc">
 <li class="ulEmpty compact toc" id="section-toc.1-1.5.2.2.2.1">
@@ -1025,7 +1050,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
                 </ul>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.5.2.3">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.5.2.3">
                 <p id="section-toc.1-1.5.2.3.1"><a href="#section-5.3" class="xref">5.3</a>.  <a href="#name-simulation-events" class="xref">Simulation events</a></p>
 <ul class="ulEmpty compact toc">
 <li class="ulEmpty compact toc" id="section-toc.1-1.5.2.3.2.1">
@@ -1040,8 +1065,8 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
           <li class="ulEmpty compact toc" id="section-toc.1-1.6">
             <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-serializing-qlog" class="xref">Serializing qlog</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.6.2.1">
+<ul class="ulEmpty compact toc">
+<li class="ulEmpty compact toc" id="section-toc.1-1.6.2.1">
                 <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="xref">6.1</a>.  <a href="#name-qlog-to-json-mapping" class="xref">qlog to JSON mapping</a></p>
 <ul class="ulEmpty compact toc">
 <li class="ulEmpty compact toc" id="section-toc.1-1.6.2.1.2.1">
@@ -1058,7 +1083,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
                 </ul>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.2">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.6.2.2">
                 <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="xref">6.2</a>.  <a href="#name-qlog-to-ndjson-mapping" class="xref">qlog to NDJSON mapping</a></p>
 <ul class="ulEmpty compact toc">
 <li class="ulEmpty compact toc" id="section-toc.1-1.6.2.2.2.1">
@@ -1066,7 +1091,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
                 </ul>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.3">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.6.2.3">
                 <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="xref">6.3</a>.  <a href="#name-other-optimizated-formattin" class="xref">Other optimizated formatting options</a></p>
 <ul class="ulEmpty compact toc">
 <li class="ulEmpty compact toc" id="section-toc.1-1.6.2.3.2.1">
@@ -1083,18 +1108,18 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
                 </ul>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.6.2.4">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.6.2.4">
                 <p id="section-toc.1-1.6.2.4.1"><a href="#section-6.4" class="xref">6.4</a>.  <a href="#name-conversion-between-formats" class="xref">Conversion between formats</a></p>
 </li>
             </ul>
 </li>
           <li class="ulEmpty compact toc" id="section-toc.1-1.7">
             <p id="section-toc.1-1.7.1"><a href="#section-7" class="xref">7</a>.  <a href="#name-methods-of-access-and-gener" class="xref">Methods of access and generation</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.7.2.1">
+<ul class="ulEmpty compact toc">
+<li class="ulEmpty compact toc" id="section-toc.1-1.7.2.1">
                 <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="xref">7.1</a>.  <a href="#name-set-file-output-destination" class="xref">Set file output destination via an environment variable</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.7.2.2">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.7.2.2">
                 <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="xref">7.2</a>.  <a href="#name-access-logs-via-a-well-know" class="xref">Access logs via a well-known endpoint</a></p>
 </li>
             </ul>
@@ -1110,25 +1135,25 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
 </li>
           <li class="ulEmpty compact toc" id="section-toc.1-1.11">
             <p id="section-toc.1-1.11.1"><a href="#section-11" class="xref">11</a>. <a href="#name-references" class="xref">References</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.11.2.1">
+<ul class="ulEmpty compact toc">
+<li class="ulEmpty compact toc" id="section-toc.1-1.11.2.1">
                 <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="xref">11.1</a>.  <a href="#name-normative-references" class="xref">Normative References</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.11.2.2">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.11.2.2">
                 <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="xref">11.2</a>.  <a href="#name-informative-references" class="xref">Informative References</a></p>
 </li>
             </ul>
 </li>
           <li class="ulEmpty compact toc" id="section-toc.1-1.12">
             <p id="section-toc.1-1.12.1"><a href="#section-appendix.a" class="xref">Appendix A</a>.  <a href="#name-change-log" class="xref">Change Log</a></p>
-<ul class="ulEmpty toc compact">
-<li class="ulEmpty toc compact" id="section-toc.1-1.12.2.1">
+<ul class="ulEmpty compact toc">
+<li class="ulEmpty compact toc" id="section-toc.1-1.12.2.1">
                 <p id="section-toc.1-1.12.2.1.1"><a href="#section-a.1" class="xref">A.1</a>.  <a href="#name-since-draft-marx-qlog-main-" class="xref">Since draft-marx-qlog-main-schema-draft-02:</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.12.2.2">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.12.2.2">
                 <p id="section-toc.1-1.12.2.2.1"><a href="#section-a.2" class="xref">A.2</a>.  <a href="#name-since-draft-marx-qlog-main-s" class="xref">Since draft-marx-qlog-main-schema-01:</a></p>
 </li>
-              <li class="ulEmpty toc compact" id="section-toc.1-1.12.2.3">
+              <li class="ulEmpty compact toc" id="section-toc.1-1.12.2.3">
                 <p id="section-toc.1-1.12.2.3.1"><a href="#section-a.3" class="xref">A.3</a>.  <a href="#name-since-draft-marx-qlog-main-sc" class="xref">Since draft-marx-qlog-main-schema-00:</a></p>
 </li>
             </ul>
@@ -1168,9 +1193,12 @@ with logs from a variety of different protocols and use cases.<a href="#section-
 <p id="section-1-4">As such, this document contains concepts such as versioning, metadata inclusion,
 log aggregation, event grouping and log file size reduction techniques.<a href="#section-1-4" class="pilcrow">¶</a></p>
 <p id="section-1-5">Feedback and discussion are welcome at
-<a href="https://github.com/quiclog/internet-drafts">https://github.com/quiclog/internet-drafts</a>.
+<a href="https://github.com/quicwg/qlog">https://github.com/quicwg/qlog</a>.
 Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
 version of this document.<a href="#section-1-5" class="pilcrow">¶</a></p>
+<p id="section-1-6">Concrete examples of integrations of this schema in
+various programming languages can be found at
+<a href="https://github.com/quiclog/qlog/">https://github.com/quiclog/qlog/</a>.<a href="#section-1-6" class="pilcrow">¶</a></p>
 <div id="data_types">
 <section id="section-1.1">
         <h3 id="name-notational-conventions">
@@ -3233,11 +3261,11 @@ blogpost</a><a href="#section-9-4" class="pilcrow">¶</a></p>
 <dl class="references">
 <dt id="QLOG-H3">[QLOG-H3]</dt>
         <dd>
-<span class="refAuthor">Marx, R., Ed.</span>, <span class="refAuthor">Niccolini, L., Ed.</span>, and <span class="refAuthor">M. Seemann, Ed.</span>, <span class="refTitle">"HTTP/3 and QPACK event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-marx-qlog-h3-events-latest</span>, <span>&lt;<a href="https://tools.ietf.org/html/draft-marx-qlog-h3-events-latest">https://tools.ietf.org/html/draft-marx-qlog-h3-events-latest</a>&gt;</span>. </dd>
+<span class="refAuthor">Marx, R., Ed.</span>, <span class="refAuthor">Niccolini, L., Ed.</span>, and <span class="refAuthor">M. Seemann, Ed.</span>, <span class="refTitle">"HTTP/3 and QPACK event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-h3-events</span>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events.txt">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events.txt</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QLOG-QUIC">[QLOG-QUIC]</dt>
       <dd>
-<span class="refAuthor">Marx, R., Ed.</span>, <span class="refAuthor">Niccolini, L., Ed.</span>, and <span class="refAuthor">M. Seemann, Ed.</span>, <span class="refTitle">"QUIC event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-marx-qlog-quic-events-latest</span>, <span>&lt;<a href="https://tools.ietf.org/html/draft-marx-qlog-quic-events-latest">https://tools.ietf.org/html/draft-marx-qlog-quic-events-latest</a>&gt;</span>. </dd>
+<span class="refAuthor">Marx, R., Ed.</span>, <span class="refAuthor">Niccolini, L., Ed.</span>, and <span class="refAuthor">M. Seemann, Ed.</span>, <span class="refTitle">"QUIC event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-quic-events</span>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events.txt">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events.txt</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
@@ -3248,27 +3276,27 @@ blogpost</a><a href="#section-9-4" class="pilcrow">¶</a></p>
 <dl class="references">
 <dt id="RFC1952">[RFC1952]</dt>
         <dd>
-<span class="refAuthor">Deutsch, P.</span>, <span class="refTitle">"GZIP file format specification version 4.3"</span>, <span class="seriesInfo">RFC 1952</span>, <span class="seriesInfo">DOI 10.17487/RFC1952</span>, <time datetime="1996-05" class="refDate">May 1996</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc1952">https://www.rfc-editor.org/info/rfc1952</a>&gt;</span>. </dd>
+<span class="refAuthor">Deutsch, P.</span>, <span class="refTitle">"GZIP file format specification version 4.3"</span>, <span class="seriesInfo">RFC 1952</span>, <span class="seriesInfo">DOI 10.17487/RFC1952</span>, <time datetime="1996-05" class="refDate">May 1996</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc1952">https://datatracker.ietf.org/doc/html/rfc1952</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
-<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc2119">https://www.rfc-editor.org/info/rfc2119</a>&gt;</span>. </dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc2119">https://datatracker.ietf.org/doc/html/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="rfc4180">[rfc4180]</dt>
         <dd>
-<span class="refAuthor">Shafranovich, Y.</span>, <span class="refTitle">"Common Format and MIME Type for Comma-Separated Values (CSV) Files"</span>, <span class="seriesInfo">RFC 4180</span>, <span class="seriesInfo">DOI 10.17487/RFC4180</span>, <time datetime="2005-10" class="refDate">October 2005</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc4180">https://www.rfc-editor.org/info/rfc4180</a>&gt;</span>. </dd>
+<span class="refAuthor">Shafranovich, Y.</span>, <span class="refTitle">"Common Format and MIME Type for Comma-Separated Values (CSV) Files"</span>, <span class="seriesInfo">RFC 4180</span>, <span class="seriesInfo">DOI 10.17487/RFC4180</span>, <time datetime="2005-10" class="refDate">October 2005</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc4180">https://datatracker.ietf.org/doc/html/rfc4180</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="rfc7049">[rfc7049]</dt>
         <dd>
-<span class="refAuthor">Bormann, C.</span> and <span class="refAuthor">P. Hoffman</span>, <span class="refTitle">"Concise Binary Object Representation (CBOR)"</span>, <span class="seriesInfo">RFC 7049</span>, <span class="seriesInfo">DOI 10.17487/RFC7049</span>, <time datetime="2013-10" class="refDate">October 2013</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc7049">https://www.rfc-editor.org/info/rfc7049</a>&gt;</span>. </dd>
+<span class="refAuthor">Bormann, C.</span> and <span class="refAuthor">P. Hoffman</span>, <span class="refTitle">"Concise Binary Object Representation (CBOR)"</span>, <span class="seriesInfo">RFC 7049</span>, <span class="seriesInfo">DOI 10.17487/RFC7049</span>, <time datetime="2013-10" class="refDate">October 2013</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc7049">https://datatracker.ietf.org/doc/html/rfc7049</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC7932">[RFC7932]</dt>
         <dd>
-<span class="refAuthor">Alakuijala, J.</span> and <span class="refAuthor">Z. Szabadka</span>, <span class="refTitle">"Brotli Compressed Data Format"</span>, <span class="seriesInfo">RFC 7932</span>, <span class="seriesInfo">DOI 10.17487/RFC7932</span>, <time datetime="2016-07" class="refDate">July 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc7932">https://www.rfc-editor.org/info/rfc7932</a>&gt;</span>. </dd>
+<span class="refAuthor">Alakuijala, J.</span> and <span class="refAuthor">Z. Szabadka</span>, <span class="refTitle">"Brotli Compressed Data Format"</span>, <span class="seriesInfo">RFC 7932</span>, <span class="seriesInfo">DOI 10.17487/RFC7932</span>, <time datetime="2016-07" class="refDate">July 2016</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc7932">https://datatracker.ietf.org/doc/html/rfc7932</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8259">[RFC8259]</dt>
       <dd>
-<span class="refAuthor">Bray, T., Ed.</span>, <span class="refTitle">"The JavaScript Object Notation (JSON) Data Interchange Format"</span>, <span class="seriesInfo">STD 90</span>, <span class="seriesInfo">RFC 8259</span>, <span class="seriesInfo">DOI 10.17487/RFC8259</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/info/rfc8259">https://www.rfc-editor.org/info/rfc8259</a>&gt;</span>. </dd>
+<span class="refAuthor">Bray, T., Ed.</span>, <span class="refTitle">"The JavaScript Object Notation (JSON) Data Interchange Format"</span>, <span class="seriesInfo">STD 90</span>, <span class="seriesInfo">RFC 8259</span>, <span class="seriesInfo">DOI 10.17487/RFC8259</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/rfc8259">https://datatracker.ietf.org/doc/html/rfc8259</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>

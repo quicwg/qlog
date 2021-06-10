@@ -5,14 +5,14 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 4 December 2021                                        Facebook
+Expires: 12 December 2021                                       Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                             2 June 2021
+                                                            10 June 2021
 
 
                       Main logging schema for qlog
-                   draft-marx-qlog-main-schema-latest
+                    draft-ietf-quic-qlog-main-schema
 
 Abstract
 
@@ -39,7 +39,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 4 December 2021.
+   This Internet-Draft will expire on 12 December 2021.
 
 Copyright Notice
 
@@ -50,14 +50,6 @@ Copyright Notice
    Provisions Relating to IETF Documents (https://trustee.ietf.org/
    license-info) in effect on the date of publication of this document.
    Please review these documents carefully, as they describe your rights
-
-
-
-Marx, et al.             Expires 4 December 2021                [Page 1]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    and restrictions with respect to this document.  Code Components
    extracted from this document must include Simplified BSD License text
    as described in Section 4.e of the Trust Legal Provisions and are
@@ -65,77 +57,68 @@ Internet-Draft        Main logging schema for qlog             June 2021
 
 Table of Contents
 
-   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
-     1.1.  Notational Conventions  . . . . . . . . . . . . . . . . .   4
-   2.  Design goals  . . . . . . . . . . . . . . . . . . . . . . . .   5
-   3.  The high level qlog schema  . . . . . . . . . . . . . . . . .   6
-     3.1.  summary . . . . . . . . . . . . . . . . . . . . . . . . .   7
-     3.2.  traces  . . . . . . . . . . . . . . . . . . . . . . . . .   8
-     3.3.  Individual Trace containers . . . . . . . . . . . . . . .   9
-       3.3.1.  configuration . . . . . . . . . . . . . . . . . . . .  10
-       3.3.2.  vantage_point . . . . . . . . . . . . . . . . . . . .  12
-     3.4.  Field name semantics  . . . . . . . . . . . . . . . . . .  14
-       3.4.1.  timestamps  . . . . . . . . . . . . . . . . . . . . .  15
-       3.4.2.  category and event  . . . . . . . . . . . . . . . . .  17
-       3.4.3.  data  . . . . . . . . . . . . . . . . . . . . . . . .  18
-       3.4.4.  protocol_type . . . . . . . . . . . . . . . . . . . .  19
-       3.4.5.  triggers  . . . . . . . . . . . . . . . . . . . . . .  19
-       3.4.6.  group_id  . . . . . . . . . . . . . . . . . . . . . .  20
-       3.4.7.  common_fields . . . . . . . . . . . . . . . . . . . .  21
-   4.  Guidelines for event definition documents . . . . . . . . . .  23
-     4.1.  Event design guidelines . . . . . . . . . . . . . . . . .  23
-     4.2.  Event importance indicators . . . . . . . . . . . . . . .  24
-     4.3.  Custom fields . . . . . . . . . . . . . . . . . . . . . .  25
-   5.  Generic events and data classes . . . . . . . . . . . . . . .  25
-     5.1.  Raw packet and frame information  . . . . . . . . . . . .  26
-     5.2.  Generic events  . . . . . . . . . . . . . . . . . . . . .  27
-       5.2.1.  error . . . . . . . . . . . . . . . . . . . . . . . .  27
-       5.2.2.  warning . . . . . . . . . . . . . . . . . . . . . . .  27
-       5.2.3.  info  . . . . . . . . . . . . . . . . . . . . . . . .  27
-       5.2.4.  debug . . . . . . . . . . . . . . . . . . . . . . . .  28
-       5.2.5.  verbose . . . . . . . . . . . . . . . . . . . . . . .  28
-     5.3.  Simulation events . . . . . . . . . . . . . . . . . . . .  28
-       5.3.1.  scenario  . . . . . . . . . . . . . . . . . . . . . .  29
-       5.3.2.  marker  . . . . . . . . . . . . . . . . . . . . . . .  29
-   6.  Serializing qlog  . . . . . . . . . . . . . . . . . . . . . .  29
-     6.1.  qlog to JSON mapping  . . . . . . . . . . . . . . . . . .  30
-       6.1.1.  numbers . . . . . . . . . . . . . . . . . . . . . . .  30
-       6.1.2.  bytes . . . . . . . . . . . . . . . . . . . . . . . .  31
-       6.1.3.  Summarizing table . . . . . . . . . . . . . . . . . .  33
-       6.1.4.  Other JSON specifics  . . . . . . . . . . . . . . . .  33
-     6.2.  qlog to NDJSON mapping  . . . . . . . . . . . . . . . . .  34
-       6.2.1.  Supporting NDJSON in tooling  . . . . . . . . . . . .  35
-     6.3.  Other optimizated formatting options  . . . . . . . . . .  35
-
-
-
-Marx, et al.             Expires 4 December 2021                [Page 2]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
-       6.3.1.  Data structure optimizations  . . . . . . . . . . . .  36
-       6.3.2.  Compression . . . . . . . . . . . . . . . . . . . . .  37
-       6.3.3.  Binary formats  . . . . . . . . . . . . . . . . . . .  38
-       6.3.4.  Overview and summary  . . . . . . . . . . . . . . . .  39
-     6.4.  Conversion between formats  . . . . . . . . . . . . . . .  40
-   7.  Methods of access and generation  . . . . . . . . . . . . . .  41
-     7.1.  Set file output destination via an environment
-           variable  . . . . . . . . . . . . . . . . . . . . . . . .  41
-     7.2.  Access logs via a well-known endpoint . . . . . . . . . .  42
-   8.  Tooling requirements  . . . . . . . . . . . . . . . . . . . .  43
-   9.  Security and privacy considerations . . . . . . . . . . . . .  44
-   10. IANA Considerations . . . . . . . . . . . . . . . . . . . . .  44
-   11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  44
-     11.1.  Normative References . . . . . . . . . . . . . . . . . .  44
-     11.2.  Informative References . . . . . . . . . . . . . . . . .  44
-   Appendix A.  Change Log . . . . . . . . . . . . . . . . . . . . .  45
-     A.1.  Since draft-marx-qlog-main-schema-draft-02: . . . . . . .  45
-     A.2.  Since draft-marx-qlog-main-schema-01: . . . . . . . . . .  45
-     A.3.  Since draft-marx-qlog-main-schema-00: . . . . . . . . . .  46
-   Appendix B.  Design Variations  . . . . . . . . . . . . . . . . .  46
-   Appendix C.  Acknowledgements . . . . . . . . . . . . . . . . . .  46
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  47
+   1.  Introduction
+     1.1.  Notational Conventions
+   2.  Design goals
+   3.  The high level qlog schema
+     3.1.  summary
+     3.2.  traces
+     3.3.  Individual Trace containers
+       3.3.1.  configuration
+       3.3.2.  vantage_point
+     3.4.  Field name semantics
+       3.4.1.  timestamps
+       3.4.2.  category and event
+       3.4.3.  data
+       3.4.4.  protocol_type
+       3.4.5.  triggers
+       3.4.6.  group_id
+       3.4.7.  common_fields
+   4.  Guidelines for event definition documents
+     4.1.  Event design guidelines
+     4.2.  Event importance indicators
+     4.3.  Custom fields
+   5.  Generic events and data classes
+     5.1.  Raw packet and frame information
+     5.2.  Generic events
+       5.2.1.  error
+       5.2.2.  warning
+       5.2.3.  info
+       5.2.4.  debug
+       5.2.5.  verbose
+     5.3.  Simulation events
+       5.3.1.  scenario
+       5.3.2.  marker
+   6.  Serializing qlog
+     6.1.  qlog to JSON mapping
+       6.1.1.  numbers
+       6.1.2.  bytes
+       6.1.3.  Summarizing table
+       6.1.4.  Other JSON specifics
+     6.2.  qlog to NDJSON mapping
+       6.2.1.  Supporting NDJSON in tooling
+     6.3.  Other optimizated formatting options
+       6.3.1.  Data structure optimizations
+       6.3.2.  Compression
+       6.3.3.  Binary formats
+       6.3.4.  Overview and summary
+     6.4.  Conversion between formats
+   7.  Methods of access and generation
+     7.1.  Set file output destination via an environment variable
+     7.2.  Access logs via a well-known endpoint
+   8.  Tooling requirements
+   9.  Security and privacy considerations
+   10. IANA Considerations
+   11. References
+     11.1.  Normative References
+     11.2.  Informative References
+   Appendix A.  Change Log
+     A.1.  Since draft-marx-qlog-main-schema-draft-02:
+     A.2.  Since draft-marx-qlog-main-schema-01:
+     A.3.  Since draft-marx-qlog-main-schema-00:
+   Appendix B.  Design Variations
+   Appendix C.  Acknowledgements
+   Authors' Addresses
 
 1.  Introduction
 
@@ -163,17 +146,14 @@ Internet-Draft        Main logging schema for qlog             June 2021
    inclusion, log aggregation, event grouping and log file size
    reduction techniques.
 
+   Feedback and discussion are welcome at https://github.com/quicwg/qlog
+   (https://github.com/quicwg/qlog).  Readers are advised to refer to
+   the "editor's draft" at that URL for an up-to-date version of this
+   document.
 
-
-Marx, et al.             Expires 4 December 2021                [Page 3]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
-   Feedback and discussion are welcome at https://github.com/quiclog/
-   internet-drafts (https://github.com/quiclog/internet-drafts).
-   Readers are advised to refer to the "editor's draft" at that URL for
-   an up-to-date version of this document.
+   Concrete examples of integrations of this schema in various
+   programming languages can be found at https://github.com/quiclog/
+   qlog/ (https://github.com/quiclog/qlog/).
 
 1.1.  Notational Conventions
 
@@ -217,14 +197,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    *  int16 : signed 16-bit integer
 
    *  int32 : signed 32-bit integer
-
-
-
-
-Marx, et al.             Expires 4 December 2021                [Page 4]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    *  int64 : signed 64-bit integer
 
@@ -273,15 +245,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    *  Extensible and pragmatic (e.g., no complex fixed schema with
       extension points)
 
-
-
-
-
-Marx, et al.             Expires 4 December 2021                [Page 5]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    *  Aggregation and transformation friendly (e.g., the top-level
       element is a container for individual traces, group_id can be used
       to tag events to a particular context)
@@ -319,24 +282,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
 
    An example of the qlog file's top-level structure is shown in
    Figure 1.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021                [Page 6]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Definition:
 
@@ -378,21 +323,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    As the summary field is highly deployment-specific, this document
    does not specify any default fields or their semantics.  Some
    examples of potential entries are shown in Figure 2.
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021                [Page 7]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Definition (purely illustrative example):
 
@@ -440,16 +370,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    opt to explicitly include it in the qlog file as an entry in the
    "traces" array, as shown in Figure 3.
 
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021                [Page 8]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    Definition:
 
    class TraceError {
@@ -487,24 +407,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
 
    The semantics and context of the trace can mainly be deduced from the
    entries in the "common_fields" list and "vantage_point" field.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021                [Page 9]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Definition:
 
@@ -553,14 +455,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    tool name to prevent collisions across tools.  This document only
    defines two optional, standard, tool-independent configuration
    settings: "time_offset" and "original_uris".
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 10]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Definition:
 
@@ -611,13 +505,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    Two examples from the qvis toolset (https://qvis.edm.uhasselt.be) are
    shown in Figure 6.
 
-
-
-Marx, et al.             Expires 4 December 2021               [Page 11]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
 {
     "configuration" : {
         "qvis" : {
@@ -649,30 +536,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    perspective of this vantage_point.  To include events from multiple
    vantage_points, implementers can for example include multiple traces,
    split by vantage_point, in a single qlog file.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 12]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Definition:
 
@@ -718,18 +581,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    semantics (a "packet sent" event goes in the direction of the
    client).  * "unknown" indicates that the flow's direction is unknown.
 
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 13]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    Depending on the context, tools confronted with "unknown" values in
    the vantage_point can either try to heuristically infer the semantics
    from protocol-level domain knowledge (e.g., in QUIC, the client
@@ -766,25 +617,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
 
    An example of a qlog event with its component fields is shown in
    Figure 8.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 14]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Definition:
 
@@ -833,15 +665,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
       This approach uses the largest amount of characters.  This is also
       the default value of the "time_format" field.
 
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 15]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    *  Delta: Delta-encode each time value on the previously logged
       value.  The first event in a trace typically logs the full
       absolute timestamp.  This approach uses the least amount of
@@ -883,20 +706,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    especially for multi-threaded and/or streaming loggers, who could
    consider using a separate postprocesser to order qlog events in time
    if a tool do not provide this feature.
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 16]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Timestamps do not have to use the UNIX epoch timestamp as their
    reference.  For example for privacy considerations, any initial
@@ -946,14 +755,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
 
       Figure 10: Ways of logging category, type and name of an event.
 
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 17]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    Certain serializations CAN emit category and type as separate fields,
    and qlog tools SHOULD be able to deal with both the concatenated
    "name" field, and the separate "category" and "type" fields.  Text-
@@ -999,16 +800,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    }
 
     Figure 11: Example of the 'data' field for a QUIC packet_sent event
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 18]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
 3.4.4.  protocol_type
 
@@ -1058,14 +849,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
        trigger?: "key_unavailable" | "unknown_connection_id" | "decrypt_error" | "unsupported_version"
    }
 
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 19]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
                          Figure 12: Trigger example
 
 3.4.6.  group_id
@@ -1114,14 +897,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
        }
    ]
 
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 20]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
                     Figure 13: Example of group_id usage
 
    Note that in some contexts (for example a Multipath transport
@@ -1151,32 +926,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    are shared by all events in this component trace.  This prevents
    these fields from being logged for each individual event.  An example
    of this is shown in Figure 14.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 21]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    JSON serialization with repeated field values per-event instance:
 
@@ -1227,13 +976,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
 
                  Figure 14: Example of common_fields usage
 
-
-
-Marx, et al.             Expires 4 December 2021               [Page 22]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    The "common_fields" field is a generic dictionary of key-value pairs,
    where the key is always a string and the value can be of any type,
    but is typically also a string or number.  As such, unknown entries
@@ -1282,14 +1024,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    There are several ways of defining qlog events.  In practice, we have
    seen two main types used so far: a) those that map directly to
    concepts seen in the protocols (e.g., "packet_sent") and b) those
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 23]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    that act as aggregating events that combine data from several
    possible protocol behaviours or code paths into one (e.g.,
    "parameters_set").  The latter are typically used as a means to
@@ -1335,16 +1069,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    metrics.  Tool implementers SHOULD expect and add support for these
    events, though SHOULD NOT expect all Core events to be present in
    each qlog trace.
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 24]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    The "Base" events add additional debugging options and CAN be present
    in qlog files.  Most of these can be implicitly inferred from data in
@@ -1395,13 +1119,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    in a single location.  This section specifies such common
    definitions.
 
-
-
-Marx, et al.             Expires 4 December 2021               [Page 25]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
 5.1.  Raw packet and frame information
 
    While qlog is a more high-level logging format, it also allows the
@@ -1450,14 +1167,6 @@ class RawInfo {
       tool developers should only utilize RawInfo (and related
       information) in such tools to prevent errors.
 
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 26]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
 5.2.  Generic events
 
    In typical logging setups, users utilize a discrete number of well-
@@ -1503,16 +1212,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
 5.2.3.  info
 
    Importance: Extra
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 27]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Used mainly for implementations that want to use qlog as their one
    and only logging format but still want to support unstructured string
@@ -1562,14 +1261,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    exactly these conditions are triggered, to allow for proper
    correlation with other events.
 
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 28]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    For the events defined below, the "category" is "simulation" and
    their "type" is the name of the heading in lowercase (e.g., the
    "name" of the scenario event is "simulation:scenario").
@@ -1618,14 +1309,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    the qlog user.  For example, for use in day to day debugging, a
    plaintext readable (yet relatively large) format like JSON is
    probably preferred.  However, for use in production, a more optimized
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 29]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    yet restricted format can be better.  In this latter case, it will be
    more difficult to achieve interoperability between qlog
    implementations of various protocol stacks, as some custom or tweaked
@@ -1674,14 +1357,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    improve in the future (as "BigInt" support
    (https://developer.mozilla.org/en-
    US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) has been
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 30]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    introduced in most Browsers, though not yet integrated into JSON
    parsers), we still need to deal with it here.
 
@@ -1722,21 +1397,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    As such, the resulting string will always have an even amount of
    characters and the original byte-size can be retrieved by dividing
    the string length by 2.
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 31]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
 6.1.2.1.  Truncated values
 
@@ -1782,17 +1442,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    }
 
              Figure 16: Example for serializing truncated bytes
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 32]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
 6.1.3.  Summarizing table
 
@@ -1842,14 +1491,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    JSON files by definition ([RFC8259]) MUST utilize the UTF-8 encoding,
    both for the file itself and the string values.
 
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 33]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    Most JSON parsers strictly follow the JSON specification.  This
    includes the rule that trailing comma's are not allowed.  As it is
    frequently annoying to remove these trailing comma's when logging
@@ -1897,14 +1538,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    Note as well from Figure 17 that the file's header (QlogFileNDJSON)
    also needs to be fully serialized on a single line to be NDJSON
    compatible.
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 34]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Definition:
 
@@ -1954,14 +1587,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    During the development of qlog, we compared a multitude of
    alternative formatting and optimization options.  The results of this
    study are summarized on the qlog github repository
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 35]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    (https://github.com/quiclog/internet-drafts/issues/30#issuecomment-
    617675097).  The rest of this section discusses some of these
    approaches implementations could choose and the expected gains and
@@ -2010,14 +1635,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    serialized as an array of values, as opposed to a full object.  This
    approach was a key part of the original qlog format (prior to draft
    02) using the "event_fields" field.  However, tests showed that this
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 36]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    optimization only provided a mean file size reduction of 5% (100MB to
    95MB) while significantly increasing the implementation complexity,
    and this approach was abandoned in favor of the default JSON setup.
@@ -2067,13 +1684,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    BE used.  The "qlog_format" field should still reflect the original
    JSON formatting of the qlog data (e.g., "JSON" or "NDJSON").
 
-
-
-Marx, et al.             Expires 4 December 2021               [Page 37]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    The second option is to use Brotli compression ([RFC7932]).  While
    similar to gzip, this more recent compression scheme provides a
    better efficiency.  It also allows multiple compression levels.
@@ -2122,14 +1732,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    without adjusting this schema as well, which has its own practical
    challenges.  As qlog is intended to be a flexible, general purpose
    format, this type of format was not chosen as its basic
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 38]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    serialization.  The lower flexibility does lead to significantly
    reduced file sizes.  Our straightforward mapping of the qlog main
    schema and QUIC/HTTP3 event types to protobuf created qlog files 24%
@@ -2166,25 +1768,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
 
    The following table provides an overview of all the discussed qlog
    formatting options with examples:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 39]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
       +====================+=======================+================+
       | format             | qlog_format           | extension      |
@@ -2234,14 +1817,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    options For this second category, a (partial) transformation from/to
    qlog can also be defined.
 
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 40]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    As such, when defining a new qlog serialization format or wanting to
    utilize qlog-compatible tools with existing codebases lacking qlog
    support, it is recommended to define and provide a concrete mapping
@@ -2290,14 +1865,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    When using QLOGDIR, it is up to the implementation to choose an
    appropriate naming scheme for the qlog files themselves.  The chosen
    scheme will typically depend on the context or protocols used.  For
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 41]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    example, for QUIC, it is recommended to use the Original Destination
    Connection ID (ODCID), followed by the vantage point type of the
    logging endpoint.  Examples of all options for QUIC are shown in
@@ -2340,19 +1907,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    file would be:
 
       .well-known/qlog/abcde.qlog
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 42]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    Implementers SHOULD allow users to fetch logs for a given connection
    on a 2nd, separate connection.  This helps prevent pollution of the
@@ -2400,16 +1954,6 @@ Internet-Draft        Main logging schema for qlog             June 2021
    Tool authors are encouraged to make their tools robust enough to
    still provide adequate output for incomplete logs.
 
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 43]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
 9.  Security and privacy considerations
 
    TODO : discuss privacy and security considerations (e.g., what NOT to
@@ -2435,54 +1979,46 @@ Internet-Draft        Main logging schema for qlog             June 2021
 
    [QLOG-H3]  Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
               "HTTP/3 and QPACK event definitions for qlog", Work in
-              Progress, Internet-Draft, draft-marx-qlog-h3-events-
-              latest, <https://tools.ietf.org/html/draft-marx-qlog-h3-
-              events-latest>.
+              Progress, Internet-Draft, draft-ietf-quic-qlog-h3-events,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
+              qlog-h3-events.txt>.
 
    [QLOG-QUIC]
               Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
               "QUIC event definitions for qlog", Work in Progress,
-              Internet-Draft, draft-marx-qlog-quic-events-latest,
-              <https://tools.ietf.org/html/draft-marx-qlog-quic-events-
-              latest>.
+              Internet-Draft, draft-ietf-quic-qlog-quic-events,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
+              qlog-quic-events.txt>.
 
 11.2.  Informative References
 
    [RFC1952]  Deutsch, P., "GZIP file format specification version 4.3",
               RFC 1952, DOI 10.17487/RFC1952, May 1996,
-              <https://www.rfc-editor.org/info/rfc1952>.
+              <https://datatracker.ietf.org/doc/html/rfc1952>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
-              <https://www.rfc-editor.org/info/rfc2119>.
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 44]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
+              <https://datatracker.ietf.org/doc/html/rfc2119>.
 
    [rfc4180]  Shafranovich, Y., "Common Format and MIME Type for Comma-
               Separated Values (CSV) Files", RFC 4180,
               DOI 10.17487/RFC4180, October 2005,
-              <https://www.rfc-editor.org/info/rfc4180>.
+              <https://datatracker.ietf.org/doc/html/rfc4180>.
 
    [rfc7049]  Bormann, C. and P. Hoffman, "Concise Binary Object
               Representation (CBOR)", RFC 7049, DOI 10.17487/RFC7049,
-              October 2013, <https://www.rfc-editor.org/info/rfc7049>.
+              October 2013,
+              <https://datatracker.ietf.org/doc/html/rfc7049>.
 
    [RFC7932]  Alakuijala, J. and Z. Szabadka, "Brotli Compressed Data
               Format", RFC 7932, DOI 10.17487/RFC7932, July 2016,
-              <https://www.rfc-editor.org/info/rfc7932>.
+              <https://datatracker.ietf.org/doc/html/rfc7932>.
 
    [RFC8259]  Bray, T., Ed., "The JavaScript Object Notation (JSON) Data
               Interchange Format", STD 90, RFC 8259,
               DOI 10.17487/RFC8259, December 2017,
-              <https://www.rfc-editor.org/info/rfc8259>.
+              <https://datatracker.ietf.org/doc/html/rfc8259>.
 
 Appendix A.  Change Log
 
@@ -2512,15 +2048,6 @@ A.2.  Since draft-marx-qlog-main-schema-01:
       -  binary blobs are now logged as lowercase hex strings (#39, #36)
 
       -  added guidance to add length-specifiers for binary blobs (#102)
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 45]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
 
    *  Removed "time_units" from Configuration.  All times are now in ms
       instead (#95)
@@ -2568,16 +2095,6 @@ Appendix C.  Acknowledgements
    Much of the initial work by Robin Marx was done at Hasselt
    University.
 
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 46]
-
-Internet-Draft        Main logging schema for qlog             June 2021
-
-
    Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
    Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja
    Kuehlewind, Jeremy Laine and Lucas Pardue for their feedback and
@@ -2601,32 +2118,3 @@ Authors' Addresses
    Protocol Labs
 
    Email: marten@protocol.ai
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Marx, et al.             Expires 4 December 2021               [Page 47]
