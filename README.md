@@ -1,21 +1,30 @@
-# qlog : QUIC and HTTP/3 logging schema
+# qlog drafts
 
-This is the working area for the Internet-Drafts concerning the qlog schema.  
-Two documents are currently defined:
+This is the working area for IETF [QUIC Working Group](https://datatracker.ietf.org/wg/quic/documents/) Internet-Drafts concerning the qlog logging format for QUIC and HTTP/3.
+
+Three documents are currently defined:
 - The main schema: high-level schema, defining general logging format and principles
-- Event definitions: concrete event definitions for the QUIC and HTTP/3 protocols
+- Event definitions for QUIC: concrete event definitions for the QUIC protocol
+- Event definitions for HTTP/3 and QPACK: concrete event definitions for the HTTP/3 and QPACK protocols
 
-## Main schema
+## Main logging schema for qlog
 
-* [Editor's Copy](https://quiclog.github.io/internet-drafts/#go.draft-marx-qlog-main-schema.html)
-* [Individual Draft](https://tools.ietf.org/html/draft-marx-qlog-main-schema)
-* [Compare Editor's Copy to Individual Draft](https://quiclog.github.io/internet-drafts/#go.draft-marx-qlog-main-schema.diff)
+* [Editor's Copy](https://quicwg.github.io/qlog/#go.draft-ietf-quic-qlog-main-schema.html)
+* [Working Group Draft](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema)
+* [Compare Editor's Copy to Working Group Draft](https://quicwg.github.io/qlog/#go.draft-ietf-quic-qlog-main-schema.diff)
 
-## Event definitions for QUIC and HTTP/3
+## QUIC event definitions for qlog
 
-* [Editor's Copy](https://quiclog.github.io/internet-drafts/#go.draft-marx-qlog-event-definitions-quic-h3.html)
-* [Individual Draft](https://tools.ietf.org/html/draft-marx-qlog-event-definitions-quic-h3)
-* [Compare Editor's Copy to Individual Draft](https://quiclog.github.io/internet-drafts/#go.draft-marx-qlog-event-definitions-quic-h3.diff)
+* [Editor's Copy](https://quicwg.github.io/qlog/#go.draft-ietf-quic-qlog-quic-events.html)
+* [Working Group Draft](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events)
+* [Compare Editor's Copy to Working Group Draft](https://quicwg.github.io/qlog/#go.draft-ietf-quic-qlog-quic-events.diff)
+
+## HTTP/3 and QPACK event definitions for qlog
+
+* [Editor's Copy](https://quicwg.github.io/qlog/#go.draft-ietf-quic-qlog-h3-events.html)
+* [Working Group Draft](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events)
+* [Compare Editor's Copy to Working Group Draft](https://quicwg.github.io/qlog/#go.draft-ietf-quic-qlog-h3-events.diff)
+
 
 ## Building the Draft
 
@@ -26,10 +35,10 @@ $ make
 ```
 
 This requires that you have the necessary software installed.  See
-[the instructions](https://github.com/martinthomson/i-d-template/blob/master/doc/SETUP.md).
+[the instructions](https://github.com/martinthomson/i-d-template/blob/main/doc/SETUP.md).
 
 
 ## Contributing
 
 See the
-[guidelines for contributions](https://github.com/quiclog/internet-drafts/blob/master/CONTRIBUTING.md).
+[guidelines for contributions](https://github.com/quicwg/qlog/blob/main/CONTRIBUTING.md).
