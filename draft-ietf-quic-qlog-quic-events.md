@@ -1,6 +1,6 @@
 ---
 title: QUIC event definitions for qlog
-docname: draft-marx-qlog-quic-events-latest
+docname: draft-ietf-quic-qlog-quic-events-latest
 category: std
 
 ipr: trust200902
@@ -34,9 +34,10 @@ normative:
 
   QUIC-TRANSPORT:
     title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
-    date: {DATE}
+    date: 2021-05
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-transport-latest
+      RFC: 9000
+      DOI: 10.17487/RFC9000
     author:
       -
         ins: J. Iyengar
@@ -51,9 +52,10 @@ normative:
 
   QUIC-RECOVERY:
     title: "QUIC Loss Detection and Congestion Control"
-    date: {DATE}
+    date: 2021-05
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-recovery-latest
+      RFC: 9002
+      DOI: 10.17487/RFC9002
     author:
       -
         ins: J. Iyengar
@@ -67,10 +69,11 @@ normative:
         role: editor
 
   QUIC-TLS:
-    title: "Using Transport Layer Security (TLS) to Secure QUIC"
-    date: {DATE}
+    title: "Using TLS to Secure QUIC"
+    date: 2021-05
     seriesinfo:
-      Internet-Draft: draft-ietf-quic-tls-latest
+      RFC: 9001
+      DOI: 10.17487/RFC9001
     author:
       -
         ins: M. Thomson
@@ -87,7 +90,7 @@ normative:
     title: "Main logging schema for qlog"
     date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-main-schema-latest
+      Internet-Draft: draft-ietf-quic-qlog-main-schema-latest
     author:
       -
         ins: R. Marx
@@ -109,7 +112,7 @@ normative:
     title: "HTTP/3 and QPACK event definitions for qlog"
     date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-h3-events-latest
+      Internet-Draft: draft-ietf-quic-qlog-h3-events-latest
     author:
       -
         ins: R. Marx
@@ -145,7 +148,7 @@ draft-34 of the QUIC I-Ds [QUIC-TRANSPORT] [QUIC-RECOVERY] [QUIC-TLS]. HTTP/3 an
 QPACK events are defined in a separate document [QLOG-H3].
 
 Feedback and discussion are welcome at
-[https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
+[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
 Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
 version of this document.
 

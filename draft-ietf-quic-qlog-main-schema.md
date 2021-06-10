@@ -1,6 +1,6 @@
 ---
 title: Main logging schema for qlog
-docname: draft-marx-qlog-main-schema-latest
+docname: draft-ietf-quic-qlog-main-schema-latest
 category: std
 
 ipr: trust200902
@@ -36,7 +36,7 @@ normative:
     title: "QUIC event definitions for qlog"
     date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-quic-events-latest
+      Internet-Draft: draft-ietf-quic-qlog-quic-events-latest
     author:
       -
         ins: R. Marx
@@ -58,7 +58,7 @@ normative:
     title: "HTTP/3 and QPACK event definitions for qlog"
     date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-h3-events-latest
+      Internet-Draft: draft-ietf-quic-qlog-h3-events-latest
     author:
       -
         ins: R. Marx
@@ -112,9 +112,13 @@ As such, this document contains concepts such as versioning, metadata inclusion,
 log aggregation, event grouping and log file size reduction techniques.
 
 Feedback and discussion are welcome at
-[https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
+[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
 Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
 version of this document.
+
+Concrete examples of integrations of this schema in
+various programming languages can be found at
+[https://github.com/quiclog/qlog/](https://github.com/quiclog/qlog/).
 
 ## Notational Conventions {#data_types}
 

@@ -1,6 +1,6 @@
 ---
 title: HTTP/3 and QPACK event definitions for qlog
-docname: draft-marx-qlog-h3-events-latest
+docname: draft-ietf-quic-qlog-h3-events-latest
 category: std
 
 ipr: trust200902
@@ -68,7 +68,7 @@ normative:
     title: "Main logging schema for qlog"
     date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-main-schema-latest
+      Internet-Draft: draft-ietf-quic-qlog-main-schema-latest
     author:
       -
         ins: R. Marx
@@ -90,7 +90,7 @@ normative:
     title: "QUIC event definitions for qlog"
     date: {DATE}
     seriesinfo:
-      Internet-Draft: draft-marx-qlog-quic-events-latest
+      Internet-Draft: draft-ietf-quic-qlog-quic-events-latest
     author:
       -
         ins: R. Marx
@@ -127,7 +127,7 @@ QPACK I-D [QUIC-QPACK]. QUIC events are defined in a separate document
 [QLOG-QUIC].
 
 Feedback and discussion are welcome at
-[https://github.com/quiclog/internet-drafts](https://github.com/quiclog/internet-drafts).
+[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
 Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
 version of this document.
 
