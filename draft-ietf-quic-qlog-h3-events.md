@@ -634,7 +634,7 @@ class PushPromiseFrame{
 ~~~
 class GoAwayFrame{
     frame_type:string = "goaway";
-    stream_id:uint64;
+    id:uint64; // either stream_id or push_id. This is implicit from the sender of the frame.
 }
 ~~~
 
