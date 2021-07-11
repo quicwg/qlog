@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-07-08T00:29:14.556128+00:00",
+  "timestamp": "2021-07-11T00:32:15.615011+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -4008,9 +4008,17 @@
       "labels": [],
       "body": "I am currently implementing qlog for video streaming using quiche.\r\nDue to the nature of video streaming, there are a lot of back and forth of `STREAM` and `ACK` frames, and they are not very useful to log.\r\nFrom the `server` vantage point, `ACK`s can be aggregated by either `packets_acked` or `frames_processed` event. However, I did not find a way to aggregate `STREAM` frames the server send out. Is there a good way to solve this problem?",
       "createdAt": "2021-07-06T04:06:03Z",
-      "updatedAt": "2021-07-06T04:06:03Z",
+      "updatedAt": "2021-07-09T08:36:47Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Hello @incfex,\r\n\r\nThanks for opening an issue. \r\n\r\nIIUC, you're basically asking for a `frames_created` event, in which you would aggregate ACK and STREAM frames that are sent over multiple packets into a single event. Is that correct? This is indeed something we currently don't have, but that I feel would be logical to add. \r\n\r\nFor the ACK-frame special case, maybe we can add an endpoint discriminator to `packets_acked` so it can be re-used when either sending/receiving (though this kind of depends on how uniformly we end up doing qlog events down the line: it might make more sense to add that to `frames_processed` too and rename it to `frames_info` or something). \r\n\r\nexample (though not very happy with the semantics of \"owner\" here):\r\n```\r\npackets_acked {\r\n  owner?:\"local\"|\"remote\",\r\n\r\n  packet_number_space?:PacketNumberSpace,\r\n  packet_numbers?:Array<uint64>\r\n}\r\n```\r\n\r\nI am however a bit confused by your motivation saying \r\n> there are a lot of back and forth of STREAM and ACK frames, and they are not very useful to log.\r\n\r\naren't you still logging them all in the `frames_processed` (or potential `frames_created`)? or how does your approach make that specifically better than using `packet_sent` and `packet_received`? Do you mean you don't want to log the packet info and just the frame details? or are you logging select ACKs/STREAM frames (but how do you decide which to log then?)? or is there something else going on?",
+          "createdAt": "2021-07-09T08:36:47Z",
+          "updatedAt": "2021-07-09T08:36:47Z"
+        }
+      ]
     },
     {
       "number": 164,
@@ -4024,9 +4032,24 @@
       "labels": [],
       "body": "While I read the some of the event definitions, I have some questions:\r\n\r\nhttps://github.com/quicwg/qlog/blob/main/draft-ietf-quic-qlog-quic-events.md#L312\r\n\r\n```\r\n    src_port?: uint32,\r\n    dst_port?: uint32,\r\n```\r\n`uint16` for udp port numbers (https://datatracker.ietf.org/doc/html/rfc768) looks good enough.\r\n\r\nhttps://github.com/quicwg/qlog/blob/main/draft-ietf-quic-qlog-quic-events.md#L1106\r\n\r\n```\r\n    initial_congestion_window?:uint64, // in bytes\r\n    minimum_congestion_window?:uint32, // in bytes // Note: this could change when max_datagram_size changes\r\n```\r\n\r\nSince both are congestion window values, using `uint64` for both makes sense to me.\r\n\r\n",
       "createdAt": "2021-07-06T17:14:31Z",
-      "updatedAt": "2021-07-06T17:32:11Z",
+      "updatedAt": "2021-07-09T18:12:49Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Hello Junho,\r\n\r\nThanks for opening the issue. \r\n\r\n`uint16` for UDP ports seems sensible.\r\n\r\nNot sure if we need `uint64` at all for congestion windows though... I'd rather think that using `uint32` for the initial cwnd would be better? (or are there systems doing +4GB bursts on new connections somewhere? :P)\r\n",
+          "createdAt": "2021-07-09T09:39:17Z",
+          "updatedAt": "2021-07-09T09:39:17Z"
+        },
+        {
+          "author": "junhochoi",
+          "authorAssociation": "NONE",
+          "body": "`congestion_window` is also `uint64`, so I just think that `initial_congestion_window` and `minimal_congestion_window` need to be a same type. In practice it will fit into 32bit (10 x mss and 2 x mss, respectively), but no need to assign a different type for them only because they are small?",
+          "createdAt": "2021-07-09T18:12:49Z",
+          "updatedAt": "2021-07-09T18:12:49Z"
+        }
+      ]
     }
   ],
   "pulls": [
