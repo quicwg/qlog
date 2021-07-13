@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-07-11T00:32:15.615011+00:00",
+  "timestamp": "2021-07-13T00:32:25.484740+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -4008,7 +4008,7 @@
       "labels": [],
       "body": "I am currently implementing qlog for video streaming using quiche.\r\nDue to the nature of video streaming, there are a lot of back and forth of `STREAM` and `ACK` frames, and they are not very useful to log.\r\nFrom the `server` vantage point, `ACK`s can be aggregated by either `packets_acked` or `frames_processed` event. However, I did not find a way to aggregate `STREAM` frames the server send out. Is there a good way to solve this problem?",
       "createdAt": "2021-07-06T04:06:03Z",
-      "updatedAt": "2021-07-09T08:36:47Z",
+      "updatedAt": "2021-07-12T14:52:29Z",
       "closedAt": null,
       "comments": [
         {
@@ -4017,6 +4017,20 @@
           "body": "Hello @incfex,\r\n\r\nThanks for opening an issue. \r\n\r\nIIUC, you're basically asking for a `frames_created` event, in which you would aggregate ACK and STREAM frames that are sent over multiple packets into a single event. Is that correct? This is indeed something we currently don't have, but that I feel would be logical to add. \r\n\r\nFor the ACK-frame special case, maybe we can add an endpoint discriminator to `packets_acked` so it can be re-used when either sending/receiving (though this kind of depends on how uniformly we end up doing qlog events down the line: it might make more sense to add that to `frames_processed` too and rename it to `frames_info` or something). \r\n\r\nexample (though not very happy with the semantics of \"owner\" here):\r\n```\r\npackets_acked {\r\n  owner?:\"local\"|\"remote\",\r\n\r\n  packet_number_space?:PacketNumberSpace,\r\n  packet_numbers?:Array<uint64>\r\n}\r\n```\r\n\r\nI am however a bit confused by your motivation saying \r\n> there are a lot of back and forth of STREAM and ACK frames, and they are not very useful to log.\r\n\r\naren't you still logging them all in the `frames_processed` (or potential `frames_created`)? or how does your approach make that specifically better than using `packet_sent` and `packet_received`? Do you mean you don't want to log the packet info and just the frame details? or are you logging select ACKs/STREAM frames (but how do you decide which to log then?)? or is there something else going on?",
           "createdAt": "2021-07-09T08:36:47Z",
           "updatedAt": "2021-07-09T08:36:47Z"
+        },
+        {
+          "author": "incfex",
+          "authorAssociation": "NONE",
+          "body": "Sorry for the confusion, my current situation is: on the SERVER side, it is sending a lot of STREAM frames and receiving similar amount of ACK frames.\r\n> IIUC, you're basically asking for a frames_created event, in which you would aggregate ACK and STREAM frames that are sent over multiple packets into a single event.\r\n\r\n\r\nThis is basically what I am asking for, but only log ACK or STREAM frames, and with a little twist.\r\n\r\nQlog currently requires STREAM frame to have `frame_type` and `stream_id` field. In my case when I am logging every `packet_sent`, each of `packet_sent` only have a single stream frame in it. There are usually 50 consecutive `packet_sent` events like this. Thus, I am purposing a `frames_created` event with `default_frame` field inside. When frames in the array did not specify their `frame_type`, we could assume that they have the same field values with the default.\r\n\r\npurposed `frames_created` example:\r\n```\r\nframes_created {\r\n  default_frame?:QuicFrame,\r\n  frames?:Array<QuicFrame>,\r\n  packet_numbers?:Array<uint64>\r\n}\r\n```\r\n\r\n\r\ncurrent example of logging all the STREAM frames with `packet_sent`(json format): \r\n```\r\n{\r\n  \"events\": [\r\n    {\r\n      \"time\": \"1\",\r\n      \"name\": \"transport:packet_sent\",\r\n      \"frames\": [\r\n        {\r\n          \"fin\": false,\r\n          \"frame_type\": \"stream\",\r\n          \"length\": 1000,\r\n          \"offset\": 2000,\r\n          \"stream_id\": 0\r\n        }\r\n      ],\r\n      \"header\": {\r\n        \"packet_number\": 3,\r\n        \"packet_size\": 1024\r\n      },\r\n      \"packet_type\": \"1RTT\",\r\n      \"transmission_type\": \"not_retransmission\"\r\n    },\r\n    {\r\n      \"time\": \"100\",\r\n      \"name\": \"transport:packet_sent\",\r\n      \"frames\": [\r\n        {\r\n          \"fin\": false,\r\n          \"frame_type\": \"stream\",\r\n          \"length\": 1000,\r\n          \"offset\": 3000,\r\n          \"stream_id\": 0\r\n        }\r\n      ],\r\n      \"header\": {\r\n        \"packet_number\": 4,\r\n        \"packet_size\": 1024\r\n      },\r\n      \"packet_type\": \"1RTT\",\r\n      \"transmission_type\": \"not_retransmission\"\r\n    },\r\n    {\r\n      \"time\": \"200\",\r\n      \"name\": \"transport:packet_sent\",\r\n      \"frames\": [\r\n        {\r\n          \"fin\": false,\r\n          \"frame_type\": \"stream\",\r\n          \"length\": 500,\r\n          \"offset\": 4000,\r\n          \"stream_id\": 0\r\n        }\r\n      ],\r\n      \"header\": {\r\n        \"packet_number\": 5,\r\n        \"packet_size\": 524\r\n      },\r\n      \"packet_type\": \"1RTT\",\r\n      \"transmission_type\": \"not_retransmission\"\r\n    }\r\n  ]\r\n}, \r\n...\r\n```\r\n\r\nExample of logging with the `frames_created` event:\r\n```\r\n{\r\n  \"events\":[\r\n    {\r\n      \"time\":\"1\",\r\n      \"name\":\"transport:packet_sent\",\r\n      \"data\":{\r\n        \"default_frame\":{\r\n          \"frame_type\":\"stream\",\r\n          \"stream_id\":0,\r\n          \"length\": 1000\r\n        },\r\n        \"frames\":[\r\n          {\"offset\": 2000},\r\n          {\"offset\": 3000},\r\n          {\"offset\": 4000, \"length\": 500}],\r\n        \"packet_number\": [3, 4, 5]\r\n      }\r\n    }\r\n  ]\r\n}\r\n```\r\n\r\nThis approach could also applies to ACK frames, becomes a dumb version of `packets_acked` event that does not care repeated ACKs.\r\n\r\nWhat do you think of this?\r\n",
+          "createdAt": "2021-07-12T07:49:43Z",
+          "updatedAt": "2021-07-12T07:49:43Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thanks for the additional information, that's much clearer now. \r\n\r\nWhile I agree with the use case for a `frames_created` event, I'm quite skeptical about the proposed design, primarily the `default_frame` setup. I'm having a hard time imagining many implementers wanting to use it like that in a general-purpose setup.\r\n\r\nFor example, you'd have to check if per-frame values deviate from the default, and you'd have to keep multiple of these events \"alive\"/buffered, 1 for each frame type you might care about (and demux frame data to the correct one). It would also require some quite more advanced logic in tools. I feel that would work in your specialized use case (only STREAM/ACK, many similar frame instances), but IMO that's not what should be **standardized**: this would be better suited for a \"custom\", application-specific qlog event, which is perfectly allowed by the spec as well. \r\n\r\nThis is partly because IIUC, one of the main reasons to do this is to reduce log verbosity. qlog has a long history of trying different ways to combat this (e.g., a convoluted csv-alike setup in draft-01 with columns). For draft-02, we took the decision to care less about (textual) verbosity/repetition, since this can be dealt with using either compression or a binary serialization format (see #30 for some earlier discussion and #144 for the current issue on this). I think moving from pure `packet_sent` to a general `frames_created` (where you still log each frame (in-full), without `default_frame`) already helps a lot in this regard. Going further should imo be application-specific. \r\n\r\nSo what I'd propose is add something like this:\r\n```\r\nframes_created : \r\n{\r\n       frames:Array<QuicFrame>,\r\n\r\n       packet_numbers?:Array<uint64>\r\n}\r\n```\r\n\r\nI think probably @marten-seemann also has some opinions on this. ",
+          "createdAt": "2021-07-12T14:52:29Z",
+          "updatedAt": "2021-07-12T14:52:29Z"
         }
       ]
     },
@@ -4050,6 +4064,70 @@
           "updatedAt": "2021-07-09T18:12:49Z"
         }
       ]
+    },
+    {
+      "number": 165,
+      "id": "MDU6SXNzdWU5NDE0NDg1ODc=",
+      "title": "Some JSON serialization examples are examples of broken JSON",
+      "url": "https://github.com/quicwg/qlog/issues/165",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "In the main logging schema, about half of the `JSON serialization` examples don't encapsulate field names in double quotes. So passing these verbatim into a parser will yield errors. ",
+      "createdAt": "2021-07-11T13:03:10Z",
+      "updatedAt": "2021-07-11T13:03:10Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 166,
+      "id": "MDU6SXNzdWU5NDE0NTQ3MjY=",
+      "title": "Inconsistencies when talking about the \"trigger\" field",
+      "url": "https://github.com/quicwg/qlog/issues/166",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Across the qlog docs, the text seems inconsistent when it mentions the \"trigger\" field, and whether that is a property of Event of Event:Data. For example\r\n\r\n```\r\nFor each event type, its importance and data definition is laid out, often accompanied by possible values for the optional \"trigger\" field.\r\n```\r\n\r\nIIUC, \"trigger\" is supposed to be only defined for Event:Data that cares to define it. It would help to sweep the docs to ensure consistency in this area.",
+      "createdAt": "2021-07-11T13:36:36Z",
+      "updatedAt": "2021-07-11T13:36:36Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 167,
+      "id": "MDU6SXNzdWU5NDE0NTcwODE=",
+      "title": "Qlog events section-3.1.7 diagram is misformatted",
+      "url": "https://github.com/quicwg/qlog/issues/167",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Looks like it is showing the markdown rather than getting rendered as a diagram.",
+      "createdAt": "2021-07-11T13:49:33Z",
+      "updatedAt": "2021-07-11T13:49:33Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 168,
+      "id": "MDU6SXNzdWU5NDIxNDgyNTc=",
+      "title": "Allow multiple packet_numbers in frames_processed",
+      "url": "https://github.com/quicwg/qlog/issues/168",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, `frames_processed` only allows indicating a single packet_number.\r\n\r\nHowever, discussion in #163 has shown that you might want to aggregate frames across multiple packets for some use cases, so it makes sense to make this into an `Array<uint64>` instead. ",
+      "createdAt": "2021-07-12T14:54:16Z",
+      "updatedAt": "2021-07-12T14:54:16Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
