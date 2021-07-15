@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-07-13T00:32:25.484740+00:00",
+  "timestamp": "2021-07-15T00:30:14.793547+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3627,7 +3627,7 @@
       "labels": [],
       "body": "In draft-02, we decided to keep using JSON as the main serialization format, with NDJSON as a streaming option. We did update the data definition language used in the draft to make it easier to define custom serializations into e.g., binary formats, if others want a more performant option. \r\n\r\nIt might be needed to revisit this decision and to still go for a binary format by default. CBOR has so far been named most as a potential option, as it's an IETF standard (as opposed to e.g., protocol buffers or flatbuffers and similar) and has proved itself for other protocol-related use cases as well. \r\n\r\nThe question remains: do we consciously limit ourselves to a select few serialization formats? and even if we don't, which \"default\" formats do we commit to in the texts? \r\n\r\nSeveral people are of the opinion it's enough to stick with for example JSON as the main format in the qlog specification and to have people write converters from/to JSON for more performant options themselves. This because even with something like CBOR, not all applications will want to employ that directly, and converters would still be needed.",
       "createdAt": "2021-03-31T14:22:01Z",
-      "updatedAt": "2021-05-21T18:24:24Z",
+      "updatedAt": "2021-07-13T16:52:58Z",
       "closedAt": null,
       "comments": [
         {
@@ -3657,6 +3657,27 @@
           "body": "It might not be the encrypted packets you are logging, it might be the DNS requests (whether encrypted or not), or even the ICMP packet too big, or the ICMP port unreachables.",
           "createdAt": "2021-05-21T18:24:24Z",
           "updatedAt": "2021-05-21T18:24:24Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "As in implementer, why would I modify my endpoint to take a packet capture when e.g. tcpdump can already do that?",
+          "createdAt": "2021-07-13T15:44:39Z",
+          "updatedAt": "2021-07-13T15:44:39Z"
+        },
+        {
+          "author": "mcr",
+          "authorAssociation": "NONE",
+          "body": "> As in implementer, why would I modify my endpoint to take a packet capture when e.g. tcpdump can already do that?\r\n\r\nBecause tcpdump can't capture (a) the cleartext packets inside the QUIC/TLS, (b) your state transitions.\r\nThe reason you might want it all in pcap-ng format is so that that you can combine an external view of the packets (including DNS requests, ICMPs, and TCP activities) with your internal capture.  \r\nYou'd do a zipper merge on the data so that you can see that your internal state transition followed a failed DNS request, or something like that.\r\n",
+          "createdAt": "2021-07-13T16:29:46Z",
+          "updatedAt": "2021-07-13T16:29:46Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "In my experience, my QUIC client application fails to resolve a name, I don't even make a UDP socket or QUIC connection object. My client stderr log throws an error message, possibly reporting the error returned by my resolution syscall.\r\n\r\nCombining with wire packet captures seems to have marginal value when those packets don't contain more information than is available to the client.",
+          "createdAt": "2021-07-13T16:52:58Z",
+          "updatedAt": "2021-07-13T16:52:58Z"
         }
       ]
     },
@@ -4008,7 +4029,7 @@
       "labels": [],
       "body": "I am currently implementing qlog for video streaming using quiche.\r\nDue to the nature of video streaming, there are a lot of back and forth of `STREAM` and `ACK` frames, and they are not very useful to log.\r\nFrom the `server` vantage point, `ACK`s can be aggregated by either `packets_acked` or `frames_processed` event. However, I did not find a way to aggregate `STREAM` frames the server send out. Is there a good way to solve this problem?",
       "createdAt": "2021-07-06T04:06:03Z",
-      "updatedAt": "2021-07-12T14:52:29Z",
+      "updatedAt": "2021-07-13T03:11:16Z",
       "closedAt": null,
       "comments": [
         {
@@ -4031,6 +4052,13 @@
           "body": "Thanks for the additional information, that's much clearer now. \r\n\r\nWhile I agree with the use case for a `frames_created` event, I'm quite skeptical about the proposed design, primarily the `default_frame` setup. I'm having a hard time imagining many implementers wanting to use it like that in a general-purpose setup.\r\n\r\nFor example, you'd have to check if per-frame values deviate from the default, and you'd have to keep multiple of these events \"alive\"/buffered, 1 for each frame type you might care about (and demux frame data to the correct one). It would also require some quite more advanced logic in tools. I feel that would work in your specialized use case (only STREAM/ACK, many similar frame instances), but IMO that's not what should be **standardized**: this would be better suited for a \"custom\", application-specific qlog event, which is perfectly allowed by the spec as well. \r\n\r\nThis is partly because IIUC, one of the main reasons to do this is to reduce log verbosity. qlog has a long history of trying different ways to combat this (e.g., a convoluted csv-alike setup in draft-01 with columns). For draft-02, we took the decision to care less about (textual) verbosity/repetition, since this can be dealt with using either compression or a binary serialization format (see #30 for some earlier discussion and #144 for the current issue on this). I think moving from pure `packet_sent` to a general `frames_created` (where you still log each frame (in-full), without `default_frame`) already helps a lot in this regard. Going further should imo be application-specific. \r\n\r\nSo what I'd propose is add something like this:\r\n```\r\nframes_created : \r\n{\r\n       frames:Array<QuicFrame>,\r\n\r\n       packet_numbers?:Array<uint64>\r\n}\r\n```\r\n\r\nI think probably @marten-seemann also has some opinions on this. ",
           "createdAt": "2021-07-12T14:52:29Z",
           "updatedAt": "2021-07-12T14:52:29Z"
+        },
+        {
+          "author": "incfex",
+          "authorAssociation": "NONE",
+          "body": "Thanks for your response!\r\n\r\nI agree that this would advanced logic in tools to achieve `default_frame`. My original intend is to only apply this field to STREAM/ACK frames, since they are the most likely ones to appear consecutivly. Also only maintain/buffer 1 `frames_created` for both frame types. As long as the next frame is different from the `default_frame` maintained, current `frames_created` will be concluded and a new one will be created. This way, we do not have to buffer multiple of these events.\r\n\r\n> I'm having a hard time imagining many implementers wanting to use it like that in a general-purpose setup.\r\n\r\nAbout this, if a website have video playback or file download, it will have bulk consecutive STREAM/ACK frames. Having a video on the website is not that uncommon this days.\r\n\r\nMaybe change the `default_frame` to `common_frame_type`, and only declare the `frame_type:string` inside it would reduce the amount of advance logic, whilst saving space to store the qlog.",
+          "createdAt": "2021-07-13T03:11:15Z",
+          "updatedAt": "2021-07-13T03:11:15Z"
         }
       ]
     },
@@ -4125,9 +4153,24 @@
       "labels": [],
       "body": "Currently, `frames_processed` only allows indicating a single packet_number.\r\n\r\nHowever, discussion in #163 has shown that you might want to aggregate frames across multiple packets for some use cases, so it makes sense to make this into an `Array<uint64>` instead. ",
       "createdAt": "2021-07-12T14:54:16Z",
-      "updatedAt": "2021-07-12T14:54:16Z",
+      "updatedAt": "2021-07-14T13:15:27Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "incfex",
+          "authorAssociation": "NONE",
+          "body": "About this structure\r\n```\r\nframes_processed : \r\n{\r\n       frames:Array<QuicFrame>,\r\n       packet_numbers?:Array<uint64>\r\n}\r\n```\r\nHow do we log the packet_numbers when we have multiple frames in one packet? My suggestion is we log them one to one.\r\n\r\nExample (suppose fr1 and fr2 are in the same packet):\r\n```\r\n{\r\n       frames:[fr1, fr2, fr3, fr4],\r\n       packet_number:[1, 1, 2, 3]\r\n}\r\n```\r\n\r\nThis way we don't have to do any search when the packets arrive out of order.\r\n",
+          "createdAt": "2021-07-14T03:10:19Z",
+          "updatedAt": "2021-07-14T03:10:19Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Good point and your suggestion seems sensible :) ",
+          "createdAt": "2021-07-14T13:15:27Z",
+          "updatedAt": "2021-07-14T13:15:27Z"
+        }
+      ]
     }
   ],
   "pulls": [
