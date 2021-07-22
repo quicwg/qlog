@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-07-15T00:30:14.793547+00:00",
+  "timestamp": "2021-07-22T00:31:51.214302+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3851,9 +3851,17 @@
       "labels": [],
       "body": "Prior to draft-02, we had separate category and type fields. The idea was that this would be easier to filter on (e.g., show me only events in the `transport` category). I'm still not sure people actually use it this way. \r\n\r\nWith the move to normal JSON in -02, I introduced the `name` field, which concatenates to `category:type`. The motivation for that was mainly reducing JSON overhead by not having to repeat `\"category\"` and `\"type\"` strings for each event. \r\n\r\nNow, we have the discussion around `protocol_type` in #85, indicating it might make more sense to tie events more closely to protocols and not have generic/high-level categories (instead of `transport:packet_sent` and a separate `protocol_type` of QUIC, we would for example have `quic_packet_sent` and `tcp_packet_sent`). \r\n\r\nI guess the main question is if there's value in splitting up events in type + category for high-level filtering, or if that's not necessary in practice. From my experience in qvis, it isn't all that useful, since filtering on category still requires looping over all events (and keeping things in lookup maps is also possible without explicit qlog-level categories).",
       "createdAt": "2021-04-21T08:44:56Z",
-      "updatedAt": "2021-04-21T08:44:56Z",
+      "updatedAt": "2021-07-20T18:11:58Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "The utility of importance, type, category (and potentialy privacy-level), is for me being able to configure my logging application. In some cases I need full details for debugging and I can control the environment to ensure there are no privacy concerns. That utility doesn't necessarily need to be reflected into the serialized logs. As a qlog logging library maintainer, I quite like the idea of providing people with the means to configure different logging instances. What would help is for the qlog spec to set the expectations of what events appear in a log for any type of configuration. For uncoordinated logs, putting this detail into the log itself would be useful for the same reason - it can help avoid false positives (e.g. not seeing any data_moved events in a log could be an application failing to read/write data into streams, or it could be a concious choice by an endpoint to *not* log those events.).\r\n\r\nHaving gone through a round of trying to shift to qlog-02, one observation I made is that the way I structured the object model gave me unique events. From those, I could always \"reflect\" the importance, category or type in the serializing code. Importance is very interesting here, it's an invariant property of the event that *is not* sent on the wire. Therefore, I would expect that such reflection is possible in deserializing code too. I think that's what you mean by \"keeping things in lookup maps is also possible without explicit qlog-level categories\".\r\n\r\nAnother way to write your question is,  how important is it to define a logging format that can be acted on by general purpose tools? Tools such as jq can't natively know a qlog event's importance, but if the log included the value, writing queries would be easy. A post-processing step, using a qlog-aware tool, could insert an importance fields, that could be used by other tools. That's a transformation that is easily reversible, and qlog-aware tools should handle unknown fields (so it's a non-destructive transformation).\r\n\r\nquic_packet_sent and tcp_packet_sent will always exist in a category of transport, whether qlog defines it or not. \r\n",
+          "createdAt": "2021-07-20T18:11:58Z",
+          "updatedAt": "2021-07-20T18:11:58Z"
+        }
+      ]
     },
     {
       "number": 154,
