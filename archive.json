@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-08-03T00:36:43.355769+00:00",
+  "timestamp": "2021-08-08T00:31:48.672918+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -4066,7 +4066,7 @@
       "labels": [],
       "body": "I am currently implementing qlog for video streaming using quiche.\r\nDue to the nature of video streaming, there are a lot of back and forth of `STREAM` and `ACK` frames, and they are not very useful to log.\r\nFrom the `server` vantage point, `ACK`s can be aggregated by either `packets_acked` or `frames_processed` event. However, I did not find a way to aggregate `STREAM` frames the server send out. Is there a good way to solve this problem?",
       "createdAt": "2021-07-06T04:06:03Z",
-      "updatedAt": "2021-07-13T03:11:16Z",
+      "updatedAt": "2021-08-05T07:14:20Z",
       "closedAt": null,
       "comments": [
         {
@@ -4096,6 +4096,13 @@
           "body": "Thanks for your response!\r\n\r\nI agree that this would advanced logic in tools to achieve `default_frame`. My original intend is to only apply this field to STREAM/ACK frames, since they are the most likely ones to appear consecutivly. Also only maintain/buffer 1 `frames_created` for both frame types. As long as the next frame is different from the `default_frame` maintained, current `frames_created` will be concluded and a new one will be created. This way, we do not have to buffer multiple of these events.\r\n\r\n> I'm having a hard time imagining many implementers wanting to use it like that in a general-purpose setup.\r\n\r\nAbout this, if a website have video playback or file download, it will have bulk consecutive STREAM/ACK frames. Having a video on the website is not that uncommon this days.\r\n\r\nMaybe change the `default_frame` to `common_frame_type`, and only declare the `frame_type:string` inside it would reduce the amount of advance logic, whilst saving space to store the qlog.",
           "createdAt": "2021-07-13T03:11:15Z",
           "updatedAt": "2021-07-13T03:11:15Z"
+        },
+        {
+          "author": "incfex",
+          "authorAssociation": "NONE",
+          "body": "After applying `frames_created` and `frames_processed` to only consecutive STREAM and ACK frames, I have observed 70~80% space save in the final qlog. These event types prove to be very useful in the situation where large objects are transferred (e.g. streaming, downloading).",
+          "createdAt": "2021-08-05T07:14:19Z",
+          "updatedAt": "2021-08-05T07:14:19Z"
         }
       ]
     },
@@ -4278,6 +4285,22 @@
       "body": "The document includes considerations about streaming serialization and specifies a way to do this using NDJSON (new-line delimited JSON).\r\n\r\nThere's two things that the Working Group should consider:\r\n\r\n1) Does streaming serialization need to be defined as part of the qlog main schema?\r\n2) If the answer to 1 is yes, what format should be used.\r\n\r\nDuring IETF 111, it was noted that https://datatracker.ietf.org/doc/html/rfc7464 is an IETF-defined format that achieves similar streaming properties as NDJSON.  There might be a preference for using RFC 7464 pending the outcome of #144.",
       "createdAt": "2021-08-02T17:50:26Z",
       "updatedAt": "2021-08-02T17:50:26Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 173,
+      "id": "MDU6SXNzdWU5NjI4MTExMzg=",
+      "title": "RawInfo doesn't play well with UDP datagram headers",
+      "url": "https://github.com/quicwg/qlog/issues/173",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, we re-use the RawInfo struct to give a simple re-usable way to log raw packet/frame/datagram contents.\r\n\r\nIn the struct, we have two length-fields: the full `length` and `payload_length`, assuming the header length can be calculated from those two. \r\n\r\nHowever, we do not have a way to log e.g., only the payload without the header (we can only log the full value truncated, but not indicate it starts at the payload).\r\n\r\nThis isn't a problem for QUIC/H3 packets/frames, but as @jlaine pointed out, it is a problem for UDP datagrams. In most stacks, you don't get the pure UDP packet header and so can't log it (so you'd always start with the payload).\r\n\r\nThis can be solved in several different ways:\r\n1. disallow usage of RawInfo for datagrams\r\n2. make explicit that datagram-related events start at the payload\r\n3. log a fixed-value/fixed-size dummy UDP datagram (e.g., 8 bytes of zeroes)\r\n4. extend RawInfo to make it more flexible\r\n\r\nI'm currently most in favor of 2, as I don't see many people logging full UDP datagrams instead of logging the QUIC packets. \r\n\r\n",
+      "createdAt": "2021-08-06T14:55:06Z",
+      "updatedAt": "2021-08-06T14:55:06Z",
       "closedAt": null,
       "comments": []
     }
