@@ -563,7 +563,7 @@ TBD
 ## HTTP/3 Frames
 
 ~~~
-type HTTP3Frame = DataFrame | HeadersFrame | PriorityFrame | CancelPushFrame | SettingsFrame | PushPromiseFrame | GoAwayFrame | MaxPushIDFrame | DuplicatePushFrame | ReservedFrame | UnknownFrame;
+type HTTP3Frame = DataFrame | HeadersFrame | CancelPushFrame | SettingsFrame | PushPromiseFrame | GoAwayFrame | MaxPushIDFrame | DuplicatePushFrame | ReservedFrame | UnknownFrame;
 ~~~
 
 ### DataFrame
