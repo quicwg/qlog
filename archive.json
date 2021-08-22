@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-08-19T00:27:20.048064+00:00",
+  "timestamp": "2021-08-22T00:30:48.242977+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -1443,7 +1443,7 @@
       ],
       "body": "Currently, we abstract out a lot of the on-the-wire specifics.\r\n\r\nA good example is in the STREAM frame: there, the length and offset fields are optional, depending on how the frame should be handled. Simply having the same fields optional in qlog doesn't convey quite the same semantics: did the implementation simply not log them or were they not present from the start? \r\n\r\nMore importantly though: if no length is set, the frame extends to the end of the packet, so it does have a length, which you'd probably want to log (that's the way it's currently designed), but so you loose the info that the length field wasn't encoded on the wire. \r\n\r\nThis is just one example of similar problems across the board. I rather like the simplicity of the current setup, but we should have ways to signal the explicit wire image as well. \r\n\r\ncc @huitema",
       "createdAt": "2020-02-26T09:36:21Z",
-      "updatedAt": "2021-08-18T15:30:19Z",
+      "updatedAt": "2021-08-19T10:24:23Z",
       "closedAt": null,
       "comments": [
         {
@@ -1473,6 +1473,20 @@
           "body": "> This could be parsed if you logged the first few bytes in raw for example, but having a separate field would be more direct. We have precedent for this in e.g., ConnectionCloseFrame.raw_error_code.\r\n\r\nSome the the question here is what do you mean by wire image. Should something like `raw_error_code` be raw bytes underlying the varint (maintaining the information on how the number was encoded on the wire), or the parsed varint.\r\n\r\nSince `raw_error_code` a single int, it must be the parsed varint, which is slightly easier. But even today I can't populate that because my implementation has discarded the data by the time I come to generate the qlog. Changing the code would boil down to me changing the logging pipeline, parsing the same value twice, and/or storing the data twice just for qlog. \r\n\r\nI'll note that for H3 this is even harder, because we have to handle non-atomic varint reads as STREAM data comes.",
           "createdAt": "2021-08-18T15:30:19Z",
           "updatedAt": "2021-08-18T15:30:19Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So the idea was:\r\nOption 1: parsed varint (so literally the 0x08 - 0x0F for STREAM)\r\nOption 2: raw wire image (so \"unparsed\" varint)\r\n\r\nI do see the confusion... probably we should use another word than `raw` here, since `raw_error_code` is intended to also be the parsed varint, but the `raw:RawInfo` fields are intended to be pure wire bits. \r\n\r\nWith regards to your implementation not having that info available... I'm not sure what you want me to say... these are optional fields that you can output if needed/available, but not something I would expect many implementations to do (by default). I don't see a way of solving the original issue here (representing all the wire image nuances in some form) without having access to those nuances at the logging location :) \r\n\r\nCould you elaborate on `because we have to handle non-atomic varint reads as STREAM data comes` with an example maybe? Not sure what you mean there? \r\n\r\n\r\n\r\n",
+          "createdAt": "2021-08-19T07:55:52Z",
+          "updatedAt": "2021-08-19T07:55:52Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "The main point is that it's fairly straightforward to log the unprocessed bytes of a QUIC packet or QUIC frame, that's because an implementation will have received those in whole and know their length.  E.g. Read UDP, everything in the datagram.\r\n\r\nFor things on top of QUIC streams it becomes harder because they can span lots of packets. A streaming parser will possibly not have an entire frame available when it want to log an event.\r\n\r\nIf the proposal is to log the parsed varint, it makes things slightly easier ",
+          "createdAt": "2021-08-19T10:24:23Z",
+          "updatedAt": "2021-08-19T10:24:23Z"
         }
       ]
     },
@@ -4064,14 +4078,17 @@
       "state": "OPEN",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
-      "assignees": [],
+      "assignees": [
+        "lnicco"
+      ],
       "labels": [
-        "quic-http3-fields",
-        "future-versions"
+        "design",
+        "high-level-schema",
+        "current-version"
       ],
       "body": "In msquic, events all contain the current CPU ID, Process ID and Thread ID (https://github.com/microsoft/msquic/blob/main/src/plugins/wpa/DataModel/QuicEvent.cs), which allows them to do advanced debugging of threading and CPU allocation issues (https://github.com/microsoft/msquic/blob/main/docs/TSG.md#diagnosing-rss-issues).\r\n\r\nIt would potentially be interesting to have this type of metadata well-defined in qlog as well.\r\n\r\nCC @nibanks",
       "createdAt": "2021-04-15T15:15:55Z",
-      "updatedAt": "2021-08-18T15:56:27Z",
+      "updatedAt": "2021-08-19T07:24:50Z",
       "closedAt": null,
       "comments": [
         {
@@ -4122,6 +4139,13 @@
           "body": "@LPardue that works for me.",
           "createdAt": "2021-08-18T15:56:27Z",
           "updatedAt": "2021-08-18T15:56:27Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I think I can now better grasp the benefits of doing this within the context of qlog, so thanks for the additional discussion.\r\n\r\nWe can bikeshed the exact form this should take. I for example would suggest not putting this as a property of the `data` field (part of the payload) but rather as a top-level field (at the same level as timestamp, name and data itself). \r\n\r\nThis would be something defined in the main schema document, as it's usable across protocols. \r\n\r\nAssigning to @lnicco so he can get his hands dirty with adding something new :) \r\n",
+          "createdAt": "2021-08-19T07:24:23Z",
+          "updatedAt": "2021-08-19T07:24:23Z"
         }
       ]
     },
