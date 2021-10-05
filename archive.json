@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-09-26T00:35:35.556471+00:00",
+  "timestamp": "2021-10-05T00:34:37.810149+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -638,9 +638,17 @@
       ],
       "body": "using transport.parameters_set there are two parameters to signal 0-RTT:\r\n- resumption_allowed\r\n- early_data_enabled\r\n\r\nAs pointed out by @jlaine, these are a bit ambiguous, as 0-RTT can either be used for the current connection or enabled for a future connection.\r\n\r\nSolution 1:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new events: session_ticket_sent/received (with early_data_enabled?:boolean member)\r\n\r\nSolution 2:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new parameters: resumption_offered and early_data_offered",
       "createdAt": "2019-10-15T09:03:47Z",
-      "updatedAt": "2021-08-18T13:39:26Z",
+      "updatedAt": "2021-10-04T14:27:01Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I'm not sure I agree that there's an ambiguity here, as TLS 1.3 clearly defines how the `early_data` extension is used. However, we currently can't log when 0-RTT is accepted / rejected (although you _could_ infer that by observing what values TLS sends).\r\nMaybe we should have separate events that indicate if resumption (with or without 0-RTT) was offered (on the client side), and on the server side, if it was accepted or rejected (for rejections, the reason might be interesting to log).",
+          "createdAt": "2021-10-04T14:27:01Z",
+          "updatedAt": "2021-10-04T14:27:01Z"
+        }
+      ]
     },
     {
       "number": 28,
@@ -3123,9 +3131,17 @@
       ],
       "body": "Currently, we can log which params/settings were restored upon attempting 0-RTT, but not which ones were actually stored at the end of a connection (though we might assume it were the correct ones, using the values from `parameters_set`).\r\n\r\nFor a server which encodes this information in for example the SessionTicket, we also cannot log which values are in the ticket when sending it, nor when receiving it, nor if early data was denied because of a mismatch therein. ",
       "createdAt": "2020-11-02T23:14:15Z",
-      "updatedAt": "2021-08-18T10:16:43Z",
+      "updatedAt": "2021-10-04T14:07:08Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": ">  (though we might assume it were the correct ones, using the values from parameters_set)\r\n\r\nThe client might also save the RTT (and RTT variance maybe?), which would not be a QUIC transport parameter.\r\n\r\n> For a server which encodes this information in for example the SessionTicket, we also cannot log which values are in the ticket when sending it\r\n\r\nI think _all_ servers would encode this in the SessionTicket, but maybe we should be flexible enough to allow for other options?\r\n\r\nThe way we could do this is by introducing a `parameters_saved` and a `parameters_restored` event, which allows to encode both QUIC transport parameters and other values. We might also add a `dest` / `src` field, so we can specify where those values were saved (in the session ticket / to disk / etc.).",
+          "createdAt": "2021-10-04T14:07:08Z",
+          "updatedAt": "2021-10-04T14:07:08Z"
+        }
+      ]
     },
     {
       "number": 122,
@@ -4819,6 +4835,22 @@
       "body": "https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-parameters_set defines some of the core QUIC TPs and then says\r\n\r\n> Additionally, this event can contain any number of unspecified fields. This is to reflect setting of for example unknown (greased) transport parameters or employed (proprietary) extensions.\r\n\r\nThat's fine but is it weak and doesn't help interoperability much. We know this is going to be an area of innovation - new extensions and grease values. The spec would be improved by having a well-defined \"extension bucket\" field that TPs can go in, an array of integers tuples would be fine, for example.\r\n\r\nThis would help something like the qlog crate accomodate different users https://github.com/cloudflare/quiche/blob/master/tools/qlog/src/lib.rs#L1712 and parse input from different loggers.\r\n\r\n",
       "createdAt": "2021-09-15T21:43:26Z",
       "updatedAt": "2021-09-15T21:43:26Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 178,
+      "id": "I_kwDOCrLn6M48g4Le",
+      "title": "support for DATAGRAMS in data_moved events",
+      "url": "https://github.com/quicwg/qlog/issues/178",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Slightly related to #124\r\n\r\nhttps://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-3.3.15 defines the data_moved event. The stream_id field is optional. It isn't clear if the type of data I'm moving is stream data (and I don't have the stream ID) or if its datagram data (and I'll never have the stream ID).\r\n\r\nAn non-exhaustive list of options to address this are:\r\n\r\n1) leave it as is, and let tools assume that omitting the stream ID field implies datagram. (That breaks down for implementations that can't populate the stream ID for whatever reason)\r\n2) add a field to describe the type of data moved\r\n3) Be more clear that `data_moved` is only for stream data.Then possibly:\r\n  a) rename the event to `stream_data_moved`\r\n  b) add a new `datagram_data_moved` event\r\n\r\n",
+      "createdAt": "2021-10-04T14:25:25Z",
+      "updatedAt": "2021-10-04T14:25:25Z",
       "closedAt": null,
       "comments": []
     }
