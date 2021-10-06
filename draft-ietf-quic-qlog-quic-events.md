@@ -1300,8 +1300,8 @@ class IPAddress : string | bytes;
 enum PacketType {
     initial,
     handshake,
-    zerortt = "0RTT",
-    onertt = "1RTT",
+    0RTT,
+    1RTT,
     retry,
     version_negotiation,
     stateless_reset,
