@@ -133,10 +133,10 @@ As qlog can be serialized both textually but also in binary, we employ a custom
 datatype definition language, inspired loosely by the ["TypeScript"
 language](https://www.typescriptlang.org/).
 
-This document describes how to employ JSON and NDJSON as textual serializations
-for qlog in {{concrete-formats}}. Other documents will describe how to utilize
-other concrete serialization options, though tips and requirements for these are
-also listed in this document ({{concrete-formats}}).
+This document describes how to employ JSON and JSON Text Sequences as textual
+serializations for qlog in {{concrete-formats}}. Other documents will describe how
+to utilize other concrete serialization options, though tips and requirements for
+these are also listed in this document ({{concrete-formats}}).
 
 The main general conventions in this document a reader should be aware of are:
 
@@ -195,17 +195,15 @@ A qlog file should be able to contain several indivdual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
-MUST have a value of "qlog-03-WIP".
+MUST have a value of "ietf-draft-01".
 
 Note:
 
 : there have been several previously broadly deployed qlog versions based on older
 drafts of this document (see draft-marx-qlog-main-schema). The old values for the
 "qlog_version" field were "draft-00", "draft-01" and "draft-02". When qlog was
-moved to the QUIC working group, we decided to increment the existing counter,
-rather than reverting back to -00. As such, any numbering indicating in the
-"qlog_version" field is explicitly not tied to a particular version of the draft
-documents.
+moved to the QUIC working group, we decided to reset the counter with the "ietf-"
+prefix, rather than continuing from -03.
 
 As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
 indicate which serialization option was chosen. Its value MUST either be one of
@@ -233,7 +231,7 @@ class QlogFile {
 JSON serialization:
 
 {
-    "qlog_version": "draft-03-WIP",
+    "qlog_version": "ietf-draft-01",
     "qlog_format": "JSON",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
@@ -1219,8 +1217,8 @@ This being said, the authors prefer JSON as the basis for storing qlog, as it
 retains full flexibility and maximum interoperability. Storage overhead can be
 managed well in practice by employing compression. For this reason, this document
 details both how to practically transform qlog schema definitions to JSON and to
-the streamable NDJSON. We discuss concrete options to bring down JSON size and
-processing overheads in {{optimizations}}.
+the streamable JSON Text Sequences. We discuss concrete options to bring down JSON
+size and processing overheads in {{optimizations}}.
 
 As depending on the employed format different deserializers/parsers should be
 used, the "qlog_format" field is used to indicate the chosen serialization
@@ -1233,7 +1231,11 @@ optimization of type A was applied to the file as well (see also
 ## qlog to JSON mapping {#format-json}
 
 When mapping qlog to normal JSON, the "qlog_format" field MUST have the value
-"JSON". This is also the default qlog serialization and default value of this field.
+"JSON". This is also the default qlog serialization and default value of this
+field.
+
+When using normal JSON serialization, the file extension/suffix SHOULD be ".qlog"
+and the Media Type (if any) SHOULD be "application/qlog+json" {{?RFC6839}}.
 
 To facilitate this mapping, the qlog documents employ a format that is close to
 pure JSON for its examples and data definitions. Still, as JSON is not a typed
@@ -1278,7 +1280,8 @@ prefixed with 0x (as is sometimes common). An example is given in
 {{json-bytes-example}}.
 
 ~~~~~~~~
-For the five raw unsigned byte input values of: 5 20 40 171 255, the JSON serialization is:
+For the five raw unsigned byte input values of: 5 20 40 171 255, the JSON
+serialization is:
 
 {
     raw: "051428abff"
@@ -1325,7 +1328,8 @@ by example in {{json-bytes-example-two}}.
     "raw_length": 5,
 }
 
-// both fields are present and the lengths do not match: the value was truncated to the first three bytes.
+// both fields are present and the lengths do not match:
+// the value was truncated to the first three bytes.
 {
     "raw_length": 5,
     "raw": "051428"
@@ -1374,7 +1378,7 @@ after their last added event.
 Finally, while not specifically required by the JSON specification, all qlog field
 names in a JSON serialization MUST be lowercase.
 
-## qlog to NDJSON mapping {#format-ndjson}
+## qlog to JSON Text Sequences mapping {#format-json-seq}
 
 One of the downsides of using pure JSON is that it is inherently a non-streamable
 format. Put differently, it is not possible to simply append new qlog events to a
@@ -1382,35 +1386,38 @@ log file without "closing" this file at the end by appending "]}]}". Without the
 closing tags, most JSON parsers will be unable to parse the file entirely. As most
 platforms do not provide a standard streaming JSON parser (which would be able to
 deal with this problem), this document also provides a qlog mapping to a
-streamable JSON format called [Newline-Delimited JSON
-(NDJSON)](http://ndjson.org/).
+streamable JSON format called JSON Text Sequences (JSON-SEQ) ({{?RFC7464}}).
 
-When mapping qlog to NDJSON, the "qlog_format" field MUST have the value "NDJSON".
+When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
+"JSON-SEQ".
 
-NDJSON is very similar to JSON, except that it interprets each line in a file as a
-fully separate JSON object. Put differently, unlike default JSON, it does not
-require a file to be wrapped as a full object with "{ ... }" or "\[ ... \]". Using
-this setup, qlog events can simply be appended as individually serialized lines at
-the back of a streamed logging file.
+When using JSON-SEQ serialization, the file extension/suffix SHOULD be ".sqlog"
+(for "streaming" qlog) and the Media Type (if any) SHOULD be
+"application/qlog+json-seq" {{?RFC8091}}.
+
+JSON Text Sequences are very similar to JSON, except that JSON objects are
+serialized as individual "records", each prefixed by an ASCII Record Separator
+(RS, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Each
+qlog event is interpreated as an individual JSON Text Sequence record, and can
+simply be appended as a new record at the back of an event stream or log file. Put
+differently, unlike default JSON, it does not require a file to be wrapped as a
+full object with "{ ... }" or "\[... \]".
 
 For this to work, some qlog definitions have to be adjusted however. Mainly,
 events are no longer part of the "events" array in the Trace object, but are
 instead logged separately from the qlog "file header" (QlogFile class in
-{{top-level}}). Additionally, qlog's NDJSON mapping does not allow logging
+{{top-level}}). Additionally, qlog's JSON-SEQ mapping does not allow logging
 multiple individual traces in a single qlog file. As such, the QlogFile:traces
 field is replaced by the singular "trace" field, which simply contains the Trace
-data directly. An example can be seen in {{ndjson-example}}. Note that the
+data directly. An example can be seen in {{json-seq-example}}. Note that the
 "group_id" field can still be used on a per-event basis to include events from
-conceptually different sources in a single NDJSON qlog file.
-
-Note as well from {{ndjson-example}} that the file's header (QlogFileNDJSON) also
-needs to be fully serialized on a single line to be NDJSON compatible.
+conceptually different sources in a single JSON-SEQ qlog file.
 
 ~~~~~~~~
 Definition:
 
-class QlogFileNDJSON {
-    qlog_format: "NDJSON",
+class QlogFileSeq {
+    qlog_format: "JSON-SEQ",
 
     qlog_version:string,
     title?:string,
@@ -1418,36 +1425,60 @@ class QlogFileNDJSON {
     summary?: Summary,
     trace: Trace
 }
-// list of qlog events, separated by newlines
+// list of qlog events, starting with a Record Separator and ending with a newline
 
-NDJSON serialization:
+JSON-SEQ serialization:
 
-{"qlog_format":"NDJSON","qlog_version":"draft-03-WIP","title":"Name of this particular NDJSON qlog file (short)","description":"Description for this NDJSON qlog file (long)","trace":{"common_fields":{"protocol_type": ["QUIC","HTTP3"],"group_id":"127ecc830d98f9d54a42c4f0842aa87e181a","time_format":"relative","reference_time":"1553986553572"},"vantage_point":{"name":"backend-67","type":"server"}}}
-{"time": 2, "name": "transport:packet_received", "data": { ... } }
-{"time": 7, "name": "http:frame_parsed", "data": { ... } }
+RS{
+    "qlog_version": "ietf-draft-01",
+    "qlog_format": "JSON-SEQ",
+    "title": "Name of this particular JSON Text Sequence qlog file (short)",
+    "description": "Description for this trace file (long)",
+    "summary": {
+        ...
+    },
+    "trace": {
+      "common_fields": {
+        "protocol_type": ["QUIC","HTTP3"],
+        "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
+        "time_format":"relative",
+        "reference_time":"1553986553572"
+      },
+      "vantage_point": {
+        "name":"backend-67",
+        "type":"server"
+      }
+    }
+}
+RS{"time": 2, "name": "transport:packet_received", "data": { ... } }
+RS{"time": 7, "name": "http:frame_parsed", "data": { ... } }
+...
 ~~~~~~~~
 {: .language-json}
-{: #ndjson-example title="Top-level element"}
+{: #json-seq-example title="Top-level element"}
 
-Finally, while not specifically required by the NDJSON specification, all qlog
-field names in a NDJSON serialization MUST be lowercase.
+Note that any JSON-SEQ record can contain any amount of newlines in its body, as
+long as it ends with a newline character before the next RS character.
 
-### Supporting NDJSON in tooling
+Finally, while not specifically required by the JSON-SEQ specification, all qlog
+field names in a JSON-SEQ serialization MUST be lowercase.
 
-Note that NDJSON is not supported in most default programming environments (unlike
-normal JSON). However, several [custom NDJSON parsing libraries
-exist](http://ndjson.org/libraries.html) that can be used and the format is easy
-enough to parse with existing implementations (i.e., by splitting the file into
-its component lines and feeding them to a normal JSON parser individually, as each
-line by itself is a valid JSON object).
+### Supporting JSON Text Sequences in tooling
+
+Note that JSON Text Sequences are not supported in most default programming
+environments (unlike normal JSON). However, several custom JSON-SEQ parsing
+libraries exist in most programming languages that can be used and the format is
+easy enough to parse with existing implementations (i.e., by splitting the file
+into its component records and feeding them to a normal JSON parser individually,
+as each record by itself is a valid JSON object).
 
 ## Other optimizated formatting options {#optimizations}
 
-Both the JSON and NDJSON formatting options described above are serviceable in
+Both the JSON and JSON-SEQ formatting options described above are serviceable in
 general small to medium scale (debugging) setups. However, these approaches tend
 to be relatively verbose, leading to larger file sizes. Additionally, generalized
-(ND)JSON (de)serialization performance is typically (slightly) lower than that of
-more optimized and predictable formats. Both aspects make these formats more
+JSON(-SEQ) (de)serialization performance is typically (slightly) lower than that
+of more optimized and predictable formats. Both aspects make these formats more
 challenging ([though still practical](https://qlog.edm.uhasselt.be/anrw/)) to use
 in large scale setups.
 
@@ -1478,14 +1509,14 @@ formats. As there are no standards in place for this type of extension to format
 mapping, we employ a commonly used scheme here. Our approach is to list the
 applied optimizations in the extension in ascending order of application (e.g., if
 a qlog file is first optimized with technique A and then compressed with technique
-B, the resulting file would have the extension ".qlog.A.B"). This allows tooling
-to start at the back of the extension to "undo" applied optimizations to finally
-arrive at the expected qlog representation.
+B, the resulting file would have the extension ".(s)qlog.A.B"). This allows
+tooling to start at the back of the extension to "undo" applied optimizations to
+finally arrive at the expected qlog representation.
 
 ### Data structure optimizations {#structure-optimizations}
 
 The first general category of optimizations is to alter the representation of data
-within an (ND)JSON qlog file to reduce file size.
+within an JSON(-SEQ) qlog file to reduce file size.
 
 The first option is to employ a scheme similar to the CSV (comma separated value
 {{?rfc4180}}) format, which utilizes the concept of column "headers" to prevent
@@ -1493,13 +1524,13 @@ repeating field names for each datapoint instance. Concretely for JSON qlog,
 several field names are repeated with each event (i.e., time, name, data). These
 names could be extracted into a separate list, after which qlog events could be
 serialized as an array of values, as opposed to a full object. This approach was a
-key part of the original qlog format (prior to draft 02) using the "event_fields"
+key part of the original qlog format (prior to draft-02) using the "event_fields"
 field. However, tests showed that this optimization only provided a mean file size
 reduction of 5% (100MB to 95MB) while significantly increasing the implementation
 complexity, and this approach was abandoned in favor of the default JSON setup.
 Implementations using this format should not employ a separate file extension (as
 it still uses JSON), but rather employ a new value of "JSON.namedheaders" (or
-"NDJSON.namedheaders") for the "qlog_format" field (see {{top-level}}).
+"JSON-SEQ.namedheaders") for the "qlog_format" field (see {{top-level}}).
 
 The second option is to replace field values and/or names with indices into a
 (dynamic) lookup table. This is a common compression technique and can provide
@@ -1511,7 +1542,7 @@ format](https://www.chromium.org/developers/design-documents/network-stack/netlo
 or defining a (static) table up-front and sharing this between implementations.
 Implementations using this approach should not employ a separate file extension
 (as it still uses JSON), but rather employ a new value of "JSON.dictionary" (or
-"NDJSON.dictionary") for the "qlog_format" field (see {{top-level}}).
+"JSON-SEQ.dictionary") for the "qlog_format" field (see {{top-level}}).
 
 As both options either proved difficult to implement, reduced qlog file
 readability, and provided too little improvement compared to other more
@@ -1521,8 +1552,8 @@ inherently part of qlog.
 ### Compression {#compression}
 
 The second general category of optimizations is to utilize a (generic) compression
-scheme for textual data. As qlog in the (ND)JSON format typically contains a large
-amount of repetition, off-the-shelf (text) compression techniques typically
+scheme for textual data. As qlog in the JSON(-SEQ) format typically contains a
+large amount of repetition, off-the-shelf (text) compression techniques typically
 succeed very well in bringing down file sizes (regularly with up to two orders of
 magnitude in our tests, even for "fast" compression levels). As such, utilizing
 compression is recommended before attempting other optimization options, even
@@ -1534,18 +1565,18 @@ compression scheme provides multiple compression levels (providing a trade-off
 between compression speed and size reduction). Utilized at level 6 (a medium
 setting thought to be applicable for streaming compression of a qlog stream in
 commodity devices), gzip compresses qlog JSON files to 7% of their initial size on
-average (100MB to 7MB). For this option, the file extension .qlog.gz SHOULD BE
-used.  The "qlog_format" field should still reflect the original JSON formatting
-of the qlog data (e.g., "JSON" or "NDJSON").
+average (100MB to 7MB). For this option, the file extension .(s)qlog.gz SHOULD BE
+used. The "qlog_format" field should still reflect the original JSON formatting of
+the qlog data (e.g., "JSON" or "JSON-SEQ").
 
 The second option is to use Brotli compression ({{?RFC7932}}). While similar to
 gzip, this more recent compression scheme provides a better efficiency. It also
 allows multiple compression levels. Utilized at level 4 (a medium setting thought
 to be applicable for streaming compression of a qlog stream in commodity devices),
 brotli compresses qlog JSON files to 7% of their initial size on average (100MB to
-7MB). For this option, the file extension .qlog.br SHOULD BE used. The
+7MB). For this option, the file extension .(s)qlog.br SHOULD BE used. The
 "qlog_format" field should still reflect the original JSON formatting of the qlog
-data (e.g., "JSON" or "NDJSON").
+data (e.g., "JSON" or "JSON-SEQ").
 
 Other compression algorithms of course exist (for example xz, zstd, and lz4). We
 mainly recommend gzip and brotli because of their tweakable behaviour and wide
@@ -1563,14 +1594,14 @@ hard tradeoffs between flexibility for performance.
 The first option is to use the CBOR (Concise Binary Object Representation
 {{?rfc7049}}) format. For our purposes, CBOR can be viewed as a straighforward
 binary variant of JSON. As such, existing JSON qlog files can be trivially
-converted to and from CBOR (though slightly more work is needed for NDJSON qlogs).
-While CBOR thus does retain the full qlog flexibility, it only provides a 25% file
-size reduction (100MB to 75MB) compared to textual (ND)JSON. As CBOR support in
-programming environments is not as widespread as that of textual JSON and the
-format lacks human readability, CBOR was not chosen as the default qlog format.
-For this option, the file extension .qlog.cbor SHOULD BE used. The "qlog_format"
-field should still reflect the original JSON formatting of the qlog data (e.g.,
-"JSON" or "NDJSON").
+converted to and from CBOR (though slightly more work is needed for JSON-SEQ
+qlogs). While CBOR thus does retain the full qlog flexibility, it only provides a
+25% file size reduction (100MB to 75MB) compared to textual JSON(-SEQ). As CBOR
+support in programming environments is not as widespread as that of textual JSON
+and the format lacks human readability, CBOR was not chosen as the default qlog
+format. For this option, the file extension .(s)qlog.cbor SHOULD BE used. The
+"qlog_format" field should still reflect the original JSON formatting of the qlog
+data (e.g., "JSON" or "JSON-SEQ").
 
 A second option is to use a more specialized binary format, such as [Protocol
 Buffers](https://developers.google.com/protocol-buffers) (protobuf). This format
@@ -1584,7 +1615,7 @@ chosen as its basic serialization. The lower flexibility does lead to
 significantly reduced file sizes. Our straightforward mapping of the qlog main
 schema and QUIC/HTTP3 event types to protobuf created qlog files 24% as large as
 the raw JSON equivalents (100MB to 24MB). For this option, the file extension
-.qlog.protobuf SHOULD BE used. The "qlog_format" field should reflect the
+.(s)qlog.protobuf SHOULD BE used. The "qlog_format" field should reflect the
 different internal format, for example: "qlog_format": "protobuf".
 
 Note that binary formats can (and should) also be used in conjunction with
@@ -1618,24 +1649,24 @@ repository](https://github.com/quiclog/qlog).
 The following table provides an overview of all the discussed qlog formatting
 options with examples:
 
-| format                                    | qlog_format               | extension     |
-|-------------------------------------------|---------------------------|---------------|
-| JSON {{format-json}}                      | JSON                      | .qlog         |
-| NDJSON  {{format-ndjson}}                 | NDJSON                    | .qlog         |
-| named headers {{structure-optimizations}} | (ND)JSON.namedheaders     | .qlog         |
-| dictionary {{structure-optimizations}}    | (ND)JSON.dictionary       | .qlog         |
-| CBOR {{binary}}                           | (ND)JSON                  | .qlog.cbor    |
-| protobuf {{binary}}                       | protobuf                  | .qlog.protobuf|
-|                                           |                           |               |
-| gzip {{compression}}                      | no change                 | .gz suffix    |
-| brotli {{compression}}                    | no change                 | .br suffix    |
+| format                                    | qlog_format               | extension        | media type                  |
+|-------------------------------------------|---------------------------|------------------|-----------------------------|
+| JSON {{format-json}}                      | JSON                      | .qlog            | application/qlog+json       |
+| JSON Text Sequences  {{format-json-seq}}  | JSON-SEQ                  | .sqlog           | application/qlog+json-seq   |
+| named headers {{structure-optimizations}} | JSON(-SEQ).namedheaders   | .(s)qlog         | application/qlog+json(-seq) |
+| dictionary {{structure-optimizations}}    | JSON(-SEQ).dictionary     | .(s)qlog         | application/qlog+json(-seq) |
+| CBOR {{binary}}                           | JSON(-SEQ)                | .(s)qlog.cbor    | application/qlog+json(-seq)+cbor(-seq) |
+| protobuf {{binary}}                       | protobuf                  | .qlog.protobuf   | application/qlog+x-protobuf |
+|                                           |                           |                  |
+| gzip {{compression}}                      | no change                 | .gz suffix       | application/qlog+json(-seq) |
+| brotli {{compression}}                    | no change                 | .br suffix       | application/qlog+json(-seq) |
 
 ## Conversion between formats {#conversion}
 
 As discussed in the previous sections, a qlog file can be serialized in a
 multitude of formats, each of which can conceivably be transformed into or from
-one another without loss of information. For example, a number of NDJSON streamed
-qlogs could be combined into a JSON formatted qlog for later processing.
+one another without loss of information. For example, a number of JSON-SEQ
+streamed qlogs could be combined into a JSON formatted qlog for later processing.
 Similarly, a captured binary qlog could be transformed to JSON for easier
 interpretation and sharing.
 
@@ -1793,6 +1824,12 @@ TODO: primarily the .well-known URI
 --- back
 
 # Change Log
+
+## Since draft-ietf-quic-qlog-main-schema-00:
+
+* Changed the streaming serialization format from NDJSON to JSON Text Sequences
+  (#172)
+* Added Media Type definitions for various qlog formats (#158)
 
 ## Since draft-marx-qlog-main-schema-draft-02:
 
