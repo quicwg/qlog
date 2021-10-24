@@ -5,10 +5,10 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 23 April 2022                                          Facebook
+Expires: 27 April 2022                                          Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                         20 October 2021
+                                                         24 October 2021
 
 
                       Main logging schema for qlog
@@ -39,7 +39,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 23 April 2022.
+   This Internet-Draft will expire on 27 April 2022.
 
 Copyright Notice
 
@@ -170,11 +170,11 @@ Table of Contents
    employ a custom datatype definition language, inspired loosely by the
    "TypeScript" language (https://www.typescriptlang.org/).
 
-   This document describes how to employ JSON and JSON Text Sequences as
-   textual serializations for qlog in Section 6.  Other documents will
-   describe how to utilize other concrete serialization options, though
-   tips and requirements for these are also listed in this document
-   (Section 6).
+   This document describes how to employ JSON ([RFC8259]) and JSON Text
+   Sequences ([RFC7464]) as textual serializations for qlog in
+   Section 6.  Other documents will describe how to utilize other
+   concrete serialization options, though tips and requirements for
+   these are also listed in this document (Section 6).
 
    The main general conventions in this document a reader should be
    aware of are:
@@ -260,14 +260,16 @@ Table of Contents
    that end, the top-level element in the qlog schema defines only a
    small set of "header" fields and an array of component traces.  For
    this document, the required "qlog_version" field MUST have a value of
-   "ietf-draft-01".
+   "0.3".
 
    Note:  there have been several previously broadly deployed qlog
       versions based on older drafts of this document (see draft-marx-
       qlog-main-schema).  The old values for the "qlog_version" field
       were "draft-00", "draft-01" and "draft-02".  When qlog was moved
-      to the QUIC working group, we decided to reset the counter with
-      the "ietf-" prefix, rather than continuing from -03.
+      to the QUIC working group, we decided to switch to a new
+      versioning scheme which is independent of individual draft
+      document numbers.  However, we do start from 0.3, as conceptually
+      0.0, 0.1 and 0.2 can map to draft-00, draft-01 and draft-02.
 
    As qlog can be serialized in a variety of ways, the "qlog_format"
    field is used to indicate which serialization option was chosen.  Its
@@ -294,10 +296,10 @@ Table of Contents
        traces: array<Trace|TraceError>
    }
 
-   JSON serialization:
+   JSON serialization example:
 
    {
-       "qlog_version": "ietf-draft-01",
+       "qlog_version": "0.3",
        "qlog_format": "JSON",
        "title": "Name of this particular qlog file (short)",
        "description": "Description for this group of traces (long)",
@@ -1527,26 +1529,38 @@ class RawInfo {
    be "application/qlog+json-seq" [RFC8091].
 
    JSON Text Sequences are very similar to JSON, except that JSON
-   objects are serialized as individual "records", each prefixed by an
-   ASCII Record Separator (RS, 0x1E), and each ending with an ASCII Line
-   Feed character (\n, 0x0A).  Each qlog event is interpreated as an
-   individual JSON Text Sequence record, and can simply be appended as a
-   new record at the back of an event stream or log file.  Put
-   differently, unlike default JSON, it does not require a file to be
-   wrapped as a full object with "{ ... }" or "[... ]".
+   objects are serialized as individual records, each prefixed by an
+   ASCII Record Separator (<RS>, 0x1E), and each ending with an ASCII
+   Line Feed character (\n, 0x0A).  Note that each record can also
+   contain any amount of newlines in its body, as long as it ends with a
+   newline character before the next <RS> character.
+
+   Each qlog event is serialized and interpreted as an individual JSON
+   Text Sequence record, and can simply be appended as a new object at
+   the back of an event stream or log file.  Put differently, unlike
+   default JSON, it does not require a file to be wrapped as a full
+   object with "{ ... }" or "[... ]".
 
    For this to work, some qlog definitions have to be adjusted however.
    Mainly, events are no longer part of the "events" array in the Trace
-   object, but are instead logged separately from the qlog "file header"
-   (QlogFile class in Section 3).  Additionally, qlog's JSON-SEQ mapping
-   does not allow logging multiple individual traces in a single qlog
-   file.  As such, the QlogFile:traces field is replaced by the singular
-   "trace" field, which simply contains the Trace data directly.  An
-   example can be seen in Figure 17.  Note that the "group_id" field can
-   still be used on a per-event basis to include events from
-   conceptually different sources in a single JSON-SEQ qlog file.
+   object, but are instead logged separately from the qlog "header", as
+   indicated by the TraceSeq object in Figure 17.  Additionally, qlog's
+   JSON-SEQ mapping does not allow logging multiple individual traces in
+   a single qlog file.  As such, the QlogFile:traces field is replaced
+   by the singular QlogFileSeq:trace field.  An example can be seen in
+   Figure 17.  Note that the "group_id" field can still be used on a
+   per-event basis to include events from conceptually different sources
+   in a single JSON-SEQ qlog file.
 
    Definition:
+
+   class TraceSeq {
+       title?: string,
+       description?: string,
+       configuration?: Configuration,
+       common_fields?: CommonFields,
+       vantage_point: VantagePoint
+   }
 
    class QlogFileSeq {
        qlog_format: "JSON-SEQ",
@@ -1555,14 +1569,17 @@ class RawInfo {
        title?:string,
        description?:string,
        summary?: Summary,
-       trace: Trace
+       trace: TraceSeq
    }
-   // list of qlog events, starting with a Record Separator and ending with a newline
 
-   JSON-SEQ serialization:
+   // list of qlog events, serialized in accordance with RFC 7464,
+   // starting with a Record Separator character and ending with a newline.
+   // For display purposes, Record Separators are rendered as <RS>
 
-   RS{
-       "qlog_version": "ietf-draft-01",
+   JSON-SEQ serialization example:
+
+   <RS>{
+       "qlog_version": "0.3",
        "qlog_format": "JSON-SEQ",
        "title": "Name of this particular JSON Text Sequence qlog file (short)",
        "description": "Description for this trace file (long)",
@@ -1582,19 +1599,14 @@ class RawInfo {
          }
        }
    }
-   RS{"time": 2, "name": "transport:packet_received", "data": { ... } }
-   RS{"time": 7, "name": "http:frame_parsed", "data": { ... } }
+   <RS>{"time": 2, "name": "transport:packet_received", "data": { ... } }
+   <RS>{"time": 7, "name": "http:frame_parsed", "data": { ... } }
    ...
 
                         Figure 17: Top-level element
 
-   Note that any JSON-SEQ record can contain any amount of newlines in
-   its body, as long as it ends with a newline character before the next
-   RS character.
-
-   Finally, while not specifically required by the JSON-SEQ
-   specification, all qlog field names in a JSON-SEQ serialization MUST
-   be lowercase.
+   Note: while not specifically required by the JSON-SEQ specification,
+   all qlog field names in a JSON-SEQ serialization MUST be lowercase.
 
 6.2.1.  Supporting JSON Text Sequences in tooling
 
@@ -1660,7 +1672,7 @@ class RawInfo {
    size.
 
    The first option is to employ a scheme similar to the CSV (comma
-   separated value [rfc4180]) format, which utilizes the concept of
+   separated value [RFC4180]) format, which utilizes the concept of
    column "headers" to prevent repeating field names for each datapoint
    instance.  Concretely for JSON qlog, several field names are repeated
    with each event (i.e., time, name, data).  These names could be
@@ -1744,18 +1756,21 @@ class RawInfo {
    flexibility for performance.
 
    The first option is to use the CBOR (Concise Binary Object
-   Representation [rfc7049]) format.  For our purposes, CBOR can be
+   Representation [RFC7049]) format.  For our purposes, CBOR can be
    viewed as a straighforward binary variant of JSON.  As such, existing
    JSON qlog files can be trivially converted to and from CBOR (though
-   slightly more work is needed for JSON-SEQ qlogs).  While CBOR thus
-   does retain the full qlog flexibility, it only provides a 25% file
-   size reduction (100MB to 75MB) compared to textual JSON(-SEQ).  As
-   CBOR support in programming environments is not as widespread as that
-   of textual JSON and the format lacks human readability, CBOR was not
-   chosen as the default qlog format.  For this option, the file
-   extension .(s)qlog.cbor SHOULD BE used.  The "qlog_format" field
-   should still reflect the original JSON formatting of the qlog data
-   (e.g., "JSON" or "JSON-SEQ").
+   slightly more work is needed for JSON-SEQ qlogs to convert them to
+   CBOR-SEQ, see [RFC8742]).  While CBOR thus does retain the full qlog
+   flexibility, it only provides a 25% file size reduction (100MB to
+   75MB) compared to textual JSON(-SEQ).  As CBOR support in programming
+   environments is not as widespread as that of textual JSON and the
+   format lacks human readability, CBOR was not chosen as the default
+   qlog format.  For this option, the file extension .(s)qlog.cbor
+   SHOULD BE used.  The "qlog_format" field should still reflect the
+   original JSON formatting of the qlog data (e.g., "JSON" or "JSON-
+   SEQ").  The media type should indicate both whether JSON or JSON Text
+   Sequences are used, as well as whether CBOR or CBOR Sequences are
+   used (see the table below).
 
    A second option is to use a more specialized binary format, such as
    Protocol Buffers (https://developers.google.com/protocol-buffers)
@@ -1804,41 +1819,43 @@ class RawInfo {
    The following table provides an overview of all the discussed qlog
    formatting options with examples:
 
-   +============+===================+================+=================+
-   |format      | qlog_format       | extension      | media type      |
-   +============+===================+================+=================+
-   |JSON        | JSON              | .qlog          | application/    |
-   |Section 6.1 |                   |                | qlog+json       |
-   +------------+-------------------+----------------+-----------------+
-   |JSON Text   | JSON-SEQ          | .sqlog         | application/    |
-   |Sequences   |                   |                | qlog+json-seq   |
-   |Section 6.2 |                   |                |                 |
-   +------------+-------------------+----------------+-----------------+
-   |named       | JSON(-            | .(s)qlog       | application/    |
-   |headers     | SEQ).namedheaders |                | qlog+json(-seq) |
-   |Section     |                   |                |                 |
-   |6.3.1       |                   |                |                 |
-   +------------+-------------------+----------------+-----------------+
-   |dictionary  | JSON(-            | .(s)qlog       | application/    |
-   |Section     | SEQ).dictionary   |                | qlog+json(-seq) |
-   |6.3.1       |                   |                |                 |
-   +------------+-------------------+----------------+-----------------+
-   |CBOR Section| JSON(-SEQ)        | .(s)qlog.cbor  | application/    |
-   |6.3.3       |                   |                | qlog+json(-     |
-   |            |                   |                | seq)+cbor(-seq) |
-   +------------+-------------------+----------------+-----------------+
-   |protobuf    | protobuf          | .qlog.protobuf | application/    |
-   |Section     |                   |                | qlog+x-protobuf |
-   |6.3.3       |                   |                |                 |
-   +------------+-------------------+----------------+-----------------+
-   +------------+-------------------+----------------+-----------------+
-   |gzip Section| no change         | .gz suffix     | application/    |
-   |6.3.2       |                   |                | qlog+json(-seq) |
-   +------------+-------------------+----------------+-----------------+
-   |brotli      | no change         | .br suffix     | application/    |
-   |Section     |                   |                | qlog+json(-seq) |
-   |6.3.2       |                   |                |                 |
-   +------------+-------------------+----------------+-----------------+
+   +===============+===================+================+==============+
+   | format        | qlog_format       | extension      | media type   |
+   +===============+===================+================+==============+
+   | JSON          | JSON              | .qlog          | application/ |
+   | Section 6.1   |                   |                | qlog+json    |
+   +---------------+-------------------+----------------+--------------+
+   | JSON Text     | JSON-SEQ          | .sqlog         | application/ |
+   | Sequences     |                   |                | qlog+json-   |
+   | Section 6.2   |                   |                | seq          |
+   +---------------+-------------------+----------------+--------------+
+   | named         | JSON(-            | .(s)qlog       | application/ |
+   | headers       | SEQ).namedheaders |                | qlog+json(-  |
+   | Section       |                   |                | seq)         |
+   | 6.3.1         |                   |                |              |
+   +---------------+-------------------+----------------+--------------+
+   | dictionary    | JSON(-            | .(s)qlog       | application/ |
+   | Section       | SEQ).dictionary   |                | qlog+json(-  |
+   | 6.3.1         |                   |                | seq)         |
+   +---------------+-------------------+----------------+--------------+
+   | CBOR          | JSON(-SEQ)        | .(s)qlog.cbor  | application/ |
+   | Section       |                   |                | qlog+json(-  |
+   | 6.3.3         |                   |                | seq)+cbor(-  |
+   |               |                   |                | seq)         |
+   +---------------+-------------------+----------------+--------------+
+   | protobuf      | protobuf          | .qlog.protobuf | NOT          |
+   | Section       |                   |                | SPECIFIED BY |
+   | 6.3.3         |                   |                | IANA         |
+   +---------------+-------------------+----------------+--------------+
+   +---------------+-------------------+----------------+--------------+
+   | gzip          | no change         | .gz suffix     | application/ |
+   | Section       |                   |                | gzip         |
+   | 6.3.2         |                   |                |              |
+   +---------------+-------------------+----------------+--------------+
+   | brotli        | no change         | .br suffix     | NOT          |
+   | Section       |                   |                | SPECIFIED BY |
+   | 6.3.2         |                   |                | IANA         |
+   +---------------+-------------------+----------------+--------------+
 
                                   Table 2
 
@@ -2036,18 +2053,11 @@ class RawInfo {
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
               qlog-quic-events>.
 
-11.2.  Informative References
-
    [RFC1952]  Deutsch, P., "GZIP file format specification version 4.3",
               RFC 1952, DOI 10.17487/RFC1952, May 1996,
               <https://datatracker.ietf.org/doc/html/rfc1952>.
 
-   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
-              Requirement Levels", BCP 14, RFC 2119,
-              DOI 10.17487/RFC2119, March 1997,
-              <https://datatracker.ietf.org/doc/html/rfc2119>.
-
-   [rfc4180]  Shafranovich, Y., "Common Format and MIME Type for Comma-
+   [RFC4180]  Shafranovich, Y., "Common Format and MIME Type for Comma-
               Separated Values (CSV) Files", RFC 4180,
               DOI 10.17487/RFC4180, October 2005,
               <https://datatracker.ietf.org/doc/html/rfc4180>.
@@ -2057,7 +2067,7 @@ class RawInfo {
               DOI 10.17487/RFC6839, January 2013,
               <https://datatracker.ietf.org/doc/html/rfc6839>.
 
-   [rfc7049]  Bormann, C. and P. Hoffman, "Concise Binary Object
+   [RFC7049]  Bormann, C. and P. Hoffman, "Concise Binary Object
               Representation (CBOR)", RFC 7049, DOI 10.17487/RFC7049,
               October 2013,
               <https://datatracker.ietf.org/doc/html/rfc7049>.
@@ -2079,6 +2089,17 @@ class RawInfo {
               DOI 10.17487/RFC8259, December 2017,
               <https://datatracker.ietf.org/doc/html/rfc8259>.
 
+11.2.  Informative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://datatracker.ietf.org/doc/html/rfc2119>.
+
+   [RFC8742]  Bormann, C., "Concise Binary Object Representation (CBOR)
+              Sequences", RFC 8742, DOI 10.17487/RFC8742, February 2020,
+              <https://datatracker.ietf.org/doc/html/rfc8742>.
+
 Appendix A.  Change Log
 
 A.1.  Since draft-ietf-quic-qlog-main-schema-00:
@@ -2087,6 +2108,8 @@ A.1.  Since draft-ietf-quic-qlog-main-schema-00:
       Text Sequences (#172)
 
    *  Added Media Type definitions for various qlog formats (#158)
+
+   *  Changed to semantic versioning
 
 A.2.  Since draft-marx-qlog-main-schema-draft-02:
 
