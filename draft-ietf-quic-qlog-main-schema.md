@@ -127,16 +127,17 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 interpreted as described in {{?RFC2119}}.
 
 While the qlog schema's are format-agnostic, for readability the qlog documents
-will use a JSON-inspired format ({{?RFC8259}}) for examples and definitions.
+will use a JSON-inspired format ({{!RFC8259}}) for examples and definitions.
 
 As qlog can be serialized both textually but also in binary, we employ a custom
 datatype definition language, inspired loosely by the ["TypeScript"
 language](https://www.typescriptlang.org/).
 
-This document describes how to employ JSON and JSON Text Sequences as textual
-serializations for qlog in {{concrete-formats}}. Other documents will describe how
-to utilize other concrete serialization options, though tips and requirements for
-these are also listed in this document ({{concrete-formats}}).
+This document describes how to employ JSON ({{!RFC8259}}) and JSON Text Sequences
+({{!RFC7464}}) as textual serializations for qlog in {{concrete-formats}}. Other
+documents will describe how to utilize other concrete serialization options,
+though tips and requirements for these are also listed in this document
+({{concrete-formats}}).
 
 The main general conventions in this document a reader should be aware of are:
 
@@ -195,15 +196,17 @@ A qlog file should be able to contain several indivdual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
-MUST have a value of "ietf-draft-01".
+MUST have a value of "0.3".
 
 Note:
 
 : there have been several previously broadly deployed qlog versions based on older
 drafts of this document (see draft-marx-qlog-main-schema). The old values for the
 "qlog_version" field were "draft-00", "draft-01" and "draft-02". When qlog was
-moved to the QUIC working group, we decided to reset the counter with the "ietf-"
-prefix, rather than continuing from -03.
+moved to the QUIC working group, we decided to switch to a new versioning scheme
+which is independent of individual draft document numbers. However, we do start
+from 0.3, as conceptually 0.0, 0.1 and 0.2 can map to draft-00, draft-01 and
+draft-02.
 
 As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
 indicate which serialization option was chosen. Its value MUST either be one of
@@ -228,10 +231,10 @@ class QlogFile {
     traces: array<Trace|TraceError>
 }
 
-JSON serialization:
+JSON serialization example:
 
 {
-    "qlog_version": "ietf-draft-01",
+    "qlog_version": "0.3",
     "qlog_format": "JSON",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
@@ -1235,7 +1238,7 @@ When mapping qlog to normal JSON, the "qlog_format" field MUST have the value
 field.
 
 When using normal JSON serialization, the file extension/suffix SHOULD be ".qlog"
-and the Media Type (if any) SHOULD be "application/qlog+json" {{?RFC6839}}.
+and the Media Type (if any) SHOULD be "application/qlog+json" {{!RFC6839}}.
 
 To facilitate this mapping, the qlog documents employ a format that is close to
 pure JSON for its examples and data definitions. Still, as JSON is not a typed
@@ -1365,7 +1368,7 @@ By definition, JSON strings are serialized surrounded by quotes. Numbers without
 
 ### Other JSON specifics
 
-JSON files by definition ({{?RFC8259}}) MUST utilize the UTF-8 encoding, both for
+JSON files by definition ({{!RFC8259}}) MUST utilize the UTF-8 encoding, both for
 the file itself and the string values.
 
 Most JSON parsers strictly follow the JSON specification. This includes the rule
@@ -1386,35 +1389,46 @@ log file without "closing" this file at the end by appending "]}]}". Without the
 closing tags, most JSON parsers will be unable to parse the file entirely. As most
 platforms do not provide a standard streaming JSON parser (which would be able to
 deal with this problem), this document also provides a qlog mapping to a
-streamable JSON format called JSON Text Sequences (JSON-SEQ) ({{?RFC7464}}).
+streamable JSON format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}).
 
 When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
 "JSON-SEQ".
 
 When using JSON-SEQ serialization, the file extension/suffix SHOULD be ".sqlog"
 (for "streaming" qlog) and the Media Type (if any) SHOULD be
-"application/qlog+json-seq" {{?RFC8091}}.
+"application/qlog+json-seq" {{!RFC8091}}.
 
 JSON Text Sequences are very similar to JSON, except that JSON objects are
-serialized as individual "records", each prefixed by an ASCII Record Separator
-(RS, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Each
-qlog event is interpreated as an individual JSON Text Sequence record, and can
-simply be appended as a new record at the back of an event stream or log file. Put
-differently, unlike default JSON, it does not require a file to be wrapped as a
-full object with "{ ... }" or "\[... \]".
+serialized as individual records, each prefixed by an ASCII Record Separator
+(\<RS\>, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Note
+that each record can also contain any amount of newlines in its body, as long as
+it ends with a newline character before the next \<RS\> character.
+
+Each qlog event is serialized and interpreted as an individual JSON Text Sequence
+record, and can simply be appended as a new object at the back of an event stream
+or log file. Put differently, unlike default JSON, it does not require a file to
+be wrapped as a full object with "{ ... }" or "\[... \]".
 
 For this to work, some qlog definitions have to be adjusted however. Mainly,
 events are no longer part of the "events" array in the Trace object, but are
-instead logged separately from the qlog "file header" (QlogFile class in
-{{top-level}}). Additionally, qlog's JSON-SEQ mapping does not allow logging
-multiple individual traces in a single qlog file. As such, the QlogFile:traces
-field is replaced by the singular "trace" field, which simply contains the Trace
-data directly. An example can be seen in {{json-seq-example}}. Note that the
-"group_id" field can still be used on a per-event basis to include events from
-conceptually different sources in a single JSON-SEQ qlog file.
+instead logged separately from the qlog "header", as indicated by the TraceSeq
+object in {{json-seq-example}}. Additionally, qlog's JSON-SEQ mapping does not
+allow logging multiple individual traces in a single qlog file. As such, the
+QlogFile:traces field is replaced by the singular QlogFileSeq:trace field. An
+example can be seen in {{json-seq-example}}. Note that the "group_id" field can
+still be used on a per-event basis to include events from conceptually different
+sources in a single JSON-SEQ qlog file.
 
 ~~~~~~~~
 Definition:
+
+class TraceSeq {
+    title?: string,
+    description?: string,
+    configuration?: Configuration,
+    common_fields?: CommonFields,
+    vantage_point: VantagePoint
+}
 
 class QlogFileSeq {
     qlog_format: "JSON-SEQ",
@@ -1423,14 +1437,17 @@ class QlogFileSeq {
     title?:string,
     description?:string,
     summary?: Summary,
-    trace: Trace
+    trace: TraceSeq
 }
-// list of qlog events, starting with a Record Separator and ending with a newline
 
-JSON-SEQ serialization:
+// list of qlog events, serialized in accordance with RFC 7464,
+// starting with a Record Separator character and ending with a newline.
+// For display purposes, Record Separators are rendered as <RS>
 
-RS{
-    "qlog_version": "ietf-draft-01",
+JSON-SEQ serialization example:
+
+<RS>{
+    "qlog_version": "0.3",
     "qlog_format": "JSON-SEQ",
     "title": "Name of this particular JSON Text Sequence qlog file (short)",
     "description": "Description for this trace file (long)",
@@ -1450,17 +1467,14 @@ RS{
       }
     }
 }
-RS{"time": 2, "name": "transport:packet_received", "data": { ... } }
-RS{"time": 7, "name": "http:frame_parsed", "data": { ... } }
+<RS>{"time": 2, "name": "transport:packet_received", "data": { ... } }
+<RS>{"time": 7, "name": "http:frame_parsed", "data": { ... } }
 ...
 ~~~~~~~~
 {: .language-json}
 {: #json-seq-example title="Top-level element"}
 
-Note that any JSON-SEQ record can contain any amount of newlines in its body, as
-long as it ends with a newline character before the next RS character.
-
-Finally, while not specifically required by the JSON-SEQ specification, all qlog
+Note: while not specifically required by the JSON-SEQ specification, all qlog
 field names in a JSON-SEQ serialization MUST be lowercase.
 
 ### Supporting JSON Text Sequences in tooling
@@ -1519,7 +1533,7 @@ The first general category of optimizations is to alter the representation of da
 within an JSON(-SEQ) qlog file to reduce file size.
 
 The first option is to employ a scheme similar to the CSV (comma separated value
-{{?rfc4180}}) format, which utilizes the concept of column "headers" to prevent
+{{!RFC4180}}) format, which utilizes the concept of column "headers" to prevent
 repeating field names for each datapoint instance. Concretely for JSON qlog,
 several field names are repeated with each event (i.e., time, name, data). These
 names could be extracted into a separate list, after which qlog events could be
@@ -1560,7 +1574,7 @@ compression is recommended before attempting other optimization options, even
 though this might (somewhat) increase processing costs due to the additional
 compression step.
 
-The first option is to use GZIP compression ({{?RFC1952}}). This generic
+The first option is to use GZIP compression ({{!RFC1952}}). This generic
 compression scheme provides multiple compression levels (providing a trade-off
 between compression speed and size reduction). Utilized at level 6 (a medium
 setting thought to be applicable for streaming compression of a qlog stream in
@@ -1569,7 +1583,7 @@ average (100MB to 7MB). For this option, the file extension .(s)qlog.gz SHOULD B
 used. The "qlog_format" field should still reflect the original JSON formatting of
 the qlog data (e.g., "JSON" or "JSON-SEQ").
 
-The second option is to use Brotli compression ({{?RFC7932}}). While similar to
+The second option is to use Brotli compression ({{!RFC7932}}). While similar to
 gzip, this more recent compression scheme provides a better efficiency. It also
 allows multiple compression levels. Utilized at level 4 (a medium setting thought
 to be applicable for streaming compression of a qlog stream in commodity devices),
@@ -1592,16 +1606,18 @@ However, the resultant files are no longer human readable and some formats requi
 hard tradeoffs between flexibility for performance.
 
 The first option is to use the CBOR (Concise Binary Object Representation
-{{?rfc7049}}) format. For our purposes, CBOR can be viewed as a straighforward
+{{!RFC7049}}) format. For our purposes, CBOR can be viewed as a straighforward
 binary variant of JSON. As such, existing JSON qlog files can be trivially
-converted to and from CBOR (though slightly more work is needed for JSON-SEQ
-qlogs). While CBOR thus does retain the full qlog flexibility, it only provides a
-25% file size reduction (100MB to 75MB) compared to textual JSON(-SEQ). As CBOR
-support in programming environments is not as widespread as that of textual JSON
-and the format lacks human readability, CBOR was not chosen as the default qlog
-format. For this option, the file extension .(s)qlog.cbor SHOULD BE used. The
-"qlog_format" field should still reflect the original JSON formatting of the qlog
-data (e.g., "JSON" or "JSON-SEQ").
+converted to and from CBOR (though slightly more work is needed for JSON-SEQ qlogs
+to convert them to CBOR-SEQ, see {{?RFC8742}}). While CBOR thus does retain the
+full qlog flexibility, it only provides a 25% file size reduction (100MB to 75MB)
+compared to textual JSON(-SEQ). As CBOR support in programming environments is not
+as widespread as that of textual JSON and the format lacks human readability, CBOR
+was not chosen as the default qlog format. For this option, the file extension
+.(s)qlog.cbor SHOULD BE used. The "qlog_format" field should still reflect the
+original JSON formatting of the qlog data (e.g., "JSON" or "JSON-SEQ"). The media
+type should indicate both whether JSON or JSON Text Sequences are used, as well as
+whether CBOR or CBOR Sequences are used (see the table below).
 
 A second option is to use a more specialized binary format, such as [Protocol
 Buffers](https://developers.google.com/protocol-buffers) (protobuf). This format
@@ -1656,10 +1672,10 @@ options with examples:
 | named headers {{structure-optimizations}} | JSON(-SEQ).namedheaders   | .(s)qlog         | application/qlog+json(-seq) |
 | dictionary {{structure-optimizations}}    | JSON(-SEQ).dictionary     | .(s)qlog         | application/qlog+json(-seq) |
 | CBOR {{binary}}                           | JSON(-SEQ)                | .(s)qlog.cbor    | application/qlog+json(-seq)+cbor(-seq) |
-| protobuf {{binary}}                       | protobuf                  | .qlog.protobuf   | application/qlog+x-protobuf |
+| protobuf {{binary}}                       | protobuf                  | .qlog.protobuf   | NOT SPECIFIED BY IANA       |
 |                                           |                           |                  |
-| gzip {{compression}}                      | no change                 | .gz suffix       | application/qlog+json(-seq) |
-| brotli {{compression}}                    | no change                 | .br suffix       | application/qlog+json(-seq) |
+| gzip {{compression}}                      | no change                 | .gz suffix       | application/gzip            |
+| brotli {{compression}}                    | no change                 | .br suffix       | NOT SPECIFIED BY IANA       |
 
 ## Conversion between formats {#conversion}
 
@@ -1830,6 +1846,7 @@ TODO: primarily the .well-known URI
 * Changed the streaming serialization format from NDJSON to JSON Text Sequences
   (#172)
 * Added Media Type definitions for various qlog formats (#158)
+* Changed to semantic versioning
 
 ## Since draft-marx-qlog-main-schema-draft-02:
 
