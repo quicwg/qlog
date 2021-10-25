@@ -1480,7 +1480,7 @@ JSON-SEQ serialization example:
 <RS>{"time": 2, "name": "transport:packet_received", "data": { ... } }
 <RS>{"time": 7, "name": "http:frame_parsed", "data": { ... } }
 ...
-
+~~~~~~~~
 {: .language-json}
 {: #json-seq-example title="Top-level element"}
 
