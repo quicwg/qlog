@@ -558,7 +558,7 @@ class Event {
     name: string,
     data: any,
 
-    protocol_type?: Array<string>,
+    protocol_type?: array<string>,
     group_id?: string|uint32,
 
     time_format?: "absolute"|"delta"|"relative",
@@ -700,7 +700,7 @@ Definition:
 class TransportPacketSentEvent {
     packet_size?:uint32,
     header:PacketHeader,
-    frames?:Array<QuicFrame>
+    frames?:array<QuicFrame>
 }
 
 JSON serialization:
@@ -854,7 +854,7 @@ JSON serialization with repeated field values per-event instance:
             group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
             protocol_type: ["QUIC","HTTP3"],
             time_format: "relative",
-            reference_time: "1553986553572",
+            reference_time: 1553986553572,
 
             time: 2,
             name: "transport:packet_received",
@@ -863,7 +863,7 @@ JSON serialization with repeated field values per-event instance:
             group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
             protocol_type: ["QUIC","HTTP3"],
             time_format: "relative",
-            reference_time: "1553986553572",
+            reference_time: 1553986553572,
 
             time: 7,
             name: "http:frame_parsed",
@@ -879,7 +879,7 @@ JSON serialization with repeated field values extracted to common_fields:
         group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
         protocol_type: ["QUIC","HTTP3"],
         time_format: "relative",
-        reference_time: "1553986553572"
+        reference_time: 1553986553572
     },
     events: [
         {
@@ -904,12 +904,22 @@ by the user and tools (i.e., the presence of an uknown field is explicitly NOT a
 error).
 
 The list of default qlog fields that are typically logged in common_fields (as
-opposed to as individual fields per event instance) are:
+opposed to as individual fields per event instance) are shown in the listing
+below:
 
-* time_format
-* reference_time
-* protocol_type
-* group_id
+~~~~~~~~
+Definition:
+
+class CommonFields {
+    time_format?:string,
+    reference_time?:double,
+
+    protocol_type?:array<string>,
+    group_id?:string|uint32
+
+    // any other fields are possible here
+}
+~~~~~~~~
 
 Tools MUST be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
@@ -1422,7 +1432,7 @@ class QlogFileNDJSON {
 
 NDJSON serialization:
 
-{"qlog_format":"NDJSON","qlog_version":"draft-03-WIP","title":"Name of this particular NDJSON qlog file (short)","description":"Description for this NDJSON qlog file (long)","trace":{"common_fields":{"protocol_type": ["QUIC","HTTP3"],"group_id":"127ecc830d98f9d54a42c4f0842aa87e181a","time_format":"relative","reference_time":"1553986553572"},"vantage_point":{"name":"backend-67","type":"server"}}}
+{"qlog_format":"NDJSON","qlog_version":"draft-03-WIP","title":"Name of this particular NDJSON qlog file (short)","description":"Description for this NDJSON qlog file (long)","trace":{"common_fields":{"protocol_type": ["QUIC","HTTP3"],"group_id":"127ecc830d98f9d54a42c4f0842aa87e181a","time_format":"relative","reference_time":1553986553572},"vantage_point":{"name":"backend-67","type":"server"}}}
 {"time": 2, "name": "transport:packet_received", "data": { ... } }
 {"time": 7, "name": "http:frame_parsed", "data": { ... } }
 ~~~~~~~~
