@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-10-24T00:35:00.134215+00:00",
+  "timestamp": "2021-10-26T00:33:12.026853+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -4722,7 +4722,7 @@
       ],
       "body": "The document includes considerations about streaming serialization and specifies a way to do this using NDJSON (new-line delimited JSON).\r\n\r\nThere's two things that the Working Group should consider:\r\n\r\n1) Does streaming serialization need to be defined as part of the qlog main schema?\r\n2) If the answer to 1 is yes, what format should be used.\r\n\r\nDuring IETF 111, it was noted that https://datatracker.ietf.org/doc/html/rfc7464 is an IETF-defined format that achieves similar streaming properties as NDJSON.  There might be a preference for using RFC 7464 pending the outcome of #144.",
       "createdAt": "2021-08-02T17:50:26Z",
-      "updatedAt": "2021-10-20T22:19:57Z",
+      "updatedAt": "2021-10-25T12:07:00Z",
       "closedAt": null,
       "comments": [
         {
@@ -4752,6 +4752,13 @@
           "body": "As an individual: I prefer to base the streaming output on an IETF standard. Building something for general purpose tools is useful and valuable today but I would like to set up qlog to be something that integrates well into IETF paradigms in the long term.\r\n\r\nThe transformation to newline-only delimitation is trivial. If its useful, I think we can mention that without referring to NDJSON explicitly.",
           "createdAt": "2021-10-20T22:19:57Z",
           "updatedAt": "2021-10-20T22:19:57Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thanks all for the additional input. We decided to try the JSON Text Sequences for now and see how it goes (doesn't mean we can't later switch to something else if Text Sequences turn out horrible somehow). \r\n\r\nThe new approach is detailed in the new draft-01 of the main schema here: https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-01.\r\n\r\nFeel free to implement the new format and let us know results, remarks, feedback, etc. Thanks!",
+          "createdAt": "2021-10-25T12:07:00Z",
+          "updatedAt": "2021-10-25T12:07:00Z"
         }
       ]
     },
@@ -4934,6 +4941,30 @@
           "body": "This seems like a general issue wider than just qlog, and one that IIUC has traditionally been solved by a combination of looking at extensions AND the first few bytes/line of the file in question (e.g., image format headers). \r\n\r\nWhile we could indicate a specific extension for the different qlog serialization types in the spec, tools probably would still want to just support `.json` as a valid `.qlog` file in any format. In qvis for example, we do [look at the first few characters of a file](https://github.com/quiclog/qvis/blob/14351bc11602d04c04a6ecae038172a28f26cef7/visualizations/src/components/filemanager/data/FileLoader.ts#L204) to guess its format, so we support both options for a `.qlog` before actual parsing. As such, I feel it's one of those cases that we could/should spec, but that it wouldn't have full impact IRL for reusable tooling. \r\n\r\nAn additional aspect is using mime-types when transferring over e.g., HTTP, see #158, where I do also think we should define the media types in the draft. \r\n\r\nSo, I'd propose to indeed recommend (SHOULD, not MUST) .qlog for normal JSON and .sqlog (for \"streaming\" qlog) for json-seq.  What do you think? \r\n\r\n\r\n",
           "createdAt": "2021-10-20T14:45:03Z",
           "updatedAt": "2021-10-20T14:45:03Z"
+        }
+      ]
+    },
+    {
+      "number": 182,
+      "id": "I_kwDOCrLn6M49rugR",
+      "title": "What are the units of \"relative_time\"?",
+      "url": "https://github.com/quicwg/qlog/issues/182",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "The example in https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#common-fields suggests the field is a string. Elsewhere, timestamps seem to be integers https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-3.4.1 but in Event the `time` is a double https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-3.4",
+      "createdAt": "2021-10-25T09:07:31Z",
+      "updatedAt": "2021-10-25T09:50:51Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Since we now require all times to be in `ms`, I think the `double` is the only correct one. \r\n\r\nThe string is a leftover from earlier times, when we forced string for something that could be >2^53 (JavaScript number limit), but when moving to CDDL, all of that will be unnecessary and we'll have doubles for this.\r\n\r\n(this obviously doesn't mean all qlog files actually use doubles at this time ;) qvis is a bit too lacks and allows both numbers and strings, so people can get away with either most times) ",
+          "createdAt": "2021-10-25T09:50:51Z",
+          "updatedAt": "2021-10-25T09:50:51Z"
         }
       ]
     }
@@ -6314,25 +6345,35 @@
       "id": "PR_kwDOCrLn6M4tcxPk",
       "title": "Move from NDJSON to JSON Text Sequences",
       "url": "https://github.com/quicwg/qlog/pull/181",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Additionally also specified Media Types and file extensions for the various formats\r\n\r\nPertains to #180, #172 and #158.",
       "createdAt": "2021-10-20T16:23:17Z",
-      "updatedAt": "2021-10-22T15:35:25Z",
+      "updatedAt": "2021-10-25T11:42:35Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "a64268dc17a7beebbf8df7567da8a5cf2ac360d3",
+      "baseRefOid": "b56e74ab9c2e3a09edfc37985d840d2587bcd8cd",
       "headRepository": "quicwg/qlog",
       "headRefName": "text-sequences",
-      "headRefOid": "8cb595632a39a1108477fdbd25c8690b99446e8a",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "headRefOid": "46a5b051afc2837bcb091e93e1f9000bcd0ec170",
+      "closedAt": "2021-10-25T11:42:35Z",
+      "mergedAt": "2021-10-25T11:42:35Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "0a0d7a78c492ff0fa0b3845b467731fd5cbc711c"
+      },
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Hello all,\r\n\r\nI've tried to resolve all the excellent comments as well as possible. \r\n\r\nIf you have time, please try to review the new changes, and then I will mint a new draft-01 tomorrow!",
+          "createdAt": "2021-10-24T10:42:55Z",
+          "updatedAt": "2021-10-24T10:42:55Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M4u0vwh",
@@ -6575,6 +6616,112 @@
               "updatedAt": "2021-10-22T15:35:25Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M4u7-Ag",
+          "commit": {
+            "abbreviatedOid": "8cb5956"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-24T06:18:19Z",
+          "updatedAt": "2021-10-24T06:18:19Z",
+          "comments": [
+            {
+              "originalPosition": 120,
+              "body": "`\"records\"` (with quotes) feels a bit colloquial. \r\nI'd say use either `records` (no quotes), or just `objects` ? ",
+              "createdAt": "2021-10-24T06:18:19Z",
+              "updatedAt": "2021-10-24T06:18:19Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M4u7-HX",
+          "commit": {
+            "abbreviatedOid": "8cb5956"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-24T06:23:49Z",
+          "updatedAt": "2021-10-24T06:23:50Z",
+          "comments": [
+            {
+              "originalPosition": 239,
+              "body": "NIT: \r\nif `\".(s)qlog.A.B\"` is meant to be a regex should it be \".(s)?qlog.A.B\" ?\r\nBut that would impact readability perhaps. Not feeling strongly about this, just pointing it out",
+              "createdAt": "2021-10-24T06:23:50Z",
+              "updatedAt": "2021-10-24T06:23:50Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M4u8DQ8",
+          "commit": {
+            "abbreviatedOid": "8cb5956"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-24T10:23:47Z",
+          "updatedAt": "2021-10-24T10:23:47Z",
+          "comments": [
+            {
+              "originalPosition": 239,
+              "body": "It's not meant to be a regex, as I assume a letter encased in ( ) would mean optional to the reader, much like in normal prose. ",
+              "createdAt": "2021-10-24T10:23:47Z",
+              "updatedAt": "2021-10-24T10:23:47Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M4u8DZk",
+          "commit": {
+            "abbreviatedOid": "8cb5956"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2021-10-24T10:29:55Z",
+          "updatedAt": "2021-10-24T10:29:55Z",
+          "comments": [
+            {
+              "originalPosition": 32,
+              "body": "I feel like the format change shouldn't matter for tooling, as they should have been handling the version as an opaque string. At least for qvis, this would mean just aliasing 0.3 to our existing draft-02 parser (with some extra checks for JSON-SEQ). \r\n\r\nAs supporters of 0.3 need to make changes for JSON-SEQ anyway, I think this shouldn't be a problem and a good way forward in general, so I've made the change. ",
+              "createdAt": "2021-10-24T10:29:55Z",
+              "updatedAt": "2021-10-24T10:29:55Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M4u8KnH",
+          "commit": {
+            "abbreviatedOid": "f4ba514"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "Design changes LGTM.\r\n\r\nThere are some broader editorial improvements that could be made but they can be done later on (when we're not up agaisnt the publish cutoff date).",
+          "createdAt": "2021-10-24T15:16:00Z",
+          "updatedAt": "2021-10-24T15:16:00Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M4u8Liu",
+          "commit": {
+            "abbreviatedOid": "f4ba514"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2021-10-24T15:56:55Z",
+          "updatedAt": "2021-10-24T15:56:55Z",
+          "comments": []
         }
       ]
     }
