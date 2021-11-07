@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-10-26T00:33:12.026853+00:00",
+  "timestamp": "2021-11-07T00:35:09.684049+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3331,7 +3331,7 @@
       "id": "MDU6SXNzdWU3ODc2NjEzODk=",
       "title": "Formal definition of CommonFields seems to be missing",
       "url": "https://github.com/quicwg/qlog/issues/130",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "ptrd",
       "authorAssociation": "NONE",
       "assignees": [
@@ -3344,8 +3344,8 @@
       ],
       "body": "Section https://tools.ietf.org/html/draft-marx-qlog-main-schema-02#section-3.3 defines class Trace that has a field\r\n`common_fields?: CommonFields`, \r\nhowever, the class CommonFields is not defined in the document.",
       "createdAt": "2021-01-17T08:50:09Z",
-      "updatedAt": "2021-08-18T10:21:40Z",
-      "closedAt": null,
+      "updatedAt": "2021-11-04T11:19:17Z",
+      "closedAt": "2021-11-04T11:19:16Z",
       "comments": [
         {
           "author": "ptrd",
@@ -3353,6 +3353,13 @@
           "body": "Hmm, 3.4.8 defines it. I missed it because i did a text search on \"CommonFields\", which occurs only once in the text.\r\nEven though it is defined as a dictionary that can contains anything, personally, i would still like to see a class definition of CommonFields in the text. This could at least define the 4 default fields.",
           "createdAt": "2021-01-17T08:56:34Z",
           "updatedAt": "2021-01-17T08:56:34Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This should now be fixed in the latest draft, at the bottom of the Section: https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-01#section-3.4.7.",
+          "createdAt": "2021-11-04T11:19:16Z",
+          "updatedAt": "2021-11-04T11:19:16Z"
         }
       ]
     },
@@ -4967,6 +4974,53 @@
           "updatedAt": "2021-10-25T09:50:51Z"
         }
       ]
+    },
+    {
+      "number": 183,
+      "id": "I_kwDOCrLn6M4-VGpW",
+      "title": "QUIC relies on ApplicationError, which is defined only for HTTP/3",
+      "url": "https://github.com/quicwg/qlog/issues/183",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "I recently refactored quiche's qlog implementation to split events into their own modules for general, QUIC and HTTP/3. In follow up work, I realised our implementation of the ConnectionClose frame was stale and I attempted to fix it up here https://github.com/cloudflare/quiche/pull/1079/commits/866292b923ce2fe236fcced0a641607e3be60bec. The definition of that frame at the time of writing is below, and a far as I can tell, `ApplicationError` is only defined in the HTTP/3 spec.\r\n\r\n```\r\nclass ConnectionCloseFrame{\r\n    frame_type:string = \"connection_close\";\r\n\r\n    error_space?:ErrorSpace;\r\n    error_code?:TransportError | ApplicationError | uint32;\r\n    raw_error_code?:uint32;\r\n    reason?:string;\r\n\r\n    trigger_frame_type?:uint64 | string; // For known frame types, the appropriate \"frame_type\" string. For unknown frame types, the hex encoded identifier value\r\n}\r\n```\r\n\r\nIn code review, it was highlighted that including an HTTP/3 enumeration in my QUIC module code is a bit strange (feels like a priority inversion). Also, it doesn't seem to scale to support other applications. I think perhaps what is needed is for there to be an \"externalised\" ApplicationError union type like `type ApplicationError = Http3Error | NewStuff`, or maybe even that doesn't work well for supporting new application protocols...",
+      "createdAt": "2021-11-05T11:14:54Z",
+      "updatedAt": "2021-11-06T11:28:28Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "body": "Is there a reason to expose the semantics of application protocol in at QUIC level?\r\n\r\nIMO, trying to expose HTTP3Error at QUIC level is no less strange than asking to decode the HTTP headers being transported by the STREAM frames, or the HTTP/3 stream type.\r\n\r\nI would hope that the QUIC-level traces would just show the error codes in numbers, much like they just log the stream IDs / bytes being exchanged.",
+          "createdAt": "2021-11-06T04:51:41Z",
+          "updatedAt": "2021-11-06T04:51:41Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "That would work too. We could invent new application error event types that sit in H3, and then correlate to QUIC frames bearing the integer value",
+          "createdAt": "2021-11-06T11:28:28Z",
+          "updatedAt": "2021-11-06T11:28:28Z"
+        }
+      ]
+    },
+    {
+      "number": 184,
+      "id": "I_kwDOCrLn6M4-YHxH",
+      "title": "The `Summary` type is too poorly defined",
+      "url": "https://github.com/quicwg/qlog/issues/184",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "QlogFile and QlogFileSeq contain `summary?: Summary`. However, https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-3.1 states \r\n\r\n> As the summary field is highly deployment-specific, this document does not specify any default fields or their semantics.\r\n\r\nIt's not a problem to leave the Summary type open as you suggest. But it's not clear how I would represent this in an implementation. Is it an array of `(String, Any)` tuples, or something else?",
+      "createdAt": "2021-11-06T13:34:24Z",
+      "updatedAt": "2021-11-06T13:34:24Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
