@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-11-07T00:35:09.684049+00:00",
+  "timestamp": "2021-11-11T00:34:25.791691+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -4983,11 +4983,17 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "lnicco"
+      ],
+      "labels": [
+        "design",
+        "editorial",
+        "quic-http3-fields"
+      ],
       "body": "I recently refactored quiche's qlog implementation to split events into their own modules for general, QUIC and HTTP/3. In follow up work, I realised our implementation of the ConnectionClose frame was stale and I attempted to fix it up here https://github.com/cloudflare/quiche/pull/1079/commits/866292b923ce2fe236fcced0a641607e3be60bec. The definition of that frame at the time of writing is below, and a far as I can tell, `ApplicationError` is only defined in the HTTP/3 spec.\r\n\r\n```\r\nclass ConnectionCloseFrame{\r\n    frame_type:string = \"connection_close\";\r\n\r\n    error_space?:ErrorSpace;\r\n    error_code?:TransportError | ApplicationError | uint32;\r\n    raw_error_code?:uint32;\r\n    reason?:string;\r\n\r\n    trigger_frame_type?:uint64 | string; // For known frame types, the appropriate \"frame_type\" string. For unknown frame types, the hex encoded identifier value\r\n}\r\n```\r\n\r\nIn code review, it was highlighted that including an HTTP/3 enumeration in my QUIC module code is a bit strange (feels like a priority inversion). Also, it doesn't seem to scale to support other applications. I think perhaps what is needed is for there to be an \"externalised\" ApplicationError union type like `type ApplicationError = Http3Error | NewStuff`, or maybe even that doesn't work well for supporting new application protocols...",
       "createdAt": "2021-11-05T11:14:54Z",
-      "updatedAt": "2021-11-06T11:28:28Z",
+      "updatedAt": "2021-11-09T16:03:58Z",
       "closedAt": null,
       "comments": [
         {
@@ -5003,6 +5009,20 @@
           "body": "That would work too. We could invent new application error event types that sit in H3, and then correlate to QUIC frames bearing the integer value",
           "createdAt": "2021-11-06T11:28:28Z",
           "updatedAt": "2021-11-06T11:28:28Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Good catch, and I feel this is primarily an oversight of mine in forgetting to change this when splitting up QUIC and H3 events...\r\n\r\nI agree it doesn't make sense to have the ApplicationError class in the QUIC events doc and that we should revert to just having `string | uint32` there, with some extra guidance that application-specific qlog docs should make that more explicit (e.g., with the ApplicationError enum that maps to strings in the H3 doc). \r\n\r\nHaving separate error events at the H3 layer is imo perpendicular to this, but certainly also not a bad idea. ",
+          "createdAt": "2021-11-09T16:00:45Z",
+          "updatedAt": "2021-11-09T16:00:45Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "String | uint32 works for me and means we likely never have to revisit this space ",
+          "createdAt": "2021-11-09T16:03:58Z",
+          "updatedAt": "2021-11-09T16:03:58Z"
         }
       ]
     },
@@ -5014,13 +5034,32 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [
+        "editorial"
+      ],
       "body": "QlogFile and QlogFileSeq contain `summary?: Summary`. However, https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-3.1 states \r\n\r\n> As the summary field is highly deployment-specific, this document does not specify any default fields or their semantics.\r\n\r\nIt's not a problem to leave the Summary type open as you suggest. But it's not clear how I would represent this in an implementation. Is it an array of `(String, Any)` tuples, or something else?",
       "createdAt": "2021-11-06T13:34:24Z",
-      "updatedAt": "2021-11-06T13:34:24Z",
+      "updatedAt": "2021-11-09T16:14:37Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "The original idea was to have this as a generic JSON Object (so not quite an array of (string, any) but rather a key-value object, which is kind of the same thing conceptually), as suggested by the example.  \r\n\r\nSo in TypeScript, it might be better defined as `summary?: Object` or if we want to keep the Summary type, we'd get something like:\r\n\r\n```\r\ninterface Summary {\r\n  [key: string]: any;\r\n}\r\n```\r\n(according to https://remarkablemark.org/blog/2021/08/19/typescript-type-plain-old-javascript-object/)\r\n\r\nNot sure what that'll look like in CDDL, but will make sure to keep it into account when we do that work. ",
+          "createdAt": "2021-11-09T16:08:18Z",
+          "updatedAt": "2021-11-09T16:08:18Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Sgtm will review it once we get there",
+          "createdAt": "2021-11-09T16:14:37Z",
+          "updatedAt": "2021-11-09T16:14:37Z"
+        }
+      ]
     }
   ],
   "pulls": [
