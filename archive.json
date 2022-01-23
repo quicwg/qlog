@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2021-11-11T00:34:25.791691+00:00",
+  "timestamp": "2022-01-23T00:36:03.707582+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -4939,7 +4939,7 @@
       ],
       "body": "The `qlog_format` field is part of the QlogFile and QlogFileNDJSON, so it's a bit circular to decide how to parse the object. When processing large files, it can be a pain to decide,\r\n\r\nOne technique would be to look at the first line of a file to determine the qlog format before attempting to parse it. But that seems like a hack. It also doesn't help if a large qlog is written into a file as a single line.\r\n\r\nKnowing the format up front, such as by unique file extensions, would mean that tools or applications can make more assumptions about how to deal with the file. For instance, I could simply use `split` https://man7.org/linux/man-pages/man1/split.1.html to safely slice up NDJSON files today, without requireing deep knowledge of qlog formats.",
       "createdAt": "2021-10-15T15:08:43Z",
-      "updatedAt": "2021-10-20T14:45:17Z",
+      "updatedAt": "2022-01-21T18:25:18Z",
       "closedAt": null,
       "comments": [
         {
@@ -4948,6 +4948,13 @@
           "body": "This seems like a general issue wider than just qlog, and one that IIUC has traditionally been solved by a combination of looking at extensions AND the first few bytes/line of the file in question (e.g., image format headers). \r\n\r\nWhile we could indicate a specific extension for the different qlog serialization types in the spec, tools probably would still want to just support `.json` as a valid `.qlog` file in any format. In qvis for example, we do [look at the first few characters of a file](https://github.com/quiclog/qvis/blob/14351bc11602d04c04a6ecae038172a28f26cef7/visualizations/src/components/filemanager/data/FileLoader.ts#L204) to guess its format, so we support both options for a `.qlog` before actual parsing. As such, I feel it's one of those cases that we could/should spec, but that it wouldn't have full impact IRL for reusable tooling. \r\n\r\nAn additional aspect is using mime-types when transferring over e.g., HTTP, see #158, where I do also think we should define the media types in the draft. \r\n\r\nSo, I'd propose to indeed recommend (SHOULD, not MUST) .qlog for normal JSON and .sqlog (for \"streaming\" qlog) for json-seq.  What do you think? \r\n\r\n\r\n",
           "createdAt": "2021-10-20T14:45:03Z",
           "updatedAt": "2021-10-20T14:45:03Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "We picked `.sqlog`. This issue can be closed now.\r\n",
+          "createdAt": "2022-01-21T18:25:18Z",
+          "updatedAt": "2022-01-21T18:25:18Z"
         }
       ]
     },
