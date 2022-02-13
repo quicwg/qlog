@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-10T00:39:17.563691+00:00",
+  "timestamp": "2022-02-13T00:41:36.882967+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -5089,6 +5089,36 @@
       "updatedAt": "2022-02-08T13:51:48Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 186,
+      "id": "I_kwDOCrLn6M5DekYc",
+      "title": "Add a way to indicate sent-but-unacked data",
+      "url": "https://github.com/quicwg/qlog/issues/186",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [
+        "design",
+        "quic-http3-fields",
+        "current-version"
+      ],
+      "body": "Once data for a stream is sent in a packet, it has to remain in some form of retransmission buffer (either a separate buffer or as ranges in the main stream buffer or ...) until the data is ACKed as received, only then can it be discarded completely. \r\n\r\nAt this time, there is no way to track how much sent-but-unacked data is outstanding for a given stream. \r\n\r\nThe most organic way to do this seems to be to add a new target to the `data_moved` event. We currently have `\"user\",\"application\",\"transport\",\"network\"`, where we might regard \"network\" as being \"sent but unacked\", but then we still lack a \"discarded\" state. \r\n\r\nBikeshedding is possible on the name: \"discarded\", \"resolved\", \"acknowledged\", ... as conceptually we could even replace the \"user\" target with this one as well, and saying that indicates the data has left the \"network protocol stack\" (either on the sender or receiver side), terming it as \"handled\"/\"resolved\" would make sense there.\r\n\r\ncc @LPardue ",
+      "createdAt": "2022-02-11T08:39:33Z",
+      "updatedAt": "2022-02-11T08:54:11Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "There's two transitions here:\r\n\r\nSend side: transport -> $foo\r\nReceive side: application -> $bar\r\n\r\n$bar I think is sufficiently expressed by \"user\" in my opinion. \r\n\r\nFor $foo, it's a bit tricky because the current values are all entities, while you've proposed non-entity terms here. Some additional suggestions would be \"null\", \"free\", or \"terminal\" (as in terminal state, not a bash terminal). \r\n\r\nThe nice thing about modelling a discarding transition is that it can also be used for stream resets. Helps to understand the point in time a transport implementation actually frees any buffers, independent of the RESET_STREAM frame.",
+          "createdAt": "2022-02-11T08:54:11Z",
+          "updatedAt": "2022-02-11T08:54:11Z"
+        }
+      ]
     }
   ],
   "pulls": [
