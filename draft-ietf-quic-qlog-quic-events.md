@@ -144,7 +144,7 @@ in [QLOG-MAIN].
 
 This document describes the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the QUIC protocol. This document is based on
-draft-34 of the QUIC I-Ds [QUIC-TRANSPORT] [QUIC-RECOVERY] [QUIC-TLS]. HTTP/3 and
+draft-34 of the QUIC I-Ds [QUIC-TRANSPORT], [QUIC-RECOVERY], and [QUIC-TLS]. HTTP/3 and
 QPACK events are defined in a separate document [QLOG-H3].
 
 Feedback and discussion are welcome at
