@@ -244,7 +244,6 @@ JSON serialization example:
     "traces": [...]
 }
 ~~~~~~~~
-{: .language-json}
 {: #top-element title="Top-level element"}
 
 ## summary
@@ -282,7 +281,6 @@ JSON serialization:
     "error_count": 2
 }
 ~~~
-{: .language-json}
 {: #summary-example title="Summary example definition"}
 
 
@@ -324,7 +322,6 @@ JSON serialization:
     "vantage_point": { type: "server" }
 }
 ~~~
-{: .language-json}
 {: #trace-error title="TraceError definition"}
 
 Note that another way to combine events of different traces in a single qlog file
@@ -377,7 +374,6 @@ JSON serialization:
     "events": [...]
 }
 ~~~~~~~~
-{: .language-json}
 {: #trace-container title="Trace container definition"}
 
 ### configuration
@@ -413,7 +409,6 @@ JSON serialization:
     ]
 }
 ~~~~~~~~
-{: .language-json}
 {: #configuration_example title="Configuration definition"}
 
 
@@ -501,7 +496,6 @@ JSON serialization examples:
     "flow": "client"
 }
 ~~~~~~~~
-{: .language-json}
 {: #vantage-point-example title="VantagePoint definition"}
 
 The flow field is only required if the type is "network" (for example, the trace
@@ -583,7 +577,6 @@ JSON serialization:
     ODCID: "127ecc830d98f9d54a42c4f0842aa87e181a", // QUIC specific
 }
 ~~~~~~~~
-{: .language-json}
 {: #event-definition title="Event fields definition"}
 
 ### timestamps {#time-based-fields}
@@ -724,7 +717,6 @@ JSON serialization:
     ]
 }
 ~~~~~~~~
-{: .language-json}
 {: #data-example title="Example of the 'data' field for a QUIC packet_sent event"}
 
 ### protocol_type {#protocol-type-field}
@@ -772,7 +764,6 @@ class QuicPacketDroppedEvent {
     trigger?: "key_unavailable" | "unknown_connection_id" | "decrypt_error" | "unsupported_version"
 }
 ~~~~~~~~
-{: .language-json}
 {: #trigger-example title="Trigger example"}
 
 ### group_id {#group-ids}
@@ -819,7 +810,6 @@ events: [
     }
 ]
 ~~~~~~~~
-{: .language-json}
 {: #group-id-example title="Example of group_id usage"}
 
 Note that in some contexts (for example a Multipath transport protocol) it might
@@ -895,7 +885,6 @@ JSON serialization with repeated field values extracted to common_fields:
     ]
 }
 ~~~~~~~~
-{: .language-json}
 {: #common-fields-example title="Example of common_fields usage"}
 
 The "common_fields" field is a generic dictionary of key-value pairs, where the
@@ -1300,7 +1289,6 @@ serialization is:
     raw: "051428abff"
 }
 ~~~~~~~~
-{: .language-json}
 {: #json-bytes-example title="Example for serializing bytes"}
 
 As such, the resulting string will always have an even amount of characters and
@@ -1349,7 +1337,6 @@ by example in {{json-bytes-example-two}}.
 }
 
 ~~~~~~~~
-{: .language-json}
 {: #json-bytes-example-two title="Example for serializing truncated bytes"}
 
 
@@ -1481,7 +1468,6 @@ JSON-SEQ serialization example:
 <RS>{"time": 7, "name": "http:frame_parsed", "data": { ... } }
 ...
 ~~~~~~~~
-{: .language-json}
 {: #json-seq-example title="Top-level element"}
 
 Note: while not specifically required by the JSON-SEQ specification, all qlog
@@ -1771,7 +1757,6 @@ Should result in the the quicserverbinary executable logging a single qlog file 
 Given that the server handled two QUIC connections before it was shut down, with ODCID values "abcde" and "12345" respectively,
 this would result in event instances in the qlog file being tagged with the "group_id" field with values "abcde" and "12345".
 ~~~~~~~~
-{: .language-json}
 {: #qlogdir-example title="Environment variable examples for a QUIC implementation"}
 
 ## Access logs via a well-known endpoint
