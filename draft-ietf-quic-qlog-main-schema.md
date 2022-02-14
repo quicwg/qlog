@@ -265,10 +265,15 @@ Definition (purely illustrative example):
 
 class Summary {
     "trace_count":uint32, // amount of traces in this file
-    "max_duration":uint64, // time duration of the longest trace in ms
-    "max_outgoing_loss_rate":float, // highest loss rate for outgoing packets over all traces
-    "total_event_count":uint64, // total number of events across all traces,
-    "error_count":uint64 // total number of error events in this trace
+    "max_duration":uint64, // time duration of the longest
+                           // trace in ms
+    "max_outgoing_loss_rate":float, // highest loss rate
+                                    // for outgoing packets
+                                    // over all traces
+    "total_event_count":uint64, // total number of events
+                                // across all traces,
+    "error_count":uint64 // total number of error events in
+                         // this trace
 }
 
 JSON serialization:
@@ -310,8 +315,11 @@ Definition:
 
 class TraceError {
     error_description: string, // A description of the error
-    uri?: string, // the original URI at which we attempted to find the file
-    vantage_point?: VantagePoint // see {{vantage_point}}: the vantage point we were expecting to include here
+    uri?: string, // the original URI at which we attempted to
+                  // find the file
+    vantage_point?: VantagePoint // see {{vantage_point}}:
+                                 // the vantage point we were
+                                 // expecting to include here
 }
 
 JSON serialization:
@@ -402,7 +410,7 @@ class Configuration {
 JSON serialization:
 
 {
-    "time_offset": 150, // starts 150ms after the first timestamp indicates
+    "time_offset": 150,
     "original_uris": [
         "https://example.org/trace1.qlog",
         "https://example.org/trace2.qlog"
@@ -439,17 +447,12 @@ Two examples from the [qvis toolset](https://qvis.edm.uhasselt.be) are shown in
 {
     "configuration" : {
         "qvis" : {
-            // when loaded into the qvis toolsuite's congestion graph tool
-            // zoom in on the period between 1s and 2s and select the 124th event defined in this trace
             "congestion_graph": {
                 "startX": 1000,
                 "endX": 2000,
                 "focusOnEventIndex": 124
             }
 
-
-            // when loaded into the qvis toolsuite's sequence diagram tool
-            // automatically scroll down the timeline to the 555th event defined in this trace
             "sequence_diagram" : {
                 "focusOnEventIndex": 555
             }
@@ -761,7 +764,8 @@ class QuicPacketDroppedEvent {
     packet_type?:PacketType,
     raw_length?:uint32,
 
-    trigger?: "key_unavailable" | "unknown_connection_id" | "decrypt_error" | "unsupported_version"
+    trigger?: "key_unavailable" | "unknown_connection_id" |
+              "decrypt_error" | "unsupported_version"
 }
 ~~~~~~~~
 {: #trigger-example title="Trigger example"}
@@ -791,13 +795,15 @@ serialization for this field, so long as it contains a unique value per logical
 group. Some examples can be seen in {{group-id-example}}.
 
 ~~~~~~~~
-JSON serialization for events grouped by four tuples and QUIC connection IDs:
+JSON serialization for events grouped by four tuples
+and QUIC connection IDs:
 
 events: [
     {
         time: 1553986553579,
         protocol_type: ["TCP", "TLS", "HTTP2"],
-        group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
+        group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
+                   ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
         name: "transport:packet_received",
         data: { ... },
     },
@@ -838,7 +844,8 @@ component trace. This prevents these fields from being logged for each individua
 event. An example of this is shown in {{common-fields-example}}.
 
 ~~~~~~~~
-JSON serialization with repeated field values per-event instance:
+JSON serialization with repeated field values
+per-event instance:
 
 {
     events: [{
@@ -863,7 +870,8 @@ JSON serialization with repeated field values per-event instance:
     ]
 }
 
-JSON serialization with repeated field values extracted to common_fields:
+JSON serialization with repeated field values
+extracted to common_fields:
 
 {
     common_fields: {
@@ -1034,10 +1042,15 @@ applicable).
 
 ~~~
 class RawInfo {
-    length?:uint64; // the full byte length of the entity (e.g., packet or frame) including headers and trailers
-    payload_length?:uint64; // the byte length of the entity's payload, without headers or trailers
+    length?:uint64; // the full byte length of the entity
+                    // (e.g., packet or frame) including
+                    // headers and trailers
+    payload_length?:uint64; // the byte length of the
+                            // entity's payload, without
+                            // headers or trailers
 
-    data?:bytes; // the contents of the full entity, including headers and trailers
+    data?:bytes; // the contents of the full entity,
+                 // including headers and trailers
 }
 ~~~
 
@@ -1282,8 +1295,8 @@ prefixed with 0x (as is sometimes common). An example is given in
 {{json-bytes-example}}.
 
 ~~~~~~~~
-For the five raw unsigned byte input values of: 5 20 40 171 255, the JSON
-serialization is:
+For the five raw unsigned byte input values of:
+5 20 40 171 255, the JSON serialization is:
 
 {
     raw: "051428abff"
@@ -1312,19 +1325,22 @@ separate length-indicating field is present. All possible permutations are shown
 by example in {{json-bytes-example-two}}.
 
 ~~~~~~~~
-// both the full raw value and its length are present (length is redundant)
+// both the full raw value and its length are present
+// (length is redundant)
 {
     "raw_length": 5,
     "raw": "051428abff"
 }
 
-// only the raw value is present, indicating it represents the fields full value
-// the byte length is obtained by calculating raw.length / 2
+// only the raw value is present, indicating it
+// represents the fields full value the byte
+// length is obtained by calculating raw.length / 2
 {
     "raw": "051428abff"
 }
 
-// only the length field is present, meaning the value was omitted
+// only the length field is present, meaning the
+// value was omitted
 {
     "raw_length": 5,
 }
@@ -1438,7 +1454,8 @@ class QlogFileSeq {
 }
 
 // list of qlog events, serialized in accordance with RFC 7464,
-// starting with a Record Separator character and ending with a newline.
+// starting with a Record Separator character and ending with a
+// newline.
 // For display purposes, Record Separators are rendered as <RS>
 
 JSON-SEQ serialization example:
@@ -1446,7 +1463,7 @@ JSON-SEQ serialization example:
 <RS>{
     "qlog_version": "0.3",
     "qlog_format": "JSON-SEQ",
-    "title": "Name of this particular JSON Text Sequence qlog file (short)",
+    "title": "Name of JSON Text Sequence qlog file (short)",
     "description": "Description for this trace file (long)",
     "summary": {
         ...
@@ -1464,8 +1481,8 @@ JSON-SEQ serialization example:
       }
     }
 }
-<RS>{"time": 2, "name": "transport:packet_received", "data": { ... } }
-<RS>{"time": 7, "name": "http:frame_parsed", "data": { ... } }
+<RS>{"time": 2, "name": "transport:parameters_set", "data": { ... } }
+<RS>{"time": 7, "name": "transport:packet_sent", "data": { ... } }
 ...
 ~~~~~~~~
 {: #json-seq-example title="Top-level element"}
@@ -1741,21 +1758,28 @@ the logging endpoint. Examples of all options for QUIC are shown in
 ~~~~~~~~
 Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
 
-Should result in the the quicclientbinary executable logging a single qlog file named client.qlog in the /srv/qlogs directory.
-This is for example useful in tests when the client sets up just a single connection and then exits.
+Should result in the the quicclientbinary executable logging a
+single qlog file named client.qlog in the /srv/qlogs directory.
+This is for example useful in tests when the client sets up
+just a single connection and then exits.
 
 Command: QLOGDIR=/srv/qlogs/ quicserverbinary
 
-Should result in the quicserverbinary executable generating several logs files, one for each QUIC connection.
-Given two QUIC connections, with ODCID values "abcde" and "12345" respectively, this would result in two files:
+Should result in the quicserverbinary executable generating
+several logs files, one for each QUIC connection.
+Given two QUIC connections, with ODCID values "abcde" and
+"12345" respectively, this would result in two files:
 /srv/qlogs/abcde_server.qlog
 /srv/qlogs/12345_server.qlog
 
 Command: QLOGFILE=/srv/qlogs/server.qlog quicserverbinary
 
-Should result in the the quicserverbinary executable logging a single qlog file named server.qlog in the /srv/qlogs directory.
-Given that the server handled two QUIC connections before it was shut down, with ODCID values "abcde" and "12345" respectively,
-this would result in event instances in the qlog file being tagged with the "group_id" field with values "abcde" and "12345".
+Should result in the the quicserverbinary executable logging
+a single qlog file named server.qlog in the /srv/qlogs directory.
+Given that the server handled two QUIC connections before it was
+shut down, with ODCID values "abcde" and "12345" respectively,
+this would result in event instances in the qlog file being
+tagged with the "group_id" field with values "abcde" and "12345".
 ~~~~~~~~
 {: #qlogdir-example title="Environment variable examples for a QUIC implementation"}
 
