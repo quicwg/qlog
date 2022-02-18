@@ -5,10 +5,10 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 28 April 2022                                          Facebook
+Expires: 22 August 2022                                         Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                         25 October 2021
+                                                        18 February 2022
 
 
                       Main logging schema for qlog
@@ -39,11 +39,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 28 April 2022.
+   This Internet-Draft will expire on 22 August 2022.
 
 Copyright Notice
 
-   Copyright (c) 2021 IETF Trust and the persons identified as the
+   Copyright (c) 2022 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
    This document is subject to BCP 78 and the IETF Trust's Legal
@@ -51,9 +51,9 @@ Copyright Notice
    license-info) in effect on the date of publication of this document.
    Please review these documents carefully, as they describe your rights
    and restrictions with respect to this document.  Code Components
-   extracted from this document must include Simplified BSD License text
-   as described in Section 4.e of the Trust Legal Provisions and are
-   provided without warranty as described in the Simplified BSD License.
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
 
 Table of Contents
 
@@ -330,10 +330,15 @@ Table of Contents
 
    class Summary {
        "trace_count":uint32, // amount of traces in this file
-       "max_duration":uint64, // time duration of the longest trace in ms
-       "max_outgoing_loss_rate":float, // highest loss rate for outgoing packets over all traces
-       "total_event_count":uint64, // total number of events across all traces,
-       "error_count":uint64 // total number of error events in this trace
+       "max_duration":uint64, // time duration of the longest
+                              // trace in ms
+       "max_outgoing_loss_rate":float, // highest loss rate
+                                       // for outgoing packets
+                                       // over all traces
+       "total_event_count":uint64, // total number of events
+                                   // across all traces,
+       "error_count":uint64 // total number of error events in
+                            // this trace
    }
 
    JSON serialization:
@@ -376,8 +381,11 @@ Table of Contents
 
    class TraceError {
        error_description: string, // A description of the error
-       uri?: string, // the original URI at which we attempted to find the file
-       vantage_point?: VantagePoint // see {{vantage_point}}: the vantage point we were expecting to include here
+       uri?: string, // the original URI at which we attempted to
+                     // find the file
+       vantage_point?: VantagePoint // see {{vantage_point}}:
+                                    // the vantage point we were
+                                    // expecting to include here
    }
 
    JSON serialization:
@@ -470,7 +478,7 @@ Table of Contents
    JSON serialization:
 
    {
-       "time_offset": 150, // starts 150ms after the first timestamp indicates
+       "time_offset": 150,
        "original_uris": [
            "https://example.org/trace1.qlog",
            "https://example.org/trace2.qlog"
@@ -507,28 +515,23 @@ Table of Contents
    Two examples from the qvis toolset (https://qvis.edm.uhasselt.be) are
    shown in Figure 6.
 
-{
-    "configuration" : {
-        "qvis" : {
-            // when loaded into the qvis toolsuite's congestion graph tool
-            // zoom in on the period between 1s and 2s and select the 124th event defined in this trace
-            "congestion_graph": {
-                "startX": 1000,
-                "endX": 2000,
-                "focusOnEventIndex": 124
-            }
+   {
+       "configuration" : {
+           "qvis" : {
+               "congestion_graph": {
+                   "startX": 1000,
+                   "endX": 2000,
+                   "focusOnEventIndex": 124
+               }
 
+               "sequence_diagram" : {
+                   "focusOnEventIndex": 555
+               }
+           }
+       }
+   }
 
-            // when loaded into the qvis toolsuite's sequence diagram tool
-            // automatically scroll down the timeline to the 555th event defined in this trace
-            "sequence_diagram" : {
-                "focusOnEventIndex": 555
-            }
-        }
-    }
-}
-
-            Figure 6: Custom configuration fields example
+               Figure 6: Custom configuration fields example
 
 3.3.2.  vantage_point
 
@@ -848,7 +851,8 @@ Table of Contents
        packet_type?:PacketType,
        raw_length?:uint32,
 
-       trigger?: "key_unavailable" | "unknown_connection_id" | "decrypt_error" | "unsupported_version"
+       trigger?: "key_unavailable" | "unknown_connection_id" |
+                 "decrypt_error" | "unsupported_version"
    }
 
                          Figure 12: Trigger example
@@ -880,13 +884,15 @@ Table of Contents
    it contains a unique value per logical group.  Some examples can be
    seen in Figure 13.
 
-   JSON serialization for events grouped by four tuples and QUIC connection IDs:
+   JSON serialization for events grouped by four tuples
+   and QUIC connection IDs:
 
    events: [
        {
            time: 1553986553579,
            protocol_type: ["TCP", "TLS", "HTTP2"],
-           group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
+           group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
+                      ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
            name: "transport:packet_received",
            data: { ... },
        },
@@ -929,7 +935,8 @@ Table of Contents
    these fields from being logged for each individual event.  An example
    of this is shown in Figure 14.
 
-   JSON serialization with repeated field values per-event instance:
+   JSON serialization with repeated field values
+   per-event instance:
 
    {
        events: [{
@@ -954,7 +961,8 @@ Table of Contents
        ]
    }
 
-   JSON serialization with repeated field values extracted to common_fields:
+   JSON serialization with repeated field values
+   extracted to common_fields:
 
    {
        common_fields: {
@@ -1136,12 +1144,17 @@ Table of Contents
    security impact.  As such, they are grouped in a separate optional
    field called "raw" of type RawInfo (where applicable).
 
-class RawInfo {
-    length?:uint64; // the full byte length of the entity (e.g., packet or frame) including headers and trailers
-    payload_length?:uint64; // the byte length of the entity's payload, without headers or trailers
+   class RawInfo {
+       length?:uint64; // the full byte length of the entity
+                       // (e.g., packet or frame) including
+                       // headers and trailers
+       payload_length?:uint64; // the byte length of the
+                               // entity's payload, without
+                               // headers or trailers
 
-    data?:bytes; // the contents of the full entity, including headers and trailers
-}
+       data?:bytes; // the contents of the full entity,
+                    // including headers and trailers
+   }
 
    Note:  The RawInfo:data field can be truncated for privacy or
       security purposes (for example excluding payload data).  In this
@@ -1395,8 +1408,8 @@ class RawInfo {
    delimiters.  The full value is not prefixed with 0x (as is sometimes
    common).  An example is given in Figure 15.
 
-   For the five raw unsigned byte input values of: 5 20 40 171 255, the JSON
-   serialization is:
+   For the five raw unsigned byte input values of:
+   5 20 40 171 255, the JSON serialization is:
 
    {
        raw: "051428abff"
@@ -1428,19 +1441,22 @@ class RawInfo {
    field is present.  All possible permutations are shown by example in
    Figure 16.
 
-   // both the full raw value and its length are present (length is redundant)
+   // both the full raw value and its length are present
+   // (length is redundant)
    {
        "raw_length": 5,
        "raw": "051428abff"
    }
 
-   // only the raw value is present, indicating it represents the fields full value
-   // the byte length is obtained by calculating raw.length / 2
+   // only the raw value is present, indicating it
+   // represents the fields full value the byte
+   // length is obtained by calculating raw.length / 2
    {
        "raw": "051428abff"
    }
 
-   // only the length field is present, meaning the value was omitted
+   // only the length field is present, meaning the
+   // value was omitted
    {
        "raw_length": 5,
    }
@@ -1577,7 +1593,8 @@ class RawInfo {
    }
 
    // list of qlog events, serialized in accordance with RFC 7464,
-   // starting with a Record Separator character and ending with a newline.
+   // starting with a Record Separator character and ending with a
+   // newline.
    // For display purposes, Record Separators are rendered as <RS>
 
    JSON-SEQ serialization example:
@@ -1585,7 +1602,7 @@ class RawInfo {
    <RS>{
        "qlog_version": "0.3",
        "qlog_format": "JSON-SEQ",
-       "title": "Name of this particular JSON Text Sequence qlog file (short)",
+       "title": "Name of JSON Text Sequence qlog file (short)",
        "description": "Description for this trace file (long)",
        "summary": {
            ...
@@ -1603,8 +1620,8 @@ class RawInfo {
          }
        }
    }
-   <RS>{"time": 2, "name": "transport:packet_received", "data": { ... } }
-   <RS>{"time": 7, "name": "http:frame_parsed", "data": { ... } }
+   <RS>{"time": 2, "name": "transport:parameters_set", "data": { ... } }
+   <RS>{"time": 7, "name": "transport:packet_sent", "data": { ... } }
    ...
 
                         Figure 17: Top-level element
@@ -1939,21 +1956,28 @@ class RawInfo {
 
    Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
 
-   Should result in the the quicclientbinary executable logging a single qlog file named client.qlog in the /srv/qlogs directory.
-   This is for example useful in tests when the client sets up just a single connection and then exits.
+   Should result in the the quicclientbinary executable logging a
+   single qlog file named client.qlog in the /srv/qlogs directory.
+   This is for example useful in tests when the client sets up
+   just a single connection and then exits.
 
    Command: QLOGDIR=/srv/qlogs/ quicserverbinary
 
-   Should result in the quicserverbinary executable generating several logs files, one for each QUIC connection.
-   Given two QUIC connections, with ODCID values "abcde" and "12345" respectively, this would result in two files:
+   Should result in the quicserverbinary executable generating
+   several logs files, one for each QUIC connection.
+   Given two QUIC connections, with ODCID values "abcde" and
+   "12345" respectively, this would result in two files:
    /srv/qlogs/abcde_server.qlog
    /srv/qlogs/12345_server.qlog
 
    Command: QLOGFILE=/srv/qlogs/server.qlog quicserverbinary
 
-   Should result in the the quicserverbinary executable logging a single qlog file named server.qlog in the /srv/qlogs directory.
-   Given that the server handled two QUIC connections before it was shut down, with ODCID values "abcde" and "12345" respectively,
-   this would result in event instances in the qlog file being tagged with the "group_id" field with values "abcde" and "12345".
+   Should result in the the quicserverbinary executable logging
+   a single qlog file named server.qlog in the /srv/qlogs directory.
+   Given that the server handled two QUIC connections before it was
+   shut down, with ODCID values "abcde" and "12345" respectively,
+   this would result in event instances in the qlog file being
+   tagged with the "group_id" field with values "abcde" and "12345".
 
      Figure 18: Environment variable examples for a QUIC implementation
 
@@ -2059,50 +2083,49 @@ class RawInfo {
 
    [RFC1952]  Deutsch, P., "GZIP file format specification version 4.3",
               RFC 1952, DOI 10.17487/RFC1952, May 1996,
-              <https://datatracker.ietf.org/doc/html/rfc1952>.
+              <https://www.rfc-editor.org/rfc/rfc1952>.
 
    [RFC4180]  Shafranovich, Y., "Common Format and MIME Type for Comma-
               Separated Values (CSV) Files", RFC 4180,
               DOI 10.17487/RFC4180, October 2005,
-              <https://datatracker.ietf.org/doc/html/rfc4180>.
+              <https://www.rfc-editor.org/rfc/rfc4180>.
 
    [RFC6839]  Hansen, T. and A. Melnikov, "Additional Media Type
               Structured Syntax Suffixes", RFC 6839,
               DOI 10.17487/RFC6839, January 2013,
-              <https://datatracker.ietf.org/doc/html/rfc6839>.
+              <https://www.rfc-editor.org/rfc/rfc6839>.
 
    [RFC7049]  Bormann, C. and P. Hoffman, "Concise Binary Object
               Representation (CBOR)", RFC 7049, DOI 10.17487/RFC7049,
-              October 2013,
-              <https://datatracker.ietf.org/doc/html/rfc7049>.
+              October 2013, <https://www.rfc-editor.org/rfc/rfc7049>.
 
    [RFC7464]  Williams, N., "JavaScript Object Notation (JSON) Text
               Sequences", RFC 7464, DOI 10.17487/RFC7464, February 2015,
-              <https://datatracker.ietf.org/doc/html/rfc7464>.
+              <https://www.rfc-editor.org/rfc/rfc7464>.
 
    [RFC7932]  Alakuijala, J. and Z. Szabadka, "Brotli Compressed Data
               Format", RFC 7932, DOI 10.17487/RFC7932, July 2016,
-              <https://datatracker.ietf.org/doc/html/rfc7932>.
+              <https://www.rfc-editor.org/rfc/rfc7932>.
 
    [RFC8091]  Wilde, E., "A Media Type Structured Syntax Suffix for JSON
               Text Sequences", RFC 8091, DOI 10.17487/RFC8091, February
-              2017, <https://datatracker.ietf.org/doc/html/rfc8091>.
+              2017, <https://www.rfc-editor.org/rfc/rfc8091>.
 
    [RFC8259]  Bray, T., Ed., "The JavaScript Object Notation (JSON) Data
               Interchange Format", STD 90, RFC 8259,
               DOI 10.17487/RFC8259, December 2017,
-              <https://datatracker.ietf.org/doc/html/rfc8259>.
+              <https://www.rfc-editor.org/rfc/rfc8259>.
 
 11.2.  Informative References
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
-              <https://datatracker.ietf.org/doc/html/rfc2119>.
+              <https://www.rfc-editor.org/rfc/rfc2119>.
 
    [RFC8742]  Bormann, C., "Concise Binary Object Representation (CBOR)
               Sequences", RFC 8742, DOI 10.17487/RFC8742, February 2020,
-              <https://datatracker.ietf.org/doc/html/rfc8742>.
+              <https://www.rfc-editor.org/rfc/rfc8742>.
 
 Appendix A.  Change Log
 
@@ -2197,17 +2220,14 @@ Authors' Addresses
 
    Robin Marx (editor)
    KU Leuven
-
    Email: robin.marx@kuleuven.be
 
 
    Luca Niccolini (editor)
    Facebook
-
    Email: lniccolini@fb.com
 
 
    Marten Seemann (editor)
    Protocol Labs
-
    Email: marten@protocol.ai
