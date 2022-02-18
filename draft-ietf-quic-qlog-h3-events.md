@@ -1,5 +1,5 @@
 ---
-title: HTTP/3 and QPACK event definitions for qlog
+title: HTTP/3 and QPACK qlog event definitions
 docname: draft-ietf-quic-qlog-h3-events-latest
 category: std
 
@@ -237,12 +237,15 @@ Data:
 {
     owner?:"local" | "remote",
 
-    max_header_list_size?:uint64, // from SETTINGS_MAX_HEADER_LIST_SIZE
-    max_table_capacity?:uint64, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
-    blocked_streams_count?:uint64, // from SETTINGS_QPACK_BLOCKED_STREAMS
+    max_header_list_size?:uint64,  // MAX_HEADER_LIST_SIZE
+    max_table_capacity?:uint64,    // QPACK_MAX_TABLE_CAPACITY
+    blocked_streams_count?:uint64, // QPACK_BLOCKED_STREAMS
 
     // qlog-defined
-    waits_for_settings?:boolean // indicates whether this implementation waits for a SETTINGS frame before processing requests
+    waits_for_settings?:boolean // indicates whether this
+                                // implementation waits for a
+                                // SETTINGS frame before
+                                // processing requests
 }
 ~~~
 
@@ -323,7 +326,7 @@ Data:
 {
     stream_id:uint64,
     length?:uint64, // payload byte length of the frame
-    frame:HTTP3Frame, // see appendix for the definitions,
+    frame:HTTP3Frame, // see definitions in appendix
 
     raw?:RawInfo
 }
@@ -350,7 +353,7 @@ Data:
 {
     stream_id:uint64,
     length?:uint64, // payload byte length of the frame
-    frame:HTTP3Frame, // see appendix for the definitions,
+    frame:HTTP3Frame, // see definitions in appendix
 
     raw?:RawInfo
 }
@@ -373,7 +376,8 @@ behaviour, which is commonplace with HTTP/2.
 ~~~
 {
     push_id?:uint64,
-    stream_id?:uint64, // in case this is logged from a place that does not have access to the push_id
+    stream_id?:uint64, // in case this is logged from a place that
+                       // does not have access to the push_id
 
     decision:"claimed"|"abandoned"
 }
@@ -409,7 +413,8 @@ Data:
     owner:"local" | "remote",
 
     dynamic_table_capacity?:uint64,
-    dynamic_table_size?:uint64, // effective current size, sum of all the entries
+    dynamic_table_size?:uint64, // effective current size, sum of
+                                // all the entries
 
     known_received_count?:uint64,
     current_insert_count?:uint64
@@ -431,7 +436,9 @@ Data:
 {
     stream_id:uint64,
 
-    state:"blocked"|"unblocked" // streams are assumed to start "unblocked" until they become "blocked"
+    state:"blocked"|"unblocked" // streams are assumed to start
+                                // "unblocked" until they become
+                                // "blocked"
 }
 ~~~
 
@@ -444,7 +451,9 @@ Data:
 
 ~~~
 {
-    owner:"local" | "remote", // local = the encoder's dynamic table. remote = the decoder's dynamic table
+    owner:"local" | "remote", // local = the encoder's dynamic
+                              // table. remote = the decoder's
+                              // dynamic table
 
     update_type:"inserted"|"evicted",
 
@@ -518,7 +527,7 @@ Data:
 
 ~~~
 {
-    instruction:QPackInstruction // see appendix for the definitions,
+    instruction:QPackInstruction // see definitions in appendix
 
     length?:uint32,
     raw?:bytes
@@ -538,7 +547,7 @@ Data:
 
 ~~~
 {
-    instruction:QPackInstruction // see appendix for the definitions,
+    instruction:QPackInstruction // see definitions in appendix
 
     length?:uint32,
     raw?:bytes
@@ -563,7 +572,11 @@ TBD
 ## HTTP/3 Frames
 
 ~~~
-type HTTP3Frame = DataFrame | HeadersFrame | CancelPushFrame | SettingsFrame | PushPromiseFrame | GoAwayFrame | MaxPushIDFrame | DuplicatePushFrame | ReservedFrame | UnknownFrame;
+type HTTP3Frame = DataFrame | HeadersFrame | CancelPushFrame |
+                  SettingsFrame | PushPromiseFrame |
+                  GoAwayFrame | MaxPushIDFrame |
+                  DuplicatePushFrame | ReservedFrame |
+                  UnknownFrame;
 ~~~
 
 ### DataFrame
@@ -583,7 +596,24 @@ compression is applied).
 For example:
 
 ~~~
-headers: [{"name":":path","value":"/"},{"name":":method","value":"GET"},{"name":":authority","value":"127.0.0.1:4433"},{"name":":scheme","value":"https"}]
+headers: [
+  {
+    "name": ":path",
+    "value": "/"
+  },
+  {
+    "name": ":method",
+    "value": "GET"
+  },
+  {
+    "name": ":authority",
+    "value": "127.0.0.1:4433"
+  },
+  {
+    "name": ":scheme",
+    "value": "https"
+  }
+]
 ~~~
 
 ~~~
@@ -634,7 +664,8 @@ class PushPromiseFrame{
 ~~~
 class GoAwayFrame{
     frame_type:string = "goaway";
-    id:uint64; // either stream_id or push_id. This is implicit from the sender of the frame.
+    id:uint64; // either stream_id or push_id. This is implicit
+               // from the sender of the frame.
 }
 ~~~
 
@@ -698,7 +729,13 @@ Note: the instructions do not have explicit encoder/decoder types, since there i
 no overlap between the insturctions of both types in neither name nor function.
 
 ~~~
-type QPackInstruction = SetDynamicTableCapacityInstruction | InsertWithNameReferenceInstruction | InsertWithoutNameReferenceInstruction | DuplicateInstruction | HeaderAcknowledgementInstruction | StreamCancellationInstruction | InsertCountIncrementInstruction;
+type QPackInstruction = SetDynamicTableCapacityInstruction |
+                        InsertWithNameReferenceInstruction |
+                        InsertWithoutNameReferenceInstruction |
+                        DuplicateInstruction |
+                        HeaderAcknowledgementInstruction |
+                        StreamCancellationInstruction |
+                        InsertCountIncrementInstruction;
 ~~~
 
 ### SetDynamicTableCapacityInstruction
@@ -789,7 +826,9 @@ class InsertCountIncrementInstruction {
 ## QPACK Header compression
 
 ~~~
-type QPackHeaderBlockRepresentation = IndexedHeaderField | LiteralHeaderFieldWithName | LiteralHeaderFieldWithoutName;
+type QPackHeaderBlockRepresentation = IndexedHeaderField |
+                                      LiteralHeaderFieldWithName |
+                                      LiteralHeaderFieldWithoutName;
 ~~~
 
 ### IndexedHeaderField
@@ -800,10 +839,13 @@ Note: also used for "indexed header field with post-base index"
 class IndexedHeaderField {
     header_field_type:string = "indexed_header";
 
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
+    table_type:"static"|"dynamic"; // MUST be "dynamic" if
+                                   // is_post_base is true
     index:uint32;
 
-    is_post_base:boolean = false; // to represent the "indexed header field with post-base index" header field type
+    is_post_base:boolean = false; // to represent the "indexed
+                                  // header field with post-base
+                                  // index" header field type
 }
 ~~~
 
@@ -816,14 +858,18 @@ class LiteralHeaderFieldWithName {
     header_field_type:string = "literal_with_name";
 
     preserve_literal:boolean; // the 3rd "N" bit
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
+    table_type:"static"|"dynamic"; // MUST be "dynamic" if
+                                   // is_post_base is true
     name_index:uint32;
 
     huffman_encoded_value:boolean;
     value_length?:uint32;
     value?:string;
 
-    is_post_base:boolean = false; // to represent the "Literal header field with post-base name reference" header field type
+    is_post_base:boolean = false; // to represent the "Literal
+                                  // header field with post-base
+                                  // name reference" header field
+                                  // type
 }
 ~~~
 
