@@ -144,7 +144,7 @@ in [QLOG-MAIN].
 
 This document describes the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the QUIC protocol. This document is based on
-draft-34 of the QUIC I-Ds [QUIC-TRANSPORT] [QUIC-RECOVERY] [QUIC-TLS]. HTTP/3 and
+draft-34 of the QUIC I-Ds [QUIC-TRANSPORT], [QUIC-RECOVERY], and [QUIC-TLS]. HTTP/3 and
 QPACK events are defined in a separate document [QLOG-H3].
 
 Feedback and discussion are welcome at
@@ -285,7 +285,10 @@ Data:
     port_v4?: uint32,
     port_v6?: uint32,
 
-    retry_required?:boolean // the server will always answer client initials with a retry (no 1-RTT connection setups by choice)
+    retry_required?:boolean // the server will always answer
+                            // client initials with a retry
+                            // (no 1-RTT connection setups
+                            // by choice)
 }
 ~~~
 
@@ -631,10 +634,14 @@ Data:
 {
     owner?:"local" | "remote",
 
-    resumption_allowed?:boolean, // valid session ticket was received
-    early_data_enabled?:boolean, // early data extension was enabled on the TLS layer
+    resumption_allowed?:boolean, // valid session ticket
+                                 // was received
+    early_data_enabled?:boolean, // early data extension
+                                 // was enabled on the TLS layer
     tls_cipher?:string, // (e.g., "AES_128_GCM_SHA256")
-    aead_tag_length?:uint8, // depends on the TLS cipher, but it's easier to be explicit. Default value is 16
+    aead_tag_length?:uint8, // depends on the TLS cipher,
+                            // but it's easier to be explicit.
+                            // Default value is 16
 
     // transport parameters from the TLS layer:
     original_destination_connection_id?:bytes,
@@ -722,9 +729,12 @@ Data:
 
     retry_token?:Token, // only if header.packet_type === retry
 
-    stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
+    stateless_reset_token?:bytes, // only if header.packet_type
+                                  // === stateless_reset. Is
+                                  // always 128 bits in length.
 
-    supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
+    supported_versions:Array<bytes>, // only if header.packet_type
+                                     // === version_negotiation
 
     raw?:RawInfo,
     datagram_id?:uint32
@@ -761,9 +771,12 @@ Data:
 
     retry_token?:Token, // only if header.packet_type === retry
 
-    stateless_reset_token?:bytes, // only if header.packet_type === stateless_reset. Is always 128 bits in length.
+    stateless_reset_token?:bytes, // only if header.packet_type
+                                  // === stateless_reset.
+                                  // Is always 128 bits in length.
 
-    supported_versions:Array<bytes>, // only if header.packet_type === version_negotiation
+    supported_versions:Array<bytes>, // only if header.packet_type
+                                     // === version_negotiation
 
     raw?:RawInfo,
     datagram_id?:uint32
@@ -790,7 +803,9 @@ Data:
 
 ~~~
 {
-    header?:PacketHeader, // primarily packet_type should be filled here, as other fields might not be parseable
+    header?:PacketHeader, // primarily packet_type should be
+                          // filled here, as other fields might
+                          // not be parseable
 
     raw?:RawInfo,
     datagram_id?:uint32
@@ -833,7 +848,10 @@ Data:
 
 ~~~
 {
-    header?:PacketHeader, // primarily packet_type and possible packet_number should be filled here, as other elements might not be available yet
+    header?:PacketHeader, // primarily packet_type and possible
+                          // packet_number should be filled here,
+                          // as other elements might not be
+                          // available yet
 
     raw?:RawInfo,
     datagram_id?:uint32
@@ -884,7 +902,9 @@ Data:
 ~~~
 {
     count?:uint16, // to support passing multiple at once
-    raw?:Array<RawInfo>, // RawInfo:length field indicates total length of the datagrams, including UDP header length
+    raw?:Array<RawInfo>, // RawInfo:length field indicates
+                         // total length of the datagrams,
+                         // including UDP header length
 
     datagram_ids?:Array<uint32>
 }
@@ -910,7 +930,9 @@ Data:
 ~~~
 {
     count?:uint16, // to support passing multiple at once
-    raw?:Array<RawInfo>, // RawInfo:length field indicates total length of the datagrams, including UDP header length
+    raw?:Array<RawInfo>, // RawInfo:length field indicates
+                         // total length of the datagrams,
+                         // including UDP header length
 
     datagram_ids?:Array<uint32>
 }
@@ -946,7 +968,9 @@ Data:
 ~~~
 {
     stream_id:uint64,
-    stream_type?:"unidirectional"|"bidirectional", // mainly useful when opening the stream
+    stream_type?:"unidirectional"|
+                 "bidirectional", // mainly useful when
+                                  // opening the stream
 
     old?:StreamState,
     new:StreamState,
@@ -1054,8 +1078,10 @@ Data:
     offset?:uint64,
     length?:uint64, // byte length of the moved data
 
-    from?:string, // typically: use either of "user","application","transport","network"
-    to?:string, // typically: use either of "user","application","transport","network"
+    from?:string, // typically: use either of "user",
+                  // "application","transport","network"
+    to?:string,   // typically: use either of "user",
+                  //"application","transport","network"
 
     data?:bytes // raw bytes that were transferred
 }
@@ -1101,9 +1127,15 @@ Data:
     initial_rtt?:float, // in ms
 
     // congestion control, Appendix B.1.
-    max_datagram_size?:uint32, // in bytes // Note: this could be updated after pmtud
+    max_datagram_size?:uint32, // in bytes
+                               // Note: this could be
+                               // updated after pmtud
     initial_congestion_window?:uint64, // in bytes
-    minimum_congestion_window?:uint32, // in bytes // Note: this could change when max_datagram_size changes
+    minimum_congestion_window?:uint32, // in bytes
+                                       // Note: this could change
+                                       // when
+                                       // max_datagram_size
+                                       // changes
     loss_reduction_factor?:float,
     persistent_congestion_threshold?:uint16 // as PTO multiplier
 }
@@ -1127,10 +1159,14 @@ Data:
 ~~~
 {
     // Loss detection, see recovery draft-23, Appendix A.3
-    min_rtt?:float, // in ms or us, depending on the overarching qlog's configuration
-    smoothed_rtt?:float, // in ms or us, depending on the overarching qlog's configuration
-    latest_rtt?:float, // in ms or us, depending on the overarching qlog's configuration
-    rtt_variance?:float, // in ms or us, depending on the overarching qlog's configuration
+    min_rtt?:float, // in ms or us, depending on the
+                    // overarching qlog's configuration
+    smoothed_rtt?:float, // in ms or us, depending on the
+                         // overarching qlog's configuration
+    latest_rtt?:float, // in ms or us, depending on the
+                       // overarching qlog's configuration
+    rtt_variance?:float, // in ms or us, depending on the
+                         // overarching qlog's configuration
 
     pto_count?:uint16,
 
@@ -1208,7 +1244,10 @@ Data:
 
     event_type:"set"|"expired"|"cancelled",
 
-    delta?:float // if event_type === "set": delta time in ms or us (see configuration) from this event's timestamp until when the timer will trigger
+    delta?:float // if event_type === "set": delta time
+                 // in ms or us (see configuration) from
+                 // this event's timestamp until when the
+                 // timer will trigger
 }
 ~~~
 
@@ -1226,9 +1265,11 @@ Data:
 
 ~~~
 {
-    header?:PacketHeader, // should include at least the packet_type and packet_number
+    header?:PacketHeader, // should include at least the
+                          // packet_type and packet_number
 
-    // not all implementations will keep track of full packets, so these are optional
+    // not all implementations will keep track of full
+    // packets, so these are optional
     frames?:Array<QuicFrame> // see appendix for the definitions
 }
 ~~~
@@ -1290,7 +1331,10 @@ TBD
 
 class IPAddress : string | bytes;
 
-// an IPAddress can either be a "human readable" form (e.g., "127.0.0.1" for v4 or "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or use a raw byte-form (as the string forms can be ambiguous)
+// an IPAddress can either be a "human readable" form
+// (e.g., "127.0.0.1" for v4 or
+// "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
+// use a raw byte-form (as the string forms can be ambiguous)
 
 ~~~
 
@@ -1328,11 +1372,18 @@ class PacketHeader {
     packet_type: PacketType;
     packet_number: uint64;
 
-    flags?: uint8; // the bit flags of the packet headers (spin bit, key update bit, etc. up to and including the packet number length bits if present) interpreted as a single 8-bit integer
+    flags?: uint8; // the bit flags of the packet headers
+                   // (spin bit, key update bit, etc. up to and
+                   // including the packet number length bits
+                   // if present) interpreted as a single
+                   // 8-bit integer
 
     token?:Token; // only if packet_type == initial
 
-    length?: uint16, // only if packet_type == initial || handshake || 0RTT. Signifies length of the packet_number plus the payload.
+    length?: uint16, // only if packet_type == initial ||
+                     // handshake || 0RTT.
+                     // Signifies length of the packet_number
+                     // plus the payload.
 
     // only if present in the header
     // if correctly using transport:connection_id_updated events,
@@ -1354,7 +1405,8 @@ class Token {
     length?:uint32; // byte length of the token
     data?:bytes; // raw byte value of the token
 
-    details?:any; // decoded fields included in the token (typically: peer's IP address, creation time)
+    details?:any; // decoded fields included in the token
+                  // (typically: peer's IP address, creation time)
 }
 ~~~
 
@@ -1386,7 +1438,16 @@ enum KeyType {
 ## QUIC Frames
 
 ~~~
-type QuicFrame = PaddingFrame | PingFrame | AckFrame | ResetStreamFrame | StopSendingFrame | CryptoFrame | NewTokenFrame | StreamFrame | MaxDataFrame | MaxStreamDataFrame | MaxStreamsFrame | DataBlockedFrame | StreamDataBlockedFrame | StreamsBlockedFrame | NewConnectionIDFrame | RetireConnectionIDFrame | PathChallengeFrame | PathResponseFrame | ConnectionCloseFrame | HandshakeDoneFrame | UnknownFrame;
+type QuicFrame = PaddingFrame | PingFrame | AckFrame |
+                 ResetStreamFrame | StopSendingFrame |
+                 CryptoFrame | NewTokenFrame |
+                 StreamFrame | MaxDataFrame |
+                 MaxStreamDataFrame | MaxStreamsFrame |
+                 DataBlockedFrame | StreamDataBlockedFrame |
+                 StreamsBlockedFrame | NewConnectionIDFrame |
+                 RetireConnectionIDFrame | PathChallengeFrame |
+                 PathResponseFrame | ConnectionCloseFrame |
+                 HandshakeDoneFrame | UnknownFrame;
 ~~~
 
 ### PaddingFrame
@@ -1428,11 +1489,13 @@ class AckFrame{
     ack_delay?:float; // in ms
 
     // first number is "from": lowest packet number in interval
-    // second number is "to": up to and including // highest packet number in interval
+    // second number is "to": up to and including
+    // highest packet number in interval
     // e.g., looks like [[1,2],[4,5]]
     acked_ranges?:Array<[uint64, uint64]|[uint64]>;
 
-    // ECN (explicit congestion notification) related fields (not always present)
+    // ECN (explicit congestion notification) related fields
+    // (not always present)
     ect1?:uint64;
     ect0?:uint64;
     ce?:uint64;
@@ -1514,7 +1577,8 @@ class StreamFrame{
     offset:uint64;
     length:uint64;
 
-    // this MAY be set any time, but MUST only be set if the value is "true"
+    // this MAY be set any time, but MUST only be set if the value
+    // is "true"
     // if absent, the value MUST be assumed to be "false"
     fin?:boolean;
 
@@ -1650,7 +1714,12 @@ class ConnectionCloseFrame{
     raw_error_code?:uint32;
     reason?:string;
 
-    trigger_frame_type?:uint64 | string; // For known frame types, the appropriate "frame_type" string. For unknown frame types, the hex encoded identifier value
+    trigger_frame_type?:uint64 | string; // For known frame types,
+                                         // the appropriate
+                                         // "frame_type" string.
+                                         // For unknown frame types,
+                                         // the hex encoded
+                                         // identifier value
 }
 ~~~
 
