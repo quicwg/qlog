@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta content="Common,Latin" name="scripts">
 <meta content="initial-scale=1.0" name="viewport">
-<title>HTTP/3 and QPACK event definitions for qlog</title>
+<title>HTTP/3 and QPACK qlog event definitions</title>
 <meta content="Robin Marx" name="author">
 <meta content="Luca Niccolini" name="author">
 <meta content="Marten Seemann" name="author">
@@ -1015,7 +1015,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <table class="ears">
 <thead><tr>
 <td class="left">Internet-Draft</td>
-<td class="center">HTTP/3 and QPACK event definitions for q</td>
+<td class="center">HTTP/3 and QPACK qlog event definitions</td>
 <td class="right">February 2022</td>
 </tr></thead>
 <tfoot><tr>
@@ -1058,7 +1058,7 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 </dd>
 </dl>
 </div>
-<h1 id="title">HTTP/3 and QPACK event definitions for qlog</h1>
+<h1 id="title">HTTP/3 and QPACK qlog event definitions</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
 <p id="section-abstract-1">This document describes concrete qlog event definitions and their metadata for
@@ -1470,12 +1470,15 @@ settings from two sides, you MUST emit two separate event instances.<a href="#se
 {
     owner?:"local" | "remote",
 
-    max_header_list_size?:uint64, // from SETTINGS_MAX_HEADER_LIST_SIZE
-    max_table_capacity?:uint64, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
-    blocked_streams_count?:uint64, // from SETTINGS_QPACK_BLOCKED_STREAMS
+    max_header_list_size?:uint64,  // MAX_HEADER_LIST_SIZE
+    max_table_capacity?:uint64,    // QPACK_MAX_TABLE_CAPACITY
+    blocked_streams_count?:uint64, // QPACK_BLOCKED_STREAMS
 
     // qlog-defined
-    waits_for_settings?:boolean // indicates whether this implementation waits for a SETTINGS frame before processing requests
+    waits_for_settings?:boolean // indicates whether this
+                                // implementation waits for a
+                                // SETTINGS frame before
+                                // processing requests
 }
 </pre><a href="#section-3.1.1-5" class="pilcrow">¶</a>
 </div>
@@ -1564,7 +1567,7 @@ in <span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span>.<a href="#sect
 {
     stream_id:uint64,
     length?:uint64, // payload byte length of the frame
-    frame:HTTP3Frame, // see appendix for the definitions,
+    frame:HTTP3Frame, // see definitions in appendix
 
     raw?:RawInfo
 }
@@ -1593,7 +1596,7 @@ the HTTP/3 data is actually received on the QUIC layer. For that, see the
 {
     stream_id:uint64,
     length?:uint64, // payload byte length of the frame
-    frame:HTTP3Frame, // see appendix for the definitions,
+    frame:HTTP3Frame, // see definitions in appendix
 
     raw?:RawInfo
 }
@@ -1620,7 +1623,8 @@ behaviour, which is commonplace with HTTP/2.<a href="#section-3.1.6-2" class="pi
 <pre>
 {
     push_id?:uint64,
-    stream_id?:uint64, // in case this is logged from a place that does not have access to the push_id
+    stream_id?:uint64, // in case this is logged from a place that
+                       // does not have access to the push_id
 
     decision:"claimed"|"abandoned"
 }
@@ -1662,7 +1666,8 @@ instances.<a href="#section-3.2.1-2" class="pilcrow">¶</a></p>
     owner:"local" | "remote",
 
     dynamic_table_capacity?:uint64,
-    dynamic_table_size?:uint64, // effective current size, sum of all the entries
+    dynamic_table_size?:uint64, // effective current size, sum of
+                                // all the entries
 
     known_received_count?:uint64,
     current_insert_count?:uint64
@@ -1687,7 +1692,9 @@ HTTP/3's observed performance.<a href="#section-3.2.2-3" class="pilcrow">¶</a><
 {
     stream_id:uint64,
 
-    state:"blocked"|"unblocked" // streams are assumed to start "unblocked" until they become "blocked"
+    state:"blocked"|"unblocked" // streams are assumed to start
+                                // "unblocked" until they become
+                                // "blocked"
 }
 </pre><a href="#section-3.2.2-5" class="pilcrow">¶</a>
 </div>
@@ -1704,7 +1711,9 @@ HTTP/3's observed performance.<a href="#section-3.2.2-3" class="pilcrow">¶</a><
 <div class="alignLeft art-text artwork" id="section-3.2.3-4">
 <pre>
 {
-    owner:"local" | "remote", // local = the encoder's dynamic table. remote = the decoder's dynamic table
+    owner:"local" | "remote", // local = the encoder's dynamic
+                              // table. remote = the decoder's
+                              // dynamic table
 
     update_type:"inserted"|"evicted",
 
@@ -1788,7 +1797,7 @@ created and added to the encoder/decoder stream.<a href="#section-3.2.6-2" class
 <div class="alignLeft art-text artwork" id="section-3.2.6-4">
 <pre>
 {
-    instruction:QPackInstruction // see appendix for the definitions,
+    instruction:QPackInstruction // see definitions in appendix
 
     length?:uint32,
     raw?:bytes
@@ -1811,7 +1820,7 @@ from the encoder/decoder stream.<a href="#section-3.2.7-2" class="pilcrow">¶</a
 <div class="alignLeft art-text artwork" id="section-3.2.7-4">
 <pre>
 {
-    instruction:QPackInstruction // see appendix for the definitions,
+    instruction:QPackInstruction // see definitions in appendix
 
     length?:uint32,
     raw?:bytes
@@ -1893,7 +1902,11 @@ instruction types or can be logged via other events (e.g., http.stream_type_set)
         </h3>
 <div class="alignLeft art-text artwork" id="appendix-A.1-1">
 <pre>
-type HTTP3Frame = DataFrame | HeadersFrame | CancelPushFrame | SettingsFrame | PushPromiseFrame | GoAwayFrame | MaxPushIDFrame | DuplicatePushFrame | ReservedFrame | UnknownFrame;
+type HTTP3Frame = DataFrame | HeadersFrame | CancelPushFrame |
+                  SettingsFrame | PushPromiseFrame |
+                  GoAwayFrame | MaxPushIDFrame |
+                  DuplicatePushFrame | ReservedFrame |
+                  UnknownFrame;
 </pre><a href="#appendix-A.1-1" class="pilcrow">¶</a>
 </div>
 <div id="dataframe">
@@ -1922,7 +1935,24 @@ compression is applied).<a href="#appendix-A.1.2-1" class="pilcrow">¶</a></p>
 <p id="appendix-A.1.2-2">For example:<a href="#appendix-A.1.2-2" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.1.2-3">
 <pre>
-headers: [{"name":":path","value":"/"},{"name":":method","value":"GET"},{"name":":authority","value":"127.0.0.1:4433"},{"name":":scheme","value":"https"}]
+headers: [
+  {
+    "name": ":path",
+    "value": "/"
+  },
+  {
+    "name": ":method",
+    "value": "GET"
+  },
+  {
+    "name": ":authority",
+    "value": "127.0.0.1:4433"
+  },
+  {
+    "name": ":scheme",
+    "value": "https"
+  }
+]
 </pre><a href="#appendix-A.1.2-3" class="pilcrow">¶</a>
 </div>
 <div class="alignLeft art-text artwork" id="appendix-A.1.2-4">
@@ -2001,7 +2031,8 @@ class PushPromiseFrame{
 <pre>
 class GoAwayFrame{
     frame_type:string = "goaway";
-    id:uint64; // either stream_id or push_id. This is implicit from the sender of the frame.
+    id:uint64; // either stream_id or push_id. This is implicit
+               // from the sender of the frame.
 }
 </pre><a href="#appendix-A.1.6-1" class="pilcrow">¶</a>
 </div>
@@ -2108,7 +2139,13 @@ enum ApplicationError{
 no overlap between the insturctions of both types in neither name nor function.<a href="#appendix-B.1-1" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-B.1-2">
 <pre>
-type QPackInstruction = SetDynamicTableCapacityInstruction | InsertWithNameReferenceInstruction | InsertWithoutNameReferenceInstruction | DuplicateInstruction | HeaderAcknowledgementInstruction | StreamCancellationInstruction | InsertCountIncrementInstruction;
+type QPackInstruction = SetDynamicTableCapacityInstruction |
+                        InsertWithNameReferenceInstruction |
+                        InsertWithoutNameReferenceInstruction |
+                        DuplicateInstruction |
+                        HeaderAcknowledgementInstruction |
+                        StreamCancellationInstruction |
+                        InsertCountIncrementInstruction;
 </pre><a href="#appendix-B.1-2" class="pilcrow">¶</a>
 </div>
 <div id="setdynamictablecapacityinstruction">
@@ -2247,7 +2284,9 @@ class InsertCountIncrementInstruction {
         </h3>
 <div class="alignLeft art-text artwork" id="appendix-B.2-1">
 <pre>
-type QPackHeaderBlockRepresentation = IndexedHeaderField | LiteralHeaderFieldWithName | LiteralHeaderFieldWithoutName;
+type QPackHeaderBlockRepresentation = IndexedHeaderField |
+                                      LiteralHeaderFieldWithName |
+                                      LiteralHeaderFieldWithoutName;
 </pre><a href="#appendix-B.2-1" class="pilcrow">¶</a>
 </div>
 <div id="indexedheaderfield">
@@ -2261,10 +2300,13 @@ type QPackHeaderBlockRepresentation = IndexedHeaderField | LiteralHeaderFieldWit
 class IndexedHeaderField {
     header_field_type:string = "indexed_header";
 
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
+    table_type:"static"|"dynamic"; // MUST be "dynamic" if
+                                   // is_post_base is true
     index:uint32;
 
-    is_post_base:boolean = false; // to represent the "indexed header field with post-base index" header field type
+    is_post_base:boolean = false; // to represent the "indexed
+                                  // header field with post-base
+                                  // index" header field type
 }
 </pre><a href="#appendix-B.2.1-2" class="pilcrow">¶</a>
 </div>
@@ -2282,14 +2324,18 @@ class LiteralHeaderFieldWithName {
     header_field_type:string = "literal_with_name";
 
     preserve_literal:boolean; // the 3rd "N" bit
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
+    table_type:"static"|"dynamic"; // MUST be "dynamic" if
+                                   // is_post_base is true
     name_index:uint32;
 
     huffman_encoded_value:boolean;
     value_length?:uint32;
     value?:string;
 
-    is_post_base:boolean = false; // to represent the "Literal header field with post-base name reference" header field type
+    is_post_base:boolean = false; // to represent the "Literal
+                                  // header field with post-base
+                                  // name reference" header field
+                                  // type
 }
 </pre><a href="#appendix-B.2.2-2" class="pilcrow">¶</a>
 </div>
