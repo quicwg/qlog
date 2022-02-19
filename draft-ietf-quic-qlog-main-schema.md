@@ -176,6 +176,25 @@ doubles in the millisecond resolution.
 Other qlog documents can define their own data types (e.g., separately for each
 Packet type that a protocol supports).
 
+
+qlog also defines two custom CDDL types:
+
+Definition:
+
+~~~~~~~~
+; CDDL doesn't define a default uint64 type
+; NOTE: this is below QlogFile here because otherwise the tooling
+; thinks uint64 is the root type instead of QlogFile...
+uint64 = uint .size 8
+; CDDL doesn't define a proper hex-string that's compatible with JSON
+; the "bytes" and "bstr" get serialized as h'1234ABCD',
+; which isn't valid JSON
+; TODO: FIXME: ask CDDL designers about this
+hexstring = text
+~~~~~~~~
+{: .language-cddl}
+{: #cddl-custom-types-def title="Custom CDDL types definition"}
+
 # Design goals
 
 The main tenets for the qlog schema design are:
@@ -217,22 +236,26 @@ In order to make it easier to parse and identify qlog files and their
 serialization format, the "qlog_version" and "qlog_format" fields and their values
 SHOULD be in the first 256 characters/bytes of the resulting log file.
 
-An example of the qlog file's top-level structure is shown in {{top-element}}.
+An example of the qlog file's top-level structure is shown in {{qlog-file-def}}.
 
-~~~~~~~~
 Definition:
 
-class QlogFile {
-    qlog_version:string,
-    qlog_format?:string,
-    title?:string,
-    description?:string,
-    summary?: Summary,
-    traces: array<Trace|TraceError>
+~~~~~~~~
+QlogFile = {
+    qlog_version: text
+    ? qlog_format: text .default "JSON"
+    ? title: text
+    ? description: text
+    ? summary: Summary
+    ? traces: [+ Trace / TraceError]
 }
+~~~~~~~~
+{: .language-cddl}
+{: #qlog-file-def title="QlogFile definition"}
 
 JSON serialization example:
 
+~~~~~~~~
 {
     "qlog_version": "0.3",
     "qlog_format": "JSON",
@@ -244,9 +267,9 @@ JSON serialization example:
     "traces": [...]
 }
 ~~~~~~~~
-{: #top-element title="Top-level element"}
+{: #qlog-file-ex title="QlogFile example"}
 
-## summary
+## Summary
 
 In a real-life deployment with a large amount of generated logs, it can be useful
 to sort and filter logs based on some basic summarized or aggregated data (e.g.,
@@ -258,26 +281,25 @@ that are deemed interesting by the user).
 
 As the summary field is highly deployment-specific, this document does not specify
 any default fields or their semantics. Some examples of potential entries are
-shown in {{summary-example}}.
+shown in {{summary}}.
 
-~~~
-Definition (purely illustrative example):
+Definition:
 
-class Summary {
-    "trace_count":uint32, // amount of traces in this file
-    "max_duration":uint64, // time duration of the longest
-                           // trace in ms
-    "max_outgoing_loss_rate":float, // highest loss rate
-                                    // for outgoing packets
-                                    // over all traces
-    "total_event_count":uint64, // total number of events
-                                // across all traces,
-    "error_count":uint64 // total number of error events in
-                         // this trace
+~~~~~~~~
+Summary = {
+    ; summary can contain any type of custom information
+    ; text here doesn't mean the type text,
+    ; but the fact that keys/names in the objects are strings
+    * text => any
 }
+~~~~~~~~
+{: .language-cddl}
+{: #summary-def title="Summary definition"}
 
-JSON serialization:
 
+JSON serialization example:
+
+~~~~~~~~
 {
     "trace_count": 1,
     "max_duration": 5006,
@@ -285,8 +307,8 @@ JSON serialization:
     "total_event_count": 568,
     "error_count": 2
 }
-~~~
-{: #summary-example title="Summary example definition"}
+~~~~~~~~
+{: #summary-ex title="Summary example"}
 
 
 ## traces
@@ -308,29 +330,32 @@ Trace type, see {{trace}}), but also "error" entries. These indicate that we tri
 to find/convert a file for inclusion in the aggregated qlog, but there was an
 error during the process. Rather than silently dropping the erroneous file, we can
 opt to explicitly include it in the qlog file as an entry in the "traces" array,
-as shown in {{trace-error}}.
+as shown in {{trace-error-def}}.
 
-~~~
+
 Definition:
 
-class TraceError {
-    error_description: string, // A description of the error
-    uri?: string, // the original URI at which we attempted to
-                  // find the file
-    vantage_point?: VantagePoint // see {{vantage_point}}:
-                                 // the vantage point we were
-                                 // expecting to include here
+~~~~~~~
+TraceError = {
+    error_description: text
+    ; the original URI at which we attempted to find the file
+    ? uri: text
+    ? vantage_point: VantagePoint
 }
+~~~~~~~
+{: .language-cddl}
+{: #trace-error-def title="TraceError definition"}
 
-JSON serialization:
+JSON serialization example:
 
+~~~~~~~
 {
     "error_description": "File could not be found",
     "uri": "/srv/traces/today/latest.qlog",
     "vantage_point": { type: "server" }
 }
-~~~
-{: #trace-error title="TraceError definition"}
+~~~~~~~
+{: #trace-error-ex title="TraceError example"}
 
 Note that another way to combine events of different traces in a single qlog file
 is through the use of the "group_id" field, discussed in {{group-ids}}.
@@ -341,7 +366,7 @@ The exact conceptual definition of a Trace can be fluid. For example, a trace
 could contain all events for a single connection, for a single endpoint, for a
 single measurement interval, for a single protocol, etc. As such, a Trace
 container contains some metadata in addition to the logged events, see
-{{trace-container}}.
+{{trace-def}}.
 
 In the normal use case however, a trace is a log of a single data flow collected
 at a single location or vantage point. For example, for QUIC, a single trace only
@@ -351,20 +376,24 @@ server.
 The semantics and context of the trace can mainly be deduced from the entries in
 the "common_fields" list and "vantage_point" field.
 
-~~~~~~~~
 Definition:
 
-class Trace {
-    title?: string,
-    description?: string,
-    configuration?: Configuration,
-    common_fields?: CommonFields,
-    vantage_point: VantagePoint,
-    events: array<Event>
+~~~~~~~~
+Trace = {
+    ? title: text
+    ? description: text
+    ? configuration: Configuration
+    ? common_fields: CommonFields
+    ? vantage_point: VantagePoint
+    events: [* Event]
 }
+~~~~~~~~
+{: .language-cddl}
+{: #trace-def title="Trace definition"}
 
-JSON serialization:
+JSON serialization example:
 
+~~~~~~~~
 {
     "title": "Name of this particular trace (short)",
     "description": "Description for this trace (long)",
@@ -382,9 +411,9 @@ JSON serialization:
     "events": [...]
 }
 ~~~~~~~~
-{: #trace-container title="Trace container definition"}
+{: #trace-ex title="Trace example"}
 
-### configuration
+### Configuration
 
 We take into account that a qlog file is usually not used in isolation, but by
 means of various tools. Especially when aggregating various traces together or
@@ -397,18 +426,22 @@ to prefix each added field with their tool name to prevent collisions across
 tools. This document only defines two optional, standard, tool-independent
 configuration settings: "time_offset" and "original_uris".
 
-~~~~~~~~
 Definition:
 
-class Configuration {
-    time_offset:double, // in ms,
-    original_uris: array<string>,
-
-    // list of fields with any type
+~~~~~~~~
+Configuration = {
+    ; time_offset is in milliseconds
+    time_offset: float64
+    original_uris:[* text]
+    * text => any
 }
+~~~~~~~~
+{: .language-cddl}
+{: #configuration-def title="Configuration definition"}
 
-JSON serialization:
+JSON serialization example:
 
+~~~~~~~~
 {
     "time_offset": 150,
     "original_uris": [
@@ -417,10 +450,11 @@ JSON serialization:
     ]
 }
 ~~~~~~~~
-{: #configuration_example title="Configuration definition"}
+{: #configuration-ex title="Configuration example"}
 
 
 #### time_offset
+
 The time_offset field indicates by how many milliseconds the starting time of the current
 trace should be offset. This is useful when comparing logs taken from various
 systems, where clocks might not be perfectly synchronous. Users could use manual
@@ -465,29 +499,31 @@ Two examples from the [qvis toolset](https://qvis.edm.uhasselt.be) are shown in
 ### vantage_point {#vantage-point}
 
 The vantage_point field describes the vantage point from which the trace
-originates, see {{vantage-point-example}}. Each trace can have only a single vantage_point
+originates, see {{vantage-point-def}}. Each trace can have only a single vantage_point
 and thus all events in a trace MUST BE from the perspective of this vantage_point.
 To include events from multiple vantage_points, implementers can for example
 include multiple traces, split by vantage_point, in a single qlog file.
 
+Definitions:
+
 ~~~~~~~~
-Definition:
-
-class VantagePoint {
-    name?: string,
-    type: VantagePointType,
-    flow?: VantagePointType
+VantagePoint = {
+    ? name: text
+    type: VantagePointType
+    ? flow: VantagePointType
 }
 
-class VantagePointType {
-    server, // endpoint which initiates the connection.
-    client, // endpoint which accepts the connection.
-    network, // observer in between client and server.
-    unknown
-}
+; client = endpoint which initiates the connection
+; server = endpoint which accepts the connection
+; network = observer in between client and server
+VantagePointType = "client" / "server" / "network" / "unknown"
+~~~~~~~~
+{: .language-cddl}
+{: #vantage-point-def title="VantagePoint definition"}
 
 JSON serialization examples:
 
+~~~~~~~~
 {
     "name": "aioquic client",
     "type": "client",
@@ -499,7 +535,7 @@ JSON serialization examples:
     "flow": "client"
 }
 ~~~~~~~~
-{: #vantage-point-example title="VantagePoint definition"}
+{: #vantage-point-ex title="VantagePoint example"}
 
 The flow field is only required if the type is "network" (for example, the trace
 is generated from a packet capture). It is used to disambiguate events like
@@ -546,26 +582,31 @@ context of the log usage (e.g., for QUIC, the ODCID field is used), see
 [QLOG-QUIC].
 
 An example of a qlog event with its component fields is shown in
-{{event-definition}}.
+{{event-def}}.
 
-~~~~~~~~
 Definition:
 
-class Event {
-    time: double,
-    name: string,
-    data: any,
+~~~~~~~~
+Event = {
+    time: float64
+    name: text
+    data: $ProtocolEventBody
 
-    protocol_type?: array<string>,
-    group_id?: string|uint32,
+    ? time_format: TimeFormat
 
-    time_format?: "absolute"|"delta"|"relative",
+    ? protocol_type: ProtocolType
+    ? group_id: GroupID
 
-    // list of fields with any type
+    ; events can contain any amount of custom fields
+    * text => any
 }
+~~~~~~~~
+{: .language-cddl}
+{: #event-def title="Event definition"}
 
 JSON serialization:
 
+~~~~~~~~
 {
     time: 1553986553572,
 
@@ -577,19 +618,27 @@ JSON serialization:
 
     time_format: "absolute",
 
-    ODCID: "127ecc830d98f9d54a42c4f0842aa87e181a", // QUIC specific
+    ODCID: "127ecc830d98f9d54a42c4f0842aa87e181a",
 }
 ~~~~~~~~
-{: #event-definition title="Event fields definition"}
+{: #event-ex title="Event example"}
 
-### timestamps {#time-based-fields}
+### Timestamps {#time-based-fields}
 
 The "time" field indicates the timestamp at which the event occured. Its value is
 typically the Unix timestamp since the 1970 epoch (number of milliseconds since
 midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports two
 more succint timestamps formats to allow reducing file size. The employed format
 is indicated in the "time_format" field, which allows one of three values:
-"absolute", "delta" or "relative":
+"absolute", "delta" or "relative".
+
+Definition:
+
+~~~~~~~~
+TimeFormat = "absolute" / "delta" / "relative"
+~~~~~~~~
+{: .language-cddl}
+{: #time-format-def title="TimeFormat definition"}
 
 * Absolute: Include the full absolute timestamp with each event. This approach
   uses the largest amount of characters. This is also the default value of the
@@ -606,9 +655,9 @@ is indicated in the "time_format" field, which allows one of three values:
 The first option is good for stateless loggers, the second and third for stateful
 loggers. The third option is generally preferred, since it produces smaller files
 while being easier to reason about. An example for each option can be seen in
-{{time-examples}}.
+{{time-format-ex}}.
 
-~~~
+~~~~~~~~
 The absolute approach will use:
 1500, 1505, 1522, 1588
 
@@ -618,9 +667,8 @@ The delta approach will use:
 The relative approach will:
 - set the reference_time to 1500 in "common_fields"
 - use: 0, 5, 22, 88
-
-~~~
-{: #time-examples title="Three different approaches for logging timestamps"}
+~~~~~~~~
+{: #time-format-ex title="Three different approaches for logging timestamps"}
 
 One of these options is typically chosen for the entire trace (put differently:
 each event has the same value for the "time_format" field). Each event MUST
@@ -641,7 +689,7 @@ Tools SHOULD NOT assume the ability to derive the absolute Unix timestamp from
 qlog traces, nor allow on them to relatively order events across two or more
 separate traces (in this case, clock drift should also be taken into account).
 
-### category and event {#name-field}
+### Category and Event Type {#name-field}
 
 Events differ mainly in the type of metadata associated with them. To help
 identify a given event and how to interpret its metadata in the "data" field (see
@@ -660,47 +708,69 @@ However, it also considerably inflates the log size and this flexibility is not
 used extensively in practice at the time of writing.
 
 As such, the default approach in qlog is to concatenate both field values using
-the ":" character in the "name" field, as can be seen in {{name-example}}. As
+the ":" character in the "name" field, as can be seen in {{name-ex}}. As
 such, qlog category and type names MUST NOT include this character.
 
 ~~~
 JSON serialization using separate fields:
 {
-    category: "transport",
-    type: "packet_sent"
+    "category": "transport",
+    "type": "packet_sent"
 }
 
 JSON serialization using ":" concatenated field:
 {
-    name: "transport:packet_sent"
+    "name": "transport:packet_sent"
 }
 ~~~
-{: #name-example title="Ways of logging category, type and name of an event."}
+{: #name-ex title="Ways of logging category, type and name of an event."}
 
 Certain serializations CAN emit category and type as separate fields, and qlog
 tools SHOULD be able to deal with both the concatenated "name" field, and the
 separate "category" and "type" fields. Text-based serializations however are
 encouraged to employ the concatenated "name" field for efficiency.
 
-### data {#data-field}
+### Data {#data-field}
 
 The data field is a generic object. It contains the per-event metadata and its
 form and semantics are defined per specific sort of event. For example, data field
 value definitons for QUIC and HTTP/3 can be found in [QLOG-QUIC] and [QLOG-H3].
 
-One purely illustrative example for a QUIC "packet_sent" event is shown in
-{{data-example}}.
+This field is defined here as a CDDL extension point (a "socket" or
+"plug") named `$ProtocolEventBody`. Other documents MUST properly extend
+this extension point when defining new data field content options to
+enable automated validation of aggregated qlog schemas.
 
-~~~~~~~~
+The only common field defined for the data field is the `trigger` field,
+which is discussed in {{trigger-field}}.
+
 Definition:
 
-class TransportPacketSentEvent {
-    packet_size?:uint32,
-    header:PacketHeader,
-    frames?:array<QuicFrame>
+~~~~~~~~
+; The ProtocolEventBody is any key-value map (e.g., JSON object)
+; only the optional trigger field is defined in this document
+$ProtocolEventBody /= {
+    ? trigger: text
+    * text => any
+}
+; event documents are intended to extend this socket by using:
+; NewProtocolEvents = EventType1 / EventType2 / ... / EventTypeN
+; $ProtocolEventBody /= NewProtocolEvents
+~~~~~~~~
+{: .language-cddl}
+{: #data-def title="Event definition"}
+
+One purely illustrative example for a QUIC "packet_sent" event is shown in
+{{data-ex}}:
+
+~~~~~~~~
+TransportPacketSent = {
+    ? packet_size: uint
+    header: PacketHeader
+    ? frames:[* QuicFrame]
 }
 
-JSON serialization:
+would be serialized as
 
 {
     packet_size: 1280,
@@ -720,7 +790,7 @@ JSON serialization:
     ]
 }
 ~~~~~~~~
-{: #data-example title="Example of the 'data' field for a QUIC packet_sent event"}
+{: #data-ex title="Example of the 'data' field for a QUIC packet_sent event"}
 
 ### protocol_type {#protocol-type-field}
 
@@ -729,13 +799,21 @@ The "protocol_type" array field indicates to which protocols (or protocol
 of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).
 
+Definition:
+
+~~~~~~~~
+ProtocolType = [+ text]
+~~~~~~~~
+{: .language-cddl}
+{: #protocol-type-def title="ProtocolType definition"}
+
 For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
 entry values, see [QLOG-QUIC] and [QLOG-H3].
 
 Typically however, all events in a single trace are of the same few protocols, and
 this array field is logged once in "common_fields", see {{common-fields}}.
 
-### triggers {#trigger-field}
+### Triggers {#trigger-field}
 
 Sometimes, additional information is needed in the case where a single event can
 be caused by a variety of other events. In the normal case, the context of the
@@ -745,30 +823,30 @@ log messages might separated in time. Another option is to explicitly indicate
 these "triggers" in a high-level way per-event to get more fine-grained
 information without much additional overhead.
 
-In qlog, the optional "trigger" field contains a string value describing the
-reason (if any) for this event instance occuring. While this "trigger" field could
-be a property of the qlog Event itself, it is instead a property of the "data"
-field instead. This choice was made because many event types do not include a
-trigger value, and having the field at the Event-level would cause overhead in
-some serializations. Additional information on the trigger can be added in the
-form of additional member fields of the "data" field value, yet this is highly
-implementation-specific, as are the trigger field's string values.
+In qlog, the optional "trigger" field contains a string value describing
+the reason (if any) for this event instance occuring, see
+{{data-field}}. While this "trigger" field could be a property of the
+qlog Event itself, it is instead a property of the "data" field instead.
+This choice was made because many event types do not include a trigger
+value, and having the field at the Event-level would cause overhead in
+some serializations. Additional information on the trigger can be added
+in the form of additional member fields of the "data" field value, yet
+this is highly implementation-specific, as are the trigger field's
+string values.
 
 One purely illustrative example of some potential triggers for QUIC's
-"packet_dropped" event is shown in {{trigger-example}}.
+"packet_dropped" event is shown in {{trigger-ex}}:
 
 ~~~~~~~~
-Definition:
+TransportPacketDropped = {
+    ? packet_type: PacketType
+    ? raw_length: uint
 
-class QuicPacketDroppedEvent {
-    packet_type?:PacketType,
-    raw_length?:uint32,
-
-    trigger?: "key_unavailable" | "unknown_connection_id" |
-              "decrypt_error" | "unsupported_version"
+    ? trigger: "key_unavailable" / "unknown_connection_id" /
+               "decrypt_error" / "unsupported_version"
 }
 ~~~~~~~~
-{: #trigger-example title="Trigger example"}
+{: #trigger-ex title="Trigger example"}
 
 ### group_id {#group-ids}
 
@@ -792,12 +870,20 @@ As such, to provide consistency and ease of tooling in cross-protocol and
 cross-context setups, qlog instead defines the common "group_id" field, which
 contains a string value. Implementations are free to use their preferred string
 serialization for this field, so long as it contains a unique value per logical
-group. Some examples can be seen in {{group-id-example}}.
+group. Some examples can be seen in {{group-id-ex}}.
+
+Definition:
 
 ~~~~~~~~
-JSON serialization for events grouped by four tuples
+GroupID = text
+~~~~~~~~
+{: .language-cddl}
+{: #group-id-def title="GroupID definition"}
+
+JSON serialization example for events grouped by four tuples
 and QUIC connection IDs:
 
+~~~~~~~~
 events: [
     {
         time: 1553986553579,
@@ -816,7 +902,7 @@ events: [
     }
 ]
 ~~~~~~~~
-{: #group-id-example title="Example of group_id usage"}
+{: #group-id-ex title="GroupID example"}
 
 Note that in some contexts (for example a Multipath transport protocol) it might
 make sense to add additional contextual per-event fields (for example "path_id"),
@@ -841,7 +927,7 @@ contains events for a single QUIC connection).
 To reduce file size and making logging easier, qlog uses the "common_fields" list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
-event. An example of this is shown in {{common-fields-example}}.
+event. An example of this is shown in {{common-fields-ex}}.
 
 ~~~~~~~~
 JSON serialization with repeated field values
@@ -870,7 +956,7 @@ per-event instance:
     ]
 }
 
-JSON serialization with repeated field values
+JSON serialization with repeated field values instead
 extracted to common_fields:
 
 {
@@ -893,7 +979,7 @@ extracted to common_fields:
     ]
 }
 ~~~~~~~~
-{: #common-fields-example title="Example of common_fields usage"}
+{: #common-fields-ex title="CommonFields example"}
 
 The "common_fields" field is a generic dictionary of key-value pairs, where the
 key is always a string and the value can be of any type, but is typically also a
@@ -905,19 +991,21 @@ The list of default qlog fields that are typically logged in common_fields (as
 opposed to as individual fields per event instance) are shown in the listing
 below:
 
-~~~~~~~~
 Definition:
 
-class CommonFields {
-    time_format?:string,
-    reference_time?:double,
+~~~~~~~~
+CommonFields = {
+    ? time_format: TimeFormat
+    ? reference_time: float64
 
-    protocol_type?:array<string>,
-    group_id?:string|uint32
+    ? protocol_type: ProtocolType
+    ? group_id: GroupID
 
-    // any other fields are possible here
+    * text => any
 }
 ~~~~~~~~
+{: .language-cddl}
+{: #common-fields-def title="CommonFields definition"}
 
 Tools MUST be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
@@ -1040,19 +1128,25 @@ frame. They can also have a considerable privacy and security impact. As such,
 they are grouped in a separate optional field called "raw" of type RawInfo (where
 applicable).
 
-~~~
-class RawInfo {
-    length?:uint64; // the full byte length of the entity
-                    // (e.g., packet or frame) including
-                    // headers and trailers
-    payload_length?:uint64; // the byte length of the
-                            // entity's payload, without
-                            // headers or trailers
+Definition:
 
-    data?:bytes; // the contents of the full entity,
-                 // including headers and trailers
+~~~~~~~~
+RawInfo = {
+    ; the full byte length of the entity (e.g., packet or frame),
+    ; including headers and trailers
+    ? length: uint64
+
+    ; the byte length of the entity's payload,
+    ; without headers or trailers
+    ? payload_length: uint64
+
+    ; the contents of the full entity,
+    ; including headers and trailers
+    data: hexstring
 }
-~~~
+~~~~~~~~
+{: .language-cddl}
+{: #raw-info-def title="RawInfo definition"}
 
 Note:
 
@@ -1101,14 +1195,16 @@ Importance: Core
 
 Used to log details of an internal error that might not get reflected on the wire.
 
-Data:
+Definition:
 
-~~~~
-{
-    code?:uint32,
-    message?:string
+~~~~~~~~
+GenericError = {
+    ? code: uint
+    ? message: text
 }
-~~~~
+~~~~~~~~
+{: .language-cddl}
+{: #generic-error-def title="GenericError definition"}
 
 ### warning
 Importance: Base
@@ -1116,14 +1212,16 @@ Importance: Base
 Used to log details of an internal warning that might not get reflected on the
 wire.
 
-Data:
+Definition:
 
-~~~~
-{
-    code?:uint32,
-    message?:string
+~~~~~~~~
+GenericWarning = {
+    ? code: uint
+    ? message: text
 }
-~~~~
+~~~~~~~~
+{: .language-cddl}
+{: #generic-warning-def title="GenericWarning definition"}
 
 ### info
 Importance: Extra
@@ -1131,13 +1229,15 @@ Importance: Extra
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages.
 
-Data:
+Definition:
 
-~~~~
-{
-    message:string
+~~~~~~~~
+GenericInfo = {
+    message: text
 }
-~~~~
+~~~~~~~~
+{: .language-cddl}
+{: #generic-info-def title="GenericInfo definition"}
 
 ### debug
 Importance: Extra
@@ -1145,13 +1245,15 @@ Importance: Extra
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages.
 
-Data:
+Definition:
 
-~~~~
-{
-    message:string
+~~~~~~~~
+GenericDebug = {
+    message: text
 }
-~~~~
+~~~~~~~~
+{: .language-cddl}
+{: #generic-debug-def title="GenericDebug definition"}
 
 ### verbose
 Importance: Extra
@@ -1159,13 +1261,15 @@ Importance: Extra
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages.
 
-Data:
+Definition:
 
-~~~~
-{
-    message:string
+~~~~~~~~
+GenericVerbose = {
+    message: text
 }
-~~~~
+~~~~~~~~
+{: .language-cddl}
+{: #generic-verbose-def title="GenericVerbose definition"}
 
 ## Simulation events
 
@@ -1188,12 +1292,16 @@ instance. This could also be reflected in the top-level qlog's `summary` or
 `configuration` fields, but having a separate event allows easier aggregation of
 several simulations into one trace (e.g., split by `group_id`).
 
-~~~~
-{
-    name?:string,
-    details?:any
+Definition:
+
+~~~~~~~~
+SimulationScenario = {
+    ? name: text
+    ? details: {* text => any }
 }
-~~~~
+~~~~~~~~
+{: .language-cddl}
+{: #simulation-scenario-def title="SimulationScenario definition"}
 
 ### marker
 Importance: Extra
@@ -1202,12 +1310,16 @@ Used to indicate when specific emulation conditions are triggered at set times
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
 triggered).
 
-~~~~
-{
-    type?:string,
-    message?:string
+Definition:
+
+~~~~~~~~
+SimulationMarker = {
+    ? type: text
+    ? message: text
 }
-~~~~
+~~~~~~~~
+{: .language-cddl}
+{: #simulation-marker-def title="SimulationMarker definition"}
 
 # Serializing qlog {#concrete-formats}
 
@@ -1292,7 +1404,7 @@ To represent qlog bytes in JSON, they MUST be serialized to their lowercase
 hexadecimal equivalents (with 0 prefix for values lower than 10). All values are
 directly appended to each other, without delimiters. The full value is not
 prefixed with 0x (as is sometimes common). An example is given in
-{{json-bytes-example}}.
+{{json-bytes-ex}}.
 
 ~~~~~~~~
 For the five raw unsigned byte input values of:
@@ -1302,7 +1414,7 @@ For the five raw unsigned byte input values of:
     raw: "051428abff"
 }
 ~~~~~~~~
-{: #json-bytes-example title="Example for serializing bytes"}
+{: #json-bytes-ex title="Example for serializing bytes"}
 
 As such, the resulting string will always have an even amount of characters and
 the original byte-size can be retrieved by dividing the string length by 2.
@@ -1322,7 +1434,7 @@ To reduce overhead however and in the case the full raw value is logged, the ext
 length-indicating field can be left out. As such, tools MUST be able to deal with
 this situation and derive the length of the field from the raw value if no
 separate length-indicating field is present. All possible permutations are shown
-by example in {{json-bytes-example-two}}.
+by example in {{json-bytes-ex2}}.
 
 ~~~~~~~~
 // both the full raw value and its length are present
@@ -1353,7 +1465,7 @@ by example in {{json-bytes-example-two}}.
 }
 
 ~~~~~~~~
-{: #json-bytes-example-two title="Example for serializing truncated bytes"}
+{: #json-bytes-ex2 title="Example for serializing truncated bytes"}
 
 
 ### Summarizing table
@@ -1422,43 +1534,55 @@ record, and can simply be appended as a new object at the back of an event strea
 or log file. Put differently, unlike default JSON, it does not require a file to
 be wrapped as a full object with "{ ... }" or "\[... \]".
 
-For this to work, some qlog definitions have to be adjusted however. Mainly,
-events are no longer part of the "events" array in the Trace object, but are
-instead logged separately from the qlog "header", as indicated by the TraceSeq
-object in {{json-seq-example}}. Additionally, qlog's JSON-SEQ mapping does not
-allow logging multiple individual traces in a single qlog file. As such, the
-QlogFile:traces field is replaced by the singular QlogFileSeq:trace field. An
-example can be seen in {{json-seq-example}}. Note that the "group_id" field can
-still be used on a per-event basis to include events from conceptually different
-sources in a single JSON-SEQ qlog file.
+For this to work, some qlog definitions have to be adjusted however.
+Mainly, events are no longer part of the "events" array in the Trace
+object, but are instead logged separately from the qlog "header", as
+indicated by the TraceSeq object in {{trace-seq-def}}. Additionally,
+qlog's JSON-SEQ mapping does not allow logging multiple individual
+traces in a single qlog file. As such, the QlogFile:traces field is
+replaced by the singular QlogFileSeq:trace field, see
+{{qlog-file-seq-def}}. An example can be seen in {{json-seq-ex}}. Note
+that the "group_id" field can still be used on a per-event basis to
+include events from conceptually different sources in a single JSON-SEQ
+qlog file.
 
-~~~~~~~~
 Definition:
 
-class TraceSeq {
-    title?: string,
-    description?: string,
-    configuration?: Configuration,
-    common_fields?: CommonFields,
-    vantage_point: VantagePoint
+~~~~~~~~
+TraceSeq = {
+    ? title: text
+    ? description: text
+    ? configuration: Configuration
+    ? common_fields: CommonFields
+    ? vantage_point: VantagePoint
 }
+~~~~~~~~
+{: .language-cddl}
+{: #trace-seq-def title="TraceSeq definition"}
 
-class QlogFileSeq {
-    qlog_format: "JSON-SEQ",
+Definition:
 
-    qlog_version:string,
-    title?:string,
-    description?:string,
-    summary?: Summary,
+~~~~~~~~
+QlogFileSeq = {
+    qlog_format: "JSON-SEQ"
+
+    qlog_version: text
+    ? title: text
+    ? description: text
+    ? summary: Summary
     trace: TraceSeq
 }
+~~~~~~~~
+{: .language-cddl}
+{: #qlog-file-seq-def title="QlogFileSeq definition"}
 
+JSON-SEQ serialization examples:
+
+~~~~~~~~
 // list of qlog events, serialized in accordance with RFC 7464,
 // starting with a Record Separator character and ending with a
 // newline.
 // For display purposes, Record Separators are rendered as <RS>
-
-JSON-SEQ serialization example:
 
 <RS>{
     "qlog_version": "0.3",
@@ -1485,7 +1609,7 @@ JSON-SEQ serialization example:
 <RS>{"time": 7, "name": "transport:packet_sent", "data": { ... } }
 ...
 ~~~~~~~~
-{: #json-seq-example title="Top-level element"}
+{: #json-seq-ex title="Top-level element"}
 
 Note: while not specifically required by the JSON-SEQ specification, all qlog
 field names in a JSON-SEQ serialization MUST be lowercase.
@@ -1859,6 +1983,10 @@ TODO: primarily the .well-known URI
 --- back
 
 # Change Log
+
+## Since draft-ietf-quic-qlog-main-schema-01:
+
+* Change the data definition language from TypeScript to CDDL (#143)
 
 ## Since draft-ietf-quic-qlog-main-schema-00:
 
