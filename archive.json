@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-15T00:42:55.062023+00:00",
+  "timestamp": "2022-02-20T00:46:10.994528+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -4572,9 +4572,17 @@
       ],
       "body": "Across the qlog docs, the text seems inconsistent when it mentions the \"trigger\" field, and whether that is a property of Event of Event:Data. For example\r\n\r\n```\r\nFor each event type, its importance and data definition is laid out, often accompanied by possible values for the optional \"trigger\" field.\r\n```\r\n\r\nIIUC, \"trigger\" is supposed to be only defined for Event:Data that cares to define it. It would help to sweep the docs to ensure consistency in this area.",
       "createdAt": "2021-07-11T13:36:36Z",
-      "updatedAt": "2021-08-18T13:52:10Z",
+      "updatedAt": "2022-02-18T14:20:58Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Current plan is to address this by including triggers directly in the event data definition instead of separately.\r\n\r\nSee https://github.com/quiclog/qlog/tree/master/CDDL/schema#triggers. ",
+          "createdAt": "2022-02-18T14:20:58Z",
+          "updatedAt": "2022-02-18T14:20:58Z"
+        }
+      ]
     },
     {
       "number": 167,
@@ -4849,11 +4857,17 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "lnicco"
+      ],
+      "labels": [
+        "editorial",
+        "quic-http3-fields",
+        "current-version"
+      ],
       "body": "The name of the setting was changed in draft 28",
       "createdAt": "2021-09-01T12:40:41Z",
-      "updatedAt": "2021-09-01T15:01:28Z",
+      "updatedAt": "2022-02-18T14:21:51Z",
       "closedAt": null,
       "comments": [
         {
@@ -4929,7 +4943,7 @@
       "id": "I_kwDOCrLn6M49Pv9z",
       "title": "consider an alternative to the .qlog file extension for streaming serilization",
       "url": "https://github.com/quicwg/qlog/issues/180",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -4939,8 +4953,8 @@
       ],
       "body": "The `qlog_format` field is part of the QlogFile and QlogFileNDJSON, so it's a bit circular to decide how to parse the object. When processing large files, it can be a pain to decide,\r\n\r\nOne technique would be to look at the first line of a file to determine the qlog format before attempting to parse it. But that seems like a hack. It also doesn't help if a large qlog is written into a file as a single line.\r\n\r\nKnowing the format up front, such as by unique file extensions, would mean that tools or applications can make more assumptions about how to deal with the file. For instance, I could simply use `split` https://man7.org/linux/man-pages/man1/split.1.html to safely slice up NDJSON files today, without requireing deep knowledge of qlog formats.",
       "createdAt": "2021-10-15T15:08:43Z",
-      "updatedAt": "2022-01-21T18:25:18Z",
-      "closedAt": null,
+      "updatedAt": "2022-02-18T17:29:51Z",
+      "closedAt": "2022-02-18T17:29:51Z",
       "comments": [
         {
           "author": "rmarx",
@@ -5000,7 +5014,7 @@
       ],
       "body": "I recently refactored quiche's qlog implementation to split events into their own modules for general, QUIC and HTTP/3. In follow up work, I realised our implementation of the ConnectionClose frame was stale and I attempted to fix it up here https://github.com/cloudflare/quiche/pull/1079/commits/866292b923ce2fe236fcced0a641607e3be60bec. The definition of that frame at the time of writing is below, and a far as I can tell, `ApplicationError` is only defined in the HTTP/3 spec.\r\n\r\n```\r\nclass ConnectionCloseFrame{\r\n    frame_type:string = \"connection_close\";\r\n\r\n    error_space?:ErrorSpace;\r\n    error_code?:TransportError | ApplicationError | uint32;\r\n    raw_error_code?:uint32;\r\n    reason?:string;\r\n\r\n    trigger_frame_type?:uint64 | string; // For known frame types, the appropriate \"frame_type\" string. For unknown frame types, the hex encoded identifier value\r\n}\r\n```\r\n\r\nIn code review, it was highlighted that including an HTTP/3 enumeration in my QUIC module code is a bit strange (feels like a priority inversion). Also, it doesn't seem to scale to support other applications. I think perhaps what is needed is for there to be an \"externalised\" ApplicationError union type like `type ApplicationError = Http3Error | NewStuff`, or maybe even that doesn't work well for supporting new application protocols...",
       "createdAt": "2021-11-05T11:14:54Z",
-      "updatedAt": "2021-11-09T16:03:58Z",
+      "updatedAt": "2022-02-18T14:18:50Z",
       "closedAt": null,
       "comments": [
         {
@@ -5030,6 +5044,13 @@
           "body": "String | uint32 works for me and means we likely never have to revisit this space ",
           "createdAt": "2021-11-09T16:03:58Z",
           "updatedAt": "2021-11-09T16:03:58Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "With CDDL, we will be able to do better than `string | uint32` as it can define extension points (called sockets/plugs in CDDL) with `$`. \r\n\r\nWill probably look something like:\r\n```\r\n# in QUIC document:\r\n$ApplicationErrorType\r\n\r\n# in HTTP/3 document:\r\n$ApplicationErrorType \\= H3ApplicationError\r\n\r\n# in future WebTransport document\r\n$ApplicationErrorType \\= WTApplicationError\r\n\r\n```",
+          "createdAt": "2022-02-18T14:18:50Z",
+          "updatedAt": "2022-02-18T14:18:50Z"
         }
       ]
     },
@@ -5178,6 +5199,28 @@
           "updatedAt": "2022-02-14T18:52:54Z"
         }
       ]
+    },
+    {
+      "number": 192,
+      "id": "I_kwDOCrLn6M5EPB8i",
+      "title": "Rework $ProtocolEventBody",
+      "url": "https://github.com/quicwg/qlog/issues/192",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [
+        "design",
+        "high-level-schema",
+        "discuss"
+      ],
+      "body": "The new CDDL approach uses a CDDL extension point to be more strict about which values are allowed in the `Event:data` field. \r\n\r\nCurrently, it's defined as:\r\n\r\n```\r\n; The ProtocolEventBody is any key-value map (e.g., JSON object)\r\n; only the optional trigger field is defined in this document\r\n$ProtocolEventBody /= {\r\n    ? trigger: text\r\n    * text => any\r\n}\r\n; event documents are intended to extend this socket by using:\r\n; NewProtocolSpecificEvents = EventType1 / EventType2 / ... / EventTypeN\r\n; $ProtocolEventBody /= NewProtocolSpecificEvents\r\n```\r\n\r\nHowever, this effectively still allows just about any JSON object as ProtocolEventBody, as we're just extending the $ProtocolEventBody.\r\n\r\nIf we want to be (slightly) more strict, we could do something like this:\r\n```\r\n; main doc\r\nProtocolEventBodyPrototype = {\r\n    ? trigger: text\r\n    * text => any\r\n}\r\n\r\nProtocolEventBody = ProtocolEventBodyPrototype / $ProtocolEventBodies\r\n\r\n; event docs\r\nNewProtocolSpecificEvents = EventType1 / EventType2 / ... / EventTypeN\r\n$ProtocolEventBodies /= NewProtocolSpecificEvents\r\n```\r\n\r\nAlternatively, we can just NOT allow the general form (the `ProtocolEventBodyPrototype`) and just include that as an example and require event bodies to provide at least 1 defined event. ",
+      "createdAt": "2022-02-19T17:03:09Z",
+      "updatedAt": "2022-02-19T17:03:22Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -6941,24 +6984,26 @@
       "id": "PR_kwDOCrLn6M4yzX0_",
       "title": "Fix main schema build errors and wrapping",
       "url": "https://github.com/quicwg/qlog/pull/189",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "- main: temporarily remove {: .language-json} tags until diagrams are changed\r\n- main: wrap lines to appease xml2rfc\r\n\r\nHelps address part of #188.\r\n\r\nIn this spec, you have a fundamental problem that the json in examples is malformed and kramdown complains. So let's just disable that for now. \r\n\r\nThe rest of the changes are tedious but also not too onerous. The main issue you have is that there's lots of comments here and there that break length limits. So I've just picked a line length that will appease xml2rfc. \r\n\r\nIn some cases, you have comments inside JSON, which won't work. In one case I deleted some because the qlog properties might get deleted anyway.\r\n\r\nThe changes you have in mind might have obviated the errors anyway. But if not, these changes will set a strong foundation to know how to shut xml2rfc up.",
       "createdAt": "2022-02-14T17:30:05Z",
-      "updatedAt": "2022-02-14T17:55:58Z",
+      "updatedAt": "2022-02-18T11:17:39Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "0a0d7a78c492ff0fa0b3845b467731fd5cbc711c",
       "headRepository": "quicwg/qlog",
       "headRefName": "lucas/fix-main-schema",
       "headRefOid": "335cdbc19b1195a62e75e6c3682b9ce884ea5cb6",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-02-18T11:17:39Z",
+      "mergedAt": "2022-02-18T11:17:39Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "fac519ace6ed637d406170db1aab36768a3b730e"
+      },
       "comments": [],
       "reviews": [
         {
@@ -7033,6 +7078,19 @@
           "createdAt": "2022-02-14T17:55:58Z",
           "updatedAt": "2022-02-14T17:55:58Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M404Mog",
+          "commit": {
+            "abbreviatedOid": "335cdbc"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-02-18T11:16:56Z",
+          "updatedAt": "2022-02-18T11:16:56Z",
+          "comments": []
         }
       ]
     },
@@ -7041,24 +7099,26 @@
       "id": "PR_kwDOCrLn6M4yzYaa",
       "title": "Fix H3 and QPACK wrapping",
       "url": "https://github.com/quicwg/qlog/pull/190",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Fixes part of #188. The changes are tedious but also not too onerous. The main issue you have is that there's lots of comments here and there that break length limits. So I've just picked a line length that will appease xml2rfc.\r\n\r\nThe changes you have in mind might have obviated the errors anyway. But if not, these changes will set a strong foundation to know how to shut xml2rfc up.",
       "createdAt": "2022-02-14T17:32:31Z",
-      "updatedAt": "2022-02-14T18:56:05Z",
+      "updatedAt": "2022-02-18T11:20:22Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "0a0d7a78c492ff0fa0b3845b467731fd5cbc711c",
       "headRepository": "quicwg/qlog",
       "headRefName": "lucas/fix-h3-line-width",
       "headRefOid": "a527786789d2349b0f308f26dc0cb24a94b144f1",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-02-18T11:20:22Z",
+      "mergedAt": "2022-02-18T11:20:22Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "8dd481ad98f85bc5db16fc8d01bdf20b312f39e1"
+      },
       "comments": [],
       "reviews": [
         {
@@ -7093,6 +7153,19 @@
               "updatedAt": "2022-02-14T18:56:05Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M404NaP",
+          "commit": {
+            "abbreviatedOid": "a527786"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-02-18T11:20:14Z",
+          "updatedAt": "2022-02-18T11:20:14Z",
+          "comments": []
         }
       ]
     },
@@ -7101,24 +7174,26 @@
       "id": "PR_kwDOCrLn6M4yzg_L",
       "title": "Fix QUIC events wrapping and errors",
       "url": "https://github.com/quicwg/qlog/pull/191",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "- quic: fix artwork line length\r\n- quic: stick commas between refs to unfool xml2rfc\r\n\r\nFixes part of https://github.com/quicwg/qlog/issues/188. The changes are tedious but also not too onerous. The main issue you have is that there's lots of comments here and there that break length limits. So I've just picked a line length that will appease xml2rfc.\r\n\r\nThe changes you have in mind might have obviated the errors anyway. But if not, these changes will set a strong foundation to know how to shut xml2rfc up.",
       "createdAt": "2022-02-14T18:11:09Z",
-      "updatedAt": "2022-02-14T18:23:19Z",
+      "updatedAt": "2022-02-18T11:23:19Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "0a0d7a78c492ff0fa0b3845b467731fd5cbc711c",
       "headRepository": "quicwg/qlog",
       "headRefName": "lucas/fix-quic-events",
       "headRefOid": "fd68ca3d9f5f60beaaf9c62f48d9538afc10c640",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-02-18T11:23:19Z",
+      "mergedAt": "2022-02-18T11:23:19Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "9b28c154492e6dac2491dfded48d2def56ed3179"
+      },
       "comments": [],
       "reviews": [
         {
@@ -7133,8 +7208,47 @@
           "createdAt": "2022-02-14T18:23:19Z",
           "updatedAt": "2022-02-14T18:23:19Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M404OEU",
+          "commit": {
+            "abbreviatedOid": "fd68ca3"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-02-18T11:23:10Z",
+          "updatedAt": "2022-02-18T11:23:10Z",
+          "comments": []
         }
       ]
+    },
+    {
+      "number": 193,
+      "id": "PR_kwDOCrLn6M4zLk9j",
+      "title": "Move to CDDL - main schema",
+      "url": "https://github.com/quicwg/qlog/pull/193",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "This PR bundles the TypeScript-to-CDDL changes for draft 0.4 for the main schema document (see other PRs for the QUIC and H3/QPACK documents). \r\n\r\nList of intended changes:\r\n\r\n- [x] Replace TypeScript with CDDL descriptions\r\n- [x] Split up CDDL definitions and JSON examples\r\n- [ ] Properly explain the $ProtocolEventBody extension point + include trigger in the example \r\n- [ ] Properly discuss how event docs should define triggers in the CDDL \r\n- [ ] Replace TypeScript explanation in `Notational Conventions` and `qlog to JSON mapping` with CDDL and I-JSON references, basic explanations and considerations\r\n- [ ] Explain the need for custom uint64 and hexstring CDDL types\r\n",
+      "createdAt": "2022-02-19T19:09:46Z",
+      "updatedAt": "2022-02-19T19:09:46Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "9b28c154492e6dac2491dfded48d2def56ed3179",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "cddl-main-04",
+      "headRefOid": "05f015f5517e95b2b95aa779bf081615fa9130dd",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
