@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-02-20T00:46:10.994528+00:00",
+  "timestamp": "2022-02-22T00:40:22.439744+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7248,6 +7248,54 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 194,
+      "id": "PR_kwDOCrLn6M4zMoiq",
+      "title": "Move to CDDL - HTTP3, QPACK",
+      "url": "https://github.com/quicwg/qlog/pull/194",
+      "state": "OPEN",
+      "author": "lnicco",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2022-02-21T00:34:43Z",
+      "updatedAt": "2022-02-21T22:08:30Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "9b28c154492e6dac2491dfded48d2def56ed3179",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "cddl_http3",
+      "headRefOid": "564768f8a5799137a3c4476cef58148bad720568",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I have checked the CDDL syntax with this command \r\n```\r\ncat draft-ietf-quic-qlog-h3-events.md | awk 'BEGIN{flag=0} /~~~ cddl-definition/{flag=1; printf \"\\n\"; next} /~~~/{flag=0; next} flag' | cddl - generate | jq .\r\n``` \r\n\r\nmost definitions are unused though at this time \r\ncommand output\r\n```\r\n*** Unused rule HTTP3ParametersRestore\r\n*** Unused rule HTTP3StreamType\r\n*** Unused rule HTTP3StreamTypeSet\r\n*** Unused rule HTTP3FrameCreated\r\n*** Unused rule HTTP3FrameParsed\r\n*** Unused rule HTTP3PushResolved\r\n*** Unused rule QPACKStateUpdate\r\n*** Unused rule QPACKStreamStateUpdate\r\n*** Unused rule QPACKStreamState\r\n*** Unused rule QPACKDynamicTableUpdate\r\n*** Unused rule QPACKDynamicTableUpdateType\r\n*** Unused rule QPACKDynamicTableEntry\r\n*** Unused rule QPACKHeadersEncoded\r\n*** Unused rule QPACKHeadersDecoded\r\n*** Unused rule QPACKInstructionCreated\r\n*** Unused rule QPACKInstructionParsed\r\n*** Unused rule HTTP3Frame\r\n*** Unused rule HTTP3DataFrame\r\n*** Unused rule HTTP3HeadersFrame\r\n*** Unused rule HTTPHeader\r\n*** Unused rule HTTP3CancelPushFrame\r\n*** Unused rule HTTP3SettingsFrame\r\n*** Unused rule HTTP3Settings\r\n*** Unused rule HTTP3PushPromiseFrame\r\n*** Unused rule HTTP3GoawayFrame\r\n*** Unused rule HTTP3MaxPushIdFrame\r\n*** Unused rule HTTP3ReservedFrame\r\n*** Unused rule HTTP3ApplicationError\r\n*** Unused rule QPACKInstruction\r\n*** Unused rule SetDynamicTableCapacityInstruction\r\n*** Unused rule InsertWithNameReferenceInstruction\r\n*** Unused rule InsertWithoutNameReferenceInstruction\r\n*** Unused rule DuplicateInstruction\r\n*** Unused rule SectionAcknowledgementInstruction\r\n*** Unused rule StreamCancellationInstruction\r\n*** Unused rule InsertCountIncrementInstruction\r\n*** Unused rule QPACKHeaderBlockRepresentation\r\n*** Unused rule IndexedHeaderField\r\n*** Unused rule LiteralHeaderFieldWithName\r\n*** Unused rule LiteralHeaderFieldWithoutName\r\n*** Unused rule QPACKHeaderBlockPrefix\r\n*** Unused rule QPACKTableType\r\n{\r\n  \"bather\": 1044930698034052400,\r\n  \"upaithric\": 15980487929328420000,\r\n  \"uxorially\": 14932785096873822000,\r\n  \"verminer\": 3648320349101929000\r\n}\r\n```\r\n",
+          "createdAt": "2022-02-21T00:37:27Z",
+          "updatedAt": "2022-02-21T00:37:27Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Hey @lnicco,\r\n\r\n Thanks for the work and the cool one-liner to extract CDDL from the draft.\r\n\r\nSome initial feedback:\r\n1. I've found that the CDDL tool doesn't really properly validate the \"unused rules\" so you need to make sure they are referenced somewhere. For the main schema I've forced this with kind of an ugly hack by adding the rules manually to a debugging definition ([see here](https://github.com/quiclog/qlog/blob/master/CDDL/schema/qlog-0.4.cddl#L175)). It's probably best to have that here as well (can even be in the draft for now imo).\r\n2. using the `~~~ cddl-definition` ends up with slightly different generated HTML than the main schema where I use the `{: .language-cddl}`. Your version generates `class=\"lang-cddl-definition sourcecode\"` while mine does `class=\"lang-cddl sourcecode\"`. I don't really care which method we use, as long as it creates consistent output. \r\n3. We're not totally consistent about how we use string \"enums\". E.g., you've added a separate `QPACKDynamicTableUpdateType`, but HTTP3PushResolved has an inline `decision: \"claimed\" / \"abandoned\"`. I'd prefer having separate types for these things (have done this in the main schema as well).\r\n4. You've prefixed the HTTP/3 type names with `HTTP3` instead of `HTTP`. My idea was that tools can eventually generate the qlog event name from the type names (i.e., `TransportPacketSent` can be transformed to `transport:packet_sent`). In this case, the category name is `http` and not `http3`, so your events should be called `HTTPMyEventName` not `HTTP3MyEventName`. At least for now... maybe we should discuss renaming the category to `http3` instead... (now I assumed it would be implied by the `protocol_type` field) cc @LPardue and see #146.\r\n5. I think now in CDDL you can indeed have a single definition for FrameParsed and FrameCreated and have both alias to that.   \r\n6. Please also run the `make` command (at least for the final PR commit). This didn't have glaring errors, but a few trailing whitespaces (fixed with `make fix-lint`). ",
+          "createdAt": "2022-02-21T08:12:02Z",
+          "updatedAt": "2022-02-21T08:12:02Z"
+        },
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Thanks @rmarx! Very valuable feedback and advice. \r\nI'll try to fix the generated HTML and use `{: .language-cddl}`. \r\nFor the time being I admit that I cut corners to get a quick continuous CDDL validation :)  \r\n\r\nAs far as using the HTTP3 prefix instead of HTTP I thought that it was valuable to distinguish between HTTP/3 and HTTP/2 especially around Frames (e.g. HTTP/2 Frames have flags?) but I'll revert to using HTTP and we can discuss further for future versions. \r\n\r\nI'll have a second iteration ready soon.",
+          "createdAt": "2022-02-21T21:51:46Z",
+          "updatedAt": "2022-02-21T22:08:30Z"
+        }
+      ],
       "reviews": []
     }
   ]
