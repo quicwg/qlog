@@ -162,9 +162,9 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
 interpreted as described in {{?RFC2119}}.
 
-The examples and data definitions in ths document are expressed in a custom data
-definition language, inspired by JSON and TypeScript, and described in
-[QLOG-MAIN].
+The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
+extensions described in [QLOG-MAIN].
 
 # Overview
 
@@ -1338,7 +1338,7 @@ This event is emitted when a packet is deemed lost by loss detection.
 Definition:
 
 ~~~ cddl
-TransportPacketLost = {
+RecoveryPacketLost = {
     ; should include at least the packet_type and packet_number
     ? header: PacketHeader
 
@@ -1354,7 +1354,7 @@ TransportPacketLost = {
         "pto_expired"
 }
 ~~~
-{: #recovery-packetlost-def title="TransportPacketLost definition"}
+{: #recovery-packetlost-def title="RecoveryPacketLost definition"}
 
 For this event, the "trigger" field SHOULD be set (for example to one of the
 values below), as this helps tremendously in debugging.
@@ -1402,6 +1402,35 @@ TBD
 --- back
 
 # QUIC data field definitions
+
+## ProtocolEventBody extension
+
+We extend the `$ProtocolEventBody` extension point defined in
+[QLOG-MAIN] with the QUIC protocol events defined in this document.
+
+~~~ cddl
+QuicEvents = ConnectivityServerListening /
+             ConnectivityConnectionStarted /
+             ConnectivityConnectionClosed /
+             ConnectivityConnectionIDUpdated /
+             ConnectivitySpinBitUpdated /
+             ConnectivityConnectionStateUpdated /
+             SecurityKeyUpdated / SecurityKeyRetired /
+             TransportVersionInformation / TransportALPNInformation /
+             TransportParametersSet / TransportParametersRestored /
+             TransportPacketSent / TransportPacketReceived /
+             TransportPacketDropped / TransportPacketBuffered /
+             TransportPacketsAcked / TransportDatagramsSent /
+             TransportDatagramsReceived / TransportDatagramDropped /
+             TransportStreamStateUpdated / TransportFramesProcessed /
+             TransportDataMoved /
+             RecoveryParametersSet / RecoveryMetricsUpdated /
+             RecoveryCongestionStateUpdated /
+             RecoveryLossTimerUpdated /
+             RecoveryPacketLost
+
+$ProtocolEventBody /= QuicEvents
+~~~
 
 ## QuicVersion
 
