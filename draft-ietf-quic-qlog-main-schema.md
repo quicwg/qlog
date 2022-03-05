@@ -126,74 +126,71 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
 interpreted as described in {{?RFC2119}}.
 
-While the qlog schema's are format-agnostic, for readability the qlog documents
-will use a JSON-inspired format ({{!RFC8259}}) for examples and definitions.
+### Schema definition
 
-As qlog can be serialized both textually but also in binary, we employ a custom
-datatype definition language, inspired loosely by the ["TypeScript"
-language](https://www.typescriptlang.org/).
+To define events and data structures, all qlog documents use the Concise
+Data Definition Language {{!CDDL=RFC8610}}. This document uses the basic
+syntax, the specific `text`, `uint`, `float32`, `float64`, `bool`, and
+`any` types, as well as the `.default`, `.size`, and `.regexp` control
+operators, the `~` unwrapping operator, and the `$` extension point
+syntax from {{!CDDL=RFC8610}}.
 
-This document describes how to employ JSON ({{!RFC8259}}) and JSON Text Sequences
-({{!RFC7464}}) as textual serializations for qlog in {{concrete-formats}}. Other
-documents will describe how to utilize other concrete serialization options,
-though tips and requirements for these are also listed in this document
-({{concrete-formats}}).
+Additionally, this document defines the following custom types for
+clarity:
 
-The main general conventions in this document a reader should be aware of are:
-
-* obj? : this object is optional
-* type1 &#124; type2 : a union of these two types (object can be either type1 OR
-  type2)
-* obj&#58;type : this object has this concrete type
-* obj&#58;array&lt;type&gt; : this object is an array of this type
-* class : defines a new type
-* &#47;&#47; : single-line comment
-
-The main data types are:
-
-* int8 : signed 8-bit integer
-* int16 : signed 16-bit integer
-* int32 : signed 32-bit integer
-* int64 : signed 64-bit integer
-* uint8 : unsigned 8-bit integer
-* uint16 : unsigned 16-bit integer
-* uint32 : unsigned 32-bit integer
-* uint64 : unsigned 64-bit integer
-* float : 32-bit floating point value
-* double : 64-bit floating point value
-* byte : an individual raw byte (8-bit) value (use array&lt;byte&gt; or the
-  shorthand "bytes" to specify a binary blob)
-* string : list of Unicode (typically UTF-8) encoded characters
-* boolean : boolean
-* enum: fixed list of values (Unless explicity defined, the value of an enum entry
-  is the string version of its name (e.g., initial = "initial"))
-* any : represents any object type. Mainly used here as a placeholder for more
-  concrete types defined in related documents (e.g., specific event types)
-
-All timestamps and time-related values (e.g., offsets) in qlog are logged as
-doubles in the millisecond resolution.
-
-Other qlog documents can define their own data types (e.g., separately for each
-Packet type that a protocol supports).
-
-
-qlog also defines two custom CDDL types:
-
-Definition:
-
-~~~~~~~~
-; CDDL doesn't define a default uint64 type
-; NOTE: this is below QlogFile here because otherwise the tooling
-; thinks uint64 is the root type instead of QlogFile...
+~~~ cddl
+; CDDL's uint is defined as being 64-bit in size
+; but for many protocol fields we want to be more restrictive
+; and explicit
+uint8 = uint .size 1
+uint16 = uint .size 2
+uint32 = uint .size 4
 uint64 = uint .size 8
-; CDDL doesn't define a proper hex-string that's compatible with JSON
-; the "bytes" and "bstr" get serialized as h'1234ABCD',
-; which isn't valid JSON
-; TODO: FIXME: ask CDDL designers about this
-hexstring = text
-~~~~~~~~
-{: .language-cddl}
-{: #cddl-custom-types-def title="Custom CDDL types definition"}
+
+; an even-length lowercase string of hexadecimally encoded bytes
+; examples: 82dc, 027339, 4cdbfd9bf0
+; this is needed because the default CDDL binary string (bytes/bstr)
+; is only CBOR and not JSON compatible
+hexstring = text .regexp "([0-9a-f]{2})*"
+~~~
+{: #cddl-custom-types-def title="Additional CDDL type definitions"}
+
+The main general CDDL syntax conventions in this document a reader
+should be aware of for easy reading comprehension are:
+
+* `? obj` : this object is optional
+* `TypeName1 / TypeName2` : a union of these two types (object can be either type 1 OR
+  type 2)
+* `obj: TypeName` : this object has this concrete type
+* `obj: [* TypeName]` : this object is an array of this type with
+  minimum size of 0 elements
+* `obj: [+ TypeName]` : this object is an array of this type with
+  minimum size of 1 element
+* `TypeName = ...` : defines a new type
+* `EnumName = "entry1" / "entry2" / entry3 / ...`: defines an enum
+* `StructName = { ... }` : defines a new struct type
+* `;` : single-line comment
+* `* text => any` : special syntax to indicate 0 or more fields that
+  have a string key that maps to any value. Used to indicate a generic
+  JSON object.
+
+All timestamps and time-related values (e.g., offsets) in qlog are
+logged as `float64` in the millisecond resolution.
+
+Other qlog documents can define their own CDDL-compatible (struct) types
+(e.g., separately for each Packet type that a protocol supports).
+
+### Serialization
+
+While the qlog schemas are format-agnostic, and can be serialized in
+many ways (e.g., JSON, CBOR, protobuf, ...), this document only
+describes how to employ {{!JSON=RFC8259}}, its subset
+{{!I-JSON=RFC7493}}, and its streamable derivative
+{{!JSON-Text-Sequences=RFC7464}} as textual serialization options. As
+such, examples are provided in {{!JSON=RFC8259}}. Other documents may
+describe how to utilize other concrete serialization options, though
+tips and requirements for these are also listed in this document
+({{concrete-formats}}).
 
 # Design goals
 
@@ -202,10 +199,10 @@ The main tenets for the qlog schema design are:
 * Streamable, event-based logging
 * Flexibility in the format, complexity in the tooling (e.g., few components are a
   MUST, tools need to deal with this)
-* Extensible and pragmatic (e.g., no complex fixed schema with extension points)
-* Aggregation and transformation friendly (e.g., the top-level element is a
-  container for individual traces, group_id can be used to tag events to a
-  particular context)
+* Extensible and pragmatic
+* Aggregation and transformation friendly (e.g., the top-level element
+  for the non-streaming format is a container for individual traces,
+  group_ids can be used to tag events to a particular context)
 * Metadata is stored together with event data
 
 
@@ -223,7 +220,7 @@ Note:
 drafts of this document (see draft-marx-qlog-main-schema). The old values for the
 "qlog_version" field were "draft-00", "draft-01" and "draft-02". When qlog was
 moved to the QUIC working group, we decided to switch to a new versioning scheme
-which is independent of individual draft document numbers. However, we do start
+which is independent of individual draft document numbers. However, we did start
 from 0.3, as conceptually 0.0, 0.1 and 0.2 can map to draft-00, draft-01 and
 draft-02.
 
@@ -240,7 +237,7 @@ An example of the qlog file's top-level structure is shown in {{qlog-file-def}}.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 QlogFile = {
     qlog_version: text
     ? qlog_format: text .default "JSON"
@@ -249,13 +246,12 @@ QlogFile = {
     ? summary: Summary
     ? traces: [+ Trace / TraceError]
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #qlog-file-def title="QlogFile definition"}
 
 JSON serialization example:
 
-~~~~~~~~
+~~~
 {
     "qlog_version": "0.3",
     "qlog_format": "JSON",
@@ -266,7 +262,7 @@ JSON serialization example:
     },
     "traces": [...]
 }
-~~~~~~~~
+~~~
 {: #qlog-file-ex title="QlogFile example"}
 
 ## Summary
@@ -285,15 +281,14 @@ shown in {{summary}}.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 Summary = {
     ; summary can contain any type of custom information
     ; text here doesn't mean the type text,
     ; but the fact that keys/names in the objects are strings
     * text => any
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #summary-def title="Summary definition"}
 
 
@@ -335,15 +330,14 @@ as shown in {{trace-error-def}}.
 
 Definition:
 
-~~~~~~~
+~~~ cddl
 TraceError = {
     error_description: text
     ; the original URI at which we attempted to find the file
     ? uri: text
     ? vantage_point: VantagePoint
 }
-~~~~~~~
-{: .language-cddl}
+~~~
 {: #trace-error-def title="TraceError definition"}
 
 JSON serialization example:
@@ -378,7 +372,7 @@ the "common_fields" list and "vantage_point" field.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 Trace = {
     ? title: text
     ? description: text
@@ -387,8 +381,7 @@ Trace = {
     ? vantage_point: VantagePoint
     events: [* Event]
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #trace-def title="Trace definition"}
 
 JSON serialization example:
@@ -428,15 +421,14 @@ configuration settings: "time_offset" and "original_uris".
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 Configuration = {
     ; time_offset is in milliseconds
     time_offset: float64
     original_uris:[* text]
     * text => any
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #configuration-def title="Configuration definition"}
 
 JSON serialization example:
@@ -506,7 +498,7 @@ include multiple traces, split by vantage_point, in a single qlog file.
 
 Definitions:
 
-~~~~~~~~
+~~~ cddl
 VantagePoint = {
     ? name: text
     type: VantagePointType
@@ -517,8 +509,7 @@ VantagePoint = {
 ; server = endpoint which accepts the connection
 ; network = observer in between client and server
 VantagePointType = "client" / "server" / "network" / "unknown"
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #vantage-point-def title="VantagePoint definition"}
 
 JSON serialization examples:
@@ -586,7 +577,7 @@ An example of a qlog event with its component fields is shown in
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 Event = {
     time: float64
     name: text
@@ -600,8 +591,7 @@ Event = {
     ; events can contain any amount of custom fields
     * text => any
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #event-def title="Event definition"}
 
 JSON serialization:
@@ -634,10 +624,9 @@ is indicated in the "time_format" field, which allows one of three values:
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 TimeFormat = "absolute" / "delta" / "relative"
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #time-format-def title="TimeFormat definition"}
 
 * Absolute: Include the full absolute timestamp with each event. This approach
@@ -746,7 +735,7 @@ which is discussed in {{trigger-field}}.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 ; The ProtocolEventBody is any key-value map (e.g., JSON object)
 ; only the optional trigger field is defined in this document
 $ProtocolEventBody /= {
@@ -756,21 +745,21 @@ $ProtocolEventBody /= {
 ; event documents are intended to extend this socket by using:
 ; NewProtocolEvents = EventType1 / EventType2 / ... / EventTypeN
 ; $ProtocolEventBody /= NewProtocolEvents
-~~~~~~~~
-{: .language-cddl}
-{: #data-def title="Event definition"}
+~~~
+{: #data-def title="ProtocolEventBody definition"}
 
 One purely illustrative example for a QUIC "packet_sent" event is shown in
 {{data-ex}}:
 
 ~~~~~~~~
 TransportPacketSent = {
-    ? packet_size: uint
+    ? packet_size: uint16
     header: PacketHeader
     ? frames:[* QuicFrame]
+    ? trigger: "pto_probe" / "retransmit_timeout" / "bandwidth_probe"
 }
 
-would be serialized as
+could be serialized as
 
 {
     packet_size: 1280,
@@ -801,10 +790,9 @@ QUIC+HTTP/3 connections).
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 ProtocolType = [+ text]
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #protocol-type-def title="ProtocolType definition"}
 
 For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
@@ -840,7 +828,7 @@ One purely illustrative example of some potential triggers for QUIC's
 ~~~~~~~~
 TransportPacketDropped = {
     ? packet_type: PacketType
-    ? raw_length: uint
+    ? raw_length: uint16
 
     ? trigger: "key_unavailable" / "unknown_connection_id" /
                "decrypt_error" / "unsupported_version"
@@ -874,10 +862,9 @@ group. Some examples can be seen in {{group-id-ex}}.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 GroupID = text
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #group-id-def title="GroupID definition"}
 
 JSON serialization example for events grouped by four tuples
@@ -993,7 +980,7 @@ below:
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 CommonFields = {
     ? time_format: TimeFormat
     ? reference_time: float64
@@ -1003,8 +990,7 @@ CommonFields = {
 
     * text => any
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #common-fields-def title="CommonFields definition"}
 
 Tools MUST be able to deal with these fields being defined either on each event
@@ -1117,7 +1103,7 @@ There are some event types and data classes that are common across protocols,
 applications and use cases that benefit from being defined in a single location.
 This section specifies such common definitions.
 
-## Raw packet and frame information
+## Raw packet and frame information {#raw-info}
 
 While qlog is a more high-level logging format, it also allows the inclusion of
 most raw wire image information, such as byte lengths and even raw byte values.
@@ -1130,7 +1116,7 @@ applicable).
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 RawInfo = {
     ; the full byte length of the entity (e.g., packet or frame),
     ; including headers and trailers
@@ -1142,17 +1128,17 @@ RawInfo = {
 
     ; the contents of the full entity,
     ; including headers and trailers
-    data: hexstring
+    ? data: hexstring
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #raw-info-def title="RawInfo definition"}
 
 Note:
 
-: The RawInfo:data field can be truncated for privacy or security purposes
-(for example excluding payload data). In this case, the length properties should
-still indicate the non-truncated lengths.
+: The RawInfo:data field can be truncated for privacy or security
+purposes (for example excluding payload data), see {{truncated-values}}.
+In this case, the length properties should still indicate the
+non-truncated lengths.
 
 Note:
 
@@ -1197,13 +1183,12 @@ Used to log details of an internal error that might not get reflected on the wir
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 GenericError = {
-    ? code: uint
+    ? code: uint64
     ? message: text
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #generic-error-def title="GenericError definition"}
 
 ### warning
@@ -1214,13 +1199,12 @@ wire.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 GenericWarning = {
-    ? code: uint
+    ? code: uint64
     ? message: text
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #generic-warning-def title="GenericWarning definition"}
 
 ### info
@@ -1231,12 +1215,11 @@ logging format but still want to support unstructured string messages.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 GenericInfo = {
     message: text
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #generic-info-def title="GenericInfo definition"}
 
 ### debug
@@ -1247,12 +1230,11 @@ logging format but still want to support unstructured string messages.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 GenericDebug = {
     message: text
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #generic-debug-def title="GenericDebug definition"}
 
 ### verbose
@@ -1263,12 +1245,11 @@ logging format but still want to support unstructured string messages.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 GenericVerbose = {
     message: text
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #generic-verbose-def title="GenericVerbose definition"}
 
 ## Simulation events
@@ -1294,13 +1275,12 @@ several simulations into one trace (e.g., split by `group_id`).
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 SimulationScenario = {
     ? name: text
     ? details: {* text => any }
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #simulation-scenario-def title="SimulationScenario definition"}
 
 ### marker
@@ -1312,13 +1292,12 @@ triggered).
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 SimulationMarker = {
     ? type: text
     ? message: text
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #simulation-marker-def title="SimulationMarker definition"}
 
 # Serializing qlog {#concrete-formats}
@@ -1340,12 +1319,14 @@ interoperability between qlog implementations of various protocol stacks, as som
 custom or tweaked events from one might not be compatible with the format of the
 other. This will also reflect in tooling: not all tools will support all formats.
 
-This being said, the authors prefer JSON as the basis for storing qlog, as it
-retains full flexibility and maximum interoperability. Storage overhead can be
-managed well in practice by employing compression. For this reason, this document
-details both how to practically transform qlog schema definitions to JSON and to
-the streamable JSON Text Sequences. We discuss concrete options to bring down JSON
-size and processing overheads in {{optimizations}}.
+This being said, the authors prefer JSON as the basis for storing qlog,
+as it retains full flexibility and maximum interoperability. Storage
+overhead can be managed well in practice by employing compression. For
+this reason, this document details how to practically transform qlog
+schema definitions to {{!JSON=RFC8259}}, its subset {{!I-JSON=RFC7493}},
+and its streamable derivative {{!JSON-Text-Sequences=RFC7464}}s. We
+discuss concrete options to bring down JSON size and processing
+overheads in {{optimizations}}.
 
 As depending on the employed format different deserializers/parsers should be
 used, the "qlog_format" field is used to indicate the chosen serialization
@@ -1361,80 +1342,71 @@ When mapping qlog to normal JSON, the "qlog_format" field MUST have the value
 "JSON". This is also the default qlog serialization and default value of this
 field.
 
-When using normal JSON serialization, the file extension/suffix SHOULD be ".qlog"
-and the Media Type (if any) SHOULD be "application/qlog+json" {{!RFC6839}}.
+When using normal JSON serialization, the file extension/suffix SHOULD
+be ".qlog" and the Media Type (if any) SHOULD be "application/qlog+json"
+per {{!RFC6839}}.
 
-To facilitate this mapping, the qlog documents employ a format that is close to
-pure JSON for its examples and data definitions. Still, as JSON is not a typed
-format, there are some practical peculiarities to observe.
+JSON files by definition ({{!RFC8259}}) MUST utilize the UTF-8 encoding,
+both for the file itself and the string values.
 
-### numbers
+While not specifically required by the JSON specification, all qlog field
+names in a JSON serialization MUST be lowercase.
 
-While JSON has built-in support for integers up to 64 bits in size, not all JSON
-parsers do. For example, none of the major Web browsers support full 64-bit
-integers at this time, as all numerical values (both floating-point numbers and
-integers) are internally represented as floating point [IEEE
-754](https://en.wikipedia.org/wiki/Floating-point_arithmetic) values. In practice,
-this limits their integers to a maximum value of 2^53-1. Integers larger than that
-are either truncated or produce a JSON parsing error. While this is expected to
-improve in the future (as ["BigInt"
-support](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt)
-has been introduced in most Browsers, though not yet integrated into JSON
-parsers), we still need to deal with it here.
+In order to serialize CDDL-based qlog event and data structure
+definitions to JSON, the official CDDL-to-JSON mapping defined in
+Appendix E of {{!CDDL=RFC8610}} SHOULD be employed.
 
-When transforming an int64, uint64 or double from qlog to JSON, the implementer
-can thus choose to either log them as JSON numbers (taking the risk of truncation
-or un-parseability) or to log them as strings instead. Logging as strings should
-however only be practically needed if the value is likely to exceed 2^53-1. In
-practice, even though protocols such as QUIC allow 64-bit values for for example
-stream identifiers, these high numbers are unlikely to be reached for the
-overwhelming majority of cases. As such, it is probably a valid trade-off to take
-the risk and log 64-bit values as JSON numbers instead of strings.
+### I-JSON
 
-Tools processing JSON-based qlog SHOULD however be able to deal with 64-bit fields
-being serialized as either strings or numbers.
+For some use cases, it should be taken into account that not all popular
+JSON parsers support the full JSON format. Especially for parsers
+integrated with the JavaScript programming language (e.g., Web browsers,
+NodeJS), users are recommended to stick to a JSON subset dubbed
+{{!I-JSON=RFC7493}} (or Internet-JSON).
 
-### bytes
+One of the key limitations of JavaScript and thus I-JSON is that it
+cannot represent full 64-bit integers in standard operating mode (i.e.,
+without using BigInt extensions), instead being limited to the range of
+`[-(2**53)+1, (2**53)-1]`. In these circumstances, Appendix E of
+{{!CDDL=RFC8610}} recommends defining new CDDL types for int64 and
+uint64 that limit their values to this range.
 
-Unlike most binary formats, JSON does not allow the logging of raw binary blobs
-directly. As such, when serializing a byte or array&lt;byte&gt;, a scheme needs to
-be chosen.
+While this can be sensible and workable for most use cases, some
+protocols targeting qlog serialization (e.g., QUIC, HTTP/3), might
+require full uint64 variables in some (rare) circumstances. In these
+situations, it should be allowed to also use the string-based
+representation of uint64 values alongside the numerical representation.
+Concretely, the following definition of uint64 should override the
+original and (web-based) tools should take into account that a uint64
+field can be either a number or string.
 
-To represent qlog bytes in JSON, they MUST be serialized to their lowercase
-hexadecimal equivalents (with 0 prefix for values lower than 10). All values are
-directly appended to each other, without delimiters. The full value is not
-prefixed with 0x (as is sometimes common). An example is given in
-{{json-bytes-ex}}.
+~~~
+uint64 = text / uint .size 8
+~~~
+{: #cddl-ijson-uint64-def title="Custom uint64 definition for I-JSON"}
 
-~~~~~~~~
-For the five raw unsigned byte input values of:
-5 20 40 171 255, the JSON serialization is:
+### Truncated values {#truncated-values}
 
-{
-    raw: "051428abff"
-}
-~~~~~~~~
-{: #json-bytes-ex title="Example for serializing bytes"}
+For some use cases (e.g., limiting file size, privacy), it can be
+necessary not to log a full raw blob (using the `hexstring` type) but
+instead a truncated value (for example, only the first 100 bytes of an
+HTTP response body to be able to discern which file it actually
+contained). In these cases, the original byte-size length cannot be
+obtained from the serialized value directly.
 
-As such, the resulting string will always have an even amount of characters and
-the original byte-size can be retrieved by dividing the string length by 2.
+As such, all qlog schema definitions SHOULD include a separate,
+length-indicating field for all fields of type `hexstring` they specify,
+see for example {{raw-info}}. This not only ensures the original length
+can always be retrieved, but also allows the omission of any raw value
+bytes of the field completely (e.g., out of privacy or security
+considerations).
 
-#### Truncated values
-
-In some cases, it can be interesting not to log a full raw blob but instead a
-truncated value (for example, only the first 100 bytes of an HTTP response body to
-be able to discern which file it actually contained). In these cases, the original
-byte-size length cannot be obtained from the serialized value directly. As such,
-all qlog schema definitions SHOULD include a separate, length-indicating field for
-all fields of type array&lt;byte&gt; they specify. This allows always retrieving
-the original length, but also allows the omission of any raw value bytes of the
-field completely (e.g., out of privacy or security considerations).
-
-To reduce overhead however and in the case the full raw value is logged, the extra
-length-indicating field can be left out. As such, tools MUST be able to deal with
-this situation and derive the length of the field from the raw value if no
-separate length-indicating field is present. All possible permutations are shown
-by example in {{json-bytes-ex2}}.
+To reduce overhead however and in the case the full raw value is logged,
+the extra length-indicating field can be left out. As such, tools MUST
+be able to deal with this situation and derive the length of the field
+from the raw value if no separate length-indicating field is present.
+The main possible permutations are shown by example in
+{{truncated-values-ex}}.
 
 ~~~~~~~~
 // both the full raw value and its length are present
@@ -1463,48 +1435,9 @@ by example in {{json-bytes-ex2}}.
     "raw_length": 5,
     "raw": "051428"
 }
-
 ~~~~~~~~
-{: #json-bytes-ex2 title="Example for serializing truncated bytes"}
-
-
-### Summarizing table
-
-By definition, JSON strings are serialized surrounded by quotes. Numbers without.
-
-| qlog type | JSON type                             |
-|-----------|---------------------------------------|
-| int8      | number                                |
-| int16     | number                                |
-| int32     | number                                |
-| uint8     | number                                |
-| uint16    | number                                |
-| uint32    | number                                |
-| float     | number                                |
-| int64     | number or string                      |
-| uint64    | number or string                      |
-| double    | number or string                      |
-| bytes     | string (lowercase hex value)          |
-| string    | string                                |
-| boolean   | string ("true" or "false")            |
-| enum      | string (full value/name, not index)   |
-| any       | object  ( {...} )                     |
-| array     | array   ( \[...\] )                   |
-
-### Other JSON specifics
-
-JSON files by definition ({{!RFC8259}}) MUST utilize the UTF-8 encoding, both for
-the file itself and the string values.
-
-Most JSON parsers strictly follow the JSON specification. This includes the rule
-that trailing comma's are not allowed. As it is frequently annoying to remove
-these trailing comma's when logging events in a streaming fashion, tool
-implementers SHOULD allow the last event entry of a qlog trace to be an empty
-object. This allows loggers to simply close the qlog file by appending "{}]}]}"
-after their last added event.
-
-Finally, while not specifically required by the JSON specification, all qlog field
-names in a JSON serialization MUST be lowercase.
+{: #truncated-values-ex title="Example for serializing truncated
+hexstrings"}
 
 ## qlog to JSON Text Sequences mapping {#format-json-seq}
 
@@ -1519,9 +1452,9 @@ streamable JSON format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}).
 When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
 "JSON-SEQ".
 
-When using JSON-SEQ serialization, the file extension/suffix SHOULD be ".sqlog"
-(for "streaming" qlog) and the Media Type (if any) SHOULD be
-"application/qlog+json-seq" {{!RFC8091}}.
+When using JSON-SEQ serialization, the file extension/suffix SHOULD be
+".sqlog" (for "streaming" qlog) and the Media Type (if any) SHOULD be
+"application/qlog+json-seq" per {{!RFC8091}}.
 
 JSON Text Sequences are very similar to JSON, except that JSON objects are
 serialized as individual records, each prefixed by an ASCII Record Separator
@@ -1548,7 +1481,7 @@ qlog file.
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 TraceSeq = {
     ? title: text
     ? description: text
@@ -1556,13 +1489,12 @@ TraceSeq = {
     ? common_fields: CommonFields
     ? vantage_point: VantagePoint
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #trace-seq-def title="TraceSeq definition"}
 
 Definition:
 
-~~~~~~~~
+~~~ cddl
 QlogFileSeq = {
     qlog_format: "JSON-SEQ"
 
@@ -1572,8 +1504,7 @@ QlogFileSeq = {
     ? summary: Summary
     trace: TraceSeq
 }
-~~~~~~~~
-{: .language-cddl}
+~~~
 {: #qlog-file-seq-def title="QlogFileSeq definition"}
 
 JSON-SEQ serialization examples:
@@ -1613,6 +1544,10 @@ JSON-SEQ serialization examples:
 
 Note: while not specifically required by the JSON-SEQ specification, all qlog
 field names in a JSON-SEQ serialization MUST be lowercase.
+
+In order to serialize all other CDDL-based qlog event and data structure
+definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
+Appendix E of {{!CDDL=RFC8610}} SHOULD still be employed.
 
 ### Supporting JSON Text Sequences in tooling
 
