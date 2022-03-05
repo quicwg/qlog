@@ -5,10 +5,10 @@
 QUIC                                                             R. Marx
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 5 September 2022                                       Facebook
+Expires: 6 September 2022                                       Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                            4 March 2022
+                                                            5 March 2022
 
 
                     QUIC event definitions for qlog
@@ -35,7 +35,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 5 September 2022.
+   This Internet-Draft will expire on 6 September 2022.
 
 Copyright Notice
 
@@ -101,40 +101,41 @@ Table of Contents
      6.1.  Normative References
      6.2.  Informative References
    Appendix A.  QUIC data field definitions
-     A.1.  QuicVersion
-     A.2.  ConnectionID
-     A.3.  Owner
-     A.4.  IPAddress and IPVersion
-     A.5.  PacketType
-     A.6.  PacketNumberSpace
-     A.7.  PacketHeader
-     A.8.  Token
-     A.9.  KeyType
-     A.10. QUIC Frames
-       A.10.1.  PaddingFrame
-       A.10.2.  PingFrame
-       A.10.3.  AckFrame
-       A.10.4.  ResetStreamFrame
-       A.10.5.  StopSendingFrame
-       A.10.6.  CryptoFrame
-       A.10.7.  NewTokenFrame
-       A.10.8.  StreamFrame
-       A.10.9.  MaxDataFrame
-       A.10.10. MaxStreamDataFrame
-       A.10.11. MaxStreamsFrame
-       A.10.12. DataBlockedFrame
-       A.10.13. StreamDataBlockedFrame
-       A.10.14. StreamsBlockedFrame
-       A.10.15. NewConnectionIDFrame
-       A.10.16. RetireConnectionIDFrame
-       A.10.17. PathChallengeFrame
-       A.10.18. PathResponseFrame
-       A.10.19. ConnectionCloseFrame
-       A.10.20. HandshakeDoneFrame
-       A.10.21. UnknownFrame
-       A.10.22. TransportError
-       A.10.23. ApplicationError
-       A.10.24. CryptoError
+     A.1.  ProtocolEventBody extension
+     A.2.  QuicVersion
+     A.3.  ConnectionID
+     A.4.  Owner
+     A.5.  IPAddress and IPVersion
+     A.6.  PacketType
+     A.7.  PacketNumberSpace
+     A.8.  PacketHeader
+     A.9.  Token
+     A.10. KeyType
+     A.11. QUIC Frames
+       A.11.1.  PaddingFrame
+       A.11.2.  PingFrame
+       A.11.3.  AckFrame
+       A.11.4.  ResetStreamFrame
+       A.11.5.  StopSendingFrame
+       A.11.6.  CryptoFrame
+       A.11.7.  NewTokenFrame
+       A.11.8.  StreamFrame
+       A.11.9.  MaxDataFrame
+       A.11.10. MaxStreamDataFrame
+       A.11.11. MaxStreamsFrame
+       A.11.12. DataBlockedFrame
+       A.11.13. StreamDataBlockedFrame
+       A.11.14. StreamsBlockedFrame
+       A.11.15. NewConnectionIDFrame
+       A.11.16. RetireConnectionIDFrame
+       A.11.17. PathChallengeFrame
+       A.11.18. PathResponseFrame
+       A.11.19. ConnectionCloseFrame
+       A.11.20. HandshakeDoneFrame
+       A.11.21. UnknownFrame
+       A.11.22. TransportError
+       A.11.23. ApplicationError
+       A.11.24. CryptoError
    Appendix B.  Change Log
      B.1.  Since draft-ietf-qlog-quic-events-00:
      B.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
@@ -167,9 +168,9 @@ Table of Contents
    "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
    document are to be interpreted as described in [RFC2119].
 
-   The examples and data definitions in ths document are expressed in a
-   custom data definition language, inspired by JSON and TypeScript, and
-   described in [QLOG-MAIN].
+   The event and data structure definitions in ths document are
+   expressed in the Concise Data Definition Language [CDDL] and its
+   extensions described in [QLOG-MAIN].
 
 2.  Overview
 
@@ -1427,7 +1428,7 @@ Table of Contents
 
    Definition:
 
-   TransportPacketLost = {
+   RecoveryPacketLost = {
        ; should include at least the packet_type and packet_number
        ? header: PacketHeader
 
@@ -1443,7 +1444,7 @@ Table of Contents
            "pto_expired"
    }
 
-                 Figure 28: TransportPacketLost definition
+                  Figure 28: RecoveryPacketLost definition
 
    For this event, the "trigger" field SHOULD be set (for example to one
    of the values below), as this helps tremendously in debugging.
@@ -1494,6 +1495,12 @@ Table of Contents
 
 6.1.  Normative References
 
+   [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
+              Definition Language (CDDL): A Notational Convention to
+              Express Concise Binary Object Representation (CBOR) and
+              JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
+              June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
+
    [QLOG-H3]  Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
               "HTTP/3 and QPACK event definitions for qlog", Work in
               Progress, Internet-Draft, draft-ietf-quic-qlog-h3-events,
@@ -1531,25 +1538,52 @@ Table of Contents
 
 Appendix A.  QUIC data field definitions
 
-A.1.  QuicVersion
+A.1.  ProtocolEventBody extension
+
+   We extend the $ProtocolEventBody extension point defined in
+   [QLOG-MAIN] with the QUIC protocol events defined in this document.
+
+   QuicEvents = ConnectivityServerListening /
+                ConnectivityConnectionStarted /
+                ConnectivityConnectionClosed /
+                ConnectivityConnectionIDUpdated /
+                ConnectivitySpinBitUpdated /
+                ConnectivityConnectionStateUpdated /
+                SecurityKeyUpdated / SecurityKeyRetired /
+                TransportVersionInformation / TransportALPNInformation /
+                TransportParametersSet / TransportParametersRestored /
+                TransportPacketSent / TransportPacketReceived /
+                TransportPacketDropped / TransportPacketBuffered /
+                TransportPacketsAcked / TransportDatagramsSent /
+                TransportDatagramsReceived / TransportDatagramDropped /
+                TransportStreamStateUpdated / TransportFramesProcessed /
+                TransportDataMoved /
+                RecoveryParametersSet / RecoveryMetricsUpdated /
+                RecoveryCongestionStateUpdated /
+                RecoveryLossTimerUpdated /
+                RecoveryPacketLost
+
+   $ProtocolEventBody /= QuicEvents
+
+A.2.  QuicVersion
 
    QuicVersion = hexstring
 
                      Figure 30: QuicVersion definition
 
-A.2.  ConnectionID
+A.3.  ConnectionID
 
    ConnectionID = hexstring
 
                      Figure 31: ConnectionID definition
 
-A.3.  Owner
+A.4.  Owner
 
    Owner = "local" / "remote"
 
                         Figure 32: Owner definition
 
-A.4.  IPAddress and IPVersion
+A.5.  IPAddress and IPVersion
 
    ; an IPAddress can either be a "human readable" form
    ; (e.g., "127.0.0.1" for v4 or
@@ -1563,20 +1597,20 @@ A.4.  IPAddress and IPVersion
 
                       Figure 34: IPVersion definition
 
-A.5.  PacketType
+A.6.  PacketType
 
    PacketType = "initial" / "handshake" / "0RTT" / "1RTT" / "retry" /
        "version_negotiation" / "stateless_reset" / "unknown"
 
                       Figure 35: PacketType definition
 
-A.6.  PacketNumberSpace
+A.7.  PacketNumberSpace
 
    PacketNumberSpace = "initial" / "handshake" / "application_data"
 
                   Figure 36: PacketNumberSpace definition
 
-A.7.  PacketHeader
+A.8.  PacketHeader
 
    PacketHeader = {
        packet_type: PacketType
@@ -1606,7 +1640,7 @@ A.7.  PacketHeader
 
                      Figure 37: PacketHeader definition
 
-A.8.  Token
+A.9.  Token
 
    Token = {
        ? type: "retry" / "resumption" / "stateless_reset"
@@ -1635,7 +1669,7 @@ A.8.  Token
    metadata and its format is implementation specific.  For that, this
    field includes a general-purpose "details" field.
 
-A.9.  KeyType
+A.10.  KeyType
 
    KeyType =
        "server_initial_secret" / "client_initial_secret" /
@@ -1645,7 +1679,7 @@ A.9.  KeyType
 
                        Figure 39: KeyType definition
 
-A.10.  QUIC Frames
+A.11.  QUIC Frames
 
    QuicFrame =
      PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
@@ -1658,7 +1692,7 @@ A.10.  QUIC Frames
 
                       Figure 40: QuicFrame definition
 
-A.10.1.  PaddingFrame
+A.11.1.  PaddingFrame
 
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
@@ -1679,7 +1713,7 @@ A.10.1.  PaddingFrame
 
                      Figure 41: PaddingFrame definition
 
-A.10.2.  PingFrame
+A.11.2.  PingFrame
 
    PingFrame = {
        frame_type: "ping"
@@ -1691,7 +1725,7 @@ A.10.2.  PingFrame
 
                       Figure 42: PingFrame definition
 
-A.10.3.  AckFrame
+A.11.3.  AckFrame
 
    ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
    ; For two numbers:
@@ -1730,7 +1764,7 @@ A.10.3.  AckFrame
    that case, implementers SHOULD log [120] instead and tools MUST be
    able to deal with both notations.
 
-A.10.4.  ResetStreamFrame
+A.11.4.  ResetStreamFrame
 
    ResetStreamFrame = {
        frame_type: "reset_stream"
@@ -1748,7 +1782,7 @@ A.10.4.  ResetStreamFrame
 
                    Figure 44: ResetStreamFrame definition
 
-A.10.5.  StopSendingFrame
+A.11.5.  StopSendingFrame
 
    StopSendingFrame = {
        frame_type: "stop_sending"
@@ -1763,7 +1797,7 @@ A.10.5.  StopSendingFrame
 
                    Figure 45: StopSendingFrame definition
 
-A.10.6.  CryptoFrame
+A.11.6.  CryptoFrame
 
    CryptoFrame = {
        frame_type: "crypto"
@@ -1776,7 +1810,7 @@ A.10.6.  CryptoFrame
 
                      Figure 46: CryptoFrame definition
 
-A.10.7.  NewTokenFrame
+A.11.7.  NewTokenFrame
 
    NewTokenFrame = {
      frame_type: "new_token"
@@ -1786,7 +1820,7 @@ A.10.7.  NewTokenFrame
 
                     Figure 47: NewTokenFrame definition
 
-A.10.8.  StreamFrame
+A.11.8.  StreamFrame
 
    StreamFrame = {
        frame_type: "stream"
@@ -1808,7 +1842,7 @@ A.10.8.  StreamFrame
 
                      Figure 48: StreamFrame definition
 
-A.10.9.  MaxDataFrame
+A.11.9.  MaxDataFrame
 
    MaxDataFrame = {
      frame_type: "max_data"
@@ -1818,7 +1852,7 @@ A.10.9.  MaxDataFrame
 
                      Figure 49: MaxDataFrame definition
 
-A.10.10.  MaxStreamDataFrame
+A.11.10.  MaxStreamDataFrame
 
    MaxStreamDataFrame = {
      frame_type: "max_stream_data"
@@ -1829,7 +1863,7 @@ A.10.10.  MaxStreamDataFrame
 
                   Figure 50: MaxStreamDataFrame definition
 
-A.10.11.  MaxStreamsFrame
+A.11.11.  MaxStreamsFrame
 
    MaxStreamsFrame = {
      frame_type: "max_streams"
@@ -1840,7 +1874,7 @@ A.10.11.  MaxStreamsFrame
 
                    Figure 51: MaxStreamsFrame definition
 
-A.10.12.  DataBlockedFrame
+A.11.12.  DataBlockedFrame
 
    DataBlockedFrame = {
      frame_type: "data_blocked"
@@ -1850,7 +1884,7 @@ A.10.12.  DataBlockedFrame
 
                    Figure 52: DataBlockedFrame definition
 
-A.10.13.  StreamDataBlockedFrame
+A.11.13.  StreamDataBlockedFrame
 
    StreamDataBlockedFrame = {
      frame_type: "stream_data_blocked"
@@ -1861,7 +1895,7 @@ A.10.13.  StreamDataBlockedFrame
 
                 Figure 53: StreamDataBlockedFrame definition
 
-A.10.14.  StreamsBlockedFrame
+A.11.14.  StreamsBlockedFrame
 
    StreamsBlockedFrame = {
      frame_type: "streams_blocked"
@@ -1872,7 +1906,7 @@ A.10.14.  StreamsBlockedFrame
 
                  Figure 54: StreamsBlockedFrame definition
 
-A.10.15.  NewConnectionIDFrame
+A.11.15.  NewConnectionIDFrame
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
@@ -1890,7 +1924,7 @@ A.10.15.  NewConnectionIDFrame
 
                  Figure 55: NewConnectionIDFrame definition
 
-A.10.16.  RetireConnectionIDFrame
+A.11.16.  RetireConnectionIDFrame
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
@@ -1900,7 +1934,7 @@ A.10.16.  RetireConnectionIDFrame
 
                Figure 56: RetireConnectionIDFrame definition
 
-A.10.17.  PathChallengeFrame
+A.11.17.  PathChallengeFrame
 
    PathChallengeFrame = {
      frame_type: "path_challenge"
@@ -1911,7 +1945,7 @@ A.10.17.  PathChallengeFrame
 
                   Figure 57: PathChallengeFrame definition
 
-A.10.18.  PathResponseFrame
+A.11.18.  PathResponseFrame
 
    PathResponseFrame = {
      frame_type: "path_response"
@@ -1922,7 +1956,7 @@ A.10.18.  PathResponseFrame
 
                   Figure 58: PathResponseFrame definition
 
-A.10.19.  ConnectionCloseFrame
+A.11.19.  ConnectionCloseFrame
 
    raw_error_code is the actual, numerical code.  This is useful because
    some error types are spread out over a range of codes (e.g., QUIC's
@@ -1945,7 +1979,7 @@ A.10.19.  ConnectionCloseFrame
 
                  Figure 59: ConnectionCloseFrame definition
 
-A.10.20.  HandshakeDoneFrame
+A.11.20.  HandshakeDoneFrame
 
    HandshakeDoneFrame = {
      frame_type: "handshake_done";
@@ -1953,7 +1987,7 @@ A.10.20.  HandshakeDoneFrame
 
                   Figure 60: HandshakeDoneFrame definition
 
-A.10.21.  UnknownFrame
+A.11.21.  UnknownFrame
 
    UnknownFrame = {
        frame_type: "unknown"
@@ -1965,7 +1999,7 @@ A.10.21.  UnknownFrame
 
                      Figure 61: UnknownFrame definition
 
-A.10.22.  TransportError
+A.11.22.  TransportError
 
    TransportError = "no_error" / "internal_error" /
        "connection_refused" / "flow_control_error" /
@@ -1977,7 +2011,7 @@ A.10.22.  TransportError
 
                     Figure 62: TransportError definition
 
-A.10.23.  ApplicationError
+A.11.23.  ApplicationError
 
    By definition, an application error is defined by the application-
    level protocol running on top of QUIC (e.g., HTTP/3).
@@ -1991,7 +2025,7 @@ A.10.23.  ApplicationError
 
    $ApplicationError /= "new_error_name" / "another_new_error_name"
 
-A.10.24.  CryptoError
+A.11.24.  CryptoError
 
    These errors are defined in the TLS document as "A TLS alert is
    turned into a QUIC connection error by converting the one-byte alert
