@@ -141,9 +141,9 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
 interpreted as described in {{?RFC2119}}.
 
-The examples and data definitions in ths document are expressed in a custom data
-definition language, inspired by JSON and TypeScript, and described in
-[QLOG-MAIN].
+The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
+extensions described in [QLOG-MAIN].
 
 # Overview
 
@@ -596,6 +596,21 @@ TBD
 
 # HTTP/3 data field definitions
 
+## ProtocolEventBody extension
+
+We extend the `$ProtocolEventBody` extension point defined in
+[QLOG-MAIN] with the HTTP/3 protocol events defined in this document.
+
+~~~ cddl
+HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
+             HTTPStreamTypeSet / HTTPFrameCreated /
+             HTTPFrameParsed / HTTPPushResolved
+
+$ProtocolEventBody /= HTTPEvents
+~~~
+{: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
+extension"}
+
 ## OwnerType
 
 ~~~ cddl
@@ -780,6 +795,22 @@ $ApplicationError /= HTTPApplicationError
 ~~~
 
 # QPACK DATA type definitions
+
+## ProtocolEventBody extension
+
+We extend the `$ProtocolEventBody` extension point defined in
+[QLOG-MAIN] with the QPACK protocol events defined in this document.
+
+~~~ cddl
+QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
+              QPACKDynamicTableUpdate / QPACKHeadersEncoded /
+              QPACKHeadersDecoded / QPACKInstructionCreated /
+              QPACKInstructionParsed
+
+$ProtocolEventBody /= QPACKEvents
+~~~
+{: #qpackevents-def title="QPACKEvents definition and ProtocolEventBody
+extension"}
 
 ## QPACK Instructions
 
