@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-03-01T00:50:03.139396+00:00",
+  "timestamp": "2022-03-06T00:44:09.990805+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7234,15 +7234,15 @@
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
-      "body": "This PR bundles the TypeScript-to-CDDL changes for draft 0.4 for the main schema document (see other PRs for the QUIC and H3/QPACK documents). \r\n\r\nList of intended changes:\r\n\r\n- [x] Replace TypeScript with CDDL descriptions\r\n- [x] Split up CDDL definitions and JSON examples\r\n- [ ] Properly explain the $ProtocolEventBody extension point + include trigger in the example \r\n- [ ] Properly discuss how event docs should define triggers in the CDDL \r\n- [ ] Replace TypeScript explanation in `Notational Conventions` and `qlog to JSON mapping` with CDDL and I-JSON references, basic explanations and considerations\r\n- [ ] Explain the need for custom uint64 and hexstring CDDL types\r\n",
+      "body": "This PR bundles the TypeScript-to-CDDL changes for draft 0.4 for the main schema document (see other PRs for the QUIC and H3/QPACK documents). \r\n\r\nList of intended changes:\r\n\r\n- [x] Replace TypeScript with CDDL descriptions\r\n- [x] Split up CDDL definitions and JSON examples\r\n- [ ] Properly explain the $ProtocolEventBody extension point + include trigger in the example \r\n- [ ] Properly discuss how event docs should define triggers in the CDDL \r\n- [x] Replace TypeScript explanation in `Notational Conventions` and `qlog to JSON mapping` with CDDL and I-JSON references, basic explanations and considerations.\r\n- [x] Refer to main schema CDDL introduction in H3 and QUIC docs as well\r\n- [x] Explain the need for custom uint64 and hexstring CDDL types\r\n- [x] Add uint32, uint16 and uint8 types\r\n- [x] Add $ProtocolEventBody listings in the QUIC and H3 docs as well!\r\n- [ ] Update QUIC and H3 docs to use uint32 instead of normal uint",
       "createdAt": "2022-02-19T19:09:46Z",
-      "updatedAt": "2022-02-25T08:19:38Z",
+      "updatedAt": "2022-03-05T21:47:38Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9b28c154492e6dac2491dfded48d2def56ed3179",
       "headRepository": "quicwg/qlog",
       "headRefName": "cddl-main-04",
-      "headRefOid": "05f015f5517e95b2b95aa779bf081615fa9130dd",
+      "headRefOid": "d136d07b91496333a7f54f1af8c3bbd740b33ca8",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -7303,13 +7303,13 @@
       "labels": [],
       "body": "",
       "createdAt": "2022-02-21T00:34:43Z",
-      "updatedAt": "2022-02-25T02:23:11Z",
+      "updatedAt": "2022-03-05T21:44:27Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9b28c154492e6dac2491dfded48d2def56ed3179",
       "headRepository": "quicwg/qlog",
       "headRefName": "cddl_http3",
-      "headRefOid": "ddb29ce8fcebf472a18bec8cf1b4e816593685be",
+      "headRefOid": "75a3f7672bbed58b4649f67e4b320a542be1d453",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -7342,6 +7342,34 @@
           "body": "@rmarx I addressed almost all the comments. I can use some guidance on how to address having shared types for Parameters and Frames. \r\n\r\nI also created a PR for the full CDDL file in case you want to link it all together \r\n \r\nhttps://github.com/quiclog/qlog/pull/7",
           "createdAt": "2022-02-25T02:23:10Z",
           "updatedAt": "2022-02-25T02:23:10Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Hey @lnicco,\r\n\r\nThanks for the updates and the very useful script, which I was also able to use for the QUIC events draft!\r\n\r\nI have added a new commit that primarily adds some overall consistency with the other two drafts (e.g., in terms of the code block ids, nothing major). I also noticed you were using `(` and `)` to wrap your enums, which isn't necessary (it works without as well, so I removed the brackets). \r\n\r\n4 main things though:\r\n\r\n1. You stated that HTTPHeader should become HTTPMessage, but it seems to me that should be HTTPField instead? Reading [this part of HTTP/3](https://datatracker.ietf.org/doc/html/draft-ietf-quic-http-34#section-4.1), it seems that the Message is -everything- (headers, content, trailers), while the HEADERS frame (and similarly QPACK) only deals with the headers/trailers Fields? I haven't kept up enough with the new HTTP semantics documents or the QPACK rewording, but Fields does seem to be the proper term if I look at those documents (e.g., https://datatracker.ietf.org/doc/html/draft-ietf-quic-qpack-21#section-4.5 and https://www.ietf.org/archive/id/draft-ietf-httpbis-semantics-19.html#section-5 and https://datatracker.ietf.org/doc/html/draft-ietf-quic-http-34#section-7.2.2). As such, I've renamed `HTTPHeader` to `HTTPField`. \r\n\r\n2. That makes it even clearer however that the QPACK event terminology is woefully out of date and we have to rename a lot of that to align with the newest QPACK draft text. I do propose we keep that for the draft after this however (-02, as the new one we're now preparing will be -01), as that would take us too much time and be too error prone to get done by Monday. \r\n\r\n3. I found a relatively clean way to have re-usable `HTTPParameters`, though it does require a new piece of CDDL syntax called the \"unwrap operator\" `~`, which is [defined here](https://www.rfc-editor.org/rfc/rfc8610.html#section-3.7). Essentially, that just takes the contents of the unwrapped type and puts them at the unwrap location, extending the target type. I do feel that will not be very clear for qlog readers, so we should explain that (better than what I tried atm...). Alternatively though, since they are just a few fields and only re-used at two locations, I wonder if it wouldn't make more sense to just keep it as it was (define them twice), to improve readability. \r\n\r\n4. Finally, while I understood what you meant by reuse for the `HTTPParameters` (see point 3 above), I wasn't sure what you meant with \"shared types for Frames\"? Could you clarify? Maybe my approach for the `HTTPParameters` works for that as well and you can adapt it? \r\n\r\nWith that, I believe this draft is (99%) ready for submission on Monday, so please review and let me know if you find any issues @lnicco @marten-seemann @LPardue. \r\n",
+          "createdAt": "2022-03-04T22:41:02Z",
+          "updatedAt": "2022-03-04T22:41:02Z"
+        },
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@rmarx thanks for the fixes and comments. \r\nYou are right that Fields is the most updated terminology to refer to headers. \r\nHowever, my comment about using HTTPMessage instead of HTTPHeaders is pointing to the fact that Headers alone are not representing a full message and that Method and Target for a request and status code for a response would be good to have. Also, Trailers should be considered. All of these are QPACK-encoded in HTTP/3 and HPACK-encoded in HTTP/2.\r\n\r\nI was thinking that we could even use the Known-length binary HTTP Message representation?\r\nhttps://www.ietf.org/archive/id/draft-thomson-http-binary-message-00.html#name-known-length-messages",
+          "createdAt": "2022-03-05T18:55:23Z",
+          "updatedAt": "2022-03-05T18:55:23Z"
+        },
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "on a second thought the binary representation is not needed at all. \r\nAnd for a request we can use the pseudo-headers to represent method/scheme/authority/path, and status pseudo-header for a response.",
+          "createdAt": "2022-03-05T19:23:43Z",
+          "updatedAt": "2022-03-05T19:26:28Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@lnicco I'm not entirely sure I follow what you're saying wrt representation of full HTTPMessage here.\r\n\r\nHowever, I do get the impression that that is something that goes (way) beyond simply updating to CDDL here, and so I'd propose you open a new issue describing this (with ideally a concrete example/proposal) so we don't hold up this PR on that. Would you agree? ",
+          "createdAt": "2022-03-05T21:44:27Z",
+          "updatedAt": "2022-03-05T21:44:27Z"
         }
       ],
       "reviews": []
@@ -7358,18 +7386,26 @@
       "labels": [],
       "body": "This will still need a bit of work, but\r\n```\r\ncat draft-ietf-quic-qlog-quic-events.md | awk 'BEGIN{flag=0} /~~~ cddl/{flag=1; printf \"\\n\"; next} /~~~/{flag=0; next} flag' | cddl - generate\r\n```\r\nsucceeds (as long as I insert the definitions for `uint64` and for `hexstring` from the main document). I'm not 100% sure if that means that my definitions are ok, as CDDL just tells me that almost all of the rules are unused.\r\n\r\nThere are a few TODOs left (search the doc for TODO), which we probably want to resolve before merging this PR. @rmarx, your opinion on those would be highly appreciated.",
       "createdAt": "2022-02-27T16:13:31Z",
-      "updatedAt": "2022-02-27T16:13:31Z",
+      "updatedAt": "2022-03-05T21:33:30Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9b28c154492e6dac2491dfded48d2def56ed3179",
       "headRepository": "quicwg/qlog",
       "headRefName": "cddl-quic",
-      "headRefOid": "8f6c212d533049d0d4d810178739d694f3fea322",
+      "headRefOid": "ff9854c0635890ec26d21d9ce0ff765319ff3072",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Hello @marten-seemann,\r\n\r\nThanks for this. As you surmised however, there were indeed still quite a few problems with the first attempt that I tried to solve with my new commit. \r\n\r\nPrimarily, you were indeed not properly checking your CDDL definitions. The CDDL tool doesn't properly validate \"unused\" rules (only does high-level syntax checking, but no CDDL semantics) which are like... almost all of them :( @lnicco had [the same problem in his PR](https://github.com/quicwg/qlog/pull/194#issuecomment-1046581128) and he eventually solved it by generating stubs for the unused rules with [a custom script](https://gist.github.com/lnicco/3418e0d7cab2363e3600ff7c6b9988a1). I've gone and changed that script minimally to work for the quic draft as well. You can find my version here: https://gist.github.com/rmarx/85b7b86130f8a8dcbe58f3c0d05620ff.  \r\n\r\nDoing that highlighted a few omissions (e.g., no definitions for ConnectionID/Owner/QuicVersion/uint16/...) which I added (or will add in the main schema).\r\n\r\nIt also showed you were not using the correct syntax to create the trigger lists (not using the / concatenation operator). For some reason this is valid overall CDDL syntax, but it generates bogus JSON results and doesn't work well in many situations. I've updated all those as well.\r\n\r\nI was also able to resolve your 3 TODO's in (I think) a satisfactory way. Please validate my proposed solution for those.\r\n\r\nFinally, to prevent global CDDL name collisions, we've been adding the category name in front of each event name (so TransportParametersSet instead of just ParametersSet). I've done that for all the events here as well. Similarly, we should add an ID to each CDDL block (e.g., `{: #transport-datagramsreceived-def title=\"TransportDatagramsReceived definition\"}`) to aid in later automated extraction/code generation. I've added those as well. \r\n\r\nThe latest version generates properly with the CDDL tool (using the gist script above) and also passes the id-nits check builtin to the draft make command. \r\n\r\nTo me, this is ready to submit as a new draft by Monday. Please review and let me know if you detect any more issues @marten-seemann @lnicco @LPardue \r\n\r\n",
+          "createdAt": "2022-03-04T21:41:08Z",
+          "updatedAt": "2022-03-04T21:41:08Z"
+        }
+      ],
       "reviews": []
     }
   ]
