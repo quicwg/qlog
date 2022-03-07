@@ -141,9 +141,9 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
 interpreted as described in {{?RFC2119}}.
 
-The examples and data definitions in ths document are expressed in a custom data
-definition language, inspired by JSON and TypeScript, and described in
-[QLOG-MAIN].
+The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
+extensions described in [QLOG-MAIN].
 
 # Overview
 
@@ -231,23 +231,36 @@ remote peer). This is reflected in the "owner" field. As such, this field MUST b
 correct for all settings included a single event instance. If you need to log
 settings from two sides, you MUST emit two separate event instances.
 
-Data:
+Note: we use the CDDL unwrap operator (~) here to make HTTPParameters
+into a re-usable list of fields. The unwrap operator copies the fields
+from the referenced type into the target type directly, extending the
+target with the unwrapped fields. TODO: explain this better + provide
+reference and maybe an example.
 
-~~~
-{
-    owner?:"local" | "remote",
+Definition:
 
-    max_header_list_size?:uint64,  // MAX_HEADER_LIST_SIZE
-    max_table_capacity?:uint64,    // QPACK_MAX_TABLE_CAPACITY
-    blocked_streams_count?:uint64, // QPACK_BLOCKED_STREAMS
+~~~ cddl
+HTTPParametersSet = {
+    ? owner: Owner
 
-    // qlog-defined
-    waits_for_settings?:boolean // indicates whether this
-                                // implementation waits for a
-                                // SETTINGS frame before
-                                // processing requests
+    ~HTTPParameters
+
+    ; qlog-specific
+    ; indicates whether this implementation waits for a SETTINGS
+    ; frame before processing requests
+    ? waits_for_settings: bool
+}
+
+HTTPParameters = {
+    ? max_header_list_size: uint64
+    ? max_table_capacity: uint64
+    ? blocked_streams_count: uint64
+
+    ; additional settings for grease and extensions
+    * text => uint64
 }
 ~~~
+{: #http-parametersset-def title="HTTPParametersSet definition"}
 
 Note: enabling server push is not explicitly done in HTTP/3 by use of a setting or
 parameter. Instead, it is communicated by use of the MAX_PUSH_ID frame, which
@@ -264,15 +277,16 @@ When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
 server's SETTINGs from the previous connection. This event is used to indicate
 which HTTP/3 settings were restored and to which values when utilizing 0-RTT.
 
-Data:
+Definition:
 
-~~~
-{
-    max_header_list_size?:uint64,
-    max_table_capacity?:uint64,
-    blocked_streams_count?:uint64
+~~~ cddl
+HTTPParametersRestored = {
+
+    ~HTTPParameters
+
 }
 ~~~
+{: #http-parametersrestored-def title="HTTPParametersRestored definition"}
 
 Note that, like for parameters_set above, this event can contain any number of
 unspecified fields to allow for additional and custom settings.
@@ -288,29 +302,28 @@ since id's are strictly partitioned at the QUIC level. Even so, this event has a
 "Base" importance because it helps a lot in debugging to have this information
 clearly spelled out.
 
-Data:
+Definition:
 
-~~~~
-{
-    stream_id:uint64,
+~~~ cddl
+HTTPStreamTypeSet = {
+    ? owner: Owner
+    stream_id: uint64
 
-    owner?:"local"|"remote"
+    ? old: HTTPStreamType
+    new: HTTPStreamType
 
-    old?:StreamType,
-    new:StreamType,
-
-    associated_push_id?:uint64 // only when new == "push"
+    ; only when new === "push"
+    ? associated_push_id: uint64
 }
 
-enum StreamType {
-    data, // bidirectional request-response streams
-    control,
-    push,
-    reserved,
-    qpack_encode,
-    qpack_decode
-}
-~~~~
+HTTPStreamType =  "data" /
+                  "control" /
+                  "push" /
+                  "reserved" /
+                  "qpack_encode" /
+                  "qpack_decode"
+~~~
+{: #https-treamtypeset-def title="HTTPStreamTypeSet definition"}
 
 ### frame_created
 Importance: Core
@@ -320,17 +333,17 @@ framing actually happens. Note: this is not necessarily the same as when the
 HTTP/3 data is passed on to the QUIC layer. For that, see the "data_moved" event
 in [QLOG-QUIC].
 
-Data:
+Definition:
 
-~~~
-{
-    stream_id:uint64,
-    length?:uint64, // payload byte length of the frame
-    frame:HTTP3Frame, // see definitions in appendix
-
-    raw?:RawInfo
+~~~ cddl
+HTTPFrameCreated = {
+    stream_id: uint64
+    ? length: uint64
+    frame: HTTPFrame
+    ? raw: RawInfo
 }
 ~~~
+{: #http-framecreated-def title="HTTPFrameCreated definition"}
 
 Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
 header overhead. As such, DATA frames can span many QUIC packets and can be
@@ -347,17 +360,17 @@ the HTTP/3 data is actually received on the QUIC layer. For that, see the
 "data_moved" event in [QLOG-QUIC].
 
 
-Data:
+Definition:
 
-~~~
-{
-    stream_id:uint64,
-    length?:uint64, // payload byte length of the frame
-    frame:HTTP3Frame, // see definitions in appendix
-
-    raw?:RawInfo
+~~~ cddl
+HTTPFrameParsed = {
+    stream_id: uint64
+    ? length: uint64
+    frame: HTTPFrame
+    ? raw: RawInfo
 }
 ~~~
+{: #http-frameparsed-def title="HTTPFrameParsed definition"}
 
 Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
 header overhead. As such, DATA frames can span many QUIC packets and can be
@@ -373,15 +386,22 @@ conversely, abandoned (rejected) by the application on top of HTTP/3 (e.g., the
 web browser). This event is added to help debug problems with unexpected PUSH
 behaviour, which is commonplace with HTTP/2.
 
-~~~
-{
-    push_id?:uint64,
-    stream_id?:uint64, // in case this is logged from a place that
-                       // does not have access to the push_id
+Definition:
 
-    decision:"claimed"|"abandoned"
+~~~ cddl
+HTTPPushResolved = {
+    ? push_id: uint64
+
+    ; in case this is logged from a place that does not have access
+    ; to the push_id
+    ? stream_id: uint64
+
+    decision: HTTPPushDecision
 }
+
+HTTPPushDecision = "claimed" / "abandoned"
 ~~~
+{: #http-pushresolved-def title="HTTPPushResolved definition"}
 
 ## qpack
 
@@ -406,20 +426,20 @@ this field MUST be correct for all variables included a single event instance. I
 you need to log settings from two sides, you MUST emit two separate event
 instances.
 
-Data:
+Definition:
 
-~~~
-{
-    owner:"local" | "remote",
+~~~ cddl
+QPACKStateUpdate = {
+    owner: Owner
+    ? dynamic_table_capacity: uint64
 
-    dynamic_table_capacity?:uint64,
-    dynamic_table_size?:uint64, // effective current size, sum of
-                                // all the entries
-
-    known_received_count?:uint64,
-    current_insert_count?:uint64
+    ; effective current size, sum of all the entries
+    ? dynamic_table_size: uint64
+    ? known_received_count: uint64
+    ? current_insert_count: uint64
 }
 ~~~
+{: #qpack-stateupdate-def title="QPACKStateUpdate definition"}
 
 ### stream_state_updated
 Importance: Core
@@ -430,42 +450,46 @@ decoding requests or QPACK instructions.
 Note: This event is of "Core" importance, as it might have a large impact on
 HTTP/3's observed performance.
 
-Data:
+Definition:
 
-~~~
-{
-    stream_id:uint64,
-
-    state:"blocked"|"unblocked" // streams are assumed to start
-                                // "unblocked" until they become
-                                // "blocked"
+~~~ cddl
+QPACKStreamStateUpdate = {
+    stream_id: uint64
+    ; streams are assumed to start "unblocked"
+    ; until they become "blocked"
+    state: QPACKStreamState
 }
+
+QPACKStreamState = "blocked" / "unblocked"
 ~~~
+{: #qpack-streamstateupdate-def title="QPACKStreamStateUpdate definition"}
 
 ### dynamic_table_updated
 Importance: Extra
 
 This event is emitted when one or more entries are inserted or evicted from QPACK's dynamic table.
 
-Data:
+Definition:
 
-~~~
-{
-    owner:"local" | "remote", // local = the encoder's dynamic
-                              // table. remote = the decoder's
-                              // dynamic table
+~~~ cddl
+QPACKDynamicTableUpdate = {
+    ; local = the encoder's dynamic table
+    ; remote = the decoder's dynamic table
+    owner: Owner
 
-    update_type:"inserted"|"evicted",
-
-    entries:Array<DynamicTableEntry>
+    update_type: QPACKDynamicTableUpdateType
+    entries: [+ QPACKDynamicTableEntry]
 }
 
-class DynamicTableEntry {
-    index:uint64;
-    name?:string | bytes;
-    value?:string | bytes;
+QPACKDynamicTableUpdateType = "inserted" / "evicted"
+
+QPACKDynamicTableEntry = {
+    index: uint64
+    ? name: text / hexstring
+    ? value: text / hexstring
 }
 ~~~
+{: #qpack-dynamictableupdate-def title="QPACKDynamicTableUpdate definition"}
 
 ### headers_encoded
 Importance: Base
@@ -476,21 +500,21 @@ Note: this event has overlap with http.frame_created for the HeadersFrame type.
 When outputting both events, implementers MAY omit the "headers" field in this
 event.
 
-Data:
+Definition:
 
-~~~~
-{
-    stream_id?:uint64,
+~~~ cddl
+QPACKHeadersEncoded = {
+    ? stream_id: uint64
+    ? headers: [+ HTTPField]
 
-    headers?:Array<HTTPHeader>,
+    block_prefix: QPACKHeaderBlockPrefix
+    header_block: [+ QPACKHeaderBlockRepresentation]
 
-    block_prefix:QPackHeaderBlockPrefix,
-    header_block:Array<QPackHeaderBlockRepresentation>,
-
-    length?:uint32,
-    raw?:bytes
+    ? length: uint
+    ? raw: hexstring
 }
-~~~~
+~~~
+{: #qpack-headersencoded-def title="QPACKHeadersEncoded definition"}
 
 ### headers_decoded
 Importance: Base
@@ -501,21 +525,21 @@ Note: this event has overlap with http.frame_parsed for the HeadersFrame type.
 When outputting both events, implementers MAY omit the "headers" field in this
 event.
 
-Data:
+Definition:
 
-~~~~
-{
-    stream_id?:uint64,
+~~~ cddl
+QPACKHeadersDecoded = {
+    ? stream_id: uint64
+    ? headers: [+ HTTPField]
 
-    headers?:Array<HTTPHeader>,
+    block_prefix: QPACKHeaderBlockPrefix
+    header_block: [+ QPACKHeaderBlockRepresentation]
 
-    block_prefix:QPackHeaderBlockPrefix,
-    header_block:Array<QPackHeaderBlockRepresentation>,
-
-    length?:uint32,
-    raw?:bytes
+    ? length: uint32
+    ? raw: hexstring
 }
-~~~~
+~~~
+{: #qpack-headersdecoded-def title="QPACKHeadersDecoded definition"}
 
 ### instruction_created
 Importance: Base
@@ -523,16 +547,17 @@ Importance: Base
 This event is emitted when a QPACK instruction (both decoder and encoder) is
 created and added to the encoder/decoder stream.
 
-Data:
+Definition:
 
-~~~
-{
-    instruction:QPackInstruction // see definitions in appendix
-
-    length?:uint32,
-    raw?:bytes
+~~~ cddl
+QPACKInstructionCreated = {
+    ; see definition in appendix
+    instruction: QPACKInstruction
+    ? length: uint32
+    ? raw: hexstring
 }
 ~~~
+{: #qpack-instructioncreated-def title="QPACKInstructionCreated definition"}
 
 Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
@@ -543,16 +568,18 @@ Importance: Base
 This event is emitted when a QPACK instruction (both decoder and encoder) is read
 from the encoder/decoder stream.
 
-Data:
+Definition:
 
-~~~
-{
-    instruction:QPackInstruction // see definitions in appendix
+~~~ cddl
+QPACKInstructionParsed = {
+    ; see QPACKInstruction definition in appendix
+    instruction: QPACKInstruction
 
-    length?:uint32,
-    raw?:bytes
+    ? length: uint32
+    ? raw: hexstring
 }
 ~~~
+{: #qpack-instructionparsed-def title="QPACKInstructionParsed definition"}
 
 Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
@@ -569,24 +596,51 @@ TBD
 
 # HTTP/3 data field definitions
 
+## ProtocolEventBody extension
+
+We extend the `$ProtocolEventBody` extension point defined in
+[QLOG-MAIN] with the HTTP/3 protocol events defined in this document.
+
+~~~ cddl
+HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
+             HTTPStreamTypeSet / HTTPFrameCreated /
+             HTTPFrameParsed / HTTPPushResolved
+
+$ProtocolEventBody /= HTTPEvents
+~~~
+{: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
+extension"}
+
+## Owner
+
+~~~ cddl
+Owner = "local" / "remote"
+~~~
+{: #owner-def title="Owner definition"}
+
 ## HTTP/3 Frames
 
+~~~ cddl
+HTTPFrame =  HTTPDataFrame /
+             HTTPHeadersFrame /
+             HTTPCancelPushFrame /
+             HTTPSettingsFrame /
+             HTTPPushPromiseFrame /
+             HTTPGoawayFrame /
+             HTTPMaxPushIDFrame /
+             HTTPReservedFrame /
+             UnknownFrame
 ~~~
-type HTTP3Frame = DataFrame | HeadersFrame | CancelPushFrame |
-                  SettingsFrame | PushPromiseFrame |
-                  GoAwayFrame | MaxPushIDFrame |
-                  DuplicatePushFrame | ReservedFrame |
-                  UnknownFrame;
-~~~
+{: #httpframe-def title="HTTPFrame definition"}
 
 ### DataFrame
-~~~
-class DataFrame{
-    frame_type:string = "data";
-
-    raw?:bytes;
+~~~ cddl
+HTTPDataFrame = {
+    frame_type: "data"
+    ? raw: hexstring
 }
 ~~~
+{: #httpdataframe-def title="HTTPDataFrame definition"}
 
 ### HeadersFrame
 
@@ -615,293 +669,352 @@ headers: [
   }
 ]
 ~~~
+{: #http-headersframe-ex title="HTTPHeadersFrame example"}
 
-~~~
-class HeadersFrame{
-    frame_type:string = "header";
-    headers:Array<HTTPHeader>;
-}
-
-class HTTPHeader {
-    name:string;
-    value:string;
+~~~ cddl
+HTTPHeadersFrame = {
+    frame_type: "headers"
+    headers: [* HTTPField]
 }
 ~~~
+{: #http-headersframe-def title="HTTPHeadersFrame definition"}
+
+~~~ cddl
+HTTPField = {
+    name: text
+    value: text
+}
+~~~
+{: #httpfield-def title="HTTPField definition"}
 
 ### CancelPushFrame
-~~~
-class CancelPushFrame{
-    frame_type:string = "cancel_push";
-    push_id:uint64;
+
+~~~ cddl
+HTTPCancelPushFrame = {
+    frame_type: "cancel_push"
+    push_id: uint64
 }
 ~~~
+{: #http-cancelpushframe-def title="HTTPCancelPushFrame definition"}
 
 ### SettingsFrame
-~~~
-class SettingsFrame{
-    frame_type:string = "settings";
-    settings:Array<Setting>;
+
+~~~ cddl
+HTTPSettingsFrame = {
+    frame_type: "settings"
+    settings: [* HTTPSetting]
 }
 
-class Setting{
-    name:string;
-    value:string;
+HTTPSetting = {
+    name: text
+    value: uint64
 }
 ~~~
+{: #httpsettingsframe-def title="HTTPSettingsFrame definition"}
 
 ### PushPromiseFrame
 
-~~~
-class PushPromiseFrame{
-    frame_type:string = "push_promise";
-    push_id:uint64;
-
-    headers:Array<HTTPHeader>;
+~~~ cddl
+HTTPPushPromiseFrame = {
+    frame_type: "push_promise"
+    push_id: uint64
+    headers: [* HTTPField]
 }
 ~~~
+{: #httppushpromiseframe-def title="HTTPPushPromiseFrame definition"}
 
 ### GoAwayFrame
-~~~
-class GoAwayFrame{
-    frame_type:string = "goaway";
-    id:uint64; // either stream_id or push_id. This is implicit
-               // from the sender of the frame.
+
+~~~ cddl
+HTTPGoawayFrame = {
+    frame_type: "goaway"
+
+    ; Either stream_id or push_id.
+    ; This is implicit from the sender of the frame
+    id: uint64
 }
 ~~~
+{: #httpgoawayframe-def title="HTTPGoawayFrame definition"}
 
 ### MaxPushIDFrame
-~~~
-class MaxPushIDFrame{
-    frame_type:string = "max_push_id";
-    push_id:uint64;
-}
-~~~
 
-### DuplicatePushFrame
-~~~
-class DuplicatePushFrame{
-    frame_type:string = "duplicate_push";
-    push_id:uint64;
+~~~ cddl
+HTTPMaxPushIDFrame = {
+    frame_type: "max_push_id"
+    push_id: uint64
 }
 ~~~
+{: #httpmaxpushidframe-def title="HTTPMaxPushIDFrame definition"}
 
 ### ReservedFrame
-~~~
-class ReservedFrame{
-    frame_type:string = "reserved";
+
+~~~ cddl
+HTTPReservedFrame = {
+    frame_type: "reserved"
+
+    ? length: uint64
 }
 ~~~
+{: #httpreservedframe-def title="HTTPReservedFrame definition"}
 
 ### UnknownFrame
 
-HTTP/3 re-uses QUIC's UnknownFrame definition, since their values and usage
-overlaps. See [QLOG-QUIC].
-
+HTTP/3 qlog re-uses QUIC's UnknownFrame definition, since their values
+and usage overlaps. See [QLOG-QUIC].
 
 ## ApplicationError
+
+~~~ cddl
+HTTPApplicationError =  "http_no_error" /
+                        "http_general_protocol_error" /
+                        "http_internal_error" /
+                        "http_stream_creation_error" /
+                        "http_closed_critical_stream" /
+                        "http_frame_unexpected" /
+                        "http_frame_error" /
+                        "http_excessive_load" /
+                        "http_id_error" /
+                        "http_settings_error" /
+                        "http_missing_settings" /
+                        "http_request_rejected" /
+                        "http_request_cancelled" /
+                        "http_request_incomplete" /
+                        "http_early_response" /
+                        "http_connect_error" /
+                        "http_version_fallback"
 ~~~
-enum ApplicationError{
-    http_no_error,
-    http_general_protocol_error,
-    http_internal_error,
-    http_stream_creation_error,
-    http_closed_critical_stream,
-    http_frame_unexpected,
-    http_frame_error,
-    http_excessive_load,
-    http_id_error,
-    http_settings_error,
-    http_missing_settings,
-    http_request_rejected,
-    http_request_cancelled,
-    http_request_incomplete,
-    http_early_response,
-    http_connect_error,
-    http_version_fallback
-}
+{: #httpapplicationerror-def title="HTTPApplicationError definition"}
+
+The HTTPApplicationError defines the general $ApplicationError
+definition in the qlog QUIC definition, see [QLOG-QUIC].
+
+~~~ cddl
+; ensure HTTP errors are properly validate in QUIC events as well
+; e.g., QUIC's ConnectionClose Frame
+$ApplicationError /= HTTPApplicationError
 ~~~
 
 # QPACK DATA type definitions
+
+## ProtocolEventBody extension
+
+We extend the `$ProtocolEventBody` extension point defined in
+[QLOG-MAIN] with the QPACK protocol events defined in this document.
+
+~~~ cddl
+QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
+              QPACKDynamicTableUpdate / QPACKHeadersEncoded /
+              QPACKHeadersDecoded / QPACKInstructionCreated /
+              QPACKInstructionParsed
+
+$ProtocolEventBody /= QPACKEvents
+~~~
+{: #qpackevents-def title="QPACKEvents definition and ProtocolEventBody
+extension"}
 
 ## QPACK Instructions
 
 Note: the instructions do not have explicit encoder/decoder types, since there is
 no overlap between the insturctions of both types in neither name nor function.
 
+~~~ cddl
+QPACKInstruction =  SetDynamicTableCapacityInstruction /
+                    InsertWithNameReferenceInstruction /
+                    InsertWithoutNameReferenceInstruction /
+                    DuplicateInstruction /
+                    SectionAcknowledgementInstruction /
+                    StreamCancellationInstruction /
+                    InsertCountIncrementInstruction
 ~~~
-type QPackInstruction = SetDynamicTableCapacityInstruction |
-                        InsertWithNameReferenceInstruction |
-                        InsertWithoutNameReferenceInstruction |
-                        DuplicateInstruction |
-                        HeaderAcknowledgementInstruction |
-                        StreamCancellationInstruction |
-                        InsertCountIncrementInstruction;
-~~~
+{: #qpackinstruction-def title="QPACKInstruction definition"}
 
 ### SetDynamicTableCapacityInstruction
 
-~~~
-class SetDynamicTableCapacityInstruction {
-    instruction_type:string = "set_dynamic_table_capacity";
-
-    capacity:uint32;
+~~~ cddl
+SetDynamicTableCapacityInstruction = {
+    instruction_type: "set_dynamic_table_capacity"
+    capacity: uint32
 }
 ~~~
+{: #setdynamictablecapacityinstruction-def
+title="SetDynamicTableCapacityInstruction definition"}
 
 ### InsertWithNameReferenceInstruction
 
-~~~
-class InsertWithNameReferenceInstruction {
-    instruction_type:string = "insert_with_name_reference";
-
-    table_type:"static"|"dynamic";
-
-    name_index:uint32;
-
-    huffman_encoded_value:boolean;
-
-    value_length?:uint32;
-    value?:string;
+~~~ cddl
+InsertWithNameReferenceInstruction = {
+    instruction_type: "insert_with_name_reference"
+    table_type: QPACKTableType
+    name_index: uint32
+    huffman_encoded_value: bool
+    ? value_length: uint32
+    ? value: text
 }
 ~~~
+{: #insertwithnamereferenceinstruction-def
+title="InsertWithNameReferenceInstruction definition"}
 
 ### InsertWithoutNameReferenceInstruction
 
-~~~
-class InsertWithoutNameReferenceInstruction {
-    instruction_type:string = "insert_without_name_reference";
-
-    huffman_encoded_name:boolean;
-
-    name_length?:uint32;
-    name?:string;
-
-    huffman_encoded_value:boolean;
-
-    value_length?:uint32;
-    value?:string;
+~~~ cddl
+InsertWithoutNameReferenceInstruction = {
+    instruction_type: "insert_without_name_reference"
+    huffman_encoded_name: bool
+    ? name_length: uint32
+    ? name: text
+    huffman_encoded_value: bool
+    ? value_length: uint32
+    ? value: text
 }
 ~~~
+{: #insertwithoutnamereferenceinstruction-def
+title="InsertWithoutNameReferenceInstruction definition"}
 
 ### DuplicateInstruction
 
-~~~
-class DuplicateInstruction {
-    instruction_type:string = "duplicate";
-
-    index:uint32;
+~~~ cddl
+DuplicateInstruction = {
+    instruction_type: "duplicate"
+    index: uint32
 }
 ~~~
+{: #duplicateinstruction-def
+title="DuplicateInstruction definition"}
 
-### HeaderAcknowledgementInstruction
+### SectionAcknowledgementInstruction
 
-~~~
-class HeaderAcknowledgementInstruction {
-    instruction_type:string = "header_acknowledgement";
-
-    stream_id:uint64;
+~~~ cddl
+SectionAcknowledgementInstruction = {
+    instruction_type: "section_acknowledgement"
+    stream_id: uint64
 }
 ~~~
+{: #sectionacknowledgementinstruction-def
+title="SectionAcknowledgementInstruction definition"}
 
 ### StreamCancellationInstruction
 
-~~~
-class StreamCancellationInstruction {
-    instruction_type:string = "stream_cancellation";
-
-    stream_id:uint64;
+~~~ cddl
+StreamCancellationInstruction = {
+    instruction_type: "stream_cancellation"
+    stream_id: uint64
 }
 ~~~
+{: #streamcancellationinstruction-def
+title="StreamCancellationInstruction definition"}
 
 ### InsertCountIncrementInstruction
 
-~~~
-class InsertCountIncrementInstruction {
-    instruction_type:string = "insert_count_increment";
-
-    increment:uint32;
+~~~ cddl
+InsertCountIncrementInstruction = {
+    instruction_type: "insert_count_increment"
+    increment: uint32
 }
 ~~~
+{: #insertcountincrementinstruction-def
+title="InsertCountIncrementInstruction definition"}
 
 ## QPACK Header compression
 
+~~~ cddl
+QPACKHeaderBlockRepresentation =  IndexedHeaderField /
+                                  LiteralHeaderFieldWithName /
+                                  LiteralHeaderFieldWithoutName
 ~~~
-type QPackHeaderBlockRepresentation = IndexedHeaderField |
-                                      LiteralHeaderFieldWithName |
-                                      LiteralHeaderFieldWithoutName;
-~~~
+{: #qpackheaderblockrepresentation-def
+title="QPACKHeaderBlockRepresentation definition"}
 
 ### IndexedHeaderField
 
 Note: also used for "indexed header field with post-base index"
 
-~~~
-class IndexedHeaderField {
-    header_field_type:string = "indexed_header";
+~~~ cddl
+IndexedHeaderField = {
+    header_field_type: "indexed_header"
 
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if
-                                   // is_post_base is true
-    index:uint32;
+    ; MUST be "dynamic" if is_post_base is true
+    table_type: QPACKTableType
+    index: uint32
 
-    is_post_base:boolean = false; // to represent the "indexed
-                                  // header field with post-base
-                                  // index" header field type
+    ; to represent the "indexed header field with post-base index"
+    ; header field type
+    is_post_base: bool .default false
 }
 ~~~
+{: #indexedheaderfield-def title="IndexedHeaderField definition"}
 
 ### LiteralHeaderFieldWithName
 
 Note: also used for "Literal header field with post-base name reference"
 
-~~~
-class LiteralHeaderFieldWithName {
-    header_field_type:string = "literal_with_name";
+~~~ cddl
+LiteralHeaderFieldWithName = {
+    header_field_type: "literal_with_name"
 
-    preserve_literal:boolean; // the 3rd "N" bit
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if
-                                   // is_post_base is true
-    name_index:uint32;
+    ; the 3rd "N" bit
+    preserve_literal: bool
 
-    huffman_encoded_value:boolean;
-    value_length?:uint32;
-    value?:string;
+    ; MUST be "dynamic" if is_post_base is true
+    table_type: QPACKTableType
+    name_index: uint32
+    huffman_encoded_value: bool
+    ? value_length: uint32
+    ? value: text
 
-    is_post_base:boolean = false; // to represent the "Literal
-                                  // header field with post-base
-                                  // name reference" header field
-                                  // type
+    ; to represent the "indexed header field with post-base index"
+    ; header field type
+    is_post_base: bool .default false
 }
 ~~~
+{: #literalheaderfieldwithname-def
+title="LiteralHeaderFieldWithName definition"}
 
 ### LiteralHeaderFieldWithoutName
 
-~~~
-class LiteralHeaderFieldWithoutName {
-    header_field_type:string = "literal_without_name";
+~~~ cddl
+LiteralHeaderFieldWithoutName = {
+    header_field_type: "literal_without_name"
 
-    preserve_literal:boolean; // the 3rd "N" bit
+    ; the 3rd "N" bit
+    preserve_literal: bool
+    huffman_encoded_name: bool
+    ? name_length: uint32
+    ? name: text
 
-    huffman_encoded_name:boolean;
-    name_length?:uint32;
-    name?:string;
-
-    huffman_encoded_value:boolean;
-    value_length?:uint32;
-    value?:string;
+    huffman_encoded_value: bool
+    ? value_length: uint32
+    ? value: text
 }
 ~~~
+{: #literalheaderfieldwithoutname-def
+title="LiteralHeaderFieldWithoutName definition"}
 
-### QPackHeaderBlockPrefix
 
-~~~
-class QPackHeaderBlockPrefix {
-    required_insert_count:uint32;
-    sign_bit:boolean;
-    delta_base:uint32;
+### QPACKHeaderBlockPrefix
+
+~~~ cddl
+QPACKHeaderBlockPrefix = {
+    required_insert_count: uint32
+    sign_bit: bool
+    delta_base: uint32
 }
 ~~~
+{: #qpackheaderblockprefix-def
+title="QPACKHeaderBlockPrefix definition"}
+
+### QPACKTableType
+
+~~~ cddl
+QPACKTableType = "static" / "dynamic"
+~~~
+{: #qpacktabletype-def title="QPACKTableType definition"}
+
 
 # Change Log
+
+## Since draft-ietf-quic-qlog-h3-events-00:
+
+* Change the data definition language from TypeScript to CDDL (#143)
 
 ## Since draft-marx-qlog-event-definitions-quic-h3-02:
 
