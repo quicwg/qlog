@@ -162,9 +162,9 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
 "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
 interpreted as described in {{?RFC2119}}.
 
-The examples and data definitions in ths document are expressed in a custom data
-definition language, inspired by JSON and TypeScript, and described in
-[QLOG-MAIN].
+The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
+extensions described in [QLOG-MAIN].
 
 # Overview
 
@@ -276,21 +276,21 @@ Importance: Extra
 
 Emitted when the server starts accepting connections.
 
-Data:
+Definition:
 
-~~~
-{
-    ip_v4?: IPAddress,
-    ip_v6?: IPAddress,
-    port_v4?: uint32,
-    port_v6?: uint32,
+~~~ cddl
+ConnectivityServerListening = {
+    ? ip_v4: IPAddress
+    ? ip_v6: IPAddress
+    ? port_v4: uint16
+    ? port_v6: uint16
 
-    retry_required?:boolean // the server will always answer
-                            // client initials with a retry
-                            // (no 1-RTT connection setups
-                            // by choice)
+    ; the server will always answer client initials with a retry
+    ; (no 1-RTT connection setups by choice)
+    ? retry_required: bool
 }
 ~~~
+{: #connectivity-serverlistening-def title="ConnectivityServerListening definition"}
 
 Note: some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
@@ -303,23 +303,24 @@ new connections. Note that this event has overlap with connection_state_updated
 and this is a separate event mainly because of all the additional data that should
 be logged.
 
-Data:
+Definition:
 
-~~~
-{
-    ip_version?: "v4" | "v6",
-    src_ip?: IPAddress,
-    dst_ip?: IPAddress,
+~~~ cddl
+ConnectivityConnectionStarted = {
+    ? ip_version: IPVersion
+    src_ip: IPAddress
+    dst_ip: IPAddress
 
-    protocol?: string, // transport layer protocol (default "QUIC")
-    src_port?: uint32,
-    dst_port?: uint32,
+    ; transport layer protocol
+    ? protocol: text .default "QUIC"
+    ? src_port: uint16
+    ? dst_port: uint16
 
-    src_cid?: bytes,
-    dst_cid?: bytes,
-
+    ? src_cid: ConnectionID
+    ? dst_cid: ConnectionID
 }
 ~~~
+{: #connectivity-connectionstarted-def title="ConnectivityConnectionStarted definition"}
 
 Note: some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
@@ -342,26 +343,31 @@ these however, there can be internal errors that occur that may or may not get
 mapped to the official error codes in implementation-specific ways. As such,
 multiple error codes can be set on the same event to reflect this.
 
-~~~
-{
-    owner?:"local"|"remote", // which side closed the connection
+Definition:
 
-    connection_code?:TransportError | CryptoError | uint32,
-    application_code?:ApplicationError | uint32,
-    internal_code?:uint32,
+~~~ cddl
+ConnectivityConnectionClosed = {
+    ; which side closed the connection
+    ? owner: Owner
 
-    reason?:string
+    ? connection_code: TransportError / CryptoError / uint32
+    ? application_code: $ApplicationError / uint32
+    ? internal_code: uint32
+
+    ? reason: text
+    ? trigger:
+        "clean" /
+        "handshake_timeout" /
+        "idle_timeout" /
+        ; this is called the "immediate close" in the QUIC RFC
+        "error" /
+        "stateless_reset" /
+        "version_mismatch" /
+        ; for example HTTP/3's GOAWAY frame
+        "application"
 }
 ~~~
-
-Triggers:
-* clean
-* handshake_timeout
-* idle_timeout
-* error // this is called the "immediate close" in the QUIC specification
-* stateless_reset
-* version_mismatch
-* application // for example HTTP/3's GOAWAY frame
+{: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
 
 
 ### connection_id_updated
@@ -377,16 +383,17 @@ receive a new connection id from our peer, we will see the dst_ fields are set. 
 we update our own connection id (e.g., NEW_CONNECTION_ID frame), we log the src_
 fields.
 
-Data:
+Definition:
 
-~~~
-{
-    owner: "local" | "remote",
+~~~ cddl
+ConnectivityConnectionIDUpdated = {
+    owner: Owner
 
-    old?:bytes,
-    new?:bytes,
+    ? old: ConnectionID
+    ? new: ConnectionID
 }
 ~~~
+{: #connectivity-connectionidupdated-def title="ConnectivityConnectionIDUpdated definition"}
 
 ### spin_bit_updated
 Importance: Base
@@ -394,13 +401,14 @@ Importance: Base
 To be emitted when the spin bit changes value. It SHOULD NOT be emitted if the
 spin bit is set without changing its value.
 
-Data:
+Definition:
 
-~~~
-{
-    state: boolean
+~~~ cddl
+ConnectivitySpinBitUpdated = {
+    state: bool
 }
 ~~~
+{: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
 
 ### connection_retried
 
@@ -416,32 +424,43 @@ implementations less interested in tracking each smaller state transition. As
 such, users should not expect to see -all- these states reflected in all qlogs and
 implementers should focus on support for the SimpleConnectionState set.
 
-Data:
-~~~
-{
-    old?: ConnectionState | SimpleConnectionState,
-    new: ConnectionState | SimpleConnectionState
+Definition:
+
+~~~ cddl
+ConnectivityConnectionStateUpdated = {
+    ? old: ConnectionState / SimpleConnectionState
+    new: ConnectionState / SimpleConnectionState
 }
 
-enum ConnectionState {
-    attempted, // initial sent/received
-    peer_validated, // peer address validated by: client sent Handshake packet OR client used CONNID chosen by the server. transport-draft-32, section-8.1
-    handshake_started,
-    early_write, // 1 RTT can be sent, but handshake isn't done yet
-    handshake_complete, // TLS handshake complete: Finished received and sent. tls-draft-32, section-4.1.1
-    handshake_confirmed, // HANDSHAKE_DONE sent/received (connection is now "active", 1RTT can be sent). tls-draft-32, section-4.1.2
-    closing,
-    draining, // connection_close sent/received
-    closed // draining period done, connection state discarded
-}
+ConnectionState =
+    ; initial sent/received
+    "attempted" /
+    ; peer address validated by: client sent Handshake packet OR
+    ; client used CONNID chosen by the server.
+    ; transport-draft-32, section-8.1
+    "peer_validated" /
+    "handshake_started" /
+    ; 1 RTT can be sent, but handshake isn't done yet
+    "early_write" /
+    ; TLS handshake complete: Finished received and sent
+    ; tls-draft-32, section-4.1.1
+    "handshake_complete" /
+    ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
+    ; can be sent). tls-draft-32, section-4.1.2
+    "handshake_confirmed" /
+    "closing" /
+    ; connection_close sent/received
+    "draining" /
+    ; draining period done, connection state discarded
+    "closed"
 
-enum SimpleConnectionState {
-    attempted,
-    handshake_started,
-    handshake_confirmed,
-    closed
-}
+SimpleConnectionState =
+    "attempted" /
+    "handshake_started" /
+    "handshake_confirmed" /
+    "closed"
 ~~~
+{: #connectivity-connectionstateupdated-def title="ConnectivityConnectionStateUpdated definition"}
 
 These states correspond to the following transitions for both client and server:
 
@@ -465,7 +484,7 @@ These states correspond to the following transitions for both client and server:
 
 - get initial
     - state = attempted
-- send initial _(don't think this needs a separate state, since some handshake will always be sent in the same flight as this?)_
+- send initial _(TODO don't think this needs a separate state, since some handshake will always be sent in the same flight as this?)_
 - send handshake EE, CERT, CV, ...
     - state = handshake_started
 - send ServerFinished
@@ -500,41 +519,52 @@ Importance: Base
 
 Note: secret_updated would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
 
-Data:
+Definition:
 
-~~~
-{
-    key_type:KeyType,
-    old?:bytes,
-    new:bytes,
-    generation?:uint32 // needed for 1RTT key updates
+~~~ cddl
+SecurityKeyUpdated = {
+    key_type: KeyType
+
+    ? old: hexstring
+    new: hexstring
+
+    ; needed for 1RTT key updates
+    ? generation: uint32
+
+    ? trigger:
+        ; (e.g., initial, handshake and 0-RTT keys
+        ; are generated by TLS)
+        "tls" /
+        "remote_update" /
+        "local_update"
 }
 ~~~
+{: #security-keyupdated-def title="SecurityKeyUpdated definition"}
 
-Triggers:
-
-* "tls" // (e.g., initial, handshake and 0-RTT keys are generated by TLS)
-* "remote_update"
-* "local_update"
 
 ### key_retired
 Importance: Base
 
-Data:
+Definition:
 
-~~~
-{
-    key_type:KeyType,
-    key?:bytes,
-    generation?:uint32 // needed for 1RTT key updates
+~~~ cddl
+SecurityKeyRetired = {
+    key_type: KeyType
+    ? key: hexstring
+
+    ; needed for 1RTT key updates
+    ? generation: uint32
+
+    ? trigger:
+        ; (e.g., initial, handshake and 0-RTT keys
+        ; are generated by TLS)
+        "tls" /
+        "remote_update" /
+        "local_update"
 }
 ~~~
+{: #security-keyretired-def title="SecurityKeyRetired definition"}
 
-Triggers:
-
-* "tls" // (e.g., initial, handshake and 0-RTT keys are dropped implicitly)
-* "remote_update"
-* "local_update"
 
 ## transport
 
@@ -548,15 +578,16 @@ supported versions. From this, the client selects a version. This event aggregat
 all this information in a single event type. It also allows logging of supported
 versions at an endpoint without actual version negotiation needing to happen.
 
-Data:
+Definition:
 
-~~~
-{
-    server_versions?:Array<bytes>,
-    client_versions?:Array<bytes>,
-    chosen_version?:bytes
+~~~ cddl
+TransportVersionInformation = {
+    ? server_versions: [+ QuicVersion]
+    ? client_versions: [+ QuicVersion]
+    ? chosen_version: QuicVersion
 }
 ~~~
+{: #transport-versioninformation-def title="TransportVersionInformation definition"}
 
 Intended use:
 
@@ -583,15 +614,16 @@ Negotiation (alpn) extension. If there are common option(s), the server chooses
 the most optimal one and communicates this back to the client. If not, the
 connection is closed.
 
-Data:
+Definition:
 
-~~~
-{
-    server_alpns?:Array<string>,
-    client_alpns?:Array<string>,
-    chosen_alpn?:string
+~~~ cddl
+TransportALPNInformation = {
+    ? server_alpns: [* text]
+    ? client_alpns: [* text]
+    ? chosen_alpn: text
 }
 ~~~
+{: #transport-alpninformation-def title="TransportALPNInformation definition"}
 
 Intended use:
 
@@ -628,55 +660,60 @@ They are later updated with the server's reply. In these cases, utilize the
 separate `parameters_restored` event to indicate the initial values, and this
 event to indicate the updated values, as normal.
 
-Data:
+Definition:
 
-~~~
-{
-    owner?:"local" | "remote",
+~~~ cddl
+TransportParametersSet = {
+    ? owner: Owner
 
-    resumption_allowed?:boolean, // valid session ticket
-                                 // was received
-    early_data_enabled?:boolean, // early data extension
-                                 // was enabled on the TLS layer
-    tls_cipher?:string, // (e.g., "AES_128_GCM_SHA256")
-    aead_tag_length?:uint8, // depends on the TLS cipher,
-                            // but it's easier to be explicit.
-                            // Default value is 16
+    ; true if valid session ticket was received
+    ? resumption_allowed: bool
 
-    // transport parameters from the TLS layer:
-    original_destination_connection_id?:bytes,
-    initial_source_connection_id?:bytes,
-    retry_source_connection_id?:bytes,
-    stateless_reset_token?:Token,
-    disable_active_migration?:boolean,
+    ; true if early data extension was enabled on the TLS layer
+    ? early_data_enabled: bool
 
-    max_idle_timeout?:uint64,
-    max_udp_payload_size?:uint32,
-    ack_delay_exponent?:uint16,
-    max_ack_delay?:uint16,
-    active_connection_id_limit?:uint32,
+    ; e.g., "AES_128_GCM_SHA256"
+    ? tls_cipher: text
 
-    initial_max_data?:uint64,
-    initial_max_stream_data_bidi_local?:uint64,
-    initial_max_stream_data_bidi_remote?:uint64,
-    initial_max_stream_data_uni?:uint64,
-    initial_max_streams_bidi?:uint64,
-    initial_max_streams_uni?:uint64,
+    ; depends on the TLS cipher, but it's easier to be explicit.
+    ; in bytes
+    ? aead_tag_length: uint8 .default 16
 
-    preferred_address?:PreferredAddress
+    ; transport parameters from the TLS layer:
+    ? original_destination_connection_id: ConnectionID
+    ? initial_source_connection_id: ConnectionID
+    ? retry_source_connection_id: ConnectionID
+    ? stateless_reset_token: Token
+    ? disable_active_migration: bool
+
+    ? max_idle_timeout: uint64
+    ? max_udp_payload_size: uint32
+    ? ack_delay_exponent: uint16
+    ? max_ack_delay: uint16
+    ? active_connection_id_limit: uint32
+
+    ? initial_max_data: uint64
+    ? initial_max_stream_data_bidi_local: uint64
+    ? initial_max_stream_data_bidi_remote: uint64
+    ? initial_max_stream_data_uni: uint64
+    ? initial_max_streams_bidi: uint64
+    ? initial_max_streams_uni: uint64
+
+    ? preferred_address: PreferredAddress
 }
 
-interface PreferredAddress {
-    ip_v4:IPAddress,
-    ip_v6:IPAddress,
+PreferredAddress = {
+    ip_v4: IPAddress
+    ip_v6: IPAddress
 
-    port_v4:uint16,
-    port_v6:uint16,
+    port_v4: uint16
+    port_v6: uint16
 
-    connection_id:bytes,
-    stateless_reset_token:Token
+    connection_id: ConnectionID
+    stateless_reset_token: Token
 }
 ~~~
+{: #transport-parametersset-def title="TransportParametersSet definition"}
 
 Additionally, this event can contain any number of unspecified fields. This is to
 reflect setting of for example unknown (greased) transport parameters or employed
@@ -692,24 +729,25 @@ not all transport parameters should be restored (many are even prohibited from
 being re-utilized). The ones listed here are the ones expected to be useful for
 correct 0-RTT usage.
 
-Data:
+Definition:
 
-~~~
-{
-    disable_active_migration?:boolean,
+~~~ cddl
+TransportParametersRestored = {
+    ? disable_active_migration: bool
 
-    max_idle_timeout?:uint64,
-    max_udp_payload_size?:uint32,
-    active_connection_id_limit?:uint32,
+    ? max_idle_timeout: uint64
+    ? max_udp_payload_size: uint32
+    ? active_connection_id_limit: uint32
 
-    initial_max_data?:uint64,
-    initial_max_stream_data_bidi_local?:uint64,
-    initial_max_stream_data_bidi_remote?:uint64,
-    initial_max_stream_data_uni?:uint64,
-    initial_max_streams_bidi?:uint64,
-    initial_max_streams_uni?:uint64,
+    ? initial_max_data: uint64
+    ? initial_max_stream_data_bidi_local: uint64
+    ? initial_max_stream_data_bidi_remote: uint64,
+    ? initial_max_stream_data_uni: uint64
+    ? initial_max_streams_bidi: uint64
+    ? initial_max_streams_uni: uint64
 }
 ~~~
+{: #transport-parametersrestored-def title="TransportParametersRestored definition"}
 
 Note that, like parameters_set above, this event can contain any number of
 unspecified fields to allow for additional/custom parameters.
@@ -717,41 +755,48 @@ unspecified fields to allow for additional/custom parameters.
 ### packet_sent
 Importance: Core
 
-Data:
+Definition:
 
-~~~
-{
-    header:PacketHeader,
+~~~ cddl
+TransportPacketSent = {
+    header: PacketHeader
 
-    frames?:Array<QuicFrame>, // see appendix for the definitions
+    ; see appendix for the QuicFrame definitions
+    ? frames: [* QuicFrame]
 
-    is_coalesced?:boolean, // default value is false
+    ? is_coalesced: bool .default false
 
-    retry_token?:Token, // only if header.packet_type === retry
+    ; only if header.packet_type === "retry"
+    ? retry_token: Token
 
-    stateless_reset_token?:bytes, // only if header.packet_type
-                                  // === stateless_reset. Is
-                                  // always 128 bits in length.
+    ; only if header.packet_type === "stateless_reset"
+    ; is always 128 bits in length.
+    ? stateless_reset_token: hexstring .size 16
 
-    supported_versions:Array<bytes>, // only if header.packet_type
-                                     // === version_negotiation
+    ; only if header.packet_type === "version_negotiation"
+    ? supported_versions: [+ QuicVersion]
 
-    raw?:RawInfo,
-    datagram_id?:uint32
+    ? raw: RawInfo
+    ? datagram_id: uint32
+
+    ? trigger:
+      ; draft-23 5.1.1
+      "retransmit_reordered" /
+      ; draft-23 5.1.2
+      "retransmit_timeout" /
+      ; draft-23 5.3.1
+      "pto_probe" /
+      ; draft-19 6.2
+      "retransmit_crypto" /
+      ; needed for some CCs to figure out bandwidth allocations
+      ; when there are no normal sends
+      "cc_bandwidth_probe"
 }
 ~~~
+{: #transport-packetsent-def title="TransportPacketSent definition"}
 
 Note: We do not explicitly log the encryption_level or packet_number_space: the
 header.packet_type specifies this by inference (assuming correct implementation)
-
-Triggers:
-
-* "retransmit_reordered" // draft-23 5.1.1
-* "retransmit_timeout" // draft-23 5.1.2
-* "pto_probe" // draft-23 5.3.1
-* "retransmit_crypto" // draft-19 6.2
-* "cc_bandwidth_probe" // needed for some CCs to figure out bandwidth allocations
-  when there are no normal sends
 
 Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
 when keeping track of packet coalescing.
@@ -759,37 +804,40 @@ when keeping track of packet coalescing.
 ### packet_received
 Importance: Core
 
-Data:
+Definition:
 
-~~~
-{
-    header:PacketHeader,
+~~~ cddl
+TransportPacketReceived = {
+    header: PacketHeader
 
-    frames?:Array<QuicFrame>, // see appendix for the definitions
+    ; see appendix for the definitions
+    ? frames: [* QuicFrame]
 
-    is_coalesced?:boolean,
+    ? is_coalesced: bool .default false
 
-    retry_token?:Token, // only if header.packet_type === retry
+    ; only if header.packet_type === "retry"
+    ? retry_token: Token
 
-    stateless_reset_token?:bytes, // only if header.packet_type
-                                  // === stateless_reset.
-                                  // Is always 128 bits in length.
+    ; only if header.packet_type === "stateless_reset"
+    ; Is always 128 bits in length.
+    ? stateless_reset_token: hexstring .size 16
 
-    supported_versions:Array<bytes>, // only if header.packet_type
-                                     // === version_negotiation
+    ; only if header.packet_type === "version_negotiation"
+    ? supported_versions: [+ QuicVersion]
 
-    raw?:RawInfo,
-    datagram_id?:uint32
+    ? raw: RawInfo
+    ? datagram_id: uint32
+
+    ? trigger:
+        ; if packet was buffered because
+        ; it couldn't be decrypted before
+        "keys_available"
 }
 ~~~
+{: #transport-packetreceived-def title="TransportPacketReceived definition"}
 
 Note: We do not explicitly log the encryption_level or packet_number_space: the
 header.packet_type specifies this by inference (assuming correct implementation)
-
-Triggers:
-
-* "keys_available" // if packet was buffered because it couldn't be decrypted
-  before
 
 Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
 when keeping track of packet coalescing.
@@ -799,36 +847,33 @@ Importance: Base
 
 This event indicates a QUIC-level packet was dropped after partial or no parsing.
 
-Data:
+Definition:
 
-~~~
-{
-    header?:PacketHeader, // primarily packet_type should be
-                          // filled here, as other fields might
-                          // not be parseable
+~~~ cddl
+TransportPacketDropped = {
+    ; primarily packet_type should be filled here,
+    ; as other fields might not be parseable
+    ? header: PacketHeader
 
-    raw?:RawInfo,
-    datagram_id?:uint32
+    ? raw: RawInfo
+    ? datagram_id: uint32
+
+    ? trigger:
+        "key_unavailable" /
+        "unknown_connection_id" /
+        "header_parse_error" /
+        "payload_decrypt_error" /
+        "protocol_violation" /
+        "dos_prevention" /
+        "unsupported_version" /
+        "unexpected_packet" /
+        "unexpected_source_connection_id" /
+        "unexpected_version" /
+        "duplicate" /
+        "invalid_initial"
 }
 ~~~
-
-For this event, the "trigger" field SHOULD be set (for example to one of the
-values below), as this helps tremendously in debugging.
-
-Triggers:
-
-* "key_unavailable"
-* "unknown_connection_id"
-* "header_parse_error"
-* "payload_decrypt_error"
-* "protocol_violation"
-* "dos_prevention"
-* "unsupported_version"
-* "unexpected_packet"
-* "unexpected_source_connection_id"
-* "unexpected_version"
-* "duplicate"
-* "invalid_initial"
+{: #transport-packetdropped-def title="TransportPacketDropped definition"}
 
 Note: sometimes packets are dropped before they can be associated with a
 particular connection (e.g., in case of "unsupported_version"). This situation is
@@ -844,29 +889,30 @@ This event is emitted when a packet is buffered because it cannot be processed
 yet. Typically, this is because the packet cannot be parsed yet, and thus we only
 log the full packet contents when it was parsed in a packet_received event.
 
-Data:
+Definition:
 
-~~~
-{
-    header?:PacketHeader, // primarily packet_type and possible
-                          // packet_number should be filled here,
-                          // as other elements might not be
-                          // available yet
+~~~ cddl
+TransportPacketBuffered = {
+    ; primarily packet_type and possible packet_number should be
+    ; filled here as other elements might not be available yet
+    ? header: PacketHeader
 
-    raw?:RawInfo,
-    datagram_id?:uint32
+    ? raw: RawInfo
+    ? datagram_id: uint32
+
+    ? trigger:
+        ; indicates the parser cannot keep up, temporarily buffers
+        ; packet for later processing
+        "backpressure" /
+        ; if packet cannot be decrypted because the proper keys were
+        ; not yet available
+        "keys_unavailable"
 }
 ~~~
+{: #transport-packetbuffered-def title="TransportPacketBuffered definition"}
 
 Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
 when keeping track of packet coalescing.
-
-Triggers:
-
-* "backpressure" // indicates the parser cannot keep up, temporarily buffers
-  packet for later processing
-* "keys_unavailable" // if packet cannot be decrypted because the proper keys were
-  not yet available
 
 ### packets_acked
 Importance: Extra
@@ -878,14 +924,16 @@ logic to determine when a given packet is acknowledged for the first time, as QU
 uses ACK ranges which can include repeated ACKs. Additionally, this event can be
 used by implementations that do not log frame contents.
 
-Data:
-~~~
-{
-    packet_number_space?:PacketNumberSpace,
+Definition:
 
-    packet_numbers?:Array<uint64>
+~~~ cddl
+TransportPacketsAcked = {
+    ? packet_number_space: PacketNumberSpace
+
+    ? packet_numbers: [+ uint64]
 }
 ~~~
+{: #transport-packetsacked-def title="TransportPacketsAcked definition"}
 
 Note: if packet_number_space is omitted, it assumes the default value of
 PacketNumberSpace.application_data, as this is by far the most prevalent packet
@@ -897,18 +945,21 @@ Importance: Extra
 When we pass one or more UDP-level datagrams to the socket. This is useful for
 determining how QUIC packet buffers are drained to the OS.
 
-Data:
+Definition:
 
-~~~
-{
-    count?:uint16, // to support passing multiple at once
-    raw?:Array<RawInfo>, // RawInfo:length field indicates
-                         // total length of the datagrams,
-                         // including UDP header length
+~~~ cddl
+TransportDatagramsSent = {
+    ; to support passing multiple at once
+    ? count: uint16
 
-    datagram_ids?:Array<uint32>
+    ; RawInfo:length field indicates total length of the datagrams
+    ; including UDP header length
+    ? raw: [+ RawInfo]
+
+    ? datagram_ids: [+ uint32]
 }
 ~~~
+{: #transport-datagramssent-def title="TransportDatagramsSent definition"}
 
 Note: QUIC itself does not have a concept of a "datagram_id". This field is a
 purely qlog-specific construct to allow tracking how multiple QUIC packets are
@@ -925,18 +976,21 @@ Importance: Extra
 When we receive one or more UDP-level datagrams from the socket. This is useful
 for determining how datagrams are passed to the user space stack from the OS.
 
-Data:
+Definition:
 
-~~~
-{
-    count?:uint16, // to support passing multiple at once
-    raw?:Array<RawInfo>, // RawInfo:length field indicates
-                         // total length of the datagrams,
-                         // including UDP header length
+~~~ cddl
+TransportDatagramsReceived = {
+    ; to support passing multiple at once
+    ? count: uint16
 
-    datagram_ids?:Array<uint32>
+    ; RawInfo:length field indicates total length of the datagrams
+    ; including UDP header length
+    ? raw: [+ RawInfo]
+
+    ? datagram_ids: [+ uint32]
 }
 ~~~
+{: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
 
 Note: for more details on "datagram_ids", see {{datagram-id}}.
 
@@ -946,13 +1000,14 @@ Importance: Extra
 When we drop a UDP-level datagram. This is typically if it does not contain a
 valid QUIC packet (in that case, use packet_dropped instead).
 
-Data:
+Definition:
 
-~~~
-{
-    raw?:RawInfo
+~~~ cddl
+TransportDatagramDropped = {
+    ? raw: RawInfo
 }
 ~~~
+{: #transport-datagramdropped-def title="TransportDatagramDropped definition"}
 
 ### stream_state_updated
 Importance: Base
@@ -962,50 +1017,52 @@ described in QUIC transport draft-23 section 3. Most of this can be inferred fro
 several types of frames going over the wire, but it's much easier to have explicit
 signals for these state changes.
 
+Definition:
 
-Data:
+~~~ cddl
+StreamType = "unidirectional" / "bidirectional"
 
-~~~
-{
-    stream_id:uint64,
-    stream_type?:"unidirectional"|
-                 "bidirectional", // mainly useful when
-                                  // opening the stream
+TransportStreamStateUpdated = {
+    stream_id: uint64
 
-    old?:StreamState,
-    new:StreamState,
+    ; mainly useful when opening the stream
+    ? stream_type: StreamType
 
-    stream_side?:"sending"|"receiving"
+    ? old: StreamState
+    new: StreamState
+
+    ? stream_side: "sending" / "receiving"
 }
 
-enum StreamState {
-    // bidirectional stream states, draft-23 3.4.
-    idle,
-    open,
-    half_closed_local,
-    half_closed_remote,
-    closed,
+StreamState =
+    ; bidirectional stream states, draft-23 3.4.
+    "idle" /
+    "open" /
+    "half_closed_local" /
+    "half_closed_remote" /
+    "closed" /
 
-    // sending-side stream states, draft-23 3.1.
-    ready,
-    send,
-    data_sent,
-    reset_sent,
-    reset_received,
+    ; sending-side stream states, draft-23 3.1.
+    "ready" /
+    "send" /
+    "data_sent" /
+    "reset_sent" /
+    "reset_received" /
 
-    // receive-side stream states, draft-23 3.2.
-    receive,
-    size_known,
-    data_read,
-    reset_read,
+    ; receive-side stream states, draft-23 3.2.
+    "receive" /
+    "size_known" /
+    "data_read" /
+    "reset_read" /
 
-    // both-side states
-    data_received,
+    ; both-side states
+    "data_received" /
 
-    // qlog-defined
-    destroyed // memory actually freed
-}
+    ; qlog-defined:
+    ; memory actually freed
+    "destroyed"
 ~~~
+{: #transport-streamstateupdated-def title="TransportStreamStateUpdated definition"}
 
 Note: QUIC implementations SHOULD mainly log the simplified bidirectional
 (HTTP/2-alike) stream states (e.g., idle, open, closed) instead of the more
@@ -1044,15 +1101,17 @@ when using packet_sent and packet_received events. For these cases, this event
 also contains the direct packet_number field, which can be used to more explicitly
 link this event to the packet_sent/received events.
 
-Data:
+Definition:
 
-~~~
-{
-    frames:Array<QuicFrame>, // see appendix for the definitions
+~~~ cddl
+TransportFramesProcessed = {
+    ; see appendix for the QuicFrame definitions
+    frames: [* QuicFrame]
 
-    packet_number?:uint64
+    ? packet_number: uint64
 }
 ~~~
+{: #transport-framesprocessed-def title="TransportFramesProcessed definition"}
 
 ### data_moved
 Importance: Base
@@ -1070,22 +1129,24 @@ larger batches (for example, all QUIC packets are processed first and afterwards
 the application layer reads from the streams with newly available data). This in
 turn can help identify bottlenecks or scheduling problems.
 
-Data:
+Definition:
 
-~~~~
-{
-    stream_id?:uint64,
-    offset?:uint64,
-    length?:uint64, // byte length of the moved data
+~~~~ cddl
+TransportDataMoved = {
+    ? stream_id: uint64
+    ? offset: uint64
 
-    from?:string, // typically: use either of "user",
-                  // "application","transport","network"
-    to?:string,   // typically: use either of "user",
-                  //"application","transport","network"
+    ; byte length of the moved data
+    ? length: uint64
 
-    data?:bytes // raw bytes that were transferred
+    ? from: "user" / "application" / "transport" / "network" / text
+    ? to: "user" / "application" / "transport" / "network" / text
+
+    ; raw bytes that were transferred
+    ? data: hexstring
 }
 ~~~~
+{: #transport-datamoved-def title="TransportDataMoved definition"}
 
 Note: we do not for example use a "direction" field (with values "up" and "down")
 to specify the data flow. This is because in some optimized implementations, data
@@ -1116,30 +1177,40 @@ control into a single event. All these settings are typically set once and never
 change. Implementation that do, for some reason, change these parameters during
 execution, MAY emit the parameters_set event twice.
 
-Data:
+Definition:
 
-~~~
-{
-    // Loss detection, see recovery draft-23, Appendix A.2
-    reordering_threshold?:uint16, // in amount of packets
-    time_threshold?:float, // as RTT multiplier
-    timer_granularity?:uint16, // in ms
-    initial_rtt?:float, // in ms
+~~~ cddl
+RecoveryParametersSet = {
+    ; Loss detection, see recovery draft-23, Appendix A.2
+    ; in amount of packets
+    ? reordering_threshold: uint16
 
-    // congestion control, Appendix B.1.
-    max_datagram_size?:uint32, // in bytes
-                               // Note: this could be
-                               // updated after pmtud
-    initial_congestion_window?:uint64, // in bytes
-    minimum_congestion_window?:uint32, // in bytes
-                                       // Note: this could change
-                                       // when
-                                       // max_datagram_size
-                                       // changes
-    loss_reduction_factor?:float,
-    persistent_congestion_threshold?:uint16 // as PTO multiplier
+    ; as RTT multiplier
+    ? time_threshold: float32
+
+    ; in ms
+    timer_granularity: uint16
+
+    ; in ms
+    ? initial_rtt:float32
+
+    ; congestion control, Appendix B.1.
+    ; in bytes. Note: this could be updated after pmtud
+    ? max_datagram_size: uint32
+
+    ; in bytes
+    ? initial_congestion_window: uint64
+
+    ; Note: this could change when max_datagram_size changes
+    ; in bytes
+    ? minimum_congestion_window: uint32
+    ? loss_reduction_factor: float32
+
+    ; as PTO multiplier
+    ? persistent_congestion_threshold: uint16
 }
 ~~~
+{: #recovery-parametersset-def title="RecoveryParametersSet definition"}
 
 Additionally, this event can contain any number of unspecified fields to support
 different recovery approaches.
@@ -1154,37 +1225,39 @@ at the same time, they should be bundled in a single metrics_updated entry, rath
 than split out into two). Consequently, a metrics_updated event is only guaranteed
 to contain at least one of the listed metrics.
 
-Data:
+Definition:
 
-~~~
-{
-    // Loss detection, see recovery draft-23, Appendix A.3
-    min_rtt?:float, // in ms or us, depending on the
-                    // overarching qlog's configuration
-    smoothed_rtt?:float, // in ms or us, depending on the
-                         // overarching qlog's configuration
-    latest_rtt?:float, // in ms or us, depending on the
-                       // overarching qlog's configuration
-    rtt_variance?:float, // in ms or us, depending on the
-                         // overarching qlog's configuration
+~~~ cddl
+RecoveryMetricsUpdated = {
+    ; Loss detection, see recovery draft-23, Appendix A.3
+    ; all following rtt fields are expressed in ms
+    ? min_rtt: float32
+    ? smoothed_rtt: float32
+    ? latest_rtt: float32
+    ? rtt_variance: float32
 
-    pto_count?:uint16,
+    ? pto_count: uint16
 
-    // Congestion control, Appendix B.2.
-    congestion_window?:uint64, // in bytes
-    bytes_in_flight?:uint64,
+    ; Congestion control, Appendix B.2.
+    ; in bytes
+    ? congestion_window: uint64
+    ? bytes_in_flight: uint64
 
-    ssthresh?:uint64, // in bytes
+    ; in bytes
+    ? ssthresh: uint64
 
-    // qlog defined
-    packets_in_flight?:uint64, // sum of all packet number spaces
+    ; qlog defined
+    ; sum of all packet number spaces
+    ? packets_in_flight: uint64
 
-    pacing_rate?:uint64 // in bps
+    ; in bits per second
+    ? pacing_rate: uint64
 }
 ~~~
+{: #recovery-metricsupdated-def title="RecoveryMetricsUpdated definition"}
 
 Note: to make logging easier, implementations MAY log values even if they are the
-same as previously reported values (e.g., two subsequent METRIC_UPDATE entries can
+same as previously reported values (e.g., two subsequent RecoveryMetricsUpdated entries can
 both report the exact same value for min_rtt). However, applications SHOULD try to
 log only actual updates to values.
 
@@ -1204,23 +1277,23 @@ the Recovery draft ("enhanced" New Reno), the following states are defined:
 * application_limited
 * recovery
 
-Data:
+Definition:
 
-~~~
-{
-    old?:string,
-    new:string
+~~~ cddl
+RecoveryCongestionStateUpdated = {
+    ? old: text
+    new: text
+
+    ? trigger:
+        "persistent_congestion" /
+        "ECN"
 }
 ~~~
+{: #recovery-congestionstateupdated-def title="RecoveryCongestionStateUpdated definition"}
 
 The "trigger" field SHOULD be logged if there are multiple ways in which a state change
 can occur but MAY be omitted if a given state can only be due to a single event
 occuring (e.g., slow start is exited only when ssthresh is exceeded).
-
-Some triggers for ("enhanced" New Reno):
-
-* persistent_congestion
-* ECN
 
 ### loss_timer_updated
 Importance: Extra
@@ -1235,21 +1308,22 @@ event types are:
 
 Note: to indicate an active timer's timeout update, a new "set" event is used.
 
-Data:
+Definition:
 
-~~~
-{
-    timer_type?:"ack"|"pto", // called "mode" in draft-23 A.9.
-    packet_number_space?: PacketNumberSpace,
+~~~ cddl
+RecoveryLossTimerUpdated = {
+    ; called "mode" in draft-23 A.9.
+    ? timer_type: "ack" / "pto"
+    ? packet_number_space: PacketNumberSpace
 
-    event_type:"set"|"expired"|"cancelled",
+    event_type: "set" / "expired" / "cancelled"
 
-    delta?:float // if event_type === "set": delta time
-                 // in ms or us (see configuration) from
-                 // this event's timestamp until when the
-                 // timer will trigger
+    ; if event_type === "set": delta time is in ms from
+    ; this event's timestamp until when the timer will trigger
+    ? delta: float32
 }
 ~~~
+{: #recovery-losstimerupdated-def title="RecoveryLossTimerUpdated definition"}
 
 TODO: how about CC algo's that use multiple timers? How generic do these events
 need to be? Just support QUIC-style recovery from the spec or broader?
@@ -1261,27 +1335,29 @@ Importance: Core
 
 This event is emitted when a packet is deemed lost by loss detection.
 
-Data:
+Definition:
 
-~~~
-{
-    header?:PacketHeader, // should include at least the
-                          // packet_type and packet_number
+~~~ cddl
+RecoveryPacketLost = {
+    ; should include at least the packet_type and packet_number
+    ? header: PacketHeader
 
-    // not all implementations will keep track of full
-    // packets, so these are optional
-    frames?:Array<QuicFrame> // see appendix for the definitions
+    ; not all implementations will keep track of full
+    ; packets, so these are optional
+    ; see appendix for the QuicFrame definitions
+    ? frames: [* QuicFrame]
+
+    ? trigger:
+        "reordering_threshold" /
+        "time_threshold" /
+        ; draft-23 section 5.3.1, MAY
+        "pto_expired"
 }
 ~~~
+{: #recovery-packetlost-def title="RecoveryPacketLost definition"}
 
 For this event, the "trigger" field SHOULD be set (for example to one of the
 values below), as this helps tremendously in debugging.
-
-Triggers:
-
-* "reordering_threshold",
-* "time_threshold"
-* "pto_expired" // draft-23 section 5.3.1, MAY
 
 
 ### marked_for_retransmit
@@ -1305,13 +1381,15 @@ Note: much of this data can be inferred if implementations log packet_sent event
 (e.g., looking at overlapping stream data offsets and length, one can determine
 when data was retransmitted).
 
-Data:
+Definition:
 
-~~~
-{
-    frames:Array<QuicFrame>, // see appendix for the definitions
+~~~ ccdl
+RecoveryMarkedForRetransmit = {
+    ; see appendix for the QuicFrame definitions
+    frames: [+ QuicFrame]
 }
 ~~~
+{: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
 
 # Security Considerations
 
@@ -1325,90 +1403,138 @@ TBD
 
 # QUIC data field definitions
 
-## IPAddress
+## ProtocolEventBody extension
 
+We extend the `$ProtocolEventBody` extension point defined in
+[QLOG-MAIN] with the QUIC protocol events defined in this document.
+
+~~~ cddl
+QuicEvents = ConnectivityServerListening /
+             ConnectivityConnectionStarted /
+             ConnectivityConnectionClosed /
+             ConnectivityConnectionIDUpdated /
+             ConnectivitySpinBitUpdated /
+             ConnectivityConnectionStateUpdated /
+             SecurityKeyUpdated / SecurityKeyRetired /
+             TransportVersionInformation / TransportALPNInformation /
+             TransportParametersSet / TransportParametersRestored /
+             TransportPacketSent / TransportPacketReceived /
+             TransportPacketDropped / TransportPacketBuffered /
+             TransportPacketsAcked / TransportDatagramsSent /
+             TransportDatagramsReceived / TransportDatagramDropped /
+             TransportStreamStateUpdated / TransportFramesProcessed /
+             TransportDataMoved /
+             RecoveryParametersSet / RecoveryMetricsUpdated /
+             RecoveryCongestionStateUpdated /
+             RecoveryLossTimerUpdated /
+             RecoveryPacketLost
+
+$ProtocolEventBody /= QuicEvents
 ~~~
 
-class IPAddress : string | bytes;
+## QuicVersion
 
-// an IPAddress can either be a "human readable" form
-// (e.g., "127.0.0.1" for v4 or
-// "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
-// use a raw byte-form (as the string forms can be ambiguous)
-
+~~~ cddl
+QuicVersion = hexstring
 ~~~
+{: #quicversion-def title="QuicVersion definition"}
+
+## ConnectionID
+
+~~~ cddl
+ConnectionID = hexstring
+~~~
+{: #connectionid-def title="ConnectionID definition"}
+
+## Owner
+
+~~~ cddl
+Owner = "local" / "remote"
+~~~
+{: #owner-def title="Owner definition"}
+
+## IPAddress and IPVersion
+
+~~~ cddl
+; an IPAddress can either be a "human readable" form
+; (e.g., "127.0.0.1" for v4 or
+; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
+; use a raw byte-form (as the string forms can be ambiguous)
+IPAddress = text / hexstring
+~~~
+{: #ipaddress-def title="IPAddress definition"}
+
+~~~ cddl
+IPVersion = "v4" / "v6"
+~~~
+{: #ipversion-def title="IPVersion definition"}
 
 ## PacketType
 
+~~~ cddl
+PacketType = "initial" / "handshake" / "0RTT" / "1RTT" / "retry" /
+    "version_negotiation" / "stateless_reset" / "unknown"
 ~~~
-enum PacketType {
-    initial,
-    handshake,
-    0RTT,
-    1RTT,
-    retry,
-    version_negotiation,
-    stateless_reset,
-    unknown
-}
-~~~
+{: #packettype-def title="PacketType definition"}
 
 ## PacketNumberSpace
 
+~~~ cddl
+PacketNumberSpace = "initial" / "handshake" / "application_data"
 ~~~
-enum PacketNumberSpace {
-    initial,
-    handshake,
-    application_data
-}
-~~~
+{: #packetnumberspace-def title="PacketNumberSpace definition"}
 
 ## PacketHeader
 
-~~~
-class PacketHeader {
-    // Note: short vs long header is implicit through PacketType
+~~~ cddl
+PacketHeader = {
+    packet_type: PacketType
+    packet_number: uint64
 
-    packet_type: PacketType;
-    packet_number: uint64;
+    ; the bit flags of the packet headers (spin bit, key update bit,
+    ; etc. up to and including the packet number length bits
+    ; if present
+    ? flags: uint8
 
-    flags?: uint8; // the bit flags of the packet headers
-                   // (spin bit, key update bit, etc. up to and
-                   // including the packet number length bits
-                   // if present) interpreted as a single
-                   // 8-bit integer
+    ; only if packet_type === "initial"
+    ? token: Token
 
-    token?:Token; // only if packet_type == initial
+    ; only if packet_type === "initial" || "handshake" || "0RTT"
+    ; Signifies length of the packet_number plus the payload
+    ? length: uint16
 
-    length?: uint16, // only if packet_type == initial ||
-                     // handshake || 0RTT.
-                     // Signifies length of the packet_number
-                     // plus the payload.
-
-    // only if present in the header
-    // if correctly using transport:connection_id_updated events,
-    // dcid can be skipped for 1RTT packets
-    version?: bytes; // e.g., "ff00001d" for draft-29
-    scil?: uint8;
-    dcil?: uint8;
-    scid?: bytes;
-    dcid?: bytes;
+    ; only if present in the header
+    ; if correctly using transport:connection_id_updated events,
+    ; dcid can be skipped for 1RTT packets
+    ? version: QuicVersion
+    ? scil: uint8
+    ? dcil: uint8
+    ? scid: ConnectionID
+    ? dcid: ConnectionID
 }
 ~~~
+{: #packetheader-def title="PacketHeader definition"}
 
 ## Token
 
-~~~
-class Token {
-    type?:"retry"|"resumption"|"stateless_reset";
+~~~ cddl
+Token = {
+    ? type: "retry" / "resumption" / "stateless_reset"
 
-    length?:uint32; // byte length of the token
-    data?:bytes; // raw byte value of the token
+    ; byte length of the token
+    ? length: uint32
 
-    details?:any; // decoded fields included in the token
-                  // (typically: peer's IP address, creation time)
+    ; raw byte value of the token
+    ? data: hexstring
+
+    ; decoded fields included in the token
+    ; (typically: peer's IP address, creation time)
+    ? details: {
+      * text => any
+    }
 }
 ~~~
+{: #token-def title="Token definition"}
 
 The token carried in an Initial packet can either be a retry token from a Retry
 packet, a stateless reset token from a Stateless Reset packet or one originally
@@ -1419,36 +1545,29 @@ and its format is implementation specific. For that, this field includes a
 general-purpose "details" field.
 
 ## KeyType
+
+~~~ cddl
+KeyType =
+    "server_initial_secret" / "client_initial_secret" /
+    "server_handshake_secret" / "client_handshake_secret" /
+    "server_0rtt_secret" / "client_0rtt_secret" /
+    "server_1rtt_secret" / "client_1rtt_secret"
 ~~~
-enum KeyType {
-    server_initial_secret,
-    client_initial_secret,
-
-    server_handshake_secret,
-    client_handshake_secret,
-
-    server_0rtt_secret,
-    client_0rtt_secret,
-
-    server_1rtt_secret,
-    client_1rtt_secret
-}
-~~~
+{: #keytype-def title="KeyType definition"}
 
 ## QUIC Frames
 
+~~~ cddl
+QuicFrame =
+  PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
+  StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
+  MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
+  DataBlockedFrame / StreamDataBlockedFrame / StreamsBlockedFrame /
+  NewConnectionIDFrame / RetireConnectionIDFrame /
+  PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
+  HandshakeDoneFrame / UnknownFrame
 ~~~
-type QuicFrame = PaddingFrame | PingFrame | AckFrame |
-                 ResetStreamFrame | StopSendingFrame |
-                 CryptoFrame | NewTokenFrame |
-                 StreamFrame | MaxDataFrame |
-                 MaxStreamDataFrame | MaxStreamsFrame |
-                 DataBlockedFrame | StreamDataBlockedFrame |
-                 StreamsBlockedFrame | NewConnectionIDFrame |
-                 RetireConnectionIDFrame | PathChallengeFrame |
-                 PathResponseFrame | ConnectionCloseFrame |
-                 HandshakeDoneFrame | UnknownFrame;
-~~~
+{: #quicframe-def title="QuicFrame definition"}
 
 ### PaddingFrame
 
@@ -1460,50 +1579,61 @@ However, as this leads to heavy logging overhead, implementations SHOULD instead
 emit just a single PaddingFrame and set the payload_length property to the amount
 of PADDING bytes/frames included in the packet.
 
-~~~
-class PaddingFrame{
-    frame_type:string = "padding";
+~~~ cddl
+PaddingFrame = {
+    frame_type: "padding"
 
-    length?:uint32; // total frame length, including frame header
-    payload_length?:uint32;
+    ; total frame length, including frame header
+    ? length: uint32
+    payload_length: uint32
 }
 ~~~
+{: #paddingframe-def title="PaddingFrame definition"}
 
 ### PingFrame
 
-~~~
-class PingFrame{
-    frame_type:string = "ping";
+~~~ cddl
+PingFrame = {
+    frame_type: "ping"
 
-    length?:uint32; // total frame length, including frame header
-    payload_length?:uint32;
+    ; total frame length, including frame header
+    ? length: uint32
+    ? payload_length: uint32
 }
 ~~~
+{: #pingframe-def title="PingFrame definition"}
 
 ### AckFrame
 
-~~~
-class AckFrame{
-    frame_type:string = "ack";
+~~~ cddl
+; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
+; For two numbers:
+; the first number is "from": lowest packet number in interval
+; the second number is "to": up to and including the highest
+; packet number in the interval
+AckRange = [1*2 uint64]
 
-    ack_delay?:float; // in ms
+AckFrame = {
+    frame_type: "ack"
 
-    // first number is "from": lowest packet number in interval
-    // second number is "to": up to and including
-    // highest packet number in interval
-    // e.g., looks like [[1,2],[4,5]]
-    acked_ranges?:Array<[uint64, uint64]|[uint64]>;
+    ; in ms
+    ? ack_delay: float32
 
-    // ECN (explicit congestion notification) related fields
-    // (not always present)
-    ect1?:uint64;
-    ect0?:uint64;
-    ce?:uint64;
+    ; e.g., looks like [[1,2],[4,5], [7], [10,22]] serialized
+    ? acked_ranges: [+ AckRange]
 
-    length?:uint32; // total frame length, including frame header
-    payload_length?:uint32;
+    ; ECN (explicit congestion notification) related fields
+    ; (not always present)
+    ? ect1: uint64
+    ? ect0:uint64
+    ? ce: uint64
+
+    ; total frame length, including frame header
+    ? length: uint32
+    ? payload_length: uint32
 }
 ~~~
+{: #ackframe-def title="AckFrame definition"}
 
 Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
 ordered (e.g., \[\[5,9\],\[1,4\]\] is a valid value).
@@ -1513,255 +1643,279 @@ that packet with number 120 was ACKed). However, in that case, implementers SHOU
 log \[120\] instead and tools MUST be able to deal with both notations.
 
 ### ResetStreamFrame
-~~~
-class ResetStreamFrame{
-    frame_type:string = "reset_stream";
+~~~ cddl
+ResetStreamFrame = {
+    frame_type: "reset_stream"
 
-    stream_id:uint64;
-    error_code:ApplicationError | uint32;
-    final_size:uint64; // in bytes
+    stream_id: uint64
+    error_code: $ApplicationError / uint32
 
-    length?:uint32; // total frame length, including frame header
-    payload_length?:uint32;
+    ; in bytes
+    final_size: uint64
+
+    ; total frame length, including frame header
+    ? length: uint32
+    ? payload_length: uint32
 }
 ~~~
+{: #resetstreamframe-def title="ResetStreamFrame definition"}
 
 
 ### StopSendingFrame
-~~~
-class StopSendingFrame{
-    frame_type:string = "stop_sending";
+~~~ cddl
+StopSendingFrame = {
+    frame_type: "stop_sending"
 
-    stream_id:uint64;
-    error_code:ApplicationError | uint32;
+    stream_id: uint64
+    error_code: $ApplicationError / uint32
 
-    length?:uint32; // total frame length, including frame header
-    payload_length?:uint32;
+    ; total frame length, including frame header
+    ? length: uint32
+    ? payload_length: uint32
 }
 ~~~
+{: #stopsendingframe-def title="StopSendingFrame definition"}
 
 ### CryptoFrame
 
-~~~
-class CryptoFrame{
-    frame_type:string = "crypto";
+~~~ cddl
+CryptoFrame = {
+    frame_type: "crypto"
 
-    offset:uint64;
-    length:uint64;
+    offset: uint64
+    length: uint64
 
-    payload_length?:uint32;
+    ? payload_length: uint32
 }
 ~~~
+{: #cryptoframe-def title="CryptoFrame definition"}
 
 ### NewTokenFrame
 
-~~~
-class NewTokenFrame{
-  frame_type:string = "new_token";
+~~~ cddl
+NewTokenFrame = {
+  frame_type: "new_token"
 
-  token:Token
+  token: Token
 }
 ~~~
-
+{: #newtokenframe-def title="NewTokenFrame definition"}
 
 ### StreamFrame
 
-~~~
-class StreamFrame{
-    frame_type:string = "stream";
+~~~ cddl
+StreamFrame = {
+    frame_type: "stream"
 
-    stream_id:uint64;
+    stream_id: uint64
 
-    // These two MUST always be set
-    // If not present in the Frame type, log their default values
-    offset:uint64;
-    length:uint64;
+    ; These two MUST always be set
+    ; If not present in the Frame type, log their default values
+    offset: uint64
+    length: uint64
 
-    // this MAY be set any time, but MUST only be set if the value
-    // is "true"
-    // if absent, the value MUST be assumed to be "false"
-    fin?:boolean;
+    ; this MAY be set any time,
+    ; but MUST only be set if the value is true
+    ; if absent, the value MUST be assumed to be false
+    ? fin: bool .default false
 
-    raw?:bytes;
+    ? raw: hexstring
 }
 ~~~
+{: #streamframe-def title="StreamFrame definition"}
 
 ### MaxDataFrame
 
-~~~
-class MaxDataFrame{
-  frame_type:string = "max_data";
+~~~ cddl
+MaxDataFrame = {
+  frame_type: "max_data"
 
-  maximum:uint64;
+  maximum: uint64
 }
 ~~~
+{: #maxdataframe-def title="MaxDataFrame definition"}
 
 ### MaxStreamDataFrame
 
-~~~
-class MaxStreamDataFrame{
-  frame_type:string = "max_stream_data";
+~~~ cddl
+MaxStreamDataFrame = {
+  frame_type: "max_stream_data"
 
-  stream_id:uint64;
-  maximum:uint64;
+  stream_id: uint64
+  maximum: uint64
 }
 ~~~
+{: #maxstreamdataframe-def title="MaxStreamDataFrame definition"}
 
 ### MaxStreamsFrame
 
-~~~
-class MaxStreamsFrame{
-  frame_type:string = "max_streams";
+~~~ cddl
+MaxStreamsFrame = {
+  frame_type: "max_streams"
 
-  stream_type:string = "bidirectional" | "unidirectional";
-  maximum:uint64;
+  stream_type: StreamType
+  maximum: uint64
 }
 ~~~
+{: #maxstreamsframe-def title="MaxStreamsFrame definition"}
 
 ### DataBlockedFrame
 
-~~~
-class DataBlockedFrame{
-  frame_type:string = "data_blocked";
+~~~ cddl
+DataBlockedFrame = {
+  frame_type: "data_blocked"
 
-  limit:uint64;
+  limit: uint64
 }
 ~~~
+{: #datablockedframe-def title="DataBlockedFrame definition"}
 
 ### StreamDataBlockedFrame
 
-~~~
-class StreamDataBlockedFrame{
-  frame_type:string = "stream_data_blocked";
+~~~ cddl
+StreamDataBlockedFrame = {
+  frame_type: "stream_data_blocked"
 
-  stream_id:uint64;
-  limit:uint64;
+  stream_id: uint64
+  limit: uint64
 }
 ~~~
+{: #streamdatablockedframe-def title="StreamDataBlockedFrame definition"}
 
 ### StreamsBlockedFrame
 
-~~~
-class StreamsBlockedFrame{
-  frame_type:string = "streams_blocked";
+~~~ cddl
+StreamsBlockedFrame = {
+  frame_type: "streams_blocked"
 
-  stream_type:string = "bidirectional" | "unidirectional";
-  limit:uint64;
+  stream_type: StreamType
+  limit: uint64
 }
 ~~~
-
+{: #streamsblockedframe-def title="StreamsBlockedFrame definition"}
 
 ### NewConnectionIDFrame
 
-~~~
-class NewConnectionIDFrame{
-  frame_type:string = "new_connection_id";
+~~~ cddl
+NewConnectionIDFrame = {
+  frame_type: "new_connection_id"
 
-  sequence_number:uint32;
-  retire_prior_to:uint32;
+  sequence_number: uint32
+  retire_prior_to: uint32
 
-  connection_id_length?:uint8;
-  connection_id:bytes;
+  ; mainly used if e.g., for privacy reasons the full
+  ; connection_id cannot be logged
+  ? connection_id_length: uint8
+  connection_id: ConnectionID
 
-  stateless_reset_token?:Token;
+  ? stateless_reset_token: Token
 }
 ~~~
+{: #newconnectionidframe-def title="NewConnectionIDFrame definition"}
 
 ### RetireConnectionIDFrame
 
-~~~
-class RetireConnectionIDFrame{
-  frame_type:string = "retire_connection_id";
+~~~ cddl
+RetireConnectionIDFrame = {
+  frame_type: "retire_connection_id"
 
-  sequence_number:uint32;
+  sequence_number: uint32
 }
 ~~~
+{: #retireconnectionid-def title="RetireConnectionIDFrame definition"}
 
 ### PathChallengeFrame
 
-~~~
-class PathChallengeFrame{
-  frame_type:string = "path_challenge";
+~~~ cddl
+PathChallengeFrame = {
+  frame_type: "path_challenge"
 
-  data?:bytes; // always 64-bit
+  ; always 64-bit
+  ? data: hexstring
 }
 ~~~
+{: #pathchallengeframe-def title="PathChallengeFrame definition"}
 
 ### PathResponseFrame
 
-~~~
-class PathResponseFrame{
-  frame_type:string = "path_response";
+~~~ cddl
+PathResponseFrame = {
+  frame_type: "path_response"
 
-  data?:bytes; // always 64-bit
+  ; always 64-bit
+  ? data: hexstring
 }
 ~~~
+{: #pathresponseframe-def title="PathResponseFrame definition"}
 
 ### ConnectionCloseFrame
 
 raw_error_code is the actual, numerical code. This is useful because some error
 types are spread out over a range of codes (e.g., QUIC's crypto_error).
 
-~~~
+~~~ cddl
+ErrorSpace = "transport" / "application"
 
-type ErrorSpace = "transport" | "application";
+ConnectionCloseFrame = {
+    frame_type: "connection_close"
 
-class ConnectionCloseFrame{
-    frame_type:string = "connection_close";
+    ? error_space: ErrorSpace
+    ? error_code: TransportError / $ApplicationError / uint32
+    ? raw_error_code: uint32
+    ? reason: text
 
-    error_space?:ErrorSpace;
-    error_code?:TransportError | ApplicationError | uint32;
-    raw_error_code?:uint32;
-    reason?:string;
-
-    trigger_frame_type?:uint64 | string; // For known frame types,
-                                         // the appropriate
-                                         // "frame_type" string.
-                                         // For unknown frame types,
-                                         // the hex encoded
-                                         // identifier value
+    ; For known frame types, the appropriate "frame_type" string
+    ; For unknown frame types, the hex encoded identifier value
+    ? trigger_frame_type: uint64 / text
 }
 ~~~
+{: #connectioncloseframe-def title="ConnectionCloseFrame definition"}
 
 ### HandshakeDoneFrame
 
-~~~
-class HandshakeDoneFrame{
-  frame_type:string = "handshake_done";
+~~~ cddl
+HandshakeDoneFrame = {
+  frame_type: "handshake_done";
 }
 ~~~
+{: #handshakedoneframe-def title="HandshakeDoneFrame definition"}
 
 ### UnknownFrame
 
-~~~
-class UnknownFrame{
-    frame_type:string = "unknown";
-    raw_frame_type:uint64;
+~~~ cddl
+UnknownFrame = {
+    frame_type: "unknown"
+    raw_frame_type: uint64
 
-    raw_length?:uint32;
-    raw?:bytes;
+    ? raw_length: uint32
+    ? raw: hexstring
 }
 ~~~
+{: #unknownframe-def title="UnknownFrame definition"}
 
 ### TransportError
 
+~~~ cddl
+TransportError = "no_error" / "internal_error" /
+    "connection_refused" / "flow_control_error" /
+    "stream_limit_error" / "stream_state_error" /
+    "final_size_error" / "frame_encoding_error" /
+    "transport_parameter_error" / "connection_id_limit_error" /
+    "protocol_violation" / "invalid_token" / "application_error" /
+    "crypto_buffer_exceeded"
 ~~~
-enum TransportError {
-    no_error,
-    internal_error,
-    connection_refused,
-    flow_control_error,
-    stream_limit_error,
-    stream_state_error,
-    final_size_error,
-    frame_encoding_error,
-    transport_parameter_error,
-    connection_id_limit_error,
-    protocol_violation,
-    invalid_token,
-    application_error,
-    crypto_buffer_exceeded
-}
+{: #transporterror-def title="TransportError definition"}
+
+### ApplicationError
+
+By definition, an application error is defined by the application-level protocol running on top of QUIC (e.g., HTTP/3).
+
+As such, we cannot define it here directly. Though we provide an extension point through the use of the CDDL "socket" mechanism.
+
+Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:
+
+~~~
+$ApplicationError /= "new_error_name" / "another_new_error_name"
 ~~~
 
 ### CryptoError
@@ -1773,15 +1927,19 @@ the range reserved for CRYPTO_ERROR."
 
 This approach maps badly to a pre-defined enum. As such, we define the
 crypto_error string as having a dynamic component here, which should include the
-hex-encoded value of the TLS alert description.
+hex-encoded and zero-padded value of the TLS alert description.
 
+~~~ cddl
+; all strings from "crypto_error_0x100" to "crypto_error_0x199"
+CryptoError = text .regexp "crypto_error_0x1[0-9][0-9]"
 ~~~
-enum CryptoError {
-    crypto_error_{TLS_ALERT}
-}
-~~~
+{: #cryptoerror-def title="CryptoError definition"}
 
 # Change Log
+
+## Since draft-ietf-qlog-quic-events-00:
+
+* Change the data definition language from TypeScript to CDDL (#143)
 
 ## Since draft-marx-qlog-event-definitions-quic-h3-02:
 
@@ -1857,4 +2015,3 @@ Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
 Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy
 Lainé, Kazu Yamamoto, Christian Huitema, and Lucas Pardue for their feedback and
 suggestions.
-
