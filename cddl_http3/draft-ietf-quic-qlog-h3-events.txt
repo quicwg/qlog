@@ -5,10 +5,10 @@
 QUIC                                                             R. Marx
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 6 September 2022                                       Facebook
+Expires: 8 September 2022                                       Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                            5 March 2022
+                                                            7 March 2022
 
 
                 HTTP/3 and QPACK qlog event definitions
@@ -35,7 +35,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 September 2022.
+   This Internet-Draft will expire on 8 September 2022.
 
 Copyright Notice
 
@@ -82,7 +82,7 @@ Table of Contents
      6.2.  Informative References
    Appendix A.  HTTP/3 data field definitions
      A.1.  ProtocolEventBody extension
-     A.2.  OwnerType
+     A.2.  Owner
      A.3.  HTTP/3 Frames
        A.3.1.  DataFrame
        A.3.2.  HeadersFrame
@@ -246,7 +246,7 @@ Table of Contents
    Definition:
 
    HTTPParametersSet = {
-       ? owner: OwnerType
+       ? owner: Owner
 
        ~HTTPParameters
 
@@ -314,7 +314,7 @@ Table of Contents
    Definition:
 
    HTTPStreamTypeSet = {
-       ? owner: OwnerType
+       ? owner: Owner
        stream_id: uint64
 
        ? old: HTTPStreamType
@@ -442,7 +442,7 @@ Table of Contents
    Definition:
 
    QPACKStateUpdate = {
-       owner: OwnerType
+       owner: Owner
        ? dynamic_table_capacity: uint64
 
        ; effective current size, sum of all the entries
@@ -488,7 +488,7 @@ Table of Contents
    QPACKDynamicTableUpdate = {
        ; local = the encoder's dynamic table
        ; remote = the decoder's dynamic table
-       owner: OwnerType
+       owner: Owner
 
        update_type: QPACKDynamicTableUpdateType
        entries: [+ QPACKDynamicTableEntry]
@@ -550,7 +550,7 @@ Table of Contents
        block_prefix: QPACKHeaderBlockPrefix
        header_block: [+ QPACKHeaderBlockRepresentation]
 
-       ? length: uint
+       ? length: uint32
        ? raw: hexstring
    }
 
@@ -568,7 +568,7 @@ Table of Contents
    QPACKInstructionCreated = {
        ; see definition in appendix
        instruction: QPACKInstruction
-       ? length: uint
+       ? length: uint32
        ? raw: hexstring
    }
 
@@ -591,7 +591,7 @@ Table of Contents
        ; see QPACKInstruction definition in appendix
        instruction: QPACKInstruction
 
-       ? length: uint
+       ? length: uint32
        ? raw: hexstring
    }
 
@@ -668,11 +668,11 @@ A.1.  ProtocolEventBody extension
 
       Figure 14: HTTPEvents definition and ProtocolEventBody extension
 
-A.2.  OwnerType
+A.2.  Owner
 
-   OwnerType = "local" / "remote"
+   Owner = "local" / "remote"
 
-                      Figure 15: OwnerType definition
+                        Figure 15: Owner definition
 
 A.3.  HTTP/3 Frames
 
@@ -873,7 +873,7 @@ B.2.1.  SetDynamicTableCapacityInstruction
 
    SetDynamicTableCapacityInstruction = {
        instruction_type: "set_dynamic_table_capacity"
-       capacity: uint
+       capacity: uint32
    }
 
           Figure 30: SetDynamicTableCapacityInstruction definition
@@ -883,9 +883,9 @@ B.2.2.  InsertWithNameReferenceInstruction
    InsertWithNameReferenceInstruction = {
        instruction_type: "insert_with_name_reference"
        table_type: QPACKTableType
-       name_index: uint
+       name_index: uint32
        huffman_encoded_value: bool
-       ? value_length: uint
+       ? value_length: uint32
        ? value: text
    }
 
@@ -896,10 +896,10 @@ B.2.3.  InsertWithoutNameReferenceInstruction
    InsertWithoutNameReferenceInstruction = {
        instruction_type: "insert_without_name_reference"
        huffman_encoded_name: bool
-       ? name_length: uint
+       ? name_length: uint32
        ? name: text
        huffman_encoded_value: bool
-       ? value_length: uint
+       ? value_length: uint32
        ? value: text
    }
 
@@ -909,7 +909,7 @@ B.2.4.  DuplicateInstruction
 
    DuplicateInstruction = {
        instruction_type: "duplicate"
-       index: uint
+       index: uint32
    }
 
                  Figure 33: DuplicateInstruction definition
@@ -936,7 +936,7 @@ B.2.7.  InsertCountIncrementInstruction
 
    InsertCountIncrementInstruction = {
        instruction_type: "insert_count_increment"
-       increment: uint
+       increment: uint32
    }
 
            Figure 36: InsertCountIncrementInstruction definition
@@ -958,7 +958,7 @@ B.3.1.  IndexedHeaderField
 
        ; MUST be "dynamic" if is_post_base is true
        table_type: QPACKTableType
-       index: uint
+       index: uint32
 
        ; to represent the "indexed header field with post-base index"
        ; header field type
@@ -980,9 +980,9 @@ B.3.2.  LiteralHeaderFieldWithName
 
        ; MUST be "dynamic" if is_post_base is true
        table_type: QPACKTableType
-       name_index: uint
+       name_index: uint32
        huffman_encoded_value: bool
-       ? value_length: uint
+       ? value_length: uint32
        ? value: text
 
        ; to represent the "indexed header field with post-base index"
@@ -1000,11 +1000,11 @@ B.3.3.  LiteralHeaderFieldWithoutName
        ; the 3rd "N" bit
        preserve_literal: bool
        huffman_encoded_name: bool
-       ? name_length: uint
+       ? name_length: uint32
        ? name: text
 
        huffman_encoded_value: bool
-       ? value_length: uint
+       ? value_length: uint32
        ? value: text
    }
 
@@ -1013,9 +1013,9 @@ B.3.3.  LiteralHeaderFieldWithoutName
 B.3.4.  QPACKHeaderBlockPrefix
 
    QPACKHeaderBlockPrefix = {
-       required_insert_count: uint
+       required_insert_count: uint32
        sign_bit: bool
-       delta_base: uint
+       delta_base: uint32
    }
 
                 Figure 41: QPACKHeaderBlockPrefix definition
