@@ -241,7 +241,7 @@ Definition:
 
 ~~~ cddl
 HTTPParametersSet = {
-    ? owner: OwnerType
+    ? owner: Owner
 
     ~HTTPParameters
 
@@ -306,7 +306,7 @@ Definition:
 
 ~~~ cddl
 HTTPStreamTypeSet = {
-    ? owner: OwnerType
+    ? owner: Owner
     stream_id: uint64
 
     ? old: HTTPStreamType
@@ -430,7 +430,7 @@ Definition:
 
 ~~~ cddl
 QPACKStateUpdate = {
-    owner: OwnerType
+    owner: Owner
     ? dynamic_table_capacity: uint64
 
     ; effective current size, sum of all the entries
@@ -475,7 +475,7 @@ Definition:
 QPACKDynamicTableUpdate = {
     ; local = the encoder's dynamic table
     ; remote = the decoder's dynamic table
-    owner: OwnerType
+    owner: Owner
 
     update_type: QPACKDynamicTableUpdateType
     entries: [+ QPACKDynamicTableEntry]
@@ -535,7 +535,7 @@ QPACKHeadersDecoded = {
     block_prefix: QPACKHeaderBlockPrefix
     header_block: [+ QPACKHeaderBlockRepresentation]
 
-    ? length: uint
+    ? length: uint32
     ? raw: hexstring
 }
 ~~~
@@ -553,7 +553,7 @@ Definition:
 QPACKInstructionCreated = {
     ; see definition in appendix
     instruction: QPACKInstruction
-    ? length: uint
+    ? length: uint32
     ? raw: hexstring
 }
 ~~~
@@ -575,7 +575,7 @@ QPACKInstructionParsed = {
     ; see QPACKInstruction definition in appendix
     instruction: QPACKInstruction
 
-    ? length: uint
+    ? length: uint32
     ? raw: hexstring
 }
 ~~~
@@ -611,12 +611,12 @@ $ProtocolEventBody /= HTTPEvents
 {: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
 extension"}
 
-## OwnerType
+## Owner
 
 ~~~ cddl
-OwnerType = "local" / "remote"
+Owner = "local" / "remote"
 ~~~
-{: #ownertype-def title="OwnerType definition"}
+{: #owner-def title="Owner definition"}
 
 ## HTTP/3 Frames
 
@@ -833,7 +833,7 @@ QPACKInstruction =  SetDynamicTableCapacityInstruction /
 ~~~ cddl
 SetDynamicTableCapacityInstruction = {
     instruction_type: "set_dynamic_table_capacity"
-    capacity: uint
+    capacity: uint32
 }
 ~~~
 {: #setdynamictablecapacityinstruction-def
@@ -845,9 +845,9 @@ title="SetDynamicTableCapacityInstruction definition"}
 InsertWithNameReferenceInstruction = {
     instruction_type: "insert_with_name_reference"
     table_type: QPACKTableType
-    name_index: uint
+    name_index: uint32
     huffman_encoded_value: bool
-    ? value_length: uint
+    ? value_length: uint32
     ? value: text
 }
 ~~~
@@ -860,10 +860,10 @@ title="InsertWithNameReferenceInstruction definition"}
 InsertWithoutNameReferenceInstruction = {
     instruction_type: "insert_without_name_reference"
     huffman_encoded_name: bool
-    ? name_length: uint
+    ? name_length: uint32
     ? name: text
     huffman_encoded_value: bool
-    ? value_length: uint
+    ? value_length: uint32
     ? value: text
 }
 ~~~
@@ -875,7 +875,7 @@ title="InsertWithoutNameReferenceInstruction definition"}
 ~~~ cddl
 DuplicateInstruction = {
     instruction_type: "duplicate"
-    index: uint
+    index: uint32
 }
 ~~~
 {: #duplicateinstruction-def
@@ -908,7 +908,7 @@ title="StreamCancellationInstruction definition"}
 ~~~ cddl
 InsertCountIncrementInstruction = {
     instruction_type: "insert_count_increment"
-    increment: uint
+    increment: uint32
 }
 ~~~
 {: #insertcountincrementinstruction-def
@@ -934,7 +934,7 @@ IndexedHeaderField = {
 
     ; MUST be "dynamic" if is_post_base is true
     table_type: QPACKTableType
-    index: uint
+    index: uint32
 
     ; to represent the "indexed header field with post-base index"
     ; header field type
@@ -956,9 +956,9 @@ LiteralHeaderFieldWithName = {
 
     ; MUST be "dynamic" if is_post_base is true
     table_type: QPACKTableType
-    name_index: uint
+    name_index: uint32
     huffman_encoded_value: bool
-    ? value_length: uint
+    ? value_length: uint32
     ? value: text
 
     ; to represent the "indexed header field with post-base index"
@@ -978,11 +978,11 @@ LiteralHeaderFieldWithoutName = {
     ; the 3rd "N" bit
     preserve_literal: bool
     huffman_encoded_name: bool
-    ? name_length: uint
+    ? name_length: uint32
     ? name: text
 
     huffman_encoded_value: bool
-    ? value_length: uint
+    ? value_length: uint32
     ? value: text
 }
 ~~~
@@ -994,9 +994,9 @@ title="LiteralHeaderFieldWithoutName definition"}
 
 ~~~ cddl
 QPACKHeaderBlockPrefix = {
-    required_insert_count: uint
+    required_insert_count: uint32
     sign_bit: bool
-    delta_base: uint
+    delta_base: uint32
 }
 ~~~
 {: #qpackheaderblockprefix-def
