@@ -5,10 +5,10 @@
 QUIC                                                             R. Marx
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 6 September 2022                                       Facebook
+Expires: 8 September 2022                                       Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                            5 March 2022
+                                                            7 March 2022
 
 
                     QUIC event definitions for qlog
@@ -35,7 +35,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 September 2022.
+   This Internet-Draft will expire on 8 September 2022.
 
 Copyright Notice
 
@@ -289,8 +289,8 @@ Table of Contents
    ConnectivityServerListening = {
        ? ip_v4: IPAddress
        ? ip_v6: IPAddress
-       ? port_v4: uint
-       ? port_v6: uint
+       ? port_v4: uint16
+       ? port_v6: uint16
 
        ; the server will always answer client initials with a retry
        ; (no 1-RTT connection setups by choice)
@@ -320,8 +320,8 @@ Table of Contents
 
        ; transport layer protocol
        ? protocol: text .default "QUIC"
-       ? src_port: uint
-       ? dst_port: uint
+       ? src_port: uint16
+       ? dst_port: uint16
 
        ? src_cid: ConnectionID
        ? dst_cid: ConnectionID
@@ -359,9 +359,9 @@ Table of Contents
        ; which side closed the connection
        ? owner: Owner
 
-       ? connection_code: TransportError / CryptoError / uint
-       ? application_code: $ApplicationError / uint
-       ? internal_code: uint
+       ? connection_code: TransportError / CryptoError / uint32
+       ? application_code: $ApplicationError / uint32
+       ? internal_code: uint32
 
        ? reason: text
        ? trigger:
@@ -567,7 +567,7 @@ Table of Contents
        new: hexstring
 
        ; needed for 1RTT key updates
-       ? generation: uint
+       ? generation: uint32
 
        ? trigger:
            ; (e.g., initial, handshake and 0-RTT keys
@@ -590,7 +590,7 @@ Table of Contents
        ? key: hexstring
 
        ; needed for 1RTT key updates
-       ? generation:uint
+       ? generation: uint32
 
        ? trigger:
            ; (e.g., initial, handshake and 0-RTT keys
@@ -740,10 +740,10 @@ Table of Contents
        ? disable_active_migration: bool
 
        ? max_idle_timeout: uint64
-       ? max_udp_payload_size: uint
+       ? max_udp_payload_size: uint32
        ? ack_delay_exponent: uint16
        ? max_ack_delay: uint16
-       ? active_connection_id_limit: uint
+       ? active_connection_id_limit: uint32
 
        ? initial_max_data: uint64
        ? initial_max_stream_data_bidi_local: uint64
@@ -789,9 +789,9 @@ Table of Contents
    TransportParametersRestored = {
        ? disable_active_migration: bool
 
-       ? max_idle_timeout: uint
-       ? max_udp_payload_size: uint
-       ? active_connection_id_limit: uint
+       ? max_idle_timeout: uint64
+       ? max_udp_payload_size: uint32
+       ? active_connection_id_limit: uint32
 
        ? initial_max_data: uint64
        ? initial_max_stream_data_bidi_local: uint64
@@ -832,7 +832,7 @@ Table of Contents
        ? supported_versions: [+ QuicVersion]
 
        ? raw: RawInfo
-       ? datagram_id: uint
+       ? datagram_id: uint32
 
        ? trigger:
          ; draft-23 5.1.1
@@ -882,7 +882,7 @@ Table of Contents
        ? supported_versions: [+ QuicVersion]
 
        ? raw: RawInfo
-       ? datagram_id: uint
+       ? datagram_id: uint32
 
        ? trigger:
            ; if packet was buffered because
@@ -914,7 +914,7 @@ Table of Contents
        ? header: PacketHeader
 
        ? raw: RawInfo
-       ? datagram_id: uint
+       ? datagram_id: uint32
 
        ? trigger:
            "key_unavailable" /
@@ -958,7 +958,7 @@ Table of Contents
        ? header: PacketHeader
 
        ? raw: RawInfo
-       ? datagram_id: uint
+       ? datagram_id: uint32
 
        ? trigger:
            ; indicates the parser cannot keep up, temporarily buffers
@@ -1018,7 +1018,7 @@ Table of Contents
        ; including UDP header length
        ? raw: [+ RawInfo]
 
-       ? datagram_ids: [+ uint]
+       ? datagram_ids: [+ uint32]
    }
 
                 Figure 18: TransportDatagramsSent definition
@@ -1051,7 +1051,7 @@ Table of Contents
        ; including UDP header length
        ? raw: [+ RawInfo]
 
-       ? datagram_ids: [+ uint]
+       ? datagram_ids: [+ uint32]
    }
 
               Figure 19: TransportDatagramsReceived definition
@@ -1259,7 +1259,7 @@ Table of Contents
    RecoveryParametersSet = {
        ; Loss detection, see recovery draft-23, Appendix A.2
        ; in amount of packets
-       ? reordering_threshold: uint
+       ? reordering_threshold: uint16
 
        ; as RTT multiplier
        ? time_threshold: float32
@@ -1272,14 +1272,14 @@ Table of Contents
 
        ; congestion control, Appendix B.1.
        ; in bytes. Note: this could be updated after pmtud
-       ? max_datagram_size: uint
+       ? max_datagram_size: uint32
 
        ; in bytes
        ? initial_congestion_window: uint64
 
        ; Note: this could change when max_datagram_size changes
        ; in bytes
-       ? minimum_congestion_window: uint
+       ? minimum_congestion_window: uint32
        ? loss_reduction_factor: float32
 
        ; as PTO multiplier
@@ -1646,7 +1646,7 @@ A.9.  Token
        ? type: "retry" / "resumption" / "stateless_reset"
 
        ; byte length of the token
-       ? length: uint
+       ? length: uint32
 
        ; raw byte value of the token
        ? data: hexstring
@@ -1707,8 +1707,8 @@ A.11.1.  PaddingFrame
        frame_type: "padding"
 
        ; total frame length, including frame header
-       ? length: uint
-       payload_length: uint
+       ? length: uint32
+       payload_length: uint32
    }
 
                      Figure 41: PaddingFrame definition
@@ -1719,8 +1719,8 @@ A.11.2.  PingFrame
        frame_type: "ping"
 
        ; total frame length, including frame header
-       ? length: uint
-       ? payload_length: uint
+       ? length: uint32
+       ? payload_length: uint32
    }
 
                       Figure 42: PingFrame definition
@@ -1750,8 +1750,8 @@ A.11.3.  AckFrame
        ? ce: uint64
 
        ; total frame length, including frame header
-       ? length: uint
-       ? payload_length: uint
+       ? length: uint32
+       ? payload_length: uint32
    }
 
                        Figure 43: AckFrame definition
@@ -1770,14 +1770,14 @@ A.11.4.  ResetStreamFrame
        frame_type: "reset_stream"
 
        stream_id: uint64
-       error_code: $ApplicationError / uint
+       error_code: $ApplicationError / uint32
 
        ; in bytes
        final_size: uint64
 
        ; total frame length, including frame header
-       ? length: uint
-       ? payload_length: uint
+       ? length: uint32
+       ? payload_length: uint32
    }
 
                    Figure 44: ResetStreamFrame definition
@@ -1788,11 +1788,11 @@ A.11.5.  StopSendingFrame
        frame_type: "stop_sending"
 
        stream_id: uint64
-       error_code: $ApplicationError / uint
+       error_code: $ApplicationError / uint32
 
        ; total frame length, including frame header
-       ? length: uint
-       ? payload_length: uint
+       ? length: uint32
+       ? payload_length: uint32
    }
 
                    Figure 45: StopSendingFrame definition
@@ -1805,7 +1805,7 @@ A.11.6.  CryptoFrame
        offset: uint64
        length: uint64
 
-       ? payload_length: uint
+       ? payload_length: uint32
    }
 
                      Figure 46: CryptoFrame definition
@@ -1911,8 +1911,8 @@ A.11.15.  NewConnectionIDFrame
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
 
-     sequence_number: uint
-     retire_prior_to: uint
+     sequence_number: uint32
+     retire_prior_to: uint32
 
      ; mainly used if e.g., for privacy reasons the full
      ; connection_id cannot be logged
@@ -1929,7 +1929,7 @@ A.11.16.  RetireConnectionIDFrame
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
 
-     sequence_number: uint
+     sequence_number: uint32
    }
 
                Figure 56: RetireConnectionIDFrame definition
@@ -1968,8 +1968,8 @@ A.11.19.  ConnectionCloseFrame
        frame_type: "connection_close"
 
        ? error_space: ErrorSpace
-       ? error_code: TransportError / $ApplicationError / uint
-       ? raw_error_code: uint
+       ? error_code: TransportError / $ApplicationError / uint32
+       ? raw_error_code: uint32
        ? reason: text
 
        ; For known frame types, the appropriate "frame_type" string
@@ -1993,7 +1993,7 @@ A.11.21.  UnknownFrame
        frame_type: "unknown"
        raw_frame_type: uint64
 
-       ? raw_length: uint
+       ? raw_length: uint32
        ? raw: hexstring
    }
 
