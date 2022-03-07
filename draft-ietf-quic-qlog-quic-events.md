@@ -282,8 +282,8 @@ Definition:
 ConnectivityServerListening = {
     ? ip_v4: IPAddress
     ? ip_v6: IPAddress
-    ? port_v4: uint
-    ? port_v6: uint
+    ? port_v4: uint16
+    ? port_v6: uint16
 
     ; the server will always answer client initials with a retry
     ; (no 1-RTT connection setups by choice)
@@ -313,8 +313,8 @@ ConnectivityConnectionStarted = {
 
     ; transport layer protocol
     ? protocol: text .default "QUIC"
-    ? src_port: uint
-    ? dst_port: uint
+    ? src_port: uint16
+    ? dst_port: uint16
 
     ? src_cid: ConnectionID
     ? dst_cid: ConnectionID
@@ -350,9 +350,9 @@ ConnectivityConnectionClosed = {
     ; which side closed the connection
     ? owner: Owner
 
-    ? connection_code: TransportError / CryptoError / uint
-    ? application_code: $ApplicationError / uint
-    ? internal_code: uint
+    ? connection_code: TransportError / CryptoError / uint32
+    ? application_code: $ApplicationError / uint32
+    ? internal_code: uint32
 
     ? reason: text
     ? trigger:
@@ -529,7 +529,7 @@ SecurityKeyUpdated = {
     new: hexstring
 
     ; needed for 1RTT key updates
-    ? generation: uint
+    ? generation: uint32
 
     ? trigger:
         ; (e.g., initial, handshake and 0-RTT keys
@@ -553,7 +553,7 @@ SecurityKeyRetired = {
     ? key: hexstring
 
     ; needed for 1RTT key updates
-    ? generation:uint
+    ? generation: uint32
 
     ? trigger:
         ; (e.g., initial, handshake and 0-RTT keys
@@ -687,10 +687,10 @@ TransportParametersSet = {
     ? disable_active_migration: bool
 
     ? max_idle_timeout: uint64
-    ? max_udp_payload_size: uint
+    ? max_udp_payload_size: uint32
     ? ack_delay_exponent: uint16
     ? max_ack_delay: uint16
-    ? active_connection_id_limit: uint
+    ? active_connection_id_limit: uint32
 
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
@@ -735,9 +735,9 @@ Definition:
 TransportParametersRestored = {
     ? disable_active_migration: bool
 
-    ? max_idle_timeout: uint
-    ? max_udp_payload_size: uint
-    ? active_connection_id_limit: uint
+    ? max_idle_timeout: uint64
+    ? max_udp_payload_size: uint32
+    ? active_connection_id_limit: uint32
 
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
@@ -777,7 +777,7 @@ TransportPacketSent = {
     ? supported_versions: [+ QuicVersion]
 
     ? raw: RawInfo
-    ? datagram_id: uint
+    ? datagram_id: uint32
 
     ? trigger:
       ; draft-23 5.1.1
@@ -826,7 +826,7 @@ TransportPacketReceived = {
     ? supported_versions: [+ QuicVersion]
 
     ? raw: RawInfo
-    ? datagram_id: uint
+    ? datagram_id: uint32
 
     ? trigger:
         ; if packet was buffered because
@@ -856,7 +856,7 @@ TransportPacketDropped = {
     ? header: PacketHeader
 
     ? raw: RawInfo
-    ? datagram_id: uint
+    ? datagram_id: uint32
 
     ? trigger:
         "key_unavailable" /
@@ -898,7 +898,7 @@ TransportPacketBuffered = {
     ? header: PacketHeader
 
     ? raw: RawInfo
-    ? datagram_id: uint
+    ? datagram_id: uint32
 
     ? trigger:
         ; indicates the parser cannot keep up, temporarily buffers
@@ -956,7 +956,7 @@ TransportDatagramsSent = {
     ; including UDP header length
     ? raw: [+ RawInfo]
 
-    ? datagram_ids: [+ uint]
+    ? datagram_ids: [+ uint32]
 }
 ~~~
 {: #transport-datagramssent-def title="TransportDatagramsSent definition"}
@@ -987,7 +987,7 @@ TransportDatagramsReceived = {
     ; including UDP header length
     ? raw: [+ RawInfo]
 
-    ? datagram_ids: [+ uint]
+    ? datagram_ids: [+ uint32]
 }
 ~~~
 {: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
@@ -1183,7 +1183,7 @@ Definition:
 RecoveryParametersSet = {
     ; Loss detection, see recovery draft-23, Appendix A.2
     ; in amount of packets
-    ? reordering_threshold: uint
+    ? reordering_threshold: uint16
 
     ; as RTT multiplier
     ? time_threshold: float32
@@ -1196,14 +1196,14 @@ RecoveryParametersSet = {
 
     ; congestion control, Appendix B.1.
     ; in bytes. Note: this could be updated after pmtud
-    ? max_datagram_size: uint
+    ? max_datagram_size: uint32
 
     ; in bytes
     ? initial_congestion_window: uint64
 
     ; Note: this could change when max_datagram_size changes
     ; in bytes
-    ? minimum_congestion_window: uint
+    ? minimum_congestion_window: uint32
     ? loss_reduction_factor: float32
 
     ; as PTO multiplier
@@ -1522,7 +1522,7 @@ Token = {
     ? type: "retry" / "resumption" / "stateless_reset"
 
     ; byte length of the token
-    ? length: uint
+    ? length: uint32
 
     ; raw byte value of the token
     ? data: hexstring
@@ -1584,8 +1584,8 @@ PaddingFrame = {
     frame_type: "padding"
 
     ; total frame length, including frame header
-    ? length: uint
-    payload_length: uint
+    ? length: uint32
+    payload_length: uint32
 }
 ~~~
 {: #paddingframe-def title="PaddingFrame definition"}
@@ -1597,8 +1597,8 @@ PingFrame = {
     frame_type: "ping"
 
     ; total frame length, including frame header
-    ? length: uint
-    ? payload_length: uint
+    ? length: uint32
+    ? payload_length: uint32
 }
 ~~~
 {: #pingframe-def title="PingFrame definition"}
@@ -1629,8 +1629,8 @@ AckFrame = {
     ? ce: uint64
 
     ; total frame length, including frame header
-    ? length: uint
-    ? payload_length: uint
+    ? length: uint32
+    ? payload_length: uint32
 }
 ~~~
 {: #ackframe-def title="AckFrame definition"}
@@ -1648,14 +1648,14 @@ ResetStreamFrame = {
     frame_type: "reset_stream"
 
     stream_id: uint64
-    error_code: $ApplicationError / uint
+    error_code: $ApplicationError / uint32
 
     ; in bytes
     final_size: uint64
 
     ; total frame length, including frame header
-    ? length: uint
-    ? payload_length: uint
+    ? length: uint32
+    ? payload_length: uint32
 }
 ~~~
 {: #resetstreamframe-def title="ResetStreamFrame definition"}
@@ -1667,11 +1667,11 @@ StopSendingFrame = {
     frame_type: "stop_sending"
 
     stream_id: uint64
-    error_code: $ApplicationError / uint
+    error_code: $ApplicationError / uint32
 
     ; total frame length, including frame header
-    ? length: uint
-    ? payload_length: uint
+    ? length: uint32
+    ? payload_length: uint32
 }
 ~~~
 {: #stopsendingframe-def title="StopSendingFrame definition"}
@@ -1685,7 +1685,7 @@ CryptoFrame = {
     offset: uint64
     length: uint64
 
-    ? payload_length: uint
+    ? payload_length: uint32
 }
 ~~~
 {: #cryptoframe-def title="CryptoFrame definition"}
@@ -1800,8 +1800,8 @@ StreamsBlockedFrame = {
 NewConnectionIDFrame = {
   frame_type: "new_connection_id"
 
-  sequence_number: uint
-  retire_prior_to: uint
+  sequence_number: uint32
+  retire_prior_to: uint32
 
   ; mainly used if e.g., for privacy reasons the full
   ; connection_id cannot be logged
@@ -1819,7 +1819,7 @@ NewConnectionIDFrame = {
 RetireConnectionIDFrame = {
   frame_type: "retire_connection_id"
 
-  sequence_number: uint
+  sequence_number: uint32
 }
 ~~~
 {: #retireconnectionid-def title="RetireConnectionIDFrame definition"}
@@ -1860,8 +1860,8 @@ ConnectionCloseFrame = {
     frame_type: "connection_close"
 
     ? error_space: ErrorSpace
-    ? error_code: TransportError / $ApplicationError / uint
-    ? raw_error_code: uint
+    ? error_code: TransportError / $ApplicationError / uint32
+    ? raw_error_code: uint32
     ? reason: text
 
     ; For known frame types, the appropriate "frame_type" string
@@ -1887,7 +1887,7 @@ UnknownFrame = {
     frame_type: "unknown"
     raw_frame_type: uint64
 
-    ? raw_length: uint
+    ? raw_length: uint32
     ? raw: hexstring
 }
 ~~~
