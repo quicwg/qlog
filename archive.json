@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-03-13T00:43:20.790825+00:00",
+  "timestamp": "2022-03-20T00:45:41.039559+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -5283,6 +5283,22 @@
           "updatedAt": "2022-03-10T09:13:05Z"
         }
       ]
+    },
+    {
+      "number": 198,
+      "id": "I_kwDOCrLn6M5F_kBC",
+      "title": "Logging events and dealing with clock drift",
+      "url": "https://github.com/quicwg/qlog/issues/198",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "We had a question about quiche's logging on https://github.com/cloudflare/quiche/issues/1197 this got me thinking some more about representations of time in qlog.\r\n\r\nIn quiche, we use a monotonic non-decreasing clock. When a trace is started, we store a monotonic start time internally and don't put that in the qlog. As events are created, we calculate a relative time since the start and record that.\r\n\r\nI've now realised this behaviour seems to differ from what the qlog draft states in https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#name-timestamps\r\n\r\n> Relative: Specify a full \"reference_time\" timestamp (typically this is done up-front in \"common_fields\", see [Section 3.4.7](https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#common-fields)) and include only relatively-encoded values based on this reference_time with each event. The \"reference_time\" value is typically the first absolute timestamp. This approach uses a medium amount of characters.\r\n\r\nThe problem is that clock drift can occur. The spec mentions this briefly but I wonder if the problem is larger than people give consideration to. For the relative and base time formats, you'd potentially end up smaller or negative values, which might break qlog tooling.\r\n\r\nI don't have much insight into solving clock drift problems but could we consider adding a monotonic time format type in addition?",
+      "createdAt": "2022-03-19T15:31:19Z",
+      "updatedAt": "2022-03-19T15:31:19Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
