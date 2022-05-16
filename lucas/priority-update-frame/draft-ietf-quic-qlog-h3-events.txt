@@ -5,13 +5,13 @@
 QUIC                                                             R. Marx
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 18 August 2022                                         Facebook
+Expires: 17 November 2022                                       Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                        14 February 2022
+                                                             16 May 2022
 
 
-              HTTP/3 and QPACK event definitions for qlog
+                HTTP/3 and QPACK qlog event definitions
                      draft-ietf-quic-qlog-h3-events
 
 Abstract
@@ -35,7 +35,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 August 2022.
+   This Internet-Draft will expire on 17 November 2022.
 
 Copyright Notice
 
@@ -81,36 +81,41 @@ Table of Contents
      6.1.  Normative References
      6.2.  Informative References
    Appendix A.  HTTP/3 data field definitions
-     A.1.  HTTP/3 Frames
-       A.1.1.  DataFrame
-       A.1.2.  HeadersFrame
-       A.1.3.  CancelPushFrame
-       A.1.4.  SettingsFrame
-       A.1.5.  PushPromiseFrame
-       A.1.6.  GoAwayFrame
-       A.1.7.  MaxPushIDFrame
-       A.1.8.  DuplicatePushFrame
-       A.1.9.  ReservedFrame
-       A.1.10. UnknownFrame
-     A.2.  ApplicationError
+     A.1.  ProtocolEventBody extension
+     A.2.  Owner
+     A.3.  HTTP/3 Frames
+       A.3.1.  DataFrame
+       A.3.2.  HeadersFrame
+       A.3.3.  CancelPushFrame
+       A.3.4.  SettingsFrame
+       A.3.5.  PushPromiseFrame
+       A.3.6.  GoAwayFrame
+       A.3.7.  MaxPushIDFrame
+       A.3.8.  HTTPPriorityUpdateFrame
+       A.3.9.  ReservedFrame
+       A.3.10. UnknownFrame
+     A.4.  ApplicationError
    Appendix B.  QPACK DATA type definitions
-     B.1.  QPACK Instructions
-       B.1.1.  SetDynamicTableCapacityInstruction
-       B.1.2.  InsertWithNameReferenceInstruction
-       B.1.3.  InsertWithoutNameReferenceInstruction
-       B.1.4.  DuplicateInstruction
-       B.1.5.  HeaderAcknowledgementInstruction
-       B.1.6.  StreamCancellationInstruction
-       B.1.7.  InsertCountIncrementInstruction
-     B.2.  QPACK Header compression
-       B.2.1.  IndexedHeaderField
-       B.2.2.  LiteralHeaderFieldWithName
-       B.2.3.  LiteralHeaderFieldWithoutName
-       B.2.4.  QPackHeaderBlockPrefix
+     B.1.  ProtocolEventBody extension
+     B.2.  QPACK Instructions
+       B.2.1.  SetDynamicTableCapacityInstruction
+       B.2.2.  InsertWithNameReferenceInstruction
+       B.2.3.  InsertWithoutNameReferenceInstruction
+       B.2.4.  DuplicateInstruction
+       B.2.5.  SectionAcknowledgementInstruction
+       B.2.6.  StreamCancellationInstruction
+       B.2.7.  InsertCountIncrementInstruction
+     B.3.  QPACK Header compression
+       B.3.1.  IndexedHeaderField
+       B.3.2.  LiteralHeaderFieldWithName
+       B.3.3.  LiteralHeaderFieldWithoutName
+       B.3.4.  QPACKHeaderBlockPrefix
+       B.3.5.  QPACKTableType
    Appendix C.  Change Log
-     C.1.  Since draft-marx-qlog-event-definitions-quic-h3-02:
-     C.2.  Since draft-marx-qlog-event-definitions-quic-h3-01:
-     C.3.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+     C.1.  Since draft-ietf-quic-qlog-h3-events-00:
+     C.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+     C.3.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+     C.4.  Since draft-marx-qlog-event-definitions-quic-h3-00:
    Appendix D.  Design Variations
    Appendix E.  Acknowledgements
    Authors' Addresses
@@ -138,9 +143,9 @@ Table of Contents
    "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
    document are to be interpreted as described in [RFC2119].
 
-   The examples and data definitions in ths document are expressed in a
-   custom data definition language, inspired by JSON and TypeScript, and
-   described in [QLOG-MAIN].
+   The event and data structure definitions in ths document are
+   expressed in the Concise Data Definition Language [CDDL] and its
+   extensions described in [QLOG-MAIN].
 
 2.  Overview
 
@@ -233,18 +238,35 @@ Table of Contents
    a single event instance.  If you need to log settings from two sides,
    you MUST emit two separate event instances.
 
-   Data:
+   Note: we use the CDDL unwrap operator (~) here to make HTTPParameters
+   into a re-usable list of fields.  The unwrap operator copies the
+   fields from the referenced type into the target type directly,
+   extending the target with the unwrapped fields.  TODO: explain this
+   better + provide reference and maybe an example.
 
-{
-    owner?:"local" | "remote",
+   Definition:
 
-    max_header_list_size?:uint64, // from SETTINGS_MAX_HEADER_LIST_SIZE
-    max_table_capacity?:uint64, // from SETTINGS_QPACK_MAX_TABLE_CAPACITY
-    blocked_streams_count?:uint64, // from SETTINGS_QPACK_BLOCKED_STREAMS
+   HTTPParametersSet = {
+       ? owner: Owner
 
-    // qlog-defined
-    waits_for_settings?:boolean // indicates whether this implementation waits for a SETTINGS frame before processing requests
-}
+       ~HTTPParameters
+
+       ; qlog-specific
+       ; indicates whether this implementation waits for a SETTINGS
+       ; frame before processing requests
+       ? waits_for_settings: bool
+   }
+
+   HTTPParameters = {
+       ? max_header_list_size: uint64
+       ? max_table_capacity: uint64
+       ? blocked_streams_count: uint64
+
+       ; additional settings for grease and extensions
+       * text => uint64
+   }
+
+                   Figure 1: HTTPParametersSet definition
 
    Note: enabling server push is not explicitly done in HTTP/3 by use of
    a setting or parameter.  Instead, it is communicated by use of the
@@ -264,13 +286,15 @@ Table of Contents
    is used to indicate which HTTP/3 settings were restored and to which
    values when utilizing 0-RTT.
 
-   Data:
+   Definition:
 
-   {
-       max_header_list_size?:uint64,
-       max_table_capacity?:uint64,
-       blocked_streams_count?:uint64
+   HTTPParametersRestored = {
+
+       ~HTTPParameters
+
    }
+
+                Figure 2: HTTPParametersRestored definition
 
    Note that, like for parameters_set above, this event can contain any
    number of unspecified fields to allow for additional and custom
@@ -288,27 +312,27 @@ Table of Contents
    Even so, this event has a "Base" importance because it helps a lot in
    debugging to have this information clearly spelled out.
 
-   Data:
+   Definition:
 
-   {
-       stream_id:uint64,
+   HTTPStreamTypeSet = {
+       ? owner: Owner
+       stream_id: uint64
 
-       owner?:"local"|"remote"
+       ? old: HTTPStreamType
+       new: HTTPStreamType
 
-       old?:StreamType,
-       new:StreamType,
-
-       associated_push_id?:uint64 // only when new == "push"
+       ; only when new === "push"
+       ? associated_push_id: uint64
    }
 
-   enum StreamType {
-       data, // bidirectional request-response streams
-       control,
-       push,
-       reserved,
-       qpack_encode,
-       qpack_decode
-   }
+   HTTPStreamType =  "data" /
+                     "control" /
+                     "push" /
+                     "reserved" /
+                     "qpack_encode" /
+                     "qpack_decode"
+
+                   Figure 3: HTTPStreamTypeSet definition
 
 3.1.4.  frame_created
 
@@ -319,15 +343,16 @@ Table of Contents
    the same as when the HTTP/3 data is passed on to the QUIC layer.  For
    that, see the "data_moved" event in [QLOG-QUIC].
 
-   Data:
+   Definition:
 
-   {
-       stream_id:uint64,
-       length?:uint64, // payload byte length of the frame
-       frame:HTTP3Frame, // see appendix for the definitions,
-
-       raw?:RawInfo
+   HTTPFrameCreated = {
+       stream_id: uint64
+       ? length: uint64
+       frame: HTTPFrame
+       ? raw: RawInfo
    }
+
+                   Figure 4: HTTPFrameCreated definition
 
    Note: in HTTP/3, DATA frames can have arbitrarily large lengths to
    reduce frame header overhead.  As such, DATA frames can span many
@@ -344,15 +369,16 @@ Table of Contents
    necessarily the same as when the HTTP/3 data is actually received on
    the QUIC layer.  For that, see the "data_moved" event in [QLOG-QUIC].
 
-   Data:
+   Definition:
 
-   {
-       stream_id:uint64,
-       length?:uint64, // payload byte length of the frame
-       frame:HTTP3Frame, // see appendix for the definitions,
-
-       raw?:RawInfo
+   HTTPFrameParsed = {
+       stream_id: uint64
+       ? length: uint64
+       frame: HTTPFrame
+       ? raw: RawInfo
    }
+
+                    Figure 5: HTTPFrameParsed definition
 
    Note: in HTTP/3, DATA frames can have arbitrarily large lengths to
    reduce frame header overhead.  As such, DATA frames can span many
@@ -370,12 +396,21 @@ Table of Contents
    problems with unexpected PUSH behaviour, which is commonplace with
    HTTP/2.
 
-{
-    push_id?:uint64,
-    stream_id?:uint64, // in case this is logged from a place that does not have access to the push_id
+   Definition:
 
-    decision:"claimed"|"abandoned"
-}
+   HTTPPushResolved = {
+       ? push_id: uint64
+
+       ; in case this is logged from a place that does not have access
+       ; to the push_id
+       ? stream_id: uint64
+
+       decision: HTTPPushDecision
+   }
+
+   HTTPPushDecision = "claimed" / "abandoned"
+
+                   Figure 6: HTTPPushResolved definition
 
 3.2.  qpack
 
@@ -405,17 +440,19 @@ Table of Contents
    need to log settings from two sides, you MUST emit two separate event
    instances.
 
-   Data:
+   Definition:
 
-{
-    owner:"local" | "remote",
+   QPACKStateUpdate = {
+       owner: Owner
+       ? dynamic_table_capacity: uint64
 
-    dynamic_table_capacity?:uint64,
-    dynamic_table_size?:uint64, // effective current size, sum of all the entries
+       ; effective current size, sum of all the entries
+       ? dynamic_table_size: uint64
+       ? known_received_count: uint64
+       ? current_insert_count: uint64
+   }
 
-    known_received_count?:uint64,
-    current_insert_count?:uint64
-}
+                   Figure 7: QPACKStateUpdate definition
 
 3.2.2.  stream_state_updated
 
@@ -427,13 +464,18 @@ Table of Contents
    Note: This event is of "Core" importance, as it might have a large
    impact on HTTP/3's observed performance.
 
-   Data:
+   Definition:
 
-{
-    stream_id:uint64,
+   QPACKStreamStateUpdate = {
+       stream_id: uint64
+       ; streams are assumed to start "unblocked"
+       ; until they become "blocked"
+       state: QPACKStreamState
+   }
 
-    state:"blocked"|"unblocked" // streams are assumed to start "unblocked" until they become "blocked"
-}
+   QPACKStreamState = "blocked" / "unblocked"
+
+                Figure 8: QPACKStreamStateUpdate definition
 
 3.2.3.  dynamic_table_updated
 
@@ -442,21 +484,26 @@ Table of Contents
    This event is emitted when one or more entries are inserted or
    evicted from QPACK's dynamic table.
 
-   Data:
+   Definition:
 
-{
-    owner:"local" | "remote", // local = the encoder's dynamic table. remote = the decoder's dynamic table
+   QPACKDynamicTableUpdate = {
+       ; local = the encoder's dynamic table
+       ; remote = the decoder's dynamic table
+       owner: Owner
 
-    update_type:"inserted"|"evicted",
+       update_type: QPACKDynamicTableUpdateType
+       entries: [+ QPACKDynamicTableEntry]
+   }
 
-    entries:Array<DynamicTableEntry>
-}
+   QPACKDynamicTableUpdateType = "inserted" / "evicted"
 
-class DynamicTableEntry {
-    index:uint64;
-    name?:string | bytes;
-    value?:string | bytes;
-}
+   QPACKDynamicTableEntry = {
+       index: uint64
+       ? name: text / hexstring
+       ? value: text / hexstring
+   }
+
+                Figure 9: QPACKDynamicTableUpdate definition
 
 3.2.4.  headers_encoded
 
@@ -469,19 +516,20 @@ class DynamicTableEntry {
    HeadersFrame type.  When outputting both events, implementers MAY
    omit the "headers" field in this event.
 
-   Data:
+   Definition:
 
-   {
-       stream_id?:uint64,
+   QPACKHeadersEncoded = {
+       ? stream_id: uint64
+       ? headers: [+ HTTPField]
 
-       headers?:Array<HTTPHeader>,
+       block_prefix: QPACKHeaderBlockPrefix
+       header_block: [+ QPACKHeaderBlockRepresentation]
 
-       block_prefix:QPackHeaderBlockPrefix,
-       header_block:Array<QPackHeaderBlockRepresentation>,
-
-       length?:uint32,
-       raw?:bytes
+       ? length: uint
+       ? raw: hexstring
    }
+
+                 Figure 10: QPACKHeadersEncoded definition
 
 3.2.5.  headers_decoded
 
@@ -494,19 +542,20 @@ class DynamicTableEntry {
    HeadersFrame type.  When outputting both events, implementers MAY
    omit the "headers" field in this event.
 
-   Data:
+   Definition:
 
-   {
-       stream_id?:uint64,
+   QPACKHeadersDecoded = {
+       ? stream_id: uint64
+       ? headers: [+ HTTPField]
 
-       headers?:Array<HTTPHeader>,
+       block_prefix: QPACKHeaderBlockPrefix
+       header_block: [+ QPACKHeaderBlockRepresentation]
 
-       block_prefix:QPackHeaderBlockPrefix,
-       header_block:Array<QPackHeaderBlockRepresentation>,
-
-       length?:uint32,
-       raw?:bytes
+       ? length: uint32
+       ? raw: hexstring
    }
+
+                 Figure 11: QPACKHeadersDecoded definition
 
 3.2.6.  instruction_created
 
@@ -515,14 +564,16 @@ class DynamicTableEntry {
    This event is emitted when a QPACK instruction (both decoder and
    encoder) is created and added to the encoder/decoder stream.
 
-   Data:
+   Definition:
 
-   {
-       instruction:QPackInstruction // see appendix for the definitions,
-
-       length?:uint32,
-       raw?:bytes
+   QPACKInstructionCreated = {
+       ; see definition in appendix
+       instruction: QPACKInstruction
+       ? length: uint32
+       ? raw: hexstring
    }
+
+               Figure 12: QPACKInstructionCreated definition
 
    Note: encoder/decoder semantics and stream_id's are implicit in
    either the instruction types or can be logged via other events (e.g.,
@@ -535,14 +586,17 @@ class DynamicTableEntry {
    This event is emitted when a QPACK instruction (both decoder and
    encoder) is read from the encoder/decoder stream.
 
-   Data:
+   Definition:
 
-   {
-       instruction:QPackInstruction // see appendix for the definitions,
+   QPACKInstructionParsed = {
+       ; see QPACKInstruction definition in appendix
+       instruction: QPACKInstruction
 
-       length?:uint32,
-       raw?:bytes
+       ? length: uint32
+       ? raw: hexstring
    }
+
+                Figure 13: QPACKInstructionParsed definition
 
    Note: encoder/decoder semantics and stream_id's are implicit in
    either the instruction types or can be logged via other events (e.g.,
@@ -559,6 +613,12 @@ class DynamicTableEntry {
 6.  References
 
 6.1.  Normative References
+
+   [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
+              Definition Language (CDDL): A Notational Convention to
+              Express Concise Binary Object Representation (CBOR) and
+              JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
+              June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
 
    [QLOG-MAIN]
               Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
@@ -596,263 +656,397 @@ class DynamicTableEntry {
 
 Appendix A.  HTTP/3 data field definitions
 
-A.1.  HTTP/3 Frames
+A.1.  ProtocolEventBody extension
 
-type HTTP3Frame = DataFrame | HeadersFrame | CancelPushFrame | SettingsFrame | PushPromiseFrame | GoAwayFrame | MaxPushIDFrame | DuplicatePushFrame | ReservedFrame | UnknownFrame;
+   We extend the $ProtocolEventBody extension point defined in
+   [QLOG-MAIN] with the HTTP/3 protocol events defined in this document.
 
-A.1.1.  DataFrame
+   HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
+                HTTPStreamTypeSet / HTTPFrameCreated /
+                HTTPFrameParsed / HTTPPushResolved
 
-   class DataFrame{
-       frame_type:string = "data";
+   $ProtocolEventBody /= HTTPEvents
 
-       raw?:bytes;
+      Figure 14: HTTPEvents definition and ProtocolEventBody extension
+
+A.2.  Owner
+
+   Owner = "local" / "remote"
+
+                        Figure 15: Owner definition
+
+A.3.  HTTP/3 Frames
+
+   HTTPFrame =  HTTPDataFrame /
+                HTTPHeadersFrame /
+                HTTPCancelPushFrame /
+                HTTPSettingsFrame /
+                HTTPPushPromiseFrame /
+                HTTPGoawayFrame /
+                HTTPMaxPushIDFrame /
+                HTTPPriorityUpdateFrame /
+                HTTPReservedFrame /
+                UnknownFrame
+
+                      Figure 16: HTTPFrame definition
+
+A.3.1.  DataFrame
+
+   HTTPDataFrame = {
+       frame_type: "data"
+       ? raw: hexstring
    }
 
-A.1.2.  HeadersFrame
+                    Figure 17: HTTPDataFrame definition
+
+A.3.2.  HeadersFrame
 
    This represents an _uncompressed_, plaintext HTTP Headers frame
    (e.g., no QPACK compression is applied).
 
    For example:
 
-headers: [{"name":":path","value":"/"},{"name":":method","value":"GET"},{"name":":authority","value":"127.0.0.1:4433"},{"name":":scheme","value":"https"}]
+   headers: [
+     {
+       "name": ":path",
+       "value": "/"
+     },
+     {
+       "name": ":method",
+       "value": "GET"
+     },
+     {
+       "name": ":authority",
+       "value": "127.0.0.1:4433"
+     },
+     {
+       "name": ":scheme",
+       "value": "https"
+     }
+   ]
 
-   class HeadersFrame{
-       frame_type:string = "header";
-       headers:Array<HTTPHeader>;
+                    Figure 18: HTTPHeadersFrame example
+
+   HTTPHeadersFrame = {
+       frame_type: "headers"
+       headers: [* HTTPField]
    }
 
-   class HTTPHeader {
-       name:string;
-       value:string;
+                   Figure 19: HTTPHeadersFrame definition
+
+   HTTPField = {
+       name: text
+       value: text
    }
 
-A.1.3.  CancelPushFrame
+                      Figure 20: HTTPField definition
 
-   class CancelPushFrame{
-       frame_type:string = "cancel_push";
-       push_id:uint64;
+A.3.3.  CancelPushFrame
+
+   HTTPCancelPushFrame = {
+       frame_type: "cancel_push"
+       push_id: uint64
    }
 
-A.1.4.  SettingsFrame
+                 Figure 21: HTTPCancelPushFrame definition
 
-   class SettingsFrame{
-       frame_type:string = "settings";
-       settings:Array<Setting>;
+A.3.4.  SettingsFrame
+
+   HTTPSettingsFrame = {
+       frame_type: "settings"
+       settings: [* HTTPSetting]
    }
 
-   class Setting{
-       name:string;
-       value:string;
+   HTTPSetting = {
+       name: text
+       value: uint64
    }
 
-A.1.5.  PushPromiseFrame
+                  Figure 22: HTTPSettingsFrame definition
 
-   class PushPromiseFrame{
-       frame_type:string = "push_promise";
-       push_id:uint64;
+A.3.5.  PushPromiseFrame
 
-       headers:Array<HTTPHeader>;
+   HTTPPushPromiseFrame = {
+       frame_type: "push_promise"
+       push_id: uint64
+       headers: [* HTTPField]
    }
 
-A.1.6.  GoAwayFrame
+                 Figure 23: HTTPPushPromiseFrame definition
 
-class GoAwayFrame{
-    frame_type:string = "goaway";
-    id:uint64; // either stream_id or push_id. This is implicit from the sender of the frame.
-}
+A.3.6.  GoAwayFrame
 
-A.1.7.  MaxPushIDFrame
+   HTTPGoawayFrame = {
+       frame_type: "goaway"
 
-   class MaxPushIDFrame{
-       frame_type:string = "max_push_id";
-       push_id:uint64;
+       ; Either stream_id or push_id.
+       ; This is implicit from the sender of the frame
+       id: uint64
    }
 
-A.1.8.  DuplicatePushFrame
+                   Figure 24: HTTPGoawayFrame definition
 
-   class DuplicatePushFrame{
-       frame_type:string = "duplicate_push";
-       push_id:uint64;
+A.3.7.  MaxPushIDFrame
+
+   HTTPMaxPushIDFrame = {
+       frame_type: "max_push_id"
+       push_id: uint64
    }
 
-A.1.9.  ReservedFrame
+                  Figure 25: HTTPMaxPushIDFrame definition
 
-   class ReservedFrame{
-       frame_type:string = "reserved";
+A.3.8.  HTTPPriorityUpdateFrame
+
+   HTTPPriorityUpdateFrame = {
+       frame_type: "priority_update"
+
+       target_stream_type: "request" / "push"
+       prioritized_element_id: uint64
+       priority_field_value: String
    }
 
-A.1.10.  UnknownFrame
+               Figure 26: HTTPPriorityUpdateFrame definition
 
-   HTTP/3 re-uses QUIC's UnknownFrame definition, since their values and
-   usage overlaps.  See [QLOG-QUIC].
+A.3.9.  ReservedFrame
 
-A.2.  ApplicationError
+   HTTPReservedFrame = {
+       frame_type: "reserved"
 
-   enum ApplicationError{
-       http_no_error,
-       http_general_protocol_error,
-       http_internal_error,
-       http_stream_creation_error,
-       http_closed_critical_stream,
-       http_frame_unexpected,
-       http_frame_error,
-       http_excessive_load,
-       http_id_error,
-       http_settings_error,
-       http_missing_settings,
-       http_request_rejected,
-       http_request_cancelled,
-       http_request_incomplete,
-       http_early_response,
-       http_connect_error,
-       http_version_fallback
+       ? length: uint64
    }
+
+                  Figure 27: HTTPReservedFrame definition
+
+A.3.10.  UnknownFrame
+
+   HTTP/3 qlog re-uses QUIC's UnknownFrame definition, since their
+   values and usage overlaps.  See [QLOG-QUIC].
+
+A.4.  ApplicationError
+
+   HTTPApplicationError =  "http_no_error" /
+                           "http_general_protocol_error" /
+                           "http_internal_error" /
+                           "http_stream_creation_error" /
+                           "http_closed_critical_stream" /
+                           "http_frame_unexpected" /
+                           "http_frame_error" /
+                           "http_excessive_load" /
+                           "http_id_error" /
+                           "http_settings_error" /
+                           "http_missing_settings" /
+                           "http_request_rejected" /
+                           "http_request_cancelled" /
+                           "http_request_incomplete" /
+                           "http_early_response" /
+                           "http_connect_error" /
+                           "http_version_fallback"
+
+                 Figure 28: HTTPApplicationError definition
+
+   The HTTPApplicationError defines the general $ApplicationError
+   definition in the qlog QUIC definition, see [QLOG-QUIC].
+
+   ; ensure HTTP errors are properly validate in QUIC events as well
+   ; e.g., QUIC's ConnectionClose Frame
+   $ApplicationError /= HTTPApplicationError
 
 Appendix B.  QPACK DATA type definitions
 
-B.1.  QPACK Instructions
+B.1.  ProtocolEventBody extension
+
+   We extend the $ProtocolEventBody extension point defined in
+   [QLOG-MAIN] with the QPACK protocol events defined in this document.
+
+   QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
+                 QPACKDynamicTableUpdate / QPACKHeadersEncoded /
+                 QPACKHeadersDecoded / QPACKInstructionCreated /
+                 QPACKInstructionParsed
+
+   $ProtocolEventBody /= QPACKEvents
+
+     Figure 29: QPACKEvents definition and ProtocolEventBody extension
+
+B.2.  QPACK Instructions
 
    Note: the instructions do not have explicit encoder/decoder types,
    since there is no overlap between the insturctions of both types in
    neither name nor function.
 
-type QPackInstruction = SetDynamicTableCapacityInstruction | InsertWithNameReferenceInstruction | InsertWithoutNameReferenceInstruction | DuplicateInstruction | HeaderAcknowledgementInstruction | StreamCancellationInstruction | InsertCountIncrementInstruction;
+   QPACKInstruction =  SetDynamicTableCapacityInstruction /
+                       InsertWithNameReferenceInstruction /
+                       InsertWithoutNameReferenceInstruction /
+                       DuplicateInstruction /
+                       SectionAcknowledgementInstruction /
+                       StreamCancellationInstruction /
+                       InsertCountIncrementInstruction
 
-B.1.1.  SetDynamicTableCapacityInstruction
+                   Figure 30: QPACKInstruction definition
 
-   class SetDynamicTableCapacityInstruction {
-       instruction_type:string = "set_dynamic_table_capacity";
+B.2.1.  SetDynamicTableCapacityInstruction
 
-       capacity:uint32;
+   SetDynamicTableCapacityInstruction = {
+       instruction_type: "set_dynamic_table_capacity"
+       capacity: uint32
    }
 
-B.1.2.  InsertWithNameReferenceInstruction
+          Figure 31: SetDynamicTableCapacityInstruction definition
 
-   class InsertWithNameReferenceInstruction {
-       instruction_type:string = "insert_with_name_reference";
+B.2.2.  InsertWithNameReferenceInstruction
 
-       table_type:"static"|"dynamic";
-
-       name_index:uint32;
-
-       huffman_encoded_value:boolean;
-
-       value_length?:uint32;
-       value?:string;
+   InsertWithNameReferenceInstruction = {
+       instruction_type: "insert_with_name_reference"
+       table_type: QPACKTableType
+       name_index: uint32
+       huffman_encoded_value: bool
+       ? value_length: uint32
+       ? value: text
    }
 
-B.1.3.  InsertWithoutNameReferenceInstruction
+          Figure 32: InsertWithNameReferenceInstruction definition
 
-   class InsertWithoutNameReferenceInstruction {
-       instruction_type:string = "insert_without_name_reference";
+B.2.3.  InsertWithoutNameReferenceInstruction
 
-       huffman_encoded_name:boolean;
-
-       name_length?:uint32;
-       name?:string;
-
-       huffman_encoded_value:boolean;
-
-       value_length?:uint32;
-       value?:string;
+   InsertWithoutNameReferenceInstruction = {
+       instruction_type: "insert_without_name_reference"
+       huffman_encoded_name: bool
+       ? name_length: uint32
+       ? name: text
+       huffman_encoded_value: bool
+       ? value_length: uint32
+       ? value: text
    }
 
-B.1.4.  DuplicateInstruction
+        Figure 33: InsertWithoutNameReferenceInstruction definition
 
-   class DuplicateInstruction {
-       instruction_type:string = "duplicate";
+B.2.4.  DuplicateInstruction
 
-       index:uint32;
+   DuplicateInstruction = {
+       instruction_type: "duplicate"
+       index: uint32
    }
 
-B.1.5.  HeaderAcknowledgementInstruction
+                 Figure 34: DuplicateInstruction definition
 
-   class HeaderAcknowledgementInstruction {
-       instruction_type:string = "header_acknowledgement";
+B.2.5.  SectionAcknowledgementInstruction
 
-       stream_id:uint64;
+   SectionAcknowledgementInstruction = {
+       instruction_type: "section_acknowledgement"
+       stream_id: uint64
    }
 
-B.1.6.  StreamCancellationInstruction
+          Figure 35: SectionAcknowledgementInstruction definition
 
-   class StreamCancellationInstruction {
-       instruction_type:string = "stream_cancellation";
+B.2.6.  StreamCancellationInstruction
 
-       stream_id:uint64;
+   StreamCancellationInstruction = {
+       instruction_type: "stream_cancellation"
+       stream_id: uint64
    }
 
-B.1.7.  InsertCountIncrementInstruction
+            Figure 36: StreamCancellationInstruction definition
 
-   class InsertCountIncrementInstruction {
-       instruction_type:string = "insert_count_increment";
+B.2.7.  InsertCountIncrementInstruction
 
-       increment:uint32;
+   InsertCountIncrementInstruction = {
+       instruction_type: "insert_count_increment"
+       increment: uint32
    }
 
-B.2.  QPACK Header compression
+           Figure 37: InsertCountIncrementInstruction definition
 
-type QPackHeaderBlockRepresentation = IndexedHeaderField | LiteralHeaderFieldWithName | LiteralHeaderFieldWithoutName;
+B.3.  QPACK Header compression
 
-B.2.1.  IndexedHeaderField
+   QPACKHeaderBlockRepresentation =  IndexedHeaderField /
+                                     LiteralHeaderFieldWithName /
+                                     LiteralHeaderFieldWithoutName
+
+            Figure 38: QPACKHeaderBlockRepresentation definition
+
+B.3.1.  IndexedHeaderField
 
    Note: also used for "indexed header field with post-base index"
 
-class IndexedHeaderField {
-    header_field_type:string = "indexed_header";
+   IndexedHeaderField = {
+       header_field_type: "indexed_header"
 
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
-    index:uint32;
+       ; MUST be "dynamic" if is_post_base is true
+       table_type: QPACKTableType
+       index: uint32
 
-    is_post_base:boolean = false; // to represent the "indexed header field with post-base index" header field type
-}
+       ; to represent the "indexed header field with post-base index"
+       ; header field type
+       is_post_base: bool .default false
+   }
 
-B.2.2.  LiteralHeaderFieldWithName
+                  Figure 39: IndexedHeaderField definition
+
+B.3.2.  LiteralHeaderFieldWithName
 
    Note: also used for "Literal header field with post-base name
    reference"
 
-class LiteralHeaderFieldWithName {
-    header_field_type:string = "literal_with_name";
+   LiteralHeaderFieldWithName = {
+       header_field_type: "literal_with_name"
 
-    preserve_literal:boolean; // the 3rd "N" bit
-    table_type:"static"|"dynamic"; // MUST be "dynamic" if is_post_base is true
-    name_index:uint32;
+       ; the 3rd "N" bit
+       preserve_literal: bool
 
-    huffman_encoded_value:boolean;
-    value_length?:uint32;
-    value?:string;
+       ; MUST be "dynamic" if is_post_base is true
+       table_type: QPACKTableType
+       name_index: uint32
+       huffman_encoded_value: bool
+       ? value_length: uint32
+       ? value: text
 
-    is_post_base:boolean = false; // to represent the "Literal header field with post-base name reference" header field type
-}
-
-B.2.3.  LiteralHeaderFieldWithoutName
-
-   class LiteralHeaderFieldWithoutName {
-       header_field_type:string = "literal_without_name";
-
-       preserve_literal:boolean; // the 3rd "N" bit
-
-       huffman_encoded_name:boolean;
-       name_length?:uint32;
-       name?:string;
-
-       huffman_encoded_value:boolean;
-       value_length?:uint32;
-       value?:string;
+       ; to represent the "indexed header field with post-base index"
+       ; header field type
+       is_post_base: bool .default false
    }
 
-B.2.4.  QPackHeaderBlockPrefix
+              Figure 40: LiteralHeaderFieldWithName definition
 
-   class QPackHeaderBlockPrefix {
-       required_insert_count:uint32;
-       sign_bit:boolean;
-       delta_base:uint32;
+B.3.3.  LiteralHeaderFieldWithoutName
+
+   LiteralHeaderFieldWithoutName = {
+       header_field_type: "literal_without_name"
+
+       ; the 3rd "N" bit
+       preserve_literal: bool
+       huffman_encoded_name: bool
+       ? name_length: uint32
+       ? name: text
+
+       huffman_encoded_value: bool
+       ? value_length: uint32
+       ? value: text
    }
+
+            Figure 41: LiteralHeaderFieldWithoutName definition
+
+B.3.4.  QPACKHeaderBlockPrefix
+
+   QPACKHeaderBlockPrefix = {
+       required_insert_count: uint32
+       sign_bit: bool
+       delta_base: uint32
+   }
+
+                Figure 42: QPACKHeaderBlockPrefix definition
+
+B.3.5.  QPACKTableType
+
+   QPACKTableType = "static" / "dynamic"
+
+                    Figure 43: QPACKTableType definition
 
 Appendix C.  Change Log
 
-C.1.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+C.1.  Since draft-ietf-quic-qlog-h3-events-00:
+
+   *  Change the data definition language from TypeScript to CDDL (#143)
+
+C.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  These changes were done in preparation of the adoption of the
       drafts by the QUIC working group (#137)
@@ -862,7 +1056,7 @@ C.1.  Since draft-marx-qlog-event-definitions-quic-h3-02:
    *  Moved RawInfo, Importance, Generic events and Simulation events to
       the main schema document.
 
-C.2.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+C.3.  Since draft-marx-qlog-event-definitions-quic-h3-01:
 
    Major changes:
 
@@ -934,7 +1128,7 @@ C.2.  Since draft-marx-qlog-event-definitions-quic-h3-01:
    *  Extended connection_state_updated with more fine-grained states
       (#49)
 
-C.3.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+C.4.  Since draft-marx-qlog-event-definitions-quic-h3-00:
 
    *  Event and category names are now all lowercase
 
@@ -969,17 +1163,14 @@ Authors' Addresses
 
    Robin Marx
    KU Leuven
-
    Email: robin.marx@kuleuven.be
 
 
    Luca Niccolini (editor)
    Facebook
-
    Email: lniccolini@fb.com
 
 
    Marten Seemann (editor)
    Protocol Labs
-
    Email: marten@protocol.ai

@@ -5,10 +5,10 @@
 QUIC                                                             R. Marx
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 18 August 2022                                         Facebook
+Expires: 17 November 2022                                       Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                        14 February 2022
+                                                             16 May 2022
 
 
                     QUIC event definitions for qlog
@@ -35,7 +35,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 August 2022.
+   This Internet-Draft will expire on 17 November 2022.
 
 Copyright Notice
 
@@ -101,40 +101,46 @@ Table of Contents
      6.1.  Normative References
      6.2.  Informative References
    Appendix A.  QUIC data field definitions
-     A.1.  IPAddress
-     A.2.  PacketType
-     A.3.  PacketNumberSpace
-     A.4.  PacketHeader
-     A.5.  Token
-     A.6.  KeyType
-     A.7.  QUIC Frames
-       A.7.1.  PaddingFrame
-       A.7.2.  PingFrame
-       A.7.3.  AckFrame
-       A.7.4.  ResetStreamFrame
-       A.7.5.  StopSendingFrame
-       A.7.6.  CryptoFrame
-       A.7.7.  NewTokenFrame
-       A.7.8.  StreamFrame
-       A.7.9.  MaxDataFrame
-       A.7.10. MaxStreamDataFrame
-       A.7.11. MaxStreamsFrame
-       A.7.12. DataBlockedFrame
-       A.7.13. StreamDataBlockedFrame
-       A.7.14. StreamsBlockedFrame
-       A.7.15. NewConnectionIDFrame
-       A.7.16. RetireConnectionIDFrame
-       A.7.17. PathChallengeFrame
-       A.7.18. PathResponseFrame
-       A.7.19. ConnectionCloseFrame
-       A.7.20. HandshakeDoneFrame
-       A.7.21. UnknownFrame
-       A.7.22. TransportError
-       A.7.23. CryptoError
+     A.1.  ProtocolEventBody extension
+     A.2.  QuicVersion
+     A.3.  ConnectionID
+     A.4.  Owner
+     A.5.  IPAddress and IPVersion
+     A.6.  PacketType
+     A.7.  PacketNumberSpace
+     A.8.  PacketHeader
+     A.9.  Token
+     A.10. KeyType
+     A.11. QUIC Frames
+       A.11.1.  PaddingFrame
+       A.11.2.  PingFrame
+       A.11.3.  AckFrame
+       A.11.4.  ResetStreamFrame
+       A.11.5.  StopSendingFrame
+       A.11.6.  CryptoFrame
+       A.11.7.  NewTokenFrame
+       A.11.8.  StreamFrame
+       A.11.9.  MaxDataFrame
+       A.11.10. MaxStreamDataFrame
+       A.11.11. MaxStreamsFrame
+       A.11.12. DataBlockedFrame
+       A.11.13. StreamDataBlockedFrame
+       A.11.14. StreamsBlockedFrame
+       A.11.15. NewConnectionIDFrame
+       A.11.16. RetireConnectionIDFrame
+       A.11.17. PathChallengeFrame
+       A.11.18. PathResponseFrame
+       A.11.19. ConnectionCloseFrame
+       A.11.20. HandshakeDoneFrame
+       A.11.21. UnknownFrame
+       A.11.22. TransportError
+       A.11.23. ApplicationError
+       A.11.24. CryptoError
    Appendix B.  Change Log
-     B.1.  Since draft-marx-qlog-event-definitions-quic-h3-02:
-     B.2.  Since draft-marx-qlog-event-definitions-quic-h3-01:
-     B.3.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+     B.1.  Since draft-ietf-qlog-quic-events-00:
+     B.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+     B.3.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+     B.4.  Since draft-marx-qlog-event-definitions-quic-h3-00:
    Appendix C.  Design Variations
    Appendix D.  Acknowledgements
    Authors' Addresses
@@ -162,9 +168,9 @@ Table of Contents
    "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
    document are to be interpreted as described in [RFC2119].
 
-   The examples and data definitions in ths document are expressed in a
-   custom data definition language, inspired by JSON and TypeScript, and
-   described in [QLOG-MAIN].
+   The event and data structure definitions in ths document are
+   expressed in the Concise Data Definition Language [CDDL] and its
+   extensions described in [QLOG-MAIN].
 
 2.  Overview
 
@@ -278,19 +284,20 @@ Table of Contents
 
    Emitted when the server starts accepting connections.
 
-   Data:
+   Definition:
 
-   {
-       ip_v4?: IPAddress,
-       ip_v6?: IPAddress,
-       port_v4?: uint32,
-       port_v6?: uint32,
+   ConnectivityServerListening = {
+       ? ip_v4: IPAddress
+       ? ip_v6: IPAddress
+       ? port_v4: uint16
+       ? port_v6: uint16
 
-       retry_required?:boolean // the server will always answer
-                               // client initials with a retry
-                               // (no 1-RTT connection setups
-                               // by choice)
+       ; the server will always answer client initials with a retry
+       ; (no 1-RTT connection setups by choice)
+       ? retry_required: bool
    }
+
+              Figure 1: ConnectivityServerListening definition
 
    Note: some QUIC stacks do not handle sockets directly and are thus
    unable to log IP and/or port information.
@@ -304,21 +311,23 @@ Table of Contents
    connection_state_updated and this is a separate event mainly because
    of all the additional data that should be logged.
 
-   Data:
+   Definition:
 
-   {
-       ip_version?: "v4" | "v6",
-       src_ip?: IPAddress,
-       dst_ip?: IPAddress,
+   ConnectivityConnectionStarted = {
+       ? ip_version: IPVersion
+       src_ip: IPAddress
+       dst_ip: IPAddress
 
-       protocol?: string, // transport layer protocol (default "QUIC")
-       src_port?: uint32,
-       dst_port?: uint32,
+       ; transport layer protocol
+       ? protocol: text .default "QUIC"
+       ? src_port: uint16
+       ? dst_port: uint16
 
-       src_cid?: bytes,
-       dst_cid?: bytes,
-
+       ? src_cid: ConnectionID
+       ? dst_cid: ConnectionID
    }
+
+             Figure 2: ConnectivityConnectionStarted definition
 
    Note: some QUIC stacks do not handle sockets directly and are thus
    unable to log IP and/or port information.
@@ -344,20 +353,30 @@ Table of Contents
    error codes in implementation-specific ways.  As such, multiple error
    codes can be set on the same event to reflect this.
 
-   {
-       owner?:"local"|"remote", // which side closed the connection
+   Definition:
 
-       connection_code?:TransportError | CryptoError | uint32,
-       application_code?:ApplicationError | uint32,
-       internal_code?:uint32,
+   ConnectivityConnectionClosed = {
+       ; which side closed the connection
+       ? owner: Owner
 
-       reason?:string
+       ? connection_code: TransportError / CryptoError / uint32
+       ? application_code: $ApplicationError / uint32
+       ? internal_code: uint32
+
+       ? reason: text
+       ? trigger:
+           "clean" /
+           "handshake_timeout" /
+           "idle_timeout" /
+           ; this is called the "immediate close" in the QUIC RFC
+           "error" /
+           "stateless_reset" /
+           "version_mismatch" /
+           ; for example HTTP/3's GOAWAY frame
+           "application"
    }
 
-   Triggers: * clean * handshake_timeout * idle_timeout * error // this
-   is called the "immediate close" in the QUIC specification *
-   stateless_reset * version_mismatch * application // for example
-   HTTP/3's GOAWAY frame
+             Figure 3: ConnectivityConnectionClosed definition
 
 3.1.4.  connection_id_updated
 
@@ -374,14 +393,16 @@ Table of Contents
    the dst_ fields are set.  If we update our own connection id (e.g.,
    NEW_CONNECTION_ID frame), we log the src_ fields.
 
-   Data:
+   Definition:
 
-   {
-       owner: "local" | "remote",
+   ConnectivityConnectionIDUpdated = {
+       owner: Owner
 
-       old?:bytes,
-       new?:bytes,
+       ? old: ConnectionID
+       ? new: ConnectionID
    }
+
+            Figure 4: ConnectivityConnectionIDUpdated definition
 
 3.1.5.  spin_bit_updated
 
@@ -390,11 +411,13 @@ Table of Contents
    To be emitted when the spin bit changes value.  It SHOULD NOT be
    emitted if the spin bit is set without changing its value.
 
-   Data:
+   Definition:
 
-   {
-       state: boolean
+   ConnectivitySpinBitUpdated = {
+       state: bool
    }
+
+              Figure 5: ConnectivitySpinBitUpdated definition
 
 3.1.6.  connection_retried
 
@@ -413,22 +436,42 @@ Table of Contents
    implementers should focus on support for the SimpleConnectionState
    set.
 
-   Data: ~~~ { old?: ConnectionState | SimpleConnectionState, new:
-   ConnectionState | SimpleConnectionState }
+   Definition:
 
-   enum ConnectionState { attempted, // initial sent/received
-   peer_validated, // peer address validated by: client sent Handshake
-   packet OR client used CONNID chosen by the server. transport-draft-
-   32, section-8.1 handshake_started, early_write, // 1 RTT can be sent,
-   but handshake isn't done yet handshake_complete, // TLS handshake
-   complete: Finished received and sent. tls-draft-32, section-4.1.1
-   handshake_confirmed, // HANDSHAKE_DONE sent/received (connection is
-   now "active", 1RTT can be sent). tls-draft-32, section-4.1.2 closing,
-   draining, // connection_close sent/received closed // draining period
-   done, connection state discarded }
+   ConnectivityConnectionStateUpdated = {
+       ? old: ConnectionState / SimpleConnectionState
+       new: ConnectionState / SimpleConnectionState
+   }
 
-   enum SimpleConnectionState { attempted, handshake_started,
-   handshake_confirmed, closed } ~~~
+   ConnectionState =
+       ; initial sent/received
+       "attempted" /
+       ; peer address validated by: client sent Handshake packet OR
+       ; client used CONNID chosen by the server.
+       ; transport-draft-32, section-8.1
+       "peer_validated" /
+       "handshake_started" /
+       ; 1 RTT can be sent, but handshake isn't done yet
+       "early_write" /
+       ; TLS handshake complete: Finished received and sent
+       ; tls-draft-32, section-4.1.1
+       "handshake_complete" /
+       ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
+       ; can be sent). tls-draft-32, section-4.1.2
+       "handshake_confirmed" /
+       "closing" /
+       ; connection_close sent/received
+       "draining" /
+       ; draining period done, connection state discarded
+       "closed"
+
+   SimpleConnectionState =
+       "attempted" /
+       "handshake_started" /
+       "handshake_confirmed" /
+       "closed"
+
+          Figure 6: ConnectivityConnectionStateUpdated definition
 
    These states correspond to the following transitions for both client
    and server:
@@ -466,8 +509,8 @@ Table of Contents
 
       -  state = attempted
 
-   *  send initial _(don't think this needs a separate state, since some
-      handshake will always be sent in the same flight as this?)_
+   *  send initial _(TODO don't think this needs a separate state, since
+      some handshake will always be sent in the same flight as this?)_
 
    *  send handshake EE, CERT, CV, ...
 
@@ -515,44 +558,49 @@ Table of Contents
    Note: secret_updated would be more correct, but in the draft it's
    called KEY_UPDATE, so stick with that for consistency
 
-   Data:
+   Definition:
 
-   {
-       key_type:KeyType,
-       old?:bytes,
-       new:bytes,
-       generation?:uint32 // needed for 1RTT key updates
+   SecurityKeyUpdated = {
+       key_type: KeyType
+
+       ? old: hexstring
+       new: hexstring
+
+       ; needed for 1RTT key updates
+       ? generation: uint32
+
+       ? trigger:
+           ; (e.g., initial, handshake and 0-RTT keys
+           ; are generated by TLS)
+           "tls" /
+           "remote_update" /
+           "local_update"
    }
 
-   Triggers:
-
-   *  "tls" // (e.g., initial, handshake and 0-RTT keys are generated by
-      TLS)
-
-   *  "remote_update"
-
-   *  "local_update"
+                  Figure 7: SecurityKeyUpdated definition
 
 3.2.2.  key_retired
 
    Importance: Base
 
-   Data:
+   Definition:
 
-   {
-       key_type:KeyType,
-       key?:bytes,
-       generation?:uint32 // needed for 1RTT key updates
+   SecurityKeyRetired = {
+       key_type: KeyType
+       ? key: hexstring
+
+       ; needed for 1RTT key updates
+       ? generation: uint32
+
+       ? trigger:
+           ; (e.g., initial, handshake and 0-RTT keys
+           ; are generated by TLS)
+           "tls" /
+           "remote_update" /
+           "local_update"
    }
 
-   Triggers:
-
-   *  "tls" // (e.g., initial, handshake and 0-RTT keys are dropped
-      implicitly)
-
-   *  "remote_update"
-
-   *  "local_update"
+                  Figure 8: SecurityKeyRetired definition
 
 3.3.  transport
 
@@ -569,13 +617,15 @@ Table of Contents
    supported versions at an endpoint without actual version negotiation
    needing to happen.
 
-   Data:
+   Definition:
 
-   {
-       server_versions?:Array<bytes>,
-       client_versions?:Array<bytes>,
-       chosen_version?:bytes
+   TransportVersionInformation = {
+       ? server_versions: [+ QuicVersion]
+       ? client_versions: [+ QuicVersion]
+       ? chosen_version: QuicVersion
    }
+
+              Figure 9: TransportVersionInformation definition
 
    Intended use:
 
@@ -609,13 +659,15 @@ Table of Contents
    and communicates this back to the client.  If not, the connection is
    closed.
 
-   Data:
+   Definition:
 
-   {
-       server_alpns?:Array<string>,
-       client_alpns?:Array<string>,
-       chosen_alpn?:string
+   TransportALPNInformation = {
+       ? server_alpns: [* text]
+       ? client_alpns: [* text]
+       ? chosen_alpn: text
    }
+
+               Figure 10: TransportALPNInformation definition
 
    Intended use:
 
@@ -662,53 +714,59 @@ Table of Contents
    indicate the initial values, and this event to indicate the updated
    values, as normal.
 
-   Data:
+   Definition:
 
-   {
-       owner?:"local" | "remote",
+   TransportParametersSet = {
+       ? owner: Owner
 
-       resumption_allowed?:boolean, // valid session ticket
-                                    // was received
-       early_data_enabled?:boolean, // early data extension
-                                    // was enabled on the TLS layer
-       tls_cipher?:string, // (e.g., "AES_128_GCM_SHA256")
-       aead_tag_length?:uint8, // depends on the TLS cipher,
-                               // but it's easier to be explicit.
-                               // Default value is 16
+       ; true if valid session ticket was received
+       ? resumption_allowed: bool
 
-       // transport parameters from the TLS layer:
-       original_destination_connection_id?:bytes,
-       initial_source_connection_id?:bytes,
-       retry_source_connection_id?:bytes,
-       stateless_reset_token?:Token,
-       disable_active_migration?:boolean,
+       ; true if early data extension was enabled on the TLS layer
+       ? early_data_enabled: bool
 
-       max_idle_timeout?:uint64,
-       max_udp_payload_size?:uint32,
-       ack_delay_exponent?:uint16,
-       max_ack_delay?:uint16,
-       active_connection_id_limit?:uint32,
+       ; e.g., "AES_128_GCM_SHA256"
+       ? tls_cipher: text
 
-       initial_max_data?:uint64,
-       initial_max_stream_data_bidi_local?:uint64,
-       initial_max_stream_data_bidi_remote?:uint64,
-       initial_max_stream_data_uni?:uint64,
-       initial_max_streams_bidi?:uint64,
-       initial_max_streams_uni?:uint64,
+       ; depends on the TLS cipher, but it's easier to be explicit.
+       ; in bytes
+       ? aead_tag_length: uint8 .default 16
 
-       preferred_address?:PreferredAddress
+       ; transport parameters from the TLS layer:
+       ? original_destination_connection_id: ConnectionID
+       ? initial_source_connection_id: ConnectionID
+       ? retry_source_connection_id: ConnectionID
+       ? stateless_reset_token: Token
+       ? disable_active_migration: bool
+
+       ? max_idle_timeout: uint64
+       ? max_udp_payload_size: uint32
+       ? ack_delay_exponent: uint16
+       ? max_ack_delay: uint16
+       ? active_connection_id_limit: uint32
+
+       ? initial_max_data: uint64
+       ? initial_max_stream_data_bidi_local: uint64
+       ? initial_max_stream_data_bidi_remote: uint64
+       ? initial_max_stream_data_uni: uint64
+       ? initial_max_streams_bidi: uint64
+       ? initial_max_streams_uni: uint64
+
+       ? preferred_address: PreferredAddress
    }
 
-   interface PreferredAddress {
-       ip_v4:IPAddress,
-       ip_v6:IPAddress,
+   PreferredAddress = {
+       ip_v4: IPAddress
+       ip_v6: IPAddress
 
-       port_v4:uint16,
-       port_v6:uint16,
+       port_v4: uint16
+       port_v6: uint16
 
-       connection_id:bytes,
-       stateless_reset_token:Token
+       connection_id: ConnectionID
+       stateless_reset_token: Token
    }
+
+                Figure 11: TransportParametersSet definition
 
    Additionally, this event can contain any number of unspecified
    fields.  This is to reflect setting of for example unknown (greased)
@@ -726,22 +784,24 @@ Table of Contents
    The ones listed here are the ones expected to be useful for correct
    0-RTT usage.
 
-   Data:
+   Definition:
 
-   {
-       disable_active_migration?:boolean,
+   TransportParametersRestored = {
+       ? disable_active_migration: bool
 
-       max_idle_timeout?:uint64,
-       max_udp_payload_size?:uint32,
-       active_connection_id_limit?:uint32,
+       ? max_idle_timeout: uint64
+       ? max_udp_payload_size: uint32
+       ? active_connection_id_limit: uint32
 
-       initial_max_data?:uint64,
-       initial_max_stream_data_bidi_local?:uint64,
-       initial_max_stream_data_bidi_remote?:uint64,
-       initial_max_stream_data_uni?:uint64,
-       initial_max_streams_bidi?:uint64,
-       initial_max_streams_uni?:uint64,
+       ? initial_max_data: uint64
+       ? initial_max_stream_data_bidi_local: uint64
+       ? initial_max_stream_data_bidi_remote: uint64,
+       ? initial_max_stream_data_uni: uint64
+       ? initial_max_streams_bidi: uint64
+       ? initial_max_streams_uni: uint64
    }
+
+             Figure 12: TransportParametersRestored definition
 
    Note that, like parameters_set above, this event can contain any
    number of unspecified fields to allow for additional/custom
@@ -751,44 +811,48 @@ Table of Contents
 
    Importance: Core
 
-   Data:
+   Definition:
 
-   {
-       header:PacketHeader,
+   TransportPacketSent = {
+       header: PacketHeader
 
-       frames?:Array<QuicFrame>, // see appendix for the definitions
+       ; see appendix for the QuicFrame definitions
+       ? frames: [* QuicFrame]
 
-       is_coalesced?:boolean, // default value is false
+       ? is_coalesced: bool .default false
 
-       retry_token?:Token, // only if header.packet_type === retry
+       ; only if header.packet_type === "retry"
+       ? retry_token: Token
 
-       stateless_reset_token?:bytes, // only if header.packet_type
-                                     // === stateless_reset. Is
-                                     // always 128 bits in length.
+       ; only if header.packet_type === "stateless_reset"
+       ; is always 128 bits in length.
+       ? stateless_reset_token: hexstring .size 16
 
-       supported_versions:Array<bytes>, // only if header.packet_type
-                                        // === version_negotiation
+       ; only if header.packet_type === "version_negotiation"
+       ? supported_versions: [+ QuicVersion]
 
-       raw?:RawInfo,
-       datagram_id?:uint32
+       ? raw: RawInfo
+       ? datagram_id: uint32
+
+       ? trigger:
+         ; draft-23 5.1.1
+         "retransmit_reordered" /
+         ; draft-23 5.1.2
+         "retransmit_timeout" /
+         ; draft-23 5.3.1
+         "pto_probe" /
+         ; draft-19 6.2
+         "retransmit_crypto" /
+         ; needed for some CCs to figure out bandwidth allocations
+         ; when there are no normal sends
+         "cc_bandwidth_probe"
    }
+
+                 Figure 13: TransportPacketSent definition
 
    Note: We do not explicitly log the encryption_level or
    packet_number_space: the header.packet_type specifies this by
    inference (assuming correct implementation)
-
-   Triggers:
-
-   *  "retransmit_reordered" // draft-23 5.1.1
-
-   *  "retransmit_timeout" // draft-23 5.1.2
-
-   *  "pto_probe" // draft-23 5.3.1
-
-   *  "retransmit_crypto" // draft-19 6.2
-
-   *  "cc_bandwidth_probe" // needed for some CCs to figure out
-      bandwidth allocations when there are no normal sends
 
    Note: for more details on "datagram_id", see Section 3.3.10.  It is
    only needed when keeping track of packet coalescing.
@@ -797,36 +861,40 @@ Table of Contents
 
    Importance: Core
 
-   Data:
+   Definition:
 
-   {
-       header:PacketHeader,
+   TransportPacketReceived = {
+       header: PacketHeader
 
-       frames?:Array<QuicFrame>, // see appendix for the definitions
+       ; see appendix for the definitions
+       ? frames: [* QuicFrame]
 
-       is_coalesced?:boolean,
+       ? is_coalesced: bool .default false
 
-       retry_token?:Token, // only if header.packet_type === retry
+       ; only if header.packet_type === "retry"
+       ? retry_token: Token
 
-       stateless_reset_token?:bytes, // only if header.packet_type
-                                     // === stateless_reset.
-                                     // Is always 128 bits in length.
+       ; only if header.packet_type === "stateless_reset"
+       ; Is always 128 bits in length.
+       ? stateless_reset_token: hexstring .size 16
 
-       supported_versions:Array<bytes>, // only if header.packet_type
-                                        // === version_negotiation
+       ; only if header.packet_type === "version_negotiation"
+       ? supported_versions: [+ QuicVersion]
 
-       raw?:RawInfo,
-       datagram_id?:uint32
+       ? raw: RawInfo
+       ? datagram_id: uint32
+
+       ? trigger:
+           ; if packet was buffered because
+           ; it couldn't be decrypted before
+           "keys_available"
    }
+
+               Figure 14: TransportPacketReceived definition
 
    Note: We do not explicitly log the encryption_level or
    packet_number_space: the header.packet_type specifies this by
    inference (assuming correct implementation)
-
-   Triggers:
-
-   *  "keys_available" // if packet was buffered because it couldn't be
-      decrypted before
 
    Note: for more details on "datagram_id", see Section 3.3.10.  It is
    only needed when keeping track of packet coalescing.
@@ -838,45 +906,32 @@ Table of Contents
    This event indicates a QUIC-level packet was dropped after partial or
    no parsing.
 
-   Data:
+   Definition:
 
-   {
-       header?:PacketHeader, // primarily packet_type should be
-                             // filled here, as other fields might
-                             // not be parseable
+   TransportPacketDropped = {
+       ; primarily packet_type should be filled here,
+       ; as other fields might not be parseable
+       ? header: PacketHeader
 
-       raw?:RawInfo,
-       datagram_id?:uint32
+       ? raw: RawInfo
+       ? datagram_id: uint32
+
+       ? trigger:
+           "key_unavailable" /
+           "unknown_connection_id" /
+           "header_parse_error" /
+           "payload_decrypt_error" /
+           "protocol_violation" /
+           "dos_prevention" /
+           "unsupported_version" /
+           "unexpected_packet" /
+           "unexpected_source_connection_id" /
+           "unexpected_version" /
+           "duplicate" /
+           "invalid_initial"
    }
 
-   For this event, the "trigger" field SHOULD be set (for example to one
-   of the values below), as this helps tremendously in debugging.
-
-   Triggers:
-
-   *  "key_unavailable"
-
-   *  "unknown_connection_id"
-
-   *  "header_parse_error"
-
-   *  "payload_decrypt_error"
-
-   *  "protocol_violation"
-
-   *  "dos_prevention"
-
-   *  "unsupported_version"
-
-   *  "unexpected_packet"
-
-   *  "unexpected_source_connection_id"
-
-   *  "unexpected_version"
-
-   *  "duplicate"
-
-   *  "invalid_initial"
+                Figure 15: TransportPacketDropped definition
 
    Note: sometimes packets are dropped before they can be associated
    with a particular connection (e.g., in case of
@@ -895,28 +950,29 @@ Table of Contents
    parsed yet, and thus we only log the full packet contents when it was
    parsed in a packet_received event.
 
-   Data:
+   Definition:
 
-   {
-       header?:PacketHeader, // primarily packet_type and possible
-                             // packet_number should be filled here,
-                             // as other elements might not be
-                             // available yet
+   TransportPacketBuffered = {
+       ; primarily packet_type and possible packet_number should be
+       ; filled here as other elements might not be available yet
+       ? header: PacketHeader
 
-       raw?:RawInfo,
-       datagram_id?:uint32
+       ? raw: RawInfo
+       ? datagram_id: uint32
+
+       ? trigger:
+           ; indicates the parser cannot keep up, temporarily buffers
+           ; packet for later processing
+           "backpressure" /
+           ; if packet cannot be decrypted because the proper keys were
+           ; not yet available
+           "keys_unavailable"
    }
+
+               Figure 16: TransportPacketBuffered definition
 
    Note: for more details on "datagram_id", see Section 3.3.10.  It is
    only needed when keeping track of packet coalescing.
-
-   Triggers:
-
-   *  "backpressure" // indicates the parser cannot keep up, temporarily
-      buffers packet for later processing
-
-   *  "keys_unavailable" // if packet cannot be decrypted because the
-      proper keys were not yet available
 
 3.3.9.  packets_acked
 
@@ -931,9 +987,15 @@ Table of Contents
    this event can be used by implementations that do not log frame
    contents.
 
-   Data: ~~~ { packet_number_space?:PacketNumberSpace,
+   Definition:
 
-   packet_numbers?:Array<uint64> } ~~~
+   TransportPacketsAcked = {
+       ? packet_number_space: PacketNumberSpace
+
+       ? packet_numbers: [+ uint64]
+   }
+
+                Figure 17: TransportPacketsAcked definition
 
    Note: if packet_number_space is omitted, it assumes the default value
    of PacketNumberSpace.application_data, as this is by far the most
@@ -946,16 +1008,20 @@ Table of Contents
    When we pass one or more UDP-level datagrams to the socket.  This is
    useful for determining how QUIC packet buffers are drained to the OS.
 
-   Data:
+   Definition:
 
-   {
-       count?:uint16, // to support passing multiple at once
-       raw?:Array<RawInfo>, // RawInfo:length field indicates
-                            // total length of the datagrams,
-                            // including UDP header length
+   TransportDatagramsSent = {
+       ; to support passing multiple at once
+       ? count: uint16
 
-       datagram_ids?:Array<uint32>
+       ; RawInfo:length field indicates total length of the datagrams
+       ; including UDP header length
+       ? raw: [+ RawInfo]
+
+       ? datagram_ids: [+ uint32]
    }
+
+                Figure 18: TransportDatagramsSent definition
 
    Note: QUIC itself does not have a concept of a "datagram_id".  This
    field is a purely qlog-specific construct to allow tracking how
@@ -975,16 +1041,20 @@ Table of Contents
    This is useful for determining how datagrams are passed to the user
    space stack from the OS.
 
-   Data:
+   Definition:
 
-   {
-       count?:uint16, // to support passing multiple at once
-       raw?:Array<RawInfo>, // RawInfo:length field indicates
-                            // total length of the datagrams,
-                            // including UDP header length
+   TransportDatagramsReceived = {
+       ; to support passing multiple at once
+       ? count: uint16
 
-       datagram_ids?:Array<uint32>
+       ; RawInfo:length field indicates total length of the datagrams
+       ; including UDP header length
+       ? raw: [+ RawInfo]
+
+       ? datagram_ids: [+ uint32]
    }
+
+              Figure 19: TransportDatagramsReceived definition
 
    Note: for more details on "datagram_ids", see Section 3.3.10.
 
@@ -996,11 +1066,13 @@ Table of Contents
    contain a valid QUIC packet (in that case, use packet_dropped
    instead).
 
-   Data:
+   Definition:
 
-   {
-       raw?:RawInfo
+   TransportDatagramDropped = {
+       ? raw: RawInfo
    }
+
+               Figure 20: TransportDatagramDropped definition
 
 3.3.13.  stream_state_updated
 
@@ -1012,47 +1084,51 @@ Table of Contents
    wire, but it's much easier to have explicit signals for these state
    changes.
 
-   Data:
+   Definition:
 
-   {
-       stream_id:uint64,
-       stream_type?:"unidirectional"|
-                    "bidirectional", // mainly useful when
-                                     // opening the stream
+   StreamType = "unidirectional" / "bidirectional"
 
-       old?:StreamState,
-       new:StreamState,
+   TransportStreamStateUpdated = {
+       stream_id: uint64
 
-       stream_side?:"sending"|"receiving"
+       ; mainly useful when opening the stream
+       ? stream_type: StreamType
+
+       ? old: StreamState
+       new: StreamState
+
+       ? stream_side: "sending" / "receiving"
    }
 
-   enum StreamState {
-       // bidirectional stream states, draft-23 3.4.
-       idle,
-       open,
-       half_closed_local,
-       half_closed_remote,
-       closed,
+   StreamState =
+       ; bidirectional stream states, draft-23 3.4.
+       "idle" /
+       "open" /
+       "half_closed_local" /
+       "half_closed_remote" /
+       "closed" /
 
-       // sending-side stream states, draft-23 3.1.
-       ready,
-       send,
-       data_sent,
-       reset_sent,
-       reset_received,
+       ; sending-side stream states, draft-23 3.1.
+       "ready" /
+       "send" /
+       "data_sent" /
+       "reset_sent" /
+       "reset_received" /
 
-       // receive-side stream states, draft-23 3.2.
-       receive,
-       size_known,
-       data_read,
-       reset_read,
+       ; receive-side stream states, draft-23 3.2.
+       "receive" /
+       "size_known" /
+       "data_read" /
+       "reset_read" /
 
-       // both-side states
-       data_received,
+       ; both-side states
+       "data_received" /
 
-       // qlog-defined
-       destroyed // memory actually freed
-   }
+       ; qlog-defined:
+       ; memory actually freed
+       "destroyed"
+
+             Figure 21: TransportStreamStateUpdated definition
 
    Note: QUIC implementations SHOULD mainly log the simplified
    bidirectional (HTTP/2-alike) stream states (e.g., idle, open, closed)
@@ -1097,13 +1173,16 @@ Table of Contents
    field, which can be used to more explicitly link this event to the
    packet_sent/received events.
 
-   Data:
+   Definition:
 
-   {
-       frames:Array<QuicFrame>, // see appendix for the definitions
+   TransportFramesProcessed = {
+       ; see appendix for the QuicFrame definitions
+       frames: [* QuicFrame]
 
-       packet_number?:uint64
+       ? packet_number: uint64
    }
+
+               Figure 22: TransportFramesProcessed definition
 
 3.3.15.  data_moved
 
@@ -1124,20 +1203,23 @@ Table of Contents
    reads from the streams with newly available data).  This in turn can
    help identify bottlenecks or scheduling problems.
 
-   Data:
+   Definition:
 
-   {
-       stream_id?:uint64,
-       offset?:uint64,
-       length?:uint64, // byte length of the moved data
+   TransportDataMoved = {
+       ? stream_id: uint64
+       ? offset: uint64
 
-       from?:string, // typically: use either of "user",
-                     // "application","transport","network"
-       to?:string,   // typically: use either of "user",
-                     //"application","transport","network"
+       ; byte length of the moved data
+       ? length: uint64
 
-       data?:bytes // raw bytes that were transferred
+       ? from: "user" / "application" / "transport" / "network" / text
+       ? to: "user" / "application" / "transport" / "network" / text
+
+       ; raw bytes that were transferred
+       ? data: hexstring
    }
+
+                  Figure 23: TransportDataMoved definition
 
    Note: we do not for example use a "direction" field (with values "up"
    and "down") to specify the data flow.  This is because in some
@@ -1172,28 +1254,39 @@ Table of Contents
    some reason, change these parameters during execution, MAY emit the
    parameters_set event twice.
 
-   Data:
+   Definition:
 
-   {
-       // Loss detection, see recovery draft-23, Appendix A.2
-       reordering_threshold?:uint16, // in amount of packets
-       time_threshold?:float, // as RTT multiplier
-       timer_granularity?:uint16, // in ms
-       initial_rtt?:float, // in ms
+   RecoveryParametersSet = {
+       ; Loss detection, see recovery draft-23, Appendix A.2
+       ; in amount of packets
+       ? reordering_threshold: uint16
 
-       // congestion control, Appendix B.1.
-       max_datagram_size?:uint32, // in bytes
-                                  // Note: this could be
-                                  // updated after pmtud
-       initial_congestion_window?:uint64, // in bytes
-       minimum_congestion_window?:uint32, // in bytes
-                                          // Note: this could change
-                                          // when
-                                          // max_datagram_size
-                                          // changes
-       loss_reduction_factor?:float,
-       persistent_congestion_threshold?:uint16 // as PTO multiplier
+       ; as RTT multiplier
+       ? time_threshold: float32
+
+       ; in ms
+       timer_granularity: uint16
+
+       ; in ms
+       ? initial_rtt:float32
+
+       ; congestion control, Appendix B.1.
+       ; in bytes. Note: this could be updated after pmtud
+       ? max_datagram_size: uint32
+
+       ; in bytes
+       ? initial_congestion_window: uint64
+
+       ; Note: this could change when max_datagram_size changes
+       ; in bytes
+       ? minimum_congestion_window: uint32
+       ? loss_reduction_factor: float32
+
+       ; as PTO multiplier
+       ? persistent_congestion_threshold: uint16
    }
+
+                Figure 24: RecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
@@ -1210,37 +1303,40 @@ Table of Contents
    split out into two).  Consequently, a metrics_updated event is only
    guaranteed to contain at least one of the listed metrics.
 
-   Data:
+   Definition:
 
-   {
-       // Loss detection, see recovery draft-23, Appendix A.3
-       min_rtt?:float, // in ms or us, depending on the
-                       // overarching qlog's configuration
-       smoothed_rtt?:float, // in ms or us, depending on the
-                            // overarching qlog's configuration
-       latest_rtt?:float, // in ms or us, depending on the
-                          // overarching qlog's configuration
-       rtt_variance?:float, // in ms or us, depending on the
-                            // overarching qlog's configuration
+   RecoveryMetricsUpdated = {
+       ; Loss detection, see recovery draft-23, Appendix A.3
+       ; all following rtt fields are expressed in ms
+       ? min_rtt: float32
+       ? smoothed_rtt: float32
+       ? latest_rtt: float32
+       ? rtt_variance: float32
 
-       pto_count?:uint16,
+       ? pto_count: uint16
 
-       // Congestion control, Appendix B.2.
-       congestion_window?:uint64, // in bytes
-       bytes_in_flight?:uint64,
+       ; Congestion control, Appendix B.2.
+       ; in bytes
+       ? congestion_window: uint64
+       ? bytes_in_flight: uint64
 
-       ssthresh?:uint64, // in bytes
+       ; in bytes
+       ? ssthresh: uint64
 
-       // qlog defined
-       packets_in_flight?:uint64, // sum of all packet number spaces
+       ; qlog defined
+       ; sum of all packet number spaces
+       ? packets_in_flight: uint64
 
-       pacing_rate?:uint64 // in bps
+       ; in bits per second
+       ? pacing_rate: uint64
    }
+
+                Figure 25: RecoveryMetricsUpdated definition
 
    Note: to make logging easier, implementations MAY log values even if
    they are the same as previously reported values (e.g., two subsequent
-   METRIC_UPDATE entries can both report the exact same value for
-   min_rtt).  However, applications SHOULD try to log only actual
+   RecoveryMetricsUpdated entries can both report the exact same value
+   for min_rtt).  However, applications SHOULD try to log only actual
    updates to values.
 
    Additionally, this event can contain any number of unspecified fields
@@ -1264,23 +1360,23 @@ Table of Contents
 
    *  recovery
 
-   Data:
+   Definition:
 
-   {
-       old?:string,
-       new:string
+   RecoveryCongestionStateUpdated = {
+       ? old: text
+       new: text
+
+       ? trigger:
+           "persistent_congestion" /
+           "ECN"
    }
+
+            Figure 26: RecoveryCongestionStateUpdated definition
 
    The "trigger" field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
    can only be due to a single event occuring (e.g., slow start is
    exited only when ssthresh is exceeded).
-
-   Some triggers for ("enhanced" New Reno):
-
-   *  persistent_congestion
-
-   *  ECN
 
 3.4.4.  loss_timer_updated
 
@@ -1301,19 +1397,21 @@ Table of Contents
    Note: to indicate an active timer's timeout update, a new "set" event
    is used.
 
-   Data:
+   Definition:
 
-   {
-       timer_type?:"ack"|"pto", // called "mode" in draft-23 A.9.
-       packet_number_space?: PacketNumberSpace,
+   RecoveryLossTimerUpdated = {
+       ; called "mode" in draft-23 A.9.
+       ? timer_type: "ack" / "pto"
+       ? packet_number_space: PacketNumberSpace
 
-       event_type:"set"|"expired"|"cancelled",
+       event_type: "set" / "expired" / "cancelled"
 
-       delta?:float // if event_type === "set": delta time
-                    // in ms or us (see configuration) from
-                    // this event's timestamp until when the
-                    // timer will trigger
+       ; if event_type === "set": delta time is in ms from
+       ; this event's timestamp until when the timer will trigger
+       ? delta: float32
    }
+
+               Figure 27: RecoveryLossTimerUpdated definition
 
    TODO: how about CC algo's that use multiple timers?  How generic do
    these events need to be?  Just support QUIC-style recovery from the
@@ -1328,27 +1426,28 @@ Table of Contents
 
    This event is emitted when a packet is deemed lost by loss detection.
 
-   Data:
+   Definition:
 
-   {
-       header?:PacketHeader, // should include at least the
-                             // packet_type and packet_number
+   RecoveryPacketLost = {
+       ; should include at least the packet_type and packet_number
+       ? header: PacketHeader
 
-       // not all implementations will keep track of full
-       // packets, so these are optional
-       frames?:Array<QuicFrame> // see appendix for the definitions
+       ; not all implementations will keep track of full
+       ; packets, so these are optional
+       ; see appendix for the QuicFrame definitions
+       ? frames: [* QuicFrame]
+
+       ? trigger:
+           "reordering_threshold" /
+           "time_threshold" /
+           ; draft-23 section 5.3.1, MAY
+           "pto_expired"
    }
+
+                  Figure 28: RecoveryPacketLost definition
 
    For this event, the "trigger" field SHOULD be set (for example to one
    of the values below), as this helps tremendously in debugging.
-
-   Triggers:
-
-   *  "reordering_threshold",
-
-   *  "time_threshold"
-
-   *  "pto_expired" // draft-23 section 5.3.1, MAY
 
 3.4.6.  marked_for_retransmit
 
@@ -1375,11 +1474,14 @@ Table of Contents
    packet_sent events (e.g., looking at overlapping stream data offsets
    and length, one can determine when data was retransmitted).
 
-   Data:
+   Definition:
 
-   {
-       frames:Array<QuicFrame>, // see appendix for the definitions
+   RecoveryMarkedForRetransmit = {
+       ; see appendix for the QuicFrame definitions
+       frames: [+ QuicFrame]
    }
+
+             Figure 29: RecoveryMarkedForRetransmit definition
 
 4.  Security Considerations
 
@@ -1392,6 +1494,12 @@ Table of Contents
 6.  References
 
 6.1.  Normative References
+
+   [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
+              Definition Language (CDDL): A Notational Convention to
+              Express Concise Binary Object Representation (CBOR) and
+              JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
+              June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
 
    [QLOG-H3]  Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
               "HTTP/3 and QPACK event definitions for qlog", Work in
@@ -1430,78 +1538,127 @@ Table of Contents
 
 Appendix A.  QUIC data field definitions
 
-A.1.  IPAddress
+A.1.  ProtocolEventBody extension
 
-   class IPAddress : string | bytes;
+   We extend the $ProtocolEventBody extension point defined in
+   [QLOG-MAIN] with the QUIC protocol events defined in this document.
 
-   // an IPAddress can either be a "human readable" form
-   // (e.g., "127.0.0.1" for v4 or
-   // "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
-   // use a raw byte-form (as the string forms can be ambiguous)
+   QuicEvents = ConnectivityServerListening /
+                ConnectivityConnectionStarted /
+                ConnectivityConnectionClosed /
+                ConnectivityConnectionIDUpdated /
+                ConnectivitySpinBitUpdated /
+                ConnectivityConnectionStateUpdated /
+                SecurityKeyUpdated / SecurityKeyRetired /
+                TransportVersionInformation / TransportALPNInformation /
+                TransportParametersSet / TransportParametersRestored /
+                TransportPacketSent / TransportPacketReceived /
+                TransportPacketDropped / TransportPacketBuffered /
+                TransportPacketsAcked / TransportDatagramsSent /
+                TransportDatagramsReceived / TransportDatagramDropped /
+                TransportStreamStateUpdated / TransportFramesProcessed /
+                TransportDataMoved /
+                RecoveryParametersSet / RecoveryMetricsUpdated /
+                RecoveryCongestionStateUpdated /
+                RecoveryLossTimerUpdated /
+                RecoveryPacketLost
 
-A.2.  PacketType
+   $ProtocolEventBody /= QuicEvents
 
-   enum PacketType {
-       initial,
-       handshake,
-       0RTT,
-       1RTT,
-       retry,
-       version_negotiation,
-       stateless_reset,
-       unknown
+A.2.  QuicVersion
+
+   QuicVersion = hexstring
+
+                     Figure 30: QuicVersion definition
+
+A.3.  ConnectionID
+
+   ConnectionID = hexstring
+
+                     Figure 31: ConnectionID definition
+
+A.4.  Owner
+
+   Owner = "local" / "remote"
+
+                        Figure 32: Owner definition
+
+A.5.  IPAddress and IPVersion
+
+   ; an IPAddress can either be a "human readable" form
+   ; (e.g., "127.0.0.1" for v4 or
+   ; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
+   ; use a raw byte-form (as the string forms can be ambiguous)
+   IPAddress = text / hexstring
+
+                      Figure 33: IPAddress definition
+
+   IPVersion = "v4" / "v6"
+
+                      Figure 34: IPVersion definition
+
+A.6.  PacketType
+
+   PacketType = "initial" / "handshake" / "0RTT" / "1RTT" / "retry" /
+       "version_negotiation" / "stateless_reset" / "unknown"
+
+                      Figure 35: PacketType definition
+
+A.7.  PacketNumberSpace
+
+   PacketNumberSpace = "initial" / "handshake" / "application_data"
+
+                  Figure 36: PacketNumberSpace definition
+
+A.8.  PacketHeader
+
+   PacketHeader = {
+       packet_type: PacketType
+       packet_number: uint64
+
+       ; the bit flags of the packet headers (spin bit, key update bit,
+       ; etc. up to and including the packet number length bits
+       ; if present
+       ? flags: uint8
+
+       ; only if packet_type === "initial"
+       ? token: Token
+
+       ; only if packet_type === "initial" || "handshake" || "0RTT"
+       ; Signifies length of the packet_number plus the payload
+       ? length: uint16
+
+       ; only if present in the header
+       ; if correctly using transport:connection_id_updated events,
+       ; dcid can be skipped for 1RTT packets
+       ? version: QuicVersion
+       ? scil: uint8
+       ? dcil: uint8
+       ? scid: ConnectionID
+       ? dcid: ConnectionID
    }
 
-A.3.  PacketNumberSpace
+                     Figure 37: PacketHeader definition
 
-   enum PacketNumberSpace {
-       initial,
-       handshake,
-       application_data
+A.9.  Token
+
+   Token = {
+       ? type: "retry" / "resumption" / "stateless_reset"
+
+       ; byte length of the token
+       ? length: uint32
+
+       ; raw byte value of the token
+       ? data: hexstring
+
+       ; decoded fields included in the token
+       ; (typically: peer's IP address, creation time)
+       ? details: {
+         * text => any
+       }
    }
 
-A.4.  PacketHeader
-
-   class PacketHeader {
-       // Note: short vs long header is implicit through PacketType
-
-       packet_type: PacketType;
-       packet_number: uint64;
-
-       flags?: uint8; // the bit flags of the packet headers
-                      // (spin bit, key update bit, etc. up to and
-                      // including the packet number length bits
-                      // if present) interpreted as a single
-                      // 8-bit integer
-
-       token?:Token; // only if packet_type == initial
-
-       length?: uint16, // only if packet_type == initial ||
-                        // handshake || 0RTT.
-                        // Signifies length of the packet_number
-                        // plus the payload.
-
-       // only if present in the header
-       // if correctly using transport:connection_id_updated events,
-       // dcid can be skipped for 1RTT packets
-       version?: bytes; // e.g., "ff00001d" for draft-29
-       scil?: uint8;
-       dcil?: uint8;
-       scid?: bytes;
-       dcid?: bytes;
-   }
-
-A.5.  Token
-
-   class Token {
-       type?:"retry"|"resumption"|"stateless_reset";
-
-       length?:uint32; // byte length of the token
-       data?:bytes; // raw byte value of the token
-
-       details?:any; // decoded fields included in the token
-                     // (typically: peer's IP address, creation time)
-   }
+                        Figure 38: Token definition
 
    The token carried in an Initial packet can either be a retry token
    from a Retry packet, a stateless reset token from a Stateless Reset
@@ -1512,36 +1669,30 @@ A.5.  Token
    metadata and its format is implementation specific.  For that, this
    field includes a general-purpose "details" field.
 
-A.6.  KeyType
+A.10.  KeyType
 
-   enum KeyType {
-       server_initial_secret,
-       client_initial_secret,
+   KeyType =
+       "server_initial_secret" / "client_initial_secret" /
+       "server_handshake_secret" / "client_handshake_secret" /
+       "server_0rtt_secret" / "client_0rtt_secret" /
+       "server_1rtt_secret" / "client_1rtt_secret"
 
-       server_handshake_secret,
-       client_handshake_secret,
+                       Figure 39: KeyType definition
 
-       server_0rtt_secret,
-       client_0rtt_secret,
+A.11.  QUIC Frames
 
-       server_1rtt_secret,
-       client_1rtt_secret
-   }
+   QuicFrame =
+     PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
+     StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
+     MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
+     DataBlockedFrame / StreamDataBlockedFrame / StreamsBlockedFrame /
+     NewConnectionIDFrame / RetireConnectionIDFrame /
+     PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
+     HandshakeDoneFrame / UnknownFrame
 
-A.7.  QUIC Frames
+                      Figure 40: QuicFrame definition
 
-   type QuicFrame = PaddingFrame | PingFrame | AckFrame |
-                    ResetStreamFrame | StopSendingFrame |
-                    CryptoFrame | NewTokenFrame |
-                    StreamFrame | MaxDataFrame |
-                    MaxStreamDataFrame | MaxStreamsFrame |
-                    DataBlockedFrame | StreamDataBlockedFrame |
-                    StreamsBlockedFrame | NewConnectionIDFrame |
-                    RetireConnectionIDFrame | PathChallengeFrame |
-                    PathResponseFrame | ConnectionCloseFrame |
-                    HandshakeDoneFrame | UnknownFrame;
-
-A.7.1.  PaddingFrame
+A.11.1.  PaddingFrame
 
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
@@ -1552,44 +1703,58 @@ A.7.1.  PaddingFrame
    payload_length property to the amount of PADDING bytes/frames
    included in the packet.
 
-   class PaddingFrame{
-       frame_type:string = "padding";
+   PaddingFrame = {
+       frame_type: "padding"
 
-       length?:uint32; // total frame length, including frame header
-       payload_length?:uint32;
+       ; total frame length, including frame header
+       ? length: uint32
+       payload_length: uint32
    }
 
-A.7.2.  PingFrame
+                     Figure 41: PaddingFrame definition
 
-   class PingFrame{
-       frame_type:string = "ping";
+A.11.2.  PingFrame
 
-       length?:uint32; // total frame length, including frame header
-       payload_length?:uint32;
+   PingFrame = {
+       frame_type: "ping"
+
+       ; total frame length, including frame header
+       ? length: uint32
+       ? payload_length: uint32
    }
 
-A.7.3.  AckFrame
+                      Figure 42: PingFrame definition
 
-   class AckFrame{
-       frame_type:string = "ack";
+A.11.3.  AckFrame
 
-       ack_delay?:float; // in ms
+   ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
+   ; For two numbers:
+   ; the first number is "from": lowest packet number in interval
+   ; the second number is "to": up to and including the highest
+   ; packet number in the interval
+   AckRange = [1*2 uint64]
 
-       // first number is "from": lowest packet number in interval
-       // second number is "to": up to and including
-       // highest packet number in interval
-       // e.g., looks like [[1,2],[4,5]]
-       acked_ranges?:Array<[uint64, uint64]|[uint64]>;
+   AckFrame = {
+       frame_type: "ack"
 
-       // ECN (explicit congestion notification) related fields
-       // (not always present)
-       ect1?:uint64;
-       ect0?:uint64;
-       ce?:uint64;
+       ; in ms
+       ? ack_delay: float32
 
-       length?:uint32; // total frame length, including frame header
-       payload_length?:uint32;
+       ; e.g., looks like [[1,2],[4,5], [7], [10,22]] serialized
+       ? acked_ranges: [+ AckRange]
+
+       ; ECN (explicit congestion notification) related fields
+       ; (not always present)
+       ? ect1: uint64
+       ? ect0:uint64
+       ? ce: uint64
+
+       ; total frame length, including frame header
+       ? length: uint32
+       ? payload_length: uint32
    }
+
+                       Figure 43: AckFrame definition
 
    Note: the packet ranges in AckFrame.acked_ranges do not necessarily
    have to be ordered (e.g., [[5,9],[1,4]] is a valid value).
@@ -1599,220 +1764,268 @@ A.7.3.  AckFrame
    that case, implementers SHOULD log [120] instead and tools MUST be
    able to deal with both notations.
 
-A.7.4.  ResetStreamFrame
+A.11.4.  ResetStreamFrame
 
-   class ResetStreamFrame{
-       frame_type:string = "reset_stream";
+   ResetStreamFrame = {
+       frame_type: "reset_stream"
 
-       stream_id:uint64;
-       error_code:ApplicationError | uint32;
-       final_size:uint64; // in bytes
+       stream_id: uint64
+       error_code: $ApplicationError / uint32
 
-       length?:uint32; // total frame length, including frame header
-       payload_length?:uint32;
+       ; in bytes
+       final_size: uint64
+
+       ; total frame length, including frame header
+       ? length: uint32
+       ? payload_length: uint32
    }
 
-A.7.5.  StopSendingFrame
+                   Figure 44: ResetStreamFrame definition
 
-   class StopSendingFrame{
-       frame_type:string = "stop_sending";
+A.11.5.  StopSendingFrame
 
-       stream_id:uint64;
-       error_code:ApplicationError | uint32;
+   StopSendingFrame = {
+       frame_type: "stop_sending"
 
-       length?:uint32; // total frame length, including frame header
-       payload_length?:uint32;
+       stream_id: uint64
+       error_code: $ApplicationError / uint32
+
+       ; total frame length, including frame header
+       ? length: uint32
+       ? payload_length: uint32
    }
 
-A.7.6.  CryptoFrame
+                   Figure 45: StopSendingFrame definition
 
-   class CryptoFrame{
-       frame_type:string = "crypto";
+A.11.6.  CryptoFrame
 
-       offset:uint64;
-       length:uint64;
+   CryptoFrame = {
+       frame_type: "crypto"
 
-       payload_length?:uint32;
+       offset: uint64
+       length: uint64
+
+       ? payload_length: uint32
    }
 
-A.7.7.  NewTokenFrame
+                     Figure 46: CryptoFrame definition
 
-   class NewTokenFrame{
-     frame_type:string = "new_token";
+A.11.7.  NewTokenFrame
 
-     token:Token
+   NewTokenFrame = {
+     frame_type: "new_token"
+
+     token: Token
    }
 
-A.7.8.  StreamFrame
+                    Figure 47: NewTokenFrame definition
 
-   class StreamFrame{
-       frame_type:string = "stream";
+A.11.8.  StreamFrame
 
-       stream_id:uint64;
+   StreamFrame = {
+       frame_type: "stream"
 
-       // These two MUST always be set
-       // If not present in the Frame type, log their default values
-       offset:uint64;
-       length:uint64;
+       stream_id: uint64
 
-       // this MAY be set any time, but MUST only be set if the value
-       // is "true"
-       // if absent, the value MUST be assumed to be "false"
-       fin?:boolean;
+       ; These two MUST always be set
+       ; If not present in the Frame type, log their default values
+       offset: uint64
+       length: uint64
 
-       raw?:bytes;
+       ; this MAY be set any time,
+       ; but MUST only be set if the value is true
+       ; if absent, the value MUST be assumed to be false
+       ? fin: bool .default false
+
+       ? raw: hexstring
    }
 
-A.7.9.  MaxDataFrame
+                     Figure 48: StreamFrame definition
 
-   class MaxDataFrame{
-     frame_type:string = "max_data";
+A.11.9.  MaxDataFrame
 
-     maximum:uint64;
+   MaxDataFrame = {
+     frame_type: "max_data"
+
+     maximum: uint64
    }
 
-A.7.10.  MaxStreamDataFrame
+                     Figure 49: MaxDataFrame definition
 
-   class MaxStreamDataFrame{
-     frame_type:string = "max_stream_data";
+A.11.10.  MaxStreamDataFrame
 
-     stream_id:uint64;
-     maximum:uint64;
+   MaxStreamDataFrame = {
+     frame_type: "max_stream_data"
+
+     stream_id: uint64
+     maximum: uint64
    }
 
-A.7.11.  MaxStreamsFrame
+                  Figure 50: MaxStreamDataFrame definition
 
-   class MaxStreamsFrame{
-     frame_type:string = "max_streams";
+A.11.11.  MaxStreamsFrame
 
-     stream_type:string = "bidirectional" | "unidirectional";
-     maximum:uint64;
+   MaxStreamsFrame = {
+     frame_type: "max_streams"
+
+     stream_type: StreamType
+     maximum: uint64
    }
 
-A.7.12.  DataBlockedFrame
+                   Figure 51: MaxStreamsFrame definition
 
-   class DataBlockedFrame{
-     frame_type:string = "data_blocked";
+A.11.12.  DataBlockedFrame
 
-     limit:uint64;
+   DataBlockedFrame = {
+     frame_type: "data_blocked"
+
+     limit: uint64
    }
 
-A.7.13.  StreamDataBlockedFrame
+                   Figure 52: DataBlockedFrame definition
 
-   class StreamDataBlockedFrame{
-     frame_type:string = "stream_data_blocked";
+A.11.13.  StreamDataBlockedFrame
 
-     stream_id:uint64;
-     limit:uint64;
+   StreamDataBlockedFrame = {
+     frame_type: "stream_data_blocked"
+
+     stream_id: uint64
+     limit: uint64
    }
 
-A.7.14.  StreamsBlockedFrame
+                Figure 53: StreamDataBlockedFrame definition
 
-   class StreamsBlockedFrame{
-     frame_type:string = "streams_blocked";
+A.11.14.  StreamsBlockedFrame
 
-     stream_type:string = "bidirectional" | "unidirectional";
-     limit:uint64;
+   StreamsBlockedFrame = {
+     frame_type: "streams_blocked"
+
+     stream_type: StreamType
+     limit: uint64
    }
 
-A.7.15.  NewConnectionIDFrame
+                 Figure 54: StreamsBlockedFrame definition
 
-   class NewConnectionIDFrame{
-     frame_type:string = "new_connection_id";
+A.11.15.  NewConnectionIDFrame
 
-     sequence_number:uint32;
-     retire_prior_to:uint32;
+   NewConnectionIDFrame = {
+     frame_type: "new_connection_id"
 
-     connection_id_length?:uint8;
-     connection_id:bytes;
+     sequence_number: uint32
+     retire_prior_to: uint32
 
-     stateless_reset_token?:Token;
+     ; mainly used if e.g., for privacy reasons the full
+     ; connection_id cannot be logged
+     ? connection_id_length: uint8
+     connection_id: ConnectionID
+
+     ? stateless_reset_token: Token
    }
 
-A.7.16.  RetireConnectionIDFrame
+                 Figure 55: NewConnectionIDFrame definition
 
-   class RetireConnectionIDFrame{
-     frame_type:string = "retire_connection_id";
+A.11.16.  RetireConnectionIDFrame
 
-     sequence_number:uint32;
+   RetireConnectionIDFrame = {
+     frame_type: "retire_connection_id"
+
+     sequence_number: uint32
    }
 
-A.7.17.  PathChallengeFrame
+               Figure 56: RetireConnectionIDFrame definition
 
-   class PathChallengeFrame{
-     frame_type:string = "path_challenge";
+A.11.17.  PathChallengeFrame
 
-     data?:bytes; // always 64-bit
+   PathChallengeFrame = {
+     frame_type: "path_challenge"
+
+     ; always 64-bit
+     ? data: hexstring
    }
 
-A.7.18.  PathResponseFrame
+                  Figure 57: PathChallengeFrame definition
 
-   class PathResponseFrame{
-     frame_type:string = "path_response";
+A.11.18.  PathResponseFrame
 
-     data?:bytes; // always 64-bit
+   PathResponseFrame = {
+     frame_type: "path_response"
+
+     ; always 64-bit
+     ? data: hexstring
    }
 
-A.7.19.  ConnectionCloseFrame
+                  Figure 58: PathResponseFrame definition
+
+A.11.19.  ConnectionCloseFrame
 
    raw_error_code is the actual, numerical code.  This is useful because
    some error types are spread out over a range of codes (e.g., QUIC's
    crypto_error).
 
-   type ErrorSpace = "transport" | "application";
+   ErrorSpace = "transport" / "application"
 
-   class ConnectionCloseFrame{
-       frame_type:string = "connection_close";
+   ConnectionCloseFrame = {
+       frame_type: "connection_close"
 
-       error_space?:ErrorSpace;
-       error_code?:TransportError | ApplicationError | uint32;
-       raw_error_code?:uint32;
-       reason?:string;
+       ? error_space: ErrorSpace
+       ? error_code: TransportError / $ApplicationError / uint32
+       ? raw_error_code: uint32
+       ? reason: text
 
-       trigger_frame_type?:uint64 | string; // For known frame types,
-                                            // the appropriate
-                                            // "frame_type" string.
-                                            // For unknown frame types,
-                                            // the hex encoded
-                                            // identifier value
+       ; For known frame types, the appropriate "frame_type" string
+       ; For unknown frame types, the hex encoded identifier value
+       ? trigger_frame_type: uint64 / text
    }
 
-A.7.20.  HandshakeDoneFrame
+                 Figure 59: ConnectionCloseFrame definition
 
-   class HandshakeDoneFrame{
-     frame_type:string = "handshake_done";
+A.11.20.  HandshakeDoneFrame
+
+   HandshakeDoneFrame = {
+     frame_type: "handshake_done";
    }
 
-A.7.21.  UnknownFrame
+                  Figure 60: HandshakeDoneFrame definition
 
-   class UnknownFrame{
-       frame_type:string = "unknown";
-       raw_frame_type:uint64;
+A.11.21.  UnknownFrame
 
-       raw_length?:uint32;
-       raw?:bytes;
+   UnknownFrame = {
+       frame_type: "unknown"
+       raw_frame_type: uint64
+
+       ? raw_length: uint32
+       ? raw: hexstring
    }
 
-A.7.22.  TransportError
+                     Figure 61: UnknownFrame definition
 
-   enum TransportError {
-       no_error,
-       internal_error,
-       connection_refused,
-       flow_control_error,
-       stream_limit_error,
-       stream_state_error,
-       final_size_error,
-       frame_encoding_error,
-       transport_parameter_error,
-       connection_id_limit_error,
-       protocol_violation,
-       invalid_token,
-       application_error,
-       crypto_buffer_exceeded
-   }
+A.11.22.  TransportError
 
-A.7.23.  CryptoError
+   TransportError = "no_error" / "internal_error" /
+       "connection_refused" / "flow_control_error" /
+       "stream_limit_error" / "stream_state_error" /
+       "final_size_error" / "frame_encoding_error" /
+       "transport_parameter_error" / "connection_id_limit_error" /
+       "protocol_violation" / "invalid_token" / "application_error" /
+       "crypto_buffer_exceeded"
+
+                    Figure 62: TransportError definition
+
+A.11.23.  ApplicationError
+
+   By definition, an application error is defined by the application-
+   level protocol running on top of QUIC (e.g., HTTP/3).
+
+   As such, we cannot define it here directly.  Though we provide an
+   extension point through the use of the CDDL "socket" mechanism.
+
+   Application-level qlog definitions that wish to define new
+   ApplicationError strings MUST do so by extending the
+   $ApplicationError socket as such:
+
+   $ApplicationError /= "new_error_name" / "another_new_error_name"
+
+A.11.24.  CryptoError
 
    These errors are defined in the TLS document as "A TLS alert is
    turned into a QUIC connection error by converting the one-byte alert
@@ -1822,15 +2035,21 @@ A.7.23.  CryptoError
 
    This approach maps badly to a pre-defined enum.  As such, we define
    the crypto_error string as having a dynamic component here, which
-   should include the hex-encoded value of the TLS alert description.
+   should include the hex-encoded and zero-padded value of the TLS alert
+   description.
 
-   enum CryptoError {
-       crypto_error_{TLS_ALERT}
-   }
+   ; all strings from "crypto_error_0x100" to "crypto_error_0x199"
+   CryptoError = text .regexp "crypto_error_0x1[0-9][0-9]"
+
+                     Figure 63: CryptoError definition
 
 Appendix B.  Change Log
 
-B.1.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+B.1.  Since draft-ietf-qlog-quic-events-00:
+
+   *  Change the data definition language from TypeScript to CDDL (#143)
+
+B.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  These changes were done in preparation of the adoption of the
       drafts by the QUIC working group (#137)
@@ -1842,7 +2061,7 @@ B.1.  Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  Changed to/from value options of the data_moved event
 
-B.2.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+B.3.  Since draft-marx-qlog-event-definitions-quic-h3-01:
 
    Major changes:
 
@@ -1914,7 +2133,7 @@ B.2.  Since draft-marx-qlog-event-definitions-quic-h3-01:
    *  Extended connection_state_updated with more fine-grained states
       (#49)
 
-B.3.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+B.4.  Since draft-marx-qlog-event-definitions-quic-h3-00:
 
    *  Event and category names are now all lowercase
 
@@ -1949,17 +2168,14 @@ Authors' Addresses
 
    Robin Marx
    KU Leuven
-
    Email: robin.marx@kuleuven.be
 
 
    Luca Niccolini (editor)
    Facebook
-
    Email: lniccolini@fb.com
 
 
    Marten Seemann (editor)
    Protocol Labs
-
    Email: marten@protocol.ai
