@@ -628,6 +628,7 @@ HTTPFrame =  HTTPDataFrame /
              HTTPPushPromiseFrame /
              HTTPGoawayFrame /
              HTTPMaxPushIDFrame /
+             HTTPPriorityUpdateFrame /
              HTTPReservedFrame /
              UnknownFrame
 ~~~
@@ -745,6 +746,19 @@ HTTPMaxPushIDFrame = {
 }
 ~~~
 {: #httpmaxpushidframe-def title="HTTPMaxPushIDFrame definition"}
+
+### HTTPPriorityUpdateFrame
+
+~~~ cddl
+HTTPPriorityUpdateFrame = {
+    frame_type: "priority_update"
+
+    target_stream_type: "request" / "push"
+    prioritized_element_id: uint64
+    priority_field_value: String
+}
+~~~
+{: #httppriorityupdateframe-def title="HTTPPriorityUpdateFrame definition"}
 
 ### ReservedFrame
 
