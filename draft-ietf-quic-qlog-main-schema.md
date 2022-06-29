@@ -377,6 +377,7 @@ Trace = {
     ? title: text
     ? description: text
     ? configuration: Configuration
+    ? environment: text
     ? common_fields: CommonFields
     ? vantage_point: VantagePoint
     events: [* Event]
@@ -546,6 +547,12 @@ vantage_point can either try to heuristically infer the semantics from
 protocol-level domain knowledge (e.g., in QUIC, the client always sends the first
 packet) or give the user the option to switch between client and server
 perspectives manually.
+
+## Environment
+
+Environment is a free-form text field that helps identify specifics about the
+deployment. It can be used to log specifics like the operating system,
+architecture, compiler version and source code revision.
 
 ## Field name semantics {#field-name-semantics}
 
