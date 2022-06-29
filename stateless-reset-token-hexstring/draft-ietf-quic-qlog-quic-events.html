@@ -1,0 +1,4225 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>QUIC event definitions for qlog</title>
+<meta content="Robin Marx" name="author">
+<meta content="Luca Niccolini" name="author">
+<meta content="Marten Seemann" name="author">
+<meta content="
+       This document describes concrete qlog event definitions and their metadata for
+QUIC events. These events can then be embedded in the higher level schema defined
+in  . 
+    " name="description">
+<meta content="xml2rfc 3.12.10" name="generator">
+<meta content="Internet-Draft" name="keyword">
+<meta content="draft-ietf-quic-qlog-quic-events-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.12.10
+    Python 3.10.4
+    appdirs 1.4.4
+    ConfigArgParse 1.5.3
+    google-i18n-address 2.5.1
+    html5lib 1.1
+    intervaltree 3.1.0
+    Jinja2 2.11.3
+    kitchen 1.2.6
+    lxml 4.8.0
+    MarkupSafe 2.0.1
+    pycountry 20.7.3
+    pyflakes 2.4.0
+    PyYAML 6.0
+    requests 2.27.1
+    setuptools 59.4.0
+    six 1.16.0
+-->
+<link href="draft-ietf-quic-qlog-quic-events.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  --font-mono: 'Oxygen Mono', monospace;
+  scrollbar-color: #bbb #eee;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Cabin Condensed", sans-serif;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+h1#title {
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1#title, h1#rfcnum {
+  margin: 1.5em 0 0.2em;
+}
+h1#rfcnum + h1#title {
+  margin: 0.2em 0;
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+}
+#abstract+p {
+  font-size: 18px;
+  line-height: 24px;
+}
+#abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 16px;
+  line-height: 0;
+}
+
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+/* font-family isn't space-separated, but =~ will have to do */
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+}
+:is(ol, ul) :is(ol, ul) {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+:is(ul, ol).compact, .ulCompact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl > dd {
+  margin-bottom: .8em;
+  min-height: 1.3em;
+}
+:is(dl.compact, .dlCompact) > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+dd.break {
+  display: none;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href].selfRef {
+  color: var(--text-color);
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+a.xref {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px var(--font-mono);
+}
+tt, code {
+  /* changing the font for inline elements leads to different ascender
+     and descender heights; as we want to retain baseline alignment,
+     remove leading to avoid altering the final height of lines */
+  line-height: 0;
+}
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+}
+@media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) p {
+    margin: -2px 0;
+    max-height: 0;
+    transition: max-height 2s ease, margin 0.5s ease 0.5s;
+    overflow: hidden;
+  }
+  :is(#status-of-memo, #copyright):hover p,
+  :is(#status-of-memo, #copyright) h2:target ~ p {
+    margin: 0.5em 0;
+    max-height: 500px;
+    overflow: auto;
+  }
+  pre, svg {
+    display: inline-block;
+    overflow-x: auto;
+  }
+  pre {
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  svg {
+    max-width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  :is(pre, svg) + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+}
+table.right {
+  margin-left: auto;
+}
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.left {
+  margin-right: auto;
+}
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
+  background-color: var(--background-color);
+}
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
+  background-color: var(--highlight-color);
+}
+table caption {
+  margin: 0;
+  padding: 3px 0 3px 1em;
+}
+table p {
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+}
+a.pilcrow[href] { color: var(--pilcrow-weak); }
+a.pilcrow[href]:hover { text-decoration: none; }
+@media not print {
+  :hover > a.pilcrow {
+    opacity: 1;
+  }
+  a.pilcrow[href]:hover {
+    color: var(--pilcrow-strong);
+    background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: 14.5px;
+}
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 8em;
+}
+#identifiers dt {
+  width: var(--identifier-width);
+  margin: 0;
+  clear: left;
+  float: left;
+  text-align: right;
+}
+#identifiers dd {
+  margin: 0 0 0 calc(1em + var(--identifier-width));
+  min-width: 5em;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+#toc nav ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+#toc nav li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+#toc a.xref {
+  white-space: normal;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+#rfc\.index\.index + ul {
+  margin-left: 0;
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses > section {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #authors-addresses > section > h2 {
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+    break-inside: avoid-column;
+  }
+}
+
+.rfcEditorRemove p:first-of-type {
+  font-style: italic;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc.active {
+      opacity: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 8px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active nav {
+    display: block;
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin-top: 2px;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #toc nav > ul  {
+    margin-bottom: 2em;
+  }
+  #toc ul {
+    margin: 0 0 0 4px;
+    font-size: var(--small-font-size);
+  }
+  #toc ul :is(p, li) {
+    margin: 2px 0;
+    line-height: 22px;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Changes introduced to fix issues found during implementation */
+
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin: 8px 0.5em 0;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table .text-left {
+  text-align: left;
+}
+table .text-center {
+  text-align: center;
+}
+table .text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 20em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+
+@media print {
+  .toplink {
+    display: none;
+  }
+
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
+
+  /* Avoid page breaks inside dl and author address entries */
+  dd {
+    page-break-before: avoid;
+  }
+  .vcard {
+    page-break-inside: avoid;
+  }
+
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg :is([stroke="black"], [stroke^="#000"]) {
+  stroke: var(--text-color);
+}
+svg :is([stroke="white"], [stroke^="#fff"]) {
+  stroke: var(--background-color);
+}
+svg :is([fill="black"], [fill^="#000"], :not([fill])) {
+  fill: var(--text-color);
+}
+svg :is([stroke="fill"], [fill^="#fff"]) {
+  fill: var(--background-color);
+}
+</style>
+
+</head>
+<body>
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">QUIC event definitions for qlog</td>
+<td class="right">June 2022</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Marx, et al.</td>
+<td class="center">Expires 31 December 2022</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">QUIC</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2022-06-29" class="published">29 June 2022</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Standards Track</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2022-12-31">31 December 2022</time></dd>
+<dt class="label-authors">Authors:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">R. Marx</div>
+<div class="org">KU Leuven</div>
+</div>
+<div class="author">
+      <div class="author-name">L. Niccolini, <span class="editor">Ed.</span>
+</div>
+<div class="org">Facebook</div>
+</div>
+<div class="author">
+      <div class="author-name">M. Seemann, <span class="editor">Ed.</span>
+</div>
+<div class="org">Protocol Labs</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">QUIC event definitions for qlog</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document describes concrete qlog event definitions and their metadata for
+QUIC events. These events can then be embedded in the higher level schema defined
+in <span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]</span>.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 31 December 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2022 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Revised BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="xref">1</a>.  <a href="#name-introduction" class="xref">Introduction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="xref">1.1</a>.  <a href="#name-notational-conventions" class="xref">Notational Conventions</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="xref">2</a>.  <a href="#name-overview" class="xref">Overview</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="xref">2.1</a>.  <a href="#name-links-to-the-main-schema" class="xref">Links to the main schema</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.1">
+                    <p id="section-toc.1-1.2.2.1.2.1.1" class="keepWithNext"><a href="#section-2.1.1" class="xref">2.1.1</a>.  <a href="#name-raw-packet-and-frame-inform" class="xref">Raw packet and frame information</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1.2.2">
+                    <p id="section-toc.1-1.2.2.1.2.2.1"><a href="#section-2.1.2" class="xref">2.1.2</a>.  <a href="#name-events-not-belonging-to-a-s" class="xref">Events not belonging to a single connection</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="xref">3</a>.  <a href="#name-quic-event-definitions" class="xref">QUIC event definitions</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="xref">3.1</a>.  <a href="#name-connectivity" class="xref">connectivity</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.1">
+                    <p id="section-toc.1-1.3.2.1.2.1.1"><a href="#section-3.1.1" class="xref">3.1.1</a>.  <a href="#name-server_listening" class="xref">server_listening</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.2">
+                    <p id="section-toc.1-1.3.2.1.2.2.1"><a href="#section-3.1.2" class="xref">3.1.2</a>.  <a href="#name-connection_started" class="xref">connection_started</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.3">
+                    <p id="section-toc.1-1.3.2.1.2.3.1"><a href="#section-3.1.3" class="xref">3.1.3</a>.  <a href="#name-connection_closed" class="xref">connection_closed</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.4">
+                    <p id="section-toc.1-1.3.2.1.2.4.1"><a href="#section-3.1.4" class="xref">3.1.4</a>.  <a href="#name-connection_id_updated" class="xref">connection_id_updated</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.5">
+                    <p id="section-toc.1-1.3.2.1.2.5.1"><a href="#section-3.1.5" class="xref">3.1.5</a>.  <a href="#name-spin_bit_updated" class="xref">spin_bit_updated</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.6">
+                    <p id="section-toc.1-1.3.2.1.2.6.1"><a href="#section-3.1.6" class="xref">3.1.6</a>.  <a href="#name-connection_retried" class="xref">connection_retried</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.7">
+                    <p id="section-toc.1-1.3.2.1.2.7.1"><a href="#section-3.1.7" class="xref">3.1.7</a>.  <a href="#name-connection_state_updated" class="xref">connection_state_updated</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1.2.8">
+                    <p id="section-toc.1-1.3.2.1.2.8.1"><a href="#section-3.1.8" class="xref">3.1.8</a>.  <a href="#name-migration-related-events" class="xref">MIGRATION-related events</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="xref">3.2</a>.  <a href="#name-security" class="xref">security</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.1">
+                    <p id="section-toc.1-1.3.2.2.2.1.1"><a href="#section-3.2.1" class="xref">3.2.1</a>.  <a href="#name-key_updated" class="xref">key_updated</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2.2.2">
+                    <p id="section-toc.1-1.3.2.2.2.2.1"><a href="#section-3.2.2" class="xref">3.2.2</a>.  <a href="#name-key_retired" class="xref">key_retired</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="xref">3.3</a>.  <a href="#name-transport" class="xref">transport</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.1">
+                    <p id="section-toc.1-1.3.2.3.2.1.1"><a href="#section-3.3.1" class="xref">3.3.1</a>.  <a href="#name-version_information" class="xref">version_information</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.2">
+                    <p id="section-toc.1-1.3.2.3.2.2.1"><a href="#section-3.3.2" class="xref">3.3.2</a>.  <a href="#name-alpn_information" class="xref">alpn_information</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.3">
+                    <p id="section-toc.1-1.3.2.3.2.3.1"><a href="#section-3.3.3" class="xref">3.3.3</a>.  <a href="#name-parameters_set" class="xref">parameters_set</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.4">
+                    <p id="section-toc.1-1.3.2.3.2.4.1"><a href="#section-3.3.4" class="xref">3.3.4</a>.  <a href="#name-parameters_restored" class="xref">parameters_restored</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.5">
+                    <p id="section-toc.1-1.3.2.3.2.5.1"><a href="#section-3.3.5" class="xref">3.3.5</a>.  <a href="#name-packet_sent" class="xref">packet_sent</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.6">
+                    <p id="section-toc.1-1.3.2.3.2.6.1"><a href="#section-3.3.6" class="xref">3.3.6</a>.  <a href="#name-packet_received" class="xref">packet_received</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.7">
+                    <p id="section-toc.1-1.3.2.3.2.7.1"><a href="#section-3.3.7" class="xref">3.3.7</a>.  <a href="#name-packet_dropped" class="xref">packet_dropped</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.8">
+                    <p id="section-toc.1-1.3.2.3.2.8.1"><a href="#section-3.3.8" class="xref">3.3.8</a>.  <a href="#name-packet_buffered" class="xref">packet_buffered</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.9">
+                    <p id="section-toc.1-1.3.2.3.2.9.1"><a href="#section-3.3.9" class="xref">3.3.9</a>.  <a href="#name-packets_acked" class="xref">packets_acked</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.10">
+                    <p id="section-toc.1-1.3.2.3.2.10.1"><a href="#section-3.3.10" class="xref">3.3.10</a>. <a href="#name-datagrams_sent" class="xref">datagrams_sent</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.11">
+                    <p id="section-toc.1-1.3.2.3.2.11.1"><a href="#section-3.3.11" class="xref">3.3.11</a>. <a href="#name-datagrams_received" class="xref">datagrams_received</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.12">
+                    <p id="section-toc.1-1.3.2.3.2.12.1"><a href="#section-3.3.12" class="xref">3.3.12</a>. <a href="#name-datagram_dropped" class="xref">datagram_dropped</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.13">
+                    <p id="section-toc.1-1.3.2.3.2.13.1"><a href="#section-3.3.13" class="xref">3.3.13</a>. <a href="#name-stream_state_updated" class="xref">stream_state_updated</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.14">
+                    <p id="section-toc.1-1.3.2.3.2.14.1"><a href="#section-3.3.14" class="xref">3.3.14</a>. <a href="#name-frames_processed" class="xref">frames_processed</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.15">
+                    <p id="section-toc.1-1.3.2.3.2.15.1"><a href="#section-3.3.15" class="xref">3.3.15</a>. <a href="#name-data_moved" class="xref">data_moved</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4">
+                <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="xref">3.4</a>.  <a href="#name-recovery" class="xref">recovery</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.1">
+                    <p id="section-toc.1-1.3.2.4.2.1.1"><a href="#section-3.4.1" class="xref">3.4.1</a>.  <a href="#name-parameters_set-2" class="xref">parameters_set</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.2">
+                    <p id="section-toc.1-1.3.2.4.2.2.1"><a href="#section-3.4.2" class="xref">3.4.2</a>.  <a href="#name-metrics_updated" class="xref">metrics_updated</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.3">
+                    <p id="section-toc.1-1.3.2.4.2.3.1"><a href="#section-3.4.3" class="xref">3.4.3</a>.  <a href="#name-congestion_state_updated" class="xref">congestion_state_updated</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.4">
+                    <p id="section-toc.1-1.3.2.4.2.4.1"><a href="#section-3.4.4" class="xref">3.4.4</a>.  <a href="#name-loss_timer_updated" class="xref">loss_timer_updated</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.5">
+                    <p id="section-toc.1-1.3.2.4.2.5.1"><a href="#section-3.4.5" class="xref">3.4.5</a>.  <a href="#name-packet_lost" class="xref">packet_lost</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.6">
+                    <p id="section-toc.1-1.3.2.4.2.6.1"><a href="#section-3.4.6" class="xref">3.4.6</a>.  <a href="#name-marked_for_retransmit" class="xref">marked_for_retransmit</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="xref">4</a>.  <a href="#name-security-considerations" class="xref">Security Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="xref">5</a>.  <a href="#name-iana-considerations" class="xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="xref">6</a>.  <a href="#name-references" class="xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="xref">6.1</a>.  <a href="#name-normative-references" class="xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="xref">6.2</a>.  <a href="#name-informative-references" class="xref">Informative References</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#appendix-A" class="xref">Appendix A</a>.  <a href="#name-quic-data-field-definitions" class="xref">QUIC data field definitions</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#appendix-A.1" class="xref">A.1</a>.  <a href="#name-protocoleventbody-extension" class="xref">ProtocolEventBody extension</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#appendix-A.2" class="xref">A.2</a>.  <a href="#name-quicversion" class="xref">QuicVersion</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
+                <p id="section-toc.1-1.7.2.3.1"><a href="#appendix-A.3" class="xref">A.3</a>.  <a href="#name-connectionid" class="xref">ConnectionID</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
+                <p id="section-toc.1-1.7.2.4.1"><a href="#appendix-A.4" class="xref">A.4</a>.  <a href="#name-owner" class="xref">Owner</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5">
+                <p id="section-toc.1-1.7.2.5.1"><a href="#appendix-A.5" class="xref">A.5</a>.  <a href="#name-ipaddress-and-ipversion" class="xref">IPAddress and IPVersion</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.6">
+                <p id="section-toc.1-1.7.2.6.1"><a href="#appendix-A.6" class="xref">A.6</a>.  <a href="#name-packettype" class="xref">PacketType</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.7">
+                <p id="section-toc.1-1.7.2.7.1"><a href="#appendix-A.7" class="xref">A.7</a>.  <a href="#name-packetnumberspace" class="xref">PacketNumberSpace</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.8">
+                <p id="section-toc.1-1.7.2.8.1"><a href="#appendix-A.8" class="xref">A.8</a>.  <a href="#name-packetheader" class="xref">PacketHeader</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.9">
+                <p id="section-toc.1-1.7.2.9.1"><a href="#appendix-A.9" class="xref">A.9</a>.  <a href="#name-token" class="xref">Token</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.10">
+                <p id="section-toc.1-1.7.2.10.1"><a href="#appendix-A.10" class="xref">A.10</a>. <a href="#name-stateless-reset-token" class="xref">Stateless Reset Token</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11">
+                <p id="section-toc.1-1.7.2.11.1"><a href="#appendix-A.11" class="xref">A.11</a>. <a href="#name-keytype" class="xref">KeyType</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12">
+                <p id="section-toc.1-1.7.2.12.1"><a href="#appendix-A.12" class="xref">A.12</a>. <a href="#name-quic-frames" class="xref">QUIC Frames</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.1">
+                    <p id="section-toc.1-1.7.2.12.2.1.1"><a href="#appendix-A.12.1" class="xref">A.12.1</a>.  <a href="#name-paddingframe" class="xref">PaddingFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.2">
+                    <p id="section-toc.1-1.7.2.12.2.2.1"><a href="#appendix-A.12.2" class="xref">A.12.2</a>.  <a href="#name-pingframe" class="xref">PingFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.3">
+                    <p id="section-toc.1-1.7.2.12.2.3.1"><a href="#appendix-A.12.3" class="xref">A.12.3</a>.  <a href="#name-ackframe" class="xref">AckFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.4">
+                    <p id="section-toc.1-1.7.2.12.2.4.1"><a href="#appendix-A.12.4" class="xref">A.12.4</a>.  <a href="#name-resetstreamframe" class="xref">ResetStreamFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.5">
+                    <p id="section-toc.1-1.7.2.12.2.5.1"><a href="#appendix-A.12.5" class="xref">A.12.5</a>.  <a href="#name-stopsendingframe" class="xref">StopSendingFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.6">
+                    <p id="section-toc.1-1.7.2.12.2.6.1"><a href="#appendix-A.12.6" class="xref">A.12.6</a>.  <a href="#name-cryptoframe" class="xref">CryptoFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.7">
+                    <p id="section-toc.1-1.7.2.12.2.7.1"><a href="#appendix-A.12.7" class="xref">A.12.7</a>.  <a href="#name-newtokenframe" class="xref">NewTokenFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.8">
+                    <p id="section-toc.1-1.7.2.12.2.8.1"><a href="#appendix-A.12.8" class="xref">A.12.8</a>.  <a href="#name-streamframe" class="xref">StreamFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.9">
+                    <p id="section-toc.1-1.7.2.12.2.9.1"><a href="#appendix-A.12.9" class="xref">A.12.9</a>.  <a href="#name-maxdataframe" class="xref">MaxDataFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.10">
+                    <p id="section-toc.1-1.7.2.12.2.10.1"><a href="#appendix-A.12.10" class="xref">A.12.10</a>. <a href="#name-maxstreamdataframe" class="xref">MaxStreamDataFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.11">
+                    <p id="section-toc.1-1.7.2.12.2.11.1"><a href="#appendix-A.12.11" class="xref">A.12.11</a>. <a href="#name-maxstreamsframe" class="xref">MaxStreamsFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.12">
+                    <p id="section-toc.1-1.7.2.12.2.12.1"><a href="#appendix-A.12.12" class="xref">A.12.12</a>. <a href="#name-datablockedframe" class="xref">DataBlockedFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.13">
+                    <p id="section-toc.1-1.7.2.12.2.13.1"><a href="#appendix-A.12.13" class="xref">A.12.13</a>. <a href="#name-streamdatablockedframe" class="xref">StreamDataBlockedFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.14">
+                    <p id="section-toc.1-1.7.2.12.2.14.1"><a href="#appendix-A.12.14" class="xref">A.12.14</a>. <a href="#name-streamsblockedframe" class="xref">StreamsBlockedFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.15">
+                    <p id="section-toc.1-1.7.2.12.2.15.1"><a href="#appendix-A.12.15" class="xref">A.12.15</a>. <a href="#name-newconnectionidframe" class="xref">NewConnectionIDFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.16">
+                    <p id="section-toc.1-1.7.2.12.2.16.1"><a href="#appendix-A.12.16" class="xref">A.12.16</a>. <a href="#name-retireconnectionidframe" class="xref">RetireConnectionIDFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.17">
+                    <p id="section-toc.1-1.7.2.12.2.17.1"><a href="#appendix-A.12.17" class="xref">A.12.17</a>. <a href="#name-pathchallengeframe" class="xref">PathChallengeFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.18">
+                    <p id="section-toc.1-1.7.2.12.2.18.1"><a href="#appendix-A.12.18" class="xref">A.12.18</a>. <a href="#name-pathresponseframe" class="xref">PathResponseFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.19">
+                    <p id="section-toc.1-1.7.2.12.2.19.1"><a href="#appendix-A.12.19" class="xref">A.12.19</a>. <a href="#name-connectioncloseframe" class="xref">ConnectionCloseFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.20">
+                    <p id="section-toc.1-1.7.2.12.2.20.1"><a href="#appendix-A.12.20" class="xref">A.12.20</a>. <a href="#name-handshakedoneframe" class="xref">HandshakeDoneFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.21">
+                    <p id="section-toc.1-1.7.2.12.2.21.1"><a href="#appendix-A.12.21" class="xref">A.12.21</a>. <a href="#name-unknownframe" class="xref">UnknownFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.22">
+                    <p id="section-toc.1-1.7.2.12.2.22.1"><a href="#appendix-A.12.22" class="xref">A.12.22</a>. <a href="#name-transporterror" class="xref">TransportError</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.23">
+                    <p id="section-toc.1-1.7.2.12.2.23.1"><a href="#appendix-A.12.23" class="xref">A.12.23</a>. <a href="#name-applicationerror" class="xref">ApplicationError</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.24">
+                    <p id="section-toc.1-1.7.2.12.2.24.1"><a href="#appendix-A.12.24" class="xref">A.12.24</a>. <a href="#name-cryptoerror" class="xref">CryptoError</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#appendix-B" class="xref">Appendix B</a>.  <a href="#name-change-log" class="xref">Change Log</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1">
+                <p id="section-toc.1-1.8.2.1.1"><a href="#appendix-B.1" class="xref">B.1</a>.  <a href="#name-since-draft-ietf-qlog-quic-" class="xref">Since draft-ietf-qlog-quic-events-00:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
+                <p id="section-toc.1-1.8.2.2.1"><a href="#appendix-B.2" class="xref">B.2</a>.  <a href="#name-since-draft-marx-qlog-event" class="xref">Since draft-marx-qlog-event-definitions-quic-h3-02:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
+                <p id="section-toc.1-1.8.2.3.1"><a href="#appendix-B.3" class="xref">B.3</a>.  <a href="#name-since-draft-marx-qlog-event-" class="xref">Since draft-marx-qlog-event-definitions-quic-h3-01:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.4">
+                <p id="section-toc.1-1.8.2.4.1"><a href="#appendix-B.4" class="xref">B.4</a>.  <a href="#name-since-draft-marx-qlog-event-d" class="xref">Since draft-marx-qlog-event-definitions-quic-h3-00:</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#appendix-C" class="xref">Appendix C</a>.  <a href="#name-design-variations" class="xref">Design Variations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#appendix-D" class="xref">Appendix D</a>.  <a href="#name-acknowledgements" class="xref">Acknowledgements</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#appendix-E" class="xref"></a><a href="#name-authors-addresses" class="xref">Authors' Addresses</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">This document describes the values of the qlog name ("category" + "event") and
+"data" fields and their semantics for the QUIC protocol. This document is based on
+draft-34 of the QUIC I-Ds <span>[<a href="#QUIC-TRANSPORT" class="xref">QUIC-TRANSPORT</a>]</span>, <span>[<a href="#QUIC-RECOVERY" class="xref">QUIC-RECOVERY</a>]</span>, and <span>[<a href="#QUIC-TLS" class="xref">QUIC-TLS</a>]</span>. HTTP/3 and
+QPACK events are defined in a separate document <span>[<a href="#QLOG-H3" class="xref">QLOG-H3</a>]</span>.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">Feedback and discussion are welcome at
+<a href="https://github.com/quicwg/qlog">https://github.com/quicwg/qlog</a>.
+Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
+version of this document.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">Concrete examples of integrations of this schema in
+various programming languages can be found at
+<a href="https://github.com/quiclog/qlog/">https://github.com/quiclog/qlog/</a>.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<div id="notational-conventions">
+<section id="section-1.1">
+        <h3 id="name-notational-conventions">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-notational-conventions" class="section-name selfRef">Notational Conventions</a>
+        </h3>
+<p id="section-1.1-1">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
+interpreted as described in <span>[<a href="#RFC2119" class="xref">RFC2119</a>]</span>.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.1-2">The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language <span>[<a href="#CDDL" class="xref">CDDL</a>]</span> and its
+extensions described in <span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]</span>.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="overview">
+<section id="section-2">
+      <h2 id="name-overview">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-overview" class="section-name selfRef">Overview</a>
+      </h2>
+<p id="section-2-1">This document describes the values of the qlog "name" ("category" + "event") and
+"data" fields and their semantics for the QUIC protocol.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">This document assumes the usage of the encompassing main qlog schema defined in
+<span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]</span>. Each subsection below defines a separate category (for example
+connectivity, transport, recovery) and each subsubsection is an event type (for
+example <code>packet_received</code>).<a href="#section-2-2" class="pilcrow">¶</a></p>
+<p id="section-2-3">For each event type, its importance and data definition is laid out, often
+accompanied by possible values for the optional "trigger" field. For the
+definition and semantics of "importance" and "trigger", see the main schema
+document.<a href="#section-2-3" class="pilcrow">¶</a></p>
+<p id="section-2-4">Most of the complex datastructures, enums and re-usable definitions are grouped
+together on the bottom of this document for clarity.<a href="#section-2-4" class="pilcrow">¶</a></p>
+<div id="links-to-the-main-schema">
+<section id="section-2.1">
+        <h3 id="name-links-to-the-main-schema">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-links-to-the-main-schema" class="section-name selfRef">Links to the main schema</a>
+        </h3>
+<p id="section-2.1-1">This document re-uses all the fields defined in the main qlog schema (e.g., name,
+category, type, data, group_id, protocol_type, the time-related fields,
+importance, RawInfo, etc.).<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-2">One entry in the "protocol_type" qlog array field MUST be "QUIC" if events from
+this document are included in a qlog trace.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">When the qlog "group_id" field is used, it is recommended to use QUIC's Original
+Destination Connection ID (ODCID, the CID chosen by the client when first
+contacting the server), as this is the only value that does not change over the
+course of the connection and can be used to link more advanced QUIC packets (e.g.,
+Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
+used as the qlog filename or file identifier, potentially suffixed by the
+vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
+trace of the connection with ODCID abcd1234).<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<div id="raw-packet-and-frame-information">
+<section id="section-2.1.1">
+          <h4 id="name-raw-packet-and-frame-inform">
+<a href="#section-2.1.1" class="section-number selfRef">2.1.1. </a><a href="#name-raw-packet-and-frame-inform" class="section-name selfRef">Raw packet and frame information</a>
+          </h4>
+<p id="section-2.1.1-1">This document re-uses the definition of the RawInfo data class from <span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]</span>.<a href="#section-2.1.1-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-2.1.1-2">
+            <dt id="section-2.1.1-2.1">Note:</dt>
+            <dd style="margin-left: 1.5em" id="section-2.1.1-2.2">
+              <p id="section-2.1.1-2.2.1">QUIC packets always include an AEAD authentication tag ("trailer") at the end.
+As this tag is always the same size for a given connection (it depends on the used
+TLS cipher), this document does not define a separate "RawInfo:aead_tag_length"
+field here. Instead, this field is reflected in "transport:parameters_set" and can
+be logged only once.<a href="#section-2.1.1-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-2.1.1-2.3">Note:</dt>
+            <dd style="margin-left: 1.5em" id="section-2.1.1-2.4">
+              <p id="section-2.1.1-2.4.1">As QUIC uses trailers in packets, packet header_lengths can be calculated as:<a href="#section-2.1.1-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-2.1.1-2.5"></dt>
+            <dd style="margin-left: 1.5em" id="section-2.1.1-2.6">
+              <p id="section-2.1.1-2.6.1">header_length = length - payload_length - aead_tag_length<a href="#section-2.1.1-2.6.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-2.1.1-2.7"></dt>
+            <dd style="margin-left: 1.5em" id="section-2.1.1-2.8">
+              <p id="section-2.1.1-2.8.1">For UDP datagrams, the calulation is simpler:<a href="#section-2.1.1-2.8.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-2.1.1-2.9"></dt>
+            <dd style="margin-left: 1.5em" id="section-2.1.1-2.10">
+              <p id="section-2.1.1-2.10.1">header_length = length - payload_length<a href="#section-2.1.1-2.10.1" class="pilcrow">¶</a></p>
+</dd>
+            <dd class="break"></dd>
+<dt id="section-2.1.1-2.11">Note:</dt>
+            <dd style="margin-left: 1.5em" id="section-2.1.1-2.12">
+              <p id="section-2.1.1-2.12.1">In some cases, the length fields are also explicitly reflected inside of packet
+headers. For example, the QUIC STREAM frame has a "length" field indicating its
+payload size. Similarly, the QUIC Long Header has a "length" field which is equal
+to the payload length plus the packet number length. In these cases, those fields
+are intentionally preserved in the event definitions. Even though this can lead to
+duplicate data when the full RawInfo is logged, it allows a more direct mapping of
+the QUIC specifications to qlog, making it easier for users to interpret.<a href="#section-2.1.1-2.12.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="handling-unknown-connections">
+<section id="section-2.1.2">
+          <h4 id="name-events-not-belonging-to-a-s">
+<a href="#section-2.1.2" class="section-number selfRef">2.1.2. </a><a href="#name-events-not-belonging-to-a-s" class="section-name selfRef">Events not belonging to a single connection</a>
+          </h4>
+<p id="section-2.1.2-1">For several types of events, it is sometimes impossible to tie them to a specific
+conceptual QUIC connection (e.g., a packet_dropped event triggered because the
+packet has an unknown connection_id in the header). Since qlog events in a trace
+are typically associated with a single connection, it is unclear how to log these
+events.<a href="#section-2.1.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.1.2-2">Ideally, implementers SHOULD create a separate, individual "endpoint-level" trace
+file (or group_id value), not associated with a specific connection (for example a
+"server.qlog" or group_id = "client"), and log all events that do not belong to a
+single connection to this grouping trace. However, this is not always practical,
+depending on the implementation. Because the semantics of most of these events are
+well-defined in the protocols and because they are difficult to mis-interpret as
+belonging to a connection, implementers MAY choose to log events not belonging to
+a particular connection in any other trace, even those strongly associated with a
+single connection.<a href="#section-2.1.2-2" class="pilcrow">¶</a></p>
+<p id="section-2.1.2-3">Note that this can make it difficult to match logs from different vantage points
+with each other. For example, from the client side, it is easy to log connections
+with version negotiation or retry in the same trace, while on the server they
+would most likely be logged in separate traces. Servers can take extra efforts
+(and keep additional state) to keep these events combined in a single trace
+however (for example by also matching connections on their four-tuple instead of
+just the connection ID).<a href="#section-2.1.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="quic-event-definitions">
+<section id="section-3">
+      <h2 id="name-quic-event-definitions">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-quic-event-definitions" class="section-name selfRef">QUIC event definitions</a>
+      </h2>
+<p id="section-3-1">Each subheading in this section is a qlog event category, while each
+sub-subheading is a qlog event type. Concretely, for the following two items, we
+have the category "connectivity" and event type "server_listening", resulting in a
+concatenated qlog "name" field value of "connectivity:server_listening".<a href="#section-3-1" class="pilcrow">¶</a></p>
+<div id="connectivity">
+<section id="section-3.1">
+        <h3 id="name-connectivity">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-connectivity" class="section-name selfRef">connectivity</a>
+        </h3>
+<div id="serverlistening">
+<section id="section-3.1.1">
+          <h4 id="name-server_listening">
+<a href="#section-3.1.1" class="section-number selfRef">3.1.1. </a><a href="#name-server_listening" class="section-name selfRef">server_listening</a>
+          </h4>
+<p id="section-3.1.1-1">Importance: Extra<a href="#section-3.1.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.1-2">Emitted when the server starts accepting connections.<a href="#section-3.1.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.1.1-3">Definition:<a href="#section-3.1.1-3" class="pilcrow">¶</a></p>
+<span id="name-connectivityserverlistening"></span><div id="connectivity-serverlistening-def">
+<figure id="figure-1">
+            <div id="section-3.1.1-4.1">
+<pre class="lang-cddl sourcecode">
+ConnectivityServerListening = {
+    ? ip_v4: IPAddress
+    ? ip_v6: IPAddress
+    ? port_v4: uint16
+    ? port_v6: uint16
+
+    ; the server will always answer client initials with a retry
+    ; (no 1-RTT connection setups by choice)
+    ? retry_required: bool
+}
+</pre>
+</div>
+<figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
+<a href="#name-connectivityserverlistening" class="selfRef">ConnectivityServerListening definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.1.1-5">Note: some QUIC stacks do not handle sockets directly and are thus unable to log
+IP and/or port information.<a href="#section-3.1.1-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="connectionstarted">
+<section id="section-3.1.2">
+          <h4 id="name-connection_started">
+<a href="#section-3.1.2" class="section-number selfRef">3.1.2. </a><a href="#name-connection_started" class="section-name selfRef">connection_started</a>
+          </h4>
+<p id="section-3.1.2-1">Importance: Base<a href="#section-3.1.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.2-2">Used for both attempting (client-perspective) and accepting (server-perspective)
+new connections. Note that this event has overlap with connection_state_updated
+and this is a separate event mainly because of all the additional data that should
+be logged.<a href="#section-3.1.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.1.2-3">Definition:<a href="#section-3.1.2-3" class="pilcrow">¶</a></p>
+<span id="name-connectivityconnectionstart"></span><div id="connectivity-connectionstarted-def">
+<figure id="figure-2">
+            <div id="section-3.1.2-4.1">
+<pre class="lang-cddl sourcecode">
+ConnectivityConnectionStarted = {
+    ? ip_version: IPVersion
+    src_ip: IPAddress
+    dst_ip: IPAddress
+
+    ; transport layer protocol
+    ? protocol: text .default "QUIC"
+    ? src_port: uint16
+    ? dst_port: uint16
+
+    ? src_cid: ConnectionID
+    ? dst_cid: ConnectionID
+}
+</pre>
+</div>
+<figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
+<a href="#name-connectivityconnectionstart" class="selfRef">ConnectivityConnectionStarted definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.1.2-5">Note: some QUIC stacks do not handle sockets directly and are thus unable to log
+IP and/or port information.<a href="#section-3.1.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="connectionclosed">
+<section id="section-3.1.3">
+          <h4 id="name-connection_closed">
+<a href="#section-3.1.3" class="section-number selfRef">3.1.3. </a><a href="#name-connection_closed" class="section-name selfRef">connection_closed</a>
+          </h4>
+<p id="section-3.1.3-1">Importance: Base<a href="#section-3.1.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.3-2">Used for logging when a connection was closed, typically when an error or timeout
+occurred. Note that this event has overlap with
+connectivity:connection_state_updated, as well as the CONNECTION_CLOSE frame.
+However, in practice, when analyzing large deployments, it can be useful to have a
+single event representing a connection_closed event, which also includes an
+additional reason field to provide additional information. Additionally, it is
+useful to log closures due to timeouts, which are difficult to reflect using the
+other options.<a href="#section-3.1.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.1.3-3">In QUIC there are two main connection-closing error categories: connection and
+application errors. They have well-defined error codes and semantics. Next to
+these however, there can be internal errors that occur that may or may not get
+mapped to the official error codes in implementation-specific ways. As such,
+multiple error codes can be set on the same event to reflect this.<a href="#section-3.1.3-3" class="pilcrow">¶</a></p>
+<p id="section-3.1.3-4">Definition:<a href="#section-3.1.3-4" class="pilcrow">¶</a></p>
+<span id="name-connectivityconnectionclose"></span><div id="connectivity-connectionclosed-def">
+<figure id="figure-3">
+            <div id="section-3.1.3-5.1">
+<pre class="lang-cddl sourcecode">
+ConnectivityConnectionClosed = {
+    ; which side closed the connection
+    ? owner: Owner
+
+    ? connection_code: TransportError / CryptoError / uint32
+    ? application_code: $ApplicationError / uint32
+    ? internal_code: uint32
+
+    ? reason: text
+    ? trigger:
+        "clean" /
+        "handshake_timeout" /
+        "idle_timeout" /
+        ; this is called the "immediate close" in the QUIC RFC
+        "error" /
+        "stateless_reset" /
+        "version_mismatch" /
+        ; for example HTTP/3's GOAWAY frame
+        "application"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
+<a href="#name-connectivityconnectionclose" class="selfRef">ConnectivityConnectionClosed definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="connectionidupdated">
+<section id="section-3.1.4">
+          <h4 id="name-connection_id_updated">
+<a href="#section-3.1.4" class="section-number selfRef">3.1.4. </a><a href="#name-connection_id_updated" class="section-name selfRef">connection_id_updated</a>
+          </h4>
+<p id="section-3.1.4-1">Importance: Base<a href="#section-3.1.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.4-2">This event is emitted when either party updates their current Connection ID. As
+this typically happens only sparingly over the course of a connection, this event
+allows loggers to be more efficient than logging the observed CID with each packet
+in the .header field of the "packet_sent" or "packet_received" events.<a href="#section-3.1.4-2" class="pilcrow">¶</a></p>
+<p id="section-3.1.4-3">This is viewed from the perspective of the one applying the new id. As such, if we
+receive a new connection id from our peer, we will see the dst_ fields are set. If
+we update our own connection id (e.g., NEW_CONNECTION_ID frame), we log the src_
+fields.<a href="#section-3.1.4-3" class="pilcrow">¶</a></p>
+<p id="section-3.1.4-4">Definition:<a href="#section-3.1.4-4" class="pilcrow">¶</a></p>
+<span id="name-connectivityconnectionidupd"></span><div id="connectivity-connectionidupdated-def">
+<figure id="figure-4">
+            <div id="section-3.1.4-5.1">
+<pre class="lang-cddl sourcecode">
+ConnectivityConnectionIDUpdated = {
+    owner: Owner
+
+    ? old: ConnectionID
+    ? new: ConnectionID
+}
+</pre>
+</div>
+<figcaption><a href="#figure-4" class="selfRef">Figure 4</a>:
+<a href="#name-connectivityconnectionidupd" class="selfRef">ConnectivityConnectionIDUpdated definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="spinbitupdated">
+<section id="section-3.1.5">
+          <h4 id="name-spin_bit_updated">
+<a href="#section-3.1.5" class="section-number selfRef">3.1.5. </a><a href="#name-spin_bit_updated" class="section-name selfRef">spin_bit_updated</a>
+          </h4>
+<p id="section-3.1.5-1">Importance: Base<a href="#section-3.1.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.5-2">To be emitted when the spin bit changes value. It SHOULD NOT be emitted if the
+spin bit is set without changing its value.<a href="#section-3.1.5-2" class="pilcrow">¶</a></p>
+<p id="section-3.1.5-3">Definition:<a href="#section-3.1.5-3" class="pilcrow">¶</a></p>
+<span id="name-connectivityspinbitupdated-"></span><div id="connectivity-spinbitupdated-def">
+<figure id="figure-5">
+            <div id="section-3.1.5-4.1">
+<pre class="lang-cddl sourcecode">
+ConnectivitySpinBitUpdated = {
+    state: bool
+}
+</pre>
+</div>
+<figcaption><a href="#figure-5" class="selfRef">Figure 5</a>:
+<a href="#name-connectivityspinbitupdated-" class="selfRef">ConnectivitySpinBitUpdated definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="connectionretried">
+<section id="section-3.1.6">
+          <h4 id="name-connection_retried">
+<a href="#section-3.1.6" class="section-number selfRef">3.1.6. </a><a href="#name-connection_retried" class="section-name selfRef">connection_retried</a>
+          </h4>
+<p id="section-3.1.6-1">TODO<a href="#section-3.1.6-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="connectionstateupdated">
+<section id="section-3.1.7">
+          <h4 id="name-connection_state_updated">
+<a href="#section-3.1.7" class="section-number selfRef">3.1.7. </a><a href="#name-connection_state_updated" class="section-name selfRef">connection_state_updated</a>
+          </h4>
+<p id="section-3.1.7-1">Importance: Base<a href="#section-3.1.7-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.7-2">This event is used to track progress through QUIC's complex handshake and
+connection close procedures. It is intended to provide exhaustive options to log
+each state individually, but also provides a more basic, simpler set for
+implementations less interested in tracking each smaller state transition. As
+such, users should not expect to see -all- these states reflected in all qlogs and
+implementers should focus on support for the SimpleConnectionState set.<a href="#section-3.1.7-2" class="pilcrow">¶</a></p>
+<p id="section-3.1.7-3">Definition:<a href="#section-3.1.7-3" class="pilcrow">¶</a></p>
+<span id="name-connectivityconnectionstate"></span><div id="connectivity-connectionstateupdated-def">
+<figure id="figure-6">
+            <div id="section-3.1.7-4.1">
+<pre class="lang-cddl sourcecode">
+ConnectivityConnectionStateUpdated = {
+    ? old: ConnectionState / SimpleConnectionState
+    new: ConnectionState / SimpleConnectionState
+}
+
+ConnectionState =
+    ; initial sent/received
+    "attempted" /
+    ; peer address validated by: client sent Handshake packet OR
+    ; client used CONNID chosen by the server.
+    ; transport-draft-32, section-8.1
+    "peer_validated" /
+    "handshake_started" /
+    ; 1 RTT can be sent, but handshake isn't done yet
+    "early_write" /
+    ; TLS handshake complete: Finished received and sent
+    ; tls-draft-32, section-4.1.1
+    "handshake_complete" /
+    ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
+    ; can be sent). tls-draft-32, section-4.1.2
+    "handshake_confirmed" /
+    "closing" /
+    ; connection_close sent/received
+    "draining" /
+    ; draining period done, connection state discarded
+    "closed"
+
+SimpleConnectionState =
+    "attempted" /
+    "handshake_started" /
+    "handshake_confirmed" /
+    "closed"
+</pre>
+</div>
+<figcaption><a href="#figure-6" class="selfRef">Figure 6</a>:
+<a href="#name-connectivityconnectionstate" class="selfRef">ConnectivityConnectionStateUpdated definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.1.7-5">These states correspond to the following transitions for both client and server:<a href="#section-3.1.7-5" class="pilcrow">¶</a></p>
+<p id="section-3.1.7-6"><strong>Client:</strong><a href="#section-3.1.7-6" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-7.1">
+              <p id="section-3.1.7-7.1.1">send initial<a href="#section-3.1.7-7.1.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-7.1.2.1">state = attempted<a href="#section-3.1.7-7.1.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-7.2">
+              <p id="section-3.1.7-7.2.1">get initial<a href="#section-3.1.7-7.2.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-7.2.2.1">state = validated <em>(not really "needed" at the client, but somewhat useful to indicate progress nonetheless)</em><a href="#section-3.1.7-7.2.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-7.3">
+              <p id="section-3.1.7-7.3.1">get first Handshake packet<a href="#section-3.1.7-7.3.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-7.3.2.1">state = handshake_started<a href="#section-3.1.7-7.3.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-7.4">
+              <p id="section-3.1.7-7.4.1">get Handshake packet containing ServerFinished<a href="#section-3.1.7-7.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-7.4.2.1">state = handshake_complete<a href="#section-3.1.7-7.4.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-7.5">
+              <p id="section-3.1.7-7.5.1">send ClientFinished<a href="#section-3.1.7-7.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-7.5.2.1">state = early_write
+  (1RTT can now be sent)<a href="#section-3.1.7-7.5.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-7.6">
+              <p id="section-3.1.7-7.6.1">get HANDSHAKE_DONE<a href="#section-3.1.7-7.6.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-7.6.2.1">state = handshake_confirmed<a href="#section-3.1.7-7.6.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+          </ul>
+<p id="section-3.1.7-8"><strong>Server:</strong><a href="#section-3.1.7-8" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-9.1">
+              <p id="section-3.1.7-9.1.1">get initial<a href="#section-3.1.7-9.1.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-9.1.2.1">state = attempted<a href="#section-3.1.7-9.1.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-9.2">send initial <em>(TODO don't think this needs a separate state, since some handshake will always be sent in the same flight as this?)</em><a href="#section-3.1.7-9.2" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.1.7-9.3">
+              <p id="section-3.1.7-9.3.1">send handshake EE, CERT, CV, ...<a href="#section-3.1.7-9.3.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-9.3.2.1">state = handshake_started<a href="#section-3.1.7-9.3.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-9.4">
+              <p id="section-3.1.7-9.4.1">send ServerFinished<a href="#section-3.1.7-9.4.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-9.4.2.1">state = early_write
+  (1RTT can now be sent)<a href="#section-3.1.7-9.4.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-9.5">
+              <p id="section-3.1.7-9.5.1">get first handshake packet / something using a server-issued CID of min length<a href="#section-3.1.7-9.5.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-9.5.2.1">state = validated<a href="#section-3.1.7-9.5.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-9.6">
+              <p id="section-3.1.7-9.6.1">get handshake packet containing ClientFinished<a href="#section-3.1.7-9.6.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-9.6.2.1">state = handshake_complete<a href="#section-3.1.7-9.6.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+            <li class="normal" id="section-3.1.7-9.7">
+              <p id="section-3.1.7-9.7.1">send HANDSHAKE_DONE<a href="#section-3.1.7-9.7.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.1.7-9.7.2.1">state = handshake_confirmed<a href="#section-3.1.7-9.7.2.1" class="pilcrow">¶</a>
+</li>
+              </ul>
+</li>
+          </ul>
+<span class="break"></span><dl class="dlParallel" id="section-3.1.7-10">
+            <dt id="section-3.1.7-10.1">Note:</dt>
+            <dd style="margin-left: 1.5em" id="section-3.1.7-10.2">
+              <p id="section-3.1.7-10.2.1">connection_state_changed with a new state of "attempted" is the same
+conceptual event as the connection_started event above from the client's
+perspective. Similarly, a state of "closing" or "draining" corresponds to the
+connection_closed event.<a href="#section-3.1.7-10.2.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="migration-related-events">
+<section id="section-3.1.8">
+          <h4 id="name-migration-related-events">
+<a href="#section-3.1.8" class="section-number selfRef">3.1.8. </a><a href="#name-migration-related-events" class="section-name selfRef">MIGRATION-related events</a>
+          </h4>
+<p id="section-3.1.8-1">e.g., path_updated<a href="#section-3.1.8-1" class="pilcrow">¶</a></p>
+<p id="section-3.1.8-2">TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
+TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02<a href="#section-3.1.8-2" class="pilcrow">¶</a></p>
+<p id="section-3.1.8-3">For now, infer from other connectivity events and path_challenge/path_response frames<a href="#section-3.1.8-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="security">
+<section id="section-3.2">
+        <h3 id="name-security">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-security" class="section-name selfRef">security</a>
+        </h3>
+<div id="keyupdated">
+<section id="section-3.2.1">
+          <h4 id="name-key_updated">
+<a href="#section-3.2.1" class="section-number selfRef">3.2.1. </a><a href="#name-key_updated" class="section-name selfRef">key_updated</a>
+          </h4>
+<p id="section-3.2.1-1">Importance: Base<a href="#section-3.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.2.1-2">Note: secret_updated would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency<a href="#section-3.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.2.1-3">Definition:<a href="#section-3.2.1-3" class="pilcrow">¶</a></p>
+<span id="name-securitykeyupdated-definiti"></span><div id="security-keyupdated-def">
+<figure id="figure-7">
+            <div id="section-3.2.1-4.1">
+<pre class="lang-cddl sourcecode">
+SecurityKeyUpdated = {
+    key_type: KeyType
+
+    ? old: hexstring
+    new: hexstring
+
+    ; needed for 1RTT key updates
+    ? generation: uint32
+
+    ? trigger:
+        ; (e.g., initial, handshake and 0-RTT keys
+        ; are generated by TLS)
+        "tls" /
+        "remote_update" /
+        "local_update"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
+<a href="#name-securitykeyupdated-definiti" class="selfRef">SecurityKeyUpdated definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="keyretired">
+<section id="section-3.2.2">
+          <h4 id="name-key_retired">
+<a href="#section-3.2.2" class="section-number selfRef">3.2.2. </a><a href="#name-key_retired" class="section-name selfRef">key_retired</a>
+          </h4>
+<p id="section-3.2.2-1">Importance: Base<a href="#section-3.2.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2.2-2">Definition:<a href="#section-3.2.2-2" class="pilcrow">¶</a></p>
+<span id="name-securitykeyretired-definiti"></span><div id="security-keyretired-def">
+<figure id="figure-8">
+            <div id="section-3.2.2-3.1">
+<pre class="lang-cddl sourcecode">
+SecurityKeyRetired = {
+    key_type: KeyType
+    ? key: hexstring
+
+    ; needed for 1RTT key updates
+    ? generation: uint32
+
+    ? trigger:
+        ; (e.g., initial, handshake and 0-RTT keys
+        ; are generated by TLS)
+        "tls" /
+        "remote_update" /
+        "local_update"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
+<a href="#name-securitykeyretired-definiti" class="selfRef">SecurityKeyRetired definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="transport">
+<section id="section-3.3">
+        <h3 id="name-transport">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-transport" class="section-name selfRef">transport</a>
+        </h3>
+<div id="versioninformation">
+<section id="section-3.3.1">
+          <h4 id="name-version_information">
+<a href="#section-3.3.1" class="section-number selfRef">3.3.1. </a><a href="#name-version_information" class="section-name selfRef">version_information</a>
+          </h4>
+<p id="section-3.3.1-1">Importance: Core<a href="#section-3.3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.1-2">QUIC endpoints each have their own list of of QUIC versions they support. The
+client uses the most likely version in their first initial. If the server does
+support that version, it replies with a version_negotiation packet, containing
+supported versions. From this, the client selects a version. This event aggregates
+all this information in a single event type. It also allows logging of supported
+versions at an endpoint without actual version negotiation needing to happen.<a href="#section-3.3.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.1-3">Definition:<a href="#section-3.3.1-3" class="pilcrow">¶</a></p>
+<span id="name-transportversioninformation"></span><div id="transport-versioninformation-def">
+<figure id="figure-9">
+            <div id="section-3.3.1-4.1">
+<pre class="lang-cddl sourcecode">
+TransportVersionInformation = {
+    ? server_versions: [+ QuicVersion]
+    ? client_versions: [+ QuicVersion]
+    ? chosen_version: QuicVersion
+}
+</pre>
+</div>
+<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
+<a href="#name-transportversioninformation" class="selfRef">TransportVersionInformation definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.1-5">Intended use:<a href="#section-3.3.1-5" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.3.1-6.1">When sending an initial, the client logs this event with client_versions and
+chosen_version set<a href="#section-3.3.1-6.1" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.3.1-6.2">Upon receiving a client initial with a supported version, the server logs this
+event with server_versions and chosen_version set<a href="#section-3.3.1-6.2" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.3.1-6.3">Upon receiving a client initial with an unsupported version, the server logs
+this event with server_versions set and client_versions to the
+single-element array containing the client's attempted version. The absence of
+chosen_version implies no overlap was found.<a href="#section-3.3.1-6.3" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.3.1-6.4">Upon receiving a version negotiation packet from the server, the client logs
+this event with client_versions set and server_versions to the versions in
+the version negotiation packet and chosen_version to the version it will use for
+the next initial packet<a href="#section-3.3.1-6.4" class="pilcrow">¶</a>
+</li>
+          </ul>
+</section>
+</div>
+<div id="alpninformation">
+<section id="section-3.3.2">
+          <h4 id="name-alpn_information">
+<a href="#section-3.3.2" class="section-number selfRef">3.3.2. </a><a href="#name-alpn_information" class="section-name selfRef">alpn_information</a>
+          </h4>
+<p id="section-3.3.2-1">Importance: Core<a href="#section-3.3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.2-2">QUIC implementations each have their own list of application level protocols and
+versions thereof they support. The client includes a list of their supported
+options in its first initial as part of the TLS Application Layer Protocol
+Negotiation (alpn) extension. If there are common option(s), the server chooses
+the most optimal one and communicates this back to the client. If not, the
+connection is closed.<a href="#section-3.3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.2-3">Definition:<a href="#section-3.3.2-3" class="pilcrow">¶</a></p>
+<span id="name-transportalpninformation-de"></span><div id="transport-alpninformation-def">
+<figure id="figure-10">
+            <div id="section-3.3.2-4.1">
+<pre class="lang-cddl sourcecode">
+TransportALPNInformation = {
+    ? server_alpns: [* text]
+    ? client_alpns: [* text]
+    ? chosen_alpn: text
+}
+</pre>
+</div>
+<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
+<a href="#name-transportalpninformation-de" class="selfRef">TransportALPNInformation definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.2-5">Intended use:<a href="#section-3.3.2-5" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.3.2-6.1">When sending an initial, the client logs this event with client_alpns set<a href="#section-3.3.2-6.1" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.3.2-6.2">When receiving an initial with a supported alpn, the server logs this event with
+server_alpns set, client_alpns equalling the client-provided list, and
+chosen_alpn to the value it will send back to the client.<a href="#section-3.3.2-6.2" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.3.2-6.3">When receiving an initial with an alpn, the client logs this event with
+chosen_alpn to the received value.<a href="#section-3.3.2-6.3" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.3.2-6.4">Alternatively, a client can choose to not log the first event, but wait for the
+receipt of the server initial to log this event with both client_alpns and
+chosen_alpn set.<a href="#section-3.3.2-6.4" class="pilcrow">¶</a>
+</li>
+          </ul>
+</section>
+</div>
+<div id="parametersset">
+<section id="section-3.3.3">
+          <h4 id="name-parameters_set">
+<a href="#section-3.3.3" class="section-number selfRef">3.3.3. </a><a href="#name-parameters_set" class="section-name selfRef">parameters_set</a>
+          </h4>
+<p id="section-3.3.3-1">Importance: Core<a href="#section-3.3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.3-2">This event groups settings from several different sources (transport parameters,
+TLS ciphers, etc.) into a single event. This is done to minimize the amount of
+events and to decouple conceptual setting impacts from their underlying mechanism
+for easier high-level reasoning.<a href="#section-3.3.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.3-3">All these settings are typically set once and never change. However, they are
+typically set at different times during the connection, so there will typically be
+several instances of this event with different fields set.<a href="#section-3.3.3-3" class="pilcrow">¶</a></p>
+<p id="section-3.3.3-4">Note that some settings have two variations (one set locally, one requested by the
+remote peer). This is reflected in the "owner" field. As such, this field MUST be
+correct for all settings included a single event instance. If you need to log
+settings from two sides, you MUST emit two separate event instances.<a href="#section-3.3.3-4" class="pilcrow">¶</a></p>
+<p id="section-3.3.3-5">In the case of connection resumption and 0-RTT, some of the server's parameters
+are stored up-front at the client and used for the initial connection startup.
+They are later updated with the server's reply. In these cases, utilize the
+separate <code>parameters_restored</code> event to indicate the initial values, and this
+event to indicate the updated values, as normal.<a href="#section-3.3.3-5" class="pilcrow">¶</a></p>
+<p id="section-3.3.3-6">Definition:<a href="#section-3.3.3-6" class="pilcrow">¶</a></p>
+<span id="name-transportparametersset-defi"></span><div id="transport-parametersset-def">
+<figure id="figure-11">
+            <div id="section-3.3.3-7.1">
+<pre class="breakable lang-cddl sourcecode">
+TransportParametersSet = {
+    ? owner: Owner
+
+    ; true if valid session ticket was received
+    ? resumption_allowed: bool
+
+    ; true if early data extension was enabled on the TLS layer
+    ? early_data_enabled: bool
+
+    ; e.g., "AES_128_GCM_SHA256"
+    ? tls_cipher: text
+
+    ; depends on the TLS cipher, but it's easier to be explicit.
+    ; in bytes
+    ? aead_tag_length: uint8 .default 16
+
+    ; transport parameters from the TLS layer:
+    ? original_destination_connection_id: ConnectionID
+    ? initial_source_connection_id: ConnectionID
+    ? retry_source_connection_id: ConnectionID
+    ? stateless_reset_token: StatelessResetToken
+    ? disable_active_migration: bool
+
+    ? max_idle_timeout: uint64
+    ? max_udp_payload_size: uint32
+    ? ack_delay_exponent: uint16
+    ? max_ack_delay: uint16
+    ? active_connection_id_limit: uint32
+
+    ? initial_max_data: uint64
+    ? initial_max_stream_data_bidi_local: uint64
+    ? initial_max_stream_data_bidi_remote: uint64
+    ? initial_max_stream_data_uni: uint64
+    ? initial_max_streams_bidi: uint64
+    ? initial_max_streams_uni: uint64
+
+    ? preferred_address: PreferredAddress
+}
+
+PreferredAddress = {
+    ip_v4: IPAddress
+    ip_v6: IPAddress
+
+    port_v4: uint16
+    port_v6: uint16
+
+    connection_id: ConnectionID
+    stateless_reset_token: StatelessResetToken
+}
+</pre>
+</div>
+<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
+<a href="#name-transportparametersset-defi" class="selfRef">TransportParametersSet definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.3-8">Additionally, this event can contain any number of unspecified fields. This is to
+reflect setting of for example unknown (greased) transport parameters or employed
+(proprietary) extensions.<a href="#section-3.3.3-8" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="parametersrestored">
+<section id="section-3.3.4">
+          <h4 id="name-parameters_restored">
+<a href="#section-3.3.4" class="section-number selfRef">3.3.4. </a><a href="#name-parameters_restored" class="section-name selfRef">parameters_restored</a>
+          </h4>
+<p id="section-3.3.4-1">Importance: Base<a href="#section-3.3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.4-2">When using QUIC 0-RTT, clients are expected to remember and restore the server's
+transport parameters from the previous connection. This event is used to indicate
+which parameters were restored and to which values when utilizing 0-RTT. Note that
+not all transport parameters should be restored (many are even prohibited from
+being re-utilized). The ones listed here are the ones expected to be useful for
+correct 0-RTT usage.<a href="#section-3.3.4-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.4-3">Definition:<a href="#section-3.3.4-3" class="pilcrow">¶</a></p>
+<span id="name-transportparametersrestored"></span><div id="transport-parametersrestored-def">
+<figure id="figure-12">
+            <div id="section-3.3.4-4.1">
+<pre class="lang-cddl sourcecode">
+TransportParametersRestored = {
+    ? disable_active_migration: bool
+
+    ? max_idle_timeout: uint64
+    ? max_udp_payload_size: uint32
+    ? active_connection_id_limit: uint32
+
+    ? initial_max_data: uint64
+    ? initial_max_stream_data_bidi_local: uint64
+    ? initial_max_stream_data_bidi_remote: uint64,
+    ? initial_max_stream_data_uni: uint64
+    ? initial_max_streams_bidi: uint64
+    ? initial_max_streams_uni: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
+<a href="#name-transportparametersrestored" class="selfRef">TransportParametersRestored definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.4-5">Note that, like parameters_set above, this event can contain any number of
+unspecified fields to allow for additional/custom parameters.<a href="#section-3.3.4-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="packetsent">
+<section id="section-3.3.5">
+          <h4 id="name-packet_sent">
+<a href="#section-3.3.5" class="section-number selfRef">3.3.5. </a><a href="#name-packet_sent" class="section-name selfRef">packet_sent</a>
+          </h4>
+<p id="section-3.3.5-1">Importance: Core<a href="#section-3.3.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.5-2">Definition:<a href="#section-3.3.5-2" class="pilcrow">¶</a></p>
+<span id="name-transportpacketsent-definit"></span><div id="transport-packetsent-def">
+<figure id="figure-13">
+            <div id="section-3.3.5-3.1">
+<pre class="lang-cddl sourcecode">
+TransportPacketSent = {
+    header: PacketHeader
+
+    ; see appendix for the QuicFrame definitions
+    ? frames: [* QuicFrame]
+
+    ? is_coalesced: bool .default false
+
+    ; only if header.packet_type === "retry"
+    ? retry_token: Token
+
+    ; only if header.packet_type === "stateless_reset"
+    ; is always 128 bits in length.
+    ? stateless_reset_token: StatelessResetToken
+
+    ; only if header.packet_type === "version_negotiation"
+    ? supported_versions: [+ QuicVersion]
+
+    ? raw: RawInfo
+    ? datagram_id: uint32
+
+    ? trigger:
+      ; draft-23 5.1.1
+      "retransmit_reordered" /
+      ; draft-23 5.1.2
+      "retransmit_timeout" /
+      ; draft-23 5.3.1
+      "pto_probe" /
+      ; draft-19 6.2
+      "retransmit_crypto" /
+      ; needed for some CCs to figure out bandwidth allocations
+      ; when there are no normal sends
+      "cc_bandwidth_probe"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
+<a href="#name-transportpacketsent-definit" class="selfRef">TransportPacketSent definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.5-4">Note: We do not explicitly log the encryption_level or packet_number_space: the
+header.packet_type specifies this by inference (assuming correct implementation)<a href="#section-3.3.5-4" class="pilcrow">¶</a></p>
+<p id="section-3.3.5-5">Note: for more details on "datagram_id", see <a href="#datagram-id" class="xref">Section 3.3.10</a>. It is only needed
+when keeping track of packet coalescing.<a href="#section-3.3.5-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="packetreceived">
+<section id="section-3.3.6">
+          <h4 id="name-packet_received">
+<a href="#section-3.3.6" class="section-number selfRef">3.3.6. </a><a href="#name-packet_received" class="section-name selfRef">packet_received</a>
+          </h4>
+<p id="section-3.3.6-1">Importance: Core<a href="#section-3.3.6-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.6-2">Definition:<a href="#section-3.3.6-2" class="pilcrow">¶</a></p>
+<span id="name-transportpacketreceived-def"></span><div id="transport-packetreceived-def">
+<figure id="figure-14">
+            <div id="section-3.3.6-3.1">
+<pre class="lang-cddl sourcecode">
+TransportPacketReceived = {
+    header: PacketHeader
+
+    ; see appendix for the definitions
+    ? frames: [* QuicFrame]
+
+    ? is_coalesced: bool .default false
+
+    ; only if header.packet_type === "retry"
+    ? retry_token: Token
+
+    ; only if header.packet_type === "stateless_reset"
+    ; Is always 128 bits in length.
+    ? stateless_reset_token: StatelessResetToken
+
+    ; only if header.packet_type === "version_negotiation"
+    ? supported_versions: [+ QuicVersion]
+
+    ? raw: RawInfo
+    ? datagram_id: uint32
+
+    ? trigger:
+        ; if packet was buffered because
+        ; it couldn't be decrypted before
+        "keys_available"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<a href="#name-transportpacketreceived-def" class="selfRef">TransportPacketReceived definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.6-4">Note: We do not explicitly log the encryption_level or packet_number_space: the
+header.packet_type specifies this by inference (assuming correct implementation)<a href="#section-3.3.6-4" class="pilcrow">¶</a></p>
+<p id="section-3.3.6-5">Note: for more details on "datagram_id", see <a href="#datagram-id" class="xref">Section 3.3.10</a>. It is only needed
+when keeping track of packet coalescing.<a href="#section-3.3.6-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="packetdropped">
+<section id="section-3.3.7">
+          <h4 id="name-packet_dropped">
+<a href="#section-3.3.7" class="section-number selfRef">3.3.7. </a><a href="#name-packet_dropped" class="section-name selfRef">packet_dropped</a>
+          </h4>
+<p id="section-3.3.7-1">Importance: Base<a href="#section-3.3.7-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.7-2">This event indicates a QUIC-level packet was dropped after partial or no parsing.<a href="#section-3.3.7-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.7-3">Definition:<a href="#section-3.3.7-3" class="pilcrow">¶</a></p>
+<span id="name-transportpacketdropped-defi"></span><div id="transport-packetdropped-def">
+<figure id="figure-15">
+            <div id="section-3.3.7-4.1">
+<pre class="lang-cddl sourcecode">
+TransportPacketDropped = {
+    ; primarily packet_type should be filled here,
+    ; as other fields might not be parseable
+    ? header: PacketHeader
+
+    ? raw: RawInfo
+    ? datagram_id: uint32
+
+    ? trigger:
+        "key_unavailable" /
+        "unknown_connection_id" /
+        "header_parse_error" /
+        "payload_decrypt_error" /
+        "protocol_violation" /
+        "dos_prevention" /
+        "unsupported_version" /
+        "unexpected_packet" /
+        "unexpected_source_connection_id" /
+        "unexpected_version" /
+        "duplicate" /
+        "invalid_initial"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
+<a href="#name-transportpacketdropped-defi" class="selfRef">TransportPacketDropped definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.7-5">Note: sometimes packets are dropped before they can be associated with a
+particular connection (e.g., in case of "unsupported_version"). This situation is
+discussed more in <a href="#handling-unknown-connections" class="xref">Section 2.1.2</a>.<a href="#section-3.3.7-5" class="pilcrow">¶</a></p>
+<p id="section-3.3.7-6">Note: for more details on "datagram_id", see <a href="#datagram-id" class="xref">Section 3.3.10</a>. It is only needed
+when keeping track of packet coalescing.<a href="#section-3.3.7-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="packetbuffered">
+<section id="section-3.3.8">
+          <h4 id="name-packet_buffered">
+<a href="#section-3.3.8" class="section-number selfRef">3.3.8. </a><a href="#name-packet_buffered" class="section-name selfRef">packet_buffered</a>
+          </h4>
+<p id="section-3.3.8-1">Importance: Base<a href="#section-3.3.8-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.8-2">This event is emitted when a packet is buffered because it cannot be processed
+yet. Typically, this is because the packet cannot be parsed yet, and thus we only
+log the full packet contents when it was parsed in a packet_received event.<a href="#section-3.3.8-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.8-3">Definition:<a href="#section-3.3.8-3" class="pilcrow">¶</a></p>
+<span id="name-transportpacketbuffered-def"></span><div id="transport-packetbuffered-def">
+<figure id="figure-16">
+            <div id="section-3.3.8-4.1">
+<pre class="lang-cddl sourcecode">
+TransportPacketBuffered = {
+    ; primarily packet_type and possible packet_number should be
+    ; filled here as other elements might not be available yet
+    ? header: PacketHeader
+
+    ? raw: RawInfo
+    ? datagram_id: uint32
+
+    ? trigger:
+        ; indicates the parser cannot keep up, temporarily buffers
+        ; packet for later processing
+        "backpressure" /
+        ; if packet cannot be decrypted because the proper keys were
+        ; not yet available
+        "keys_unavailable"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
+<a href="#name-transportpacketbuffered-def" class="selfRef">TransportPacketBuffered definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.8-5">Note: for more details on "datagram_id", see <a href="#datagram-id" class="xref">Section 3.3.10</a>. It is only needed
+when keeping track of packet coalescing.<a href="#section-3.3.8-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="packetsacked">
+<section id="section-3.3.9">
+          <h4 id="name-packets_acked">
+<a href="#section-3.3.9" class="section-number selfRef">3.3.9. </a><a href="#name-packets_acked" class="section-name selfRef">packets_acked</a>
+          </h4>
+<p id="section-3.3.9-1">Importance: Extra<a href="#section-3.3.9-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.9-2">This event is emitted when a (group of) sent packet(s) is acknowledged by the
+remote peer <em>for the first time</em>. This information could also be deduced from the
+contents of received ACK frames. However, ACK frames require additional processing
+logic to determine when a given packet is acknowledged for the first time, as QUIC
+uses ACK ranges which can include repeated ACKs. Additionally, this event can be
+used by implementations that do not log frame contents.<a href="#section-3.3.9-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.9-3">Definition:<a href="#section-3.3.9-3" class="pilcrow">¶</a></p>
+<span id="name-transportpacketsacked-defin"></span><div id="transport-packetsacked-def">
+<figure id="figure-17">
+            <div id="section-3.3.9-4.1">
+<pre class="lang-cddl sourcecode">
+TransportPacketsAcked = {
+    ? packet_number_space: PacketNumberSpace
+
+    ? packet_numbers: [+ uint64]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<a href="#name-transportpacketsacked-defin" class="selfRef">TransportPacketsAcked definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.9-5">Note: if packet_number_space is omitted, it assumes the default value of
+PacketNumberSpace.application_data, as this is by far the most prevalent packet
+number space a typical QUIC connection will use.<a href="#section-3.3.9-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="datagram-id">
+<section id="section-3.3.10">
+          <h4 id="name-datagrams_sent">
+<a href="#section-3.3.10" class="section-number selfRef">3.3.10. </a><a href="#name-datagrams_sent" class="section-name selfRef">datagrams_sent</a>
+          </h4>
+<p id="section-3.3.10-1">Importance: Extra<a href="#section-3.3.10-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.10-2">When we pass one or more UDP-level datagrams to the socket. This is useful for
+determining how QUIC packet buffers are drained to the OS.<a href="#section-3.3.10-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.10-3">Definition:<a href="#section-3.3.10-3" class="pilcrow">¶</a></p>
+<span id="name-transportdatagramssent-defi"></span><div id="transport-datagramssent-def">
+<figure id="figure-18">
+            <div id="section-3.3.10-4.1">
+<pre class="lang-cddl sourcecode">
+TransportDatagramsSent = {
+    ; to support passing multiple at once
+    ? count: uint16
+
+    ; RawInfo:length field indicates total length of the datagrams
+    ; including UDP header length
+    ? raw: [+ RawInfo]
+
+    ? datagram_ids: [+ uint32]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<a href="#name-transportdatagramssent-defi" class="selfRef">TransportDatagramsSent definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.10-5">Note: QUIC itself does not have a concept of a "datagram_id". This field is a
+purely qlog-specific construct to allow tracking how multiple QUIC packets are
+coalesced inside of a single UDP datagram, which is an important optimization
+during the QUIC handshake. For this, implementations assign a (per-endpoint)
+unique ID to each datagram and keep track of which packets were coalesced into the
+same datagram. As packet coalescing typically only happens during the handshake
+(as it requires at least one long header packet), this can be done without much
+overhead.<a href="#section-3.3.10-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="datagramsreceived">
+<section id="section-3.3.11">
+          <h4 id="name-datagrams_received">
+<a href="#section-3.3.11" class="section-number selfRef">3.3.11. </a><a href="#name-datagrams_received" class="section-name selfRef">datagrams_received</a>
+          </h4>
+<p id="section-3.3.11-1">Importance: Extra<a href="#section-3.3.11-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.11-2">When we receive one or more UDP-level datagrams from the socket. This is useful
+for determining how datagrams are passed to the user space stack from the OS.<a href="#section-3.3.11-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.11-3">Definition:<a href="#section-3.3.11-3" class="pilcrow">¶</a></p>
+<span id="name-transportdatagramsreceived-"></span><div id="transport-datagramsreceived-def">
+<figure id="figure-19">
+            <div id="section-3.3.11-4.1">
+<pre class="lang-cddl sourcecode">
+TransportDatagramsReceived = {
+    ; to support passing multiple at once
+    ? count: uint16
+
+    ; RawInfo:length field indicates total length of the datagrams
+    ; including UDP header length
+    ? raw: [+ RawInfo]
+
+    ? datagram_ids: [+ uint32]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
+<a href="#name-transportdatagramsreceived-" class="selfRef">TransportDatagramsReceived definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.11-5">Note: for more details on "datagram_ids", see <a href="#datagram-id" class="xref">Section 3.3.10</a>.<a href="#section-3.3.11-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="datagramdropped">
+<section id="section-3.3.12">
+          <h4 id="name-datagram_dropped">
+<a href="#section-3.3.12" class="section-number selfRef">3.3.12. </a><a href="#name-datagram_dropped" class="section-name selfRef">datagram_dropped</a>
+          </h4>
+<p id="section-3.3.12-1">Importance: Extra<a href="#section-3.3.12-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.12-2">When we drop a UDP-level datagram. This is typically if it does not contain a
+valid QUIC packet (in that case, use packet_dropped instead).<a href="#section-3.3.12-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.12-3">Definition:<a href="#section-3.3.12-3" class="pilcrow">¶</a></p>
+<span id="name-transportdatagramdropped-de"></span><div id="transport-datagramdropped-def">
+<figure id="figure-20">
+            <div id="section-3.3.12-4.1">
+<pre class="lang-cddl sourcecode">
+TransportDatagramDropped = {
+    ? raw: RawInfo
+}
+</pre>
+</div>
+<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
+<a href="#name-transportdatagramdropped-de" class="selfRef">TransportDatagramDropped definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="streamstateupdated">
+<section id="section-3.3.13">
+          <h4 id="name-stream_state_updated">
+<a href="#section-3.3.13" class="section-number selfRef">3.3.13. </a><a href="#name-stream_state_updated" class="section-name selfRef">stream_state_updated</a>
+          </h4>
+<p id="section-3.3.13-1">Importance: Base<a href="#section-3.3.13-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.13-2">This event is emitted whenever the internal state of a QUIC stream is updated, as
+described in QUIC transport draft-23 section 3. Most of this can be inferred from
+several types of frames going over the wire, but it's much easier to have explicit
+signals for these state changes.<a href="#section-3.3.13-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.13-3">Definition:<a href="#section-3.3.13-3" class="pilcrow">¶</a></p>
+<span id="name-transportstreamstateupdated"></span><div id="transport-streamstateupdated-def">
+<figure id="figure-21">
+            <div id="section-3.3.13-4.1">
+<pre class="lang-cddl sourcecode">
+StreamType = "unidirectional" / "bidirectional"
+
+TransportStreamStateUpdated = {
+    stream_id: uint64
+
+    ; mainly useful when opening the stream
+    ? stream_type: StreamType
+
+    ? old: StreamState
+    new: StreamState
+
+    ? stream_side: "sending" / "receiving"
+}
+
+StreamState =
+    ; bidirectional stream states, draft-23 3.4.
+    "idle" /
+    "open" /
+    "half_closed_local" /
+    "half_closed_remote" /
+    "closed" /
+
+    ; sending-side stream states, draft-23 3.1.
+    "ready" /
+    "send" /
+    "data_sent" /
+    "reset_sent" /
+    "reset_received" /
+
+    ; receive-side stream states, draft-23 3.2.
+    "receive" /
+    "size_known" /
+    "data_read" /
+    "reset_read" /
+
+    ; both-side states
+    "data_received" /
+
+    ; qlog-defined:
+    ; memory actually freed
+    "destroyed"
+</pre>
+</div>
+<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
+<a href="#name-transportstreamstateupdated" class="selfRef">TransportStreamStateUpdated definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.13-5">Note: QUIC implementations SHOULD mainly log the simplified bidirectional
+(HTTP/2-alike) stream states (e.g., idle, open, closed) instead of the more
+finegrained stream states (e.g., data_sent, reset_received). These latter ones are
+mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
+equally.<a href="#section-3.3.13-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="framesprocessed">
+<section id="section-3.3.14">
+          <h4 id="name-frames_processed">
+<a href="#section-3.3.14" class="section-number selfRef">3.3.14. </a><a href="#name-frames_processed" class="section-name selfRef">frames_processed</a>
+          </h4>
+<p id="section-3.3.14-1">Importance: Extra<a href="#section-3.3.14-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.14-2">This event's main goal is to prevent a large proliferation of specific purpose
+events (e.g., packets_acknowledged, flow_control_updated, stream_data_received).
+We want to give implementations the opportunity to (selectively) log this type of
+signal without having to log packet-level details (e.g., in packet_received).
+Since for almost all cases, the effects of applying a frame to the internal state
+of an implementation can be inferred from that frame's contents, we aggregate
+these events in this single "frames_processed" event.<a href="#section-3.3.14-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.14-3">Note: This event can be used to signal internal state change not resulting
+directly from the actual "parsing" of a frame (e.g., the frame could have been
+parsed, data put into a buffer, then later processed, then logged with this
+event).<a href="#section-3.3.14-3" class="pilcrow">¶</a></p>
+<p id="section-3.3.14-4">Note: Implementations logging "packet_received" and which include all of the
+packet's constituent frames therein, are not expected to emit this
+"frames_processed" event. Rather, implementations not wishing to log full packets
+or that wish to explicitly convey extra information about when frames are
+processed (if not directly tied to their reception) can use this event.<a href="#section-3.3.14-4" class="pilcrow">¶</a></p>
+<p id="section-3.3.14-5">Note: for some events, this approach will lose some information (e.g., for which
+encryption level are packets being acknowledged?). If this information is
+important, please use the packet_received event instead.<a href="#section-3.3.14-5" class="pilcrow">¶</a></p>
+<p id="section-3.3.14-6">Note: in some implementations, it can be difficult to log frames directly, even
+when using packet_sent and packet_received events. For these cases, this event
+also contains the direct packet_number field, which can be used to more explicitly
+link this event to the packet_sent/received events.<a href="#section-3.3.14-6" class="pilcrow">¶</a></p>
+<p id="section-3.3.14-7">Definition:<a href="#section-3.3.14-7" class="pilcrow">¶</a></p>
+<span id="name-transportframesprocessed-de"></span><div id="transport-framesprocessed-def">
+<figure id="figure-22">
+            <div id="section-3.3.14-8.1">
+<pre class="lang-cddl sourcecode">
+TransportFramesProcessed = {
+    ; see appendix for the QuicFrame definitions
+    frames: [* QuicFrame]
+
+    ? packet_number: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
+<a href="#name-transportframesprocessed-de" class="selfRef">TransportFramesProcessed definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="datamoved">
+<section id="section-3.3.15">
+          <h4 id="name-data_moved">
+<a href="#section-3.3.15" class="section-number selfRef">3.3.15. </a><a href="#name-data_moved" class="section-name selfRef">data_moved</a>
+          </h4>
+<p id="section-3.3.15-1">Importance: Base<a href="#section-3.3.15-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.15-2">Used to indicate when data moves between the different layers (for example passing
+from the application protocol (e.g., HTTP) to QUIC stream buffers and vice versa)
+or between the application protocol (e.g., HTTP) and the actual user application
+on top (for example a browser engine). This helps make clear the flow of data, how
+long data remains in various buffers and the overheads introduced by individual
+layers.<a href="#section-3.3.15-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.15-3">For example, this helps make clear whether received data on a QUIC stream is moved
+to the application protocol immediately (for example per received packet) or in
+larger batches (for example, all QUIC packets are processed first and afterwards
+the application layer reads from the streams with newly available data). This in
+turn can help identify bottlenecks or scheduling problems.<a href="#section-3.3.15-3" class="pilcrow">¶</a></p>
+<p id="section-3.3.15-4">Definition:<a href="#section-3.3.15-4" class="pilcrow">¶</a></p>
+<span id="name-transportdatamoved-definiti"></span><div id="transport-datamoved-def">
+<figure id="figure-23">
+            <div id="section-3.3.15-5.1">
+<pre class="lang-cddl sourcecode">
+TransportDataMoved = {
+    ? stream_id: uint64
+    ? offset: uint64
+
+    ; byte length of the moved data
+    ? length: uint64
+
+    ? from: "user" / "application" / "transport" / "network" / text
+    ? to: "user" / "application" / "transport" / "network" / text
+
+    ; raw bytes that were transferred
+    ? data: hexstring
+}
+</pre>
+</div>
+<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
+<a href="#name-transportdatamoved-definiti" class="selfRef">TransportDataMoved definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.3.15-6">Note: we do not for example use a "direction" field (with values "up" and "down")
+to specify the data flow. This is because in some optimized implementations, data
+might skip some individual layers. Additionally, using explicit "from" and "to"
+fields is more flexible and allows the definition of other conceptual "layers"
+(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
+library ("security") or from HTTP/3 to QPACK ("qpack")).<a href="#section-3.3.15-6" class="pilcrow">¶</a></p>
+<p id="section-3.3.15-7">Note: this event type is part of the "transport" category, but really spans all
+the different layers. This means we have a few leaky abstractions here (for
+example, the stream_id or stream offset might not be available at some logging
+points, or the raw data might not be in a byte-array form). In these situations,
+implementers can decide to define new, in-context fields to aid in manual
+debugging.<a href="#section-3.3.15-7" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="recovery">
+<section id="section-3.4">
+        <h3 id="name-recovery">
+<a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-recovery" class="section-name selfRef">recovery</a>
+        </h3>
+<p id="section-3.4-1">Note: most of the events in this category are kept generic to support different
+recovery approaches and various congestion control algorithms. Tool creators
+SHOULD make an effort to support and visualize even unknown data in these events
+(e.g., plot unknown congestion states by name on a timeline visualization).<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<div id="parametersset-1">
+<section id="section-3.4.1">
+          <h4 id="name-parameters_set-2">
+<a href="#section-3.4.1" class="section-number selfRef">3.4.1. </a><a href="#name-parameters_set-2" class="section-name selfRef">parameters_set</a>
+          </h4>
+<p id="section-3.4.1-1">Importance: Base<a href="#section-3.4.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-2">This event groups initial parameters from both loss detection and congestion
+control into a single event. All these settings are typically set once and never
+change. Implementation that do, for some reason, change these parameters during
+execution, MAY emit the parameters_set event twice.<a href="#section-3.4.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-3">Definition:<a href="#section-3.4.1-3" class="pilcrow">¶</a></p>
+<span id="name-recoveryparametersset-defin"></span><div id="recovery-parametersset-def">
+<figure id="figure-24">
+            <div id="section-3.4.1-4.1">
+<pre class="lang-cddl sourcecode">
+RecoveryParametersSet = {
+    ; Loss detection, see recovery draft-23, Appendix A.2
+    ; in amount of packets
+    ? reordering_threshold: uint16
+
+    ; as RTT multiplier
+    ? time_threshold: float32
+
+    ; in ms
+    timer_granularity: uint16
+
+    ; in ms
+    ? initial_rtt:float32
+
+    ; congestion control, Appendix B.1.
+    ; in bytes. Note: this could be updated after pmtud
+    ? max_datagram_size: uint32
+
+    ; in bytes
+    ? initial_congestion_window: uint64
+
+    ; Note: this could change when max_datagram_size changes
+    ; in bytes
+    ? minimum_congestion_window: uint32
+    ? loss_reduction_factor: float32
+
+    ; as PTO multiplier
+    ? persistent_congestion_threshold: uint16
+}
+</pre>
+</div>
+<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
+<a href="#name-recoveryparametersset-defin" class="selfRef">RecoveryParametersSet definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.4.1-5">Additionally, this event can contain any number of unspecified fields to support
+different recovery approaches.<a href="#section-3.4.1-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="metricsupdated">
+<section id="section-3.4.2">
+          <h4 id="name-metrics_updated">
+<a href="#section-3.4.2" class="section-number selfRef">3.4.2. </a><a href="#name-metrics_updated" class="section-name selfRef">metrics_updated</a>
+          </h4>
+<p id="section-3.4.2-1">Importance: Core<a href="#section-3.4.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-2">This event is emitted when one or more of the observable recovery metrics changes
+value. This event SHOULD group all possible metric updates that happen at or
+around the same time in a single event (e.g., if min_rtt and smoothed_rtt change
+at the same time, they should be bundled in a single metrics_updated entry, rather
+than split out into two). Consequently, a metrics_updated event is only guaranteed
+to contain at least one of the listed metrics.<a href="#section-3.4.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-3">Definition:<a href="#section-3.4.2-3" class="pilcrow">¶</a></p>
+<span id="name-recoverymetricsupdated-defi"></span><div id="recovery-metricsupdated-def">
+<figure id="figure-25">
+            <div id="section-3.4.2-4.1">
+<pre class="lang-cddl sourcecode">
+RecoveryMetricsUpdated = {
+    ; Loss detection, see recovery draft-23, Appendix A.3
+    ; all following rtt fields are expressed in ms
+    ? min_rtt: float32
+    ? smoothed_rtt: float32
+    ? latest_rtt: float32
+    ? rtt_variance: float32
+
+    ? pto_count: uint16
+
+    ; Congestion control, Appendix B.2.
+    ; in bytes
+    ? congestion_window: uint64
+    ? bytes_in_flight: uint64
+
+    ; in bytes
+    ? ssthresh: uint64
+
+    ; qlog defined
+    ; sum of all packet number spaces
+    ? packets_in_flight: uint64
+
+    ; in bits per second
+    ? pacing_rate: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
+<a href="#name-recoverymetricsupdated-defi" class="selfRef">RecoveryMetricsUpdated definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.4.2-5">Note: to make logging easier, implementations MAY log values even if they are the
+same as previously reported values (e.g., two subsequent RecoveryMetricsUpdated entries can
+both report the exact same value for min_rtt). However, applications SHOULD try to
+log only actual updates to values.<a href="#section-3.4.2-5" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-6">Additionally, this event can contain any number of unspecified fields to support
+different recovery approaches.<a href="#section-3.4.2-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="congestionstateupdated">
+<section id="section-3.4.3">
+          <h4 id="name-congestion_state_updated">
+<a href="#section-3.4.3" class="section-number selfRef">3.4.3. </a><a href="#name-congestion_state_updated" class="section-name selfRef">congestion_state_updated</a>
+          </h4>
+<p id="section-3.4.3-1">Importance: Base<a href="#section-3.4.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.3-2">This event signifies when the congestion controller enters a significant new state
+and changes its behaviour. This event's definition is kept generic to support
+different Congestion Control algorithms. For example, for the algorithm defined in
+the Recovery draft ("enhanced" New Reno), the following states are defined:<a href="#section-3.4.3-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.4.3-3.1">slow_start<a href="#section-3.4.3-3.1" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.4.3-3.2">congestion_avoidance<a href="#section-3.4.3-3.2" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.4.3-3.3">application_limited<a href="#section-3.4.3-3.3" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.4.3-3.4">recovery<a href="#section-3.4.3-3.4" class="pilcrow">¶</a>
+</li>
+          </ul>
+<p id="section-3.4.3-4">Definition:<a href="#section-3.4.3-4" class="pilcrow">¶</a></p>
+<span id="name-recoverycongestionstateupda"></span><div id="recovery-congestionstateupdated-def">
+<figure id="figure-26">
+            <div id="section-3.4.3-5.1">
+<pre class="lang-cddl sourcecode">
+RecoveryCongestionStateUpdated = {
+    ? old: text
+    new: text
+
+    ? trigger:
+        "persistent_congestion" /
+        "ECN"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
+<a href="#name-recoverycongestionstateupda" class="selfRef">RecoveryCongestionStateUpdated definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.4.3-6">The "trigger" field SHOULD be logged if there are multiple ways in which a state change
+can occur but MAY be omitted if a given state can only be due to a single event
+occuring (e.g., slow start is exited only when ssthresh is exceeded).<a href="#section-3.4.3-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="losstimerupdated">
+<section id="section-3.4.4">
+          <h4 id="name-loss_timer_updated">
+<a href="#section-3.4.4" class="section-number selfRef">3.4.4. </a><a href="#name-loss_timer_updated" class="section-name selfRef">loss_timer_updated</a>
+          </h4>
+<p id="section-3.4.4-1">Importance: Extra<a href="#section-3.4.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.4-2">This event is emitted when a recovery loss timer changes state. The three main
+event types are:<a href="#section-3.4.4-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-3.4.4-3.1">set: the timer is set with a delta timeout for when it will trigger next<a href="#section-3.4.4-3.1" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.4.4-3.2">expired: when the timer effectively expires after the delta timeout<a href="#section-3.4.4-3.2" class="pilcrow">¶</a>
+</li>
+            <li class="normal" id="section-3.4.4-3.3">cancelled: when a timer is cancelled (e.g., all outstanding packets are
+acknowledged, start idle period)<a href="#section-3.4.4-3.3" class="pilcrow">¶</a>
+</li>
+          </ul>
+<p id="section-3.4.4-4">Note: to indicate an active timer's timeout update, a new "set" event is used.<a href="#section-3.4.4-4" class="pilcrow">¶</a></p>
+<p id="section-3.4.4-5">Definition:<a href="#section-3.4.4-5" class="pilcrow">¶</a></p>
+<span id="name-recoverylosstimerupdated-de"></span><div id="recovery-losstimerupdated-def">
+<figure id="figure-27">
+            <div id="section-3.4.4-6.1">
+<pre class="lang-cddl sourcecode">
+RecoveryLossTimerUpdated = {
+    ; called "mode" in draft-23 A.9.
+    ? timer_type: "ack" / "pto"
+    ? packet_number_space: PacketNumberSpace
+
+    event_type: "set" / "expired" / "cancelled"
+
+    ; if event_type === "set": delta time is in ms from
+    ; this event's timestamp until when the timer will trigger
+    ? delta: float32
+}
+</pre>
+</div>
+<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
+<a href="#name-recoverylosstimerupdated-de" class="selfRef">RecoveryLossTimerUpdated definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.4.4-7">TODO: how about CC algo's that use multiple timers? How generic do these events
+need to be? Just support QUIC-style recovery from the spec or broader?<a href="#section-3.4.4-7" class="pilcrow">¶</a></p>
+<p id="section-3.4.4-8">TODO: read up on the loss detection logic in draft-27 onward and see if this suffices<a href="#section-3.4.4-8" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="packetlost">
+<section id="section-3.4.5">
+          <h4 id="name-packet_lost">
+<a href="#section-3.4.5" class="section-number selfRef">3.4.5. </a><a href="#name-packet_lost" class="section-name selfRef">packet_lost</a>
+          </h4>
+<p id="section-3.4.5-1">Importance: Core<a href="#section-3.4.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.5-2">This event is emitted when a packet is deemed lost by loss detection.<a href="#section-3.4.5-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.5-3">Definition:<a href="#section-3.4.5-3" class="pilcrow">¶</a></p>
+<span id="name-recoverypacketlost-definiti"></span><div id="recovery-packetlost-def">
+<figure id="figure-28">
+            <div id="section-3.4.5-4.1">
+<pre class="lang-cddl sourcecode">
+RecoveryPacketLost = {
+    ; should include at least the packet_type and packet_number
+    ? header: PacketHeader
+
+    ; not all implementations will keep track of full
+    ; packets, so these are optional
+    ; see appendix for the QuicFrame definitions
+    ? frames: [* QuicFrame]
+
+    ? trigger:
+        "reordering_threshold" /
+        "time_threshold" /
+        ; draft-23 section 5.3.1, MAY
+        "pto_expired"
+}
+</pre>
+</div>
+<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
+<a href="#name-recoverypacketlost-definiti" class="selfRef">RecoveryPacketLost definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-3.4.5-5">For this event, the "trigger" field SHOULD be set (for example to one of the
+values below), as this helps tremendously in debugging.<a href="#section-3.4.5-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="markedforretransmit">
+<section id="section-3.4.6">
+          <h4 id="name-marked_for_retransmit">
+<a href="#section-3.4.6" class="section-number selfRef">3.4.6. </a><a href="#name-marked_for_retransmit" class="section-name selfRef">marked_for_retransmit</a>
+          </h4>
+<p id="section-3.4.6-1">Importance: Extra<a href="#section-3.4.6-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-2">This event indicates which data was marked for retransmit upon detecing a packet
+loss (see packet_lost). Similar to our reasoning for the "frames_processed" event,
+in order to keep the amount of different events low, we group this signal for all
+types of retransmittable data in a single event based on existing QUIC frame
+definitions.<a href="#section-3.4.6-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-3">Implementations retransmitting full packets or frames directly can just log the
+consituent frames of the lost packet here (or do away with this event and use the
+contents of the packet_lost event instead). Conversely, implementations that have
+more complex logic (e.g., marking ranges in a stream's data buffer as in-flight),
+or that do not track sent frames in full (e.g., only stream offset + length), can
+translate their internal behaviour into the appropriate frame instance here even
+if that frame was never or will never be put on the wire.<a href="#section-3.4.6-3" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-4">Note: much of this data can be inferred if implementations log packet_sent events
+(e.g., looking at overlapping stream data offsets and length, one can determine
+when data was retransmitted).<a href="#section-3.4.6-4" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-5">Definition:<a href="#section-3.4.6-5" class="pilcrow">¶</a></p>
+<span id="name-recoverymarkedforretransmit"></span><div id="recovery-markedforretransmit-def">
+<figure id="figure-29">
+            <div id="section-3.4.6-6.1">
+<pre class="lang-ccdl sourcecode">
+RecoveryMarkedForRetransmit = {
+    ; see appendix for the QuicFrame definitions
+    frames: [+ QuicFrame]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
+<a href="#name-recoverymarkedforretransmit" class="selfRef">RecoveryMarkedForRetransmit definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="security-considerations">
+<section id="section-4">
+      <h2 id="name-security-considerations">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<p id="section-4-1">TBD<a href="#section-4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-5">
+      <h2 id="name-iana-considerations">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-5-1">TBD<a href="#section-5-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<section id="section-6">
+      <h2 id="name-references">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-references" class="section-name selfRef">References</a>
+      </h2>
+<section id="section-6.1">
+        <h3 id="name-normative-references">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
+<dl class="references">
+<dt id="CDDL">[CDDL]</dt>
+        <dd>
+<span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Vigano, C.</span>, and <span class="refAuthor">C. Bormann</span>, <span class="refTitle">"Concise Data Definition Language (CDDL): A Notational Convention to Express Concise Binary Object Representation (CBOR) and JSON Data Structures"</span>, <span class="seriesInfo">RFC 8610</span>, <span class="seriesInfo">DOI 10.17487/RFC8610</span>, <time datetime="2019-06" class="refDate">June 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8610">https://www.rfc-editor.org/rfc/rfc8610</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="QLOG-H3">[QLOG-H3]</dt>
+        <dd>
+<span class="refAuthor">Marx, R., Ed.</span>, <span class="refAuthor">Niccolini, L., Ed.</span>, and <span class="refAuthor">M. Seemann, Ed.</span>, <span class="refTitle">"HTTP/3 and QPACK event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-h3-events</span>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="QLOG-MAIN">[QLOG-MAIN]</dt>
+        <dd>
+<span class="refAuthor">Marx, R., Ed.</span>, <span class="refAuthor">Niccolini, L., Ed.</span>, and <span class="refAuthor">M. Seemann, Ed.</span>, <span class="refTitle">"Main logging schema for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-main-schema</span>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="QUIC-RECOVERY">[QUIC-RECOVERY]</dt>
+        <dd>
+<span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">I. Swett, Ed.</span>, <span class="refTitle">"QUIC Loss Detection and Congestion Control"</span>, <span class="seriesInfo">RFC 9002</span>, <span class="seriesInfo">DOI 10.17487/RFC9002</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9002">https://www.rfc-editor.org/rfc/rfc9002</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="QUIC-TLS">[QUIC-TLS]</dt>
+        <dd>
+<span class="refAuthor">Thomson, M., Ed.</span> and <span class="refAuthor">S. Turner, Ed.</span>, <span class="refTitle">"Using TLS to Secure QUIC"</span>, <span class="seriesInfo">RFC 9001</span>, <span class="seriesInfo">DOI 10.17487/RFC9001</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9001">https://www.rfc-editor.org/rfc/rfc9001</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="QUIC-TRANSPORT">[QUIC-TRANSPORT]</dt>
+      <dd>
+<span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="seriesInfo">RFC 9000</span>, <span class="seriesInfo">DOI 10.17487/RFC9000</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9000">https://www.rfc-editor.org/rfc/rfc9000</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+<section id="section-6.2">
+        <h3 id="name-informative-references">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+      <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</section>
+<div id="quic-data-field-definitions">
+<section id="appendix-A">
+      <h2 id="name-quic-data-field-definitions">
+<a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-quic-data-field-definitions" class="section-name selfRef">QUIC data field definitions</a>
+      </h2>
+<div id="protocoleventbody-extension">
+<section id="appendix-A.1">
+        <h3 id="name-protocoleventbody-extension">
+<a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-protocoleventbody-extension" class="section-name selfRef">ProtocolEventBody extension</a>
+        </h3>
+<p id="appendix-A.1-1">We extend the <code>$ProtocolEventBody</code> extension point defined in
+<span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]</span> with the QUIC protocol events defined in this document.<a href="#appendix-A.1-1" class="pilcrow">¶</a></p>
+<div id="appendix-A.1-2">
+<pre class="lang-cddl sourcecode">
+QuicEvents = ConnectivityServerListening /
+             ConnectivityConnectionStarted /
+             ConnectivityConnectionClosed /
+             ConnectivityConnectionIDUpdated /
+             ConnectivitySpinBitUpdated /
+             ConnectivityConnectionStateUpdated /
+             SecurityKeyUpdated / SecurityKeyRetired /
+             TransportVersionInformation / TransportALPNInformation /
+             TransportParametersSet / TransportParametersRestored /
+             TransportPacketSent / TransportPacketReceived /
+             TransportPacketDropped / TransportPacketBuffered /
+             TransportPacketsAcked / TransportDatagramsSent /
+             TransportDatagramsReceived / TransportDatagramDropped /
+             TransportStreamStateUpdated / TransportFramesProcessed /
+             TransportDataMoved /
+             RecoveryParametersSet / RecoveryMetricsUpdated /
+             RecoveryCongestionStateUpdated /
+             RecoveryLossTimerUpdated /
+             RecoveryPacketLost
+
+$ProtocolEventBody /= QuicEvents
+</pre><a href="#appendix-A.1-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="quicversion">
+<section id="appendix-A.2">
+        <h3 id="name-quicversion">
+<a href="#appendix-A.2" class="section-number selfRef">A.2. </a><a href="#name-quicversion" class="section-name selfRef">QuicVersion</a>
+        </h3>
+<span id="name-quicversion-definition"></span><div id="quicversion-def">
+<figure id="figure-30">
+          <div id="appendix-A.2-1.1">
+<pre class="lang-cddl sourcecode">
+QuicVersion = hexstring
+</pre>
+</div>
+<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
+<a href="#name-quicversion-definition" class="selfRef">QuicVersion definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="connectionid">
+<section id="appendix-A.3">
+        <h3 id="name-connectionid">
+<a href="#appendix-A.3" class="section-number selfRef">A.3. </a><a href="#name-connectionid" class="section-name selfRef">ConnectionID</a>
+        </h3>
+<span id="name-connectionid-definition"></span><div id="connectionid-def">
+<figure id="figure-31">
+          <div id="appendix-A.3-1.1">
+<pre class="lang-cddl sourcecode">
+ConnectionID = hexstring
+</pre>
+</div>
+<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
+<a href="#name-connectionid-definition" class="selfRef">ConnectionID definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="owner">
+<section id="appendix-A.4">
+        <h3 id="name-owner">
+<a href="#appendix-A.4" class="section-number selfRef">A.4. </a><a href="#name-owner" class="section-name selfRef">Owner</a>
+        </h3>
+<span id="name-owner-definition"></span><div id="owner-def">
+<figure id="figure-32">
+          <div id="appendix-A.4-1.1">
+<pre class="lang-cddl sourcecode">
+Owner = "local" / "remote"
+</pre>
+</div>
+<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
+<a href="#name-owner-definition" class="selfRef">Owner definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="ipaddress-and-ipversion">
+<section id="appendix-A.5">
+        <h3 id="name-ipaddress-and-ipversion">
+<a href="#appendix-A.5" class="section-number selfRef">A.5. </a><a href="#name-ipaddress-and-ipversion" class="section-name selfRef">IPAddress and IPVersion</a>
+        </h3>
+<span id="name-ipaddress-definition"></span><div id="ipaddress-def">
+<figure id="figure-33">
+          <div id="appendix-A.5-1.1">
+<pre class="lang-cddl sourcecode">
+; an IPAddress can either be a "human readable" form
+; (e.g., "127.0.0.1" for v4 or
+; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
+; use a raw byte-form (as the string forms can be ambiguous)
+IPAddress = text / hexstring
+</pre>
+</div>
+<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
+<a href="#name-ipaddress-definition" class="selfRef">IPAddress definition</a>
+          </figcaption></figure>
+</div>
+<span id="name-ipversion-definition"></span><div id="ipversion-def">
+<figure id="figure-34">
+          <div id="appendix-A.5-2.1">
+<pre class="lang-cddl sourcecode">
+IPVersion = "v4" / "v6"
+</pre>
+</div>
+<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
+<a href="#name-ipversion-definition" class="selfRef">IPVersion definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="packettype">
+<section id="appendix-A.6">
+        <h3 id="name-packettype">
+<a href="#appendix-A.6" class="section-number selfRef">A.6. </a><a href="#name-packettype" class="section-name selfRef">PacketType</a>
+        </h3>
+<span id="name-packettype-definition"></span><div id="packettype-def">
+<figure id="figure-35">
+          <div id="appendix-A.6-1.1">
+<pre class="lang-cddl sourcecode">
+PacketType = "initial" / "handshake" / "0RTT" / "1RTT" / "retry" /
+    "version_negotiation" / "stateless_reset" / "unknown"
+</pre>
+</div>
+<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
+<a href="#name-packettype-definition" class="selfRef">PacketType definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="packetnumberspace">
+<section id="appendix-A.7">
+        <h3 id="name-packetnumberspace">
+<a href="#appendix-A.7" class="section-number selfRef">A.7. </a><a href="#name-packetnumberspace" class="section-name selfRef">PacketNumberSpace</a>
+        </h3>
+<span id="name-packetnumberspace-definitio"></span><div id="packetnumberspace-def">
+<figure id="figure-36">
+          <div id="appendix-A.7-1.1">
+<pre class="lang-cddl sourcecode">
+PacketNumberSpace = "initial" / "handshake" / "application_data"
+</pre>
+</div>
+<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
+<a href="#name-packetnumberspace-definitio" class="selfRef">PacketNumberSpace definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="packetheader">
+<section id="appendix-A.8">
+        <h3 id="name-packetheader">
+<a href="#appendix-A.8" class="section-number selfRef">A.8. </a><a href="#name-packetheader" class="section-name selfRef">PacketHeader</a>
+        </h3>
+<span id="name-packetheader-definition"></span><div id="packetheader-def">
+<figure id="figure-37">
+          <div id="appendix-A.8-1.1">
+<pre class="lang-cddl sourcecode">
+PacketHeader = {
+    packet_type: PacketType
+    packet_number: uint64
+
+    ; the bit flags of the packet headers (spin bit, key update bit,
+    ; etc. up to and including the packet number length bits
+    ; if present
+    ? flags: uint8
+
+    ; only if packet_type === "initial"
+    ? token: Token
+
+    ; only if packet_type === "initial" || "handshake" || "0RTT"
+    ; Signifies length of the packet_number plus the payload
+    ? length: uint16
+
+    ; only if present in the header
+    ; if correctly using transport:connection_id_updated events,
+    ; dcid can be skipped for 1RTT packets
+    ? version: QuicVersion
+    ? scil: uint8
+    ? dcil: uint8
+    ? scid: ConnectionID
+    ? dcid: ConnectionID
+}
+</pre>
+</div>
+<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
+<a href="#name-packetheader-definition" class="selfRef">PacketHeader definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="token">
+<section id="appendix-A.9">
+        <h3 id="name-token">
+<a href="#appendix-A.9" class="section-number selfRef">A.9. </a><a href="#name-token" class="section-name selfRef">Token</a>
+        </h3>
+<span id="name-token-definition"></span><div id="token-def">
+<figure id="figure-38">
+          <div id="appendix-A.9-1.1">
+<pre class="lang-cddl sourcecode">
+Token = {
+    ? type: "retry" / "resumption" / "stateless_reset"
+
+    ; byte length of the token
+    ? length: uint32
+
+    ; raw byte value of the token
+    ? data: hexstring
+
+    ; decoded fields included in the token
+    ; (typically: peer's IP address, creation time)
+    ? details: {
+      * text =&gt; any
+    }
+}
+</pre>
+</div>
+<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
+<a href="#name-token-definition" class="selfRef">Token definition</a>
+          </figcaption></figure>
+</div>
+<p id="appendix-A.9-2">The token carried in an Initial packet can either be a retry token from a Retry
+packet, or one originally provided by the server in a NEW_TOKEN frame used when
+resuming a connection (e.g., for address validation purposes). Retry and
+resumption tokens typically contain encoded metadata to check the token's
+validity when it is used, but this metadata and its format is implementation
+specific. For that, this field includes a general-purpose "details" field.<a href="#appendix-A.9-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="stateless-reset-token">
+<section id="appendix-A.10">
+        <h3 id="name-stateless-reset-token">
+<a href="#appendix-A.10" class="section-number selfRef">A.10. </a><a href="#name-stateless-reset-token" class="section-name selfRef">Stateless Reset Token</a>
+        </h3>
+<span id="name-stateless-reset-token-defin"></span><div id="stateless-reset-token-def">
+<figure id="figure-39">
+          <div id="appendix-A.10-1.1">
+<pre class="lang-cddl sourcecode">
+StatelessResetToken = hexstring .size 16
+</pre>
+</div>
+<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
+<a href="#name-stateless-reset-token-defin" class="selfRef">Stateless Reset Token definition</a>
+          </figcaption></figure>
+</div>
+<p id="appendix-A.10-2">The stateless reset token is carried in stateless reset packets, in transport
+parameters and in NEW_CONNECTION_ID frames.<a href="#appendix-A.10-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="keytype">
+<section id="appendix-A.11">
+        <h3 id="name-keytype">
+<a href="#appendix-A.11" class="section-number selfRef">A.11. </a><a href="#name-keytype" class="section-name selfRef">KeyType</a>
+        </h3>
+<span id="name-keytype-definition"></span><div id="keytype-def">
+<figure id="figure-40">
+          <div id="appendix-A.11-1.1">
+<pre class="lang-cddl sourcecode">
+KeyType =
+    "server_initial_secret" / "client_initial_secret" /
+    "server_handshake_secret" / "client_handshake_secret" /
+    "server_0rtt_secret" / "client_0rtt_secret" /
+    "server_1rtt_secret" / "client_1rtt_secret"
+</pre>
+</div>
+<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
+<a href="#name-keytype-definition" class="selfRef">KeyType definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="quic-frames">
+<section id="appendix-A.12">
+        <h3 id="name-quic-frames">
+<a href="#appendix-A.12" class="section-number selfRef">A.12. </a><a href="#name-quic-frames" class="section-name selfRef">QUIC Frames</a>
+        </h3>
+<span id="name-quicframe-definition"></span><div id="quicframe-def">
+<figure id="figure-41">
+          <div id="appendix-A.12-1.1">
+<pre class="lang-cddl sourcecode">
+QuicFrame =
+  PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
+  StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
+  MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
+  DataBlockedFrame / StreamDataBlockedFrame / StreamsBlockedFrame /
+  NewConnectionIDFrame / RetireConnectionIDFrame /
+  PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
+  HandshakeDoneFrame / UnknownFrame
+</pre>
+</div>
+<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
+<a href="#name-quicframe-definition" class="selfRef">QuicFrame definition</a>
+          </figcaption></figure>
+</div>
+<div id="paddingframe">
+<section id="appendix-A.12.1">
+          <h4 id="name-paddingframe">
+<a href="#appendix-A.12.1" class="section-number selfRef">A.12.1. </a><a href="#name-paddingframe" class="section-name selfRef">PaddingFrame</a>
+          </h4>
+<p id="appendix-A.12.1-1">In QUIC, PADDING frames are simply identified as a single byte of value 0. As
+such, each padding byte could be theoretically interpreted and logged as an
+individual PaddingFrame.<a href="#appendix-A.12.1-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.1-2">However, as this leads to heavy logging overhead, implementations SHOULD instead
+emit just a single PaddingFrame and set the payload_length property to the amount
+of PADDING bytes/frames included in the packet.<a href="#appendix-A.12.1-2" class="pilcrow">¶</a></p>
+<span id="name-paddingframe-definition"></span><div id="paddingframe-def">
+<figure id="figure-42">
+            <div id="appendix-A.12.1-3.1">
+<pre class="lang-cddl sourcecode">
+PaddingFrame = {
+    frame_type: "padding"
+
+    ; total frame length, including frame header
+    ? length: uint32
+    payload_length: uint32
+}
+</pre>
+</div>
+<figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
+<a href="#name-paddingframe-definition" class="selfRef">PaddingFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="pingframe">
+<section id="appendix-A.12.2">
+          <h4 id="name-pingframe">
+<a href="#appendix-A.12.2" class="section-number selfRef">A.12.2. </a><a href="#name-pingframe" class="section-name selfRef">PingFrame</a>
+          </h4>
+<span id="name-pingframe-definition"></span><div id="pingframe-def">
+<figure id="figure-43">
+            <div id="appendix-A.12.2-1.1">
+<pre class="lang-cddl sourcecode">
+PingFrame = {
+    frame_type: "ping"
+
+    ; total frame length, including frame header
+    ? length: uint32
+    ? payload_length: uint32
+}
+</pre>
+</div>
+<figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
+<a href="#name-pingframe-definition" class="selfRef">PingFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="ackframe">
+<section id="appendix-A.12.3">
+          <h4 id="name-ackframe">
+<a href="#appendix-A.12.3" class="section-number selfRef">A.12.3. </a><a href="#name-ackframe" class="section-name selfRef">AckFrame</a>
+          </h4>
+<span id="name-ackframe-definition"></span><div id="ackframe-def">
+<figure id="figure-44">
+            <div id="appendix-A.12.3-1.1">
+<pre class="lang-cddl sourcecode">
+; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
+; For two numbers:
+; the first number is "from": lowest packet number in interval
+; the second number is "to": up to and including the highest
+; packet number in the interval
+AckRange = [1*2 uint64]
+
+AckFrame = {
+    frame_type: "ack"
+
+    ; in ms
+    ? ack_delay: float32
+
+    ; e.g., looks like [[1,2],[4,5], [7], [10,22]] serialized
+    ? acked_ranges: [+ AckRange]
+
+    ; ECN (explicit congestion notification) related fields
+    ; (not always present)
+    ? ect1: uint64
+    ? ect0:uint64
+    ? ce: uint64
+
+    ; total frame length, including frame header
+    ? length: uint32
+    ? payload_length: uint32
+}
+</pre>
+</div>
+<figcaption><a href="#figure-44" class="selfRef">Figure 44</a>:
+<a href="#name-ackframe-definition" class="selfRef">AckFrame definition</a>
+            </figcaption></figure>
+</div>
+<p id="appendix-A.12.3-2">Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
+ordered (e.g., [[5,9],[1,4]] is a valid value).<a href="#appendix-A.12.3-2" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.3-3">Note: the two numbers in the packet range can be the same (e.g., [120,120] means
+that packet with number 120 was ACKed). However, in that case, implementers SHOULD
+log [120] instead and tools MUST be able to deal with both notations.<a href="#appendix-A.12.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="resetstreamframe">
+<section id="appendix-A.12.4">
+          <h4 id="name-resetstreamframe">
+<a href="#appendix-A.12.4" class="section-number selfRef">A.12.4. </a><a href="#name-resetstreamframe" class="section-name selfRef">ResetStreamFrame</a>
+          </h4>
+<span id="name-resetstreamframe-definition"></span><div id="resetstreamframe-def">
+<figure id="figure-45">
+            <div id="appendix-A.12.4-1.1">
+<pre class="lang-cddl sourcecode">
+ResetStreamFrame = {
+    frame_type: "reset_stream"
+
+    stream_id: uint64
+    error_code: $ApplicationError / uint32
+
+    ; in bytes
+    final_size: uint64
+
+    ; total frame length, including frame header
+    ? length: uint32
+    ? payload_length: uint32
+}
+</pre>
+</div>
+<figcaption><a href="#figure-45" class="selfRef">Figure 45</a>:
+<a href="#name-resetstreamframe-definition" class="selfRef">ResetStreamFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="stopsendingframe">
+<section id="appendix-A.12.5">
+          <h4 id="name-stopsendingframe">
+<a href="#appendix-A.12.5" class="section-number selfRef">A.12.5. </a><a href="#name-stopsendingframe" class="section-name selfRef">StopSendingFrame</a>
+          </h4>
+<span id="name-stopsendingframe-definition"></span><div id="stopsendingframe-def">
+<figure id="figure-46">
+            <div id="appendix-A.12.5-1.1">
+<pre class="lang-cddl sourcecode">
+StopSendingFrame = {
+    frame_type: "stop_sending"
+
+    stream_id: uint64
+    error_code: $ApplicationError / uint32
+
+    ; total frame length, including frame header
+    ? length: uint32
+    ? payload_length: uint32
+}
+</pre>
+</div>
+<figcaption><a href="#figure-46" class="selfRef">Figure 46</a>:
+<a href="#name-stopsendingframe-definition" class="selfRef">StopSendingFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="cryptoframe">
+<section id="appendix-A.12.6">
+          <h4 id="name-cryptoframe">
+<a href="#appendix-A.12.6" class="section-number selfRef">A.12.6. </a><a href="#name-cryptoframe" class="section-name selfRef">CryptoFrame</a>
+          </h4>
+<span id="name-cryptoframe-definition"></span><div id="cryptoframe-def">
+<figure id="figure-47">
+            <div id="appendix-A.12.6-1.1">
+<pre class="lang-cddl sourcecode">
+CryptoFrame = {
+    frame_type: "crypto"
+
+    offset: uint64
+    length: uint64
+
+    ? payload_length: uint32
+}
+</pre>
+</div>
+<figcaption><a href="#figure-47" class="selfRef">Figure 47</a>:
+<a href="#name-cryptoframe-definition" class="selfRef">CryptoFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="newtokenframe">
+<section id="appendix-A.12.7">
+          <h4 id="name-newtokenframe">
+<a href="#appendix-A.12.7" class="section-number selfRef">A.12.7. </a><a href="#name-newtokenframe" class="section-name selfRef">NewTokenFrame</a>
+          </h4>
+<span id="name-newtokenframe-definition"></span><div id="newtokenframe-def">
+<figure id="figure-48">
+            <div id="appendix-A.12.7-1.1">
+<pre class="lang-cddl sourcecode">
+NewTokenFrame = {
+  frame_type: "new_token"
+
+  token: Token
+}
+</pre>
+</div>
+<figcaption><a href="#figure-48" class="selfRef">Figure 48</a>:
+<a href="#name-newtokenframe-definition" class="selfRef">NewTokenFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="streamframe">
+<section id="appendix-A.12.8">
+          <h4 id="name-streamframe">
+<a href="#appendix-A.12.8" class="section-number selfRef">A.12.8. </a><a href="#name-streamframe" class="section-name selfRef">StreamFrame</a>
+          </h4>
+<span id="name-streamframe-definition"></span><div id="streamframe-def">
+<figure id="figure-49">
+            <div id="appendix-A.12.8-1.1">
+<pre class="lang-cddl sourcecode">
+StreamFrame = {
+    frame_type: "stream"
+
+    stream_id: uint64
+
+    ; These two MUST always be set
+    ; If not present in the Frame type, log their default values
+    offset: uint64
+    length: uint64
+
+    ; this MAY be set any time,
+    ; but MUST only be set if the value is true
+    ; if absent, the value MUST be assumed to be false
+    ? fin: bool .default false
+
+    ? raw: hexstring
+}
+</pre>
+</div>
+<figcaption><a href="#figure-49" class="selfRef">Figure 49</a>:
+<a href="#name-streamframe-definition" class="selfRef">StreamFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="maxdataframe">
+<section id="appendix-A.12.9">
+          <h4 id="name-maxdataframe">
+<a href="#appendix-A.12.9" class="section-number selfRef">A.12.9. </a><a href="#name-maxdataframe" class="section-name selfRef">MaxDataFrame</a>
+          </h4>
+<span id="name-maxdataframe-definition"></span><div id="maxdataframe-def">
+<figure id="figure-50">
+            <div id="appendix-A.12.9-1.1">
+<pre class="lang-cddl sourcecode">
+MaxDataFrame = {
+  frame_type: "max_data"
+
+  maximum: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-50" class="selfRef">Figure 50</a>:
+<a href="#name-maxdataframe-definition" class="selfRef">MaxDataFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="maxstreamdataframe">
+<section id="appendix-A.12.10">
+          <h4 id="name-maxstreamdataframe">
+<a href="#appendix-A.12.10" class="section-number selfRef">A.12.10. </a><a href="#name-maxstreamdataframe" class="section-name selfRef">MaxStreamDataFrame</a>
+          </h4>
+<span id="name-maxstreamdataframe-definiti"></span><div id="maxstreamdataframe-def">
+<figure id="figure-51">
+            <div id="appendix-A.12.10-1.1">
+<pre class="lang-cddl sourcecode">
+MaxStreamDataFrame = {
+  frame_type: "max_stream_data"
+
+  stream_id: uint64
+  maximum: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-51" class="selfRef">Figure 51</a>:
+<a href="#name-maxstreamdataframe-definiti" class="selfRef">MaxStreamDataFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="maxstreamsframe">
+<section id="appendix-A.12.11">
+          <h4 id="name-maxstreamsframe">
+<a href="#appendix-A.12.11" class="section-number selfRef">A.12.11. </a><a href="#name-maxstreamsframe" class="section-name selfRef">MaxStreamsFrame</a>
+          </h4>
+<span id="name-maxstreamsframe-definition"></span><div id="maxstreamsframe-def">
+<figure id="figure-52">
+            <div id="appendix-A.12.11-1.1">
+<pre class="lang-cddl sourcecode">
+MaxStreamsFrame = {
+  frame_type: "max_streams"
+
+  stream_type: StreamType
+  maximum: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-52" class="selfRef">Figure 52</a>:
+<a href="#name-maxstreamsframe-definition" class="selfRef">MaxStreamsFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="datablockedframe">
+<section id="appendix-A.12.12">
+          <h4 id="name-datablockedframe">
+<a href="#appendix-A.12.12" class="section-number selfRef">A.12.12. </a><a href="#name-datablockedframe" class="section-name selfRef">DataBlockedFrame</a>
+          </h4>
+<span id="name-datablockedframe-definition"></span><div id="datablockedframe-def">
+<figure id="figure-53">
+            <div id="appendix-A.12.12-1.1">
+<pre class="lang-cddl sourcecode">
+DataBlockedFrame = {
+  frame_type: "data_blocked"
+
+  limit: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-53" class="selfRef">Figure 53</a>:
+<a href="#name-datablockedframe-definition" class="selfRef">DataBlockedFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="streamdatablockedframe">
+<section id="appendix-A.12.13">
+          <h4 id="name-streamdatablockedframe">
+<a href="#appendix-A.12.13" class="section-number selfRef">A.12.13. </a><a href="#name-streamdatablockedframe" class="section-name selfRef">StreamDataBlockedFrame</a>
+          </h4>
+<span id="name-streamdatablockedframe-defi"></span><div id="streamdatablockedframe-def">
+<figure id="figure-54">
+            <div id="appendix-A.12.13-1.1">
+<pre class="lang-cddl sourcecode">
+StreamDataBlockedFrame = {
+  frame_type: "stream_data_blocked"
+
+  stream_id: uint64
+  limit: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-54" class="selfRef">Figure 54</a>:
+<a href="#name-streamdatablockedframe-defi" class="selfRef">StreamDataBlockedFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="streamsblockedframe">
+<section id="appendix-A.12.14">
+          <h4 id="name-streamsblockedframe">
+<a href="#appendix-A.12.14" class="section-number selfRef">A.12.14. </a><a href="#name-streamsblockedframe" class="section-name selfRef">StreamsBlockedFrame</a>
+          </h4>
+<span id="name-streamsblockedframe-definit"></span><div id="streamsblockedframe-def">
+<figure id="figure-55">
+            <div id="appendix-A.12.14-1.1">
+<pre class="lang-cddl sourcecode">
+StreamsBlockedFrame = {
+  frame_type: "streams_blocked"
+
+  stream_type: StreamType
+  limit: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-55" class="selfRef">Figure 55</a>:
+<a href="#name-streamsblockedframe-definit" class="selfRef">StreamsBlockedFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="newconnectionidframe">
+<section id="appendix-A.12.15">
+          <h4 id="name-newconnectionidframe">
+<a href="#appendix-A.12.15" class="section-number selfRef">A.12.15. </a><a href="#name-newconnectionidframe" class="section-name selfRef">NewConnectionIDFrame</a>
+          </h4>
+<span id="name-newconnectionidframe-defini"></span><div id="newconnectionidframe-def">
+<figure id="figure-56">
+            <div id="appendix-A.12.15-1.1">
+<pre class="lang-cddl sourcecode">
+NewConnectionIDFrame = {
+  frame_type: "new_connection_id"
+
+  sequence_number: uint32
+  retire_prior_to: uint32
+
+  ; mainly used if e.g., for privacy reasons the full
+  ; connection_id cannot be logged
+  ? connection_id_length: uint8
+  connection_id: ConnectionID
+
+  ? stateless_reset_token: StatelessResetToken
+}
+</pre>
+</div>
+<figcaption><a href="#figure-56" class="selfRef">Figure 56</a>:
+<a href="#name-newconnectionidframe-defini" class="selfRef">NewConnectionIDFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="retireconnectionidframe">
+<section id="appendix-A.12.16">
+          <h4 id="name-retireconnectionidframe">
+<a href="#appendix-A.12.16" class="section-number selfRef">A.12.16. </a><a href="#name-retireconnectionidframe" class="section-name selfRef">RetireConnectionIDFrame</a>
+          </h4>
+<span id="name-retireconnectionidframe-def"></span><div id="retireconnectionid-def">
+<figure id="figure-57">
+            <div id="appendix-A.12.16-1.1">
+<pre class="lang-cddl sourcecode">
+RetireConnectionIDFrame = {
+  frame_type: "retire_connection_id"
+
+  sequence_number: uint32
+}
+</pre>
+</div>
+<figcaption><a href="#figure-57" class="selfRef">Figure 57</a>:
+<a href="#name-retireconnectionidframe-def" class="selfRef">RetireConnectionIDFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="pathchallengeframe">
+<section id="appendix-A.12.17">
+          <h4 id="name-pathchallengeframe">
+<a href="#appendix-A.12.17" class="section-number selfRef">A.12.17. </a><a href="#name-pathchallengeframe" class="section-name selfRef">PathChallengeFrame</a>
+          </h4>
+<span id="name-pathchallengeframe-definiti"></span><div id="pathchallengeframe-def">
+<figure id="figure-58">
+            <div id="appendix-A.12.17-1.1">
+<pre class="lang-cddl sourcecode">
+PathChallengeFrame = {
+  frame_type: "path_challenge"
+
+  ; always 64-bit
+  ? data: hexstring
+}
+</pre>
+</div>
+<figcaption><a href="#figure-58" class="selfRef">Figure 58</a>:
+<a href="#name-pathchallengeframe-definiti" class="selfRef">PathChallengeFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="pathresponseframe">
+<section id="appendix-A.12.18">
+          <h4 id="name-pathresponseframe">
+<a href="#appendix-A.12.18" class="section-number selfRef">A.12.18. </a><a href="#name-pathresponseframe" class="section-name selfRef">PathResponseFrame</a>
+          </h4>
+<span id="name-pathresponseframe-definitio"></span><div id="pathresponseframe-def">
+<figure id="figure-59">
+            <div id="appendix-A.12.18-1.1">
+<pre class="lang-cddl sourcecode">
+PathResponseFrame = {
+  frame_type: "path_response"
+
+  ; always 64-bit
+  ? data: hexstring
+}
+</pre>
+</div>
+<figcaption><a href="#figure-59" class="selfRef">Figure 59</a>:
+<a href="#name-pathresponseframe-definitio" class="selfRef">PathResponseFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="connectioncloseframe">
+<section id="appendix-A.12.19">
+          <h4 id="name-connectioncloseframe">
+<a href="#appendix-A.12.19" class="section-number selfRef">A.12.19. </a><a href="#name-connectioncloseframe" class="section-name selfRef">ConnectionCloseFrame</a>
+          </h4>
+<p id="appendix-A.12.19-1">raw_error_code is the actual, numerical code. This is useful because some error
+types are spread out over a range of codes (e.g., QUIC's crypto_error).<a href="#appendix-A.12.19-1" class="pilcrow">¶</a></p>
+<span id="name-connectioncloseframe-defini"></span><div id="connectioncloseframe-def">
+<figure id="figure-60">
+            <div id="appendix-A.12.19-2.1">
+<pre class="lang-cddl sourcecode">
+ErrorSpace = "transport" / "application"
+
+ConnectionCloseFrame = {
+    frame_type: "connection_close"
+
+    ? error_space: ErrorSpace
+    ? error_code: TransportError / $ApplicationError / uint32
+    ? raw_error_code: uint32
+    ? reason: text
+
+    ; For known frame types, the appropriate "frame_type" string
+    ; For unknown frame types, the hex encoded identifier value
+    ? trigger_frame_type: uint64 / text
+}
+</pre>
+</div>
+<figcaption><a href="#figure-60" class="selfRef">Figure 60</a>:
+<a href="#name-connectioncloseframe-defini" class="selfRef">ConnectionCloseFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="handshakedoneframe">
+<section id="appendix-A.12.20">
+          <h4 id="name-handshakedoneframe">
+<a href="#appendix-A.12.20" class="section-number selfRef">A.12.20. </a><a href="#name-handshakedoneframe" class="section-name selfRef">HandshakeDoneFrame</a>
+          </h4>
+<span id="name-handshakedoneframe-definiti"></span><div id="handshakedoneframe-def">
+<figure id="figure-61">
+            <div id="appendix-A.12.20-1.1">
+<pre class="lang-cddl sourcecode">
+HandshakeDoneFrame = {
+  frame_type: "handshake_done";
+}
+</pre>
+</div>
+<figcaption><a href="#figure-61" class="selfRef">Figure 61</a>:
+<a href="#name-handshakedoneframe-definiti" class="selfRef">HandshakeDoneFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="unknownframe">
+<section id="appendix-A.12.21">
+          <h4 id="name-unknownframe">
+<a href="#appendix-A.12.21" class="section-number selfRef">A.12.21. </a><a href="#name-unknownframe" class="section-name selfRef">UnknownFrame</a>
+          </h4>
+<span id="name-unknownframe-definition"></span><div id="unknownframe-def">
+<figure id="figure-62">
+            <div id="appendix-A.12.21-1.1">
+<pre class="lang-cddl sourcecode">
+UnknownFrame = {
+    frame_type: "unknown"
+    raw_frame_type: uint64
+
+    ? raw_length: uint32
+    ? raw: hexstring
+}
+</pre>
+</div>
+<figcaption><a href="#figure-62" class="selfRef">Figure 62</a>:
+<a href="#name-unknownframe-definition" class="selfRef">UnknownFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="transporterror">
+<section id="appendix-A.12.22">
+          <h4 id="name-transporterror">
+<a href="#appendix-A.12.22" class="section-number selfRef">A.12.22. </a><a href="#name-transporterror" class="section-name selfRef">TransportError</a>
+          </h4>
+<span id="name-transporterror-definition"></span><div id="transporterror-def">
+<figure id="figure-63">
+            <div id="appendix-A.12.22-1.1">
+<pre class="lang-cddl sourcecode">
+TransportError = "no_error" / "internal_error" /
+    "connection_refused" / "flow_control_error" /
+    "stream_limit_error" / "stream_state_error" /
+    "final_size_error" / "frame_encoding_error" /
+    "transport_parameter_error" / "connection_id_limit_error" /
+    "protocol_violation" / "invalid_token" / "application_error" /
+    "crypto_buffer_exceeded"
+</pre>
+</div>
+<figcaption><a href="#figure-63" class="selfRef">Figure 63</a>:
+<a href="#name-transporterror-definition" class="selfRef">TransportError definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="applicationerror">
+<section id="appendix-A.12.23">
+          <h4 id="name-applicationerror">
+<a href="#appendix-A.12.23" class="section-number selfRef">A.12.23. </a><a href="#name-applicationerror" class="section-name selfRef">ApplicationError</a>
+          </h4>
+<p id="appendix-A.12.23-1">By definition, an application error is defined by the application-level protocol running on top of QUIC (e.g., HTTP/3).<a href="#appendix-A.12.23-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.23-2">As such, we cannot define it here directly. Though we provide an extension point through the use of the CDDL "socket" mechanism.<a href="#appendix-A.12.23-2" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.23-3">Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:<a href="#appendix-A.12.23-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="appendix-A.12.23-4">
+<pre>
+$ApplicationError /= "new_error_name" / "another_new_error_name"
+</pre><a href="#appendix-A.12.23-4" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="cryptoerror">
+<section id="appendix-A.12.24">
+          <h4 id="name-cryptoerror">
+<a href="#appendix-A.12.24" class="section-number selfRef">A.12.24. </a><a href="#name-cryptoerror" class="section-name selfRef">CryptoError</a>
+          </h4>
+<p id="appendix-A.12.24-1">These errors are defined in the TLS document as "A TLS alert is turned into a QUIC
+connection error by converting the one-byte alert description into a QUIC error
+code. The alert description is added to 0x100 to produce a QUIC error code from
+the range reserved for CRYPTO_ERROR."<a href="#appendix-A.12.24-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.24-2">This approach maps badly to a pre-defined enum. As such, we define the
+crypto_error string as having a dynamic component here, which should include the
+hex-encoded and zero-padded value of the TLS alert description.<a href="#appendix-A.12.24-2" class="pilcrow">¶</a></p>
+<span id="name-cryptoerror-definition"></span><div id="cryptoerror-def">
+<figure id="figure-64">
+            <div id="appendix-A.12.24-3.1">
+<pre class="lang-cddl sourcecode">
+; all strings from "crypto_error_0x100" to "crypto_error_0x199"
+CryptoError = text .regexp "crypto_error_0x1[0-9][0-9]"
+</pre>
+</div>
+<figcaption><a href="#figure-64" class="selfRef">Figure 64</a>:
+<a href="#name-cryptoerror-definition" class="selfRef">CryptoError definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="change-log">
+<section id="appendix-B">
+      <h2 id="name-change-log">
+<a href="#appendix-B" class="section-number selfRef">Appendix B. </a><a href="#name-change-log" class="section-name selfRef">Change Log</a>
+      </h2>
+<div id="since-draft-ietf-qlog-quic-events-00">
+<section id="appendix-B.1">
+        <h3 id="name-since-draft-ietf-qlog-quic-">
+<a href="#appendix-B.1" class="section-number selfRef">B.1. </a><a href="#name-since-draft-ietf-qlog-quic-" class="section-name selfRef">Since draft-ietf-qlog-quic-events-00:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.1-1.1">Change the data definition language from TypeScript to CDDL (#143)<a href="#appendix-B.1-1.1" class="pilcrow">¶</a>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-marx-qlog-event-definitions-quic-h3-02">
+<section id="appendix-B.2">
+        <h3 id="name-since-draft-marx-qlog-event">
+<a href="#appendix-B.2" class="section-number selfRef">B.2. </a><a href="#name-since-draft-marx-qlog-event" class="section-name selfRef">Since draft-marx-qlog-event-definitions-quic-h3-02:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.2-1.1">These changes were done in preparation of the adoption of the drafts by the QUIC
+working group (#137)<a href="#appendix-B.2-1.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.2-1.2">Split QUIC and HTTP/3 events into two separate documents<a href="#appendix-B.2-1.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.2-1.3">Moved RawInfo, Importance, Generic events and Simulation events to the main
+schema document.<a href="#appendix-B.2-1.3" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.2-1.4">Changed to/from value options of the <code>data_moved</code> event<a href="#appendix-B.2-1.4" class="pilcrow">¶</a>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-marx-qlog-event-definitions-quic-h3-01">
+<section id="appendix-B.3">
+        <h3 id="name-since-draft-marx-qlog-event-">
+<a href="#appendix-B.3" class="section-number selfRef">B.3. </a><a href="#name-since-draft-marx-qlog-event-" class="section-name selfRef">Since draft-marx-qlog-event-definitions-quic-h3-01:</a>
+        </h3>
+<p id="appendix-B.3-1">Major changes:<a href="#appendix-B.3-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="appendix-B.3-2.1">Moved data_moved from http to transport. Also made the "from" and "to" fields
+flexible strings instead of an enum (#111,#65)<a href="#appendix-B.3-2.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-2.2">Moved packet_type fields to PacketHeader. Moved packet_size field out of
+PacketHeader to RawInfo:length (#40)<a href="#appendix-B.3-2.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-2.3">Made events that need to log packet_type and packet_number use a header field
+instead of logging these fields individually<a href="#appendix-B.3-2.3" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-2.4">Added support for logging retry, stateless reset and initial tokens (#94,#86,#117)<a href="#appendix-B.3-2.4" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-2.5">Moved separate general event categories into a single category "generic" (#47)<a href="#appendix-B.3-2.5" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-2.6">Added "transport:connection_closed" event (#43,#85,#78,#49)<a href="#appendix-B.3-2.6" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-2.7">Added version_information and alpn_information events (#85,#75,#28)<a href="#appendix-B.3-2.7" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-2.8">Added parameters_restored events to help clarify 0-RTT behaviour (#88)<a href="#appendix-B.3-2.8" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="appendix-B.3-3">Smaller changes:<a href="#appendix-B.3-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="appendix-B.3-4.1">Merged loss_timer events into one loss_timer_updated event<a href="#appendix-B.3-4.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.2">Field data types are now strongly defined (#10,#39,#36,#115)<a href="#appendix-B.3-4.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.3">Renamed qpack instruction_received and instruction_sent to instruction_created
+and instruction_parsed (#114)<a href="#appendix-B.3-4.3" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.4">Updated qpack:dynamic_table_updated.update_type. It now has the value "inserted"
+instead of "added" (#113)<a href="#appendix-B.3-4.4" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.5">Updated qpack:dynamic_table_updated. It now has an "owner" field to
+differentiate encoder vs decoder state (#112)<a href="#appendix-B.3-4.5" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.6">Removed push_allowed from http:parameters_set (#110)<a href="#appendix-B.3-4.6" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.7">Removed explicit trigger field indications from events, since this was moved to
+be a generic property of the "data" field (#80)<a href="#appendix-B.3-4.7" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.8">Updated transport:connection_id_updated to be more in line with other similar
+events. Also dropped importance from Core to Base (#45)<a href="#appendix-B.3-4.8" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.9">Added length property to PaddingFrame (#34)<a href="#appendix-B.3-4.9" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.10">Added packet_number field to transport:frames_processed (#74)<a href="#appendix-B.3-4.10" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.11">Added a way to generically log packet header flags (first 8 bits) to
+PacketHeader<a href="#appendix-B.3-4.11" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.12">Added additional guidance on which events to log in which situations (#53)<a href="#appendix-B.3-4.12" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.13">Added "simulation:scenario" event to help indicate simulation details<a href="#appendix-B.3-4.13" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.14">Added "packets_acked" event (#107)<a href="#appendix-B.3-4.14" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.15">Added "datagram_ids" to the datagram_X and packet_X events to allow tracking of
+coalesced QUIC packets (#91)<a href="#appendix-B.3-4.15" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.3-4.16">Extended connection_state_updated with more fine-grained states (#49)<a href="#appendix-B.3-4.16" class="pilcrow">¶</a>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-marx-qlog-event-definitions-quic-h3-00">
+<section id="appendix-B.4">
+        <h3 id="name-since-draft-marx-qlog-event-d">
+<a href="#appendix-B.4" class="section-number selfRef">B.4. </a><a href="#name-since-draft-marx-qlog-event-d" class="section-name selfRef">Since draft-marx-qlog-event-definitions-quic-h3-00:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.4-1.1">Event and category names are now all lowercase<a href="#appendix-B.4-1.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.4-1.2">Added many new events and their definitions<a href="#appendix-B.4-1.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.4-1.3">"type" fields have been made more specific (especially important for PacketType
+fields, which are now called packet_type instead of type)<a href="#appendix-B.4-1.3" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.4-1.4">Events are given an importance indicator (issue #22)<a href="#appendix-B.4-1.4" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.4-1.5">Event names are more consistent and use past tense (issue #21)<a href="#appendix-B.4-1.5" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-B.4-1.6">Triggers have been redefined as properties of the "data" field and updated for most events (issue #23)<a href="#appendix-B.4-1.6" class="pilcrow">¶</a>
+</li>
+        </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="design-variations">
+<section id="appendix-C">
+      <h2 id="name-design-variations">
+<a href="#appendix-C" class="section-number selfRef">Appendix C. </a><a href="#name-design-variations" class="section-name selfRef">Design Variations</a>
+      </h2>
+<p id="appendix-C-1">TBD<a href="#appendix-C-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="acknowledgements">
+<section id="appendix-D">
+      <h2 id="name-acknowledgements">
+<a href="#appendix-D" class="section-number selfRef">Appendix D. </a><a href="#name-acknowledgements" class="section-name selfRef">Acknowledgements</a>
+      </h2>
+<p id="appendix-D-1">Much of the initial work by Robin Marx was done at Hasselt University.<a href="#appendix-D-1" class="pilcrow">¶</a></p>
+<p id="appendix-D-2">Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
+Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kuehlewind, Jeremy
+Laine, Kazu Yamamoto, Christian Huitema, and Lucas Pardue for their feedback and
+suggestions.<a href="#appendix-D-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-E">
+      <h2 id="name-authors-addresses">
+<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Robin Marx</span></div>
+<div dir="auto" class="left"><span class="org">KU Leuven</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:robin.marx@kuleuven.be" class="email">robin.marx@kuleuven.be</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Luca Niccolini (<span class="role">editor</span>)</span></div>
+<div dir="auto" class="left"><span class="org">Facebook</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:lniccolini@fb.com" class="email">lniccolini@fb.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Marten Seemann (<span class="role">editor</span>)</span></div>
+<div dir="auto" class="left"><span class="org">Protocol Labs</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:marten@protocol.ai" class="email">marten@protocol.ai</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
