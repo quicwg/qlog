@@ -1930,8 +1930,8 @@ crypto_error string as having a dynamic component here, which should include the
 hex-encoded and zero-padded value of the TLS alert description.
 
 ~~~ cddl
-; all strings from "crypto_error_0x100" to "crypto_error_0x199"
-CryptoError = text .regexp "crypto_error_0x1[0-9][0-9]"
+; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
+CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 ~~~
 {: #cryptoerror-def title="CryptoError definition"}
 
