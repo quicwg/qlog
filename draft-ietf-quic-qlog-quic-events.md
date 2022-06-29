@@ -542,13 +542,13 @@ SecurityKeyUpdated = {
 {: #security-keyupdated-def title="SecurityKeyUpdated definition"}
 
 
-### key_retired
+### key_discarded
 Importance: Base
 
 Definition:
 
 ~~~ cddl
-SecurityKeyRetired = {
+SecurityKeyDiscarded = {
     key_type: KeyType
     ? key: hexstring
 
@@ -563,7 +563,7 @@ SecurityKeyRetired = {
         "local_update"
 }
 ~~~
-{: #security-keyretired-def title="SecurityKeyRetired definition"}
+{: #security-keydiscarded-def title="SecurityKeyDiscarded definition"}
 
 
 ## transport
@@ -1415,7 +1415,7 @@ QuicEvents = ConnectivityServerListening /
              ConnectivityConnectionIDUpdated /
              ConnectivitySpinBitUpdated /
              ConnectivityConnectionStateUpdated /
-             SecurityKeyUpdated / SecurityKeyRetired /
+             SecurityKeyUpdated / SecurityKeyDiscarded /
              TransportVersionInformation / TransportALPNInformation /
              TransportParametersSet / TransportParametersRestored /
              TransportPacketSent / TransportPacketReceived /
