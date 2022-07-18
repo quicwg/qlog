@@ -778,6 +778,8 @@ TransportPacketSent = {
 
     ? raw: RawInfo
     ? datagram_id: uint32
+    ? src_ip: IPAddress
+    ? dst_ip: IPAddress
 
     ? trigger:
       ; draft-23 5.1.1
@@ -827,6 +829,8 @@ TransportPacketReceived = {
 
     ? raw: RawInfo
     ? datagram_id: uint32
+    ? src_ip: IPAddress
+    ? dst_ip: IPAddress
 
     ? trigger:
         ; if packet was buffered because
@@ -857,6 +861,8 @@ TransportPacketDropped = {
 
     ? raw: RawInfo
     ? datagram_id: uint32
+    ? src_ip: IPAddress
+    ? dst_ip: IPAddress
 
     ? trigger:
         "key_unavailable" /
@@ -899,6 +905,8 @@ TransportPacketBuffered = {
 
     ? raw: RawInfo
     ? datagram_id: uint32
+    ? src_ip: IPAddress
+    ? dst_ip: IPAddress
 
     ? trigger:
         ; indicates the parser cannot keep up, temporarily buffers
