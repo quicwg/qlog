@@ -1519,7 +1519,7 @@ PacketHeader = {
 
 ~~~ cddl
 Token = {
-    ? type: "retry" / "resumption" / "stateless_reset"
+    ? type: "retry" / "resumption"
 
     ; byte length of the token
     ? length: uint32
