@@ -683,7 +683,7 @@ TransportParametersSet = {
     ? original_destination_connection_id: ConnectionID
     ? initial_source_connection_id: ConnectionID
     ? retry_source_connection_id: ConnectionID
-    ? stateless_reset_token: Token
+    ? stateless_reset_token: StatelessResetToken
     ? disable_active_migration: bool
 
     ? max_idle_timeout: uint64
@@ -710,7 +710,7 @@ PreferredAddress = {
     port_v6: uint16
 
     connection_id: ConnectionID
-    stateless_reset_token: Token
+    stateless_reset_token: StatelessResetToken
 }
 ~~~
 {: #transport-parametersset-def title="TransportParametersSet definition"}
@@ -771,7 +771,7 @@ TransportPacketSent = {
 
     ; only if header.packet_type === "stateless_reset"
     ; is always 128 bits in length.
-    ? stateless_reset_token: hexstring .size 16
+    ? stateless_reset_token: StatelessResetToken
 
     ; only if header.packet_type === "version_negotiation"
     ? supported_versions: [+ QuicVersion]
@@ -820,7 +820,7 @@ TransportPacketReceived = {
 
     ; only if header.packet_type === "stateless_reset"
     ; Is always 128 bits in length.
-    ? stateless_reset_token: hexstring .size 16
+    ? stateless_reset_token: StatelessResetToken
 
     ; only if header.packet_type === "version_negotiation"
     ? supported_versions: [+ QuicVersion]
@@ -1519,7 +1519,7 @@ PacketHeader = {
 
 ~~~ cddl
 Token = {
-    ? type: "retry" / "resumption" / "stateless_reset"
+    ? type: "retry" / "resumption"
 
     ; byte length of the token
     ? length: uint32
@@ -1537,12 +1537,21 @@ Token = {
 {: #token-def title="Token definition"}
 
 The token carried in an Initial packet can either be a retry token from a Retry
-packet, a stateless reset token from a Stateless Reset packet or one originally
-provided by the server in a NEW_TOKEN frame used when resuming a connection (e.g.,
-for address validation purposes). Retry and resumption tokens typically contain
-encoded metadata to check the token's validity when it is used, but this metadata
-and its format is implementation specific. For that, this field includes a
-general-purpose "details" field.
+packet, or one originally provided by the server in a NEW_TOKEN frame used when
+resuming a connection (e.g., for address validation purposes). Retry and
+resumption tokens typically contain encoded metadata to check the token's
+validity when it is used, but this metadata and its format is implementation
+specific. For that, this field includes a general-purpose "details" field.
+
+## Stateless Reset Token
+
+~~~ cddl
+StatelessResetToken = hexstring .size 16
+~~~
+{: #stateless-reset-token-def title="Stateless Reset Token definition"}
+
+The stateless reset token is carried in stateless reset packets, in transport
+parameters and in NEW_CONNECTION_ID frames.
 
 ## KeyType
 
@@ -1808,7 +1817,7 @@ NewConnectionIDFrame = {
   ? connection_id_length: uint8
   connection_id: ConnectionID
 
-  ? stateless_reset_token: Token
+  ? stateless_reset_token: StatelessResetToken
 }
 ~~~
 {: #newconnectionidframe-def title="NewConnectionIDFrame definition"}
