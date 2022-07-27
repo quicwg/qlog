@@ -5,14 +5,14 @@
 QUIC                                                             R. Marx
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 16 September 2022                                      Facebook
+Expires: 28 January 2023                                        Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                           15 March 2022
+                                                            27 July 2022
 
 
                     QUIC event definitions for qlog
-                    draft-ietf-quic-qlog-quic-events
+                draft-ietf-quic-qlog-quic-events-latest
 
 Abstract
 
@@ -35,7 +35,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 16 September 2022.
+   This Internet-Draft will expire on 28 January 2023.
 
 Copyright Notice
 
@@ -110,32 +110,33 @@ Table of Contents
      A.7.  PacketNumberSpace
      A.8.  PacketHeader
      A.9.  Token
-     A.10. KeyType
-     A.11. QUIC Frames
-       A.11.1.  PaddingFrame
-       A.11.2.  PingFrame
-       A.11.3.  AckFrame
-       A.11.4.  ResetStreamFrame
-       A.11.5.  StopSendingFrame
-       A.11.6.  CryptoFrame
-       A.11.7.  NewTokenFrame
-       A.11.8.  StreamFrame
-       A.11.9.  MaxDataFrame
-       A.11.10. MaxStreamDataFrame
-       A.11.11. MaxStreamsFrame
-       A.11.12. DataBlockedFrame
-       A.11.13. StreamDataBlockedFrame
-       A.11.14. StreamsBlockedFrame
-       A.11.15. NewConnectionIDFrame
-       A.11.16. RetireConnectionIDFrame
-       A.11.17. PathChallengeFrame
-       A.11.18. PathResponseFrame
-       A.11.19. ConnectionCloseFrame
-       A.11.20. HandshakeDoneFrame
-       A.11.21. UnknownFrame
-       A.11.22. TransportError
-       A.11.23. ApplicationError
-       A.11.24. CryptoError
+     A.10. Stateless Reset Token
+     A.11. KeyType
+     A.12. QUIC Frames
+       A.12.1.  PaddingFrame
+       A.12.2.  PingFrame
+       A.12.3.  AckFrame
+       A.12.4.  ResetStreamFrame
+       A.12.5.  StopSendingFrame
+       A.12.6.  CryptoFrame
+       A.12.7.  NewTokenFrame
+       A.12.8.  StreamFrame
+       A.12.9.  MaxDataFrame
+       A.12.10. MaxStreamDataFrame
+       A.12.11. MaxStreamsFrame
+       A.12.12. DataBlockedFrame
+       A.12.13. StreamDataBlockedFrame
+       A.12.14. StreamsBlockedFrame
+       A.12.15. NewConnectionIDFrame
+       A.12.16. RetireConnectionIDFrame
+       A.12.17. PathChallengeFrame
+       A.12.18. PathResponseFrame
+       A.12.19. ConnectionCloseFrame
+       A.12.20. HandshakeDoneFrame
+       A.12.21. UnknownFrame
+       A.12.22. TransportError
+       A.12.23. ApplicationError
+       A.12.24. CryptoError
    Appendix B.  Change Log
      B.1.  Since draft-ietf-qlog-quic-events-00:
      B.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
@@ -736,7 +737,7 @@ Table of Contents
        ? original_destination_connection_id: ConnectionID
        ? initial_source_connection_id: ConnectionID
        ? retry_source_connection_id: ConnectionID
-       ? stateless_reset_token: Token
+       ? stateless_reset_token: StatelessResetToken
        ? disable_active_migration: bool
 
        ? max_idle_timeout: uint64
@@ -763,7 +764,7 @@ Table of Contents
        port_v6: uint16
 
        connection_id: ConnectionID
-       stateless_reset_token: Token
+       stateless_reset_token: StatelessResetToken
    }
 
                 Figure 11: TransportParametersSet definition
@@ -826,7 +827,7 @@ Table of Contents
 
        ; only if header.packet_type === "stateless_reset"
        ; is always 128 bits in length.
-       ? stateless_reset_token: hexstring .size 16
+       ? stateless_reset_token: StatelessResetToken
 
        ; only if header.packet_type === "version_negotiation"
        ? supported_versions: [+ QuicVersion]
@@ -876,7 +877,7 @@ Table of Contents
 
        ; only if header.packet_type === "stateless_reset"
        ; Is always 128 bits in length.
-       ? stateless_reset_token: hexstring .size 16
+       ? stateless_reset_token: StatelessResetToken
 
        ; only if header.packet_type === "version_negotiation"
        ? supported_versions: [+ QuicVersion]
@@ -1643,7 +1644,7 @@ A.8.  PacketHeader
 A.9.  Token
 
    Token = {
-       ? type: "retry" / "resumption" / "stateless_reset"
+       ? type: "retry" / "resumption"
 
        ; byte length of the token
        ? length: uint32
@@ -1661,15 +1662,23 @@ A.9.  Token
                         Figure 38: Token definition
 
    The token carried in an Initial packet can either be a retry token
-   from a Retry packet, a stateless reset token from a Stateless Reset
-   packet or one originally provided by the server in a NEW_TOKEN frame
-   used when resuming a connection (e.g., for address validation
-   purposes).  Retry and resumption tokens typically contain encoded
-   metadata to check the token's validity when it is used, but this
-   metadata and its format is implementation specific.  For that, this
-   field includes a general-purpose "details" field.
+   from a Retry packet, or one originally provided by the server in a
+   NEW_TOKEN frame used when resuming a connection (e.g., for address
+   validation purposes).  Retry and resumption tokens typically contain
+   encoded metadata to check the token's validity when it is used, but
+   this metadata and its format is implementation specific.  For that,
+   this field includes a general-purpose "details" field.
 
-A.10.  KeyType
+A.10.  Stateless Reset Token
+
+   StatelessResetToken = hexstring .size 16
+
+                Figure 39: Stateless Reset Token definition
+
+   The stateless reset token is carried in stateless reset packets, in
+   transport parameters and in NEW_CONNECTION_ID frames.
+
+A.11.  KeyType
 
    KeyType =
        "server_initial_secret" / "client_initial_secret" /
@@ -1677,9 +1686,9 @@ A.10.  KeyType
        "server_0rtt_secret" / "client_0rtt_secret" /
        "server_1rtt_secret" / "client_1rtt_secret"
 
-                       Figure 39: KeyType definition
+                       Figure 40: KeyType definition
 
-A.11.  QUIC Frames
+A.12.  QUIC Frames
 
    QuicFrame =
      PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
@@ -1690,9 +1699,9 @@ A.11.  QUIC Frames
      PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
      HandshakeDoneFrame / UnknownFrame
 
-                      Figure 40: QuicFrame definition
+                      Figure 41: QuicFrame definition
 
-A.11.1.  PaddingFrame
+A.12.1.  PaddingFrame
 
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
@@ -1711,9 +1720,9 @@ A.11.1.  PaddingFrame
        payload_length: uint32
    }
 
-                     Figure 41: PaddingFrame definition
+                     Figure 42: PaddingFrame definition
 
-A.11.2.  PingFrame
+A.12.2.  PingFrame
 
    PingFrame = {
        frame_type: "ping"
@@ -1723,9 +1732,9 @@ A.11.2.  PingFrame
        ? payload_length: uint32
    }
 
-                      Figure 42: PingFrame definition
+                      Figure 43: PingFrame definition
 
-A.11.3.  AckFrame
+A.12.3.  AckFrame
 
    ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
    ; For two numbers:
@@ -1754,7 +1763,7 @@ A.11.3.  AckFrame
        ? payload_length: uint32
    }
 
-                       Figure 43: AckFrame definition
+                       Figure 44: AckFrame definition
 
    Note: the packet ranges in AckFrame.acked_ranges do not necessarily
    have to be ordered (e.g., [[5,9],[1,4]] is a valid value).
@@ -1764,7 +1773,7 @@ A.11.3.  AckFrame
    that case, implementers SHOULD log [120] instead and tools MUST be
    able to deal with both notations.
 
-A.11.4.  ResetStreamFrame
+A.12.4.  ResetStreamFrame
 
    ResetStreamFrame = {
        frame_type: "reset_stream"
@@ -1780,9 +1789,9 @@ A.11.4.  ResetStreamFrame
        ? payload_length: uint32
    }
 
-                   Figure 44: ResetStreamFrame definition
+                   Figure 45: ResetStreamFrame definition
 
-A.11.5.  StopSendingFrame
+A.12.5.  StopSendingFrame
 
    StopSendingFrame = {
        frame_type: "stop_sending"
@@ -1795,9 +1804,9 @@ A.11.5.  StopSendingFrame
        ? payload_length: uint32
    }
 
-                   Figure 45: StopSendingFrame definition
+                   Figure 46: StopSendingFrame definition
 
-A.11.6.  CryptoFrame
+A.12.6.  CryptoFrame
 
    CryptoFrame = {
        frame_type: "crypto"
@@ -1808,9 +1817,9 @@ A.11.6.  CryptoFrame
        ? payload_length: uint32
    }
 
-                     Figure 46: CryptoFrame definition
+                     Figure 47: CryptoFrame definition
 
-A.11.7.  NewTokenFrame
+A.12.7.  NewTokenFrame
 
    NewTokenFrame = {
      frame_type: "new_token"
@@ -1818,9 +1827,9 @@ A.11.7.  NewTokenFrame
      token: Token
    }
 
-                    Figure 47: NewTokenFrame definition
+                    Figure 48: NewTokenFrame definition
 
-A.11.8.  StreamFrame
+A.12.8.  StreamFrame
 
    StreamFrame = {
        frame_type: "stream"
@@ -1840,9 +1849,9 @@ A.11.8.  StreamFrame
        ? raw: hexstring
    }
 
-                     Figure 48: StreamFrame definition
+                     Figure 49: StreamFrame definition
 
-A.11.9.  MaxDataFrame
+A.12.9.  MaxDataFrame
 
    MaxDataFrame = {
      frame_type: "max_data"
@@ -1850,9 +1859,9 @@ A.11.9.  MaxDataFrame
      maximum: uint64
    }
 
-                     Figure 49: MaxDataFrame definition
+                     Figure 50: MaxDataFrame definition
 
-A.11.10.  MaxStreamDataFrame
+A.12.10.  MaxStreamDataFrame
 
    MaxStreamDataFrame = {
      frame_type: "max_stream_data"
@@ -1861,9 +1870,9 @@ A.11.10.  MaxStreamDataFrame
      maximum: uint64
    }
 
-                  Figure 50: MaxStreamDataFrame definition
+                  Figure 51: MaxStreamDataFrame definition
 
-A.11.11.  MaxStreamsFrame
+A.12.11.  MaxStreamsFrame
 
    MaxStreamsFrame = {
      frame_type: "max_streams"
@@ -1872,9 +1881,9 @@ A.11.11.  MaxStreamsFrame
      maximum: uint64
    }
 
-                   Figure 51: MaxStreamsFrame definition
+                   Figure 52: MaxStreamsFrame definition
 
-A.11.12.  DataBlockedFrame
+A.12.12.  DataBlockedFrame
 
    DataBlockedFrame = {
      frame_type: "data_blocked"
@@ -1882,9 +1891,9 @@ A.11.12.  DataBlockedFrame
      limit: uint64
    }
 
-                   Figure 52: DataBlockedFrame definition
+                   Figure 53: DataBlockedFrame definition
 
-A.11.13.  StreamDataBlockedFrame
+A.12.13.  StreamDataBlockedFrame
 
    StreamDataBlockedFrame = {
      frame_type: "stream_data_blocked"
@@ -1893,9 +1902,9 @@ A.11.13.  StreamDataBlockedFrame
      limit: uint64
    }
 
-                Figure 53: StreamDataBlockedFrame definition
+                Figure 54: StreamDataBlockedFrame definition
 
-A.11.14.  StreamsBlockedFrame
+A.12.14.  StreamsBlockedFrame
 
    StreamsBlockedFrame = {
      frame_type: "streams_blocked"
@@ -1904,9 +1913,9 @@ A.11.14.  StreamsBlockedFrame
      limit: uint64
    }
 
-                 Figure 54: StreamsBlockedFrame definition
+                 Figure 55: StreamsBlockedFrame definition
 
-A.11.15.  NewConnectionIDFrame
+A.12.15.  NewConnectionIDFrame
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
@@ -1919,12 +1928,12 @@ A.11.15.  NewConnectionIDFrame
      ? connection_id_length: uint8
      connection_id: ConnectionID
 
-     ? stateless_reset_token: Token
+     ? stateless_reset_token: StatelessResetToken
    }
 
-                 Figure 55: NewConnectionIDFrame definition
+                 Figure 56: NewConnectionIDFrame definition
 
-A.11.16.  RetireConnectionIDFrame
+A.12.16.  RetireConnectionIDFrame
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
@@ -1932,9 +1941,9 @@ A.11.16.  RetireConnectionIDFrame
      sequence_number: uint32
    }
 
-               Figure 56: RetireConnectionIDFrame definition
+               Figure 57: RetireConnectionIDFrame definition
 
-A.11.17.  PathChallengeFrame
+A.12.17.  PathChallengeFrame
 
    PathChallengeFrame = {
      frame_type: "path_challenge"
@@ -1943,9 +1952,9 @@ A.11.17.  PathChallengeFrame
      ? data: hexstring
    }
 
-                  Figure 57: PathChallengeFrame definition
+                  Figure 58: PathChallengeFrame definition
 
-A.11.18.  PathResponseFrame
+A.12.18.  PathResponseFrame
 
    PathResponseFrame = {
      frame_type: "path_response"
@@ -1954,9 +1963,9 @@ A.11.18.  PathResponseFrame
      ? data: hexstring
    }
 
-                  Figure 58: PathResponseFrame definition
+                  Figure 59: PathResponseFrame definition
 
-A.11.19.  ConnectionCloseFrame
+A.12.19.  ConnectionCloseFrame
 
    raw_error_code is the actual, numerical code.  This is useful because
    some error types are spread out over a range of codes (e.g., QUIC's
@@ -1977,17 +1986,17 @@ A.11.19.  ConnectionCloseFrame
        ? trigger_frame_type: uint64 / text
    }
 
-                 Figure 59: ConnectionCloseFrame definition
+                 Figure 60: ConnectionCloseFrame definition
 
-A.11.20.  HandshakeDoneFrame
+A.12.20.  HandshakeDoneFrame
 
    HandshakeDoneFrame = {
      frame_type: "handshake_done";
    }
 
-                  Figure 60: HandshakeDoneFrame definition
+                  Figure 61: HandshakeDoneFrame definition
 
-A.11.21.  UnknownFrame
+A.12.21.  UnknownFrame
 
    UnknownFrame = {
        frame_type: "unknown"
@@ -1997,9 +2006,9 @@ A.11.21.  UnknownFrame
        ? raw: hexstring
    }
 
-                     Figure 61: UnknownFrame definition
+                     Figure 62: UnknownFrame definition
 
-A.11.22.  TransportError
+A.12.22.  TransportError
 
    TransportError = "no_error" / "internal_error" /
        "connection_refused" / "flow_control_error" /
@@ -2009,9 +2018,9 @@ A.11.22.  TransportError
        "protocol_violation" / "invalid_token" / "application_error" /
        "crypto_buffer_exceeded"
 
-                    Figure 62: TransportError definition
+                    Figure 63: TransportError definition
 
-A.11.23.  ApplicationError
+A.12.23.  ApplicationError
 
    By definition, an application error is defined by the application-
    level protocol running on top of QUIC (e.g., HTTP/3).
@@ -2025,7 +2034,7 @@ A.11.23.  ApplicationError
 
    $ApplicationError /= "new_error_name" / "another_new_error_name"
 
-A.11.24.  CryptoError
+A.12.24.  CryptoError
 
    These errors are defined in the TLS document as "A TLS alert is
    turned into a QUIC connection error by converting the one-byte alert
@@ -2041,7 +2050,7 @@ A.11.24.  CryptoError
    ; all strings from "crypto_error_0x100" to "crypto_error_0x199"
    CryptoError = text .regexp "crypto_error_0x1[0-9][0-9]"
 
-                     Figure 63: CryptoError definition
+                     Figure 64: CryptoError definition
 
 Appendix B.  Change Log
 

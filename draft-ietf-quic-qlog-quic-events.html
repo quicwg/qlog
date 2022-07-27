@@ -13,26 +13,26 @@
 QUIC events. These events can then be embedded in the higher level schema defined
 in  . 
     " name="description">
-<meta content="xml2rfc 3.12.3" name="generator">
+<meta content="xml2rfc 3.13.0" name="generator">
 <meta content="Internet-Draft" name="keyword">
-<meta content="draft-ietf-quic-qlog-quic-events" name="ietf.draft">
+<meta content="draft-ietf-quic-qlog-quic-events-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.12.3
-    Python 3.9.7
+  xml2rfc 3.13.0
+    Python 3.10.4
     appdirs 1.4.4
-    ConfigArgParse 1.3
-    google-i18n-address 2.5.0
+    ConfigArgParse 1.5.3
+    google-i18n-address 2.5.2
     html5lib 1.1
     intervaltree 3.1.0
-    Jinja2 2.11.3
+    Jinja2 3.1.2
     kitchen 1.2.6
-    lxml 4.6.5
-    MarkupSafe 2.0.1
-    pycountry 20.7.3
-    pyflakes 2.3.1
-    PyYAML 5.4.1
-    requests 2.26.0
-    setuptools 52.0.0
+    lxml 4.9.1
+    MarkupSafe 2.1.1
+    pycountry 22.3.5
+    pyflakes 2.4.0
+    PyYAML 6.0
+    requests 2.27.1
+    setuptools 59.4.0
     six 1.16.0
 -->
 <link href="draft-ietf-quic-qlog-quic-events.xml" rel="alternate" type="application/rfc+xml">
@@ -157,6 +157,14 @@ in  .
   font-weight: 700;
   font-display: swap;
   src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -340,7 +348,7 @@ ol, ul {
   padding: 0;
   margin: 0 0 0.5em 2em;
 }
-ol ol, ul ul, ol ul, ul ol {
+:is(ol, ul) :is(ol, ul) {
   margin-left: 1em;
 }
 li {
@@ -355,8 +363,7 @@ ul.empty, .ulEmpty {
 ul.empty li, .ulEmpty li {
   margin-top: 0.5em;
 }
-ul.compact, .ulCompact,
-ol.compact, .olCompact {
+:is(ul, ol).compact, .ulCompact, .olCompact {
   line-height: 100%;
   margin: 0 0 0 2em;
 }
@@ -372,7 +379,7 @@ dl > dd {
   margin-bottom: .8em;
   min-height: 1.3em;
 }
-dl.compact > dd, .dlCompact > dd {
+:is(dl.compact, .dlCompact) > dd {
   margin-bottom: 0em;
 }
 dl > dd > dl {
@@ -414,6 +421,9 @@ tt, code {
      remove leading to avoid altering the final height of lines */
   line-height: 0;
 }
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
 pre {
   border: 1px solid var(--line-color);
   font-size: 13.5px;
@@ -438,6 +448,19 @@ figcaption, caption {
   text-align: left;
 }
 @media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) p {
+    margin: -2px 0;
+    max-height: 0;
+    transition: max-height 2s ease, margin 0.5s ease 0.5s;
+    overflow: hidden;
+  }
+  :is(#status-of-memo, #copyright):hover p,
+  :is(#status-of-memo, #copyright) h2:target ~ p {
+    margin: 0.5em 0;
+    max-height: 500px;
+    overflow: auto;
+  }
   pre, svg {
     display: inline-block;
     overflow-x: auto;
@@ -453,7 +476,7 @@ figcaption, caption {
     display: block;
     width: calc(100% - 25px);
   }
-  pre + .pilcrow, svg + .pilcrow {
+  :is(pre, svg) + .pilcrow {
     display: inline-block;
     vertical-align: text-bottom;
     padding-bottom: 8px;
@@ -502,17 +525,11 @@ th, td {
 th {
   background-color: var(--line-color);
 }
-tr:nth-child(2n) > td {
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
   background-color: var(--background-color);
 }
-tr:nth-child(2n+1) > td {
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
   background-color: var(--highlight-color);
-}
-thead+tbody > tr:nth-child(2n) > td {
-  background-color: var(--highlight-color);
-}
-thead+tbody > tr:nth-child(2n+1) > td {
-  background-color: var(--background-color);
 }
 table caption {
   margin: 0;
@@ -552,8 +569,9 @@ hr {
 }
 .bcp14 {
   font-variant: small-caps;
+  font-weight: 600;
+  font-size: 14.5px;
 }
-
 .role {
   font-variant: all-small-caps;
 }
@@ -622,6 +640,11 @@ hr {
   text-align: right;
   font-weight: bold;
   min-width: 7em;
+}
+.references dt:target::before {
+  content: "⇒";
+  width: 15px;
+  margin: 0 10px 0 -25px;
 }
 .references dd {
   margin-left: 8em;
@@ -792,7 +815,7 @@ hr.addr {
     margin: 0 0 0 4px;
     font-size: var(--small-font-size);
   }
-  #toc ul p, #toc ul li {
+  #toc ul :is(p, li) {
     margin: 2px 0;
     line-height: 22px;
   }
@@ -902,13 +925,13 @@ dl.dlNewline > dt {
 }
 
 /* Provide styling for table cell text alignment */
-table .text-left, table .text-left {
+table .text-left {
   text-align: left;
 }
-table .text-center, table .text-center {
+table .text-center {
   text-align: center;
 }
-table .text-right, table .text-right {
+table .text-right {
   text-align: right;
 }
 
@@ -975,12 +998,6 @@ address div.right {
   }
 
 }
-/* Tweak the bcp14 keyword presentation */
-.bcp14 {
-  font-variant: small-caps;
-  font-weight: bold;
-  font-size: 0.9em;
-}
 
 /* Dark mode. */
 @media (prefers-color-scheme: dark) {
@@ -995,19 +1012,20 @@ address div.right {
   --pilcrow-strong: #666;
   scrollbar-color: #777 #333;
 }
-/* Trick: a prefix match works because only black and white are allowed */
-svg [stroke="black"], svg [stroke^="#000"] {
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg :is([stroke="black"], [stroke^="#000"]) {
   stroke: var(--text-color);
 }
-svg [stroke="white"], svg [stroke^="#fff"] {
+svg :is([stroke="white"], [stroke^="#fff"]) {
   stroke: var(--background-color);
 }
-svg [fill="black"], svg [fill^="#000"], svg :not([fill]) {
+svg :is([fill="black"], [fill^="#000"], :not([fill])) {
   fill: var(--text-color);
 }
-svg [stroke="fill"], svg [fill^="#fff"] {
+svg :is([stroke="fill"], [fill^="#fff"]) {
   fill: var(--background-color);
-}
 }
 </style>
 
@@ -1017,11 +1035,11 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">QUIC event definitions for qlog</td>
-<td class="right">March 2022</td>
+<td class="right">July 2022</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 16 September 2022</td>
+<td class="center">Expires 28 January 2023</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1031,15 +1049,15 @@ svg [stroke="fill"], svg [fill^="#fff"] {
 <dt class="label-workgroup">Workgroup:</dt>
 <dd class="workgroup">QUIC</dd>
 <dt class="label-internet-draft">Internet-Draft:</dt>
-<dd class="internet-draft">draft-ietf-quic-qlog-quic-events</dd>
+<dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-03-15" class="published">15 March 2022</time>
+<time datetime="2022-07-27" class="published">27 July 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-09-16">16 September 2022</time></dd>
+<dd class="expires"><time datetime="2023-01-28">28 January 2023</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1085,7 +1103,7 @@ in <span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]</span>.<a href="#sect
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 16 September 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 28 January 2023.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1304,82 +1322,85 @@ in <span>[<a href="#QLOG-MAIN" class="xref">QLOG-MAIN</a>]</span>.<a href="#sect
                 <p id="section-toc.1-1.7.2.9.1"><a href="#appendix-A.9" class="xref">A.9</a>.  <a href="#name-token" class="xref">Token</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.10">
-                <p id="section-toc.1-1.7.2.10.1"><a href="#appendix-A.10" class="xref">A.10</a>. <a href="#name-keytype" class="xref">KeyType</a></p>
+                <p id="section-toc.1-1.7.2.10.1"><a href="#appendix-A.10" class="xref">A.10</a>. <a href="#name-stateless-reset-token" class="xref">Stateless Reset Token</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11">
-                <p id="section-toc.1-1.7.2.11.1"><a href="#appendix-A.11" class="xref">A.11</a>. <a href="#name-quic-frames" class="xref">QUIC Frames</a></p>
+                <p id="section-toc.1-1.7.2.11.1"><a href="#appendix-A.11" class="xref">A.11</a>. <a href="#name-keytype" class="xref">KeyType</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12">
+                <p id="section-toc.1-1.7.2.12.1"><a href="#appendix-A.12" class="xref">A.12</a>. <a href="#name-quic-frames" class="xref">QUIC Frames</a></p>
 <ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.1">
-                    <p id="section-toc.1-1.7.2.11.2.1.1"><a href="#appendix-A.11.1" class="xref">A.11.1</a>.  <a href="#name-paddingframe" class="xref">PaddingFrame</a></p>
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.1">
+                    <p id="section-toc.1-1.7.2.12.2.1.1"><a href="#appendix-A.12.1" class="xref">A.12.1</a>.  <a href="#name-paddingframe" class="xref">PaddingFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.2">
-                    <p id="section-toc.1-1.7.2.11.2.2.1"><a href="#appendix-A.11.2" class="xref">A.11.2</a>.  <a href="#name-pingframe" class="xref">PingFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.2">
+                    <p id="section-toc.1-1.7.2.12.2.2.1"><a href="#appendix-A.12.2" class="xref">A.12.2</a>.  <a href="#name-pingframe" class="xref">PingFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.3">
-                    <p id="section-toc.1-1.7.2.11.2.3.1"><a href="#appendix-A.11.3" class="xref">A.11.3</a>.  <a href="#name-ackframe" class="xref">AckFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.3">
+                    <p id="section-toc.1-1.7.2.12.2.3.1"><a href="#appendix-A.12.3" class="xref">A.12.3</a>.  <a href="#name-ackframe" class="xref">AckFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.4">
-                    <p id="section-toc.1-1.7.2.11.2.4.1"><a href="#appendix-A.11.4" class="xref">A.11.4</a>.  <a href="#name-resetstreamframe" class="xref">ResetStreamFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.4">
+                    <p id="section-toc.1-1.7.2.12.2.4.1"><a href="#appendix-A.12.4" class="xref">A.12.4</a>.  <a href="#name-resetstreamframe" class="xref">ResetStreamFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.5">
-                    <p id="section-toc.1-1.7.2.11.2.5.1"><a href="#appendix-A.11.5" class="xref">A.11.5</a>.  <a href="#name-stopsendingframe" class="xref">StopSendingFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.5">
+                    <p id="section-toc.1-1.7.2.12.2.5.1"><a href="#appendix-A.12.5" class="xref">A.12.5</a>.  <a href="#name-stopsendingframe" class="xref">StopSendingFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.6">
-                    <p id="section-toc.1-1.7.2.11.2.6.1"><a href="#appendix-A.11.6" class="xref">A.11.6</a>.  <a href="#name-cryptoframe" class="xref">CryptoFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.6">
+                    <p id="section-toc.1-1.7.2.12.2.6.1"><a href="#appendix-A.12.6" class="xref">A.12.6</a>.  <a href="#name-cryptoframe" class="xref">CryptoFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.7">
-                    <p id="section-toc.1-1.7.2.11.2.7.1"><a href="#appendix-A.11.7" class="xref">A.11.7</a>.  <a href="#name-newtokenframe" class="xref">NewTokenFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.7">
+                    <p id="section-toc.1-1.7.2.12.2.7.1"><a href="#appendix-A.12.7" class="xref">A.12.7</a>.  <a href="#name-newtokenframe" class="xref">NewTokenFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.8">
-                    <p id="section-toc.1-1.7.2.11.2.8.1"><a href="#appendix-A.11.8" class="xref">A.11.8</a>.  <a href="#name-streamframe" class="xref">StreamFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.8">
+                    <p id="section-toc.1-1.7.2.12.2.8.1"><a href="#appendix-A.12.8" class="xref">A.12.8</a>.  <a href="#name-streamframe" class="xref">StreamFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.9">
-                    <p id="section-toc.1-1.7.2.11.2.9.1"><a href="#appendix-A.11.9" class="xref">A.11.9</a>.  <a href="#name-maxdataframe" class="xref">MaxDataFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.9">
+                    <p id="section-toc.1-1.7.2.12.2.9.1"><a href="#appendix-A.12.9" class="xref">A.12.9</a>.  <a href="#name-maxdataframe" class="xref">MaxDataFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.10">
-                    <p id="section-toc.1-1.7.2.11.2.10.1"><a href="#appendix-A.11.10" class="xref">A.11.10</a>. <a href="#name-maxstreamdataframe" class="xref">MaxStreamDataFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.10">
+                    <p id="section-toc.1-1.7.2.12.2.10.1"><a href="#appendix-A.12.10" class="xref">A.12.10</a>. <a href="#name-maxstreamdataframe" class="xref">MaxStreamDataFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.11">
-                    <p id="section-toc.1-1.7.2.11.2.11.1"><a href="#appendix-A.11.11" class="xref">A.11.11</a>. <a href="#name-maxstreamsframe" class="xref">MaxStreamsFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.11">
+                    <p id="section-toc.1-1.7.2.12.2.11.1"><a href="#appendix-A.12.11" class="xref">A.12.11</a>. <a href="#name-maxstreamsframe" class="xref">MaxStreamsFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.12">
-                    <p id="section-toc.1-1.7.2.11.2.12.1"><a href="#appendix-A.11.12" class="xref">A.11.12</a>. <a href="#name-datablockedframe" class="xref">DataBlockedFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.12">
+                    <p id="section-toc.1-1.7.2.12.2.12.1"><a href="#appendix-A.12.12" class="xref">A.12.12</a>. <a href="#name-datablockedframe" class="xref">DataBlockedFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.13">
-                    <p id="section-toc.1-1.7.2.11.2.13.1"><a href="#appendix-A.11.13" class="xref">A.11.13</a>. <a href="#name-streamdatablockedframe" class="xref">StreamDataBlockedFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.13">
+                    <p id="section-toc.1-1.7.2.12.2.13.1"><a href="#appendix-A.12.13" class="xref">A.12.13</a>. <a href="#name-streamdatablockedframe" class="xref">StreamDataBlockedFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.14">
-                    <p id="section-toc.1-1.7.2.11.2.14.1"><a href="#appendix-A.11.14" class="xref">A.11.14</a>. <a href="#name-streamsblockedframe" class="xref">StreamsBlockedFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.14">
+                    <p id="section-toc.1-1.7.2.12.2.14.1"><a href="#appendix-A.12.14" class="xref">A.12.14</a>. <a href="#name-streamsblockedframe" class="xref">StreamsBlockedFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.15">
-                    <p id="section-toc.1-1.7.2.11.2.15.1"><a href="#appendix-A.11.15" class="xref">A.11.15</a>. <a href="#name-newconnectionidframe" class="xref">NewConnectionIDFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.15">
+                    <p id="section-toc.1-1.7.2.12.2.15.1"><a href="#appendix-A.12.15" class="xref">A.12.15</a>. <a href="#name-newconnectionidframe" class="xref">NewConnectionIDFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.16">
-                    <p id="section-toc.1-1.7.2.11.2.16.1"><a href="#appendix-A.11.16" class="xref">A.11.16</a>. <a href="#name-retireconnectionidframe" class="xref">RetireConnectionIDFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.16">
+                    <p id="section-toc.1-1.7.2.12.2.16.1"><a href="#appendix-A.12.16" class="xref">A.12.16</a>. <a href="#name-retireconnectionidframe" class="xref">RetireConnectionIDFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.17">
-                    <p id="section-toc.1-1.7.2.11.2.17.1"><a href="#appendix-A.11.17" class="xref">A.11.17</a>. <a href="#name-pathchallengeframe" class="xref">PathChallengeFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.17">
+                    <p id="section-toc.1-1.7.2.12.2.17.1"><a href="#appendix-A.12.17" class="xref">A.12.17</a>. <a href="#name-pathchallengeframe" class="xref">PathChallengeFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.18">
-                    <p id="section-toc.1-1.7.2.11.2.18.1"><a href="#appendix-A.11.18" class="xref">A.11.18</a>. <a href="#name-pathresponseframe" class="xref">PathResponseFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.18">
+                    <p id="section-toc.1-1.7.2.12.2.18.1"><a href="#appendix-A.12.18" class="xref">A.12.18</a>. <a href="#name-pathresponseframe" class="xref">PathResponseFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.19">
-                    <p id="section-toc.1-1.7.2.11.2.19.1"><a href="#appendix-A.11.19" class="xref">A.11.19</a>. <a href="#name-connectioncloseframe" class="xref">ConnectionCloseFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.19">
+                    <p id="section-toc.1-1.7.2.12.2.19.1"><a href="#appendix-A.12.19" class="xref">A.12.19</a>. <a href="#name-connectioncloseframe" class="xref">ConnectionCloseFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.20">
-                    <p id="section-toc.1-1.7.2.11.2.20.1"><a href="#appendix-A.11.20" class="xref">A.11.20</a>. <a href="#name-handshakedoneframe" class="xref">HandshakeDoneFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.20">
+                    <p id="section-toc.1-1.7.2.12.2.20.1"><a href="#appendix-A.12.20" class="xref">A.12.20</a>. <a href="#name-handshakedoneframe" class="xref">HandshakeDoneFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.21">
-                    <p id="section-toc.1-1.7.2.11.2.21.1"><a href="#appendix-A.11.21" class="xref">A.11.21</a>. <a href="#name-unknownframe" class="xref">UnknownFrame</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.21">
+                    <p id="section-toc.1-1.7.2.12.2.21.1"><a href="#appendix-A.12.21" class="xref">A.12.21</a>. <a href="#name-unknownframe" class="xref">UnknownFrame</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.22">
-                    <p id="section-toc.1-1.7.2.11.2.22.1"><a href="#appendix-A.11.22" class="xref">A.11.22</a>. <a href="#name-transporterror" class="xref">TransportError</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.22">
+                    <p id="section-toc.1-1.7.2.12.2.22.1"><a href="#appendix-A.12.22" class="xref">A.12.22</a>. <a href="#name-transporterror" class="xref">TransportError</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.23">
-                    <p id="section-toc.1-1.7.2.11.2.23.1"><a href="#appendix-A.11.23" class="xref">A.11.23</a>. <a href="#name-applicationerror" class="xref">ApplicationError</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.23">
+                    <p id="section-toc.1-1.7.2.12.2.23.1"><a href="#appendix-A.12.23" class="xref">A.12.23</a>. <a href="#name-applicationerror" class="xref">ApplicationError</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.11.2.24">
-                    <p id="section-toc.1-1.7.2.11.2.24.1"><a href="#appendix-A.11.24" class="xref">A.11.24</a>. <a href="#name-cryptoerror" class="xref">CryptoError</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.12.2.24">
+                    <p id="section-toc.1-1.7.2.12.2.24.1"><a href="#appendix-A.12.24" class="xref">A.12.24</a>. <a href="#name-cryptoerror" class="xref">CryptoError</a></p>
 </li>
                 </ul>
 </li>
@@ -2141,7 +2162,7 @@ event to indicate the updated values, as normal.<a href="#section-3.3.3-5" class
 <span id="name-transportparametersset-defi"></span><div id="transport-parametersset-def">
 <figure id="figure-11">
             <div id="section-3.3.3-7.1">
-<pre class="lang-cddl sourcecode">
+<pre class="breakable lang-cddl sourcecode">
 TransportParametersSet = {
     ? owner: Owner
 
@@ -2162,7 +2183,7 @@ TransportParametersSet = {
     ? original_destination_connection_id: ConnectionID
     ? initial_source_connection_id: ConnectionID
     ? retry_source_connection_id: ConnectionID
-    ? stateless_reset_token: Token
+    ? stateless_reset_token: StatelessResetToken
     ? disable_active_migration: bool
 
     ? max_idle_timeout: uint64
@@ -2189,7 +2210,7 @@ PreferredAddress = {
     port_v6: uint16
 
     connection_id: ConnectionID
-    stateless_reset_token: Token
+    stateless_reset_token: StatelessResetToken
 }
 </pre>
 </div>
@@ -2267,7 +2288,7 @@ TransportPacketSent = {
 
     ; only if header.packet_type === "stateless_reset"
     ; is always 128 bits in length.
-    ? stateless_reset_token: hexstring .size 16
+    ? stateless_reset_token: StatelessResetToken
 
     ; only if header.packet_type === "version_negotiation"
     ? supported_versions: [+ QuicVersion]
@@ -2324,7 +2345,7 @@ TransportPacketReceived = {
 
     ; only if header.packet_type === "stateless_reset"
     ; Is always 128 bits in length.
-    ? stateless_reset_token: hexstring .size 16
+    ? stateless_reset_token: StatelessResetToken
 
     ; only if header.packet_type === "version_negotiation"
     ? supported_versions: [+ QuicVersion]
@@ -3303,7 +3324,7 @@ PacketHeader = {
           <div id="appendix-A.9-1.1">
 <pre class="lang-cddl sourcecode">
 Token = {
-    ? type: "retry" / "resumption" / "stateless_reset"
+    ? type: "retry" / "resumption"
 
     ; byte length of the token
     ? length: uint32
@@ -3324,22 +3345,41 @@ Token = {
           </figcaption></figure>
 </div>
 <p id="appendix-A.9-2">The token carried in an Initial packet can either be a retry token from a Retry
-packet, a stateless reset token from a Stateless Reset packet or one originally
-provided by the server in a NEW_TOKEN frame used when resuming a connection (e.g.,
-for address validation purposes). Retry and resumption tokens typically contain
-encoded metadata to check the token's validity when it is used, but this metadata
-and its format is implementation specific. For that, this field includes a
-general-purpose "details" field.<a href="#appendix-A.9-2" class="pilcrow">¶</a></p>
+packet, or one originally provided by the server in a NEW_TOKEN frame used when
+resuming a connection (e.g., for address validation purposes). Retry and
+resumption tokens typically contain encoded metadata to check the token's
+validity when it is used, but this metadata and its format is implementation
+specific. For that, this field includes a general-purpose "details" field.<a href="#appendix-A.9-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="stateless-reset-token">
+<section id="appendix-A.10">
+        <h3 id="name-stateless-reset-token">
+<a href="#appendix-A.10" class="section-number selfRef">A.10. </a><a href="#name-stateless-reset-token" class="section-name selfRef">Stateless Reset Token</a>
+        </h3>
+<span id="name-stateless-reset-token-defin"></span><div id="stateless-reset-token-def">
+<figure id="figure-39">
+          <div id="appendix-A.10-1.1">
+<pre class="lang-cddl sourcecode">
+StatelessResetToken = hexstring .size 16
+</pre>
+</div>
+<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
+<a href="#name-stateless-reset-token-defin" class="selfRef">Stateless Reset Token definition</a>
+          </figcaption></figure>
+</div>
+<p id="appendix-A.10-2">The stateless reset token is carried in stateless reset packets, in transport
+parameters and in NEW_CONNECTION_ID frames.<a href="#appendix-A.10-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="keytype">
-<section id="appendix-A.10">
+<section id="appendix-A.11">
         <h3 id="name-keytype">
-<a href="#appendix-A.10" class="section-number selfRef">A.10. </a><a href="#name-keytype" class="section-name selfRef">KeyType</a>
+<a href="#appendix-A.11" class="section-number selfRef">A.11. </a><a href="#name-keytype" class="section-name selfRef">KeyType</a>
         </h3>
 <span id="name-keytype-definition"></span><div id="keytype-def">
-<figure id="figure-39">
-          <div id="appendix-A.10-1.1">
+<figure id="figure-40">
+          <div id="appendix-A.11-1.1">
 <pre class="lang-cddl sourcecode">
 KeyType =
     "server_initial_secret" / "client_initial_secret" /
@@ -3348,20 +3388,20 @@ KeyType =
     "server_1rtt_secret" / "client_1rtt_secret"
 </pre>
 </div>
-<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
+<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
 <a href="#name-keytype-definition" class="selfRef">KeyType definition</a>
           </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="quic-frames">
-<section id="appendix-A.11">
+<section id="appendix-A.12">
         <h3 id="name-quic-frames">
-<a href="#appendix-A.11" class="section-number selfRef">A.11. </a><a href="#name-quic-frames" class="section-name selfRef">QUIC Frames</a>
+<a href="#appendix-A.12" class="section-number selfRef">A.12. </a><a href="#name-quic-frames" class="section-name selfRef">QUIC Frames</a>
         </h3>
 <span id="name-quicframe-definition"></span><div id="quicframe-def">
-<figure id="figure-40">
-          <div id="appendix-A.11-1.1">
+<figure id="figure-41">
+          <div id="appendix-A.12-1.1">
 <pre class="lang-cddl sourcecode">
 QuicFrame =
   PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
@@ -3373,24 +3413,24 @@ QuicFrame =
   HandshakeDoneFrame / UnknownFrame
 </pre>
 </div>
-<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
+<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
 <a href="#name-quicframe-definition" class="selfRef">QuicFrame definition</a>
           </figcaption></figure>
 </div>
 <div id="paddingframe">
-<section id="appendix-A.11.1">
+<section id="appendix-A.12.1">
           <h4 id="name-paddingframe">
-<a href="#appendix-A.11.1" class="section-number selfRef">A.11.1. </a><a href="#name-paddingframe" class="section-name selfRef">PaddingFrame</a>
+<a href="#appendix-A.12.1" class="section-number selfRef">A.12.1. </a><a href="#name-paddingframe" class="section-name selfRef">PaddingFrame</a>
           </h4>
-<p id="appendix-A.11.1-1">In QUIC, PADDING frames are simply identified as a single byte of value 0. As
+<p id="appendix-A.12.1-1">In QUIC, PADDING frames are simply identified as a single byte of value 0. As
 such, each padding byte could be theoretically interpreted and logged as an
-individual PaddingFrame.<a href="#appendix-A.11.1-1" class="pilcrow">¶</a></p>
-<p id="appendix-A.11.1-2">However, as this leads to heavy logging overhead, implementations SHOULD instead
+individual PaddingFrame.<a href="#appendix-A.12.1-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.1-2">However, as this leads to heavy logging overhead, implementations SHOULD instead
 emit just a single PaddingFrame and set the payload_length property to the amount
-of PADDING bytes/frames included in the packet.<a href="#appendix-A.11.1-2" class="pilcrow">¶</a></p>
+of PADDING bytes/frames included in the packet.<a href="#appendix-A.12.1-2" class="pilcrow">¶</a></p>
 <span id="name-paddingframe-definition"></span><div id="paddingframe-def">
-<figure id="figure-41">
-            <div id="appendix-A.11.1-3.1">
+<figure id="figure-42">
+            <div id="appendix-A.12.1-3.1">
 <pre class="lang-cddl sourcecode">
 PaddingFrame = {
     frame_type: "padding"
@@ -3401,20 +3441,20 @@ PaddingFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
+<figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
 <a href="#name-paddingframe-definition" class="selfRef">PaddingFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="pingframe">
-<section id="appendix-A.11.2">
+<section id="appendix-A.12.2">
           <h4 id="name-pingframe">
-<a href="#appendix-A.11.2" class="section-number selfRef">A.11.2. </a><a href="#name-pingframe" class="section-name selfRef">PingFrame</a>
+<a href="#appendix-A.12.2" class="section-number selfRef">A.12.2. </a><a href="#name-pingframe" class="section-name selfRef">PingFrame</a>
           </h4>
 <span id="name-pingframe-definition"></span><div id="pingframe-def">
-<figure id="figure-42">
-            <div id="appendix-A.11.2-1.1">
+<figure id="figure-43">
+            <div id="appendix-A.12.2-1.1">
 <pre class="lang-cddl sourcecode">
 PingFrame = {
     frame_type: "ping"
@@ -3425,20 +3465,20 @@ PingFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
+<figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
 <a href="#name-pingframe-definition" class="selfRef">PingFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="ackframe">
-<section id="appendix-A.11.3">
+<section id="appendix-A.12.3">
           <h4 id="name-ackframe">
-<a href="#appendix-A.11.3" class="section-number selfRef">A.11.3. </a><a href="#name-ackframe" class="section-name selfRef">AckFrame</a>
+<a href="#appendix-A.12.3" class="section-number selfRef">A.12.3. </a><a href="#name-ackframe" class="section-name selfRef">AckFrame</a>
           </h4>
 <span id="name-ackframe-definition"></span><div id="ackframe-def">
-<figure id="figure-43">
-            <div id="appendix-A.11.3-1.1">
+<figure id="figure-44">
+            <div id="appendix-A.12.3-1.1">
 <pre class="lang-cddl sourcecode">
 ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
 ; For two numbers:
@@ -3468,25 +3508,25 @@ AckFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
+<figcaption><a href="#figure-44" class="selfRef">Figure 44</a>:
 <a href="#name-ackframe-definition" class="selfRef">AckFrame definition</a>
             </figcaption></figure>
 </div>
-<p id="appendix-A.11.3-2">Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
-ordered (e.g., [[5,9],[1,4]] is a valid value).<a href="#appendix-A.11.3-2" class="pilcrow">¶</a></p>
-<p id="appendix-A.11.3-3">Note: the two numbers in the packet range can be the same (e.g., [120,120] means
+<p id="appendix-A.12.3-2">Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
+ordered (e.g., [[5,9],[1,4]] is a valid value).<a href="#appendix-A.12.3-2" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.3-3">Note: the two numbers in the packet range can be the same (e.g., [120,120] means
 that packet with number 120 was ACKed). However, in that case, implementers SHOULD
-log [120] instead and tools MUST be able to deal with both notations.<a href="#appendix-A.11.3-3" class="pilcrow">¶</a></p>
+log [120] instead and tools MUST be able to deal with both notations.<a href="#appendix-A.12.3-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="resetstreamframe">
-<section id="appendix-A.11.4">
+<section id="appendix-A.12.4">
           <h4 id="name-resetstreamframe">
-<a href="#appendix-A.11.4" class="section-number selfRef">A.11.4. </a><a href="#name-resetstreamframe" class="section-name selfRef">ResetStreamFrame</a>
+<a href="#appendix-A.12.4" class="section-number selfRef">A.12.4. </a><a href="#name-resetstreamframe" class="section-name selfRef">ResetStreamFrame</a>
           </h4>
 <span id="name-resetstreamframe-definition"></span><div id="resetstreamframe-def">
-<figure id="figure-44">
-            <div id="appendix-A.11.4-1.1">
+<figure id="figure-45">
+            <div id="appendix-A.12.4-1.1">
 <pre class="lang-cddl sourcecode">
 ResetStreamFrame = {
     frame_type: "reset_stream"
@@ -3503,20 +3543,20 @@ ResetStreamFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-44" class="selfRef">Figure 44</a>:
+<figcaption><a href="#figure-45" class="selfRef">Figure 45</a>:
 <a href="#name-resetstreamframe-definition" class="selfRef">ResetStreamFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="stopsendingframe">
-<section id="appendix-A.11.5">
+<section id="appendix-A.12.5">
           <h4 id="name-stopsendingframe">
-<a href="#appendix-A.11.5" class="section-number selfRef">A.11.5. </a><a href="#name-stopsendingframe" class="section-name selfRef">StopSendingFrame</a>
+<a href="#appendix-A.12.5" class="section-number selfRef">A.12.5. </a><a href="#name-stopsendingframe" class="section-name selfRef">StopSendingFrame</a>
           </h4>
 <span id="name-stopsendingframe-definition"></span><div id="stopsendingframe-def">
-<figure id="figure-45">
-            <div id="appendix-A.11.5-1.1">
+<figure id="figure-46">
+            <div id="appendix-A.12.5-1.1">
 <pre class="lang-cddl sourcecode">
 StopSendingFrame = {
     frame_type: "stop_sending"
@@ -3530,20 +3570,20 @@ StopSendingFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-45" class="selfRef">Figure 45</a>:
+<figcaption><a href="#figure-46" class="selfRef">Figure 46</a>:
 <a href="#name-stopsendingframe-definition" class="selfRef">StopSendingFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="cryptoframe">
-<section id="appendix-A.11.6">
+<section id="appendix-A.12.6">
           <h4 id="name-cryptoframe">
-<a href="#appendix-A.11.6" class="section-number selfRef">A.11.6. </a><a href="#name-cryptoframe" class="section-name selfRef">CryptoFrame</a>
+<a href="#appendix-A.12.6" class="section-number selfRef">A.12.6. </a><a href="#name-cryptoframe" class="section-name selfRef">CryptoFrame</a>
           </h4>
 <span id="name-cryptoframe-definition"></span><div id="cryptoframe-def">
-<figure id="figure-46">
-            <div id="appendix-A.11.6-1.1">
+<figure id="figure-47">
+            <div id="appendix-A.12.6-1.1">
 <pre class="lang-cddl sourcecode">
 CryptoFrame = {
     frame_type: "crypto"
@@ -3555,20 +3595,20 @@ CryptoFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-46" class="selfRef">Figure 46</a>:
+<figcaption><a href="#figure-47" class="selfRef">Figure 47</a>:
 <a href="#name-cryptoframe-definition" class="selfRef">CryptoFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="newtokenframe">
-<section id="appendix-A.11.7">
+<section id="appendix-A.12.7">
           <h4 id="name-newtokenframe">
-<a href="#appendix-A.11.7" class="section-number selfRef">A.11.7. </a><a href="#name-newtokenframe" class="section-name selfRef">NewTokenFrame</a>
+<a href="#appendix-A.12.7" class="section-number selfRef">A.12.7. </a><a href="#name-newtokenframe" class="section-name selfRef">NewTokenFrame</a>
           </h4>
 <span id="name-newtokenframe-definition"></span><div id="newtokenframe-def">
-<figure id="figure-47">
-            <div id="appendix-A.11.7-1.1">
+<figure id="figure-48">
+            <div id="appendix-A.12.7-1.1">
 <pre class="lang-cddl sourcecode">
 NewTokenFrame = {
   frame_type: "new_token"
@@ -3577,20 +3617,20 @@ NewTokenFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-47" class="selfRef">Figure 47</a>:
+<figcaption><a href="#figure-48" class="selfRef">Figure 48</a>:
 <a href="#name-newtokenframe-definition" class="selfRef">NewTokenFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="streamframe">
-<section id="appendix-A.11.8">
+<section id="appendix-A.12.8">
           <h4 id="name-streamframe">
-<a href="#appendix-A.11.8" class="section-number selfRef">A.11.8. </a><a href="#name-streamframe" class="section-name selfRef">StreamFrame</a>
+<a href="#appendix-A.12.8" class="section-number selfRef">A.12.8. </a><a href="#name-streamframe" class="section-name selfRef">StreamFrame</a>
           </h4>
 <span id="name-streamframe-definition"></span><div id="streamframe-def">
-<figure id="figure-48">
-            <div id="appendix-A.11.8-1.1">
+<figure id="figure-49">
+            <div id="appendix-A.12.8-1.1">
 <pre class="lang-cddl sourcecode">
 StreamFrame = {
     frame_type: "stream"
@@ -3611,20 +3651,20 @@ StreamFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-48" class="selfRef">Figure 48</a>:
+<figcaption><a href="#figure-49" class="selfRef">Figure 49</a>:
 <a href="#name-streamframe-definition" class="selfRef">StreamFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="maxdataframe">
-<section id="appendix-A.11.9">
+<section id="appendix-A.12.9">
           <h4 id="name-maxdataframe">
-<a href="#appendix-A.11.9" class="section-number selfRef">A.11.9. </a><a href="#name-maxdataframe" class="section-name selfRef">MaxDataFrame</a>
+<a href="#appendix-A.12.9" class="section-number selfRef">A.12.9. </a><a href="#name-maxdataframe" class="section-name selfRef">MaxDataFrame</a>
           </h4>
 <span id="name-maxdataframe-definition"></span><div id="maxdataframe-def">
-<figure id="figure-49">
-            <div id="appendix-A.11.9-1.1">
+<figure id="figure-50">
+            <div id="appendix-A.12.9-1.1">
 <pre class="lang-cddl sourcecode">
 MaxDataFrame = {
   frame_type: "max_data"
@@ -3633,20 +3673,20 @@ MaxDataFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-49" class="selfRef">Figure 49</a>:
+<figcaption><a href="#figure-50" class="selfRef">Figure 50</a>:
 <a href="#name-maxdataframe-definition" class="selfRef">MaxDataFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="maxstreamdataframe">
-<section id="appendix-A.11.10">
+<section id="appendix-A.12.10">
           <h4 id="name-maxstreamdataframe">
-<a href="#appendix-A.11.10" class="section-number selfRef">A.11.10. </a><a href="#name-maxstreamdataframe" class="section-name selfRef">MaxStreamDataFrame</a>
+<a href="#appendix-A.12.10" class="section-number selfRef">A.12.10. </a><a href="#name-maxstreamdataframe" class="section-name selfRef">MaxStreamDataFrame</a>
           </h4>
 <span id="name-maxstreamdataframe-definiti"></span><div id="maxstreamdataframe-def">
-<figure id="figure-50">
-            <div id="appendix-A.11.10-1.1">
+<figure id="figure-51">
+            <div id="appendix-A.12.10-1.1">
 <pre class="lang-cddl sourcecode">
 MaxStreamDataFrame = {
   frame_type: "max_stream_data"
@@ -3656,20 +3696,20 @@ MaxStreamDataFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-50" class="selfRef">Figure 50</a>:
+<figcaption><a href="#figure-51" class="selfRef">Figure 51</a>:
 <a href="#name-maxstreamdataframe-definiti" class="selfRef">MaxStreamDataFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="maxstreamsframe">
-<section id="appendix-A.11.11">
+<section id="appendix-A.12.11">
           <h4 id="name-maxstreamsframe">
-<a href="#appendix-A.11.11" class="section-number selfRef">A.11.11. </a><a href="#name-maxstreamsframe" class="section-name selfRef">MaxStreamsFrame</a>
+<a href="#appendix-A.12.11" class="section-number selfRef">A.12.11. </a><a href="#name-maxstreamsframe" class="section-name selfRef">MaxStreamsFrame</a>
           </h4>
 <span id="name-maxstreamsframe-definition"></span><div id="maxstreamsframe-def">
-<figure id="figure-51">
-            <div id="appendix-A.11.11-1.1">
+<figure id="figure-52">
+            <div id="appendix-A.12.11-1.1">
 <pre class="lang-cddl sourcecode">
 MaxStreamsFrame = {
   frame_type: "max_streams"
@@ -3679,20 +3719,20 @@ MaxStreamsFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-51" class="selfRef">Figure 51</a>:
+<figcaption><a href="#figure-52" class="selfRef">Figure 52</a>:
 <a href="#name-maxstreamsframe-definition" class="selfRef">MaxStreamsFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="datablockedframe">
-<section id="appendix-A.11.12">
+<section id="appendix-A.12.12">
           <h4 id="name-datablockedframe">
-<a href="#appendix-A.11.12" class="section-number selfRef">A.11.12. </a><a href="#name-datablockedframe" class="section-name selfRef">DataBlockedFrame</a>
+<a href="#appendix-A.12.12" class="section-number selfRef">A.12.12. </a><a href="#name-datablockedframe" class="section-name selfRef">DataBlockedFrame</a>
           </h4>
 <span id="name-datablockedframe-definition"></span><div id="datablockedframe-def">
-<figure id="figure-52">
-            <div id="appendix-A.11.12-1.1">
+<figure id="figure-53">
+            <div id="appendix-A.12.12-1.1">
 <pre class="lang-cddl sourcecode">
 DataBlockedFrame = {
   frame_type: "data_blocked"
@@ -3701,20 +3741,20 @@ DataBlockedFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-52" class="selfRef">Figure 52</a>:
+<figcaption><a href="#figure-53" class="selfRef">Figure 53</a>:
 <a href="#name-datablockedframe-definition" class="selfRef">DataBlockedFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="streamdatablockedframe">
-<section id="appendix-A.11.13">
+<section id="appendix-A.12.13">
           <h4 id="name-streamdatablockedframe">
-<a href="#appendix-A.11.13" class="section-number selfRef">A.11.13. </a><a href="#name-streamdatablockedframe" class="section-name selfRef">StreamDataBlockedFrame</a>
+<a href="#appendix-A.12.13" class="section-number selfRef">A.12.13. </a><a href="#name-streamdatablockedframe" class="section-name selfRef">StreamDataBlockedFrame</a>
           </h4>
 <span id="name-streamdatablockedframe-defi"></span><div id="streamdatablockedframe-def">
-<figure id="figure-53">
-            <div id="appendix-A.11.13-1.1">
+<figure id="figure-54">
+            <div id="appendix-A.12.13-1.1">
 <pre class="lang-cddl sourcecode">
 StreamDataBlockedFrame = {
   frame_type: "stream_data_blocked"
@@ -3724,20 +3764,20 @@ StreamDataBlockedFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-53" class="selfRef">Figure 53</a>:
+<figcaption><a href="#figure-54" class="selfRef">Figure 54</a>:
 <a href="#name-streamdatablockedframe-defi" class="selfRef">StreamDataBlockedFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="streamsblockedframe">
-<section id="appendix-A.11.14">
+<section id="appendix-A.12.14">
           <h4 id="name-streamsblockedframe">
-<a href="#appendix-A.11.14" class="section-number selfRef">A.11.14. </a><a href="#name-streamsblockedframe" class="section-name selfRef">StreamsBlockedFrame</a>
+<a href="#appendix-A.12.14" class="section-number selfRef">A.12.14. </a><a href="#name-streamsblockedframe" class="section-name selfRef">StreamsBlockedFrame</a>
           </h4>
 <span id="name-streamsblockedframe-definit"></span><div id="streamsblockedframe-def">
-<figure id="figure-54">
-            <div id="appendix-A.11.14-1.1">
+<figure id="figure-55">
+            <div id="appendix-A.12.14-1.1">
 <pre class="lang-cddl sourcecode">
 StreamsBlockedFrame = {
   frame_type: "streams_blocked"
@@ -3747,20 +3787,20 @@ StreamsBlockedFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-54" class="selfRef">Figure 54</a>:
+<figcaption><a href="#figure-55" class="selfRef">Figure 55</a>:
 <a href="#name-streamsblockedframe-definit" class="selfRef">StreamsBlockedFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="newconnectionidframe">
-<section id="appendix-A.11.15">
+<section id="appendix-A.12.15">
           <h4 id="name-newconnectionidframe">
-<a href="#appendix-A.11.15" class="section-number selfRef">A.11.15. </a><a href="#name-newconnectionidframe" class="section-name selfRef">NewConnectionIDFrame</a>
+<a href="#appendix-A.12.15" class="section-number selfRef">A.12.15. </a><a href="#name-newconnectionidframe" class="section-name selfRef">NewConnectionIDFrame</a>
           </h4>
 <span id="name-newconnectionidframe-defini"></span><div id="newconnectionidframe-def">
-<figure id="figure-55">
-            <div id="appendix-A.11.15-1.1">
+<figure id="figure-56">
+            <div id="appendix-A.12.15-1.1">
 <pre class="lang-cddl sourcecode">
 NewConnectionIDFrame = {
   frame_type: "new_connection_id"
@@ -3773,24 +3813,24 @@ NewConnectionIDFrame = {
   ? connection_id_length: uint8
   connection_id: ConnectionID
 
-  ? stateless_reset_token: Token
+  ? stateless_reset_token: StatelessResetToken
 }
 </pre>
 </div>
-<figcaption><a href="#figure-55" class="selfRef">Figure 55</a>:
+<figcaption><a href="#figure-56" class="selfRef">Figure 56</a>:
 <a href="#name-newconnectionidframe-defini" class="selfRef">NewConnectionIDFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="retireconnectionidframe">
-<section id="appendix-A.11.16">
+<section id="appendix-A.12.16">
           <h4 id="name-retireconnectionidframe">
-<a href="#appendix-A.11.16" class="section-number selfRef">A.11.16. </a><a href="#name-retireconnectionidframe" class="section-name selfRef">RetireConnectionIDFrame</a>
+<a href="#appendix-A.12.16" class="section-number selfRef">A.12.16. </a><a href="#name-retireconnectionidframe" class="section-name selfRef">RetireConnectionIDFrame</a>
           </h4>
 <span id="name-retireconnectionidframe-def"></span><div id="retireconnectionid-def">
-<figure id="figure-56">
-            <div id="appendix-A.11.16-1.1">
+<figure id="figure-57">
+            <div id="appendix-A.12.16-1.1">
 <pre class="lang-cddl sourcecode">
 RetireConnectionIDFrame = {
   frame_type: "retire_connection_id"
@@ -3799,20 +3839,20 @@ RetireConnectionIDFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-56" class="selfRef">Figure 56</a>:
+<figcaption><a href="#figure-57" class="selfRef">Figure 57</a>:
 <a href="#name-retireconnectionidframe-def" class="selfRef">RetireConnectionIDFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="pathchallengeframe">
-<section id="appendix-A.11.17">
+<section id="appendix-A.12.17">
           <h4 id="name-pathchallengeframe">
-<a href="#appendix-A.11.17" class="section-number selfRef">A.11.17. </a><a href="#name-pathchallengeframe" class="section-name selfRef">PathChallengeFrame</a>
+<a href="#appendix-A.12.17" class="section-number selfRef">A.12.17. </a><a href="#name-pathchallengeframe" class="section-name selfRef">PathChallengeFrame</a>
           </h4>
 <span id="name-pathchallengeframe-definiti"></span><div id="pathchallengeframe-def">
-<figure id="figure-57">
-            <div id="appendix-A.11.17-1.1">
+<figure id="figure-58">
+            <div id="appendix-A.12.17-1.1">
 <pre class="lang-cddl sourcecode">
 PathChallengeFrame = {
   frame_type: "path_challenge"
@@ -3822,20 +3862,20 @@ PathChallengeFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-57" class="selfRef">Figure 57</a>:
+<figcaption><a href="#figure-58" class="selfRef">Figure 58</a>:
 <a href="#name-pathchallengeframe-definiti" class="selfRef">PathChallengeFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="pathresponseframe">
-<section id="appendix-A.11.18">
+<section id="appendix-A.12.18">
           <h4 id="name-pathresponseframe">
-<a href="#appendix-A.11.18" class="section-number selfRef">A.11.18. </a><a href="#name-pathresponseframe" class="section-name selfRef">PathResponseFrame</a>
+<a href="#appendix-A.12.18" class="section-number selfRef">A.12.18. </a><a href="#name-pathresponseframe" class="section-name selfRef">PathResponseFrame</a>
           </h4>
 <span id="name-pathresponseframe-definitio"></span><div id="pathresponseframe-def">
-<figure id="figure-58">
-            <div id="appendix-A.11.18-1.1">
+<figure id="figure-59">
+            <div id="appendix-A.12.18-1.1">
 <pre class="lang-cddl sourcecode">
 PathResponseFrame = {
   frame_type: "path_response"
@@ -3845,22 +3885,22 @@ PathResponseFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-58" class="selfRef">Figure 58</a>:
+<figcaption><a href="#figure-59" class="selfRef">Figure 59</a>:
 <a href="#name-pathresponseframe-definitio" class="selfRef">PathResponseFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="connectioncloseframe">
-<section id="appendix-A.11.19">
+<section id="appendix-A.12.19">
           <h4 id="name-connectioncloseframe">
-<a href="#appendix-A.11.19" class="section-number selfRef">A.11.19. </a><a href="#name-connectioncloseframe" class="section-name selfRef">ConnectionCloseFrame</a>
+<a href="#appendix-A.12.19" class="section-number selfRef">A.12.19. </a><a href="#name-connectioncloseframe" class="section-name selfRef">ConnectionCloseFrame</a>
           </h4>
-<p id="appendix-A.11.19-1">raw_error_code is the actual, numerical code. This is useful because some error
-types are spread out over a range of codes (e.g., QUIC's crypto_error).<a href="#appendix-A.11.19-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.19-1">raw_error_code is the actual, numerical code. This is useful because some error
+types are spread out over a range of codes (e.g., QUIC's crypto_error).<a href="#appendix-A.12.19-1" class="pilcrow">¶</a></p>
 <span id="name-connectioncloseframe-defini"></span><div id="connectioncloseframe-def">
-<figure id="figure-59">
-            <div id="appendix-A.11.19-2.1">
+<figure id="figure-60">
+            <div id="appendix-A.12.19-2.1">
 <pre class="lang-cddl sourcecode">
 ErrorSpace = "transport" / "application"
 
@@ -3878,40 +3918,40 @@ ConnectionCloseFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-59" class="selfRef">Figure 59</a>:
+<figcaption><a href="#figure-60" class="selfRef">Figure 60</a>:
 <a href="#name-connectioncloseframe-defini" class="selfRef">ConnectionCloseFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="handshakedoneframe">
-<section id="appendix-A.11.20">
+<section id="appendix-A.12.20">
           <h4 id="name-handshakedoneframe">
-<a href="#appendix-A.11.20" class="section-number selfRef">A.11.20. </a><a href="#name-handshakedoneframe" class="section-name selfRef">HandshakeDoneFrame</a>
+<a href="#appendix-A.12.20" class="section-number selfRef">A.12.20. </a><a href="#name-handshakedoneframe" class="section-name selfRef">HandshakeDoneFrame</a>
           </h4>
 <span id="name-handshakedoneframe-definiti"></span><div id="handshakedoneframe-def">
-<figure id="figure-60">
-            <div id="appendix-A.11.20-1.1">
+<figure id="figure-61">
+            <div id="appendix-A.12.20-1.1">
 <pre class="lang-cddl sourcecode">
 HandshakeDoneFrame = {
   frame_type: "handshake_done";
 }
 </pre>
 </div>
-<figcaption><a href="#figure-60" class="selfRef">Figure 60</a>:
+<figcaption><a href="#figure-61" class="selfRef">Figure 61</a>:
 <a href="#name-handshakedoneframe-definiti" class="selfRef">HandshakeDoneFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="unknownframe">
-<section id="appendix-A.11.21">
+<section id="appendix-A.12.21">
           <h4 id="name-unknownframe">
-<a href="#appendix-A.11.21" class="section-number selfRef">A.11.21. </a><a href="#name-unknownframe" class="section-name selfRef">UnknownFrame</a>
+<a href="#appendix-A.12.21" class="section-number selfRef">A.12.21. </a><a href="#name-unknownframe" class="section-name selfRef">UnknownFrame</a>
           </h4>
 <span id="name-unknownframe-definition"></span><div id="unknownframe-def">
-<figure id="figure-61">
-            <div id="appendix-A.11.21-1.1">
+<figure id="figure-62">
+            <div id="appendix-A.12.21-1.1">
 <pre class="lang-cddl sourcecode">
 UnknownFrame = {
     frame_type: "unknown"
@@ -3922,20 +3962,20 @@ UnknownFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-61" class="selfRef">Figure 61</a>:
+<figcaption><a href="#figure-62" class="selfRef">Figure 62</a>:
 <a href="#name-unknownframe-definition" class="selfRef">UnknownFrame definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="transporterror">
-<section id="appendix-A.11.22">
+<section id="appendix-A.12.22">
           <h4 id="name-transporterror">
-<a href="#appendix-A.11.22" class="section-number selfRef">A.11.22. </a><a href="#name-transporterror" class="section-name selfRef">TransportError</a>
+<a href="#appendix-A.12.22" class="section-number selfRef">A.12.22. </a><a href="#name-transporterror" class="section-name selfRef">TransportError</a>
           </h4>
 <span id="name-transporterror-definition"></span><div id="transporterror-def">
-<figure id="figure-62">
-            <div id="appendix-A.11.22-1.1">
+<figure id="figure-63">
+            <div id="appendix-A.12.22-1.1">
 <pre class="lang-cddl sourcecode">
 TransportError = "no_error" / "internal_error" /
     "connection_refused" / "flow_control_error" /
@@ -3946,48 +3986,48 @@ TransportError = "no_error" / "internal_error" /
     "crypto_buffer_exceeded"
 </pre>
 </div>
-<figcaption><a href="#figure-62" class="selfRef">Figure 62</a>:
+<figcaption><a href="#figure-63" class="selfRef">Figure 63</a>:
 <a href="#name-transporterror-definition" class="selfRef">TransportError definition</a>
             </figcaption></figure>
 </div>
 </section>
 </div>
 <div id="applicationerror">
-<section id="appendix-A.11.23">
+<section id="appendix-A.12.23">
           <h4 id="name-applicationerror">
-<a href="#appendix-A.11.23" class="section-number selfRef">A.11.23. </a><a href="#name-applicationerror" class="section-name selfRef">ApplicationError</a>
+<a href="#appendix-A.12.23" class="section-number selfRef">A.12.23. </a><a href="#name-applicationerror" class="section-name selfRef">ApplicationError</a>
           </h4>
-<p id="appendix-A.11.23-1">By definition, an application error is defined by the application-level protocol running on top of QUIC (e.g., HTTP/3).<a href="#appendix-A.11.23-1" class="pilcrow">¶</a></p>
-<p id="appendix-A.11.23-2">As such, we cannot define it here directly. Though we provide an extension point through the use of the CDDL "socket" mechanism.<a href="#appendix-A.11.23-2" class="pilcrow">¶</a></p>
-<p id="appendix-A.11.23-3">Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:<a href="#appendix-A.11.23-3" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="appendix-A.11.23-4">
+<p id="appendix-A.12.23-1">By definition, an application error is defined by the application-level protocol running on top of QUIC (e.g., HTTP/3).<a href="#appendix-A.12.23-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.23-2">As such, we cannot define it here directly. Though we provide an extension point through the use of the CDDL "socket" mechanism.<a href="#appendix-A.12.23-2" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.23-3">Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:<a href="#appendix-A.12.23-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="appendix-A.12.23-4">
 <pre>
 $ApplicationError /= "new_error_name" / "another_new_error_name"
-</pre><a href="#appendix-A.11.23-4" class="pilcrow">¶</a>
+</pre><a href="#appendix-A.12.23-4" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
 <div id="cryptoerror">
-<section id="appendix-A.11.24">
+<section id="appendix-A.12.24">
           <h4 id="name-cryptoerror">
-<a href="#appendix-A.11.24" class="section-number selfRef">A.11.24. </a><a href="#name-cryptoerror" class="section-name selfRef">CryptoError</a>
+<a href="#appendix-A.12.24" class="section-number selfRef">A.12.24. </a><a href="#name-cryptoerror" class="section-name selfRef">CryptoError</a>
           </h4>
-<p id="appendix-A.11.24-1">These errors are defined in the TLS document as "A TLS alert is turned into a QUIC
+<p id="appendix-A.12.24-1">These errors are defined in the TLS document as "A TLS alert is turned into a QUIC
 connection error by converting the one-byte alert description into a QUIC error
 code. The alert description is added to 0x100 to produce a QUIC error code from
-the range reserved for CRYPTO_ERROR."<a href="#appendix-A.11.24-1" class="pilcrow">¶</a></p>
-<p id="appendix-A.11.24-2">This approach maps badly to a pre-defined enum. As such, we define the
+the range reserved for CRYPTO_ERROR."<a href="#appendix-A.12.24-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.12.24-2">This approach maps badly to a pre-defined enum. As such, we define the
 crypto_error string as having a dynamic component here, which should include the
-hex-encoded and zero-padded value of the TLS alert description.<a href="#appendix-A.11.24-2" class="pilcrow">¶</a></p>
+hex-encoded and zero-padded value of the TLS alert description.<a href="#appendix-A.12.24-2" class="pilcrow">¶</a></p>
 <span id="name-cryptoerror-definition"></span><div id="cryptoerror-def">
-<figure id="figure-63">
-            <div id="appendix-A.11.24-3.1">
+<figure id="figure-64">
+            <div id="appendix-A.12.24-3.1">
 <pre class="lang-cddl sourcecode">
 ; all strings from "crypto_error_0x100" to "crypto_error_0x199"
 CryptoError = text .regexp "crypto_error_0x1[0-9][0-9]"
 </pre>
 </div>
-<figcaption><a href="#figure-63" class="selfRef">Figure 63</a>:
+<figcaption><a href="#figure-64" class="selfRef">Figure 64</a>:
 <a href="#name-cryptoerror-definition" class="selfRef">CryptoError definition</a>
             </figcaption></figure>
 </div>
