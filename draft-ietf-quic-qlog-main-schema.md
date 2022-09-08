@@ -111,10 +111,13 @@ with logs from a variety of different protocols and use cases.
 As such, this document contains concepts such as versioning, metadata inclusion,
 log aggregation, event grouping and log file size reduction techniques.
 
+> Note to RFC editor: Please remove the follow paragraphs in this section before
+publication.
+
 Feedback and discussion are welcome at
-[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
-Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
-version of this document.
+[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog). Readers are
+advised to refer to the "editor's draft" at that URL for an up-to-date version
+of this document.
 
 Concrete examples of integrations of this schema in
 various programming languages can be found at
@@ -122,9 +125,7 @@ various programming languages can be found at
 
 ## Notational Conventions {#data_types}
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
-"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
-interpreted as described in {{?RFC2119}}.
+{::boilerplate bcp14-tagged}
 
 ### Schema definition
 

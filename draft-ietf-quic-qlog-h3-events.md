@@ -126,6 +126,9 @@ document is based on draft-34 of the HTTP/3 I-D [QUIC-HTTP] and draft-21 of the
 QPACK I-D [QUIC-QPACK]. QUIC events are defined in a separate document
 [QLOG-QUIC].
 
+> Note to RFC editor: Please remove the follow paragraphs in this section before
+publication.
+
 Feedback and discussion are welcome at
 [https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
 Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
@@ -137,9 +140,7 @@ various programming languages can be found at
 
 ## Notational Conventions
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
-"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
-interpreted as described in {{?RFC2119}}.
+{::boilerplate bcp14-tagged}
 
 The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its

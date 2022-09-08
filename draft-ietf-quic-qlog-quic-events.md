@@ -158,9 +158,7 @@ various programming languages can be found at
 
 ## Notational Conventions
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
-"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
-interpreted as described in {{?RFC2119}}.
+{::boilerplate bcp14-tagged}
 
 The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
