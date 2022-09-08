@@ -245,21 +245,15 @@ events.
 Ideally, implementers SHOULD create a separate, individual "endpoint-level" trace
 file (or group_id value), not associated with a specific connection (for example a
 "server.qlog" or group_id = "client"), and log all events that do not belong to a
-single connection to this grouping trace. However, this is not always practical,
-depending on the implementation. Because the semantics of most of these events are
-well-defined in the protocols and because they are difficult to mis-interpret as
-belonging to a connection, implementers MAY choose to log events not belonging to
-a particular connection in any other trace, even those strongly associated with a
-single connection.
+single connection to this grouping trace.
 
-Note that this can make it difficult to match logs from different vantage points
-with each other. For example, from the client side, it is easy to log connections
-with version negotiation or retry in the same trace, while on the server they
-would most likely be logged in separate traces. Servers can take extra efforts
-(and keep additional state) to keep these events combined in a single trace
-however (for example by also matching connections on their four-tuple instead of
-just the connection ID).
-
+There are events that are conceptually associated with a single connection, but
+that happen before the actual QUIC connection is established when viewed from
+the server's perspective. This includes version negotiation as well as retries.
+Servers MAY take extra efforts to associate these events with a successfully
+established QUIC connection and combine them in a single trace. For version
+negotiation, matching can be done by identifying a connection attempt by its
+four-tuple, and retries can be identified by their ODCID.
 
 
 # QUIC event definitions
