@@ -517,7 +517,7 @@ JSON serialization examples:
 ~~~~~~~~
 {
     "name": "aioquic client",
-    "type": "client",
+    "type": "client"
 }
 
 {
@@ -598,17 +598,17 @@ JSON serialization:
 
 ~~~~~~~~
 {
-    time: 1553986553572,
+    "time": 1553986553572,
 
-    name: "transport:packet_sent",
-    data: { ... }
+    "name": "transport:packet_sent",
+    "data": { ... },
 
-    protocol_type:  ["QUIC","HTTP3"],
-    group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
+    "protocol_type":  ["QUIC","HTTP3"],
+    "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
-    time_format: "absolute",
+    "time_format": "absolute",
 
-    ODCID: "127ecc830d98f9d54a42c4f0842aa87e181a",
+    "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a"
 }
 ~~~~~~~~
 {: #event-ex title="Event example"}
@@ -762,19 +762,19 @@ TransportPacketSent = {
 could be serialized as
 
 {
-    packet_size: 1280,
-    header: {
-        packet_type: "1RTT",
-        packet_number: 123
+    "packet_size": 1280,
+    "header": {
+        "packet_type": "1RTT",
+        "packet_number": 123
     },
-    frames: [
+    "frames": [
         {
-            frame_type: "stream",
-            length: 1000,
-            offset: 456
+            "frame_type": "stream",
+            "length": 1000,
+            "offset": 456
         },
         {
-            frame_type: "padding"
+            "frame_type": "padding"
         }
     ]
 }
@@ -871,21 +871,21 @@ JSON serialization example for events grouped by four tuples
 and QUIC connection IDs:
 
 ~~~~~~~~
-events: [
+"events": [
     {
-        time: 1553986553579,
-        protocol_type: ["TCP", "TLS", "HTTP2"],
-        group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
+        "time": 1553986553579,
+        "protocol_type": ["TCP", "TLS", "HTTP2"],
+        "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
                    ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
-        name: "transport:packet_received",
-        data: { ... },
+        "name": "transport:packet_received",
+        "data": { ... }
     },
     {
-        time: 1553986553581,
-        protocol_type: ["QUIC","HTTP3"],
-        group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-        name: "transport:packet_sent",
-        data: { ... },
+        "time": 1553986553581,
+        "protocol_type": ["QUIC","HTTP3"],
+        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+        "name": "transport:packet_sent",
+        "data": { ... }
     }
 ]
 ~~~~~~~~
@@ -921,24 +921,24 @@ JSON serialization with repeated field values
 per-event instance:
 
 {
-    events: [{
-            group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-            protocol_type: ["QUIC","HTTP3"],
-            time_format: "relative",
-            reference_time: 1553986553572,
+    "events": [{
+            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+            "protocol_type": ["QUIC","HTTP3"],
+            "time_format": "relative",
+            "reference_time": 1553986553572,
 
-            time: 2,
-            name: "transport:packet_received",
-            data: { ... }
+            "time": 2,
+            "name": "transport:packet_received",
+            "data": { ... }
         },{
-            group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-            protocol_type: ["QUIC","HTTP3"],
-            time_format: "relative",
-            reference_time: 1553986553572,
+            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+            "protocol_type": ["QUIC","HTTP3"],
+            "time_format": "relative",
+            "reference_time": 1553986553572,
 
-            time: 7,
-            name: "http:frame_parsed",
-            data: { ... }
+            "time": 7,
+            "name": "http:frame_parsed",
+            "data": { ... }
         }
     ]
 }
@@ -947,21 +947,21 @@ JSON serialization with repeated field values instead
 extracted to common_fields:
 
 {
-    common_fields: {
-        group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-        protocol_type: ["QUIC","HTTP3"],
-        time_format: "relative",
-        reference_time: 1553986553572
+    "common_fields": {
+        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+        "protocol_type": ["QUIC","HTTP3"],
+        "time_format": "relative",
+        "reference_time": 1553986553572
     },
-    events: [
+    "events": [
         {
-            time: 2,
-            name: "transport:packet_received",
-            data: { ... }
+            "time": 2,
+            "name": "transport:packet_received",
+            "data": { ... }
         },{
-            7,
-            name: "http:frame_parsed",
-            data: { ... }
+            "time": 7,
+            "name": "http:frame_parsed",
+            "data": { ... }
         }
     ]
 }
