@@ -16,23 +16,22 @@ intended to be protocol-agnostic. Separate documents specify how the format shou
 be used for specific protocol data. The schema is also format-agnostic, and can be
 represented in for example JSON, csv or protobuf. 
     " name="description">
-<meta content="xml2rfc 3.12.10" name="generator">
+<meta content="xml2rfc 3.14.2" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-ietf-quic-qlog-main-schema-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.12.10
-    Python 3.10.4
+  xml2rfc 3.14.2
+    Python 3.10.5
     appdirs 1.4.4
     ConfigArgParse 1.5.3
-    google-i18n-address 2.5.1
+    google-i18n-address 2.5.2
     html5lib 1.1
     intervaltree 3.1.0
-    Jinja2 2.11.3
+    Jinja2 3.1.2
     kitchen 1.2.6
-    lxml 4.8.0
-    MarkupSafe 2.0.1
-    pycountry 20.7.3
-    pyflakes 2.4.0
+    lxml 4.9.1
+    MarkupSafe 2.1.1
+    pycountry 22.3.5
     PyYAML 6.0
     requests 2.27.1
     setuptools 59.4.0
@@ -373,23 +372,37 @@ ul.empty li, .ulEmpty li {
 
 /* definition lists */
 dl {
+  clear: left;
+  --indent: 3ch;
+  /* --indent: attr(indent ch); not supported in any browser, but we can dream */
 }
 dl > dt {
   float: left;
   margin-right: 1em;
+  min-width: 20ch;
+}
+dl.dlNewline > dt {
+  float: none;
 }
 dl > dd {
   margin-bottom: .8em;
-  min-height: 1.3em;
+  margin-left: var(--indent) !important; /* stupid element overrides */
+  min-height: 2ex;
 }
 :is(dl.compact, .dlCompact) > dd {
-  margin-bottom: 0em;
+  margin-bottom: 0;
+}
+:is(dl.compact, .dlCompact) > dd > :is(:first-child, .break:first-child + *) {
+  margin-top: 0;
+}
+:is(dl.compact, .dlCompact) > dd > :is(:last-child) {
+  margin-bottom: 0;
 }
 dl > dd > dl {
   margin-top: 0.5em;
-  margin-bottom: 0em;
+  margin-bottom: 0;
 }
-dd.break {
+dl .break {
   display: none;
 }
 
@@ -584,17 +597,18 @@ hr {
   margin: 0;
   font-size: var(--small-font-size);
   line-height: 18px;
-  --identifier-width: 8em;
+  --identifier-width: 15ch;
 }
 #identifiers dt {
   width: var(--identifier-width);
-  margin: 0;
+  min-width: var(--identifier-width);
   clear: left;
   float: left;
   text-align: right;
 }
 #identifiers dd {
-  margin: 0 0 0 calc(1em + var(--identifier-width));
+  margin: 0;
+  margin-left: calc(1em + var(--identifier-width)) !important;
   min-width: 5em;
 }
 #identifiers .authors .author {
@@ -644,8 +658,13 @@ hr {
   font-weight: bold;
   min-width: 7em;
 }
+.references dt:target::before {
+  content: "⇒";
+  width: 15px;
+  margin: 0 10px 0 -25px;
+}
 .references dd {
-  margin-left: 8em;
+  margin-left: 8em !important;
   overflow: auto;
 }
 
@@ -912,16 +931,6 @@ a.toplink {
   margin: 8px 0.5em 0;
 }
 
-/* Fix the dl styling to match the RFC 7992 attributes */
-dl > dt,
-dl.dlParallel > dt {
-  float: left;
-  margin-right: 1em;
-}
-dl.dlNewline > dt {
-  float: none;
-}
-
 /* Provide styling for table cell text alignment */
 table .text-left {
   text-align: left;
@@ -1033,11 +1042,11 @@ svg :is([stroke="fill"], [fill^="#fff"]) {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Main logging schema for qlog</td>
-<td class="right">June 2022</td>
+<td class="right">September 2022</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 31 December 2022</td>
+<td class="center">Expires 12 March 2023</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1050,12 +1059,12 @@ svg :is([stroke="fill"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-main-schema-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-06-29" class="published">29 June 2022</time>
+<time datetime="2022-09-08" class="published">8 September 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2022-12-31">31 December 2022</time></dd>
+<dd class="expires"><time datetime="2023-03-12">12 March 2023</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1105,7 +1114,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 31 December 2022.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 12 March 2023.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1174,31 +1183,28 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
                 </ul>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4">
-                <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="xref">3.4</a>.  <a href="#name-environment" class="xref">Environment</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5">
-                <p id="section-toc.1-1.3.2.5.1"><a href="#section-3.5" class="xref">3.5</a>.  <a href="#name-field-name-semantics" class="xref">Field name semantics</a></p>
+                <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="xref">3.4</a>.  <a href="#name-field-name-semantics" class="xref">Field name semantics</a></p>
 <ul class="compact toc ulBare ulEmpty">
-<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5.2.1">
-                    <p id="section-toc.1-1.3.2.5.2.1.1"><a href="#section-3.5.1" class="xref">3.5.1</a>.  <a href="#name-timestamps" class="xref">Timestamps</a></p>
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.1">
+                    <p id="section-toc.1-1.3.2.4.2.1.1"><a href="#section-3.4.1" class="xref">3.4.1</a>.  <a href="#name-timestamps" class="xref">Timestamps</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5.2.2">
-                    <p id="section-toc.1-1.3.2.5.2.2.1"><a href="#section-3.5.2" class="xref">3.5.2</a>.  <a href="#name-category-and-event-type" class="xref">Category and Event Type</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.2">
+                    <p id="section-toc.1-1.3.2.4.2.2.1"><a href="#section-3.4.2" class="xref">3.4.2</a>.  <a href="#name-category-and-event-type" class="xref">Category and Event Type</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5.2.3">
-                    <p id="section-toc.1-1.3.2.5.2.3.1"><a href="#section-3.5.3" class="xref">3.5.3</a>.  <a href="#name-data" class="xref">Data</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.3">
+                    <p id="section-toc.1-1.3.2.4.2.3.1"><a href="#section-3.4.3" class="xref">3.4.3</a>.  <a href="#name-data" class="xref">Data</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5.2.4">
-                    <p id="section-toc.1-1.3.2.5.2.4.1"><a href="#section-3.5.4" class="xref">3.5.4</a>.  <a href="#name-protocol_type" class="xref">protocol_type</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.4">
+                    <p id="section-toc.1-1.3.2.4.2.4.1"><a href="#section-3.4.4" class="xref">3.4.4</a>.  <a href="#name-protocol_type" class="xref">protocol_type</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5.2.5">
-                    <p id="section-toc.1-1.3.2.5.2.5.1"><a href="#section-3.5.5" class="xref">3.5.5</a>.  <a href="#name-triggers" class="xref">Triggers</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.5">
+                    <p id="section-toc.1-1.3.2.4.2.5.1"><a href="#section-3.4.5" class="xref">3.4.5</a>.  <a href="#name-triggers" class="xref">Triggers</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5.2.6">
-                    <p id="section-toc.1-1.3.2.5.2.6.1"><a href="#section-3.5.6" class="xref">3.5.6</a>.  <a href="#name-group_id" class="xref">group_id</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.6">
+                    <p id="section-toc.1-1.3.2.4.2.6.1"><a href="#section-3.4.6" class="xref">3.4.6</a>.  <a href="#name-group_id" class="xref">group_id</a></p>
 </li>
-                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5.2.7">
-                    <p id="section-toc.1-1.3.2.5.2.7.1"><a href="#section-3.5.7" class="xref">3.5.7</a>.  <a href="#name-common_fields" class="xref">common_fields</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.7">
+                    <p id="section-toc.1-1.3.2.4.2.7.1"><a href="#section-3.4.7" class="xref">3.4.7</a>.  <a href="#name-common_fields" class="xref">common_fields</a></p>
 </li>
                 </ul>
 </li>
@@ -1703,7 +1709,7 @@ TraceError = {
           </figcaption></figure>
 </div>
 <p id="section-3.2-8">Note that another way to combine events of different traces in a single qlog file
-is through the use of the "group_id" field, discussed in <a href="#group-ids" class="xref">Section 3.5.6</a>.<a href="#section-3.2-8" class="pilcrow">¶</a></p>
+is through the use of the "group_id" field, discussed in <a href="#group-ids" class="xref">Section 3.4.6</a>.<a href="#section-3.2-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="trace">
@@ -1731,7 +1737,6 @@ Trace = {
     ? title: text
     ? description: text
     ? configuration: Configuration
-    ? environment: text
     ? common_fields: CommonFields
     ? vantage_point: VantagePoint
     events: [* Event]
@@ -1953,46 +1958,36 @@ perspectives manually.<a href="#section-3.3.2-8" class="pilcrow">¶</a></p>
 </div>
 </section>
 </div>
-<div id="environment">
-<section id="section-3.4">
-        <h3 id="name-environment">
-<a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-environment" class="section-name selfRef">Environment</a>
-        </h3>
-<p id="section-3.4-1">Environment is a free-form text field that helps identify specifics about the
-deployment. It can be used to log specifics like the operating system,
-architecture, compiler version and source code revision.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
-</section>
-</div>
 <div id="field-name-semantics">
-<section id="section-3.5">
+<section id="section-3.4">
         <h3 id="name-field-name-semantics">
-<a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-field-name-semantics" class="section-name selfRef">Field name semantics</a>
+<a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-field-name-semantics" class="section-name selfRef">Field name semantics</a>
         </h3>
-<p id="section-3.5-1">Inside of the "events" field of a qlog trace is a list of events logged by the
+<p id="section-3.4-1">Inside of the "events" field of a qlog trace is a list of events logged by the
 endpoint. Each event is specified as a generic object with a number of member
 fields and their associated data. Depending on the protocol and use case, the
 exact member field names and their formats can differ across implementations. This
 section lists the main, pre-defined and reserved field names with specific
-semantics and expected corresponding value formats.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
-<p id="section-3.5-2">Each qlog event at minimum requires the "time" (<a href="#time-based-fields" class="xref">Section 3.5.1</a>), "name"
-(<a href="#name-field" class="xref">Section 3.5.2</a>) and "data" (<a href="#data-field" class="xref">Section 3.5.3</a>) fields. Other typical fields are
-"time_format" (<a href="#time-based-fields" class="xref">Section 3.5.1</a>), "protocol_type" (<a href="#protocol-type-field" class="xref">Section 3.5.4</a>),
-"trigger" (<a href="#trigger-field" class="xref">Section 3.5.5</a>), and "group_id" <a href="#group-ids" class="xref">Section 3.5.6</a>. As especially these
+semantics and expected corresponding value formats.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4-2">Each qlog event at minimum requires the "time" (<a href="#time-based-fields" class="xref">Section 3.4.1</a>), "name"
+(<a href="#name-field" class="xref">Section 3.4.2</a>) and "data" (<a href="#data-field" class="xref">Section 3.4.3</a>) fields. Other typical fields are
+"time_format" (<a href="#time-based-fields" class="xref">Section 3.4.1</a>), "protocol_type" (<a href="#protocol-type-field" class="xref">Section 3.4.4</a>),
+"trigger" (<a href="#trigger-field" class="xref">Section 3.4.5</a>), and "group_id" <a href="#group-ids" class="xref">Section 3.4.6</a>. As especially these
 later fields typically have identical values across individual event instances,
-they are normally logged separately in the "common_fields" (<a href="#common-fields" class="xref">Section 3.5.7</a>).<a href="#section-3.5-2" class="pilcrow">¶</a></p>
-<p id="section-3.5-3">The specific values for each of these fields and their semantics are defined in
+they are normally logged separately in the "common_fields" (<a href="#common-fields" class="xref">Section 3.4.7</a>).<a href="#section-3.4-2" class="pilcrow">¶</a></p>
+<p id="section-3.4-3">The specific values for each of these fields and their semantics are defined in
 separate documents, specific per protocol or use case. For example: event
-definitions for QUIC, HTTP/3 and QPACK can be found in <span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="xref">QLOG-H3</a>]</span>.<a href="#section-3.5-3" class="pilcrow">¶</a></p>
-<p id="section-3.5-4">Other fields are explicitly allowed by the qlog approach, and tools SHOULD allow
+definitions for QUIC, HTTP/3 and QPACK can be found in <span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="xref">QLOG-H3</a>]</span>.<a href="#section-3.4-3" class="pilcrow">¶</a></p>
+<p id="section-3.4-4">Other fields are explicitly allowed by the qlog approach, and tools SHOULD allow
 for the presence of unknown event fields, but their semantics depend on the
 context of the log usage (e.g., for QUIC, the ODCID field is used), see
-<span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span>.<a href="#section-3.5-4" class="pilcrow">¶</a></p>
-<p id="section-3.5-5">An example of a qlog event with its component fields is shown in
-<a href="#event-def" class="xref">Figure 15</a>.<a href="#section-3.5-5" class="pilcrow">¶</a></p>
-<p id="section-3.5-6">Definition:<a href="#section-3.5-6" class="pilcrow">¶</a></p>
+<span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span>.<a href="#section-3.4-4" class="pilcrow">¶</a></p>
+<p id="section-3.4-5">An example of a qlog event with its component fields is shown in
+<a href="#event-def" class="xref">Figure 15</a>.<a href="#section-3.4-5" class="pilcrow">¶</a></p>
+<p id="section-3.4-6">Definition:<a href="#section-3.4-6" class="pilcrow">¶</a></p>
 <span id="name-event-definition"></span><div id="event-def">
 <figure id="figure-15">
-          <div id="section-3.5-7.1">
+          <div id="section-3.4-7.1">
 <pre class="lang-cddl sourcecode">
 Event = {
     time: float64
@@ -2013,10 +2008,10 @@ Event = {
 <a href="#name-event-definition" class="selfRef">Event definition</a>
           </figcaption></figure>
 </div>
-<p id="section-3.5-8">JSON serialization:<a href="#section-3.5-8" class="pilcrow">¶</a></p>
+<p id="section-3.4-8">JSON serialization:<a href="#section-3.4-8" class="pilcrow">¶</a></p>
 <span id="name-event-example"></span><div id="event-ex">
 <figure id="figure-16">
-          <div class="alignLeft art-text artwork" id="section-3.5-9.1">
+          <div class="alignLeft art-text artwork" id="section-3.4-9.1">
 <pre>
 {
     time: 1553986553572,
@@ -2038,20 +2033,20 @@ Event = {
           </figcaption></figure>
 </div>
 <div id="time-based-fields">
-<section id="section-3.5.1">
+<section id="section-3.4.1">
           <h4 id="name-timestamps">
-<a href="#section-3.5.1" class="section-number selfRef">3.5.1. </a><a href="#name-timestamps" class="section-name selfRef">Timestamps</a>
+<a href="#section-3.4.1" class="section-number selfRef">3.4.1. </a><a href="#name-timestamps" class="section-name selfRef">Timestamps</a>
           </h4>
-<p id="section-3.5.1-1">The "time" field indicates the timestamp at which the event occured. Its value is
+<p id="section-3.4.1-1">The "time" field indicates the timestamp at which the event occured. Its value is
 typically the Unix timestamp since the 1970 epoch (number of milliseconds since
 midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports two
 more succint timestamps formats to allow reducing file size. The employed format
 is indicated in the "time_format" field, which allows one of three values:
-"absolute", "delta" or "relative".<a href="#section-3.5.1-1" class="pilcrow">¶</a></p>
-<p id="section-3.5.1-2">Definition:<a href="#section-3.5.1-2" class="pilcrow">¶</a></p>
+"absolute", "delta" or "relative".<a href="#section-3.4.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-2">Definition:<a href="#section-3.4.1-2" class="pilcrow">¶</a></p>
 <span id="name-timeformat-definition"></span><div id="time-format-def">
 <figure id="figure-17">
-            <div id="section-3.5.1-3.1">
+            <div id="section-3.4.1-3.1">
 <pre class="lang-cddl sourcecode">
 TimeFormat = "absolute" / "delta" / "relative"
 </pre>
@@ -2061,28 +2056,28 @@ TimeFormat = "absolute" / "delta" / "relative"
             </figcaption></figure>
 </div>
 <ul class="normal">
-<li class="normal" id="section-3.5.1-4.1">Absolute: Include the full absolute timestamp with each event. This approach
+<li class="normal" id="section-3.4.1-4.1">Absolute: Include the full absolute timestamp with each event. This approach
 uses the largest amount of characters. This is also the default value of the
-"time_format" field.<a href="#section-3.5.1-4.1" class="pilcrow">¶</a>
+"time_format" field.<a href="#section-3.4.1-4.1" class="pilcrow">¶</a>
 </li>
-            <li class="normal" id="section-3.5.1-4.2">Delta: Delta-encode each time value on the previously logged value. The first
+            <li class="normal" id="section-3.4.1-4.2">Delta: Delta-encode each time value on the previously logged value. The first
 event in a trace typically logs the full absolute timestamp. This approach uses
-the least amount of characters.<a href="#section-3.5.1-4.2" class="pilcrow">¶</a>
+the least amount of characters.<a href="#section-3.4.1-4.2" class="pilcrow">¶</a>
 </li>
-            <li class="normal" id="section-3.5.1-4.3">Relative: Specify a full "reference_time" timestamp (typically this is done
-up-front in "common_fields", see <a href="#common-fields" class="xref">Section 3.5.7</a>) and include only
+            <li class="normal" id="section-3.4.1-4.3">Relative: Specify a full "reference_time" timestamp (typically this is done
+up-front in "common_fields", see <a href="#common-fields" class="xref">Section 3.4.7</a>) and include only
 relatively-encoded values based on this reference_time with each event. The
 "reference_time" value is typically the first absolute timestamp. This approach
-uses a medium amount of characters.<a href="#section-3.5.1-4.3" class="pilcrow">¶</a>
+uses a medium amount of characters.<a href="#section-3.4.1-4.3" class="pilcrow">¶</a>
 </li>
           </ul>
-<p id="section-3.5.1-5">The first option is good for stateless loggers, the second and third for stateful
+<p id="section-3.4.1-5">The first option is good for stateless loggers, the second and third for stateful
 loggers. The third option is generally preferred, since it produces smaller files
 while being easier to reason about. An example for each option can be seen in
-<a href="#time-format-ex" class="xref">Figure 18</a>.<a href="#section-3.5.1-5" class="pilcrow">¶</a></p>
+<a href="#time-format-ex" class="xref">Figure 18</a>.<a href="#section-3.4.1-5" class="pilcrow">¶</a></p>
 <span id="name-three-different-approaches-"></span><div id="time-format-ex">
 <figure id="figure-18">
-            <div class="alignLeft art-text artwork" id="section-3.5.1-6.1">
+            <div class="alignLeft art-text artwork" id="section-3.4.1-6.1">
 <pre>
 The absolute approach will use:
 1500, 1505, 1522, 1588
@@ -2099,48 +2094,48 @@ The relative approach will:
 <a href="#name-three-different-approaches-" class="selfRef">Three different approaches for logging timestamps</a>
             </figcaption></figure>
 </div>
-<p id="section-3.5.1-7">One of these options is typically chosen for the entire trace (put differently:
+<p id="section-3.4.1-7">One of these options is typically chosen for the entire trace (put differently:
 each event has the same value for the "time_format" field). Each event MUST
-include a timestamp in the "time" field.<a href="#section-3.5.1-7" class="pilcrow">¶</a></p>
-<p id="section-3.5.1-8">Events in each individual trace SHOULD be logged in strictly ascending timestamp
+include a timestamp in the "time" field.<a href="#section-3.4.1-7" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-8">Events in each individual trace SHOULD be logged in strictly ascending timestamp
 order (though not necessarily absolute value, for the "delta" format). Tools CAN
 sort all events on the timestamp before processing them, though are not required
 to (as this could impose a significant processing overhead). This can be a problem
 especially for multi-threaded and/or streaming loggers, who could consider using a
 separate postprocesser to order qlog events in time if a tool do not provide this
-feature.<a href="#section-3.5.1-8" class="pilcrow">¶</a></p>
-<p id="section-3.5.1-9">Timestamps do not have to use the UNIX epoch timestamp as their reference. For
+feature.<a href="#section-3.4.1-8" class="pilcrow">¶</a></p>
+<p id="section-3.4.1-9">Timestamps do not have to use the UNIX epoch timestamp as their reference. For
 example for privacy considerations, any initial reference timestamps (for example
 "endpoint uptime in ms" or "time since connection start in ms") can be chosen.
 Tools SHOULD NOT assume the ability to derive the absolute Unix timestamp from
 qlog traces, nor allow on them to relatively order events across two or more
-separate traces (in this case, clock drift should also be taken into account).<a href="#section-3.5.1-9" class="pilcrow">¶</a></p>
+separate traces (in this case, clock drift should also be taken into account).<a href="#section-3.4.1-9" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="name-field">
-<section id="section-3.5.2">
+<section id="section-3.4.2">
           <h4 id="name-category-and-event-type">
-<a href="#section-3.5.2" class="section-number selfRef">3.5.2. </a><a href="#name-category-and-event-type" class="section-name selfRef">Category and Event Type</a>
+<a href="#section-3.4.2" class="section-number selfRef">3.4.2. </a><a href="#name-category-and-event-type" class="section-name selfRef">Category and Event Type</a>
           </h4>
-<p id="section-3.5.2-1">Events differ mainly in the type of metadata associated with them. To help
+<p id="section-3.4.2-1">Events differ mainly in the type of metadata associated with them. To help
 identify a given event and how to interpret its metadata in the "data" field (see
-<a href="#data-field" class="xref">Section 3.5.3</a>), each event has an associated "name" field. This can be considered
-as a concatenation of two other fields, namely event "category" and event "type".<a href="#section-3.5.2-1" class="pilcrow">¶</a></p>
-<p id="section-3.5.2-2">Category allows a higher-level grouping of events per specific event type. For
+<a href="#data-field" class="xref">Section 3.4.3</a>), each event has an associated "name" field. This can be considered
+as a concatenation of two other fields, namely event "category" and event "type".<a href="#section-3.4.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-2">Category allows a higher-level grouping of events per specific event type. For
 example for QUIC and HTTP/3, the different categories could be "transport",
 "http", "qpack", and "recovery". Within these categories, the event Type provides
 additional granularity. For example for QUIC and HTTP/3, within the "transport"
-Category, there would be "packet_sent" and "packet_received" events.<a href="#section-3.5.2-2" class="pilcrow">¶</a></p>
-<p id="section-3.5.2-3">Logging category and type separately conceptually allows for fast and high-level
+Category, there would be "packet_sent" and "packet_received" events.<a href="#section-3.4.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-3">Logging category and type separately conceptually allows for fast and high-level
 filtering based on category and the re-use of event types across categories.
 However, it also considerably inflates the log size and this flexibility is not
-used extensively in practice at the time of writing.<a href="#section-3.5.2-3" class="pilcrow">¶</a></p>
-<p id="section-3.5.2-4">As such, the default approach in qlog is to concatenate both field values using
+used extensively in practice at the time of writing.<a href="#section-3.4.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.4.2-4">As such, the default approach in qlog is to concatenate both field values using
 the ":" character in the "name" field, as can be seen in <a href="#name-ex" class="xref">Figure 19</a>. As
-such, qlog category and type names MUST NOT include this character.<a href="#section-3.5.2-4" class="pilcrow">¶</a></p>
+such, qlog category and type names MUST NOT include this character.<a href="#section-3.4.2-4" class="pilcrow">¶</a></p>
 <span id="name-ways-of-logging-category-ty"></span><div id="name-ex">
 <figure id="figure-19">
-            <div class="alignLeft art-text artwork" id="section-3.5.2-5.1">
+            <div class="alignLeft art-text artwork" id="section-3.4.2-5.1">
 <pre>
 JSON serialization using separate fields:
 {
@@ -2158,30 +2153,30 @@ JSON serialization using ":" concatenated field:
 <a href="#name-ways-of-logging-category-ty" class="selfRef">Ways of logging category, type and name of an event.</a>
             </figcaption></figure>
 </div>
-<p id="section-3.5.2-6">Certain serializations CAN emit category and type as separate fields, and qlog
+<p id="section-3.4.2-6">Certain serializations CAN emit category and type as separate fields, and qlog
 tools SHOULD be able to deal with both the concatenated "name" field, and the
 separate "category" and "type" fields. Text-based serializations however are
-encouraged to employ the concatenated "name" field for efficiency.<a href="#section-3.5.2-6" class="pilcrow">¶</a></p>
+encouraged to employ the concatenated "name" field for efficiency.<a href="#section-3.4.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="data-field">
-<section id="section-3.5.3">
+<section id="section-3.4.3">
           <h4 id="name-data">
-<a href="#section-3.5.3" class="section-number selfRef">3.5.3. </a><a href="#name-data" class="section-name selfRef">Data</a>
+<a href="#section-3.4.3" class="section-number selfRef">3.4.3. </a><a href="#name-data" class="section-name selfRef">Data</a>
           </h4>
-<p id="section-3.5.3-1">The data field is a generic object. It contains the per-event metadata and its
+<p id="section-3.4.3-1">The data field is a generic object. It contains the per-event metadata and its
 form and semantics are defined per specific sort of event. For example, data field
-value definitons for QUIC and HTTP/3 can be found in <span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="xref">QLOG-H3</a>]</span>.<a href="#section-3.5.3-1" class="pilcrow">¶</a></p>
-<p id="section-3.5.3-2">This field is defined here as a CDDL extension point (a "socket" or
+value definitons for QUIC and HTTP/3 can be found in <span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="xref">QLOG-H3</a>]</span>.<a href="#section-3.4.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.3-2">This field is defined here as a CDDL extension point (a "socket" or
 "plug") named <code>$ProtocolEventBody</code>. Other documents MUST properly extend
 this extension point when defining new data field content options to
-enable automated validation of aggregated qlog schemas.<a href="#section-3.5.3-2" class="pilcrow">¶</a></p>
-<p id="section-3.5.3-3">The only common field defined for the data field is the <code>trigger</code> field,
-which is discussed in <a href="#trigger-field" class="xref">Section 3.5.5</a>.<a href="#section-3.5.3-3" class="pilcrow">¶</a></p>
-<p id="section-3.5.3-4">Definition:<a href="#section-3.5.3-4" class="pilcrow">¶</a></p>
+enable automated validation of aggregated qlog schemas.<a href="#section-3.4.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.3-3">The only common field defined for the data field is the <code>trigger</code> field,
+which is discussed in <a href="#trigger-field" class="xref">Section 3.4.5</a>.<a href="#section-3.4.3-3" class="pilcrow">¶</a></p>
+<p id="section-3.4.3-4">Definition:<a href="#section-3.4.3-4" class="pilcrow">¶</a></p>
 <span id="name-protocoleventbody-definitio"></span><div id="data-def">
 <figure id="figure-20">
-            <div id="section-3.5.3-5.1">
+            <div id="section-3.4.3-5.1">
 <pre class="lang-cddl sourcecode">
 ; The ProtocolEventBody is any key-value map (e.g., JSON object)
 ; only the optional trigger field is defined in this document
@@ -2198,11 +2193,11 @@ $ProtocolEventBody /= {
 <a href="#name-protocoleventbody-definitio" class="selfRef">ProtocolEventBody definition</a>
             </figcaption></figure>
 </div>
-<p id="section-3.5.3-6">One purely illustrative example for a QUIC "packet_sent" event is shown in
-<a href="#data-ex" class="xref">Figure 21</a>:<a href="#section-3.5.3-6" class="pilcrow">¶</a></p>
+<p id="section-3.4.3-6">One purely illustrative example for a QUIC "packet_sent" event is shown in
+<a href="#data-ex" class="xref">Figure 21</a>:<a href="#section-3.4.3-6" class="pilcrow">¶</a></p>
 <span id="name-example-of-the-data-field-f"></span><div id="data-ex">
 <figure id="figure-21">
-            <div class="alignLeft art-text artwork" id="section-3.5.3-7.1">
+            <div class="alignLeft art-text artwork" id="section-3.4.3-7.1">
 <pre>
 TransportPacketSent = {
     ? packet_size: uint16
@@ -2239,18 +2234,18 @@ could be serialized as
 </section>
 </div>
 <div id="protocol-type-field">
-<section id="section-3.5.4">
+<section id="section-3.4.4">
           <h4 id="name-protocol_type">
-<a href="#section-3.5.4" class="section-number selfRef">3.5.4. </a><a href="#name-protocol_type" class="section-name selfRef">protocol_type</a>
+<a href="#section-3.4.4" class="section-number selfRef">3.4.4. </a><a href="#name-protocol_type" class="section-name selfRef">protocol_type</a>
           </h4>
-<p id="section-3.5.4-1">The "protocol_type" array field indicates to which protocols (or protocol
+<p id="section-3.4.4-1">The "protocol_type" array field indicates to which protocols (or protocol
 "stacks") this event belongs. This allows a single qlog file to aggregate traces
 of different protocols (e.g., a web server offering both TCP+HTTP/2 and
-QUIC+HTTP/3 connections).<a href="#section-3.5.4-1" class="pilcrow">¶</a></p>
-<p id="section-3.5.4-2">Definition:<a href="#section-3.5.4-2" class="pilcrow">¶</a></p>
+QUIC+HTTP/3 connections).<a href="#section-3.4.4-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.4-2">Definition:<a href="#section-3.4.4-2" class="pilcrow">¶</a></p>
 <span id="name-protocoltype-definition"></span><div id="protocol-type-def">
 <figure id="figure-22">
-            <div id="section-3.5.4-3.1">
+            <div id="section-3.4.4-3.1">
 <pre class="lang-cddl sourcecode">
 ProtocolType = [+ text]
 </pre>
@@ -2259,39 +2254,39 @@ ProtocolType = [+ text]
 <a href="#name-protocoltype-definition" class="selfRef">ProtocolType definition</a>
             </figcaption></figure>
 </div>
-<p id="section-3.5.4-4">For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
-entry values, see <span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="xref">QLOG-H3</a>]</span>.<a href="#section-3.5.4-4" class="pilcrow">¶</a></p>
-<p id="section-3.5.4-5">Typically however, all events in a single trace are of the same few protocols, and
-this array field is logged once in "common_fields", see <a href="#common-fields" class="xref">Section 3.5.7</a>.<a href="#section-3.5.4-5" class="pilcrow">¶</a></p>
+<p id="section-3.4.4-4">For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
+entry values, see <span>[<a href="#QLOG-QUIC" class="xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="xref">QLOG-H3</a>]</span>.<a href="#section-3.4.4-4" class="pilcrow">¶</a></p>
+<p id="section-3.4.4-5">Typically however, all events in a single trace are of the same few protocols, and
+this array field is logged once in "common_fields", see <a href="#common-fields" class="xref">Section 3.4.7</a>.<a href="#section-3.4.4-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="trigger-field">
-<section id="section-3.5.5">
+<section id="section-3.4.5">
           <h4 id="name-triggers">
-<a href="#section-3.5.5" class="section-number selfRef">3.5.5. </a><a href="#name-triggers" class="section-name selfRef">Triggers</a>
+<a href="#section-3.4.5" class="section-number selfRef">3.4.5. </a><a href="#name-triggers" class="section-name selfRef">Triggers</a>
           </h4>
-<p id="section-3.5.5-1">Sometimes, additional information is needed in the case where a single event can
+<p id="section-3.4.5-1">Sometimes, additional information is needed in the case where a single event can
 be caused by a variety of other events. In the normal case, the context of the
 surrounding log messages gives a hint as to which of these other events was the
 cause. However, in highly-parallel and optimized implementations, corresponding
 log messages might separated in time. Another option is to explicitly indicate
 these "triggers" in a high-level way per-event to get more fine-grained
-information without much additional overhead.<a href="#section-3.5.5-1" class="pilcrow">¶</a></p>
-<p id="section-3.5.5-2">In qlog, the optional "trigger" field contains a string value describing
+information without much additional overhead.<a href="#section-3.4.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.5-2">In qlog, the optional "trigger" field contains a string value describing
 the reason (if any) for this event instance occuring, see
-<a href="#data-field" class="xref">Section 3.5.3</a>. While this "trigger" field could be a property of the
+<a href="#data-field" class="xref">Section 3.4.3</a>. While this "trigger" field could be a property of the
 qlog Event itself, it is instead a property of the "data" field instead.
 This choice was made because many event types do not include a trigger
 value, and having the field at the Event-level would cause overhead in
 some serializations. Additional information on the trigger can be added
 in the form of additional member fields of the "data" field value, yet
 this is highly implementation-specific, as are the trigger field's
-string values.<a href="#section-3.5.5-2" class="pilcrow">¶</a></p>
-<p id="section-3.5.5-3">One purely illustrative example of some potential triggers for QUIC's
-"packet_dropped" event is shown in <a href="#trigger-ex" class="xref">Figure 23</a>:<a href="#section-3.5.5-3" class="pilcrow">¶</a></p>
+string values.<a href="#section-3.4.5-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.5-3">One purely illustrative example of some potential triggers for QUIC's
+"packet_dropped" event is shown in <a href="#trigger-ex" class="xref">Figure 23</a>:<a href="#section-3.4.5-3" class="pilcrow">¶</a></p>
 <span id="name-trigger-example"></span><div id="trigger-ex">
 <figure id="figure-23">
-            <div class="alignLeft art-text artwork" id="section-3.5.5-4.1">
+            <div class="alignLeft art-text artwork" id="section-3.4.5-4.1">
 <pre>
 TransportPacketDropped = {
     ? packet_type: PacketType
@@ -2309,33 +2304,33 @@ TransportPacketDropped = {
 </section>
 </div>
 <div id="group-ids">
-<section id="section-3.5.6">
+<section id="section-3.4.6">
           <h4 id="name-group_id">
-<a href="#section-3.5.6" class="section-number selfRef">3.5.6. </a><a href="#name-group_id" class="section-name selfRef">group_id</a>
+<a href="#section-3.4.6" class="section-number selfRef">3.4.6. </a><a href="#name-group_id" class="section-name selfRef">group_id</a>
           </h4>
-<p id="section-3.5.6-1">As discussed in <a href="#trace" class="xref">Section 3.3</a>, a single qlog file can contain several traces taken
+<p id="section-3.4.6-1">As discussed in <a href="#trace" class="xref">Section 3.3</a>, a single qlog file can contain several traces taken
 from different vantage points. However, a single trace from one endpoint can also
 contain events from a variety of sources. For example, a server implementation
 might choose to log events for all incoming connections in a single large
 (streamed) qlog file. As such, we need a method for splitting up events belonging
-to separate logical entities.<a href="#section-3.5.6-1" class="pilcrow">¶</a></p>
-<p id="section-3.5.6-2">The simplest way to perform this splitting is by associating a "group identifier"
+to separate logical entities.<a href="#section-3.4.6-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-2">The simplest way to perform this splitting is by associating a "group identifier"
 to each event that indicates to which conceptual "group" each event belongs. A
 post-processing step can then extract events per group. However, this group
 identifier can be highly protocol and context-specific. In the example above, we
 might use QUIC's "Original Destination Connection ID" to uniquely identify a
 connection. As such, they might add a "ODCID" field to each event. However, a
 middlebox logging IP or TCP traffic might rather use four-tuples to identify
-connections, and add a "four_tuple" field.<a href="#section-3.5.6-2" class="pilcrow">¶</a></p>
-<p id="section-3.5.6-3">As such, to provide consistency and ease of tooling in cross-protocol and
+connections, and add a "four_tuple" field.<a href="#section-3.4.6-2" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-3">As such, to provide consistency and ease of tooling in cross-protocol and
 cross-context setups, qlog instead defines the common "group_id" field, which
 contains a string value. Implementations are free to use their preferred string
 serialization for this field, so long as it contains a unique value per logical
-group. Some examples can be seen in <a href="#group-id-ex" class="xref">Figure 25</a>.<a href="#section-3.5.6-3" class="pilcrow">¶</a></p>
-<p id="section-3.5.6-4">Definition:<a href="#section-3.5.6-4" class="pilcrow">¶</a></p>
+group. Some examples can be seen in <a href="#group-id-ex" class="xref">Figure 25</a>.<a href="#section-3.4.6-3" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-4">Definition:<a href="#section-3.4.6-4" class="pilcrow">¶</a></p>
 <span id="name-groupid-definition"></span><div id="group-id-def">
 <figure id="figure-24">
-            <div id="section-3.5.6-5.1">
+            <div id="section-3.4.6-5.1">
 <pre class="lang-cddl sourcecode">
 GroupID = text
 </pre>
@@ -2344,11 +2339,11 @@ GroupID = text
 <a href="#name-groupid-definition" class="selfRef">GroupID definition</a>
             </figcaption></figure>
 </div>
-<p id="section-3.5.6-6">JSON serialization example for events grouped by four tuples
-and QUIC connection IDs:<a href="#section-3.5.6-6" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-6">JSON serialization example for events grouped by four tuples
+and QUIC connection IDs:<a href="#section-3.4.6-6" class="pilcrow">¶</a></p>
 <span id="name-groupid-example"></span><div id="group-id-ex">
 <figure id="figure-25">
-            <div class="alignLeft art-text artwork" id="section-3.5.6-7.1">
+            <div class="alignLeft art-text artwork" id="section-3.4.6-7.1">
 <pre>
 events: [
     {
@@ -2373,35 +2368,35 @@ events: [
 <a href="#name-groupid-example" class="selfRef">GroupID example</a>
             </figcaption></figure>
 </div>
-<p id="section-3.5.6-8">Note that in some contexts (for example a Multipath transport protocol) it might
+<p id="section-3.4.6-8">Note that in some contexts (for example a Multipath transport protocol) it might
 make sense to add additional contextual per-event fields (for example "path_id"),
-rather than use the group_id field for that purpose.<a href="#section-3.5.6-8" class="pilcrow">¶</a></p>
-<p id="section-3.5.6-9">Note also that, typically, a single trace only contains events belonging to a
+rather than use the group_id field for that purpose.<a href="#section-3.4.6-8" class="pilcrow">¶</a></p>
+<p id="section-3.4.6-9">Note also that, typically, a single trace only contains events belonging to a
 single logical group (for example, an individual QUIC connection). As such,
 instead of logging the "group_id" field with an identical value for each event
 instance, this field is typically logged once in "common_fields", see
-<a href="#common-fields" class="xref">Section 3.5.7</a>.<a href="#section-3.5.6-9" class="pilcrow">¶</a></p>
+<a href="#common-fields" class="xref">Section 3.4.7</a>.<a href="#section-3.4.6-9" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="common-fields">
-<section id="section-3.5.7">
+<section id="section-3.4.7">
           <h4 id="name-common_fields">
-<a href="#section-3.5.7" class="section-number selfRef">3.5.7. </a><a href="#name-common_fields" class="section-name selfRef">common_fields</a>
+<a href="#section-3.4.7" class="section-number selfRef">3.4.7. </a><a href="#name-common_fields" class="section-name selfRef">common_fields</a>
           </h4>
-<p id="section-3.5.7-1">As discussed in the previous sections, information for a typical qlog event varies
+<p id="section-3.4.7-1">As discussed in the previous sections, information for a typical qlog event varies
 in three main fields: "time", "name" and associated data. Additionally, there are
 also several more advanced fields that allow mixing events from different
 protocols and contexts inside of the same trace (for example "protocol_type" and
 "group_id"). In most "normal" use cases however, the values of these advanced
 fields are consistent for each event instance (for example, a single trace
-contains events for a single QUIC connection).<a href="#section-3.5.7-1" class="pilcrow">¶</a></p>
-<p id="section-3.5.7-2">To reduce file size and making logging easier, qlog uses the "common_fields" list
+contains events for a single QUIC connection).<a href="#section-3.4.7-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.7-2">To reduce file size and making logging easier, qlog uses the "common_fields" list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
-event. An example of this is shown in <a href="#common-fields-ex" class="xref">Figure 26</a>.<a href="#section-3.5.7-2" class="pilcrow">¶</a></p>
+event. An example of this is shown in <a href="#common-fields-ex" class="xref">Figure 26</a>.<a href="#section-3.4.7-2" class="pilcrow">¶</a></p>
 <span id="name-commonfields-example"></span><div id="common-fields-ex">
 <figure id="figure-26">
-            <div class="alignLeft art-text artwork" id="section-3.5.7-3.1">
+            <div class="alignLeft art-text artwork" id="section-3.4.7-3.1">
 <pre>
 JSON serialization with repeated field values
 per-event instance:
@@ -2457,18 +2452,18 @@ extracted to common_fields:
 <a href="#name-commonfields-example" class="selfRef">CommonFields example</a>
             </figcaption></figure>
 </div>
-<p id="section-3.5.7-4">The "common_fields" field is a generic dictionary of key-value pairs, where the
+<p id="section-3.4.7-4">The "common_fields" field is a generic dictionary of key-value pairs, where the
 key is always a string and the value can be of any type, but is typically also a
 string or number. As such, unknown entries in this dictionary MUST be disregarded
 by the user and tools (i.e., the presence of an uknown field is explicitly NOT an
-error).<a href="#section-3.5.7-4" class="pilcrow">¶</a></p>
-<p id="section-3.5.7-5">The list of default qlog fields that are typically logged in common_fields (as
+error).<a href="#section-3.4.7-4" class="pilcrow">¶</a></p>
+<p id="section-3.4.7-5">The list of default qlog fields that are typically logged in common_fields (as
 opposed to as individual fields per event instance) are shown in the listing
-below:<a href="#section-3.5.7-5" class="pilcrow">¶</a></p>
-<p id="section-3.5.7-6">Definition:<a href="#section-3.5.7-6" class="pilcrow">¶</a></p>
+below:<a href="#section-3.4.7-5" class="pilcrow">¶</a></p>
+<p id="section-3.4.7-6">Definition:<a href="#section-3.4.7-6" class="pilcrow">¶</a></p>
 <span id="name-commonfields-definition"></span><div id="common-fields-def">
 <figure id="figure-27">
-            <div id="section-3.5.7-7.1">
+            <div id="section-3.4.7-7.1">
 <pre class="lang-cddl sourcecode">
 CommonFields = {
     ? time_format: TimeFormat
@@ -2485,11 +2480,11 @@ CommonFields = {
 <a href="#name-commonfields-definition" class="selfRef">CommonFields definition</a>
             </figcaption></figure>
 </div>
-<p id="section-3.5.7-8">Tools MUST be able to deal with these fields being defined either on each event
+<p id="section-3.4.7-8">Tools MUST be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
 trace has a different value for a given field, this field MUST NOT be added to
 common_fields but instead defined on each event individually. Good example of such
-fields are "time" and "data", who are divergent by nature.<a href="#section-3.5.7-8" class="pilcrow">¶</a></p>
+fields are "time" and "data", who are divergent by nature.<a href="#section-3.4.7-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -3501,7 +3496,7 @@ end.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
 generate multiple qlog files. This can for example be the case for a QUIC server
 implementation that logs each QUIC connection in a separate qlog file. An
 alternative that uses QLOGFILE would be a QUIC server that logs all connections in
-a single file and uses the "group_id" field (<a href="#group-ids" class="xref">Section 3.5.6</a>) to allow post-hoc
+a single file and uses the "group_id" field (<a href="#group-ids" class="xref">Section 3.4.6</a>) to allow post-hoc
 separation of events.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
 <p id="section-7.1-3">Implementations SHOULD provide support for QLOGDIR and MAY provide support for
 QLOGFILE.<a href="#section-7.1-3" class="pilcrow">¶</a></p>

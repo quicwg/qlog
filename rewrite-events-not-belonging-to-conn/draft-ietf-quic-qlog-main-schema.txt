@@ -5,10 +5,10 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                 KU Leuven
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 31 December 2022                                       Facebook
+Expires: 12 March 2023                                          Facebook
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                            29 June 2022
+                                                        8 September 2022
 
 
                       Main logging schema for qlog
@@ -39,7 +39,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 31 December 2022.
+   This Internet-Draft will expire on 12 March 2023.
 
 Copyright Notice
 
@@ -68,15 +68,14 @@ Table of Contents
      3.3.  Individual Trace containers
        3.3.1.  Configuration
        3.3.2.  vantage_point
-     3.4.  Environment
-     3.5.  Field name semantics
-       3.5.1.  Timestamps
-       3.5.2.  Category and Event Type
-       3.5.3.  Data
-       3.5.4.  protocol_type
-       3.5.5.  Triggers
-       3.5.6.  group_id
-       3.5.7.  common_fields
+     3.4.  Field name semantics
+       3.4.1.  Timestamps
+       3.4.2.  Category and Event Type
+       3.4.3.  Data
+       3.4.4.  protocol_type
+       3.4.5.  Triggers
+       3.4.6.  group_id
+       3.4.7.  common_fields
    4.  Guidelines for event definition documents
      4.1.  Event design guidelines
      4.2.  Event importance indicators
@@ -401,7 +400,7 @@ Table of Contents
 
    Note that another way to combine events of different traces in a
    single qlog file is through the use of the "group_id" field,
-   discussed in Section 3.5.6.
+   discussed in Section 3.4.6.
 
 3.3.  Individual Trace containers
 
@@ -425,7 +424,6 @@ Table of Contents
        ? title: text
        ? description: text
        ? configuration: Configuration
-       ? environment: text
        ? common_fields: CommonFields
        ? vantage_point: VantagePoint
        events: [* Event]
@@ -598,14 +596,7 @@ Table of Contents
    always sends the first packet) or give the user the option to switch
    between client and server perspectives manually.
 
-3.4.  Environment
-
-   Environment is a free-form text field that helps identify specifics
-   about the deployment.  It can be used to log specifics like the
-   operating system, architecture, compiler version and source code
-   revision.
-
-3.5.  Field name semantics
+3.4.  Field name semantics
 
    Inside of the "events" field of a qlog trace is a list of events
    logged by the endpoint.  Each event is specified as a generic object
@@ -615,13 +606,13 @@ Table of Contents
    main, pre-defined and reserved field names with specific semantics
    and expected corresponding value formats.
 
-   Each qlog event at minimum requires the "time" (Section 3.5.1),
-   "name" (Section 3.5.2) and "data" (Section 3.5.3) fields.  Other
-   typical fields are "time_format" (Section 3.5.1), "protocol_type"
-   (Section 3.5.4), "trigger" (Section 3.5.5), and "group_id"
-   Section 3.5.6.  As especially these later fields typically have
+   Each qlog event at minimum requires the "time" (Section 3.4.1),
+   "name" (Section 3.4.2) and "data" (Section 3.4.3) fields.  Other
+   typical fields are "time_format" (Section 3.4.1), "protocol_type"
+   (Section 3.4.4), "trigger" (Section 3.4.5), and "group_id"
+   Section 3.4.6.  As especially these later fields typically have
    identical values across individual event instances, they are normally
-   logged separately in the "common_fields" (Section 3.5.7).
+   logged separately in the "common_fields" (Section 3.4.7).
 
    The specific values for each of these fields and their semantics are
    defined in separate documents, specific per protocol or use case.
@@ -672,7 +663,7 @@ Table of Contents
 
                           Figure 16: Event example
 
-3.5.1.  Timestamps
+3.4.1.  Timestamps
 
    The "time" field indicates the timestamp at which the event occured.
    Its value is typically the Unix timestamp since the 1970 epoch
@@ -698,7 +689,7 @@ Table of Contents
       characters.
 
    *  Relative: Specify a full "reference_time" timestamp (typically
-      this is done up-front in "common_fields", see Section 3.5.7) and
+      this is done up-front in "common_fields", see Section 3.4.7) and
       include only relatively-encoded values based on this
       reference_time with each event.  The "reference_time" value is
       typically the first absolute timestamp.  This approach uses a
@@ -743,11 +734,11 @@ Table of Contents
    more separate traces (in this case, clock drift should also be taken
    into account).
 
-3.5.2.  Category and Event Type
+3.4.2.  Category and Event Type
 
    Events differ mainly in the type of metadata associated with them.
    To help identify a given event and how to interpret its metadata in
-   the "data" field (see Section 3.5.3), each event has an associated
+   the "data" field (see Section 3.4.3), each event has an associated
    "name" field.  This can be considered as a concatenation of two other
    fields, namely event "category" and event "type".
 
@@ -788,7 +779,7 @@ Table of Contents
    based serializations however are encouraged to employ the
    concatenated "name" field for efficiency.
 
-3.5.3.  Data
+3.4.3.  Data
 
    The data field is a generic object.  It contains the per-event
    metadata and its form and semantics are defined per specific sort of
@@ -801,7 +792,7 @@ Table of Contents
    options to enable automated validation of aggregated qlog schemas.
 
    The only common field defined for the data field is the trigger
-   field, which is discussed in Section 3.5.5.
+   field, which is discussed in Section 3.4.5.
 
    Definition:
 
@@ -849,7 +840,7 @@ Table of Contents
 
     Figure 21: Example of the 'data' field for a QUIC packet_sent event
 
-3.5.4.  protocol_type
+3.4.4.  protocol_type
 
    The "protocol_type" array field indicates to which protocols (or
    protocol "stacks") this event belongs.  This allows a single qlog
@@ -867,9 +858,9 @@ Table of Contents
 
    Typically however, all events in a single trace are of the same few
    protocols, and this array field is logged once in "common_fields",
-   see Section 3.5.7.
+   see Section 3.4.7.
 
-3.5.5.  Triggers
+3.4.5.  Triggers
 
    Sometimes, additional information is needed in the case where a
    single event can be caused by a variety of other events.  In the
@@ -882,7 +873,7 @@ Table of Contents
 
    In qlog, the optional "trigger" field contains a string value
    describing the reason (if any) for this event instance occuring, see
-   Section 3.5.3.  While this "trigger" field could be a property of the
+   Section 3.4.3.  While this "trigger" field could be a property of the
    qlog Event itself, it is instead a property of the "data" field
    instead.  This choice was made because many event types do not
    include a trigger value, and having the field at the Event-level
@@ -904,7 +895,7 @@ Table of Contents
 
                          Figure 23: Trigger example
 
-3.5.6.  group_id
+3.4.6.  group_id
 
    As discussed in Section 3.3, a single qlog file can contain several
    traces taken from different vantage points.  However, a single trace
@@ -969,9 +960,9 @@ Table of Contents
    belonging to a single logical group (for example, an individual QUIC
    connection).  As such, instead of logging the "group_id" field with
    an identical value for each event instance, this field is typically
-   logged once in "common_fields", see Section 3.5.7.
+   logged once in "common_fields", see Section 3.4.7.
 
-3.5.7.  common_fields
+3.4.7.  common_fields
 
    As discussed in the previous sections, information for a typical qlog
    event varies in three main fields: "time", "name" and associated
@@ -1952,7 +1943,7 @@ Table of Contents
    the case for a QUIC server implementation that logs each QUIC
    connection in a separate qlog file.  An alternative that uses
    QLOGFILE would be a QUIC server that logs all connections in a single
-   file and uses the "group_id" field (Section 3.5.6) to allow post-hoc
+   file and uses the "group_id" field (Section 3.4.6) to allow post-hoc
    separation of events.
 
    Implementations SHOULD provide support for QLOGDIR and MAY provide
