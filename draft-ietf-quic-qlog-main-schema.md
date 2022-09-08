@@ -32,6 +32,8 @@ author:
     role: editor
 
 normative:
+
+informative:
   QLOG-QUIC:
     title: "QUIC event definitions for qlog"
     date: {DATE}
@@ -76,7 +78,6 @@ normative:
         org: Protocol Labs
         role: editor
 
-informative:
 
 --- abstract
 
@@ -100,7 +101,7 @@ This document aims to provide a high-level schema and harness that describes the
 general layout of an easily usable, shareable, aggregatable and structured logging
 format. This high-level schema is protocol agnostic, with logging entries for
 specific protocols and use cases being defined in other documents (see for example
-[QLOG-QUIC] for QUIC and [QLOG-H3] for HTTP/3 and QPACK-related event
+{{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3 and QPACK-related event
 definitions).
 
 The goal of this high-level schema is to provide amenities and default
@@ -565,12 +566,13 @@ they are normally logged separately in the "common_fields" ({{common-fields}}).
 
 The specific values for each of these fields and their semantics are defined in
 separate documents, specific per protocol or use case. For example: event
-definitions for QUIC, HTTP/3 and QPACK can be found in [QLOG-QUIC] and [QLOG-H3].
+definitions for QUIC, HTTP/3 and QPACK can be found in {{QLOG-QUIC}} and
+{{QLOG-H3}}.
 
 Other fields are explicitly allowed by the qlog approach, and tools SHOULD allow
 for the presence of unknown event fields, but their semantics depend on the
 context of the log usage (e.g., for QUIC, the ODCID field is used), see
-[QLOG-QUIC].
+{{QLOG-QUIC}}.
 
 An example of a qlog event with its component fields is shown in
 {{event-def}}.
@@ -722,8 +724,9 @@ encouraged to employ the concatenated "name" field for efficiency.
 ### Data {#data-field}
 
 The data field is a generic object. It contains the per-event metadata and its
-form and semantics are defined per specific sort of event. For example, data field
-value definitions for QUIC and HTTP/3 can be found in [QLOG-QUIC] and [QLOG-H3].
+form and semantics are defined per specific sort of event. For example, data
+field value definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and
+{{QLOG-H3}}.
 
 This field is defined here as a CDDL extension point (a "socket" or
 "plug") named `$ProtocolEventBody`. Other documents MUST properly extend
@@ -796,7 +799,7 @@ ProtocolType = [+ text]
 {: #protocol-type-def title="ProtocolType definition"}
 
 For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
-entry values, see [QLOG-QUIC] and [QLOG-H3].
+entry values, see {{QLOG-QUIC}} and {{QLOG-H3}}.
 
 Typically however, all events in a single trace are of the same few protocols, and
 this array field is logged once in "common_fields", see {{common-fields}}.
@@ -1005,8 +1008,8 @@ This document only defines the main schema for the qlog format. This is intended
 to be used together with specific, per-protocol event definitions that specify the
 name (category + type) and data needed for each individual event. This is with the
 intent to allow the qlog main schema to be easily re-used for several protocols.
-Examples include the QUIC event definitions [QLOG-QUIC] and HTTP/3 and QPACK
-event definitions [QLOG-H3].
+Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3 and QPACK
+event definitions {{QLOG-H3}}.
 
 This section defines some basic annotations and concepts the creators of event
 definition documents SHOULD follow to ensure a measure of consistency, making it
@@ -1717,7 +1720,7 @@ compressed textual JSON options are a better default for the qlog format in
 general.
 
 {::comment} The definition of the qlog main schema and existing event type
-documents (for example [QLOG-QUIC] [QLOG-H3]) should allow a relatively easy qlog
+documents (for example {{QLOG-QUIC}} {{QLOG-H3}}) should allow a relatively easy qlog
 definition in a variety of binary format schemas. {:/comment}
 
 ### Overview and summary {#format-summary}
