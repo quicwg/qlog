@@ -147,6 +147,9 @@ This document describes the values of the qlog name ("category" + "event") and
 draft-34 of the QUIC I-Ds [QUIC-TRANSPORT], [QUIC-RECOVERY], and [QUIC-TLS]. HTTP/3 and
 QPACK events are defined in a separate document [QLOG-H3].
 
+> Note to RFC editor: Please remove the follow paragraphs in this section before
+publication.
+
 Feedback and discussion are welcome at
 [https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
 Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
