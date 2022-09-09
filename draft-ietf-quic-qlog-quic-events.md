@@ -703,6 +703,8 @@ TransportPacketSent = {
     ? raw: RawInfo
     ? datagram_id: uint32
 
+    ? is_mtu_probe_packet: bool .default false
+
     ? trigger:
       ; draft-23 5.1.1
       "retransmit_reordered" /
@@ -1271,6 +1273,8 @@ RecoveryPacketLost = {
     ; see appendix for the QuicFrame definitions
     ? frames: [* QuicFrame]
 
+    ? is_mtu_probe_packet: boolean .default false
+
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
@@ -1314,6 +1318,24 @@ RecoveryMarkedForRetransmit = {
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
+
+## mtu_updated
+Importance: Extra
+
+~~~ ccdl
+MTUUpdated = {
+  ? mtu: uint16
+
+  ; at some point, MTU discovery stops, as a "good enough"
+  ; packet size has been found
+  ? done: boolean .default false
+}
+~~~
+{: #mtu-updated-def title="MTUUpdated definition"}
+
+This event indicates that the estimated Path MTU was updated. This happens as
+part of the Path MTU discovery process.
+
 
 # Security Considerations
 
