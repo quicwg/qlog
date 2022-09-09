@@ -105,7 +105,7 @@ definitions).
 
 The goal of this high-level schema is to provide amenities and default
 characteristics that each logging file should contain (or should be able to
-contain), such that generic and reusable tool sets can be created that can deal
+contain), such that generic and reusable toolsets can be created that can deal
 with logs from a variety of different protocols and use cases.
 
 As such, this document contains concepts such as versioning, metadata inclusion,
@@ -1143,7 +1143,7 @@ non-truncated lengths.
 Note:
 
 : We do not specify explicit header_length or trailer_length fields. In
-most protocols, header_length can be calculated by sub-tracing the payload_length
+most protocols, header_length can be calculated by subtracting the payload_length
 from the length (e.g., if trailer_length is always 0). In protocols with trailers
 (e.g., QUIC's AEAD tag), event definitions documents SHOULD define other ways of
 logging the trailer_length to make the header_length calculation possible.
