@@ -32,87 +32,11 @@ author:
 
 normative:
 
-  QUIC-TRANSPORT:
-    title: "QUIC: A UDP-Based Multiplexed and Secure Transport"
-    date: 2021-05
-    seriesinfo:
-      RFC: 9000
-      DOI: 10.17487/RFC9000
-    author:
-      -
-        ins: J. Iyengar
-        name: Jana Iyengar
-        org: Fastly
-        role: editor
-      -
-        ins: M. Thomson
-        name: Martin Thomson
-        org: Mozilla
-        role: editor
-
-  QUIC-RECOVERY:
-    title: "QUIC Loss Detection and Congestion Control"
-    date: 2021-05
-    seriesinfo:
-      RFC: 9002
-      DOI: 10.17487/RFC9002
-    author:
-      -
-        ins: J. Iyengar
-        name: Jana Iyengar
-        org: Fastly
-        role: editor
-      -
-        ins: I. Swett
-        name: Ian Swett
-        org: Google
-        role: editor
-
-  QUIC-TLS:
-    title: "Using TLS to Secure QUIC"
-    date: 2021-05
-    seriesinfo:
-      RFC: 9001
-      DOI: 10.17487/RFC9001
-    author:
-      -
-        ins: M. Thomson
-        name: Martin Thomson
-        org: Mozilla
-        role: editor
-      -
-        ins: S. Turner
-        name: Sean Turner
-        org: sn3rd
-        role: editor
-
   QLOG-MAIN:
     title: "Main logging schema for qlog"
     date: {DATE}
     seriesinfo:
       Internet-Draft: draft-ietf-quic-qlog-main-schema-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
-
-  QLOG-H3:
-    title: "HTTP/3 and QPACK event definitions for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-h3-events-latest
     author:
       -
         ins: R. Marx
@@ -136,16 +60,15 @@ informative:
 
 This document describes concrete qlog event definitions and their metadata for
 QUIC events. These events can then be embedded in the higher level schema defined
-in [QLOG-MAIN].
+in {{QLOG-MAIN}}.
 
 --- middle
 
 # Introduction
 
 This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the QUIC protocol. This document is based on
-draft-34 of the QUIC I-Ds [QUIC-TRANSPORT], [QUIC-RECOVERY], and [QUIC-TLS]. HTTP/3 and
-QPACK events are defined in a separate document [QLOG-H3].
+"data" fields and their semantics for QUIC; see {{!QUIC-TRANSPORT=RFC9000}},
+{{!QUIC-RECOVERY=RFC9002}}, and {{!QUIC-TLS=RFC9003}}.
 
 Feedback and discussion are welcome at
 [https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
@@ -164,7 +87,7 @@ interpreted as described in {{?RFC2119}}.
 
 The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
-extensions described in [QLOG-MAIN].
+extensions described in {{QLOG-MAIN}}.
 
 # Overview
 
@@ -172,7 +95,7 @@ This document describes the values of the qlog "name" ("category" + "event") and
 "data" fields and their semantics for the QUIC protocol.
 
 This document assumes the usage of the encompassing main qlog schema defined in
-[QLOG-MAIN]. Each subsection below defines a separate category (for example
+{{QLOG-MAIN}}. Each subsection below defines a separate category (for example
 connectivity, transport, recovery) and each subsubsection is an event type (for
 example `packet_received`).
 
@@ -204,7 +127,7 @@ trace of the connection with ODCID abcd1234).
 
 ### Raw packet and frame information
 
-This document re-uses the definition of the RawInfo data class from [QLOG-MAIN].
+This document re-uses the definition of the RawInfo data class from {{QLOG-MAIN}}.
 
 Note:
 
@@ -1406,7 +1329,7 @@ TBD
 ## ProtocolEventBody extension
 
 We extend the `$ProtocolEventBody` extension point defined in
-[QLOG-MAIN] with the QUIC protocol events defined in this document.
+{{QLOG-MAIN}} with the QUIC protocol events defined in this document.
 
 ~~~ cddl
 QuicEvents = ConnectivityServerListening /

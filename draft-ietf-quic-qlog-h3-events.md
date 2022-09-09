@@ -32,37 +32,8 @@ author:
 
 normative:
 
-  QUIC-HTTP:
-    title: "Hypertext Transfer Protocol Version 3 (HTTP/3)"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-http-latest
-    author:
-      -
-          ins: M. Bishop
-          name: Mike Bishop
-          org: Akamai Technologies
-          role: editor
-
-  QUIC-QPACK:
-    title: "QPACK: Header Compression for HTTP over QUIC"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qpack-latest
-    author:
-      -
-          ins: C. Krasic
-          name: Charles 'Buck' Krasic
-          org: Google, Inc
-      -
-          ins: M. Bishop
-          name: Mike Bishop
-          org: Akamai Technologies
-      -
-          ins: A. Frindell
-          name: Alan Frindell
-          org: Facebook
-          role: editor
+  RFC9114:
+    display: HTTP/3
 
   QLOG-MAIN:
     title: "Main logging schema for qlog"
@@ -114,17 +85,15 @@ informative:
 
 This document describes concrete qlog event definitions and their metadata for
 HTTP/3 and QPACK-related events. These events can then be embedded in the higher
-level schema defined in [QLOG-MAIN].
+level schema defined in {{QLOG-MAIN}}.
 
 --- middle
 
 # Introduction
 
 This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the HTTP/3 and QPACK protocols. This
-document is based on draft-34 of the HTTP/3 I-D [QUIC-HTTP] and draft-21 of the
-QPACK I-D [QUIC-QPACK]. QUIC events are defined in a separate document
-[QLOG-QUIC].
+"data" fields and their semantics for HTTP/3 {{RFC9114}} and QPACK
+{{!QPACK=RFC9204}}.
 
 Feedback and discussion are welcome at
 [https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
@@ -143,7 +112,7 @@ interpreted as described in {{?RFC2119}}.
 
 The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
-extensions described in [QLOG-MAIN].
+extensions described in {{QLOG-MAIN}}.
 
 # Overview
 
@@ -151,7 +120,7 @@ This document describes the values of the qlog "name" ("category" + "event") and
 "data" fields and their semantics for the HTTP/3 and QPACK protocols.
 
 This document assumes the usage of the encompassing main qlog schema defined in
-[QLOG-MAIN]. Each subsection below defines a separate category (for example http,
+{{QLOG-MAIN}}. Each subsection below defines a separate category (for example http,
 qpack) and each subsubsection is an event type (for example `frame_created`).
 
 For each event type, its importance and data definition is laid out, often
@@ -165,7 +134,7 @@ together on the bottom of this document for clarity.
 ## Usage with QUIC
 
 The events described in this document can be used with or without logging the
-related QUIC events defined in [QLOG-QUIC]. If used with QUIC events, the QUIC
+related QUIC events defined in {{QLOG-QUIC}}. If used with QUIC events, the QUIC
 document takes precedence in terms of recommended filenames and trace separation
 setups.
 
@@ -187,7 +156,7 @@ this document are included in a qlog trace.
 
 ### Raw packet and frame information
 
-This document re-uses the definition of the RawInfo data class from [QLOG-MAIN].
+This document re-uses the definition of the RawInfo data class from {{QLOG-MAIN}}.
 
 Note:
 
@@ -331,7 +300,7 @@ Importance: Core
 HTTP equivalent to the packet_sent event. This event is emitted when the HTTP/3
 framing actually happens. Note: this is not necessarily the same as when the
 HTTP/3 data is passed on to the QUIC layer. For that, see the "data_moved" event
-in [QLOG-QUIC].
+in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -357,7 +326,7 @@ Importance: Core
 HTTP equivalent to the packet_received event. This event is emitted when we
 actually parse the HTTP/3 frame. Note: this is not necessarily the same as when
 the HTTP/3 data is actually received on the QUIC layer. For that, see the
-"data_moved" event in [QLOG-QUIC].
+"data_moved" event in {{QLOG-QUIC}}.
 
 
 Definition:
@@ -599,7 +568,7 @@ TBD
 ## ProtocolEventBody extension
 
 We extend the `$ProtocolEventBody` extension point defined in
-[QLOG-MAIN] with the HTTP/3 protocol events defined in this document.
+{{QLOG-MAIN}} with the HTTP/3 protocol events defined in this document.
 
 ~~~ cddl
 HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
@@ -760,7 +729,7 @@ HTTPReservedFrame = {
 ### UnknownFrame
 
 HTTP/3 qlog re-uses QUIC's UnknownFrame definition, since their values
-and usage overlaps. See [QLOG-QUIC].
+and usage overlaps. See {{QLOG-QUIC}}.
 
 ## ApplicationError
 
@@ -786,7 +755,7 @@ HTTPApplicationError =  "http_no_error" /
 {: #httpapplicationerror-def title="HTTPApplicationError definition"}
 
 The HTTPApplicationError defines the general $ApplicationError
-definition in the qlog QUIC definition, see [QLOG-QUIC].
+definition in the qlog QUIC definition, see {{QLOG-QUIC}}.
 
 ~~~ cddl
 ; ensure HTTP errors are properly validate in QUIC events as well
@@ -799,7 +768,7 @@ $ApplicationError /= HTTPApplicationError
 ## ProtocolEventBody extension
 
 We extend the `$ProtocolEventBody` extension point defined in
-[QLOG-MAIN] with the QPACK protocol events defined in this document.
+{{QLOG-MAIN}} with the QPACK protocol events defined in this document.
 
 ~~~ cddl
 QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
