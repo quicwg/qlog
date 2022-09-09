@@ -323,7 +323,7 @@ HTTPStreamType =  "data" /
                   "qpack_encode" /
                   "qpack_decode"
 ~~~
-{: #https-treamtypeset-def title="HTTPStreamTypeSet definition"}
+{: #https-streamtypeset-def title="HTTPStreamTypeSet definition"}
 
 ### frame_created
 Importance: Core
@@ -815,7 +815,7 @@ extension"}
 ## QPACK Instructions
 
 Note: the instructions do not have explicit encoder/decoder types, since there is
-no overlap between the insturctions of both types in neither name nor function.
+no overlap between the instructions of both types in neither name nor function.
 
 ~~~ cddl
 QPACKInstruction =  SetDynamicTableCapacityInstruction /

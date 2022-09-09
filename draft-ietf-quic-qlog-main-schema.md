@@ -105,7 +105,7 @@ definitions).
 
 The goal of this high-level schema is to provide amenities and default
 characteristics that each logging file should contain (or should be able to
-contain), such that generic and reusable toolsets can be created that can deal
+contain), such that generic and reusable tool sets can be created that can deal
 with logs from a variety of different protocols and use cases.
 
 As such, this document contains concepts such as versioning, metadata inclusion,
@@ -208,7 +208,7 @@ The main tenets for the qlog schema design are:
 
 # The high level qlog schema {#top-level}
 
-A qlog file should be able to contain several indivdual traces and logs from
+A qlog file should be able to contain several individual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
@@ -615,10 +615,10 @@ JSON serialization:
 
 ### Timestamps {#time-based-fields}
 
-The "time" field indicates the timestamp at which the event occured. Its value is
+The "time" field indicates the timestamp at which the event occurred. Its value is
 typically the Unix timestamp since the 1970 epoch (number of milliseconds since
 midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports two
-more succint timestamps formats to allow reducing file size. The employed format
+more succinct timestamps formats to allow reducing file size. The employed format
 is indicated in the "time_format" field, which allows one of three values:
 "absolute", "delta" or "relative".
 
@@ -668,7 +668,7 @@ order (though not necessarily absolute value, for the "delta" format). Tools CAN
 sort all events on the timestamp before processing them, though are not required
 to (as this could impose a significant processing overhead). This can be a problem
 especially for multi-threaded and/or streaming loggers, who could consider using a
-separate postprocesser to order qlog events in time if a tool do not provide this
+separate post-processor to order qlog events in time if a tool do not provide this
 feature.
 
 Timestamps do not have to use the UNIX epoch timestamp as their reference. For
@@ -723,7 +723,7 @@ encouraged to employ the concatenated "name" field for efficiency.
 
 The data field is a generic object. It contains the per-event metadata and its
 form and semantics are defined per specific sort of event. For example, data field
-value definitons for QUIC and HTTP/3 can be found in [QLOG-QUIC] and [QLOG-H3].
+value definitions for QUIC and HTTP/3 can be found in [QLOG-QUIC] and [QLOG-H3].
 
 This field is defined here as a CDDL extension point (a "socket" or
 "plug") named `$ProtocolEventBody`. Other documents MUST properly extend
@@ -812,7 +812,7 @@ these "triggers" in a high-level way per-event to get more fine-grained
 information without much additional overhead.
 
 In qlog, the optional "trigger" field contains a string value describing
-the reason (if any) for this event instance occuring, see
+the reason (if any) for this event instance occurring, see
 {{data-field}}. While this "trigger" field could be a property of the
 qlog Event itself, it is instead a property of the "data" field instead.
 This choice was made because many event types do not include a trigger
@@ -971,7 +971,7 @@ extracted to common_fields:
 The "common_fields" field is a generic dictionary of key-value pairs, where the
 key is always a string and the value can be of any type, but is typically also a
 string or number. As such, unknown entries in this dictionary MUST be disregarded
-by the user and tools (i.e., the presence of an uknown field is explicitly NOT an
+by the user and tools (i.e., the presence of an unknown field is explicitly NOT an
 error).
 
 The list of default qlog fields that are typically logged in common_fields (as
@@ -1020,7 +1020,7 @@ draft 01 and 02) setup.
 There are several ways of defining qlog events. In practice, we have seen two main
 types used so far: a) those that map directly to concepts seen in the protocols
 (e.g., `packet_sent`) and b) those that act as aggregating events that combine
-data from several possible protocol behaviours or code paths into one (e.g.,
+data from several possible protocol behaviors or code paths into one (e.g.,
 `parameters_set`). The latter are typically used as a means to reduce the amount
 of unique event definitions, as reflecting each possible protocol event as a
 separate qlog entity would cause an explosion of event types.
@@ -1047,7 +1047,7 @@ present and provide conflicting information.
 
 To aid in this decision making, we recommend that each event SHOULD have an
 "importance indicator" with one of three values, in decreasing order of importance
-and exptected usage:
+and expected usage:
 
 * Core
 * Base
@@ -1070,7 +1070,7 @@ these events, if they do not handle them explicitly.
 
 The "Extra" events are considered mostly useful for low-level debugging of the
 implementation, rather than the protocol. They allow more fine-grained tracking of
-internal behaviour. As such, they CAN be present in qlog files and tool
+internal behavior. As such, they CAN be present in qlog files and tool
 implementers CAN add support for these, but they are not required to.
 
 Note that in some cases, implementers might not want to log for example data
@@ -1108,7 +1108,7 @@ This section specifies such common definitions.
 While qlog is a more high-level logging format, it also allows the inclusion of
 most raw wire image information, such as byte lengths and even raw byte values.
 This can be useful when for example investigating or tuning packetization
-behaviour or determining encoding/framing overheads. However, these fields are not
+behavior or determining encoding/framing overheads. However, these fields are not
 always necessary and can take up considerable space if logged for each packet or
 frame. They can also have a considerable privacy and security impact. As such,
 they are grouped in a separate optional field called "raw" of type RawInfo (where
@@ -1143,7 +1143,7 @@ non-truncated lengths.
 Note:
 
 : We do not specify explicit header_length or trailer_length fields. In
-most protocols, header_length can be calculated by subtracing the payload_length
+most protocols, header_length can be calculated by sub-tracing the payload_length
 from the length (e.g., if trailer_length is always 0). In protocols with trailers
 (e.g., QUIC's AEAD tag), event definitions documents SHOULD define other ways of
 logging the trailer_length to make the header_length calculation possible.
@@ -1156,7 +1156,7 @@ Note:
 
 : Relatedly, many modern protocols use Variable-Length Integer Encoded (VLIE) values
 in their headers, which are of a dynamic length. Because of this, we cannot
-deterministally reconstruct the header encoding/length from non-RawInfo qlog data,
+deterministically reconstruct the header encoding/length from non-RawInfo qlog data,
 as implementations might not necessarily employ the most efficient VLIE scheme for
 all values. As such, to make exact size-analysis possible, implementers should use
 explicit lengths in RawInfo rather than reconstructing them from other qlog data.
@@ -1558,7 +1558,7 @@ easy enough to parse with existing implementations (i.e., by splitting the file
 into its component records and feeding them to a normal JSON parser individually,
 as each record by itself is a valid JSON object).
 
-## Other optimizated formatting options {#optimizations}
+## Other optimized formatting options {#optimizations}
 
 Both the JSON and JSON-SEQ formatting options described above are serviceable in
 general small to medium scale (debugging) setups. However, these approaches tend
@@ -1678,7 +1678,7 @@ However, the resultant files are no longer human readable and some formats requi
 hard tradeoffs between flexibility for performance.
 
 The first option is to use the CBOR (Concise Binary Object Representation
-{{!RFC7049}}) format. For our purposes, CBOR can be viewed as a straighforward
+{{!RFC7049}}) format. For our purposes, CBOR can be viewed as a straightforward
 binary variant of JSON. As such, existing JSON qlog files can be trivially
 converted to and from CBOR (though slightly more work is needed for JSON-SEQ qlogs
 to convert them to CBOR-SEQ, see {{?RFC8742}}). While CBOR thus does retain the
@@ -1886,7 +1886,7 @@ SHOULD generate a clear error message to this effect.
 
 Tools MUST NOT produce breaking errors for any field names and/or values in the
 qlog format that they do not recognize. Tools SHOULD indicate even unknown event
-occurences within their context (e.g., marking unknown events on a timeline for
+occurrences within their context (e.g., marking unknown events on a timeline for
 manual interpretation by the user).
 
 Tool authors should be aware that, depending on the logging implementation, some

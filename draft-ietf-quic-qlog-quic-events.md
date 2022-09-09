@@ -220,7 +220,7 @@ Note:
 
 : header_length = length - payload_length - aead_tag_length
 
-: For UDP datagrams, the calulation is simpler:
+: For UDP datagrams, the calculation is simpler:
 
 : header_length = length - payload_length
 
@@ -1066,7 +1066,7 @@ StreamState =
 
 Note: QUIC implementations SHOULD mainly log the simplified bidirectional
 (HTTP/2-alike) stream states (e.g., idle, open, closed) instead of the more
-finegrained stream states (e.g., data_sent, reset_received). These latter ones are
+fine-grained stream states (e.g., data_sent, reset_received). These latter ones are
 mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
 equally.
 
@@ -1293,7 +1293,7 @@ RecoveryCongestionStateUpdated = {
 
 The "trigger" field SHOULD be logged if there are multiple ways in which a state change
 can occur but MAY be omitted if a given state can only be due to a single event
-occuring (e.g., slow start is exited only when ssthresh is exceeded).
+occurring (e.g., slow start is exited only when ssthresh is exceeded).
 
 ### loss_timer_updated
 Importance: Extra
@@ -1363,14 +1363,14 @@ values below), as this helps tremendously in debugging.
 ### marked_for_retransmit
 Importance: Extra
 
-This event indicates which data was marked for retransmit upon detecing a packet
+This event indicates which data was marked for retransmit upon detecting a packet
 loss (see packet_lost). Similar to our reasoning for the "frames_processed" event,
 in order to keep the amount of different events low, we group this signal for all
 types of retransmittable data in a single event based on existing QUIC frame
 definitions.
 
 Implementations retransmitting full packets or frames directly can just log the
-consituent frames of the lost packet here (or do away with this event and use the
+constituent frames of the lost packet here (or do away with this event and use the
 contents of the packet_lost event instead). Conversely, implementations that have
 more complex logic (e.g., marking ranges in a stream's data buffer as in-flight),
 or that do not track sent frames in full (e.g., only stream offset + length), can
@@ -1383,7 +1383,7 @@ when data was retransmitted).
 
 Definition:
 
-~~~ ccdl
+~~~ cddl
 RecoveryMarkedForRetransmit = {
     ; see appendix for the QuicFrame definitions
     frames: [+ QuicFrame]
