@@ -250,10 +250,11 @@ single connection to this grouping trace.
 There are events that are conceptually associated with a single connection, but
 that happen before the actual QUIC connection is established when viewed from
 the server's perspective. This includes version negotiation as well as retries.
-Servers MAY take extra efforts to associate these events with a successfully
-established QUIC connection and combine them in a single trace. For version
-negotiation, matching can be done by identifying a connection attempt by its
-four-tuple, and retries can be identified by their ODCID.
+Servers MAY include such events in the connection trace but need to ensure those
+events are correctly associated with the correct connection, which can take
+extra effort or resource. For example, version negotiation events can be matched
+to a connection by identifying a connection attempt by its four-tuple;
+similarly, retry events be matched by their ODCID.
 
 
 # QUIC event definitions
