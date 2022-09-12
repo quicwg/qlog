@@ -29,30 +29,16 @@ author:
     org: Protocol Labs
     email: marten@protocol.ai
     role: editor
+  - ins: L. Pardue
+    name: Lucas Pardue
+    org: Cloudflare
+    email: lucaspardue.24.7@gmail.com
+    role: editor
 
 normative:
 
   QLOG-MAIN:
-    title: "Main logging schema for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-main-schema-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
+    I-D.ietf-quic-qlog-main-schema
 
 informative:
 
