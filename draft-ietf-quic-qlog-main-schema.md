@@ -184,15 +184,8 @@ Other qlog documents can define their own CDDL-compatible (struct) types
 
 ### Serialization
 
-While the qlog schemas are format-agnostic, and can be serialized in
-many ways (e.g., JSON, CBOR, protobuf, ...), this document only
-describes how to employ {{!JSON=RFC8259}}, its subset
-{{!I-JSON=RFC7493}}, and its streamable derivative
-{{!JSON-Text-Sequences=RFC7464}} as textual serialization options. As
-such, examples are provided in {{!JSON=RFC8259}}. Other documents may
-describe how to utilize other concrete serialization options, though
-tips and requirements for these are also listed in this document
-({{concrete-formats}}).
+The qlog schema can be serialized in many ways (e.g., JSON, CBOR, protobuf,
+etc). Serialization examples in this document use JSON ({{!JSON=RFC8259}}).
 
 # Design goals
 
