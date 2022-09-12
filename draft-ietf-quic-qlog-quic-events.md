@@ -175,14 +175,54 @@ just the connection ID).
 
 # QUIC event definitions
 
-Each subheading in this section is a qlog event category, while each
-sub-subheading is a qlog event type. Concretely, for the following two items, we
-have the category "connectivity" and event type "server_listening", resulting in a
-concatenated qlog "name" field value of "connectivity:server_listening".
+QUIC connections consist of different phases and interaction events. In order to
+model this, QUIC event types are divided into general categories: connectivity
+({{conn-ev}}), security ({{sec-ev}}), transport {{trans-ev}}, and recovery
+{{rec-ev}}.
 
-## connectivity
+As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
+concatenation of category and type.
 
-### server_listening
+{{quic-events}} summarizes the name value of each event type that is defined in
+this specification.
+
+| Name value |  Definition |
+|:-----------|:---------------------|
+| connectivity:server_listening | {{server-listening}} |
+| connectivity:connection_started | {{connection-started}} |
+| connectivity:connection_closed | {{connection-closed}} |
+| connectivity:connection_id_updated | {{connection-id-updated}} |
+| connectivity:spin_bit_updated | {{spin-bit-updated}} |
+| connectivity:connection_retried | {{connection-retried}} |
+| connectivity:connection_state_updated | {{connection-state-updated}} |
+| security:key_updated | {{key-updated}} |
+| security:key_discarded | {{key-discarded}} |
+| transport:version_information | {{version-information}} |
+| transport:alpn_information | {{alpn-information}} |
+| transport:parameters_set | {{trans-parameters-set}} |
+| transport:parameters_restored | {{trans-parameters-restored}} |
+| transport:packet_sent | {{packet-sent}} |
+| transport:packet_received | {{packet-received}} |
+| transport:packet_dropped | {{packet-dropped}} |
+| transport:packet_buffered | {{packet-buffered}} |
+| transport:packets_acked | {{packets-acked}} |
+| transport:datagrams_sent | {{datagrams-sent}} |
+| transport:datagrams_received | {{datagrams-received}} |
+| transport:datagram_dropped | {{datagram-dropped}} |
+| transport:stream_state_updated | {{stream-state-updated}} |
+| transport:frames_processed | {{frames-processed}} |
+| transport:data_moved | {{data-moved}} |
+| recovery:parameters_set | {{rec-parameters-set}} |
+| recovery:metrics_updated | {{metrics-updated}} |
+| recovery:congestion_state_updated | {{congestion-state-updated}} |
+| recovery:loss_timer_updated | {{loss-timer-updated}} |
+| recovery:packet_lost | {{packet-lost}} |
+| recovery:marked_for_retransmit | {{marked-for-retransmit}} |
+{: #quic-events title="QUIC Events"}
+
+# Connectivity events {#conn-ev}
+
+## server_listening {#server-listening}
 Importance: Extra
 
 Emitted when the server starts accepting connections.
@@ -206,7 +246,7 @@ ConnectivityServerListening = {
 Note: some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
-### connection_started
+## connection_started {#connection-started}
 Importance: Base
 
 Used for both attempting (client-perspective) and accepting (server-perspective)
@@ -236,7 +276,7 @@ ConnectivityConnectionStarted = {
 Note: some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
-### connection_closed
+## connection_closed {#connection-closed}
 Importance: Base
 
 Used for logging when a connection was closed, typically when an error or timeout
@@ -281,7 +321,7 @@ ConnectivityConnectionClosed = {
 {: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
 
 
-### connection_id_updated
+## connection_id_updated {#connection-id-updated}
 Importance: Base
 
 This event is emitted when either party updates their current Connection ID. As
@@ -306,7 +346,7 @@ ConnectivityConnectionIDUpdated = {
 ~~~
 {: #connectivity-connectionidupdated-def title="ConnectivityConnectionIDUpdated definition"}
 
-### spin_bit_updated
+## spin_bit_updated {#spin-bit-updated}
 Importance: Base
 
 To be emitted when the spin bit changes value. It SHOULD NOT be emitted if the
@@ -321,11 +361,11 @@ ConnectivitySpinBitUpdated = {
 ~~~
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
 
-### connection_retried
+## connection_retried {#connection-retried}
 
 TODO
 
-### connection_state_updated
+## connection_state_updated {#connection-state-updated}
 Importance: Base
 
 This event is used to track progress through QUIC's complex handshake and
@@ -415,7 +455,7 @@ conceptual event as the connection_started event above from the client's
 perspective. Similarly, a state of "closing" or "draining" corresponds to the
 connection_closed event.
 
-### MIGRATION-related events
+## MIGRATION-related events
 e.g., path_updated
 
 TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
@@ -423,7 +463,7 @@ TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
 
 For now, infer from other connectivity events and path_challenge/path_response frames
 
-### mtu_updated
+## mtu_updated
 Importance: Extra
 
 ~~~ ccdl
@@ -443,7 +483,7 @@ part of the Path MTU discovery process.
 
 ## security
 
-### key_updated
+## key_updated {#key-updated}
 Importance: Base
 
 Note: secret_updated would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
@@ -471,7 +511,7 @@ SecurityKeyUpdated = {
 {: #security-keyupdated-def title="SecurityKeyUpdated definition"}
 
 
-### key_discarded
+## key_discarded {#key-discarded}
 Importance: Base
 
 Definition:
@@ -495,9 +535,9 @@ SecurityKeyDiscarded = {
 {: #security-keydiscarded-def title="SecurityKeyDiscarded definition"}
 
 
-## transport
+# Transport events  {#trans-ev}
 
-### version_information
+## version_information {#version-information}
 Importance: Core
 
 QUIC endpoints each have their own list of of QUIC versions they support. The
@@ -533,7 +573,7 @@ Intended use:
   the version negotiation packet and chosen_version to the version it will use for
   the next initial packet
 
-### alpn_information
+## alpn_information {#alpn-information}
 Importance: Core
 
 QUIC implementations each have their own list of application level protocols and
@@ -566,7 +606,7 @@ Intended use:
   receipt of the server initial to log this event with both client_alpns and
   chosen_alpn set.
 
-### parameters_set
+## parameters_set {#trans-parameters-set}
 Importance: Core
 
 This event groups settings from several different sources (transport parameters,
@@ -648,7 +688,7 @@ Additionally, this event can contain any number of unspecified fields. This is t
 reflect setting of for example unknown (greased) transport parameters or employed
 (proprietary) extensions.
 
-### parameters_restored
+## parameters_restored {#trans-parameters-restored}
 Importance: Base
 
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
@@ -681,7 +721,7 @@ TransportParametersRestored = {
 Note that, like parameters_set above, this event can contain any number of
 unspecified fields to allow for additional/custom parameters.
 
-### packet_sent
+## packet_sent {#packet-sent}
 Importance: Core
 
 Definition:
@@ -729,10 +769,10 @@ TransportPacketSent = {
 Note: We do not explicitly log the encryption_level or packet_number_space: the
 header.packet_type specifies this by inference (assuming correct implementation)
 
-Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+Note: for more details on "datagram_id", see {{datagrams-sent}}. It is only needed
 when keeping track of packet coalescing.
 
-### packet_received
+## packet_received {#packet-received}
 Importance: Core
 
 Definition:
@@ -770,10 +810,10 @@ TransportPacketReceived = {
 Note: We do not explicitly log the encryption_level or packet_number_space: the
 header.packet_type specifies this by inference (assuming correct implementation)
 
-Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+Note: for more details on "datagram_id", see {{datagrams-sent}}. It is only needed
 when keeping track of packet coalescing.
 
-### packet_dropped
+## packet_dropped {#packet-dropped}
 Importance: Base
 
 This event indicates a QUIC-level packet was dropped after partial or no parsing.
@@ -810,10 +850,10 @@ Note: sometimes packets are dropped before they can be associated with a
 particular connection (e.g., in case of "unsupported_version"). This situation is
 discussed more in {{handling-unknown-connections}}.
 
-Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+Note: for more details on "datagram_id", see {{datagrams-sent}}. It is only needed
 when keeping track of packet coalescing.
 
-### packet_buffered
+## packet_buffered {#packet-buffered}
 Importance: Base
 
 This event is emitted when a packet is buffered because it cannot be processed
@@ -842,10 +882,10 @@ TransportPacketBuffered = {
 ~~~
 {: #transport-packetbuffered-def title="TransportPacketBuffered definition"}
 
-Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+Note: for more details on "datagram_id", see {{datagrams-sent}}. It is only needed
 when keeping track of packet coalescing.
 
-### packets_acked
+## packets_acked {#packets-acked}
 Importance: Extra
 
 This event is emitted when a (group of) sent packet(s) is acknowledged by the
@@ -870,7 +910,7 @@ Note: if packet_number_space is omitted, it assumes the default value of
 PacketNumberSpace.application_data, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
-### datagrams_sent {#datagram-id}
+## datagrams_sent {#datagrams-sent}
 Importance: Extra
 
 When we pass one or more UDP-level datagrams to the socket. This is useful for
@@ -901,7 +941,7 @@ same datagram. As packet coalescing typically only happens during the handshake
 (as it requires at least one long header packet), this can be done without much
 overhead.
 
-### datagrams_received
+## datagrams_received {#datagrams-received}
 Importance: Extra
 
 When we receive one or more UDP-level datagrams from the socket. This is useful
@@ -923,9 +963,9 @@ TransportDatagramsReceived = {
 ~~~
 {: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
 
-Note: for more details on "datagram_ids", see {{datagram-id}}.
+Note: for more details on "datagram_ids", see {{datagrams-sent}}.
 
-### datagram_dropped
+## datagram_dropped {#datagram-dropped}
 Importance: Extra
 
 When we drop a UDP-level datagram. This is typically if it does not contain a
@@ -940,7 +980,7 @@ TransportDatagramDropped = {
 ~~~
 {: #transport-datagramdropped-def title="TransportDatagramDropped definition"}
 
-### stream_state_updated
+## stream_state_updated {#stream-state-updated}
 Importance: Base
 
 This event is emitted whenever the internal state of a QUIC stream is updated, as
@@ -1001,7 +1041,7 @@ fine-grained stream states (e.g., data_sent, reset_received). These latter ones 
 mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
 equally.
 
-### frames_processed
+## frames_processed {#frames-processed}
 Importance: Extra
 
 This event's main goal is to prevent a large proliferation of specific purpose
@@ -1044,7 +1084,7 @@ TransportFramesProcessed = {
 ~~~
 {: #transport-framesprocessed-def title="TransportFramesProcessed definition"}
 
-### data_moved
+## data_moved {#data-moved}
 Importance: Base
 
 Used to indicate when data moves between the different layers (for example passing
@@ -1093,14 +1133,14 @@ points, or the raw data might not be in a byte-array form). In these situations,
 implementers can decide to define new, in-context fields to aid in manual
 debugging.
 
-## recovery
+# Recovery events {#rec-ev}
 
 Note: most of the events in this category are kept generic to support different
 recovery approaches and various congestion control algorithms. Tool creators
 SHOULD make an effort to support and visualize even unknown data in these events
 (e.g., plot unknown congestion states by name on a timeline visualization).
 
-### parameters_set
+## parameters_set {#rec-parameters-set}
 Importance: Base
 
 This event groups initial parameters from both loss detection and congestion
@@ -1146,7 +1186,7 @@ RecoveryParametersSet = {
 Additionally, this event can contain any number of unspecified fields to support
 different recovery approaches.
 
-### metrics_updated
+## metrics_updated {#metrics-updated}
 Importance: Core
 
 This event is emitted when one or more of the observable recovery metrics changes
@@ -1195,7 +1235,7 @@ log only actual updates to values.
 Additionally, this event can contain any number of unspecified fields to support
 different recovery approaches.
 
-### congestion_state_updated
+## congestion_state_updated {#congestion-state-updated}
 Importance: Base
 
 This event signifies when the congestion controller enters a significant new state
@@ -1226,7 +1266,7 @@ The "trigger" field SHOULD be logged if there are multiple ways in which a state
 can occur but MAY be omitted if a given state can only be due to a single event
 occurring (e.g., slow start is exited only when ssthresh is exceeded).
 
-### loss_timer_updated
+## loss_timer_updated {#loss-timer-updated}
 Importance: Extra
 
 This event is emitted when a recovery loss timer changes state. The three main
@@ -1261,7 +1301,7 @@ need to be? Just support QUIC-style recovery from the spec or broader?
 
 TODO: read up on the loss detection logic in draft-27 onward and see if this suffices
 
-### packet_lost
+## packet_lost {#packet-lost}
 Importance: Core
 
 This event is emitted when a packet is deemed lost by loss detection.
@@ -1293,7 +1333,7 @@ For this event, the "trigger" field SHOULD be set (for example to one of the
 values below), as this helps tremendously in debugging.
 
 
-### marked_for_retransmit
+## marked_for_retransmit {#marked-for-retransmit}
 Importance: Extra
 
 This event indicates which data was marked for retransmit upon detecting a packet
@@ -1323,7 +1363,6 @@ RecoveryMarkedForRetransmit = {
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
-
 
 # Security Considerations
 
