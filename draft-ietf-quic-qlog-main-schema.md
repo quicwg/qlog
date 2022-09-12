@@ -199,8 +199,8 @@ tips and requirements for these are also listed in this document
 The main tenets for the qlog schema design are:
 
 * Streamable, event-based logging
-* Flexibility in the format, complexity in the tooling (e.g., few components are a
-  MUST, tools need to deal with this)
+* A flexible format that can reduce log producer overhead, at the cost of
+  increased complexity for consumers (e.g. tools)
 * Extensible and pragmatic
 * Aggregation and transformation friendly (e.g., the top-level element
   for the non-streaming format is a container for individual traces,
