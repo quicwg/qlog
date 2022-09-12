@@ -257,6 +257,7 @@ HTTPStreamType =  "data" /
                   "control" /
                   "push" /
                   "reserved" /
+                  "unknown" /
                   "qpack_encode" /
                   "qpack_decode"
 ~~~
