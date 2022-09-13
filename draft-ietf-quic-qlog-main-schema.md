@@ -30,53 +30,20 @@ author:
     org: Protocol Labs
     email: marten@protocol.ai
     role: editor
+  - ins: L. Pardue
+    name: Lucas Pardue
+    org: Cloudflare
+    email: lucaspardue.24.7@gmail.com
+    role: editor
 
 normative:
 
 informative:
   QLOG-QUIC:
-    title: "QUIC event definitions for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-quic-events-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
+    I-D.ietf-quic-qlog-quic-events
 
   QLOG-H3:
-    title: "HTTP/3 and QPACK event definitions for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-h3-events-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
+    I-D.ietf-quic-qlog-h3-events
 
 
 --- abstract
