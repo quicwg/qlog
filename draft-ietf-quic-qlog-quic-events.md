@@ -77,32 +77,23 @@ The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
+The following fields from {{QLOG-MAIN}} are imported and used: name, category,
+type, data, group_id, protocol_type, importance, RawInfo, and time-related
+fields.
+
 # Overview
 
-This document describes the values of the qlog "name" ("category" + "event") and
-"data" fields and their semantics for the QUIC protocol.
+This document describes how the QUIC protocol is can be expressed in qlog using
+the schema defined in {{QLOG-MAIN}}. QUIC protocol events are defined with a
+category, a name (the concatenation of "category" and "event"), an "importance",
+an optional "trigger", and "data" fields.
 
-This document assumes the usage of the encompassing main qlog schema defined in
-{{QLOG-MAIN}}. Each subsection below defines a separate category (for example
-connectivity, transport, recovery) and each subsubsection is an event type (for
-example `packet_received`).
+Some data fields use complex datastructures. These are represented as enums or
+re-usable definitions, which are grouped together on the bottom of this document
+for clarity.
 
-For each event type, its importance and data definition is laid out, often
-accompanied by possible values for the optional "trigger" field. For the
-definition and semantics of "importance" and "trigger", see the main schema
-document.
-
-Most of the complex datastructures, enums and re-usable definitions are grouped
-together on the bottom of this document for clarity.
-
-## Links to the main schema
-
-This document re-uses all the fields defined in the main qlog schema (e.g., name,
-category, type, data, group_id, protocol_type, the time-related fields,
-importance, RawInfo, etc.).
-
-One entry in the "protocol_type" qlog array field MUST be "QUIC" if events from
-this document are included in a qlog trace.
+When any event from this document is included in a qlog trace, the
+"protocol_type" qlog array field MUST contain an entry with the value "QUIC".
 
 When the qlog "group_id" field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
@@ -113,9 +104,7 @@ used as the qlog filename or file identifier, potentially suffixed by the
 vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
 trace of the connection with ODCID abcd1234).
 
-### Raw packet and frame information
-
-This document re-uses the definition of the RawInfo data class from {{QLOG-MAIN}}.
+## Raw packet and frame information
 
 Note:
 
@@ -145,7 +134,7 @@ are intentionally preserved in the event definitions. Even though this can lead 
 duplicate data when the full RawInfo is logged, it allows a more direct mapping of
 the QUIC specifications to qlog, making it easier for users to interpret.
 
-### Events not belonging to a single connection {#handling-unknown-connections}
+## Events not belonging to a single connection {#handling-unknown-connections}
 
 For several types of events, it is sometimes impossible to tie them to a specific
 conceptual QUIC connection (e.g., a packet_dropped event triggered because the
