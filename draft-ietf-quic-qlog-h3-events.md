@@ -949,6 +949,14 @@ QPACKTableType = "static" / "dynamic"
 
 # Change Log
 
+## Since draft-ietf-quic-qlog-h3-events-02:
+
+* TODO
+
+## Since draft-ietf-quic-qlog-h3-events-01:
+
+* No changes - new draft to prevent expiration
+
 ## Since draft-ietf-quic-qlog-h3-events-00:
 
 * Change the data definition language from TypeScript to CDDL (#143)

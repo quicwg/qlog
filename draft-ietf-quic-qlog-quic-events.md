@@ -1878,6 +1878,15 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
 # Change Log
 
+## Since draft-ietf-qlog-quic-events-02:
+
+* Renamed key_retired to key_discarded (#185)
+* Add fields and events for DPLPMTUD (#135)
+
+## Since draft-ietf-qlog-quic-events-01:
+
+* Added Stateless Reset Token type (#122)
+
 ## Since draft-ietf-qlog-quic-events-00:
 
 * Change the data definition language from TypeScript to CDDL (#143)

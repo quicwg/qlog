@@ -1890,6 +1890,14 @@ TODO: primarily the .well-known URI
 
 # Change Log
 
+## Since draft-ietf-quic-qlog-main-schema-03:
+
+* TODO
+
+## Since draft-ietf-quic-qlog-main-schema-02:
+
+* No changes - new draft to prevent expiration
+
 ## Since draft-ietf-quic-qlog-main-schema-01:
 
 * Change the data definition language from TypeScript to CDDL (#143)
