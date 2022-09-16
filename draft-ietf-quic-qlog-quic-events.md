@@ -15,12 +15,13 @@ author:
   -
     ins: R. Marx
     name: Robin Marx
-    org: KU Leuven
-    email: robin.marx@kuleuven.be
+    org: Akamai
+    email: rmarx@akamai.com
+    role: editor
   -
     ins: L. Niccolini
     name: Luca Niccolini
-    org: Facebook
+    org: Meta
     email: lniccolini@fb.com
     role: editor
   -
@@ -1959,7 +1960,8 @@ TBD
 
 # Acknowledgements
 
-Much of the initial work by Robin Marx was done at Hasselt University.
+Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.
 
 Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
 Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy
