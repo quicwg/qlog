@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-09-15T01:18:36.839114+00:00",
+  "timestamp": "2022-09-18T01:17:49.942171+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3906,7 +3906,7 @@
       ],
       "body": "With many iterations of my qlog implementation running in production now, it would be helpful if there was a way to tell which version of my code generated any particular qlog file (even better if qvis could display it somewhere).\r\n\r\nI suggest adding an optional `code_version` to the `Trace` container. Implementations could fill this field with whatever they want. In quic-go, I'd probably use something like `quic-go $(git describe --long --dirty)`.",
       "createdAt": "2021-02-07T11:14:07Z",
-      "updatedAt": "2021-08-18T10:24:39Z",
+      "updatedAt": "2022-09-16T14:39:44Z",
       "closedAt": null,
       "comments": [
         {
@@ -3929,6 +3929,13 @@
           "body": "> Note that it's in my opinion perfectly acceptable to have qvis display a field that isn't defined in the qlog docs as such\r\n\r\nAre you suggesting that qvis defines additional fields / events? That's an interesting idea.\r\nIn this case though, I'd argue that `environment` (which is a lot better name than the `code_version` I suggested) is something that would be a useful thing to display for a variety of tools, so it would probably make sense to define it here.",
           "createdAt": "2021-02-09T13:57:56Z",
           "updatedAt": "2021-02-09T13:57:56Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, I remain of the opinion that it would not make much sense to standardize this (whether it's Configuration, Summary, Environment or a combination thereof). The proposed new field in #208 as simply a generic text value reinforces that opinion. \r\n\r\nHowever, if we do want to do this, I'd propose to just merge all of this into a single field of a generic object type, i.e.,:\r\n\r\n```\r\nBikesheddedTypeName = {\r\n    * text => any\r\n}\r\n```\r\n\r\nWhere people can go crazy adding `configuration`, `environment`, etc. members as they see fit. This feels more flexible than having a `text` field. \r\n\r\nFinally, #208 only adds this to the Trace object, not TraceSeq. Any chosen solution should be enforced on both trace types. ",
+          "createdAt": "2022-09-16T14:39:44Z",
+          "updatedAt": "2022-09-16T14:39:44Z"
         }
       ]
     },
@@ -5917,9 +5924,24 @@
       "labels": [],
       "body": "The section on I-JSON notes serialization concerns about 64-bit numbers that might be required for protocols like QUIC or HTTP/3.\r\n\r\nIt then says:\r\n\r\n> Concretely, the following definition of uint64 should override the original and (web-based) tools should take into account that a uint64 field can be either a number or string.\r\n\r\n> uint64 = text / uint .size 8\r\n\r\nI find this confusing. This document defines a custom `unit64` itself. It's not entirely clear when the above override applies or not.",
       "createdAt": "2022-09-12T18:13:17Z",
-      "updatedAt": "2022-09-12T18:13:17Z",
+      "updatedAt": "2022-09-16T15:26:19Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I agree it can be confusing. \r\n\r\nThe intent is to say that, when outputting qlog intended for web browser-based tools (like qvis), implementers MAY also use text instead of uint when encoding uint64 values, because of the I-JSON restrictions.\r\n\r\nSimilarly, web based tool builders SHOULD take into account that uint64 values can be encoded as text values. \r\n\r\nI'm not sure how to best alter the text to make that clearer though...",
+          "createdAt": "2022-09-16T15:00:47Z",
+          "updatedAt": "2022-09-16T15:00:47Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "The constraints make sense, I just think they could be missed by implementers, which might be unfortunate. \r\n\r\nTo match that intent, maybe it would be clearer to put the optionalilty only in the single definition of uint64 in Section 1.1.1 and explain to people the considerations in user integer types with respect to serialization. Something like\r\n\r\n> Serialization formats and/or serialization/parsing implementations may not be able to handle the full range of values permitted by a 64-bit number. For example, JavaScript without BigInt extensions supports a maximum value of (2**53)-1; see Appendix E of [CDDL]. Some protocols, such as QUIC and HTTP/3, support integer values up to (2^62)-1. In order to represent these large values in qlog, the value can be encoded as a string.\r\n\r\nStructured fields describes the constraint in a similar way - https://www.rfc-editor.org/rfc/rfc8941.html#section-3.3.1-6",
+          "createdAt": "2022-09-16T15:26:19Z",
+          "updatedAt": "2022-09-16T15:26:19Z"
+        }
+      ]
     },
     {
       "number": 230,
@@ -5929,13 +5951,23 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "rmarx"
+      ],
       "labels": [],
       "body": "In the main schema document, there's a a chunk of text that says:\r\n\r\n> The main general CDDL syntax conventions in this document a reader should be aware of for easy reading comprehension are:\r\n>\r\n> // list of things\r\n\r\nThe danger with restating things like this is that there is some subtle problem or incompatibility with the canonical CDDL source citation. I appreciate the QUIC WG might not be familiar with this syntax, so it's handy. But the long-term problems a more insidious. Consider replacing it with deep links to CDDL syntax, or sticking it behind a note that it will be removed prior to publication.",
       "createdAt": "2022-09-12T18:23:05Z",
-      "updatedAt": "2022-09-12T18:23:05Z",
+      "updatedAt": "2022-09-16T15:02:09Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Yes, the intent is to remove this prior to publication. It's just there to make early adoption easier for now. \r\n\r\nWill look up how to properly add such a note (not sure if there's something default in the kramdown for that) and add it.",
+          "createdAt": "2022-09-16T15:02:05Z",
+          "updatedAt": "2022-09-16T15:02:05Z"
+        }
+      ]
     },
     {
       "number": 233,
@@ -5949,7 +5981,31 @@
       "labels": [],
       "body": "Across the qlog docs, there's ~50 instances of the word \"we\", compared to 1 in RFC 9000.\r\n\r\nWe (pun intended) need to rephrase the specification to move away from that style. \r\n\r\nFor example,\r\n\r\n> To aid in this decision making, we recommend that each event SHOULD have an\r\n\"importance indicator\" with one of three values, in decreasing order of importance\r\nand expected usage:\r\n\r\ncan be rewritten as\r\n\r\n> To aid in this decision making, each event SHOULD have an\r\n\"importance indicator\" with one of three values, in decreasing order of importance\r\nand expected usage:\r\n\r\nOr, this example\r\n\r\n> ; but for many protocol fields we want to be more restrictive\r\n; and explicit\r\n\r\ncan be rewritten as\r\n\r\n> but many qlog fields benefit from more restrictive integer types\r\n\r\nPS. a lot of these are in text that might be due to the cutting room floor anyway. But tidying up the style sooner everywhere is a faster way to resolve the problem while we think about what to keep or cut.",
       "createdAt": "2022-09-12T19:07:23Z",
-      "updatedAt": "2022-09-12T19:07:23Z",
+      "updatedAt": "2022-09-16T14:44:41Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Yes, I of course fully agree. A lot of the prose is written in faux academic paper style and should be updated to RFC-style. I could definitely use some pointers on how to best approach that, and the examples above help with that!",
+          "createdAt": "2022-09-16T14:44:41Z",
+          "updatedAt": "2022-09-16T14:44:41Z"
+        }
+      ]
+    },
+    {
+      "number": 236,
+      "id": "I_kwDOCrLn6M5SEQy6",
+      "title": "HTTPStreamType: why do we have an `old` and a `new` fields? .",
+      "url": "https://github.com/quicwg/qlog/issues/236",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Sorry if that's a stupid question, but why do we have an `old` and a `new` field here? I thought you can only set it once.\r\n\r\n_Originally posted by @marten-seemann in https://github.com/quicwg/qlog/pull/227#pullrequestreview-1111456120_",
+      "createdAt": "2022-09-17T18:57:41Z",
+      "updatedAt": "2022-09-17T18:57:54Z",
       "closedAt": null,
       "comments": []
     }
@@ -8310,7 +8366,7 @@
       "labels": [],
       "body": "Fixes #136.",
       "createdAt": "2022-06-29T10:39:41Z",
-      "updatedAt": "2022-09-08T01:41:41Z",
+      "updatedAt": "2022-09-16T14:41:04Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "3909bbb9cd3b958b23528f40c9f191851ec26b6d",
@@ -8349,6 +8405,19 @@
           "body": "As @rmarx recommended on #136: could the `configuration` field above serve the same purpose? \r\n\r\nFrom the current text:\r\n```\r\nThe configuration field can be viewed as a generic metadata field that tools can\r\nfill with their own fields, based on per-tool logic. \r\n```\r\n",
           "createdAt": "2022-07-18T07:01:39Z",
           "updatedAt": "2022-07-18T07:01:39Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5CNW_s",
+          "commit": {
+            "abbreviatedOid": "64cea72"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "See comment on #136 ",
+          "createdAt": "2022-09-16T14:41:04Z",
+          "updatedAt": "2022-09-16T14:41:04Z",
           "comments": []
         }
       ]
@@ -8470,7 +8539,7 @@
       "labels": [],
       "body": "Add optional src and dst address for TransportPacketSent, TransportPacketReceived, TransportPacketDropped, TransportPacketBuffered\r\n\r\nFixes #57\r\n",
       "createdAt": "2022-07-18T05:49:15Z",
-      "updatedAt": "2022-07-18T16:08:04Z",
+      "updatedAt": "2022-09-16T13:44:23Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "3909bbb9cd3b958b23528f40c9f191851ec26b6d",
@@ -8488,6 +8557,13 @@
           "body": "Actually this should be for the Datagram events and not for Packet events \r\nTransportDatagramsSent\r\nTransportDatagramsReceived\r\nTransportDatagramDropped",
           "createdAt": "2022-07-18T16:08:04Z",
           "updatedAt": "2022-07-18T16:08:04Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "As mentioned in #57, I would rather see this (and some of the other events we have that list IPs/ports, like `ConnectivityConnectionStarted`) updated to a generic `PathInfo` struct (or similar).\r\n\r\nThis does depend a bit on how we approach migration events (as they probably want to re-use this too). (also depends on multipath approach, but since it looks like we're not doing that, we can skip it).\r\n\r\nIn short: this is not yet ready for review/merge atm :) ",
+          "createdAt": "2022-09-16T13:44:04Z",
+          "updatedAt": "2022-09-16T13:44:23Z"
         }
       ],
       "reviews": []
@@ -8926,7 +9002,7 @@
       "labels": [],
       "body": "Closes #204\n",
       "createdAt": "2022-09-09T13:59:34Z",
-      "updatedAt": "2022-09-09T14:05:59Z",
+      "updatedAt": "2022-09-16T14:25:23Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6521609d885b3ec8e2cc1dfdfb25d7ea09f0686c",
@@ -8938,7 +9014,21 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5CNRFp",
+          "commit": {
+            "abbreviatedOid": "1a15660"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "This was probably indeed a leftover from earlier days. Just checked RFC9114 and the enum seems to equal what's in there, so LGTM. \r\n\r\nNot merging yet because @lnicco is owner of the H3 doc. ",
+          "createdAt": "2022-09-16T14:24:53Z",
+          "updatedAt": "2022-09-16T14:25:23Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 223,
@@ -9065,24 +9155,26 @@
       "id": "PR_kwDOCrLn6M4-yZyY",
       "title": "Add CODEOWNERS",
       "url": "https://github.com/quicwg/qlog/pull/225",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Saves having to manually request reviews.\n",
       "createdAt": "2022-09-12T14:07:59Z",
-      "updatedAt": "2022-09-12T14:08:39Z",
+      "updatedAt": "2022-09-16T14:42:53Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b48b8c42380f1af2b1ca3f5444be9abac5f12618",
       "headRepository": "quicwg/qlog",
       "headRefName": "codeowners",
       "headRefOid": "e21ca63178955f24c72f13efe427cc502e5e4b9b",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-09-16T14:42:53Z",
+      "mergedAt": "2022-09-16T14:42:53Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "c4e3b386a4020e5cf67fc8e19adea152a3ae056e"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -9106,13 +9198,13 @@
       "labels": [],
       "body": "This is a subjective editorial change. The intent is to improve the\nreadability of the document and expose better how we expect people\nto use the \"name\" field. By splitting out the overview of events\nfrom the definitions themselves, we achieve those intents.\n",
       "createdAt": "2022-09-12T15:25:37Z",
-      "updatedAt": "2022-09-13T13:42:57Z",
+      "updatedAt": "2022-09-16T19:18:18Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b48b8c42380f1af2b1ca3f5444be9abac5f12618",
       "headRepository": "quicwg/qlog",
       "headRefName": "summary-table",
-      "headRefOid": "7e264460412d220129fcb436a33a14142d04571b",
+      "headRefOid": "9cb26e49221e2ca40cdfc7831785c700e688fa6a",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -9124,6 +9216,27 @@
           "body": "Easier to review as \r\n\r\n[HTML](https://quicwg.org/qlog/summary-table/draft-ietf-quic-qlog-quic-events.html)\r\n[diff](https://www.ietf.org/rfcdiff?url1=https://quicwg.github.io/qlog/draft-ietf-quic-qlog-quic-events.txt&url2=https://quicwg.github.io/qlog/summary-table/draft-ietf-quic-qlog-quic-events.txt)",
           "createdAt": "2022-09-12T15:31:42Z",
           "updatedAt": "2022-09-12T15:32:55Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "In general looks good, but I wonder if we should be pedantic about the link names / align them with the CDDL definition names.\r\n\r\nConcretely:\r\n\r\nThe CDDL definition ID for the `transport:parameters_set` event is currently `#transport-parametersset-def` while the link to the section in this PR is `#trans-parameters-set`.\r\n\r\nFurthermore, few of the other events in the transport category have the `trans` prefix in this PR, while they are consistently prefixed with `transport-` in the CDDL block names.\r\n\r\nI of course have a preference for consistency and alignment, otherwise I wouldn't post this, but it's not necessarily a hill I'm willing to die on. \r\n\r\nFinally, this should have accompanying and similar PRs for the main and H3 documents down the line (maybe make an issue so we don't forget those?)",
+          "createdAt": "2022-09-16T14:57:41Z",
+          "updatedAt": "2022-09-16T14:58:20Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I have no issue with switching to consistent names. \r\n\r\nInitially I wanted to make the table multi-column and to keep its identifiers short. That's not how it turned out, so I'll push a fixup.",
+          "createdAt": "2022-09-16T15:06:30Z",
+          "updatedAt": "2022-09-16T15:06:30Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> Finally, this should have accompanying and similar PRs for the main and H3 documents down the line (maybe make an issue so we don't forget those?)\r\n\r\nYes. I didn't want to invest any more effort if the editor team didn't like this approach. I'd suggest we refine this PR, get it merged, and then update the other documents using this as a template.",
+          "createdAt": "2022-09-16T15:08:28Z",
+          "updatedAt": "2022-09-16T15:08:28Z"
         }
       ],
       "reviews": []
@@ -9140,19 +9253,69 @@
       "labels": [],
       "body": "Closes #205\n",
       "createdAt": "2022-09-12T16:14:54Z",
-      "updatedAt": "2022-09-12T16:14:54Z",
+      "updatedAt": "2022-09-17T18:58:29Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "b48b8c42380f1af2b1ca3f5444be9abac5f12618",
+      "baseRefOid": "c4e3b386a4020e5cf67fc8e19adea152a3ae056e",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-unknown-stream-type",
-      "headRefOid": "4e16dcefed4e774b1414e35f4867d9ff19e00f98",
+      "headRefOid": "8b8fc3cb2cf9b1eeb1e8882ad06f1fbd8134ee24",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I wonder if this needs some way to set the raw stream type instead of just logging \"unknown\"\r\n\r\nWe have precedent for this in the quic-events with:\r\n\r\n```\r\nConnectionCloseFrame = {\r\n    frame_type: \"connection_close\"\r\n\r\n    ? error_space: ErrorSpace\r\n    ? error_code: TransportError / $ApplicationError / uint32\r\n    ? raw_error_code: uint32\r\n    ? reason: text\r\n\r\n    ; For known frame types, the appropriate \"frame_type\" string\r\n    ; For unknown frame types, the hex encoded identifier value\r\n    ? trigger_frame_type: uint64 / text\r\n}\r\n```\r\n\r\nand \r\n\r\n```\r\nUnknownFrame = {\r\n    frame_type: \"unknown\"\r\n    raw_frame_type: uint64\r\n\r\n    ? raw_length: uint32\r\n    ? raw: hexstring\r\n}\r\n```\r\n\r\nSo potentially adding something like this here could help:\r\n\r\n```\r\nHTTPUnknownFrame = {\r\n    frame_type: \"unknown\"\r\n    raw_frame_type: uint64\r\n}\r\n```\r\n\r\n(assuming the raw payload is logged as part of `frameParsed`)",
+          "createdAt": "2022-09-16T14:11:14Z",
+          "updatedAt": "2022-09-16T14:21:06Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Looging the unknown value seems like a good idea. But there's no frame parsing going on here, it's just the first varint on the stream. So I think we'd need instead\r\n\r\n```\r\nHTTPStreamTypeSet = {\r\n    ... all the existing stuff\r\n    \r\n    ; add \r\n    raw_stream_type: uint64\r\n``\r\n\r\nWDYT?\r\n",
+          "createdAt": "2022-09-16T14:32:43Z",
+          "updatedAt": "2022-09-16T14:32:43Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I seem to have been conflating StreamType with FrameType here in my suggestion... yours is of course much better.\r\n\r\nIf included in StreamTypeSet though, I'd make it an optional field (as the known types don't have to set it), so\r\n\r\n```\r\nHTTPStreamTypeSet = {\r\n    ... all the existing stuff\r\n    \r\n    ; This should only be present if the value of new is \"unknown\" \r\n    ? raw_stream_type: uint64\r\n}\r\n```\r\n",
+          "createdAt": "2022-09-16T14:48:19Z",
+          "updatedAt": "2022-09-16T14:48:29Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "oops I meant it to be optional, and failed. I'll update the PR a bit later to reflect your suggestion. Cheers.",
+          "createdAt": "2022-09-16T14:57:42Z",
+          "updatedAt": "2022-09-16T14:57:42Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Seems a valid question. Spun off to #236",
+          "createdAt": "2022-09-17T18:58:29Z",
+          "updatedAt": "2022-09-17T18:58:29Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5CP3l4",
+          "commit": {
+            "abbreviatedOid": "8b8fc3c"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Sorry if that's a stupid question, but why do we have an `old` and a `new` field here? I thought you can only set it once.",
+          "createdAt": "2022-09-17T17:32:11Z",
+          "updatedAt": "2022-09-17T17:32:11Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 228,
@@ -9295,24 +9458,26 @@
       "id": "PR_kwDOCrLn6M4-zvnU",
       "title": "Design goal wrt flexibiliy rephrasing",
       "url": "https://github.com/quicwg/qlog/pull/232",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "It reads weird, especially the use of MUST\n",
       "createdAt": "2022-09-12T18:50:33Z",
-      "updatedAt": "2022-09-12T18:58:33Z",
+      "updatedAt": "2022-09-16T14:04:55Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b48b8c42380f1af2b1ca3f5444be9abac5f12618",
       "headRepository": "quicwg/qlog",
       "headRefName": "dont-eg-and-normative-language",
       "headRefOid": "da80ee4d29f238aaa2902b34720d7b226311ad0c",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-09-16T14:04:55Z",
+      "mergedAt": "2022-09-16T14:04:55Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "37ea485015d175bf3372e23b56e804f82d4e816d"
+      },
       "comments": [],
       "reviews": [
         {
@@ -9326,6 +9491,114 @@
           "body": "",
           "createdAt": "2022-09-12T18:58:33Z",
           "updatedAt": "2022-09-12T18:58:33Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 234,
+      "id": "PR_kwDOCrLn6M4_GT--",
+      "title": "Update document editors info",
+      "url": "https://github.com/quicwg/qlog/pull/234",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Update employer info and add consistency.\r\n\r\n@lnicco wasn't sure the move to Meta also updates your email address or not. If yes: please push a commit!",
+      "createdAt": "2022-09-16T13:06:42Z",
+      "updatedAt": "2022-09-16T13:46:33Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "eeade4790278da70be5b2006d166b1721220c669",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "update-editors-2",
+      "headRefOid": "98cbe94845a95911d25da7f08e761f0de0ff3297",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5CM-wz",
+          "commit": {
+            "abbreviatedOid": "98cbe94"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-16T13:37:08Z",
+          "updatedAt": "2022-09-16T13:37:08Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 235,
+      "id": "PR_kwDOCrLn6M4_GZ4Q",
+      "title": "Update MTU event definitions",
+      "url": "https://github.com/quicwg/qlog/pull/235",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Updates #210 as that had some problems:\n\n- used `boolean` instead of `bool` for CDDL type in some of the definitions (not in others)...\n- Made a separate category for the `mtu_updated` event. It's debatable imo whether it belongs in `connectivity` or `transport`, but it shouldn't be its own thing. \n\nIn general, I feel #210 was approved/merged too soon and this type of things should be checked for future PRs of a similar type. ",
+      "createdAt": "2022-09-16T13:28:48Z",
+      "updatedAt": "2022-09-16T13:45:57Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "eeade4790278da70be5b2006d166b1721220c669",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "update-mtu",
+      "headRefOid": "7bee5705df3d1670fe9a6e60fc45ece0e8f2c6b2",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Changes look good to me.\r\n\r\n> In general, I feel https://github.com/quicwg/qlog/pull/210 was approved/merged too soon and this type of things should be checked for future PRs of a similar type.\r\n\r\nFirst of all, sorry for messing up the type name. I'm not sure I agree that it was merge too soon though, #210 was open for 3 months, and was approved by one of the editors. Sometimes it's better to make progress instead of not moving at all, even if some cleanup is necessary later.",
+          "createdAt": "2022-09-16T13:42:42Z",
+          "updatedAt": "2022-09-16T13:42:42Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@marten-seemann no problem, I mess up way worse than that :)\r\n\r\nLet me rephrase that to just \"approved\" too soon then, instead of \"merged\" too soon (which is again perfectly understandable with Lucas not used to watching for that type of issue, just wanted to indicate future approvals should). ",
+          "createdAt": "2022-09-16T13:45:57Z",
+          "updatedAt": "2022-09-16T13:45:57Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5CNAEH",
+          "commit": {
+            "abbreviatedOid": "7bee570"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-16T13:40:51Z",
+          "updatedAt": "2022-09-16T13:40:51Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5CNBoC",
+          "commit": {
+            "abbreviatedOid": "7bee570"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-16T13:44:41Z",
+          "updatedAt": "2022-09-16T13:44:41Z",
           "comments": []
         }
       ]
