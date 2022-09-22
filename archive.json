@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-09-18T01:17:49.942171+00:00",
+  "timestamp": "2022-09-22T01:12:30.624294+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -1908,7 +1908,7 @@
       ],
       "body": "When looking at a qlog at this time, if there is a certain event type missing, you don't know if it's because those events never occurred or if the implementation simply doesn't support/log that event type. \r\n\r\nThis is especially troublesome if you want to selectively enable/disable certain types to reduce overhead when you're doing targeted \"live\" debugging on a deployed system.\r\n\r\nThe simplest solution I can see is to add a new field to `configuration`, for example:\r\n\r\n> supportedEvents:Array\\<string\\> // each string is category:event_type (e.g., transport:packet_sent)\r\n\r\nSome bikeshedding can help to decide if we need two separate fields (supportedCategories separately for example) or if we can cut out the category in here completely (as there is little overlap in event names atm).\r\n\r\nThis would also be interesting for doing a fast \"is this trace compatible with this visualization\"-check in qvis and others tools. \r\n\r\nThanks to @mjoras for reporting.",
       "createdAt": "2020-03-28T10:36:52Z",
-      "updatedAt": "2020-11-02T19:49:42Z",
+      "updatedAt": "2022-09-21T09:22:19Z",
       "closedAt": null,
       "comments": [
         {
@@ -1924,6 +1924,13 @@
           "body": "I'm not sure I follow you here...\r\nIf the implementation doesn't support stateless_reset, it won't log them either in the first place, so them being absent from the `supportedEvents` list is the same.\r\n\r\nThis is not really intended to show what an implementation \"supports\" but more what is has \"enabled\". The situation is that as a user, you get a random qlog file in front of you, on which you need to do analysis. You're looking for the occurrence of a certain event type, but it isn't there. Is that because the event type wasn't being logged for this log (e.g., mvfst wants to selectively log only -some- of the supported event types to keep overhead down) or because it actually never occurred during the connection (e.g., signalling the bug you're looking for).\r\n\r\nCould you expand on the orthogonal versioning scheme? For your example of the `stateless_reset`, that would just be `draft-02` going forward from my viewpoint. \r\n\r\n\r\n\r\n",
           "createdAt": "2020-03-29T10:53:44Z",
           "updatedAt": "2020-03-29T10:53:44Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I think this can be resolved as 2 optional lists containing event category+type, or name. One list  declares what events were in scope to be logged, one that declares what events were actually logged.\r\n\r\nThis would allow for easier scanning of traces to determine if they have events of interest - I.e. speeding up finding 1 in 10,000 connections that fail or bwhave in a certain way",
+          "createdAt": "2022-09-21T09:22:19Z",
+          "updatedAt": "2022-09-21T09:22:19Z"
         }
       ]
     },
