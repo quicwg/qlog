@@ -426,15 +426,16 @@ For now, infer from other connectivity events and path_challenge/path_response f
 Importance: Extra
 
 ~~~ ccdl
-MTUUpdated = {
-  ? mtu: uint16
+ConnectivityMTUUpdated = {
+  ? old: uint16
+  new: uint16
 
   ; at some point, MTU discovery stops, as a "good enough"
   ; packet size has been found
   ? done: bool .default false
 }
 ~~~
-{: #mtu-updated-def title="MTUUpdated definition"}
+{: #connectivity-mtu-updated-def title="ConnectivityMTUUpdated definition"}
 
 This event indicates that the estimated Path MTU was updated. This happens as
 part of the Path MTU discovery process.
@@ -1347,6 +1348,7 @@ QuicEvents = ConnectivityServerListening /
              ConnectivityConnectionIDUpdated /
              ConnectivitySpinBitUpdated /
              ConnectivityConnectionStateUpdated /
+             ConnectivityMTUUpdated /
              SecurityKeyUpdated / SecurityKeyDiscarded /
              TransportVersionInformation / TransportALPNInformation /
              TransportParametersSet / TransportParametersRestored /
