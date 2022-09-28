@@ -1032,12 +1032,12 @@ Smaller changes:
 TBD
 
 # Acknowledgements
+{:numbered="false"}
 
 Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
 Universities.
 
-Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
-Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy
-Lainé, Kazu Yamamoto, Christian Huitema, and Lucas Pardue for their feedback and
-suggestions.
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
+Yamamoto, and Christian Huitema for their feedback and suggestions.
 

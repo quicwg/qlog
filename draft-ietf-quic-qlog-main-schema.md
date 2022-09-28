@@ -1956,11 +1956,12 @@ The idea is that qlog is able to encompass the use cases for both of these
 alternate designs and that all tooling converges on the qlog standard.
 
 # Acknowledgements
+{:numbered="false"}
 
 Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
 Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé and Lucas
-Pardue for their feedback and suggestions.
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, and Jeremy Lainé for
+their feedback and suggestions.
 
