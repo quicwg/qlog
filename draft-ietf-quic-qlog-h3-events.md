@@ -253,7 +253,7 @@ HTTPStreamTypeSet = {
     ? associated_push_id: uint64
 }
 
-HTTPStreamType =  "data" /
+HTTPStreamType =  "request" /
                   "control" /
                   "push" /
                   "reserved" /
