@@ -249,6 +249,9 @@ HTTPStreamTypeSet = {
     ? old: HTTPStreamType
     new: HTTPStreamType
 
+    ; only when new === "unknown"
+    ? raw_stream_type: uint64
+
     ; only when new === "push"
     ? associated_push_id: uint64
 }
@@ -257,6 +260,7 @@ HTTPStreamType =  "request" /
                   "control" /
                   "push" /
                   "reserved" /
+                  "unknown" /
                   "qpack_encode" /
                   "qpack_decode"
 ~~~
