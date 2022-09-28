@@ -1958,6 +1958,7 @@ Smaller changes:
 TBD
 
 # Acknowledgements
+{:numbered="false"}
 
 Much of the initial work by Robin Marx was done at Hasselt University.
 

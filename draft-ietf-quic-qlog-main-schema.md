@@ -1956,6 +1956,7 @@ The idea is that qlog is able to encompass the use cases for both of these
 alternate designs and that all tooling converges on the qlog standard.
 
 # Acknowledgements
+{:numbered="false"}
 
 Much of the initial work by Robin Marx was done at Hasselt University.
 
