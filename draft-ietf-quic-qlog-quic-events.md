@@ -1422,7 +1422,7 @@ PacketNumberSpace = "initial" / "handshake" / "application_data"
 ~~~ cddl
 PacketHeader = {
     packet_type: PacketType
-    ; only if packet_type === "initial" || "handshake" || 
+    ; only if packet_type === "initial" || "handshake" ||
     ;                         "0RTT" || "1RTT"
     ? packet_number: uint64
 
