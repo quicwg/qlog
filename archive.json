@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-09-22T01:12:30.624294+00:00",
+  "timestamp": "2022-09-29T01:20:13.662416+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -600,7 +600,7 @@
       ],
       "body": "The current text lists about 8 reasons for dropping packets.\r\nMicrosoft's implementation lists 60+ individual reasons (via @nibanks)\r\n\r\nSome of those:\r\n\r\n> LogDrop(\"Retry sent to server\");\r\nLogDrop(\"Already received server response\");\r\nLogDrop(\"No room for ODCID\");\r\nLogDrop(\"Invalid ODCID\");\r\nLogDrop(\"InitialToken alloc failed\");\r\nLogDrop(\"OrigCID alloc failed\");\r\nLogDrop(\"Max deferred datagram count reached\");\r\nLogDrop(\"Key no longer accepted\");\r\nLogDrop(\"SH packet during version negotiation\");\r\nLogDrop(\"Too short for HP\");\r\nLogDrop(\"Packet number too big\");\r\nLogDrop(\"Payload length less than encryption tag\");\r\nLogDrop(\"Generate new packet keys\");\r\nLogDrop(\"Decryption failure\");\r\nLogDrop(\"Invalid SH Reserved bits values\");\r\nLogDrop(\"Invalid LH Reserved bits values\");\r\nLogDrop(\"Duplicate packet number\");\r\nLogDrop(\"Key no longer accepted (batch)\");\r\nLogDrop(\"Failed to compute HP mask\");\r\nLogDrop(\"Different remote address\");\r\nLogDrop(\"Too small for Packet->Invariant\");\r\nLogDrop(\"LH no room for DestCID\");\r\nLogDrop(\"Zero length DestCID\");\r\nLogDrop(\"LH no room for SourceCID\");\r\nLogDrop(\"SH no room for DestCID\");\r\nLogDrop(\"DestCID don't match\");\r\nLogDrop(\"SourceCID don't match\");\r\nLogDrop(\"Greater than allowed max CID length\");\r\nLogDropWithValue(\"Invalid client/server packet type\", Packet->LH->Type);\r\nLogDrop(\"Invalid LH FixedBit bits values\");\r\nLogDrop(\"Long header has invalid token length\");\r\nLogDropWithValue(\"Long header has token length larger than buffer length\", TokenLengthVarInt);\r\nLogDrop(\"Long header has invalid payload length\");\r\nLogDropWithValue(\"Long header has length larger than buffer length\", LengthVarInt);\r\nLogDropWithValue(\"Long Header doesn't have enough room for packet number\",\r\nLogDrop(\"Invalid SH FixedBit bits values\");\r\nLogDrop(\"Non-initial packet not matched with a Connection\");\r\nLogDrop(\"Retry received after initial\");\r\n\r\nI feel that we don't need to list things in this level of detail in the qlog spec (the \"trigger\" field allows any text anyway). However, maybe some guidance text on this would be helpful and maybe a few more suggested triggers would be interesting. \r\n\r\n\r\n",
       "createdAt": "2019-10-09T09:29:23Z",
-      "updatedAt": "2022-09-08T15:02:26Z",
+      "updatedAt": "2022-09-28T16:50:02Z",
       "closedAt": null,
       "comments": [
         {
@@ -637,6 +637,27 @@
           "body": "just adding a datapoint in favor for being as specific as possible about the reason a packet got dropped on the floor\r\nin MVFST we have about 40 different reasons  and as @nibanks says they are useful to identify the specific line of code that drops the packet\r\n https://github.com/facebookincubator/mvfst/blob/main/quic/state/QuicTransportStatsCallback.h#L30-L73 \r\n \r\nThat being said encoding this information with a generic \"Packet Dropped\" event and an optional free-form reason/detailed_info field seems like the best course of action to me since it's not up to qlog specs to define which errors are useful and which ones are less useful.",
           "createdAt": "2022-09-08T14:54:56Z",
           "updatedAt": "2022-09-08T15:02:26Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Looking at this, I would agree keeping the list in qlog itself quite short and providing a generic field where implementations can add any type of freeform info they desire. \r\n\r\nFor this, we need 2 things:\r\n\r\n1. Decide WHICH of these current triggers on `packet_dropped` we want to keep (or do we want to rename/exchange some maybe?). Probably best coming from someone with a large deployment (@LPardue @nibanks @lnicco): \r\n\r\n```\r\n        \"key_unavailable\" /\r\n        \"unknown_connection_id\" /\r\n        \"header_parse_error\" /\r\n        \"payload_decrypt_error\" /\r\n        \"protocol_violation\" /\r\n        \"dos_prevention\" /\r\n        \"unsupported_version\" /\r\n        \"unexpected_packet\" /\r\n        \"unexpected_source_connection_id\" /\r\n        \"unexpected_version\" /\r\n        \"duplicate\" /\r\n        \"invalid_initial\"\r\n```\r\n\r\n2. Add a `details` field to the event. I have it as a JSON object instead of a `text` but I don't mind either way. \r\n\r\n```\r\nTransportPacketDropped = {\r\n    ; primarily packet_type should be filled here,\r\n    ; as other fields might not be parseable\r\n    ? header: PacketHeader\r\n\r\n    ? raw: RawInfo\r\n    ? datagram_id: uint32\r\n\r\n    ? details: {* text => any}\r\n\r\n    ; list of leftover triggers here:\r\n    ; ...\r\n}\r\n```\r\n\r\nI'd put the \"error type\" in the `details` field as well then @LPardue, feeling that the `trigger` can act as an \"error category\" indicator. ",
+          "createdAt": "2022-09-28T13:41:28Z",
+          "updatedAt": "2022-09-28T13:56:15Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "MEMBER",
+          "body": "Looking at our (currently 79) drop reasons in MsQuic, I think the following top-level categories would be reasonable:\r\n\r\n- Internal Error (not initialized, OOM, etc.)\r\n- Rejected (internal limits reached, ddos protection, unwilling to track more paths, duplicate)\r\n- Unsupported (unknown/unsupported version)\r\n- Invalid Packet (packet parsing/validation failed)\r\n- Connection Unknown (CID doesn't match)\r\n- Decryption Failure (decrypt failed or key unavailable)",
+          "createdAt": "2022-09-28T14:16:31Z",
+          "updatedAt": "2022-09-28T14:16:31Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I like Nicks categories. All I might add is a \"General\" category for anything else, where details can be added or not at operator discretion",
+          "createdAt": "2022-09-28T16:50:02Z",
+          "updatedAt": "2022-09-28T16:50:02Z"
         }
       ]
     },
@@ -1908,7 +1929,7 @@
       ],
       "body": "When looking at a qlog at this time, if there is a certain event type missing, you don't know if it's because those events never occurred or if the implementation simply doesn't support/log that event type. \r\n\r\nThis is especially troublesome if you want to selectively enable/disable certain types to reduce overhead when you're doing targeted \"live\" debugging on a deployed system.\r\n\r\nThe simplest solution I can see is to add a new field to `configuration`, for example:\r\n\r\n> supportedEvents:Array\\<string\\> // each string is category:event_type (e.g., transport:packet_sent)\r\n\r\nSome bikeshedding can help to decide if we need two separate fields (supportedCategories separately for example) or if we can cut out the category in here completely (as there is little overlap in event names atm).\r\n\r\nThis would also be interesting for doing a fast \"is this trace compatible with this visualization\"-check in qvis and others tools. \r\n\r\nThanks to @mjoras for reporting.",
       "createdAt": "2020-03-28T10:36:52Z",
-      "updatedAt": "2022-09-21T09:22:19Z",
+      "updatedAt": "2022-09-28T13:48:13Z",
       "closedAt": null,
       "comments": [
         {
@@ -1931,6 +1952,20 @@
           "body": "I think this can be resolved as 2 optional lists containing event category+type, or name. One list  declares what events were in scope to be logged, one that declares what events were actually logged.\r\n\r\nThis would allow for easier scanning of traces to determine if they have events of interest - I.e. speeding up finding 1 in 10,000 connections that fail or bwhave in a certain way",
           "createdAt": "2022-09-21T09:22:19Z",
           "updatedAt": "2022-09-21T09:22:19Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Especially from the perspective of streaming logs I'm not sure I see much value in a list of events that \"were actually logged\"? That would imply somehow keeping track of what you were logging and then, at the end of the file (if there is even such a thing in a streaming context) dumping those out? \r\n\r\nTools can get this by making a list of event names seen in the logs (either in a file or a streamed collection of individual events) and then comparing to the `supportedEvents` list (which you call \"in scope to be logged\" IIUC). \r\n\r\nI think I understand a bit more now though what @marten-seemann was saying that we don't need explicit `supported_versions` but that this can just be an internal convention/configuration based on `our_custom_qlog_configuration_version_nr_or_tag`. This would mean it's not tracked in the qlog file itself, which also has merit I would assume.\r\n\r\nAt this point, with an eye on keeping qlog simple and given that IIUC no-one has implemented this or something similar, would be to close this without action. \r\n\r\n\r\n",
+          "createdAt": "2022-09-28T13:33:01Z",
+          "updatedAt": "2022-09-28T13:33:01Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Good point. On one hand I think it could be useful to have a list of the events a particular instance is configured to produce if they happened, whatever we named it. On the other hand, my experience with netlogs is that having a huge list at the top of every file is annoying (the reason they have a list of events is different but the effect is quite similar). \r\n\r\nSuch a field seems easy enough to add as a custom extension for vendor needs, or a standard extension as follow on work. Therefore closing with no action seems fine to me.",
+          "createdAt": "2022-09-28T13:48:12Z",
+          "updatedAt": "2022-09-28T13:48:12Z"
         }
       ]
     },
@@ -3643,7 +3678,7 @@
       ],
       "body": "With draft-02, we moved packet_number to PacketHeader and used that field for all types of packets as well. \r\nHowever, packet_number is currently a required field, but Retry, Version Negotiation and Stateless Reset packets don't actually use packet numbers.\r\n\r\nI don't want to just make the packet_number field generally optional, since imo it shouldn't be for other packet types. Better (best?) solution is to add an explicit comment indicating the field MUST be omitted for the 3 exceptions and MUST be included for all others. ",
       "createdAt": "2021-01-27T13:10:01Z",
-      "updatedAt": "2022-09-08T08:08:12Z",
+      "updatedAt": "2022-09-28T16:46:03Z",
       "closedAt": null,
       "comments": [
         {
@@ -3659,6 +3694,27 @@
           "body": "The underlying problem here is that some fields only apply to some kind of headers. This is most obvious for the packet number, but it also applies to the Token (which is only carried on Initial packets), the Length (only on long header packets) and the SCID.\r\n\r\nIf we want to use a strict encoding scheme here, we'll probably have to define a new header for each and every packet type.",
           "createdAt": "2022-09-08T08:08:12Z",
           "updatedAt": "2022-09-08T08:08:12Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "At this point in time, I think I'd be fine with just making `packet_number` an optional field and adding comments saying that it of course should be logged if available.\r\n\r\nSplitting into several events seems icky just for this (especially not if you'd split it more than once as Marten indicates) and in the end implementers will still choose themselves which fields to log. If they don't include `packet_number` they probably don't need it for their use case (if they do, the lack of it becomes obvious quite immediately).\r\n\r\nThat doesn't detract libraries/implementations of the qlog schema (e.g., @LPardue's rust crate) to enforce this by including multiple types, but I wouldn't have this in qlog (at least not in my current thinking).\r\n\r\nIn short: I propose to change to `? packet_number: uint64`.\r\n",
+          "createdAt": "2022-09-28T14:01:35Z",
+          "updatedAt": "2022-09-28T14:01:35Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> In short: I propose to change to ? packet_number: uint64.\r\n\r\nSounds reasonable to me.",
+          "createdAt": "2022-09-28T16:41:42Z",
+          "updatedAt": "2022-09-28T16:41:42Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Optional packet number sounds good too. we already have other optional fields with the conditions of usage stated clearly. This is just another one",
+          "createdAt": "2022-09-28T16:46:03Z",
+          "updatedAt": "2022-09-28T16:46:03Z"
         }
       ]
     },
@@ -5796,7 +5852,7 @@
       "id": "I_kwDOCrLn6M5JxHhI",
       "title": "HTTPStreamType::Data",
       "url": "https://github.com/quicwg/qlog/issues/204",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -5805,8 +5861,8 @@
       "labels": [],
       "body": "What is this type supposed to represent? If it's a request stream, lets just call it that.",
       "createdAt": "2022-05-16T19:28:28Z",
-      "updatedAt": "2022-09-08T01:45:53Z",
-      "closedAt": null,
+      "updatedAt": "2022-09-28T14:42:56Z",
+      "closedAt": "2022-09-28T14:42:56Z",
       "comments": []
     },
     {
@@ -5814,7 +5870,7 @@
       "id": "I_kwDOCrLn6M5JxH0_",
       "title": "HTTPStreamType needs an unknown enumeration",
       "url": "https://github.com/quicwg/qlog/issues/205",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -5823,8 +5879,8 @@
       "labels": [],
       "body": "It's possible that a peer would open stream types of unknown type, and not in the reserved range. So let's fix that up.",
       "createdAt": "2022-05-16T19:29:37Z",
-      "updatedAt": "2022-09-08T01:46:01Z",
-      "closedAt": null,
+      "updatedAt": "2022-09-28T14:45:07Z",
+      "closedAt": "2022-09-28T14:45:07Z",
       "comments": []
     },
     {
@@ -5927,11 +5983,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "rmarx"
+      ],
       "labels": [],
       "body": "The section on I-JSON notes serialization concerns about 64-bit numbers that might be required for protocols like QUIC or HTTP/3.\r\n\r\nIt then says:\r\n\r\n> Concretely, the following definition of uint64 should override the original and (web-based) tools should take into account that a uint64 field can be either a number or string.\r\n\r\n> uint64 = text / uint .size 8\r\n\r\nI find this confusing. This document defines a custom `unit64` itself. It's not entirely clear when the above override applies or not.",
       "createdAt": "2022-09-12T18:13:17Z",
-      "updatedAt": "2022-09-16T15:26:19Z",
+      "updatedAt": "2022-09-28T13:07:25Z",
       "closedAt": null,
       "comments": [
         {
@@ -6012,7 +6070,71 @@
       "labels": [],
       "body": "Sorry if that's a stupid question, but why do we have an `old` and a `new` field here? I thought you can only set it once.\r\n\r\n_Originally posted by @marten-seemann in https://github.com/quicwg/qlog/pull/227#pullrequestreview-1111456120_",
       "createdAt": "2022-09-17T18:57:41Z",
-      "updatedAt": "2022-09-17T18:57:54Z",
+      "updatedAt": "2022-09-28T12:51:34Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This is a fair question.\r\n\r\nThis is most likely a copy-paste from one of the `*Updated` events (can't find evidence that this was once called StreamTypeUpdated though...)\r\n\r\nFor updates this makes sense, but if the StreamType is only ever set once after becoming known, it would be better to change the definition to e.g., (note, `raw_stream_type` is from #227) :\r\n\r\n```\r\nHTTPStreamTypeSet = {\r\n    ? owner: Owner\r\n    stream_id: uint64\r\n\r\n    stream_type: HTTPStreamType\r\n    ? raw_stream_type: uint64\r\n\r\n    ; only when stream_type === \"push\"\r\n    ? associated_push_id: uint64\r\n}\r\n```\r\n",
+          "createdAt": "2022-09-28T12:51:33Z",
+          "updatedAt": "2022-09-28T12:51:33Z"
+        }
+      ]
+    },
+    {
+      "number": 239,
+      "id": "I_kwDOCrLn6M5Sz3XJ",
+      "title": "Clean up connection states in connection_state_updated",
+      "url": "https://github.com/quicwg/qlog/issues/239",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "This QUIC event currently has a long list of possible connection states (both \"simple\" and \"full\"), but it hasn't been validated if these states are correct/logical wrt the final RFCs (list has been in there for a long while since early drafts). \r\n\r\n```\r\nConnectivityConnectionStateUpdated = {\r\n    ? old: ConnectionState / SimpleConnectionState\r\n    new: ConnectionState / SimpleConnectionState\r\n}\r\n\r\nConnectionState =\r\n    ; initial sent/received\r\n    \"attempted\" /\r\n    ; peer address validated by: client sent Handshake packet OR\r\n    ; client used CONNID chosen by the server.\r\n    ; transport-draft-32, section-8.1\r\n    \"peer_validated\" /\r\n    \"handshake_started\" /\r\n    ; 1 RTT can be sent, but handshake isn't done yet\r\n    \"early_write\" /\r\n    ; TLS handshake complete: Finished received and sent\r\n    ; tls-draft-32, section-4.1.1\r\n    \"handshake_complete\" /\r\n    ; HANDSHAKE_DONE sent/received (connection is now \"active\", 1RTT\r\n    ; can be sent). tls-draft-32, section-4.1.2\r\n    \"handshake_confirmed\" /\r\n    \"closing\" /\r\n    ; connection_close sent/received\r\n    \"draining\" /\r\n    ; draining period done, connection state discarded\r\n    \"closed\"\r\n\r\nSimpleConnectionState =\r\n    \"attempted\" /\r\n    \"handshake_started\" /\r\n    \"handshake_confirmed\" /\r\n    \"closed\"\r\n```\r\n\r\nUnlike for [Stream states](https://www.rfc-editor.org/rfc/rfc9000.html#name-stream-states) there doesn't seem to be a clear flow graph for Connection states in RFC9000, so it's not easy to distill something \"RFC-esque\". \r\n\r\nMy gut feeling would be to just keep the SimpleConnectionState and remove the rest, but that does miss some info...\r\n\r\nThis could use input from someone with deployment experience that wants to track connection state in this way. CC @LPardue @marten-seemann @lnicco ",
+      "createdAt": "2022-09-28T13:05:45Z",
+      "updatedAt": "2022-09-28T13:18:43Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Seems like the qlog crate didn't implement this properly, at the time of writing I only support the `ConnectionState` type. We don't actually generate any connectivity event types is quiche yet but could in future. If we did, I suspect having the option to log a value from `ConnectionState` would be useful. Especially the draining to closed transition, which seems to catch people out.\r\n\r\nI'd probably be in favor of a single `ConnectionState` type and we can bikeshed some more on what values are actually kept inside that. Having both types seems odd, especially as one is a subset of the other.",
+          "createdAt": "2022-09-28T13:18:42Z",
+          "updatedAt": "2022-09-28T13:18:42Z"
+        }
+      ]
+    },
+    {
+      "number": 241,
+      "id": "I_kwDOCrLn6M5Sz_HT",
+      "title": "Check that we can log version mismatch errors appropriately",
+      "url": "https://github.com/quicwg/qlog/issues/241",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "As noted in https://github.com/quicwg/qlog/pull/138#issuecomment-801995115, version mismatch problems causing a connection close are logged in 3 ways currently:\r\n\r\n1. with a `version_mismatch` trigger value in `connection_closed`\r\n2. by logging the on the wire versions in `packet_sent` and `packet_received` `.supported_versions`\r\n3. by emitting a separate `version_information` event grouping both external and internal (see below)\r\n\r\n```\r\nTransportVersionInformation = {\r\n    ? server_versions: [+ QuicVersion]\r\n    ? client_versions: [+ QuicVersion]\r\n    ? chosen_version: QuicVersion\r\n}\r\n```\r\n\r\nThis feels clunky, but probably gets the job done, with 1 proposed change:\r\nCurrently QuicVersion is defined as `: hexstring` and I would define it as `: hexstring / \"none\"` to support the mismatch case explicitly in that event as well (currently you'd omit the `chosen_version` field to signal the same). \r\n\r\nAnother change we could do is to add `? supported_versions: [+ QuicVersion]` to the `server_listening` event to make it more explicit which versions a server supports at startup (currently no real way to indicate that). Not sure this is crucial though.\r\n\r\n-------------------\r\n\r\nOne of the main points however is that I'm not sure this:\r\n\r\n1. allows logging of all the possible flows with the [VersionNegotiation extension ](https://www.ietf.org/archive/id/draft-ietf-quic-version-negotiation-10.html). Maybe someone who's implemented that logic can give some insight? CC @huitema\r\n \r\n2. should even be an issue for the qlog documents (as we're [leaning towards](https://github.com/quicwg/qlog/issues/124#issuecomment-1240048715) having separate qlog documents for separate QUIC features/extensions). CC @LPardue \r\n\r\n\r\n\r\n",
+      "createdAt": "2022-09-28T13:25:39Z",
+      "updatedAt": "2022-09-28T13:25:39Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 242,
+      "id": "I_kwDOCrLn6M5S0nSQ",
+      "title": "revisit old / new fields in various events",
+      "url": "https://github.com/quicwg/qlog/issues/242",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "One might argue that having an `old` field doesn\u2019t make any sense, since you can just have a look at the last event to see what the value was.\r\n\r\nWe should consider removing the `old` field (and maybe renaming the `new` field).",
+      "createdAt": "2022-09-28T15:03:56Z",
+      "updatedAt": "2022-09-28T15:03:56Z",
       "closedAt": null,
       "comments": []
     }
@@ -6907,7 +7029,7 @@
       "labels": [],
       "body": "When a client receives a Version Negotiation packet indicating that there's no commonly supported version, it aborts the connection attempt. Currently, qlog doesn't allow to log this.",
       "createdAt": "2021-03-15T02:43:58Z",
-      "updatedAt": "2021-06-02T12:12:27Z",
+      "updatedAt": "2022-09-28T13:26:17Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "d4b62cd84b73338c8be1b749f7686cccd2754967",
@@ -6932,6 +7054,13 @@
           "body": "I think my intention here was that:\r\n- client logs `connection_closed` with trigger of value `version_mismatch` (which is already in -02, though potentially not perfectly named). Did you maybe miss that trigger? \r\n- to know which versions were offered and supported by both sides, you'd use the `version_information` event and `supported_versions` fields of `packet_sent/received` (see discussion in https://github.com/quiclog/internet-drafts/issues/75)\r\n\r\nI agree this is slightly more tedious than having all of that together in a single event, but IIUC your last reply here, that isn't very critical. \r\n",
           "createdAt": "2021-03-18T14:55:25Z",
           "updatedAt": "2021-03-18T14:55:25Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@marten-seemann I'm not sure how to proceed on this one. From my perspective, my approach in the previous comment should be sufficient and this PR can be closed?\r\n\r\nHowever, I did notice a few more aspects around this that I listed in #241. I suggest closing this PR and continuing discussion on that issue. \r\n",
+          "createdAt": "2022-09-28T13:26:16Z",
+          "updatedAt": "2022-09-28T13:26:16Z"
         }
       ],
       "reviews": []
@@ -9002,24 +9131,26 @@
       "id": "PR_kwDOCrLn6M4-rmP-",
       "title": "Rename HTTPStreamType::data to HTTPStreamType::request",
       "url": "https://github.com/quicwg/qlog/pull/222",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Closes #204\n",
       "createdAt": "2022-09-09T13:59:34Z",
-      "updatedAt": "2022-09-16T14:25:23Z",
+      "updatedAt": "2022-09-28T14:42:58Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6521609d885b3ec8e2cc1dfdfb25d7ea09f0686c",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-data-stream-to-request",
       "headRefOid": "1a15660b54c4f8390edc86c82cbb23e5e4920b05",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-09-28T14:42:55Z",
+      "mergedAt": "2022-09-28T14:42:55Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "f6de0d6bed6d18790ee4d85a066115c5c7f6fb76"
+      },
       "comments": [],
       "reviews": [
         {
@@ -9112,11 +9243,15 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [
+        "design"
+      ],
       "body": "Avoid confusing use of QUIC's UnknownFrame type.\n\nFixes #201\n",
       "createdAt": "2022-09-09T14:04:58Z",
-      "updatedAt": "2022-09-09T16:25:12Z",
+      "updatedAt": "2022-09-28T14:43:51Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b48b8c42380f1af2b1ca3f5444be9abac5f12618",
@@ -9253,24 +9388,26 @@
       "id": "PR_kwDOCrLn6M4-zDYX",
       "title": "Add unknown HTTPStreamType",
       "url": "https://github.com/quicwg/qlog/pull/227",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Closes #205\n",
       "createdAt": "2022-09-12T16:14:54Z",
-      "updatedAt": "2022-09-17T18:58:29Z",
+      "updatedAt": "2022-09-28T14:45:08Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "c4e3b386a4020e5cf67fc8e19adea152a3ae056e",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-unknown-stream-type",
       "headRefOid": "8b8fc3cb2cf9b1eeb1e8882ad06f1fbd8134ee24",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-09-28T14:45:05Z",
+      "mergedAt": "2022-09-28T14:45:05Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "0a7340c403a8df2a2e94fb42322dd2db2f770100"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -9442,11 +9579,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "rmarx"
+      ],
       "labels": [],
       "body": "There's too much text here that doesn't aid the reader. Delete it to be\nclear that we're using JSON as the notational convention for examples.\n\nIf this text was valuable, it should be somewhere else.\n",
       "createdAt": "2022-09-12T18:34:00Z",
-      "updatedAt": "2022-09-12T18:34:00Z",
+      "updatedAt": "2022-09-28T14:57:37Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b48b8c42380f1af2b1ca3f5444be9abac5f12618",
@@ -9458,7 +9597,28 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5C_Kb5",
+          "commit": {
+            "abbreviatedOid": "d231c95"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-09-28T14:54:51Z",
+          "updatedAt": "2022-09-28T14:54:52Z",
+          "comments": [
+            {
+              "originalPosition": 14,
+              "body": "We'll keep the definition of serialization example using JSON. But we need to keep the talk about serialization considerations somewhere else",
+              "createdAt": "2022-09-28T14:54:51Z",
+              "updatedAt": "2022-09-28T14:54:52Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 232,
@@ -9507,24 +9667,26 @@
       "id": "PR_kwDOCrLn6M4_GT--",
       "title": "Update document editors info",
       "url": "https://github.com/quicwg/qlog/pull/234",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Update employer info and add consistency.\r\n\r\n@lnicco wasn't sure the move to Meta also updates your email address or not. If yes: please push a commit!",
       "createdAt": "2022-09-16T13:06:42Z",
-      "updatedAt": "2022-09-16T13:46:33Z",
+      "updatedAt": "2022-09-28T14:48:15Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "eeade4790278da70be5b2006d166b1721220c669",
       "headRepository": "quicwg/qlog",
       "headRefName": "update-editors-2",
       "headRefOid": "98cbe94845a95911d25da7f08e761f0de0ff3297",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2022-09-28T14:48:06Z",
+      "mergedAt": "2022-09-28T14:48:06Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "c3e2f5872655f33cbad718d40f28a36e3bb855ab"
+      },
       "comments": [],
       "reviews": [
         {
@@ -9554,13 +9716,13 @@
       "labels": [],
       "body": "Updates #210 as that had some problems:\n\n- used `boolean` instead of `bool` for CDDL type in some of the definitions (not in others)...\n- Made a separate category for the `mtu_updated` event. It's debatable imo whether it belongs in `connectivity` or `transport`, but it shouldn't be its own thing. \n\nIn general, I feel #210 was approved/merged too soon and this type of things should be checked for future PRs of a similar type. ",
       "createdAt": "2022-09-16T13:28:48Z",
-      "updatedAt": "2022-09-16T13:45:57Z",
+      "updatedAt": "2022-09-28T16:30:15Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "eeade4790278da70be5b2006d166b1721220c669",
       "headRepository": "quicwg/qlog",
       "headRefName": "update-mtu",
-      "headRefOid": "7bee5705df3d1670fe9a6e60fc45ece0e8f2c6b2",
+      "headRefOid": "4cb63300644c3188eeb6087fe475fa5e24c41fb4",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -9579,6 +9741,13 @@
           "body": "@marten-seemann no problem, I mess up way worse than that :)\r\n\r\nLet me rephrase that to just \"approved\" too soon then, instead of \"merged\" too soon (which is again perfectly understandable with Lucas not used to watching for that type of issue, just wanted to indicate future approvals should). ",
           "createdAt": "2022-09-16T13:45:57Z",
           "updatedAt": "2022-09-16T13:45:57Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "From the discussion in #236, it seems better to keep this consistent with other `*Updated` events.\r\n\r\nAlso noticed I forgot to prefix the event with Connectivity and add it to the CDDL list on the bottom...",
+          "createdAt": "2022-09-28T13:01:08Z",
+          "updatedAt": "2022-09-28T13:01:08Z"
         }
       ],
       "reviews": [
@@ -9606,6 +9775,184 @@
           "body": "",
           "createdAt": "2022-09-16T13:44:41Z",
           "updatedAt": "2022-09-16T13:44:41Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5C-kF0",
+          "commit": {
+            "abbreviatedOid": "4cb6330"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-28T13:30:29Z",
+          "updatedAt": "2022-09-28T13:30:29Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5C_N6P",
+          "commit": {
+            "abbreviatedOid": "4cb6330"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-28T15:02:36Z",
+          "updatedAt": "2022-09-28T15:02:36Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5C_w21",
+          "commit": {
+            "abbreviatedOid": "4cb6330"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-28T16:30:15Z",
+          "updatedAt": "2022-09-28T16:30:15Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 237,
+      "id": "PR_kwDOCrLn6M4_xqAH",
+      "title": "Flatten h3 and qpack event definition ToC, add summary table",
+      "url": "https://github.com/quicwg/qlog/pull/237",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2022-09-28T12:51:58Z",
+      "updatedAt": "2022-09-28T16:29:18Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c4e3b386a4020e5cf67fc8e19adea152a3ae056e",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "flatten-h3-toc-add-event-summary",
+      "headRefOid": "9bc9d52d38c6670c5dca9026b398d22aefa62f5d",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5C_wih",
+          "commit": {
+            "abbreviatedOid": "9bc9d52"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-28T16:29:18Z",
+          "updatedAt": "2022-09-28T16:29:18Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 238,
+      "id": "PR_kwDOCrLn6M4_xrhF",
+      "title": "Remove editors from acknowledgements",
+      "url": "https://github.com/quicwg/qlog/pull/238",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2022-09-28T12:56:26Z",
+      "updatedAt": "2022-09-28T14:50:17Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c4e3b386a4020e5cf67fc8e19adea152a3ae056e",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "less-self-appreciation",
+      "headRefOid": "29445324bb11d6b00e804580c6c9510c015e5a2c",
+      "closedAt": "2022-09-28T14:50:14Z",
+      "mergedAt": "2022-09-28T14:50:14Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "c5a659fb9da4772daf0728c561372e75629dfd3c"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5C_IO1",
+          "commit": {
+            "abbreviatedOid": "2944532"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-28T14:50:02Z",
+          "updatedAt": "2022-09-28T14:50:02Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5C_IWg",
+          "commit": {
+            "abbreviatedOid": "2944532"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-28T14:50:17Z",
+          "updatedAt": "2022-09-28T14:50:17Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 240,
+      "id": "PR_kwDOCrLn6M4_xv8M",
+      "title": "Remove old and new fields from HTTPStreamTypeSet",
+      "url": "https://github.com/quicwg/qlog/pull/240",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [
+        "design"
+      ],
+      "body": "Builds on #227, which should be merged first.\r\n\r\nFixes #236\r\n",
+      "createdAt": "2022-09-28T13:09:58Z",
+      "updatedAt": "2022-09-28T14:51:27Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c4e3b386a4020e5cf67fc8e19adea152a3ae056e",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "h3-stream-type-old-is-old",
+      "headRefOid": "094ae4571107661467594d756ad4b18d5fbb4c7a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5C_I4T",
+          "commit": {
+            "abbreviatedOid": "094ae45"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-28T14:51:27Z",
+          "updatedAt": "2022-09-28T14:51:27Z",
           "comments": []
         }
       ]
