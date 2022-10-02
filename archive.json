@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-09-29T01:20:13.662416+00:00",
+  "timestamp": "2022-10-02T01:23:19.585812+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -42,6 +42,11 @@
       "name": "discuss",
       "description": "needs further discussion",
       "color": "CA53CA"
+    },
+    {
+      "name": "ask-3rd-party",
+      "description": "",
+      "color": "d93f0b"
     }
   ],
   "issues": [
@@ -1129,7 +1134,7 @@
       "id": "MDU6SXNzdWU1NTE5MDYyODU=",
       "title": "Think about usage in proxies",
       "url": "https://github.com/quicwg/qlog/issues/42",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -1138,8 +1143,8 @@
       ],
       "body": "If qlog is used on a proxy, the question becomes what vantage_point it should use for its traces, since it's now simultaneously accepting and opening connections, and thus behaves as both a client and a server.\r\n\r\nOne approach would be to have (two) separate traces with separate vantage_points, but if there is a 1-to-1 mapping between client -> proxy -> origin connections, it -might- make sense to log everything into one trace (though I would need to reflect more on this). \r\n\r\nIn this latter case, it might make sense to add a \"role\" or \"vantage_point\" indication to events like `connection_started`.\r\n\r\nThanks to @hawkinsw for reporting.\r\nMaybe @LPardue has some comments, given his experience with the proxy-ing use case? ",
       "createdAt": "2020-01-19T11:08:11Z",
-      "updatedAt": "2022-09-08T07:18:09Z",
-      "closedAt": null,
+      "updatedAt": "2022-09-29T14:01:30Z",
+      "closedAt": "2022-09-29T14:01:30Z",
       "comments": [
         {
           "author": "LPardue",
@@ -1154,6 +1159,13 @@
           "body": "I agree with @LPardue that this should live in a qlog extension. Maybe CONNECT-UDP would be a good candidate to define such an extension, once the qlog RFC is on its way.",
           "createdAt": "2022-09-08T07:18:09Z",
           "updatedAt": "2022-09-08T07:18:09Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agreed with both to close with no action for now.\r\nI'd say since e.g., Cloudflare is using qlog in this proxied setting already, it's probably somewhat possible to employ it usefully today and can be extended to be more ergonomic later. ",
+          "createdAt": "2022-09-29T14:01:29Z",
+          "updatedAt": "2022-09-29T14:01:29Z"
         }
       ]
     },
@@ -1920,7 +1932,7 @@
       "id": "MDU6SXNzdWU1ODk1NTEzNzU=",
       "title": "Allow listing which events were supported by the logger",
       "url": "https://github.com/quicwg/qlog/issues/72",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -1929,8 +1941,8 @@
       ],
       "body": "When looking at a qlog at this time, if there is a certain event type missing, you don't know if it's because those events never occurred or if the implementation simply doesn't support/log that event type. \r\n\r\nThis is especially troublesome if you want to selectively enable/disable certain types to reduce overhead when you're doing targeted \"live\" debugging on a deployed system.\r\n\r\nThe simplest solution I can see is to add a new field to `configuration`, for example:\r\n\r\n> supportedEvents:Array\\<string\\> // each string is category:event_type (e.g., transport:packet_sent)\r\n\r\nSome bikeshedding can help to decide if we need two separate fields (supportedCategories separately for example) or if we can cut out the category in here completely (as there is little overlap in event names atm).\r\n\r\nThis would also be interesting for doing a fast \"is this trace compatible with this visualization\"-check in qvis and others tools. \r\n\r\nThanks to @mjoras for reporting.",
       "createdAt": "2020-03-28T10:36:52Z",
-      "updatedAt": "2022-09-28T13:48:13Z",
-      "closedAt": null,
+      "updatedAt": "2022-09-29T13:54:23Z",
+      "closedAt": "2022-09-29T13:54:23Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -1966,6 +1978,13 @@
           "body": "Good point. On one hand I think it could be useful to have a list of the events a particular instance is configured to produce if they happened, whatever we named it. On the other hand, my experience with netlogs is that having a huge list at the top of every file is annoying (the reason they have a list of events is different but the effect is quite similar). \r\n\r\nSuch a field seems easy enough to add as a custom extension for vendor needs, or a standard extension as follow on work. Therefore closing with no action seems fine to me.",
           "createdAt": "2022-09-28T13:48:12Z",
           "updatedAt": "2022-09-28T13:48:12Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Closing for now, feel free to re-open if you have strong opinions later @marten-seemann or @mjoras. ",
+          "createdAt": "2022-09-29T13:54:23Z",
+          "updatedAt": "2022-09-29T13:54:23Z"
         }
       ]
     },
@@ -3165,7 +3184,7 @@
       "id": "MDU6SXNzdWU2OTQ4NjY2MDE=",
       "title": "Add certificate verification events",
       "url": "https://github.com/quicwg/qlog/issues/116",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -3176,8 +3195,8 @@
       ],
       "body": "In real deployments, getting some feedback on certificate validation events is useful (e.g., these are included in NetLog).\r\n\r\nI wonder if these can be done as triggers... but on what event would those triggers be logged then? Maybe on a connection close if validation fails? What if it succeeds? \r\n\r\nAs I've seen some discussion about these things being async and sometimes depend on remote fetches (e.g., for OCSP), it would probably be useful to have separate events though. \r\n\r\nI need to get a better overview of the types of events though to decide on how to log this. Probably add something simple for draft-02 and extend in -03. ",
       "createdAt": "2020-09-07T08:37:28Z",
-      "updatedAt": "2022-09-08T07:13:40Z",
-      "closedAt": null,
+      "updatedAt": "2022-09-29T14:02:57Z",
+      "closedAt": "2022-09-29T14:02:57Z",
       "comments": [
         {
           "author": "LPardue",
@@ -3192,6 +3211,13 @@
           "body": "This also seems to fall into the realm of a TLS qlog extension.",
           "createdAt": "2022-09-08T07:13:40Z",
           "updatedAt": "2022-09-08T07:13:40Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agreed to close with no action, as this leans more towards top-level Application or low-level TLS, neither of which we do (much of) today. ",
+          "createdAt": "2022-09-29T14:02:54Z",
+          "updatedAt": "2022-09-29T14:02:54Z"
         }
       ]
     },
@@ -3294,11 +3320,12 @@
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [
-        "future-versions"
+        "design",
+        "discuss"
       ],
       "body": "Depending on some TLS parameters, things might behave strangely on a QUIC level.\r\n\r\nFor example, TLS key shares can apparently use different \"group types\", e.g., p-256 or x25519 (this is somehow separate from the cipher it uses... I really need to brush up on my TLS understanding). The client chooses one of the groups that it thinks the server will support. If it doesn't the server will send an initial back, to which the client replies with another ClientHello using the correct group type, leading to a 2RTT QUIC handshake instead of 1RTT. An example can be seen in https://quic-tracker.info.ucl.ac.be/traces/20201101/2 (or if that's not longer available, a quic-tracker to mvfst connection setup, which seems to do this consistently).\r\n\r\nThis example above has already caught two separate researchers by surprise, and it should really be possible to expose this in qlog for easier debugging. \r\n\r\nIn general, I think we can do with providing more options for logging TLS-level information, but for that I first need to understand the variables better (or find someone to propose the concrete things to surface in qlog for that). ",
       "createdAt": "2020-11-02T15:05:32Z",
-      "updatedAt": "2022-09-08T07:12:51Z",
+      "updatedAt": "2022-09-29T14:06:36Z",
       "closedAt": null,
       "comments": [
         {
@@ -3314,6 +3341,13 @@
           "body": "If our motto is to keep things limited to what the 3 QUIC RFCs describe, this would be out of scope.\r\n\r\n> Applications can log what they like with their own events. \r\n\r\nI'm not sure if this really constitutes an application-layer event, as the TLS stack is most likely provided by the QUIC implementation, not the application. Maybe we can punt this to a TLS stack extension to qlog?",
           "createdAt": "2022-09-08T07:12:51Z",
           "updatedAt": "2022-09-08T07:12:51Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "In one way, I would agree punting this to a broader TLS extension would be good.\r\n\r\nIn another, I really feel our current TLS capabilities of qlog are too limited to be of much use to debug TLS-specific aspects (e.g., it irks me we can't log extensions or ciphersuites properly, though I also hesitate to put this stuff in atm). \r\n\r\nWill mark this as needs discussion, as we need a plan for how deep we want TLS support to go imo. ",
+          "createdAt": "2022-09-29T14:06:30Z",
+          "updatedAt": "2022-09-29T14:06:30Z"
         }
       ]
     },
@@ -3616,11 +3650,12 @@
       "labels": [
         "design",
         "quic-http3-fields",
-        "current-version"
+        "current-version",
+        "discuss"
       ],
       "body": "msquic has separate events that indicate if the sender was blocked/delayed/idle and due to which cause (e.g., pacing, flow control limited, cwnd limited, etc.).\r\n\r\nThis is quite useful for debugging. While some of this can be deduced from looking at other existing qlog events, adding some more explicit events for this could be interesting. \r\n\r\n@nibanks: maybe you could give some pointers/links to where these events are defined for msquic for reference? \r\n\r\ncc @lpardue",
       "createdAt": "2021-01-20T16:56:04Z",
-      "updatedAt": "2022-09-08T00:37:50Z",
+      "updatedAt": "2022-09-29T14:44:48Z",
       "closedAt": null,
       "comments": [
         {
@@ -3657,6 +3692,20 @@
           "body": "Leaning on the side of let folks log what they like, and focus these drafts on transport events.",
           "createdAt": "2022-09-08T00:37:50Z",
           "updatedAt": "2022-09-08T00:37:50Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I still personally feel these would be very useful to have.\r\n\r\nI'm not sure why these wouldn't be part of \"transport events\" @LPardue? Seems like being blocked on e.g., flow control is a very transport-esque thing? \r\n\r\nRight now, we can somewhat deduce this information by e.g., looking at logged values for `MAX_STREAM_DATA` and friends and `*_BLOCKED` and matching those with actual `StreamFrame` sent events, but having something explicit is useful here imo. \r\n\r\n",
+          "createdAt": "2022-09-29T14:35:07Z",
+          "updatedAt": "2022-09-29T14:35:07Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "There's no QUIC message to tell your peer you can't send it data due to pacing or amplification prevention. So to do that in qlog here, we'd have to invent some new category of event and explain to people what it means and how to use it (produce and consume). \r\n\r\nYes it could be interesting but I lean on punting it to be done when there's a good case about why it needs to be defined in an interoperable way in qlog.",
+          "createdAt": "2022-09-29T14:44:47Z",
+          "updatedAt": "2022-09-29T14:44:47Z"
         }
       ]
     },
@@ -3734,7 +3783,7 @@
       ],
       "body": "With the multipath conversation gaining traction in the QUIC wg, it's time to start thinking more seriously about adding (rough) multipath support to qlog and qvis to aid practical implementation efforts (e.g., see https://huitema.wordpress.com/2021/01/26/implementing-multipath-in-quic).\r\n\r\nThe simplest approach that I can see would be to associate a `path_id` with each qlog event:\r\n\r\n```\r\nEvent definition without multipath:\r\nclass Event {\r\n    time: number,\r\n    name:string,\r\n    data:any\r\n}\r\n\r\nEvent definition with multipath:\r\nclass Event {\r\n    time:number,\r\n    name:string,\r\n    path_id:number | string,\r\n    data:any\r\n}\r\n```\r\n\r\nThis would allow users to log all events belonging to a single \"connection\" to differentiate per-path events without having to split them up in separate qlog Trace objects. Additionally, it prevents from having to overload the existing `group_id` field with an additional meaning.\r\n\r\nHowever, the main problem I can see is that the `path_id` (which can be anything, preferably an opaque/obscured value) is not available everywhere in the code that wants to output a qlog event. For example, a congestion controller will wish to output the `recovery:metrics_updated` event, but might not necessarily have the `path_id` available in the code path where these metrics are calculated/available (e.g., if a congestion control method is re-used as-is between single-path and multi-path QUIC). Similar concerns exist for other events (e.g., ACK processing or event `packet_sent` if this is logged before the packet scheduler decides which path to take). \r\n\r\nWhile there are of course always solutions to this (e.g., pass the path_id as extra parameter/as global variable/put it on a stack/put it on a logging object reference/etc.) it is at this time unclear if this is an actual problem and if implementers would wish to add these patchwork \"solutions\" if required, just to get proper qlog output.\r\n\r\nCC @huitema @mpiraux\r\n\r\n\r\n",
       "createdAt": "2021-01-27T13:20:50Z",
-      "updatedAt": "2022-09-09T05:52:22Z",
+      "updatedAt": "2022-09-29T13:44:13Z",
       "closedAt": null,
       "comments": [
         {
@@ -3897,6 +3946,13 @@
           "body": "The multipath specification uses path specific number spaces. In 1 RTT packets, path numbers are qualified by a packet-number-space identifier (a.k.a., path ID). This is set to the sequence number of the destination OID. My early observation was that this was really confusing for tools like QVIS, which would see the same packet number occurring multiple times. Yes, they could somehow parse the transport parameters and infer that they should be multipath aware, and then match the sequence number space with the sequence number of the OID. But that's quite a bit of work, and stating the path-ID would make that process much simpler.\r\n\r\nThe other frames that are path aware are the ACK frames, Path Abandon Frames, and Path Status frames. There is a special type of ACK frame for multipath, and the ACK-MP frames explicitly carry the path ID; the Status and Abandon frames also do. No need for anything else than \"learn to parse these frames.\"",
           "createdAt": "2022-09-09T05:52:22Z",
           "updatedAt": "2022-09-09T05:52:22Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I'm not too sure I like the \"single field\" option for inclusion in the current documents...\r\n\r\nThe only way this would work as a single addition (that I can see) is to add it to the main event definition, for example:\r\n```\r\nEvent = {\r\n    time: float64\r\n    name: text\r\n    ; only used in multipath contexts\r\n    ? path_id: text\r\n    data: $ProtocolEventBody\r\n\r\n    ? time_format: TimeFormat\r\n\r\n    ? protocol_type: ProtocolType\r\n    ? group_id: GroupID\r\n\r\n    ; events can contain any amount of custom fields\r\n    * text => any\r\n}\r\n```\r\n\r\nSomething like that is easy enough to do in an extension document that can give more context. \r\n\r\n------\r\n\r\nThat being said, we do still need to decided how to properly handle RFC9000 connection migration and how/if to log IP addresses for QUIC packets, which this has overlap with (discussed partially in https://github.com/quicwg/qlog/pull/211#issuecomment-1249383687). \r\n\r\nI don't think handling connection migration is best done with a singular `path_id` field, but I could very well be wrong. \r\n\r\n",
+          "createdAt": "2022-09-29T13:19:14Z",
+          "updatedAt": "2022-09-29T13:44:13Z"
         }
       ]
     },
@@ -4041,7 +4097,7 @@
       ],
       "body": "The [spindump project](https://github.com/EricssonResearch/spindump) provides (aggregated) protocol measurements (e.g., RTT, loss, connection count, etc.) from middleboxes. They would like to use qlog as an output format and have [prototyped](https://github.com/EricssonResearch/spindump/blob/master/src/spindump_event_printer_qlog.c) what that [might look like](https://github.com/EricssonResearch/spindump/blob/master/Format.md#qlog-format).\r\n\r\nExample of their current output:\r\n```\r\n$ src/spindump --input-file src/../test/trace_quic_rfc_quant_long_qlog.pcap --textual --format text --not-report-notes --format qlog\r\n\r\n{\"qlog_version\": \"draft-02\", \"qlog_format\": \"JSON\", \"description\": \"Spindump measurements\", \"traces\": [\r\n\r\n { \"vantage_point\": { \"type\": \"network\" }, \"events\": [\r\n\r\n     {\"time\": 1614616215488286, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"connection_started\", \r\n\r\n      \"ip_version\": \"ipv4\", \"src_ip\": \"10.30.0.167\", \"dst_ip\": \"91.190.195.94\", \"src_port\": \"49702\", \"dst_port\": \"4433\", \"src_cid\": \"041d0cd3\", \"dst_cid\": \"c2e9970d6b5925175646\", \r\n\r\n      \"data\": {\"packets1\": 0, \"packets2\": 0, \"bytes1\": 0, \"bytes2\": 0}},\r\n\r\n     {\"time\": 1614616216598876, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"connection_started\", \r\n\r\n      \"ip_version\": \"ipv4\", \"src_ip\": \"10.30.0.167\", \"dst_ip\": \"91.190.195.94\", \"src_port\": \"49702\", \"dst_port\": \"4433\", \"src_cid\": \"041d0cd3\", \"dst_cid\": \"0487c887\", \r\n\r\n      \"data\": {\"packets1\": 2, \"packets2\": 1, \"bytes1\": 2728, \"bytes2\": 298, \"bandwidth1\": 1500, \"bandwidth2\": 298}},\r\n\r\n     {\"time\": 1614616216598876, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 2, \"packets2\": 1, \"bytes1\": 2728, \"bytes2\": 298, \"bandwidth1\": 1500, \"bandwidth2\": 298, \"right_rtt\": 109806}},\r\n\r\n     {\"time\": 1614616217177621, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 18, \"bytes1\": 3159, \"bytes2\": 21320, \"bandwidth1\": 1500, \"bandwidth2\": 21320, \"right_rtt\": 70432}},\r\n\r\n     {\"time\": 1614616217178198, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 19, \"bytes1\": 3159, \"bytes2\": 21415, \"bandwidth1\": 1500, \"bandwidth2\": 21415, \"left_rtt\": 577}},\r\n\r\n     {\"time\": 1614616217178198, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 19, \"bytes1\": 3159, \"bytes2\": 21415, \"bandwidth1\": 1500, \"bandwidth2\": 21415, \"full_rtt_initiator\": 71009}},\r\n\r\n     {\"time\": 1614616217545056, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 26, \"bytes1\": 3275, \"bytes2\": 30375, \"bandwidth1\": 1500, \"bandwidth2\": 30375, \"right_rtt\": 366858}},\r\n\r\n     {\"time\": 1614616217545056, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 26, \"bytes1\": 3275, \"bytes2\": 30375, \"bandwidth1\": 1500, \"bandwidth2\": 30375, \"full_rtt_responder\": 367435}},\r\n\r\n     {\"time\": 1614616217546034, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 30, \"bytes1\": 3275, \"bytes2\": 34607, \"bandwidth1\": 1500, \"bandwidth2\": 34607, \"left_rtt\": 978}},\r\n\r\n     {\"time\": 1614616217546034, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 30, \"bytes1\": 3275, \"bytes2\": 34607, \"bandwidth1\": 1500, \"bandwidth2\": 34607, \"full_rtt_initiator\": 367836}},\r\n\r\n     {\"time\": 1614616217643280, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 11, \"packets2\": 30, \"bytes1\": 3386, \"bytes2\": 34607, \"bandwidth1\": 1775, \"bandwidth2\": 34607, \"right_rtt\": 97246}},\r\n\r\n     {\"time\": 1614616217643280, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 11, \"packets2\": 30, \"bytes1\": 3386, \"bytes2\": 34607, \"bandwidth1\": 1775, \"bandwidth2\": 34607, \"full_rtt_responder\": 98224}}  \r\n\r\n ]}]}\r\n```\r\n\r\nThe semantics of logging measurements from a middlebox can differ from logging endpoint events, as the middlebox doesn't have all the contextual information.\r\n\r\nOne example is the `connection_started` event vs possible events like `connection_migrated` or `tuple_changed` (which we don't have yet, but will someday #79). The middlebox can't really tell the difference for a protocol like QUIC, and always logging either `_started` or `_changed` is semantically not 100% correct (it's more like \"first observed\").\r\n\r\nSomething similar can be said for using `recovery:metrics_updated` to log changes to e.g., RTT or loss rates. They have now defined a custom `measurement` event, which I feel is maybe too generic. You could also question if logging all measurement fields together in a single event is optimal (though this is the approach we do take with things like `metrics_updated`. See #85 for more discussion).\r\n\r\nAnother interesting observation is the need to log metrics in two directions, as the middlebox is somewhere in between 2 endpoints in the network. This all seems to indicate measurement-specific events is the way to go (i.e., not re-using existing qlog  endpoint events), as it would be confusing to have those semantics in endpoint events. \r\n\r\nSomething not yet reflected in here are the possibility to log percentiles, which seems interesting as a generic option for (aggregated) measurement logging. \r\n\r\nCC @jariarkko @ihlar\r\n\r\n ",
       "createdAt": "2021-03-18T11:40:32Z",
-      "updatedAt": "2022-09-08T01:20:03Z",
+      "updatedAt": "2022-09-29T14:19:14Z",
       "closedAt": null,
       "comments": [
         {
@@ -4050,6 +4106,13 @@
           "body": "This is interesting but I'm struggling to identify  clear or actionable feedback on the qlog draft. \r\n\r\nRobin said:\r\n\r\n>  This all seems to indicate measurement-specific events is the way to go (i.e., not re-using existing qlog endpoint events), as it would be confusing to have those semantics in endpoint events.\r\n\r\nIf qlog is flexibile enough for their needs and we don't need to do anything, let's close the issue. If people don't agree, please speak up now.",
           "createdAt": "2022-09-08T01:20:03Z",
           "updatedAt": "2022-09-08T01:20:03Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agreed with Lucas here. There more I've thought about this over time, the more it seems to me this is potentially something perpendicular to qlog itself and/or can be done as a standalone extension later. \r\n\r\nAny indication on progress for this within spindump @jariarkko @ihlar? If not, we'll close this with no action soon. ",
+          "createdAt": "2022-09-29T14:19:14Z",
+          "updatedAt": "2022-09-29T14:19:14Z"
         }
       ]
     },
@@ -4114,15 +4177,18 @@
       "state": "OPEN",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
-      "assignees": [],
+      "assignees": [
+        "rmarx"
+      ],
       "labels": [
         "design",
-        "future-versions",
-        "privacy"
+        "privacy",
+        "discuss",
+        "ask-3rd-party"
       ],
       "body": "qlog should be specific about which fields are potentially privacy sensitive and the possible actions that can be taken to mitigate these issues (e.g., hashing, exclusion, mapping, ...). \r\n\r\nThe current proposal is to work with multiple sanitization levels, depending on the intended use case. \r\nThe way this is expressed in the drafts depends on the data definition format we end up adopting. \r\n\r\nOne potential source of inspiration is https://www.tracewrangler.com, which anonymizes pcaps. \r\n\r\nOther related considerations are whether to provide options to encrypt qlogs themselves.\r\n\r\nThis is intended to be an overarching summary issue, with sub-issues expected for specific approaches/proposals. ",
       "createdAt": "2021-03-31T08:50:43Z",
-      "updatedAt": "2022-09-08T01:23:04Z",
+      "updatedAt": "2022-09-29T14:17:09Z",
       "closedAt": null,
       "comments": [
         {
@@ -4159,6 +4225,13 @@
           "body": "This topic is important and needs the right level of sensitive treatment. But my 2c are that we shouldn't try to boil the ocean on the first pass. \r\n\r\nPropose we add some well considered text in the short term and ask for an early review from the relevant areas while we work on other design issues in parallel.",
           "createdAt": "2022-09-08T01:23:04Z",
           "updatedAt": "2022-09-08T01:23:04Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agreed with @LPardue here.\r\n\r\nAlso had a meeting with @britram about this a few weeks ago, who similarly proposes to keep the text in the qlog docs relatively short with high-level guidance (e.g., not tagging sensitive fields per event). \r\n\r\nHe additionally proposes to start a parallel project for (a) new document(s) that discuss in a more general scope how to deal with sensitive information in all types of logs (since we lack such guidance at the IETF atm). If this effort is at least started by last call for qlog, it would help to have something to point to if people worry about a lack of in-depth guidance here.\r\n\r\nWill add some basic text here ASAP, ready for internal review soon, and then have something to bring to the wg for initial review by IETF 115. ",
+          "createdAt": "2022-09-29T14:16:48Z",
+          "updatedAt": "2022-09-29T14:16:48Z"
         }
       ]
     },
@@ -4678,12 +4751,12 @@
       "assignees": [],
       "labels": [
         "high-level-schema",
-        "current-version",
-        "discuss"
+        "discuss",
+        "ask-3rd-party"
       ],
       "body": "Currently, we have only a single version field in `qlog_version`. This is somewhat inflexible, as it for example doesn't allow indicating updated versions of event definitions for individual protocols (say we have main schema version 2, but HTTP/3's events are already at 5, while you can also use 2, 3 and 4 with main schema 2).\r\n\r\nI'm not entirely sure we need to go very fine-grained in this (e.g., indicating for each event which version it belongs to seems overkill), but a more advanced scheme than what we have currently is probably needed.\r\n\r\nOriginal remark from @lpardue:\r\n\r\n> Do we also need independent versioning of the different schema? How does qlog evolve over the years? For example, say the main schema got published as 1.0, and then work commenced on 2.0. Can there be a QUIC qlog event definitions 1.1 (which is updated say to support QUIC v2) and a 2.1 (which is updated to support QUIC v2 and a new main schema format)?\r\n",
       "createdAt": "2021-05-15T19:17:44Z",
-      "updatedAt": "2022-09-08T01:33:03Z",
+      "updatedAt": "2022-09-29T14:10:52Z",
       "closedAt": null,
       "comments": [
         {
@@ -4700,7 +4773,7 @@
       "id": "MDU6SXNzdWU5MTAyMTI3NTE=",
       "title": "PCAPML and metadata integration in general",
       "url": "https://github.com/quicwg/qlog/issues/157",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -4711,8 +4784,8 @@
       ],
       "body": "I recently came across this interesting project that tags traffic in pcaps for Machine Learning purposes: https://github.com/nprint/pcapml\r\n\r\nThis general concept of keeping traffic traces and metadata describing that data in the same file is one of the things I had envisioned for qlog at the start as well (i.e., combining traces into a single file, the `configuration` field, the ability to add new fields to events at will, etc.). This goal has diminished somewhat over time, but I'm still a big proponent of it.\r\n\r\nI feel we should take a look at PCAPML to see how they're approaching this and decide if similar setups should be *possible* in qlog (though probably not part of the core spec). ",
       "createdAt": "2021-06-03T07:43:30Z",
-      "updatedAt": "2022-09-08T01:37:23Z",
-      "closedAt": null,
+      "updatedAt": "2022-09-29T14:12:24Z",
+      "closedAt": "2022-09-29T14:12:24Z",
       "comments": [
         {
           "author": "LPardue",
@@ -4720,6 +4793,13 @@
           "body": "hmmm. Anything is possible, right? It's interesting for sure but seems outside our tight scope of work. I'm not seeing much traction on the issue since it got opened. Suggest closing and reopening if someone comes back with a strong use case we can't accomodate, or information about a current implementation of this technique applied to qlog.",
           "createdAt": "2022-09-08T01:37:23Z",
           "updatedAt": "2022-09-08T01:37:23Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agree to close without action. ",
+          "createdAt": "2022-09-29T14:12:24Z",
+          "updatedAt": "2022-09-29T14:12:24Z"
         }
       ]
     },
@@ -5894,10 +5974,13 @@
       "assignees": [
         "marten-seemann"
       ],
-      "labels": [],
+      "labels": [
+        "discuss",
+        "ask-3rd-party"
+      ],
       "body": "Endpoints using ECN will perform validation of ECN, as described in https://datatracker.ietf.org/doc/html/rfc9000#section-13.4.2. There are a few different conditions that can lead to a failure of ECN validation, which in turns leads to disabling of ECN for that path. We should have an event that tells us _that_ ECN validation failed and _why_.",
       "createdAt": "2022-07-25T13:41:10Z",
-      "updatedAt": "2022-09-08T01:47:07Z",
+      "updatedAt": "2022-09-30T09:26:21Z",
       "closedAt": null,
       "comments": [
         {
@@ -5906,6 +5989,27 @@
           "body": "This sounds good. I'd like to pull in people with more ECN experience to be part of the discussion. Asking on the list seems like the best way to do that.",
           "createdAt": "2022-09-08T01:47:07Z",
           "updatedAt": "2022-09-08T01:47:07Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agreed we could use another perspective on this. \r\n\r\nMaybe @huitema has input on this? Probably also @goelvidhi, who's been working with L4S etc. at Apple and also has used qlog?",
+          "createdAt": "2022-09-29T14:08:41Z",
+          "updatedAt": "2022-09-29T14:08:41Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "Yes, having an event stating that ECN negotiation failed would be nice.\r\n\r\nECN negotiation is per path, and whatever logging we do has to reflect that. A connection can migrate from a path that supports ECN to one that does not; nodes are supposed to perform the validation after each migration event, or in the case of multipath after each path setup.\r\n\r\nI don't remember whether we are logging the ECN bits in the \"datagram_sent\" and \"datagram_received\" events. That might be a good idea.\r\n",
+          "createdAt": "2022-09-29T15:15:01Z",
+          "updatedAt": "2022-09-29T15:15:01Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Another question is how ECN probing works. I haven't managed to come with a good algorithm yet (that's why quic-go isn't sending ECN marks). \r\nDo you start the handshake with ECN marks, run into a timeout, conclude that ECN is blackholed, and restart the handshake? Or do you occasionally send packets with ECN marks after handshake completion, and switch on ECN marking once you've received an ACK for such a probe packet? That would be very similar to the DPLPMTUD probing logic.",
+          "createdAt": "2022-09-30T09:26:21Z",
+          "updatedAt": "2022-09-30T09:26:21Z"
         }
       ]
     },
@@ -5939,9 +6043,31 @@
       "labels": [],
       "body": "There's almost 60 notes spread across the three documents. This is too many.\r\n\r\nI suspect some of these are note to author, and should be resolved with due process. However, many just seem to be prose that applies directly to the subject matter. Qlog is a bit odd in so far as it's a data scheme definition with few normative requirements but I don't think that warrents us explicitly marking things as notes. Let's just write clear text inside.",
       "createdAt": "2022-09-08T23:56:11Z",
-      "updatedAt": "2022-09-08T23:56:11Z",
+      "updatedAt": "2022-09-29T15:06:13Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agreed. I could use a \"how to write prose for IETF documents\"-guide though. Does something like that exist?",
+          "createdAt": "2022-09-29T13:59:12Z",
+          "updatedAt": "2022-09-29T13:59:12Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "There's RFC editor pages like https://www.rfc-editor.org/styleguide/ which has some links to things like https://www.rfc-editor.org/rfc/rfc7322.txt. But I suspect they don't target the kind of advice you're aiming for. Style comes from borrowing from other comtemporary drafts, and taking suggestions from co-editors, the WG, the IETF and the RFC editor.\r\n\r\nIf these notes would be similar to footnotes in a book, it probably isn't acceptable to readers open a blank chapter and see multiple footnotes. Putting normative statements in RFC notes just seems bad, because they could be missed or ignored by a reader.\r\n\r\nA quick win is remove all `note:` prefixes unless they specifically relate to an editorial or design matter with the document. Then convert all editorial or design notes into actual issues before deleting them.",
+          "createdAt": "2022-09-29T14:56:37Z",
+          "updatedAt": "2022-09-29T14:56:37Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Furthermore, a subjective opinion is that an RFC doesn't need to justify every decision in the document. \r\n\r\nSo take for example these notes from https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-3.3.15\r\n\r\n> Note: we do not for example use a \"direction\" field (with values \"up\" and \"down\") to specify the data flow. This is because in some optimized implementations, data might skip some individual layers. Additionally, using explicit \"from\" and \"to\" fields is more flexible and allows the definition of other conceptual \"layers\" (for example to indicate data from QUIC CRYPTO frames being passed to a TLS library (\"security\") or from HTTP/3 to QPACK (\"qpack\")).\r\n\r\n> Note: this event type is part of the \"transport\" category, but really spans all the different layers. This means we have a few leaky abstractions here (for example, the stream_id or stream offset might not be available at some logging points, or the raw data might not be in a byte-array form). In these situations, implementers can decide to define new, in-context fields to aid in manual debugging.\r\n\r\nThis could possibly be simplified down to a statement like:\r\n\r\n> The data_moved event is defined in the transport category but the \"from\" and \"to\" fields can be extended with values to provide flexibility for logging data movements between layers that don't involve the transport. For example, moving data between the HTTP/3 and QPACK components that both reside in the application layer.",
+          "createdAt": "2022-09-29T15:06:11Z",
+          "updatedAt": "2022-09-29T15:06:11Z"
+        }
+      ]
     },
     {
       "number": 220,
@@ -5955,9 +6081,17 @@
       "labels": [],
       "body": "In qlog and h3 event definitions, there's a pattern in section 2 to say \"each subsecion and subsubsection defines xyz\". However, the definitions are actually in section 3. Suggest that we make this more accurate.",
       "createdAt": "2022-09-09T00:24:26Z",
-      "updatedAt": "2022-09-09T00:24:26Z",
+      "updatedAt": "2022-09-29T13:52:57Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "As discussed in the editor's meeting yesterday, it should indeed be made clearer how (sub)section names map to event names etc. without it being (purely) implicit in the document structure.\r\n\r\nI think your existing PRs #226 and #237 go a ways towards that @LPardue. \r\n\r\nI would maybe argue we should also either add an explicit entry/comment for each of the events showing its full serialized name (e.g., the `version_information` Section in quic-events would have an explicit indication saying it's `name` field should be `transport:version_information`). Though maybe that's overkill if we list it in a \"TOC\" and make the text mentioned in this issue clearer ?",
+          "createdAt": "2022-09-29T13:52:57Z",
+          "updatedAt": "2022-09-29T13:52:57Z"
+        }
+      ]
     },
     {
       "number": 221,
@@ -5968,12 +6102,22 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "editorial"
+      ],
       "body": "This also relates to https://github.com/quicwg/qlog/issues/220\r\n\r\nIn both the QUIC and H3 documents, the interesting data of each event is defined in the appendix. Typically, appendicesare used for only additional or informative content. \r\n\r\nSince the data is part of the normative schema, I'd suggest the definitions need to be promoted into the main body of the text.",
       "createdAt": "2022-09-09T00:32:11Z",
-      "updatedAt": "2022-09-09T00:32:11Z",
+      "updatedAt": "2022-09-29T13:49:16Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agreed this shouldn't be in appendix.\r\n\r\nDo want to keep the data definitions together though, instead of e.g., defining each where they are first used in an event. \r\n\r\nSince you are splitting the event categories into a Section per Category @LPardue, would this mean 1 new top-level Section for the data definitions (so just lift them up from appendices as they are) or split out more? ",
+          "createdAt": "2022-09-29T13:49:04Z",
+          "updatedAt": "2022-09-29T13:49:04Z"
+        }
+      ]
     },
     {
       "number": 229,
@@ -6134,7 +6278,33 @@
       "labels": [],
       "body": "One might argue that having an `old` field doesn\u2019t make any sense, since you can just have a look at the last event to see what the value was.\r\n\r\nWe should consider removing the `old` field (and maybe renaming the `new` field).",
       "createdAt": "2022-09-28T15:03:56Z",
-      "updatedAt": "2022-09-28T15:03:56Z",
+      "updatedAt": "2022-09-29T12:36:51Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "For context: I chose the old/new approach for `*Updated` events because:\r\n\r\n1. You often start with a \"default\" value (e.g., for MTU) that you update later, but you wouldn't log the initial value (as that's part of the standard config), or at least not as an `Updated` event (though you -should- in that case)\r\n2. When streaming logs in e.g., a \"ring buffer\" style, you might loose earlier events, making it impossible to track full history. Having both old and new in 1 event would help with this. This is a use case sometimes mentioned by @nibanks \r\n\r\nOne of the main things I dislike is the naming of the `new` field. It would be nicer to have a name matching the semantics better (e.g., `stream_state` instead of `new` in `stream_state_updated` event). \r\n\r\nAt this time, I don't have a strong preference for keeping old/new or changing to another scheme. ",
+          "createdAt": "2022-09-29T12:36:51Z",
+          "updatedAt": "2022-09-29T12:36:51Z"
+        }
+      ]
+    },
+    {
+      "number": 243,
+      "id": "I_kwDOCrLn6M5S5fT2",
+      "title": "Properly use RawInfo everywhere",
+      "url": "https://github.com/quicwg/qlog/issues/243",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "Currently, most events use `RawInfo`, but some still use a separate `raw: hexstring` + `raw_length: uint32` setup. \r\n\r\n1. Figure out why (probably just forgot to update all when making the change)\r\n2. Change to `RawInfo` where appropriate, or add comment why `RawInfo` isn't used",
+      "createdAt": "2022-09-29T12:39:17Z",
+      "updatedAt": "2022-09-29T12:39:17Z",
       "closedAt": null,
       "comments": []
     }
@@ -7029,7 +7199,7 @@
       "labels": [],
       "body": "When a client receives a Version Negotiation packet indicating that there's no commonly supported version, it aborts the connection attempt. Currently, qlog doesn't allow to log this.",
       "createdAt": "2021-03-15T02:43:58Z",
-      "updatedAt": "2022-09-28T13:26:17Z",
+      "updatedAt": "2022-09-29T15:08:19Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "d4b62cd84b73338c8be1b749f7686cccd2754967",
@@ -7063,7 +7233,28 @@
           "updatedAt": "2022-09-28T13:26:16Z"
         }
       ],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5DFWXA",
+          "commit": {
+            "abbreviatedOid": "d532844"
+          },
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "You asked me to look at this from the point of view of \"compatible version negotiation\". I think the compatible VN logging is already OK. Compatible VN negotiation uses transport parameters. These parameters are already logged, see for example:\r\n```\r\n[68563, \"transport\", \"parameters_set\", {\r\n    \"owner\": \"local\",\r\n    \"initial_max_stream_data_bidi_local\" : 2097152,\r\n    \"initial_max_data\" : 1048576,\r\n    \"initial_max_streams_bidi\" : 513,\r\n    \"idle_timeout\" : 30000,\r\n    \"max_packet_size\" : 1440,\r\n    \"initial_max_streams_uni\" : 513,\r\n    \"initial_max_stream_data_bidi_remote\" : 65635,\r\n    \"initial_max_stream_data_uni\" : 65535,\r\n    \"active_connection_id_limit\" : 8,\r\n    \"max_ack_delay\" : 10,\r\n    \"handshake_connection_id\": \"091caa2b8bf8bc65\",\r\n    \"1cce\": \"8000fcc7\",\r\n    \"min_ack_delay\" : 1000,\r\n    \"enable_time_stamp\" : \"03\",\r\n    \"grease_quic_bit\" : \"\",\r\n    \"version_negotiation\": { \"chosen\": \"00000001\", \"others\": [\"00000002\", \"00000001\"]}}],\r\n```\r\n",
+          "createdAt": "2022-09-29T14:59:36Z",
+          "updatedAt": "2022-09-29T15:08:19Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "Shouldn't this be optional? Are we missing a question mark?",
+              "createdAt": "2022-09-29T14:59:37Z",
+              "updatedAt": "2022-09-29T15:08:19Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 145,
@@ -9243,15 +9434,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [
-        "rmarx"
-      ],
+      "assignees": [],
       "labels": [
         "design"
       ],
       "body": "Avoid confusing use of QUIC's UnknownFrame type.\n\nFixes #201\n",
       "createdAt": "2022-09-09T14:04:58Z",
-      "updatedAt": "2022-09-28T14:43:51Z",
+      "updatedAt": "2022-09-29T12:28:15Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b48b8c42380f1af2b1ca3f5444be9abac5f12618",
@@ -9288,6 +9477,19 @@
           "body": "Thanks! ",
           "createdAt": "2022-09-09T16:25:12Z",
           "updatedAt": "2022-09-09T16:25:12Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5DET-q",
+          "commit": {
+            "abbreviatedOid": "6601995"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "I was confused about this yesterday because the `raw` stuff should use `RawInfo` instead, but that seems inconsistent across other events atm as well, so I'll make a new issue for that. ",
+          "createdAt": "2022-09-29T12:28:08Z",
+          "updatedAt": "2022-09-29T12:28:08Z",
           "comments": []
         }
       ]
@@ -9953,6 +10155,59 @@
           "body": "",
           "createdAt": "2022-09-28T14:51:27Z",
           "updatedAt": "2022-09-28T14:51:27Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 244,
+      "id": "PR_kwDOCrLn6M4_2rPJ",
+      "title": "Make packet_number optional",
+      "url": "https://github.com/quicwg/qlog/pull/244",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #133\n\n(not sure whether to indent with spaces to vertically match the listing or to just let it wrap to the next line without prepended spaces though)",
+      "createdAt": "2022-09-29T12:53:43Z",
+      "updatedAt": "2022-09-29T13:38:12Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c5a659fb9da4772daf0728c561372e75629dfd3c",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "optional-pn",
+      "headRefOid": "b294bf2c2ebd2d57987937392f7cb099c09f75d4",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5DEeIH",
+          "commit": {
+            "abbreviatedOid": "20ecfff"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "remove trailing space",
+          "createdAt": "2022-09-29T12:55:37Z",
+          "updatedAt": "2022-09-29T12:55:37Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5DEvqE",
+          "commit": {
+            "abbreviatedOid": "b294bf2"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2022-09-29T13:38:12Z",
+          "updatedAt": "2022-09-29T13:38:12Z",
           "comments": []
         }
       ]
