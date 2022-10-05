@@ -2,15 +2,15 @@
 
 
 
-QUIC                                                             R. Marx
-Internet-Draft                                                 KU Leuven
+QUIC                                                        R. Marx, Ed.
+Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 1 April 2023                                           Facebook
+Expires: 8 April 2023                                               Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                       28 September 2022
+                                                          5 October 2022
 
 
                     QUIC event definitions for qlog
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 1 April 2023.
+   This Internet-Draft will expire on 8 April 2023.
 
 Copyright Notice
 
@@ -58,49 +58,48 @@ Table of Contents
    1.  Introduction
      1.1.  Notational Conventions
    2.  Overview
-     2.1.  Links to the main schema
-       2.1.1.  Raw packet and frame information
-       2.1.2.  Events not belonging to a single connection
+     2.1.  Raw packet and frame information
+     2.2.  Events not belonging to a single connection
    3.  QUIC event definitions
-     3.1.  connectivity
-       3.1.1.  server_listening
-       3.1.2.  connection_started
-       3.1.3.  connection_closed
-       3.1.4.  connection_id_updated
-       3.1.5.  spin_bit_updated
-       3.1.6.  connection_retried
-       3.1.7.  connection_state_updated
-       3.1.8.  MIGRATION-related events
-     3.2.  security
-       3.2.1.  key_updated
-       3.2.2.  key_discarded
-     3.3.  transport
-       3.3.1.  version_information
-       3.3.2.  alpn_information
-       3.3.3.  parameters_set
-       3.3.4.  parameters_restored
-       3.3.5.  packet_sent
-       3.3.6.  packet_received
-       3.3.7.  packet_dropped
-       3.3.8.  packet_buffered
-       3.3.9.  packets_acked
-       3.3.10. datagrams_sent
-       3.3.11. datagrams_received
-       3.3.12. datagram_dropped
-       3.3.13. stream_state_updated
-       3.3.14. frames_processed
-       3.3.15. data_moved
-     3.4.  recovery
-       3.4.1.  parameters_set
-       3.4.2.  metrics_updated
-       3.4.3.  congestion_state_updated
-       3.4.4.  loss_timer_updated
-       3.4.5.  packet_lost
-       3.4.6.  marked_for_retransmit
-     3.5.  mtu_updated
-   4.  Security Considerations
-   5.  IANA Considerations
-   6.  Normative References
+   4.  Connectivity events
+     4.1.  server_listening
+     4.2.  connection_started
+     4.3.  connection_closed
+     4.4.  connection_id_updated
+     4.5.  spin_bit_updated
+     4.6.  connection_retried
+     4.7.  connection_state_updated
+     4.8.  MIGRATION-related events
+     4.9.  mtu_updated
+   5.  Transport events
+     5.1.  version_information
+     5.2.  alpn_information
+     5.3.  parameters_set
+     5.4.  parameters_restored
+     5.5.  packet_sent
+     5.6.  packet_received
+     5.7.  packet_dropped
+     5.8.  packet_buffered
+     5.9.  packets_acked
+     5.10. datagrams_sent
+     5.11. datagrams_received
+     5.12. datagram_dropped
+     5.13. stream_state_updated
+     5.14. frames_processed
+     5.15. data_moved
+   6.  Security Events
+     6.1.  key_updated
+     6.2.  key_discarded
+   7.  Recovery events
+     7.1.  parameters_set
+     7.2.  metrics_updated
+     7.3.  congestion_state_updated
+     7.4.  loss_timer_updated
+     7.5.  packet_lost
+     7.6.  marked_for_retransmit
+   8.  Security Considerations
+   9.  IANA Considerations
+   10. Normative References
    Appendix A.  QUIC data field definitions
      A.1.  ProtocolEventBody extension
      A.2.  QuicVersion
@@ -146,7 +145,7 @@ Table of Contents
      B.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
      B.6.  Since draft-marx-qlog-event-definitions-quic-h3-00:
    Appendix C.  Design Variations
-   Appendix D.  Acknowledgements
+   Acknowledgements
    Authors' Addresses
 
 1.  Introduction
@@ -179,32 +178,25 @@ Table of Contents
    expressed in the Concise Data Definition Language [CDDL] and its
    extensions described in [QLOG-MAIN].
 
+   The following fields from [QLOG-MAIN] are imported and used: name,
+   category, type, data, group_id, protocol_type, importance, RawInfo,
+   and time-related fields.
+
 2.  Overview
 
-   This document describes the values of the qlog "name" ("category" +
-   "event") and "data" fields and their semantics for the QUIC protocol.
+   This document describes how the QUIC protocol is can be expressed in
+   qlog using the schema defined in [QLOG-MAIN].  QUIC protocol events
+   are defined with a category, a name (the concatenation of "category"
+   and "event"), an "importance", an optional "trigger", and "data"
+   fields.
 
-   This document assumes the usage of the encompassing main qlog schema
-   defined in [QLOG-MAIN].  Each subsection below defines a separate
-   category (for example connectivity, transport, recovery) and each
-   subsubsection is an event type (for example packet_received).
+   Some data fields use complex datastructures.  These are represented
+   as enums or re-usable definitions, which are grouped together on the
+   bottom of this document for clarity.
 
-   For each event type, its importance and data definition is laid out,
-   often accompanied by possible values for the optional "trigger"
-   field.  For the definition and semantics of "importance" and
-   "trigger", see the main schema document.
-
-   Most of the complex datastructures, enums and re-usable definitions
-   are grouped together on the bottom of this document for clarity.
-
-2.1.  Links to the main schema
-
-   This document re-uses all the fields defined in the main qlog schema
-   (e.g., name, category, type, data, group_id, protocol_type, the time-
-   related fields, importance, RawInfo, etc.).
-
-   One entry in the "protocol_type" qlog array field MUST be "QUIC" if
-   events from this document are included in a qlog trace.
+   When any event from this document is included in a qlog trace, the
+   "protocol_type" qlog array field MUST contain an entry with the value
+   "QUIC".
 
    When the qlog "group_id" field is used, it is recommended to use
    QUIC's Original Destination Connection ID (ODCID, the CID chosen by
@@ -216,10 +208,7 @@ Table of Contents
    the vantagepoint type (For example, abcd1234_server.qlog would
    contain the server-side trace of the connection with ODCID abcd1234).
 
-2.1.1.  Raw packet and frame information
-
-   This document re-uses the definition of the RawInfo data class from
-   [QLOG-MAIN].
+2.1.  Raw packet and frame information
 
    Note:  QUIC packets always include an AEAD authentication tag
       ("trailer") at the end.  As this tag is always the same size for a
@@ -247,7 +236,7 @@ Table of Contents
       logged, it allows a more direct mapping of the QUIC specifications
       to qlog, making it easier for users to interpret.
 
-2.1.2.  Events not belonging to a single connection
+2.2.  Events not belonging to a single connection
 
    For several types of events, it is sometimes impossible to tie them
    to a specific conceptual QUIC connection (e.g., a packet_dropped
@@ -277,15 +266,88 @@ Table of Contents
 
 3.  QUIC event definitions
 
-   Each subheading in this section is a qlog event category, while each
-   sub-subheading is a qlog event type.  Concretely, for the following
-   two items, we have the category "connectivity" and event type
-   "server_listening", resulting in a concatenated qlog "name" field
-   value of "connectivity:server_listening".
+   QUIC connections consist of different phases and interaction events.
+   In order to model this, QUIC event types are divided into general
+   categories: connectivity (Section 4), security (Section 6), transport
+   Section 5, and recovery Section 7.
 
-3.1.  connectivity
+   As described in Section 3.4.2 of [QLOG-MAIN], the qlog "name" field
+   is the concatenation of category and type.
 
-3.1.1.  server_listening
+   Table 1 summarizes the name value of each event type that is defined
+   in this specification.
+
+         +=======================================+==============+
+         | Name value                            | Definition   |
+         +=======================================+==============+
+         | connectivity:server_listening         | Section 4.1  |
+         +---------------------------------------+--------------+
+         | connectivity:connection_started       | Section 4.2  |
+         +---------------------------------------+--------------+
+         | connectivity:connection_closed        | Section 4.3  |
+         +---------------------------------------+--------------+
+         | connectivity:connection_id_updated    | Section 4.4  |
+         +---------------------------------------+--------------+
+         | connectivity:spin_bit_updated         | Section 4.5  |
+         +---------------------------------------+--------------+
+         | connectivity:connection_retried       | Section 4.6  |
+         +---------------------------------------+--------------+
+         | connectivity:connection_state_updated | Section 4.7  |
+         +---------------------------------------+--------------+
+         | connectivity:mtu_updated              | Section 4.9  |
+         +---------------------------------------+--------------+
+         | security:key_updated                  | Section 6.1  |
+         +---------------------------------------+--------------+
+         | security:key_discarded                | Section 6.2  |
+         +---------------------------------------+--------------+
+         | transport:version_information         | Section 5.1  |
+         +---------------------------------------+--------------+
+         | transport:alpn_information            | Section 5.2  |
+         +---------------------------------------+--------------+
+         | transport:parameters_set              | Section 5.3  |
+         +---------------------------------------+--------------+
+         | transport:parameters_restored         | Section 5.4  |
+         +---------------------------------------+--------------+
+         | transport:packet_sent                 | Section 5.5  |
+         +---------------------------------------+--------------+
+         | transport:packet_received             | Section 5.6  |
+         +---------------------------------------+--------------+
+         | transport:packet_dropped              | Section 5.7  |
+         +---------------------------------------+--------------+
+         | transport:packet_buffered             | Section 5.8  |
+         +---------------------------------------+--------------+
+         | transport:packets_acked               | Section 5.9  |
+         +---------------------------------------+--------------+
+         | transport:datagrams_sent              | Section 5.10 |
+         +---------------------------------------+--------------+
+         | transport:datagrams_received          | Section 5.11 |
+         +---------------------------------------+--------------+
+         | transport:datagram_dropped            | Section 5.12 |
+         +---------------------------------------+--------------+
+         | transport:stream_state_updated        | Section 5.13 |
+         +---------------------------------------+--------------+
+         | transport:frames_processed            | Section 5.14 |
+         +---------------------------------------+--------------+
+         | transport:data_moved                  | Section 5.15 |
+         +---------------------------------------+--------------+
+         | recovery:parameters_set               | Section 7.1  |
+         +---------------------------------------+--------------+
+         | recovery:metrics_updated              | Section 7.2  |
+         +---------------------------------------+--------------+
+         | recovery:congestion_state_updated     | Section 7.3  |
+         +---------------------------------------+--------------+
+         | recovery:loss_timer_updated           | Section 7.4  |
+         +---------------------------------------+--------------+
+         | recovery:packet_lost                  | Section 7.5  |
+         +---------------------------------------+--------------+
+         | recovery:marked_for_retransmit        | Section 7.6  |
+         +---------------------------------------+--------------+
+
+                           Table 1: QUIC Events
+
+4.  Connectivity events
+
+4.1.  server_listening
 
    Importance: Extra
 
@@ -309,7 +371,7 @@ Table of Contents
    Note: some QUIC stacks do not handle sockets directly and are thus
    unable to log IP and/or port information.
 
-3.1.2.  connection_started
+4.2.  connection_started
 
    Importance: Base
 
@@ -339,7 +401,7 @@ Table of Contents
    Note: some QUIC stacks do not handle sockets directly and are thus
    unable to log IP and/or port information.
 
-3.1.3.  connection_closed
+4.3.  connection_closed
 
    Importance: Base
 
@@ -385,7 +447,7 @@ Table of Contents
 
              Figure 3: ConnectivityConnectionClosed definition
 
-3.1.4.  connection_id_updated
+4.4.  connection_id_updated
 
    Importance: Base
 
@@ -411,7 +473,7 @@ Table of Contents
 
             Figure 4: ConnectivityConnectionIDUpdated definition
 
-3.1.5.  spin_bit_updated
+4.5.  spin_bit_updated
 
    Importance: Base
 
@@ -426,11 +488,11 @@ Table of Contents
 
               Figure 5: ConnectivitySpinBitUpdated definition
 
-3.1.6.  connection_retried
+4.6.  connection_retried
 
    TODO
 
-3.1.7.  connection_state_updated
+4.7.  connection_state_updated
 
    Importance: Base
 
@@ -545,7 +607,7 @@ Table of Contents
       from the client's perspective.  Similarly, a state of "closing" or
       "draining" corresponds to the connection_closed event.
 
-3.1.8.  MIGRATION-related events
+4.8.  MIGRATION-related events
 
    e.g., path_updated
 
@@ -556,62 +618,27 @@ Table of Contents
    For now, infer from other connectivity events and path_challenge/
    path_response frames
 
-3.2.  security
+4.9.  mtu_updated
 
-3.2.1.  key_updated
+   Importance: Extra
 
-   Importance: Base
+   ConnectivityMTUUpdated = {
+     ? old: uint16
+     new: uint16
 
-   Note: secret_updated would be more correct, but in the draft it's
-   called KEY_UPDATE, so stick with that for consistency
-
-   Definition:
-
-   SecurityKeyUpdated = {
-       key_type: KeyType
-
-       ? old: hexstring
-       new: hexstring
-
-       ; needed for 1RTT key updates
-       ? generation: uint32
-
-       ? trigger:
-           ; (e.g., initial, handshake and 0-RTT keys
-           ; are generated by TLS)
-           "tls" /
-           "remote_update" /
-           "local_update"
+     ; at some point, MTU discovery stops, as a "good enough"
+     ; packet size has been found
+     ? done: bool .default false
    }
 
-                  Figure 7: SecurityKeyUpdated definition
+                Figure 7: ConnectivityMTUUpdated definition
 
-3.2.2.  key_discarded
+   This event indicates that the estimated Path MTU was updated.  This
+   happens as part of the Path MTU discovery process.
 
-   Importance: Base
+5.  Transport events
 
-   Definition:
-
-   SecurityKeyDiscarded = {
-       key_type: KeyType
-       ? key: hexstring
-
-       ; needed for 1RTT key updates
-       ? generation: uint32
-
-       ? trigger:
-           ; (e.g., initial, handshake and 0-RTT keys
-           ; are generated by TLS)
-           "tls" /
-           "remote_update" /
-           "local_update"
-   }
-
-                 Figure 8: SecurityKeyDiscarded definition
-
-3.3.  transport
-
-3.3.1.  version_information
+5.1.  version_information
 
    Importance: Core
 
@@ -632,7 +659,7 @@ Table of Contents
        ? chosen_version: QuicVersion
    }
 
-              Figure 9: TransportVersionInformation definition
+              Figure 8: TransportVersionInformation definition
 
    Intended use:
 
@@ -654,7 +681,7 @@ Table of Contents
       and chosen_version to the version it will use for the next initial
       packet
 
-3.3.2.  alpn_information
+5.2.  alpn_information
 
    Importance: Core
 
@@ -674,7 +701,7 @@ Table of Contents
        ? chosen_alpn: text
    }
 
-               Figure 10: TransportALPNInformation definition
+               Figure 9: TransportALPNInformation definition
 
    Intended use:
 
@@ -693,7 +720,7 @@ Table of Contents
       wait for the receipt of the server initial to log this event with
       both client_alpns and chosen_alpn set.
 
-3.3.3.  parameters_set
+5.3.  parameters_set
 
    Importance: Core
 
@@ -773,13 +800,13 @@ Table of Contents
        stateless_reset_token: StatelessResetToken
    }
 
-                Figure 11: TransportParametersSet definition
+                Figure 10: TransportParametersSet definition
 
    Additionally, this event can contain any number of unspecified
    fields.  This is to reflect setting of for example unknown (greased)
    transport parameters or employed (proprietary) extensions.
 
-3.3.4.  parameters_restored
+5.4.  parameters_restored
 
    Importance: Base
 
@@ -808,13 +835,13 @@ Table of Contents
        ? initial_max_streams_uni: uint64
    }
 
-             Figure 12: TransportParametersRestored definition
+             Figure 11: TransportParametersRestored definition
 
    Note that, like parameters_set above, this event can contain any
    number of unspecified fields to allow for additional/custom
    parameters.
 
-3.3.5.  packet_sent
+5.5.  packet_sent
 
    Importance: Core
 
@@ -857,16 +884,16 @@ Table of Contents
          "cc_bandwidth_probe"
    }
 
-                 Figure 13: TransportPacketSent definition
+                 Figure 12: TransportPacketSent definition
 
    Note: We do not explicitly log the encryption_level or
    packet_number_space: the header.packet_type specifies this by
    inference (assuming correct implementation)
 
-   Note: for more details on "datagram_id", see Section 3.3.10.  It is
+   Note: for more details on "datagram_id", see Section 5.10.  It is
    only needed when keeping track of packet coalescing.
 
-3.3.6.  packet_received
+5.6.  packet_received
 
    Importance: Core
 
@@ -899,16 +926,16 @@ Table of Contents
            "keys_available"
    }
 
-               Figure 14: TransportPacketReceived definition
+               Figure 13: TransportPacketReceived definition
 
    Note: We do not explicitly log the encryption_level or
    packet_number_space: the header.packet_type specifies this by
    inference (assuming correct implementation)
 
-   Note: for more details on "datagram_id", see Section 3.3.10.  It is
+   Note: for more details on "datagram_id", see Section 5.10.  It is
    only needed when keeping track of packet coalescing.
 
-3.3.7.  packet_dropped
+5.7.  packet_dropped
 
    Importance: Base
 
@@ -940,17 +967,17 @@ Table of Contents
            "invalid_initial"
    }
 
-                Figure 15: TransportPacketDropped definition
+                Figure 14: TransportPacketDropped definition
 
    Note: sometimes packets are dropped before they can be associated
    with a particular connection (e.g., in case of
    "unsupported_version").  This situation is discussed more in
-   Section 2.1.2.
+   Section 2.2.
 
-   Note: for more details on "datagram_id", see Section 3.3.10.  It is
+   Note: for more details on "datagram_id", see Section 5.10.  It is
    only needed when keeping track of packet coalescing.
 
-3.3.8.  packet_buffered
+5.8.  packet_buffered
 
    Importance: Base
 
@@ -978,12 +1005,12 @@ Table of Contents
            "keys_unavailable"
    }
 
-               Figure 16: TransportPacketBuffered definition
+               Figure 15: TransportPacketBuffered definition
 
-   Note: for more details on "datagram_id", see Section 3.3.10.  It is
+   Note: for more details on "datagram_id", see Section 5.10.  It is
    only needed when keeping track of packet coalescing.
 
-3.3.9.  packets_acked
+5.9.  packets_acked
 
    Importance: Extra
 
@@ -1004,13 +1031,13 @@ Table of Contents
        ? packet_numbers: [+ uint64]
    }
 
-                Figure 17: TransportPacketsAcked definition
+                Figure 16: TransportPacketsAcked definition
 
    Note: if packet_number_space is omitted, it assumes the default value
    of PacketNumberSpace.application_data, as this is by far the most
    prevalent packet number space a typical QUIC connection will use.
 
-3.3.10.  datagrams_sent
+5.10.  datagrams_sent
 
    Importance: Extra
 
@@ -1030,7 +1057,7 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-                Figure 18: TransportDatagramsSent definition
+                Figure 17: TransportDatagramsSent definition
 
    Note: QUIC itself does not have a concept of a "datagram_id".  This
    field is a purely qlog-specific construct to allow tracking how
@@ -1042,7 +1069,7 @@ Table of Contents
    handshake (as it requires at least one long header packet), this can
    be done without much overhead.
 
-3.3.11.  datagrams_received
+5.11.  datagrams_received
 
    Importance: Extra
 
@@ -1063,11 +1090,11 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-              Figure 19: TransportDatagramsReceived definition
+              Figure 18: TransportDatagramsReceived definition
 
-   Note: for more details on "datagram_ids", see Section 3.3.10.
+   Note: for more details on "datagram_ids", see Section 5.10.
 
-3.3.12.  datagram_dropped
+5.12.  datagram_dropped
 
    Importance: Extra
 
@@ -1081,9 +1108,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-               Figure 20: TransportDatagramDropped definition
+               Figure 19: TransportDatagramDropped definition
 
-3.3.13.  stream_state_updated
+5.13.  stream_state_updated
 
    Importance: Base
 
@@ -1137,7 +1164,7 @@ Table of Contents
        ; memory actually freed
        "destroyed"
 
-             Figure 21: TransportStreamStateUpdated definition
+             Figure 20: TransportStreamStateUpdated definition
 
    Note: QUIC implementations SHOULD mainly log the simplified
    bidirectional (HTTP/2-alike) stream states (e.g., idle, open, closed)
@@ -1145,7 +1172,7 @@ Table of Contents
    reset_received).  These latter ones are mainly for more in-depth
    debugging.  Tools SHOULD be able to deal with both types equally.
 
-3.3.14.  frames_processed
+5.14.  frames_processed
 
    Importance: Extra
 
@@ -1191,9 +1218,9 @@ Table of Contents
        ? packet_number: uint64
    }
 
-               Figure 22: TransportFramesProcessed definition
+               Figure 21: TransportFramesProcessed definition
 
-3.3.15.  data_moved
+5.15.  data_moved
 
    Importance: Base
 
@@ -1228,7 +1255,7 @@ Table of Contents
        ? data: hexstring
    }
 
-                  Figure 23: TransportDataMoved definition
+                  Figure 22: TransportDataMoved definition
 
    Note: we do not for example use a "direction" field (with values "up"
    and "down") to specify the data flow.  This is because in some
@@ -1245,7 +1272,60 @@ Table of Contents
    in a byte-array form).  In these situations, implementers can decide
    to define new, in-context fields to aid in manual debugging.
 
-3.4.  recovery
+6.  Security Events
+
+6.1.  key_updated
+
+   Importance: Base
+
+   Note: secret_updated would be more correct, but in the draft it's
+   called KEY_UPDATE, so stick with that for consistency
+
+   Definition:
+
+   SecurityKeyUpdated = {
+       key_type: KeyType
+
+       ? old: hexstring
+       new: hexstring
+
+       ; needed for 1RTT key updates
+       ? generation: uint32
+
+       ? trigger:
+           ; (e.g., initial, handshake and 0-RTT keys
+           ; are generated by TLS)
+           "tls" /
+           "remote_update" /
+           "local_update"
+   }
+
+                  Figure 23: SecurityKeyUpdated definition
+
+6.2.  key_discarded
+
+   Importance: Base
+
+   Definition:
+
+   SecurityKeyDiscarded = {
+       key_type: KeyType
+       ? key: hexstring
+
+       ; needed for 1RTT key updates
+       ? generation: uint32
+
+       ? trigger:
+           ; (e.g., initial, handshake and 0-RTT keys
+           ; are generated by TLS)
+           "tls" /
+           "remote_update" /
+           "local_update"
+   }
+
+                 Figure 24: SecurityKeyDiscarded definition
+
+7.  Recovery events
 
    Note: most of the events in this category are kept generic to support
    different recovery approaches and various congestion control
@@ -1253,7 +1333,7 @@ Table of Contents
    visualize even unknown data in these events (e.g., plot unknown
    congestion states by name on a timeline visualization).
 
-3.4.1.  parameters_set
+7.1.  parameters_set
 
    Importance: Base
 
@@ -1295,12 +1375,12 @@ Table of Contents
        ? persistent_congestion_threshold: uint16
    }
 
-                Figure 24: RecoveryParametersSet definition
+                Figure 25: RecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
 
-3.4.2.  metrics_updated
+7.2.  metrics_updated
 
    Importance: Core
 
@@ -1340,7 +1420,7 @@ Table of Contents
        ? pacing_rate: uint64
    }
 
-                Figure 25: RecoveryMetricsUpdated definition
+                Figure 26: RecoveryMetricsUpdated definition
 
    Note: to make logging easier, implementations MAY log values even if
    they are the same as previously reported values (e.g., two subsequent
@@ -1351,7 +1431,7 @@ Table of Contents
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
 
-3.4.3.  congestion_state_updated
+7.3.  congestion_state_updated
 
    Importance: Base
 
@@ -1380,14 +1460,14 @@ Table of Contents
            "ECN"
    }
 
-            Figure 26: RecoveryCongestionStateUpdated definition
+            Figure 27: RecoveryCongestionStateUpdated definition
 
    The "trigger" field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
    can only be due to a single event occurring (e.g., slow start is
    exited only when ssthresh is exceeded).
 
-3.4.4.  loss_timer_updated
+7.4.  loss_timer_updated
 
    Importance: Extra
 
@@ -1420,7 +1500,7 @@ Table of Contents
        ? delta: float32
    }
 
-               Figure 27: RecoveryLossTimerUpdated definition
+               Figure 28: RecoveryLossTimerUpdated definition
 
    TODO: how about CC algo's that use multiple timers?  How generic do
    these events need to be?  Just support QUIC-style recovery from the
@@ -1429,7 +1509,7 @@ Table of Contents
    TODO: read up on the loss detection logic in draft-27 onward and see
    if this suffices
 
-3.4.5.  packet_lost
+7.5.  packet_lost
 
    Importance: Core
 
@@ -1446,7 +1526,7 @@ Table of Contents
        ; see appendix for the QuicFrame definitions
        ? frames: [* QuicFrame]
 
-       ? is_mtu_probe_packet: boolean .default false
+       ? is_mtu_probe_packet: bool .default false
 
        ? trigger:
            "reordering_threshold" /
@@ -1455,12 +1535,12 @@ Table of Contents
            "pto_expired"
    }
 
-                  Figure 28: RecoveryPacketLost definition
+                  Figure 29: RecoveryPacketLost definition
 
    For this event, the "trigger" field SHOULD be set (for example to one
    of the values below), as this helps tremendously in debugging.
 
-3.4.6.  marked_for_retransmit
+7.6.  marked_for_retransmit
 
    Importance: Extra
 
@@ -1492,34 +1572,17 @@ Table of Contents
        frames: [+ QuicFrame]
    }
 
-             Figure 29: RecoveryMarkedForRetransmit definition
+             Figure 30: RecoveryMarkedForRetransmit definition
 
-3.5.  mtu_updated
-
-   Importance: Extra
-
-   MTUUpdated = {
-     ? mtu: uint16
-
-     ; at some point, MTU discovery stops, as a "good enough"
-     ; packet size has been found
-     ? done: boolean .default false
-   }
-
-                      Figure 30: MTUUpdated definition
-
-   This event indicates that the estimated Path MTU was updated.  This
-   happens as part of the Path MTU discovery process.
-
-4.  Security Considerations
+8.  Security Considerations
 
    TBD
 
-5.  IANA Considerations
+9.  IANA Considerations
 
    TBD
 
-6.  Normative References
+10.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -1572,6 +1635,7 @@ A.1.  ProtocolEventBody extension
                 ConnectivityConnectionIDUpdated /
                 ConnectivitySpinBitUpdated /
                 ConnectivityConnectionStateUpdated /
+                ConnectivityMTUUpdated /
                 SecurityKeyUpdated / SecurityKeyDiscarded /
                 TransportVersionInformation / TransportALPNInformation /
                 TransportParametersSet / TransportParametersRestored /
@@ -2195,25 +2259,25 @@ Appendix C.  Design Variations
 
    TBD
 
-Appendix D.  Acknowledgements
+Acknowledgements
 
-   Much of the initial work by Robin Marx was done at Hasselt
-   University.
+   Much of the initial work by Robin Marx was done at the Hasselt and KU
+   Leuven Universities.
 
-   Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri
-   Tikhonov, Stephen Petrides, Jari Arkko, Marcus Ihlar, Victor
-   Vasiliev, Mirja Kuehlewind, Jeremy Laine, Kazu Yamamoto, Christian
-   Huitema, and Lucas Pardue for their feedback and suggestions.
+   Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
+   Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja
+   Kuehlewind, Jeremy Laine, Kazu Yamamoto, and Christian Huitema for
+   their feedback and suggestions.
 
 Authors' Addresses
 
-   Robin Marx
-   KU Leuven
-   Email: robin.marx@kuleuven.be
+   Robin Marx (editor)
+   Akamai
+   Email: rmarx@akamai.com
 
 
    Luca Niccolini (editor)
-   Facebook
+   Meta
    Email: lniccolini@fb.com
 
 
