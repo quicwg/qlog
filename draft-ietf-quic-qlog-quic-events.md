@@ -423,6 +423,24 @@ TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
 
 For now, infer from other connectivity events and path_challenge/path_response frames
 
+### mtu_updated
+Importance: Extra
+
+~~~ ccdl
+ConnectivityMTUUpdated = {
+  ? old: uint16
+  new: uint16
+
+  ; at some point, MTU discovery stops, as a "good enough"
+  ; packet size has been found
+  ? done: bool .default false
+}
+~~~
+{: #connectivity-mtu-updated-def title="ConnectivityMTUUpdated definition"}
+
+This event indicates that the estimated Path MTU was updated. This happens as
+part of the Path MTU discovery process.
+
 ## security
 
 ### key_updated
@@ -1260,7 +1278,7 @@ RecoveryPacketLost = {
     ; see appendix for the QuicFrame definitions
     ? frames: [* QuicFrame]
 
-    ? is_mtu_probe_packet: boolean .default false
+    ? is_mtu_probe_packet: bool .default false
 
     ? trigger:
         "reordering_threshold" /
@@ -1306,23 +1324,6 @@ RecoveryMarkedForRetransmit = {
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
 
-## mtu_updated
-Importance: Extra
-
-~~~ ccdl
-MTUUpdated = {
-  ? mtu: uint16
-
-  ; at some point, MTU discovery stops, as a "good enough"
-  ; packet size has been found
-  ? done: boolean .default false
-}
-~~~
-{: #mtu-updated-def title="MTUUpdated definition"}
-
-This event indicates that the estimated Path MTU was updated. This happens as
-part of the Path MTU discovery process.
-
 
 # Security Considerations
 
@@ -1348,6 +1349,7 @@ QuicEvents = ConnectivityServerListening /
              ConnectivityConnectionIDUpdated /
              ConnectivitySpinBitUpdated /
              ConnectivityConnectionStateUpdated /
+             ConnectivityMTUUpdated /
              SecurityKeyUpdated / SecurityKeyDiscarded /
              TransportVersionInformation / TransportALPNInformation /
              TransportParametersSet / TransportParametersRestored /
