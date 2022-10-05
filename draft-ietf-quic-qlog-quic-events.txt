@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 1 April 2023                                               Meta
+Expires: 8 April 2023                                               Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                       28 September 2022
+                                                          5 October 2022
 
 
                     QUIC event definitions for qlog
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 1 April 2023.
+   This Internet-Draft will expire on 8 April 2023.
 
 Copyright Notice
 
@@ -71,6 +71,7 @@ Table of Contents
        3.1.6.  connection_retried
        3.1.7.  connection_state_updated
        3.1.8.  MIGRATION-related events
+       3.1.9.  mtu_updated
      3.2.  security
        3.2.1.  key_updated
        3.2.2.  key_discarded
@@ -97,7 +98,6 @@ Table of Contents
        3.4.4.  loss_timer_updated
        3.4.5.  packet_lost
        3.4.6.  marked_for_retransmit
-     3.5.  mtu_updated
    4.  Security Considerations
    5.  IANA Considerations
    6.  Normative References
@@ -556,6 +556,24 @@ Table of Contents
    For now, infer from other connectivity events and path_challenge/
    path_response frames
 
+3.1.9.  mtu_updated
+
+   Importance: Extra
+
+   ConnectivityMTUUpdated = {
+     ? old: uint16
+     new: uint16
+
+     ; at some point, MTU discovery stops, as a "good enough"
+     ; packet size has been found
+     ? done: bool .default false
+   }
+
+                Figure 7: ConnectivityMTUUpdated definition
+
+   This event indicates that the estimated Path MTU was updated.  This
+   happens as part of the Path MTU discovery process.
+
 3.2.  security
 
 3.2.1.  key_updated
@@ -584,7 +602,7 @@ Table of Contents
            "local_update"
    }
 
-                  Figure 7: SecurityKeyUpdated definition
+                  Figure 8: SecurityKeyUpdated definition
 
 3.2.2.  key_discarded
 
@@ -607,7 +625,7 @@ Table of Contents
            "local_update"
    }
 
-                 Figure 8: SecurityKeyDiscarded definition
+                 Figure 9: SecurityKeyDiscarded definition
 
 3.3.  transport
 
@@ -632,7 +650,7 @@ Table of Contents
        ? chosen_version: QuicVersion
    }
 
-              Figure 9: TransportVersionInformation definition
+             Figure 10: TransportVersionInformation definition
 
    Intended use:
 
@@ -674,7 +692,7 @@ Table of Contents
        ? chosen_alpn: text
    }
 
-               Figure 10: TransportALPNInformation definition
+               Figure 11: TransportALPNInformation definition
 
    Intended use:
 
@@ -773,7 +791,7 @@ Table of Contents
        stateless_reset_token: StatelessResetToken
    }
 
-                Figure 11: TransportParametersSet definition
+                Figure 12: TransportParametersSet definition
 
    Additionally, this event can contain any number of unspecified
    fields.  This is to reflect setting of for example unknown (greased)
@@ -808,7 +826,7 @@ Table of Contents
        ? initial_max_streams_uni: uint64
    }
 
-             Figure 12: TransportParametersRestored definition
+             Figure 13: TransportParametersRestored definition
 
    Note that, like parameters_set above, this event can contain any
    number of unspecified fields to allow for additional/custom
@@ -857,7 +875,7 @@ Table of Contents
          "cc_bandwidth_probe"
    }
 
-                 Figure 13: TransportPacketSent definition
+                 Figure 14: TransportPacketSent definition
 
    Note: We do not explicitly log the encryption_level or
    packet_number_space: the header.packet_type specifies this by
@@ -899,7 +917,7 @@ Table of Contents
            "keys_available"
    }
 
-               Figure 14: TransportPacketReceived definition
+               Figure 15: TransportPacketReceived definition
 
    Note: We do not explicitly log the encryption_level or
    packet_number_space: the header.packet_type specifies this by
@@ -940,7 +958,7 @@ Table of Contents
            "invalid_initial"
    }
 
-                Figure 15: TransportPacketDropped definition
+                Figure 16: TransportPacketDropped definition
 
    Note: sometimes packets are dropped before they can be associated
    with a particular connection (e.g., in case of
@@ -978,7 +996,7 @@ Table of Contents
            "keys_unavailable"
    }
 
-               Figure 16: TransportPacketBuffered definition
+               Figure 17: TransportPacketBuffered definition
 
    Note: for more details on "datagram_id", see Section 3.3.10.  It is
    only needed when keeping track of packet coalescing.
@@ -1004,7 +1022,7 @@ Table of Contents
        ? packet_numbers: [+ uint64]
    }
 
-                Figure 17: TransportPacketsAcked definition
+                Figure 18: TransportPacketsAcked definition
 
    Note: if packet_number_space is omitted, it assumes the default value
    of PacketNumberSpace.application_data, as this is by far the most
@@ -1030,7 +1048,7 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-                Figure 18: TransportDatagramsSent definition
+                Figure 19: TransportDatagramsSent definition
 
    Note: QUIC itself does not have a concept of a "datagram_id".  This
    field is a purely qlog-specific construct to allow tracking how
@@ -1063,7 +1081,7 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-              Figure 19: TransportDatagramsReceived definition
+              Figure 20: TransportDatagramsReceived definition
 
    Note: for more details on "datagram_ids", see Section 3.3.10.
 
@@ -1081,7 +1099,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-               Figure 20: TransportDatagramDropped definition
+               Figure 21: TransportDatagramDropped definition
 
 3.3.13.  stream_state_updated
 
@@ -1137,7 +1155,7 @@ Table of Contents
        ; memory actually freed
        "destroyed"
 
-             Figure 21: TransportStreamStateUpdated definition
+             Figure 22: TransportStreamStateUpdated definition
 
    Note: QUIC implementations SHOULD mainly log the simplified
    bidirectional (HTTP/2-alike) stream states (e.g., idle, open, closed)
@@ -1191,7 +1209,7 @@ Table of Contents
        ? packet_number: uint64
    }
 
-               Figure 22: TransportFramesProcessed definition
+               Figure 23: TransportFramesProcessed definition
 
 3.3.15.  data_moved
 
@@ -1228,7 +1246,7 @@ Table of Contents
        ? data: hexstring
    }
 
-                  Figure 23: TransportDataMoved definition
+                  Figure 24: TransportDataMoved definition
 
    Note: we do not for example use a "direction" field (with values "up"
    and "down") to specify the data flow.  This is because in some
@@ -1295,7 +1313,7 @@ Table of Contents
        ? persistent_congestion_threshold: uint16
    }
 
-                Figure 24: RecoveryParametersSet definition
+                Figure 25: RecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
@@ -1340,7 +1358,7 @@ Table of Contents
        ? pacing_rate: uint64
    }
 
-                Figure 25: RecoveryMetricsUpdated definition
+                Figure 26: RecoveryMetricsUpdated definition
 
    Note: to make logging easier, implementations MAY log values even if
    they are the same as previously reported values (e.g., two subsequent
@@ -1380,7 +1398,7 @@ Table of Contents
            "ECN"
    }
 
-            Figure 26: RecoveryCongestionStateUpdated definition
+            Figure 27: RecoveryCongestionStateUpdated definition
 
    The "trigger" field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
@@ -1420,7 +1438,7 @@ Table of Contents
        ? delta: float32
    }
 
-               Figure 27: RecoveryLossTimerUpdated definition
+               Figure 28: RecoveryLossTimerUpdated definition
 
    TODO: how about CC algo's that use multiple timers?  How generic do
    these events need to be?  Just support QUIC-style recovery from the
@@ -1446,7 +1464,7 @@ Table of Contents
        ; see appendix for the QuicFrame definitions
        ? frames: [* QuicFrame]
 
-       ? is_mtu_probe_packet: boolean .default false
+       ? is_mtu_probe_packet: bool .default false
 
        ? trigger:
            "reordering_threshold" /
@@ -1455,7 +1473,7 @@ Table of Contents
            "pto_expired"
    }
 
-                  Figure 28: RecoveryPacketLost definition
+                  Figure 29: RecoveryPacketLost definition
 
    For this event, the "trigger" field SHOULD be set (for example to one
    of the values below), as this helps tremendously in debugging.
@@ -1492,24 +1510,7 @@ Table of Contents
        frames: [+ QuicFrame]
    }
 
-             Figure 29: RecoveryMarkedForRetransmit definition
-
-3.5.  mtu_updated
-
-   Importance: Extra
-
-   MTUUpdated = {
-     ? mtu: uint16
-
-     ; at some point, MTU discovery stops, as a "good enough"
-     ; packet size has been found
-     ? done: boolean .default false
-   }
-
-                      Figure 30: MTUUpdated definition
-
-   This event indicates that the estimated Path MTU was updated.  This
-   happens as part of the Path MTU discovery process.
+             Figure 30: RecoveryMarkedForRetransmit definition
 
 4.  Security Considerations
 
@@ -1572,6 +1573,7 @@ A.1.  ProtocolEventBody extension
                 ConnectivityConnectionIDUpdated /
                 ConnectivitySpinBitUpdated /
                 ConnectivityConnectionStateUpdated /
+                ConnectivityMTUUpdated /
                 SecurityKeyUpdated / SecurityKeyDiscarded /
                 TransportVersionInformation / TransportALPNInformation /
                 TransportParametersSet / TransportParametersRestored /
