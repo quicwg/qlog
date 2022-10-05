@@ -130,7 +130,7 @@ logged as `float64` in the millisecond resolution.
 Other qlog documents can define their own CDDL-compatible (struct) types
 (e.g., separately for each Packet type that a protocol supports).
 
-> Note to RFC editor: Please remove the follow text in this section before
+> Note to RFC editor: Please remove the following text in this section before
 publication.
 
 The main general CDDL syntax conventions in this document a reader
