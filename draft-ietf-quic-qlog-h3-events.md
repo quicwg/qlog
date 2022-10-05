@@ -83,22 +83,23 @@ The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
+The following fields from {{QLOG-MAIN}} are imported and used: name, category,
+type, data, group_id, protocol_type, importance, RawInfo, and time-related
+fields.
+
 # Overview
 
-This document describes the values of the qlog "name" ("category" + "event") and
-"data" fields and their semantics for the HTTP/3 and QPACK protocols.
+This document describes how the HTTP/3 and QPACK can be expressed in qlog using
+the schema defined in {{QLOG-MAIN}}. HTTP/3 and QPACK events are defined with a
+category, a name (the concatenation of "category" and "event"), an "importance",
+an optional "trigger", and "data" fields.
 
-This document assumes the usage of the encompassing main qlog schema defined in
-{{QLOG-MAIN}}. Each subsection below defines a separate category (for example http,
-qpack) and each subsubsection is an event type (for example `frame_created`).
+Some data fields use complex datastructures. These are represented as enums or
+re-usable definitions, which are grouped together on the bottom of this document
+for clarity.
 
-For each event type, its importance and data definition is laid out, often
-accompanied by possible values for the optional "trigger" field. For the
-definition and semantics of "importance" and "trigger", see the main schema
-document.
-
-Most of the complex datastructures, enums and re-usable definitions are grouped
-together on the bottom of this document for clarity.
+When any event from this document is included in a qlog trace, the
+"protocol_type" qlog array field MUST contain an entry with the value "HTTP3".
 
 ## Usage with QUIC
 
@@ -114,16 +115,7 @@ identifier, potentially suffixed by the vantagepoint type (For example,
 abcd1234_server.qlog would contain the server-side trace of the connection with
 GUID abcd1234).
 
-## Links to the main schema
-
-This document re-uses all the fields defined in the main qlog schema (e.g., name,
-category, type, data, group_id, protocol_type, the time-related fields,
-importance, RawInfo, etc.).
-
-One entry in the "protocol_type" qlog array field MUST be "HTTP3" if events from
-this document are included in a qlog trace.
-
-### Raw packet and frame information
+## Raw packet and frame information
 
 This document re-uses the definition of the RawInfo data class from {{QLOG-MAIN}}.
 
@@ -145,18 +137,37 @@ the same value.
 
 # HTTP/3 and QPACK event definitions
 
-Each subheading in this section is a qlog event category, while each
-sub-subheading is a qlog event type.
+This document defines events in two categories: http ({{http-ev}}) and qpack
+({{qpack-ev}}).
 
-For example, for the following two items, we have the category "http" and event
-type "parameters_set", resulting in a concatenated qlog "name" field value of
-"http:parameters_set".
+As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
+concatenation of category and type.
 
-## http
+{{h3-qpack-events}} summarizes the name value of each event type that is defined
+in this specification.
+
+| Name value                  |  Definition |
+|:----------------------------|:------------|
+| http:parameters_set         | {{http-parametersset}} |
+| http:parameters_restored    | {{http-parametersrestored}} |
+| http:stream_type_set        | {{http-streamtypeset}} |
+| http:frame_created          | {{http-framecreated}} |
+| http:frame_parsed           | {{http-frameparsed}} |
+| http:push_resolved          | {{http-pushresolved}} |
+| qpack:state_updated         | {{qpack-stateupdated}} |
+| qpack:stream_state_updated  | {{qpack-streamstateupdate}} |
+| qpack:dynamic_table_updated | {{qpack-dynamictableupdate}} |
+| qpack:headers_encoded       | {{qpack-headersencoded}} |
+| qpack:headers_decoded       | {{qpack-headersdecoded}} |
+| qpack:instruction_created   | {{qpack-instructioncreated}} |
+| qpack:instruction_parsed    | {{qpack-instructionparsed}} |
+{: #h3-qpack-events title="HTTP/3 and QPACK Events"}
+
+# HTTP/3 events {#http-ev}
 
 Note: like all category values, the "http" category is written in lowercase.
 
-### parameters_set
+## parameters_set {#http-parametersset}
 Importance: Base
 
 This event contains HTTP/3 and QPACK-level settings, mostly those received from
@@ -208,7 +219,7 @@ Additionally, this event can contain any number of unspecified fields. This is t
 reflect setting of for example unknown (greased) settings or parameters of
 (proprietary) extensions.
 
-### parameters_restored
+## parameters_restored {#http-parametersrestored}
 Importance: Base
 
 When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
@@ -229,7 +240,7 @@ HTTPParametersRestored = {
 Note that, like for parameters_set above, this event can contain any number of
 unspecified fields to allow for additional and custom settings.
 
-### stream_type_set
+## stream_type_set {#http-streamtypeset}
 Importance: Base
 
 Emitted when a stream's type becomes known. This is typically when a stream is
@@ -267,7 +278,7 @@ HTTPStreamType =  "request" /
 ~~~
 {: #https-streamtypeset-def title="HTTPStreamTypeSet definition"}
 
-### frame_created
+## frame_created {#http-framecreated}
 Importance: Core
 
 HTTP equivalent to the packet_sent event. This event is emitted when the HTTP/3
@@ -293,7 +304,7 @@ created in a streaming fashion. In this case, the frame_created event is emitted
 once for the frame header, and further streamed data is indicated using the
 data_moved event.
 
-### frame_parsed
+## frame_parsed {#http-frameparsed}
 Importance: Core
 
 HTTP equivalent to the packet_received event. This event is emitted when we
@@ -320,7 +331,7 @@ processed in a streaming fashion. In this case, the frame_parsed event is emitte
 once for the frame header, and further streamed data is indicated using the
 data_moved event.
 
-### push_resolved
+## push_resolved {#http-pushresolved}
 Importance: Extra
 
 This event is emitted when a pushed resource is successfully claimed (used) or,
@@ -345,7 +356,7 @@ HTTPPushDecision = "claimed" / "abandoned"
 ~~~
 {: #http-pushresolved-def title="HTTPPushResolved definition"}
 
-## qpack
+# qpack {#qpack-ev}
 
 Note: like all category values, the "qpack" category is written in lowercase.
 
@@ -358,7 +369,7 @@ http.parameters_set for brevity, since qpack is a required extension for HTTP/3
 anyway. Other HTTP/3 extensions MAY also log their SETTINGS fields in
 http.parameters_set or MAY define their own events.
 
-### state_updated
+## state_updated {#qpack-stateupdated}
 Importance: Base
 
 This event is emitted when one or more of the internal QPACK variables changes
@@ -383,7 +394,7 @@ QPACKStateUpdate = {
 ~~~
 {: #qpack-stateupdate-def title="QPACKStateUpdate definition"}
 
-### stream_state_updated
+## stream_state_updated {#qpack-streamstateupdate}
 Importance: Core
 
 This event is emitted when a stream becomes blocked or unblocked by header
@@ -406,7 +417,7 @@ QPACKStreamState = "blocked" / "unblocked"
 ~~~
 {: #qpack-streamstateupdate-def title="QPACKStreamStateUpdate definition"}
 
-### dynamic_table_updated
+## dynamic_table_updated {#qpack-dynamictableupdate}
 Importance: Extra
 
 This event is emitted when one or more entries are inserted or evicted from QPACK's dynamic table.
@@ -433,7 +444,7 @@ QPACKDynamicTableEntry = {
 ~~~
 {: #qpack-dynamictableupdate-def title="QPACKDynamicTableUpdate definition"}
 
-### headers_encoded
+## headers_encoded {#qpack-headersencoded}
 Importance: Base
 
 This event is emitted when an uncompressed header block is encoded successfully.
@@ -458,7 +469,7 @@ QPACKHeadersEncoded = {
 ~~~
 {: #qpack-headersencoded-def title="QPACKHeadersEncoded definition"}
 
-### headers_decoded
+## headers_decoded {#qpack-headersdecoded}
 Importance: Base
 
 This event is emitted when a compressed header block is decoded successfully.
@@ -483,7 +494,7 @@ QPACKHeadersDecoded = {
 ~~~
 {: #qpack-headersdecoded-def title="QPACKHeadersDecoded definition"}
 
-### instruction_created
+## instruction_created {#qpack-instructioncreated}
 Importance: Base
 
 This event is emitted when a QPACK instruction (both decoder and encoder) is
@@ -504,7 +515,7 @@ QPACKInstructionCreated = {
 Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
-### instruction_parsed
+## instruction_parsed {#qpack-instructionparsed}
 Importance: Base
 
 This event is emitted when a QPACK instruction (both decoder and encoder) is read
