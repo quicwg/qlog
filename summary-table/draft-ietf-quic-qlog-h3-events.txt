@@ -2,13 +2,15 @@
 
 
 
-QUIC                                                             R. Marx
-Internet-Draft                                                 KU Leuven
+QUIC                                                        R. Marx, Ed.
+Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 20 March 2023                                          Facebook
+Expires: 8 April 2023                                               Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                       16 September 2022
+                                                          L. Pardue, Ed.
+                                                              Cloudflare
+                                                          5 October 2022
 
 
                 HTTP/3 and QPACK qlog event definitions
@@ -35,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 20 March 2023.
+   This Internet-Draft will expire on 8 April 2023.
 
 Copyright Notice
 
@@ -109,12 +111,14 @@ Table of Contents
        B.3.4.  QPACKHeaderBlockPrefix
        B.3.5.  QPACKTableType
    Appendix C.  Change Log
-     C.1.  Since draft-ietf-quic-qlog-h3-events-00:
-     C.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
-     C.3.  Since draft-marx-qlog-event-definitions-quic-h3-01:
-     C.4.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+     C.1.  Since draft-ietf-quic-qlog-h3-events-02:
+     C.2.  Since draft-ietf-quic-qlog-h3-events-01:
+     C.3.  Since draft-ietf-quic-qlog-h3-events-00:
+     C.4.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+     C.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+     C.6.  Since draft-marx-qlog-event-definitions-quic-h3-00:
    Appendix D.  Design Variations
-   Appendix E.  Acknowledgements
+   Acknowledgements
    Authors' Addresses
 
 1.  Introduction
@@ -321,14 +325,18 @@ Table of Contents
        ? old: HTTPStreamType
        new: HTTPStreamType
 
+       ; only when new === "unknown"
+       ? raw_stream_type: uint64
+
        ; only when new === "push"
        ? associated_push_id: uint64
    }
 
-   HTTPStreamType =  "data" /
+   HTTPStreamType =  "request" /
                      "control" /
                      "push" /
                      "reserved" /
+                     "unknown" /
                      "qpack_encode" /
                      "qpack_decode"
 
@@ -622,18 +630,18 @@ Table of Contents
               June 2022, <https://www.rfc-editor.org/rfc/rfc9114>.
 
    [QLOG-MAIN]
-              Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
-              "Main logging schema for qlog", Work in Progress,
-              Internet-Draft, draft-ietf-quic-qlog-main-schema,
+              Marx, R., Niccolini, L., and M. Seemann, "Main logging
+              schema for qlog", Work in Progress, Internet-Draft, draft-
+              ietf-quic-qlog-main-schema-03, 31 August 2022,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema>.
+              qlog-main-schema-03>.
 
    [QLOG-QUIC]
-              Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
-              "QUIC event definitions for qlog", Work in Progress,
-              Internet-Draft, draft-ietf-quic-qlog-quic-events,
+              Marx, R., Niccolini, L., and M. Seemann, "QUIC event
+              definitions for qlog", Work in Progress, Internet-Draft,
+              draft-ietf-quic-qlog-quic-events-02, 31 August 2022,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-quic-events>.
+              qlog-quic-events-02>.
 
    [QPACK]    Krasic, C., Bishop, M., and A. Frindell, Ed., "QPACK:
               Field Compression for HTTP/3", RFC 9204,
@@ -1024,11 +1032,19 @@ B.3.5.  QPACKTableType
 
 Appendix C.  Change Log
 
-C.1.  Since draft-ietf-quic-qlog-h3-events-00:
+C.1.  Since draft-ietf-quic-qlog-h3-events-02:
+
+   *  TODO
+
+C.2.  Since draft-ietf-quic-qlog-h3-events-01:
+
+   *  No changes - new draft to prevent expiration
+
+C.3.  Since draft-ietf-quic-qlog-h3-events-00:
 
    *  Change the data definition language from TypeScript to CDDL (#143)
 
-C.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+C.4.  Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  These changes were done in preparation of the adoption of the
       drafts by the QUIC working group (#137)
@@ -1038,7 +1054,7 @@ C.2.  Since draft-marx-qlog-event-definitions-quic-h3-02:
    *  Moved RawInfo, Importance, Generic events and Simulation events to
       the main schema document.
 
-C.3.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+C.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
 
    Major changes:
 
@@ -1110,7 +1126,7 @@ C.3.  Since draft-marx-qlog-event-definitions-quic-h3-01:
    *  Extended connection_state_updated with more fine-grained states
       (#49)
 
-C.4.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+C.6.  Since draft-marx-qlog-event-definitions-quic-h3-00:
 
    *  Event and category names are now all lowercase
 
@@ -1131,28 +1147,33 @@ Appendix D.  Design Variations
 
    TBD
 
-Appendix E.  Acknowledgements
+Acknowledgements
 
-   Much of the initial work by Robin Marx was done at Hasselt
-   University.
+   Much of the initial work by Robin Marx was done at the Hasselt and KU
+   Leuven Universities.
 
-   Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri
-   Tikhonov, Stephen Petrides, Jari Arkko, Marcus Ihlar, Victor
-   Vasiliev, Mirja Kuehlewind, Jeremy Laine, Kazu Yamamoto, Christian
-   Huitema, and Lucas Pardue for their feedback and suggestions.
+   Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
+   Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja
+   Kuehlewind, Jeremy Laine, Kazu Yamamoto, and Christian Huitema for
+   their feedback and suggestions.
 
 Authors' Addresses
 
-   Robin Marx
-   KU Leuven
-   Email: robin.marx@kuleuven.be
+   Robin Marx (editor)
+   Akamai
+   Email: rmarx@akamai.com
 
 
    Luca Niccolini (editor)
-   Facebook
+   Meta
    Email: lniccolini@fb.com
 
 
    Marten Seemann (editor)
    Protocol Labs
    Email: marten@protocol.ai
+
+
+   Lucas Pardue (editor)
+   Cloudflare
+   Email: lucaspardue.24.7@gmail.com
