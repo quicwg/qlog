@@ -124,6 +124,15 @@ hexstring = text .regexp "([0-9a-f]{2})*"
 ~~~
 {: #cddl-custom-types-def title="Additional CDDL type definitions"}
 
+All timestamps and time-related values (e.g., offsets) in qlog are
+logged as `float64` in the millisecond resolution.
+
+Other qlog documents can define their own CDDL-compatible (struct) types
+(e.g., separately for each Packet type that a protocol supports).
+
+> Note to RFC editor: Please remove the follow text in this section before
+publication.
+
 The main general CDDL syntax conventions in this document a reader
 should be aware of for easy reading comprehension are:
 
@@ -142,12 +151,6 @@ should be aware of for easy reading comprehension are:
 * `* text => any` : special syntax to indicate 0 or more fields that
   have a string key that maps to any value. Used to indicate a generic
   JSON object.
-
-All timestamps and time-related values (e.g., offsets) in qlog are
-logged as `float64` in the millisecond resolution.
-
-Other qlog documents can define their own CDDL-compatible (struct) types
-(e.g., separately for each Packet type that a protocol supports).
 
 ### Serialization
 
