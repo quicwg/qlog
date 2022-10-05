@@ -581,7 +581,7 @@ HTTPFrame =  HTTPDataFrame /
              HTTPGoawayFrame /
              HTTPMaxPushIDFrame /
              HTTPReservedFrame /
-             UnknownFrame
+             HTTPUnknownFrame
 ~~~
 {: #httpframe-def title="HTTPFrame definition"}
 
@@ -711,8 +711,16 @@ HTTPReservedFrame = {
 
 ### UnknownFrame
 
-HTTP/3 qlog re-uses QUIC's UnknownFrame definition, since their values
-and usage overlaps. See {{QLOG-QUIC}}.
+~~~ cddl
+HTTPUnknownFrame = {
+    frame_type: "unknown"
+    raw_frame_type: uint64
+
+    ? raw_length: uint32
+    ? raw: hexstring
+}
+~~~
+{: #httpunknownframe-def title="UnknownFrame definition"}
 
 ## ApplicationError
 
