@@ -134,7 +134,7 @@ qlog, making it easier for users to interpret. In this case, both fields MUST ha
 the same value.
 
 
-# HTTP/3 and QPACK event summary
+# HTTP/3 and QPACK event definitions
 
 This document defines events in two categories: http ({{http-ev}}) and qpack
 ({{qpack-ev}}).
