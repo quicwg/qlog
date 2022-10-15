@@ -162,7 +162,7 @@ just the connection ID).
 
 
 
-# QUIC event definitions
+# QUIC Event Overview
 
 QUIC connections consist of different phases and interaction events. In order to
 model this, QUIC event types are divided into general categories: connectivity
@@ -175,39 +175,39 @@ concatenation of category and type.
 {{quic-events}} summarizes the name value of each event type that is defined in
 this specification.
 
-| Name value                            |  Definition |
-|:--------------------------------------|:------------|
-| connectivity:server_listening         | {{connectivity-serverlistening}} |
-| connectivity:connection_started       | {{connectivity-connectionstarted}} |
-| connectivity:connection_closed        | {{connectivity-connectionclosed}} |
-| connectivity:connection_id_updated    | {{connectivity-connectionidupdated}} |
-| connectivity:spin_bit_updated         | {{connectivity-spinbitupdated}} |
-| connectivity:connection_retried       | {{connectivity-connectionretried}} |
-| connectivity:connection_state_updated | {{connectivity-connectionstateupdated}} |
-| connectivity:mtu_updated              | {{connectivity-mtuupdated}} |
-| security:key_updated                  | {{security-keyupdated}} |
-| security:key_discarded                | {{security-keydiscarded}} |
-| transport:version_information         | {{transport-versioninformation}} |
-| transport:alpn_information            | {{transport-alpninformation}} |
-| transport:parameters_set              | {{transport-parametersset}} |
-| transport:parameters_restored         | {{transport-parametersrestored}} |
-| transport:packet_sent                 | {{transport-packetsent}} |
-| transport:packet_received             | {{transport-packetreceived}} |
-| transport:packet_dropped              | {{transport-packetdropped}} |
-| transport:packet_buffered             | {{transport-packetbuffered}} |
-| transport:packets_acked               | {{transport-packetsacked}} |
-| transport:datagrams_sent              | {{transport-datagramssent}} |
-| transport:datagrams_received          | {{transport-datagramsreceived}} |
-| transport:datagram_dropped            | {{transport-datagramdropped}} |
-| transport:stream_state_updated        | {{transport-streamstateupdated}} |
-| transport:frames_processed            | {{transport-framesprocessed}} |
-| transport:data_moved                  | {{transport-datamoved}} |
-| recovery:parameters_set               | {{recovery-parametersset}} |
-| recovery:metrics_updated              | {{recovery-metricsupdated}} |
-| recovery:congestion_state_updated     | {{recovery-congestionstateupdated}} |
-| recovery:loss_timer_updated           | {{recovery-losstimerupdated}} |
-| recovery:packet_lost                  | {{recovery-packetlost}} |
-| recovery:marked_for_retransmit        | {{recovery-markedforretransmit}} |
+| Name value                            | Importance |  Definition |
+|:--------------------------------------|:-----------| :------------|
+| connectivity:server_listening         | Extra      | {{connectivity-serverlistening}} |
+| connectivity:connection_started       | Base       | {{connectivity-connectionstarted}} |
+| connectivity:connection_closed        | Base       | {{connectivity-connectionclosed}} |
+| connectivity:connection_id_updated    | Base       | {{connectivity-connectionidupdated}} |
+| connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
+| connectivity:connection_retried       | TODO       | {{connectivity-connectionretried}} |
+| connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
+| connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
+| transport:version_information         | Core       | {{transport-versioninformation}} |
+| transport:alpn_information            | Core       | {{transport-alpninformation}} |
+| transport:parameters_set              | Core       | {{transport-parametersset}} |
+| transport:parameters_restored         | Base       | {{transport-parametersrestored}} |
+| transport:packet_sent                 | Core       | {{transport-packetsent}} |
+| transport:packet_received             | Core       | {{transport-packetreceived}} |
+| transport:packet_dropped              | Base       | {{transport-packetdropped}} |
+| transport:packet_buffered             | Base       | {{transport-packetbuffered}} |
+| transport:packets_acked               | Extra      | {{transport-packetsacked}} |
+| transport:datagrams_sent              | Extra      | {{transport-datagramssent}} |
+| transport:datagrams_received          | Extra      | {{transport-datagramsreceived}} |
+| transport:datagram_dropped            | Extra      | {{transport-datagramdropped}} |
+| transport:stream_state_updated        | Base       | {{transport-streamstateupdated}} |
+| transport:frames_processed            | Extra      | {{transport-framesprocessed}} |
+| transport:data_moved                  | Base       | {{transport-datamoved}} |
+| security:key_updated                  | Base       | {{security-keyupdated}} |
+| security:key_discarded                | Base       | {{security-keydiscarded}} |
+| recovery:parameters_set               | Base       | {{recovery-parametersset}} |
+| recovery:metrics_updated              | Core       | {{recovery-metricsupdated}} |
+| recovery:congestion_state_updated     | Base       | {{recovery-congestionstateupdated}} |
+| recovery:loss_timer_updated           | Extra      | {{recovery-losstimerupdated}} |
+| recovery:packet_lost                  | Core       | {{recovery-packetlost}} |
+| recovery:marked_for_retransmit        | Extra      | {{recovery-markedforretransmit}} |
 {: #quic-events title="QUIC Events"}
 
 # Connectivity events {#conn-ev}
