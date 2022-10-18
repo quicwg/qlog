@@ -1873,17 +1873,88 @@ still provide adequate output for incomplete logs.
 
 # Security and privacy considerations {#privacy}
 
-TODO : discuss privacy and security considerations (e.g., what NOT to log, what to
-strip out of a log before sharing, ...)
+Modern protocols such as QUIC ({{!RFC9000}}) take pains to encrypt a large part
+of their wire image, leading to generally strong privacy and security
+characteristics, especially considering monster-in-the-middle threat models. A
+generalized, plaintext logging scheme such as qlog by its nature undoes some of
+these characteristics to make (parts of) the protocols observable again. This is
+needed for a variety of use cases such as (live) operational insight,
+implementation debuggability or research, but carries inherent security and
+privacy risks, especially if qlog data can be correlated with other data
+sources. As such, qlog operators and implementers should be aware of these risks
+inherent in logging, storing, using, and in some cases purposefully disclosing
+potentially sensitive information as part of qlog data.
 
-TODO: strip out/don't log IPs, ports, specific CIDs, raw user data, exact times,
-HTTP HEADERS (or at least :path), SNI values
+A non-exhaustive list of potentially sensitive fields in qlog data include:
 
-TODO: see if there is merit in encrypting the logs and having the server choose an
-encryption key (e.g., sent in transport parameters)
+* IP addresses and transport protocol port numbers, which can be used to
+  identify individual connections, endpoints and potentially users.
 
-Good initial reference: [Christian Huitema's
-blogpost](https://huitema.wordpress.com/2020/07/21/scrubbing-quic-logs-for-privacy/)
+* QUIC Connection IDs and contents of NEW_CONNECTION_ID frames, which can be
+  used to identify and track users across geographical networks {{!RFC9000}}.
+
+* Accurate event timestamps, event counts, packet and frame sizes, which can be
+  used with other data sources (e.g., encrypted packet captures) to correlate
+  qlog data to a specific connection or user.
+
+* Token values, which can contain address validation details and previous
+  connection information which could allow correlation of multiple connections.
+
+* TLS (decryption) keys, which can be used with other data sources (e.g.,
+  encrypted packet captures) to correlate qlog data to a specific connection or
+  user or leak additional information.
+
+* Full or partial, encrypted or plaintext raw packet and frame payloads (e.g.,
+  HTTP Field values, HTTP response data, TLS SNI field values), which can
+  contain other sensitive information. In qlog, these are typically (but not
+  exclusively) contained in fields of the RawInfo type (see {{raw-info}}). qlog
+  users should be particularly hesitant to include this information in all but
+  the most stringent conditions.
+
+The simplest and most extreme form of protection against abuse of this
+information is the complete deletion of a given field, which is equivalent to
+not logging the field(s) in question. While deletion completely protects the
+data in the deleted fields from the risk of compromise, it also reduces the
+utility of the dataset as a whole. As such, a balance should be found between
+logging these fields and the potential risks inherent in their (involuntary)
+disclosure. This balance depends on the use case at hand (e.g., research
+datasets have different requirements to live operational troubleshooting). As
+such, operators SHOULD only capture the minimal subset of qlog data relevant to
+their specific purpose. Consequently, qlog implementers SHOULD allow for
+changing this subset in a dynamic fashion, ideally even on a per-connection
+basis.
+
+For the remaining fields deemed necessary for the use case at hand, as per
+{{!RFC6973}}, operators must be aware that the data will be at risk of
+compromise. As such, measures should be taken to firstly reduce the risk of
+compromise and secondly reduce the risk of abuse of compromised data. While a
+full discussion of both aspects is out of scope for this document, the following
+paragraphs discuss high level concepts that can be applied to qlog data.
+
+To reduce the risk of compromise, operators can take measures such as: limiting
+the amount of time data is stored, encrypting data at rest, limiting access
+rights to the data, and auditing data usage practices. qlog deployments SHOULD
+have integrated options for easy qlog data deletion or (aggressive) aggregation.
+
+To reduce the risk of data abuse after compromise, sensitive fields can be
+anonymized, pseudonymized, otherwise permutated/replaced, truncated,
+(re-)encrypted, or aggregated. A partial discussion of applicable techniques
+(especially for IP address information) can be found in Appendix B of
+{{!DNS-PRIVACY=RFC8932}}. Operators should however be aware that many of these
+techniques have been shown to be insufficient to safeguard user privacy and/or
+to protect user identity, especially if qlog data would be compromised in large
+amounts or be correlated with other data sources. As such, techniques from the
+field of differential privacy (TODO: add survey paper reference) should be
+applied to mitigate this risk to its maximal potential.
+
+Finally, in keeping with the trend of maximum end user agency, qlog operators
+SHOULD take end user preferences into account. While active user participation
+(as per {{!RFC6973}}) on a per-qlog basis is difficult, as logs are often capture
+out-of-band to the main user interaction and intent, implementers should have a
+mechanism for integrating the capture, storage and removal of qlogs with more
+general, often existing, user consent and privacy control systems. This is
+especially true when logging (plaintext) packet and frame payload, as this can
+contain highly sensitive information.
 
 # IANA Considerations
 
@@ -1895,7 +1966,7 @@ TODO: primarily the .well-known URI
 
 ## Since draft-ietf-quic-qlog-main-schema-03:
 
-* TODO
+* Added security and privacy considerations discussion
 
 ## Since draft-ietf-quic-qlog-main-schema-02:
 
