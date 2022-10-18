@@ -3,12 +3,14 @@
 
 
 QUIC                                                        R. Marx, Ed.
-Internet-Draft                                                 KU Leuven
+Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 20 March 2023                                          Facebook
+Expires: 21 April 2023                                              Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
-                                                       16 September 2022
+                                                          L. Pardue, Ed.
+                                                              Cloudflare
+                                                         18 October 2022
 
 
                       Main logging schema for qlog
@@ -39,7 +41,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 20 March 2023.
+   This Internet-Draft will expire on 21 April 2023.
 
 Copyright Notice
 
@@ -97,7 +99,7 @@ Table of Contents
        6.1.2.  Truncated values
      6.2.  qlog to JSON Text Sequences mapping
        6.2.1.  Supporting JSON Text Sequences in tooling
-     6.3.  Other optimizated formatting options
+     6.3.  Other optimized formatting options
        6.3.1.  Data structure optimizations
        6.3.2.  Compression
        6.3.3.  Binary formats
@@ -113,13 +115,15 @@ Table of Contents
      11.1.  Normative References
      11.2.  Informative References
    Appendix A.  Change Log
-     A.1.  Since draft-ietf-quic-qlog-main-schema-01:
-     A.2.  Since draft-ietf-quic-qlog-main-schema-00:
-     A.3.  Since draft-marx-qlog-main-schema-draft-02:
-     A.4.  Since draft-marx-qlog-main-schema-01:
-     A.5.  Since draft-marx-qlog-main-schema-00:
+     A.1.  Since draft-ietf-quic-qlog-main-schema-03:
+     A.2.  Since draft-ietf-quic-qlog-main-schema-02:
+     A.3.  Since draft-ietf-quic-qlog-main-schema-01:
+     A.4.  Since draft-ietf-quic-qlog-main-schema-00:
+     A.5.  Since draft-marx-qlog-main-schema-draft-02:
+     A.6.  Since draft-marx-qlog-main-schema-01:
+     A.7.  Since draft-marx-qlog-main-schema-00:
    Appendix B.  Design Variations
-   Appendix C.  Acknowledgements
+   Acknowledgements
    Authors' Addresses
 
 1.  Introduction
@@ -148,6 +152,9 @@ Table of Contents
    inclusion, log aggregation, event grouping and log file size
    reduction techniques.
 
+      Note to RFC editor: Please remove the follow paragraphs in this
+      section before publication.
+
    Feedback and discussion are welcome at https://github.com/quicwg/qlog
    (https://github.com/quicwg/qlog).  Readers are advised to refer to
    the "editor's draft" at that URL for an up-to-date version of this
@@ -160,8 +167,10 @@ Table of Contents
 1.1.  Notational Conventions
 
    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
-   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
-   document are to be interpreted as described in [RFC2119].
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+   "OPTIONAL" in this document are to be interpreted as described in
+   BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
+   capitals, as shown here.
 
 1.1.1.  Schema definition
 
@@ -191,6 +200,16 @@ Table of Contents
 
                  Figure 1: Additional CDDL type definitions
 
+   All timestamps and time-related values (e.g., offsets) in qlog are
+   logged as float64 in the millisecond resolution.
+
+   Other qlog documents can define their own CDDL-compatible (struct)
+   types (e.g., separately for each Packet type that a protocol
+   supports).
+
+      Note to RFC editor: Please remove the following text in this
+      section before publication.
+
    The main general CDDL syntax conventions in this document a reader
    should be aware of for easy reading comprehension are:
 
@@ -219,13 +238,6 @@ Table of Contents
       have a string key that maps to any value.  Used to indicate a
       generic JSON object.
 
-   All timestamps and time-related values (e.g., offsets) in qlog are
-   logged as float64 in the millisecond resolution.
-
-   Other qlog documents can define their own CDDL-compatible (struct)
-   types (e.g., separately for each Packet type that a protocol
-   supports).
-
 1.1.2.  Serialization
 
    While the qlog schemas are format-agnostic, and can be serialized in
@@ -243,8 +255,8 @@ Table of Contents
 
    *  Streamable, event-based logging
 
-   *  Flexibility in the format, complexity in the tooling (e.g., few
-      components are a MUST, tools need to deal with this)
+   *  A flexible format that can reduce log producer overhead, at the
+      cost of increased complexity for consumers (e.g. tools)
 
    *  Extensible and pragmatic
 
@@ -257,7 +269,7 @@ Table of Contents
 
 3.  The high level qlog schema
 
-   A qlog file should be able to contain several indivdual traces and
+   A qlog file should be able to contain several individual traces and
    logs from multiple vantage points that are in some way related.  To
    that end, the top-level element in the qlog schema defines only a
    small set of "header" fields and an array of component traces.  For
@@ -565,7 +577,7 @@ Table of Contents
 
    {
        "name": "aioquic client",
-       "type": "client",
+       "type": "client"
    }
 
    {
@@ -648,27 +660,27 @@ Table of Contents
    JSON serialization:
 
    {
-       time: 1553986553572,
+       "time": 1553986553572,
 
-       name: "transport:packet_sent",
-       data: { ... }
+       "name": "transport:packet_sent",
+       "data": { ... },
 
-       protocol_type:  ["QUIC","HTTP3"],
-       group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
+       "protocol_type":  ["QUIC","HTTP3"],
+       "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
-       time_format: "absolute",
+       "time_format": "absolute",
 
-       ODCID: "127ecc830d98f9d54a42c4f0842aa87e181a",
+       "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a"
    }
 
                           Figure 16: Event example
 
 3.4.1.  Timestamps
 
-   The "time" field indicates the timestamp at which the event occured.
+   The "time" field indicates the timestamp at which the event occurred.
    Its value is typically the Unix timestamp since the 1970 epoch
    (number of milliseconds since midnight UTC, January 1, 1970, ignoring
-   leap seconds).  However, qlog supports two more succint timestamps
+   leap seconds).  However, qlog supports two more succinct timestamps
    formats to allow reducing file size.  The employed format is
    indicated in the "time_format" field, which allows one of three
    values: "absolute", "delta" or "relative".
@@ -722,7 +734,7 @@ Table of Contents
    before processing them, though are not required to (as this could
    impose a significant processing overhead).  This can be a problem
    especially for multi-threaded and/or streaming loggers, who could
-   consider using a separate postprocesser to order qlog events in time
+   consider using a separate post-processor to order qlog events in time
    if a tool do not provide this feature.
 
    Timestamps do not have to use the UNIX epoch timestamp as their
@@ -783,7 +795,7 @@ Table of Contents
 
    The data field is a generic object.  It contains the per-event
    metadata and its form and semantics are defined per specific sort of
-   event.  For example, data field value definitons for QUIC and HTTP/3
+   event.  For example, data field value definitions for QUIC and HTTP/3
    can be found in [QLOG-QUIC] and [QLOG-H3].
 
    This field is defined here as a CDDL extension point (a "socket" or
@@ -821,19 +833,19 @@ Table of Contents
    could be serialized as
 
    {
-       packet_size: 1280,
-       header: {
-           packet_type: "1RTT",
-           packet_number: 123
+       "packet_size": 1280,
+       "header": {
+           "packet_type": "1RTT",
+           "packet_number": 123
        },
-       frames: [
+       "frames": [
            {
-               frame_type: "stream",
-               length: 1000,
-               offset: 456
+               "frame_type": "stream",
+               "length": 1000,
+               "offset": 456
            },
            {
-               frame_type: "padding"
+               "frame_type": "padding"
            }
        ]
    }
@@ -872,7 +884,7 @@ Table of Contents
    grained information without much additional overhead.
 
    In qlog, the optional "trigger" field contains a string value
-   describing the reason (if any) for this event instance occuring, see
+   describing the reason (if any) for this event instance occurring, see
    Section 3.4.3.  While this "trigger" field could be a property of the
    qlog Event itself, it is instead a property of the "data" field
    instead.  This choice was made because many event types do not
@@ -931,21 +943,21 @@ Table of Contents
    JSON serialization example for events grouped by four tuples and QUIC
    connection IDs:
 
-   events: [
+   "events": [
        {
-           time: 1553986553579,
-           protocol_type: ["TCP", "TLS", "HTTP2"],
-           group_id: "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
+           "time": 1553986553579,
+           "protocol_type": ["TCP", "TLS", "HTTP2"],
+           "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
                       ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
-           name: "transport:packet_received",
-           data: { ... },
+           "name": "transport:packet_received",
+           "data": { ... }
        },
        {
-           time: 1553986553581,
-           protocol_type: ["QUIC","HTTP3"],
-           group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-           name: "transport:packet_sent",
-           data: { ... },
+           "time": 1553986553581,
+           "protocol_type": ["QUIC","HTTP3"],
+           "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+           "name": "transport:packet_sent",
+           "data": { ... }
        }
    ]
 
@@ -983,24 +995,24 @@ Table of Contents
    per-event instance:
 
    {
-       events: [{
-               group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-               protocol_type: ["QUIC","HTTP3"],
-               time_format: "relative",
-               reference_time: 1553986553572,
+       "events": [{
+               "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+               "protocol_type": ["QUIC","HTTP3"],
+               "time_format": "relative",
+               "reference_time": 1553986553572,
 
-               time: 2,
-               name: "transport:packet_received",
-               data: { ... }
+               "time": 2,
+               "name": "transport:packet_received",
+               "data": { ... }
            },{
-               group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-               protocol_type: ["QUIC","HTTP3"],
-               time_format: "relative",
-               reference_time: 1553986553572,
+               "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+               "protocol_type": ["QUIC","HTTP3"],
+               "time_format": "relative",
+               "reference_time": 1553986553572,
 
-               time: 7,
-               name: "http:frame_parsed",
-               data: { ... }
+               "time": 7,
+               "name": "http:frame_parsed",
+               "data": { ... }
            }
        ]
    }
@@ -1009,21 +1021,21 @@ Table of Contents
    extracted to common_fields:
 
    {
-       common_fields: {
-           group_id: "127ecc830d98f9d54a42c4f0842aa87e181a",
-           protocol_type: ["QUIC","HTTP3"],
-           time_format: "relative",
-           reference_time: 1553986553572
+       "common_fields": {
+           "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
+           "protocol_type": ["QUIC","HTTP3"],
+           "time_format": "relative",
+           "reference_time": 1553986553572
        },
-       events: [
+       "events": [
            {
-               time: 2,
-               name: "transport:packet_received",
-               data: { ... }
+               "time": 2,
+               "name": "transport:packet_received",
+               "data": { ... }
            },{
-               7,
-               name: "http:frame_parsed",
-               data: { ... }
+               "time": 7,
+               "name": "http:frame_parsed",
+               "data": { ... }
            }
        ]
    }
@@ -1034,7 +1046,7 @@ Table of Contents
    where the key is always a string and the value can be of any type,
    but is typically also a string or number.  As such, unknown entries
    in this dictionary MUST be disregarded by the user and tools (i.e.,
-   the presence of an uknown field is explicitly NOT an error).
+   the presence of an unknown field is explicitly NOT an error).
 
    The list of default qlog fields that are typically logged in
    common_fields (as opposed to as individual fields per event instance)
@@ -1085,7 +1097,7 @@ Table of Contents
    seen two main types used so far: a) those that map directly to
    concepts seen in the protocols (e.g., packet_sent) and b) those that
    act as aggregating events that combine data from several possible
-   protocol behaviours or code paths into one (e.g., parameters_set).
+   protocol behaviors or code paths into one (e.g., parameters_set).
    The latter are typically used as a means to reduce the amount of
    unique event definitions, as reflecting each possible protocol event
    as a separate qlog entity would cause an explosion of event types.
@@ -1114,7 +1126,7 @@ Table of Contents
 
    To aid in this decision making, we recommend that each event SHOULD
    have an "importance indicator" with one of three values, in
-   decreasing order of importance and exptected usage:
+   decreasing order of importance and expected usage:
 
    *  Core
 
@@ -1141,9 +1153,9 @@ Table of Contents
 
    The "Extra" events are considered mostly useful for low-level
    debugging of the implementation, rather than the protocol.  They
-   allow more fine-grained tracking of internal behaviour.  As such,
-   they CAN be present in qlog files and tool implementers CAN add
-   support for these, but they are not required to.
+   allow more fine-grained tracking of internal behavior.  As such, they
+   CAN be present in qlog files and tool implementers CAN add support
+   for these, but they are not required to.
 
    Note that in some cases, implementers might not want to log for
    example data content details in the "Core" events due to performance
@@ -1183,7 +1195,7 @@ Table of Contents
    While qlog is a more high-level logging format, it also allows the
    inclusion of most raw wire image information, such as byte lengths
    and even raw byte values.  This can be useful when for example
-   investigating or tuning packetization behaviour or determining
+   investigating or tuning packetization behavior or determining
    encoding/framing overheads.  However, these fields are not always
    necessary and can take up considerable space if logged for each
    packet or frame.  They can also have a considerable privacy and
@@ -1215,7 +1227,7 @@ Table of Contents
 
    Note:  We do not specify explicit header_length or trailer_length
       fields.  In most protocols, header_length can be calculated by
-      subtracing the payload_length from the length (e.g., if
+      subtracting the payload_length from the length (e.g., if
       trailer_length is always 0).  In protocols with trailers (e.g.,
       QUIC's AEAD tag), event definitions documents SHOULD define other
       ways of logging the trailer_length to make the header_length
@@ -1228,7 +1240,7 @@ Table of Contents
 
    Note:  Relatedly, many modern protocols use Variable-Length Integer
       Encoded (VLIE) values in their headers, which are of a dynamic
-      length.  Because of this, we cannot deterministally reconstruct
+      length.  Because of this, we cannot deterministically reconstruct
       the header encoding/length from non-RawInfo qlog data, as
       implementations might not necessarily employ the most efficient
       VLIE scheme for all values.  As such, to make exact size-analysis
@@ -1642,7 +1654,7 @@ Table of Contents
    records and feeding them to a normal JSON parser individually, as
    each record by itself is a valid JSON object).
 
-6.3.  Other optimizated formatting options
+6.3.  Other optimized formatting options
 
    Both the JSON and JSON-SEQ formatting options described above are
    serviceable in general small to medium scale (debugging) setups.
@@ -1781,20 +1793,20 @@ Table of Contents
 
    The first option is to use the CBOR (Concise Binary Object
    Representation [RFC7049]) format.  For our purposes, CBOR can be
-   viewed as a straighforward binary variant of JSON.  As such, existing
-   JSON qlog files can be trivially converted to and from CBOR (though
-   slightly more work is needed for JSON-SEQ qlogs to convert them to
-   CBOR-SEQ, see [RFC8742]).  While CBOR thus does retain the full qlog
-   flexibility, it only provides a 25% file size reduction (100MB to
-   75MB) compared to textual JSON(-SEQ).  As CBOR support in programming
-   environments is not as widespread as that of textual JSON and the
-   format lacks human readability, CBOR was not chosen as the default
-   qlog format.  For this option, the file extension .(s)qlog.cbor
-   SHOULD BE used.  The "qlog_format" field should still reflect the
-   original JSON formatting of the qlog data (e.g., "JSON" or "JSON-
-   SEQ").  The media type should indicate both whether JSON or JSON Text
-   Sequences are used, as well as whether CBOR or CBOR Sequences are
-   used (see the table below).
+   viewed as a straightforward binary variant of JSON.  As such,
+   existing JSON qlog files can be trivially converted to and from CBOR
+   (though slightly more work is needed for JSON-SEQ qlogs to convert
+   them to CBOR-SEQ, see [RFC8742]).  While CBOR thus does retain the
+   full qlog flexibility, it only provides a 25% file size reduction
+   (100MB to 75MB) compared to textual JSON(-SEQ).  As CBOR support in
+   programming environments is not as widespread as that of textual JSON
+   and the format lacks human readability, CBOR was not chosen as the
+   default qlog format.  For this option, the file extension
+   .(s)qlog.cbor SHOULD BE used.  The "qlog_format" field should still
+   reflect the original JSON formatting of the qlog data (e.g., "JSON"
+   or "JSON-SEQ").  The media type should indicate both whether JSON or
+   JSON Text Sequences are used, as well as whether CBOR or CBOR
+   Sequences are used (see the table below).
 
    A second option is to use a more specialized binary format, such as
    Protocol Buffers (https://developers.google.com/protocol-buffers)
@@ -2035,7 +2047,7 @@ Table of Contents
 
    Tools MUST NOT produce breaking errors for any field names and/or
    values in the qlog format that they do not recognize.  Tools SHOULD
-   indicate even unknown event occurences within their context (e.g.,
+   indicate even unknown event occurrences within their context (e.g.,
    marking unknown events on a timeline for manual interpretation by the
    user).
 
@@ -2050,18 +2062,101 @@ Table of Contents
 
 9.  Security and privacy considerations
 
-   TODO : discuss privacy and security considerations (e.g., what NOT to
-   log, what to strip out of a log before sharing, ...)
+   Modern protocols such as QUIC ([RFC9000]) take pains to encrypt a
+   large part of their wire image, leading to generally strong privacy
+   and security characteristics, especially considering monster-in-the-
+   middle threat models.  A generalized, plaintext logging scheme such
+   as qlog by its nature undoes some of these characteristics to make
+   (parts of) the protocols observable again.  This is needed for a
+   variety of use cases such as (live) operational insight,
+   implementation debuggability or research, but carries inherent
+   security and privacy risks, especially if qlog data can be correlated
+   with other data sources.  As such, qlog operators and implementers
+   should be aware of these risks inherent in logging, storing, using,
+   and in some cases purposefully disclosing potentially sensitive
+   information as part of qlog data.
 
-   TODO: strip out/don't log IPs, ports, specific CIDs, raw user data,
-   exact times, HTTP HEADERS (or at least :path), SNI values
+   A non-exhaustive list of potentially sensitive fields in qlog data
+   include:
 
-   TODO: see if there is merit in encrypting the logs and having the
-   server choose an encryption key (e.g., sent in transport parameters)
+   *  IP addresses and transport protocol port numbers, which can be
+      used to identify individual connections, endpoints and potentially
+      users.
 
-   Good initial reference: Christian Huitema's blogpost
-   (https://huitema.wordpress.com/2020/07/21/scrubbing-quic-logs-for-
-   privacy/)
+   *  QUIC Connection IDs and contents of NEW_CONNECTION_ID frames,
+      which can be used to identify and track users across geographical
+      networks [RFC9000].
+
+   *  Accurate event timestamps, event counts, packet and frame sizes,
+      which can be used with other data sources (e.g., encrypted packet
+      captures) to correlate qlog data to a specific connection or user.
+
+   *  Token values, which can contain address validation details and
+      previous connection information which could allow correlation of
+      multiple connections.
+
+   *  TLS (decryption) keys, which can be used with other data sources
+      (e.g., encrypted packet captures) to correlate qlog data to a
+      specific connection or user or leak additional information.
+
+   *  Full or partial, encrypted or plaintext raw packet and frame
+      payloads (e.g., HTTP Field values, HTTP response data, TLS SNI
+      field values), which can contain other sensitive information.  In
+      qlog, these are typically (but not exclusively) contained in
+      fields of the RawInfo type (see Section 5.1). qlog users should be
+      particularly hesitant to include this information in all but the
+      most stringent conditions.
+
+   The simplest and most extreme form of protection against abuse of
+   this information is the complete deletion of a given field, which is
+   equivalent to not logging the field(s) in question.  While deletion
+   completely protects the data in the deleted fields from the risk of
+   compromise, it also reduces the utility of the dataset as a whole.
+   As such, a balance should be found between logging these fields and
+   the potential risks inherent in their (involuntary) disclosure.  This
+   balance depends on the use case at hand (e.g., research datasets have
+   different requirements to live operational troubleshooting).  As
+   such, operators SHOULD only capture the minimal subset of qlog data
+   relevant to their specific purpose.  Consequently, qlog implementers
+   SHOULD allow for changing this subset in a dynamic fashion, ideally
+   even on a per-connection basis.
+
+   For the remaining fields deemed necessary for the use case at hand,
+   as per [RFC6973], operators must be aware that the data will be at
+   risk of compromise.  As such, measures should be taken to firstly
+   reduce the risk of compromise and secondly reduce the risk of abuse
+   of compromised data.  While a full discussion of both aspects is out
+   of scope for this document, the following paragraphs discuss high
+   level concepts that can be applied to qlog data.
+
+   To reduce the risk of compromise, operators can take measures such
+   as: limiting the amount of time data is stored, encrypting data at
+   rest, limiting access rights to the data, and auditing data usage
+   practices. qlog deployments SHOULD have integrated options for easy
+   qlog data deletion or (aggressive) aggregation.
+
+   To reduce the risk of data abuse after compromise, sensitive fields
+   can be anonymized, pseudonymized, otherwise permutated/replaced,
+   truncated, (re-)encrypted, or aggregated.  A partial discussion of
+   applicable techniques (especially for IP address information) can be
+   found in Appendix B of [DNS-PRIVACY].  Operators should however be
+   aware that many of these techniques have been shown to be
+   insufficient to safeguard user privacy and/or to protect user
+   identity, especially if qlog data would be compromised in large
+   amounts or be correlated with other data sources.  As such,
+   techniques from the field of differential privacy (TODO: add survey
+   paper reference) should be applied to mitigate this risk to its
+   maximal potential.
+
+   Finally, in keeping with the trend of maximum end user agency, qlog
+   operators SHOULD take end user preferences into account.  While
+   active user participation (as per [RFC6973]) on a per-qlog basis is
+   difficult, as logs are often capture out-of-band to the main user
+   interaction and intent, implementers should have a mechanism for
+   integrating the capture, storage and removal of qlogs with more
+   general, often existing, user consent and privacy control systems.
+   This is especially true when logging (plaintext) packet and frame
+   payload, as this can contain highly sensitive information.
 
 10.  IANA Considerations
 
@@ -2077,6 +2172,12 @@ Table of Contents
               JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
               June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
 
+   [DNS-PRIVACY]
+              Dickinson, S., Overeinder, B., van Rijswijk-Deij, R., and
+              A. Mankin, "Recommendations for DNS Privacy Service
+              Operators", BCP 232, RFC 8932, DOI 10.17487/RFC8932,
+              October 2020, <https://www.rfc-editor.org/rfc/rfc8932>.
+
    [I-JSON]   Bray, T., Ed., "The I-JSON Message Format", RFC 7493,
               DOI 10.17487/RFC7493, March 2015,
               <https://www.rfc-editor.org/rfc/rfc7493>.
@@ -2091,22 +2192,14 @@ Table of Contents
               Sequences", RFC 7464, DOI 10.17487/RFC7464, February 2015,
               <https://www.rfc-editor.org/rfc/rfc7464>.
 
-   [QLOG-H3]  Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
-              "HTTP/3 and QPACK event definitions for qlog", Work in
-              Progress, Internet-Draft, draft-ietf-quic-qlog-h3-events,
-              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-h3-events>.
-
-   [QLOG-QUIC]
-              Marx, R., Ed., Niccolini, L., Ed., and M. Seemann, Ed.,
-              "QUIC event definitions for qlog", Work in Progress,
-              Internet-Draft, draft-ietf-quic-qlog-quic-events,
-              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-quic-events>.
-
    [RFC1952]  Deutsch, P., "GZIP file format specification version 4.3",
               RFC 1952, DOI 10.17487/RFC1952, May 1996,
               <https://www.rfc-editor.org/rfc/rfc1952>.
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/rfc/rfc2119>.
 
    [RFC4180]  Shafranovich, Y., "Common Format and MIME Type for Comma-
               Separated Values (CSV) Files", RFC 4180,
@@ -2117,6 +2210,12 @@ Table of Contents
               Structured Syntax Suffixes", RFC 6839,
               DOI 10.17487/RFC6839, January 2013,
               <https://www.rfc-editor.org/rfc/rfc6839>.
+
+   [RFC6973]  Cooper, A., Tschofenig, H., Aboba, B., Peterson, J.,
+              Morris, J., Hansen, M., and R. Smith, "Privacy
+              Considerations for Internet Protocols", RFC 6973,
+              DOI 10.17487/RFC6973, July 2013,
+              <https://www.rfc-editor.org/rfc/rfc6973>.
 
    [RFC7049]  Bormann, C. and P. Hoffman, "Concise Binary Object
               Representation (CBOR)", RFC 7049, DOI 10.17487/RFC7049,
@@ -2134,17 +2233,34 @@ Table of Contents
               Text Sequences", RFC 8091, DOI 10.17487/RFC8091, February
               2017, <https://www.rfc-editor.org/rfc/rfc8091>.
 
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
    [RFC8259]  Bray, T., Ed., "The JavaScript Object Notation (JSON) Data
               Interchange Format", STD 90, RFC 8259,
               DOI 10.17487/RFC8259, December 2017,
               <https://www.rfc-editor.org/rfc/rfc8259>.
 
+   [RFC9000]  Iyengar, J., Ed. and M. Thomson, Ed., "QUIC: A UDP-Based
+              Multiplexed and Secure Transport", RFC 9000,
+              DOI 10.17487/RFC9000, May 2021,
+              <https://www.rfc-editor.org/rfc/rfc9000>.
+
 11.2.  Informative References
 
-   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
-              Requirement Levels", BCP 14, RFC 2119,
-              DOI 10.17487/RFC2119, March 1997,
-              <https://www.rfc-editor.org/rfc/rfc2119>.
+   [QLOG-H3]  Marx, R., Niccolini, L., and M. Seemann, "HTTP/3 and QPACK
+              qlog event definitions", Work in Progress, Internet-Draft,
+              draft-ietf-quic-qlog-h3-events-02, 31 August 2022,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
+              qlog-h3-events-02>.
+
+   [QLOG-QUIC]
+              Marx, R., Niccolini, L., and M. Seemann, "QUIC event
+              definitions for qlog", Work in Progress, Internet-Draft,
+              draft-ietf-quic-qlog-quic-events-02, 31 August 2022,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
+              qlog-quic-events-02>.
 
    [RFC8742]  Bormann, C., "Concise Binary Object Representation (CBOR)
               Sequences", RFC 8742, DOI 10.17487/RFC8742, February 2020,
@@ -2152,11 +2268,19 @@ Table of Contents
 
 Appendix A.  Change Log
 
-A.1.  Since draft-ietf-quic-qlog-main-schema-01:
+A.1.  Since draft-ietf-quic-qlog-main-schema-03:
+
+   *  Added security and privacy considerations discussion
+
+A.2.  Since draft-ietf-quic-qlog-main-schema-02:
+
+   *  No changes - new draft to prevent expiration
+
+A.3.  Since draft-ietf-quic-qlog-main-schema-01:
 
    *  Change the data definition language from TypeScript to CDDL (#143)
 
-A.2.  Since draft-ietf-quic-qlog-main-schema-00:
+A.4.  Since draft-ietf-quic-qlog-main-schema-00:
 
    *  Changed the streaming serialization format from NDJSON to JSON
       Text Sequences (#172)
@@ -2165,7 +2289,7 @@ A.2.  Since draft-ietf-quic-qlog-main-schema-00:
 
    *  Changed to semantic versioning
 
-A.3.  Since draft-marx-qlog-main-schema-draft-02:
+A.5.  Since draft-marx-qlog-main-schema-draft-02:
 
    *  These changes were done in preparation of the adoption of the
       drafts by the QUIC working group (#137)
@@ -2177,7 +2301,7 @@ A.3.  Since draft-marx-qlog-main-schema-draft-02:
 
    *  Made protocol_type an array instead of a string (#146)
 
-A.4.  Since draft-marx-qlog-main-schema-01:
+A.6.  Since draft-marx-qlog-main-schema-01:
 
    *  Decoupled qlog from the JSON format and described a mapping
       instead (#89)
@@ -2207,7 +2331,7 @@ A.4.  Since draft-marx-qlog-main-schema-01:
 
    *  Overall tightened up the text and added more examples
 
-A.5.  Since draft-marx-qlog-main-schema-00:
+A.7.  Since draft-marx-qlog-main-schema-00:
 
    *  All field names are now lowercase (e.g., category instead of
       CATEGORY)
@@ -2233,28 +2357,32 @@ Appendix B.  Design Variations
    these alternate designs and that all tooling converges on the qlog
    standard.
 
-Appendix C.  Acknowledgements
+Acknowledgements
 
-   Much of the initial work by Robin Marx was done at Hasselt
-   University.
+   Much of the initial work by Robin Marx was done at the Hasselt and KU
+   Leuven Universities.
 
    Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
    Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja
-   Kuehlewind, Jeremy Laine and Lucas Pardue for their feedback and
-   suggestions.
+   Kuehlewind, and Jeremy Laine for their feedback and suggestions.
 
 Authors' Addresses
 
    Robin Marx (editor)
-   KU Leuven
-   Email: robin.marx@kuleuven.be
+   Akamai
+   Email: rmarx@akamai.com
 
 
    Luca Niccolini (editor)
-   Facebook
+   Meta
    Email: lniccolini@fb.com
 
 
    Marten Seemann (editor)
    Protocol Labs
    Email: marten@protocol.ai
+
+
+   Lucas Pardue (editor)
+   Cloudflare
+   Email: lucaspardue.24.7@gmail.com
