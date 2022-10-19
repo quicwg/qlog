@@ -1987,10 +1987,6 @@ Smaller changes:
 * Event names are more consistent and use past tense (issue \#21)
 * Triggers have been redefined as properties of the "data" field and updated for most events (issue \#23)
 
-# Design Variations
-
-TBD
-
 # Acknowledgements
 {:numbered="false"}
 
