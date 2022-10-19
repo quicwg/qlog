@@ -182,7 +182,6 @@ this specification.
 | connectivity:connection_closed        | {{connectivity-connectionclosed}} |
 | connectivity:connection_id_updated    | {{connectivity-connectionidupdated}} |
 | connectivity:spin_bit_updated         | {{connectivity-spinbitupdated}} |
-| connectivity:connection_retried       | {{connectivity-connectionretried}} |
 | connectivity:connection_state_updated | {{connectivity-connectionstateupdated}} |
 | connectivity:mtu_updated              | {{connectivity-mtuupdated}} |
 | security:key_updated                  | {{security-keyupdated}} |
@@ -350,10 +349,6 @@ ConnectivitySpinBitUpdated = {
 }
 ~~~
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
-
-## connection_retried {#connectivity-connectionretried}
-
-TODO
 
 ## connection_state_updated {#connectivity-connectionstateupdated}
 Importance: Base
@@ -1916,6 +1911,7 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
 * Renamed key_retired to key_discarded (#185)
 * Add fields and events for DPLPMTUD (#135)
+* Removed connection_retried event placeholder
 
 ## Since draft-ietf-qlog-quic-events-01:
 
