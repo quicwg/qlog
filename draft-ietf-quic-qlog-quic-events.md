@@ -22,7 +22,7 @@ author:
     ins: L. Niccolini
     name: Luca Niccolini
     org: Meta
-    email: lniccolini@fb.com
+    email: lniccolini@meta.com
     role: editor
   -
     ins: M. Seemann
