@@ -191,9 +191,7 @@ Definition:
 ~~~ cddl
 HTTPParametersSet = {
     ? owner: Owner
-
     ~HTTPParameters
-
     ; qlog-specific
     ; indicates whether this implementation waits for a SETTINGS
     ; frame before processing requests
@@ -204,7 +202,6 @@ HTTPParameters = {
     ? max_header_list_size: uint64
     ? max_table_capacity: uint64
     ? blocked_streams_count: uint64
-
     ; additional settings for grease and extensions
     * text => uint64
 }
@@ -230,9 +227,7 @@ Definition:
 
 ~~~ cddl
 HTTPParametersRestored = {
-
     ~HTTPParameters
-
 }
 ~~~
 {: #http-parametersrestored-def title="HTTPParametersRestored definition"}
@@ -257,12 +252,9 @@ Definition:
 HTTPStreamTypeSet = {
     ? owner: Owner
     stream_id: uint64
-
     stream_type: HTTPStreamType
-
     ; only when stream_type === "unknown"
     ? raw_stream_type: uint64
-
     ; only when stream_type === "push"
     ? associated_push_id: uint64
 }
@@ -343,11 +335,9 @@ Definition:
 ~~~ cddl
 HTTPPushResolved = {
     ? push_id: uint64
-
     ; in case this is logged from a place that does not have access
     ; to the push_id
     ? stream_id: uint64
-
     decision: HTTPPushDecision
 }
 
@@ -384,7 +374,6 @@ Definition:
 QPACKStateUpdate = {
     owner: Owner
     ? dynamic_table_capacity: uint64
-
     ; effective current size, sum of all the entries
     ? dynamic_table_size: uint64
     ? known_received_count: uint64
@@ -428,7 +417,6 @@ QPACKDynamicTableUpdate = {
     ; local = the encoder's dynamic table
     ; remote = the decoder's dynamic table
     owner: Owner
-
     update_type: QPACKDynamicTableUpdateType
     entries: [+ QPACKDynamicTableEntry]
 }
@@ -458,10 +446,8 @@ Definition:
 QPACKHeadersEncoded = {
     ? stream_id: uint64
     ? headers: [+ HTTPField]
-
     block_prefix: QPACKHeaderBlockPrefix
     header_block: [+ QPACKHeaderBlockRepresentation]
-
     ? length: uint
     ? raw: hexstring
 }
@@ -483,10 +469,8 @@ Definition:
 QPACKHeadersDecoded = {
     ? stream_id: uint64
     ? headers: [+ HTTPField]
-
     block_prefix: QPACKHeaderBlockPrefix
     header_block: [+ QPACKHeaderBlockRepresentation]
-
     ? length: uint32
     ? raw: hexstring
 }
@@ -526,7 +510,6 @@ Definition:
 QPACKInstructionParsed = {
     ; see QPACKInstruction definition in appendix
     instruction: QPACKInstruction
-
     ? length: uint32
     ? raw: hexstring
 }
@@ -554,9 +537,12 @@ We extend the `$ProtocolEventBody` extension point defined in
 {{QLOG-MAIN}} with the HTTP/3 protocol events defined in this document.
 
 ~~~ cddl
-HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
-             HTTPStreamTypeSet / HTTPFrameCreated /
-             HTTPFrameParsed / HTTPPushResolved
+HTTPEvents = HTTPParametersSet /
+             HTTPParametersRestored /
+             HTTPStreamTypeSet /
+             HTTPFrameCreated /
+             HTTPFrameParsed /
+             HTTPPushResolved
 
 $ProtocolEventBody /= HTTPEvents
 ~~~
@@ -680,7 +666,6 @@ HTTPPushPromiseFrame = {
 ~~~ cddl
 HTTPGoawayFrame = {
     frame_type: "goaway"
-
     ; Either stream_id or push_id.
     ; This is implicit from the sender of the frame
     id: uint64
@@ -703,7 +688,6 @@ HTTPMaxPushIDFrame = {
 ~~~ cddl
 HTTPReservedFrame = {
     frame_type: "reserved"
-
     ? length: uint64
 }
 ~~~
@@ -715,7 +699,6 @@ HTTPReservedFrame = {
 HTTPUnknownFrame = {
     frame_type: "unknown"
     raw_frame_type: uint64
-
     ? raw_length: uint32
     ? raw: hexstring
 }
@@ -762,9 +745,12 @@ We extend the `$ProtocolEventBody` extension point defined in
 {{QLOG-MAIN}} with the QPACK protocol events defined in this document.
 
 ~~~ cddl
-QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
-              QPACKDynamicTableUpdate / QPACKHeadersEncoded /
-              QPACKHeadersDecoded / QPACKInstructionCreated /
+QPACKEvents = QPACKStateUpdate /
+              QPACKStreamStateUpdate /
+              QPACKDynamicTableUpdate /
+              QPACKHeadersEncoded /
+              QPACKHeadersDecoded /
+              QPACKInstructionCreated /
               QPACKInstructionParsed
 
 $ProtocolEventBody /= QPACKEvents
@@ -891,11 +877,9 @@ Note: also used for "indexed header field with post-base index"
 ~~~ cddl
 IndexedHeaderField = {
     header_field_type: "indexed_header"
-
     ; MUST be "dynamic" if is_post_base is true
     table_type: QPACKTableType
     index: uint32
-
     ; to represent the "indexed header field with post-base index"
     ; header field type
     is_post_base: bool .default false
@@ -910,17 +894,14 @@ Note: also used for "Literal header field with post-base name reference"
 ~~~ cddl
 LiteralHeaderFieldWithName = {
     header_field_type: "literal_with_name"
-
     ; the 3rd "N" bit
     preserve_literal: bool
-
     ; MUST be "dynamic" if is_post_base is true
     table_type: QPACKTableType
     name_index: uint32
     huffman_encoded_value: bool
     ? value_length: uint32
     ? value: text
-
     ; to represent the "indexed header field with post-base index"
     ; header field type
     is_post_base: bool .default false
@@ -934,13 +915,11 @@ title="LiteralHeaderFieldWithName definition"}
 ~~~ cddl
 LiteralHeaderFieldWithoutName = {
     header_field_type: "literal_without_name"
-
     ; the 3rd "N" bit
     preserve_literal: bool
     huffman_encoded_name: bool
     ? name_length: uint32
     ? name: text
-
     huffman_encoded_value: bool
     ? value_length: uint32
     ? value: text
