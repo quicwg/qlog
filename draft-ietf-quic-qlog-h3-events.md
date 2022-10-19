@@ -365,18 +365,18 @@ HTTPPushDecision = "claimed" / "abandoned"
 ~~~
 {: #http-pushresolved-def title="HTTPPushResolved definition"}
 
-## HTTP/3 Data Field Definitions
+# HTTP/3 Data Field Definitions
 
 The following data field definitions can be used in HTTP/3 events.
 
-### Owner
+## Owner
 
 ~~~ cddl
 Owner = "local" / "remote"
 ~~~
 {: #owner-def title="Owner definition"}
 
-### HTTPFrame
+## HTTPFrame
 
 ~~~ cddl
 HTTPFrame =  HTTPDataFrame /
@@ -391,7 +391,7 @@ HTTPFrame =  HTTPDataFrame /
 ~~~
 {: #httpframe-def title="HTTPFrame definition"}
 
-#### HTTPDataFrame
+### HTTPDataFrame
 ~~~ cddl
 HTTPDataFrame = {
     frame_type: "data"
@@ -400,7 +400,7 @@ HTTPDataFrame = {
 ~~~
 {: #httpdataframe-def title="HTTPDataFrame definition"}
 
-#### HTTPHeadersFrame
+### HTTPHeadersFrame
 
 This represents an *uncompressed*, plaintext HTTP Headers frame (e.g., no QPACK
 compression is applied).
@@ -445,7 +445,7 @@ HTTPField = {
 ~~~
 {: #httpfield-def title="HTTPField definition"}
 
-#### HTTPCancelPushFrame
+### HTTPCancelPushFrame
 
 ~~~ cddl
 HTTPCancelPushFrame = {
@@ -455,7 +455,7 @@ HTTPCancelPushFrame = {
 ~~~
 {: #http-cancelpushframe-def title="HTTPCancelPushFrame definition"}
 
-#### HTTPSettingsFrame
+### HTTPSettingsFrame
 
 ~~~ cddl
 HTTPSettingsFrame = {
@@ -470,7 +470,7 @@ HTTPSetting = {
 ~~~
 {: #httpsettingsframe-def title="HTTPSettingsFrame definition"}
 
-#### HTTPPushPromiseFrame
+### HTTPPushPromiseFrame
 
 ~~~ cddl
 HTTPPushPromiseFrame = {
@@ -481,7 +481,7 @@ HTTPPushPromiseFrame = {
 ~~~
 {: #httppushpromiseframe-def title="HTTPPushPromiseFrame definition"}
 
-#### HTTPGoAwayFrame
+### HTTPGoAwayFrame
 
 ~~~ cddl
 HTTPGoawayFrame = {
@@ -494,7 +494,7 @@ HTTPGoawayFrame = {
 ~~~
 {: #httpgoawayframe-def title="HTTPGoawayFrame definition"}
 
-#### HTTPMaxPushIDFrame
+### HTTPMaxPushIDFrame
 
 ~~~ cddl
 HTTPMaxPushIDFrame = {
@@ -504,7 +504,7 @@ HTTPMaxPushIDFrame = {
 ~~~
 {: #httpmaxpushidframe-def title="HTTPMaxPushIDFrame definition"}
 
-#### HTTPReservedFrame
+### HTTPReservedFrame
 
 ~~~ cddl
 HTTPReservedFrame = {
@@ -515,7 +515,7 @@ HTTPReservedFrame = {
 ~~~
 {: #httpreservedframe-def title="HTTPReservedFrame definition"}
 
-#### HTTPUnknownFrame
+### HTTPUnknownFrame
 
 ~~~ cddl
 HTTPUnknownFrame = {
@@ -560,7 +560,7 @@ definition in the qlog QUIC definition, see {{QLOG-QUIC}}.
 $ApplicationError /= HTTPApplicationError
 ~~~
 
-# qpack {#qpack-ev}
+# QPACK Events {#qpack-ev}
 
 QPACK events extend the `$ProtocolEventBody` extension point defined in
 {{QLOG-MAIN}}.
@@ -753,11 +753,11 @@ QPACKInstructionParsed = {
 Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
-## QPACK Data Field Definitions
+# QPACK Data Field Definitions
 
 The following data field definitions can be used in QPACK events.
 
-### QPACKInstruction
+## QPACKInstruction
 
 Note: the instructions do not have explicit encoder/decoder types, since there is
 no overlap between the instructions of both types in neither name nor function.
@@ -773,7 +773,7 @@ QPACKInstruction =  SetDynamicTableCapacityInstruction /
 ~~~
 {: #qpackinstruction-def title="QPACKInstruction definition"}
 
-#### SetDynamicTableCapacityInstruction
+### SetDynamicTableCapacityInstruction
 
 ~~~ cddl
 SetDynamicTableCapacityInstruction = {
@@ -784,7 +784,7 @@ SetDynamicTableCapacityInstruction = {
 {: #setdynamictablecapacityinstruction-def
 title="SetDynamicTableCapacityInstruction definition"}
 
-#### InsertWithNameReferenceInstruction
+### InsertWithNameReferenceInstruction
 
 ~~~ cddl
 InsertWithNameReferenceInstruction = {
@@ -799,7 +799,7 @@ InsertWithNameReferenceInstruction = {
 {: #insertwithnamereferenceinstruction-def
 title="InsertWithNameReferenceInstruction definition"}
 
-#### InsertWithoutNameReferenceInstruction
+### InsertWithoutNameReferenceInstruction
 
 ~~~ cddl
 InsertWithoutNameReferenceInstruction = {
@@ -815,7 +815,7 @@ InsertWithoutNameReferenceInstruction = {
 {: #insertwithoutnamereferenceinstruction-def
 title="InsertWithoutNameReferenceInstruction definition"}
 
-#### DuplicateInstruction
+### DuplicateInstruction
 
 ~~~ cddl
 DuplicateInstruction = {
@@ -826,7 +826,7 @@ DuplicateInstruction = {
 {: #duplicateinstruction-def
 title="DuplicateInstruction definition"}
 
-#### SectionAcknowledgementInstruction
+### SectionAcknowledgementInstruction
 
 ~~~ cddl
 SectionAcknowledgementInstruction = {
@@ -837,7 +837,7 @@ SectionAcknowledgementInstruction = {
 {: #sectionacknowledgementinstruction-def
 title="SectionAcknowledgementInstruction definition"}
 
-#### StreamCancellationInstruction
+### StreamCancellationInstruction
 
 ~~~ cddl
 StreamCancellationInstruction = {
@@ -848,7 +848,7 @@ StreamCancellationInstruction = {
 {: #streamcancellationinstruction-def
 title="StreamCancellationInstruction definition"}
 
-#### InsertCountIncrementInstruction
+### InsertCountIncrementInstruction
 
 ~~~ cddl
 InsertCountIncrementInstruction = {
@@ -859,7 +859,7 @@ InsertCountIncrementInstruction = {
 {: #insertcountincrementinstruction-def
 title="InsertCountIncrementInstruction definition"}
 
-### QPACKHeaderBlockRepresentation
+## QPACKHeaderBlockRepresentation
 
 ~~~ cddl
 QPACKHeaderBlockRepresentation =  IndexedHeaderField /
@@ -869,7 +869,7 @@ QPACKHeaderBlockRepresentation =  IndexedHeaderField /
 {: #qpackheaderblockrepresentation-def
 title="QPACKHeaderBlockRepresentation definition"}
 
-#### IndexedHeaderField
+### IndexedHeaderField
 
 Note: also used for "indexed header field with post-base index"
 
@@ -888,7 +888,7 @@ IndexedHeaderField = {
 ~~~
 {: #indexedheaderfield-def title="IndexedHeaderField definition"}
 
-#### LiteralHeaderFieldWithName
+### LiteralHeaderFieldWithName
 
 Note: also used for "Literal header field with post-base name reference"
 
@@ -914,7 +914,7 @@ LiteralHeaderFieldWithName = {
 {: #literalheaderfieldwithname-def
 title="LiteralHeaderFieldWithName definition"}
 
-#### LiteralHeaderFieldWithoutName
+### LiteralHeaderFieldWithoutName
 
 ~~~ cddl
 LiteralHeaderFieldWithoutName = {
@@ -935,7 +935,7 @@ LiteralHeaderFieldWithoutName = {
 title="LiteralHeaderFieldWithoutName definition"}
 
 
-### QPACKHeaderBlockPrefix
+## QPACKHeaderBlockPrefix
 
 ~~~ cddl
 QPACKHeaderBlockPrefix = {
@@ -947,7 +947,7 @@ QPACKHeaderBlockPrefix = {
 {: #qpackheaderblockprefix-def
 title="QPACKHeaderBlockPrefix definition"}
 
-### QPACKTableType
+## QPACKTableType
 
 ~~~ cddl
 QPACKTableType = "static" / "dynamic"
