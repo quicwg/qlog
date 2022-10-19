@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 18 April 2023                                              Meta
+Expires: 22 April 2023                                              Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         15 October 2022
+                                                         19 October 2022
 
 
                 HTTP/3 and QPACK qlog event definitions
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 April 2023.
+   This Internet-Draft will expire on 22 April 2023.
 
 Copyright Notice
 
@@ -68,26 +68,45 @@ Table of Contents
      4.4.  frame_created
      4.5.  frame_parsed
      4.6.  push_resolved
-     4.7.  HTTP/3 Data Field Definitions
-       4.7.1.  Owner
-       4.7.2.  HTTPFrame
-       4.7.3.  HTTPApplicationError
-   5.  qpack
-     5.1.  state_updated
-     5.2.  stream_state_updated
-     5.3.  dynamic_table_updated
-     5.4.  headers_encoded
-     5.5.  headers_decoded
-     5.6.  instruction_created
-     5.7.  instruction_parsed
-     5.8.  QPACK Data Field Definitions
-       5.8.1.  QPACKInstruction
-       5.8.2.  QPACKHeaderBlockRepresentation
-       5.8.3.  QPACKHeaderBlockPrefix
-       5.8.4.  QPACKTableType
-   6.  Security Considerations
-   7.  IANA Considerations
-   8.  Normative References
+   5.  HTTP/3 Data Field Definitions
+     5.1.  Owner
+     5.2.  HTTPFrame
+       5.2.1.  HTTPDataFrame
+       5.2.2.  HTTPHeadersFrame
+       5.2.3.  HTTPCancelPushFrame
+       5.2.4.  HTTPSettingsFrame
+       5.2.5.  HTTPPushPromiseFrame
+       5.2.6.  HTTPGoAwayFrame
+       5.2.7.  HTTPMaxPushIDFrame
+       5.2.8.  HTTPReservedFrame
+       5.2.9.  HTTPUnknownFrame
+       5.2.10. HTTPApplicationError
+   6.  QPACK Events
+     6.1.  state_updated
+     6.2.  stream_state_updated
+     6.3.  dynamic_table_updated
+     6.4.  headers_encoded
+     6.5.  headers_decoded
+     6.6.  instruction_created
+     6.7.  instruction_parsed
+   7.  QPACK Data Field Definitions
+     7.1.  QPACKInstruction
+       7.1.1.  SetDynamicTableCapacityInstruction
+       7.1.2.  InsertWithNameReferenceInstruction
+       7.1.3.  InsertWithoutNameReferenceInstruction
+       7.1.4.  DuplicateInstruction
+       7.1.5.  SectionAcknowledgementInstruction
+       7.1.6.  StreamCancellationInstruction
+       7.1.7.  InsertCountIncrementInstruction
+     7.2.  QPACKHeaderBlockRepresentation
+       7.2.1.  IndexedHeaderField
+       7.2.2.  LiteralHeaderFieldWithName
+       7.2.3.  LiteralHeaderFieldWithoutName
+     7.3.  QPACKHeaderBlockPrefix
+     7.4.  QPACKTableType
+   8.  Security Considerations
+   9.  IANA Considerations
+   10. Normative References
    Appendix A.  Change Log
      A.1.  Since draft-ietf-quic-qlog-h3-events-02:
      A.2.  Since draft-ietf-quic-qlog-h3-events-01:
@@ -185,7 +204,7 @@ Table of Contents
 3.  HTTP/3 and QPACK event definitions
 
    This document defines events in two categories, written as lowercase
-   to follow convention: http (Section 4) and qpack (Section 5).
+   to follow convention: http (Section 4) and qpack (Section 6).
 
    As described in Section 3.4.2 of [QLOG-MAIN], the qlog "name" field
    is the concatenation of category and type.
@@ -208,19 +227,19 @@ Table of Contents
                +-----------------------------+-------------+
                | http:push_resolved          | Section 4.6 |
                +-----------------------------+-------------+
-               | qpack:state_updated         | Section 5.1 |
+               | qpack:state_updated         | Section 6.1 |
                +-----------------------------+-------------+
-               | qpack:stream_state_updated  | Section 5.2 |
+               | qpack:stream_state_updated  | Section 6.2 |
                +-----------------------------+-------------+
-               | qpack:dynamic_table_updated | Section 5.3 |
+               | qpack:dynamic_table_updated | Section 6.3 |
                +-----------------------------+-------------+
-               | qpack:headers_encoded       | Section 5.4 |
+               | qpack:headers_encoded       | Section 6.4 |
                +-----------------------------+-------------+
-               | qpack:headers_decoded       | Section 5.5 |
+               | qpack:headers_decoded       | Section 6.5 |
                +-----------------------------+-------------+
-               | qpack:instruction_created   | Section 5.6 |
+               | qpack:instruction_created   | Section 6.6 |
                +-----------------------------+-------------+
-               | qpack:instruction_parsed    | Section 5.7 |
+               | qpack:instruction_parsed    | Section 6.7 |
                +-----------------------------+-------------+
 
                       Table 1: HTTP/3 and QPACK Events
@@ -431,17 +450,17 @@ Table of Contents
 
                    Figure 7: HTTPPushResolved definition
 
-4.7.  HTTP/3 Data Field Definitions
+5.  HTTP/3 Data Field Definitions
 
    The following data field definitions can be used in HTTP/3 events.
 
-4.7.1.  Owner
+5.1.  Owner
 
    Owner = "local" / "remote"
 
                          Figure 8: Owner definition
 
-4.7.2.  HTTPFrame
+5.2.  HTTPFrame
 
    HTTPFrame =  HTTPDataFrame /
                 HTTPHeadersFrame /
@@ -455,7 +474,7 @@ Table of Contents
 
                        Figure 9: HTTPFrame definition
 
-4.7.2.1.  HTTPDataFrame
+5.2.1.  HTTPDataFrame
 
    HTTPDataFrame = {
        frame_type: "data"
@@ -464,7 +483,7 @@ Table of Contents
 
                     Figure 10: HTTPDataFrame definition
 
-4.7.2.2.  HTTPHeadersFrame
+5.2.2.  HTTPHeadersFrame
 
    This represents an _uncompressed_, plaintext HTTP Headers frame
    (e.g., no QPACK compression is applied).
@@ -506,7 +525,7 @@ Table of Contents
 
                       Figure 13: HTTPField definition
 
-4.7.2.3.  HTTPCancelPushFrame
+5.2.3.  HTTPCancelPushFrame
 
    HTTPCancelPushFrame = {
        frame_type: "cancel_push"
@@ -515,7 +534,7 @@ Table of Contents
 
                  Figure 14: HTTPCancelPushFrame definition
 
-4.7.2.4.  HTTPSettingsFrame
+5.2.4.  HTTPSettingsFrame
 
    HTTPSettingsFrame = {
        frame_type: "settings"
@@ -529,7 +548,7 @@ Table of Contents
 
                   Figure 15: HTTPSettingsFrame definition
 
-4.7.2.5.  HTTPPushPromiseFrame
+5.2.5.  HTTPPushPromiseFrame
 
    HTTPPushPromiseFrame = {
        frame_type: "push_promise"
@@ -539,7 +558,7 @@ Table of Contents
 
                  Figure 16: HTTPPushPromiseFrame definition
 
-4.7.2.6.  HTTPGoAwayFrame
+5.2.6.  HTTPGoAwayFrame
 
    HTTPGoawayFrame = {
        frame_type: "goaway"
@@ -551,7 +570,7 @@ Table of Contents
 
                    Figure 17: HTTPGoawayFrame definition
 
-4.7.2.7.  HTTPMaxPushIDFrame
+5.2.7.  HTTPMaxPushIDFrame
 
    HTTPMaxPushIDFrame = {
        frame_type: "max_push_id"
@@ -560,7 +579,7 @@ Table of Contents
 
                   Figure 18: HTTPMaxPushIDFrame definition
 
-4.7.2.8.  HTTPReservedFrame
+5.2.8.  HTTPReservedFrame
 
    HTTPReservedFrame = {
        frame_type: "reserved"
@@ -570,7 +589,7 @@ Table of Contents
 
                   Figure 19: HTTPReservedFrame definition
 
-4.7.2.9.  HTTPUnknownFrame
+5.2.9.  HTTPUnknownFrame
 
    HTTPUnknownFrame = {
        frame_type: "unknown"
@@ -582,7 +601,7 @@ Table of Contents
 
                      Figure 20: UnknownFrame definition
 
-4.7.3.  HTTPApplicationError
+5.2.10.  HTTPApplicationError
 
    HTTPApplicationError =  "http_no_error" /
                            "http_general_protocol_error" /
@@ -611,7 +630,7 @@ Table of Contents
    ; e.g., QUIC's ConnectionClose Frame
    $ApplicationError /= HTTPApplicationError
 
-5.  qpack
+6.  QPACK Events
 
    QPACK events extend the $ProtocolEventBody extension point defined in
    [QLOG-MAIN].
@@ -636,7 +655,7 @@ Table of Contents
    also log their SETTINGS fields in http.parameters_set or MAY define
    their own events.
 
-5.1.  state_updated
+6.1.  state_updated
 
    Importance: Base
 
@@ -662,7 +681,7 @@ Table of Contents
 
                    Figure 23: QPACKStateUpdate definition
 
-5.2.  stream_state_updated
+6.2.  stream_state_updated
 
    Importance: Core
 
@@ -685,7 +704,7 @@ Table of Contents
 
                 Figure 24: QPACKStreamStateUpdate definition
 
-5.3.  dynamic_table_updated
+6.3.  dynamic_table_updated
 
    Importance: Extra
 
@@ -713,7 +732,7 @@ Table of Contents
 
                Figure 25: QPACKDynamicTableUpdate definition
 
-5.4.  headers_encoded
+6.4.  headers_encoded
 
    Importance: Base
 
@@ -739,7 +758,7 @@ Table of Contents
 
                  Figure 26: QPACKHeadersEncoded definition
 
-5.5.  headers_decoded
+6.5.  headers_decoded
 
    Importance: Base
 
@@ -765,7 +784,7 @@ Table of Contents
 
                  Figure 27: QPACKHeadersDecoded definition
 
-5.6.  instruction_created
+6.6.  instruction_created
 
    Importance: Base
 
@@ -787,7 +806,7 @@ Table of Contents
    either the instruction types or can be logged via other events (e.g.,
    http.stream_type_set)
 
-5.7.  instruction_parsed
+6.7.  instruction_parsed
 
    Importance: Base
 
@@ -810,11 +829,11 @@ Table of Contents
    either the instruction types or can be logged via other events (e.g.,
    http.stream_type_set)
 
-5.8.  QPACK Data Field Definitions
+7.  QPACK Data Field Definitions
 
    The following data field definitions can be used in QPACK events.
 
-5.8.1.  QPACKInstruction
+7.1.  QPACKInstruction
 
    Note: the instructions do not have explicit encoder/decoder types,
    since there is no overlap between the instructions of both types in
@@ -830,7 +849,7 @@ Table of Contents
 
                    Figure 30: QPACKInstruction definition
 
-5.8.1.1.  SetDynamicTableCapacityInstruction
+7.1.1.  SetDynamicTableCapacityInstruction
 
    SetDynamicTableCapacityInstruction = {
        instruction_type: "set_dynamic_table_capacity"
@@ -839,7 +858,7 @@ Table of Contents
 
           Figure 31: SetDynamicTableCapacityInstruction definition
 
-5.8.1.2.  InsertWithNameReferenceInstruction
+7.1.2.  InsertWithNameReferenceInstruction
 
    InsertWithNameReferenceInstruction = {
        instruction_type: "insert_with_name_reference"
@@ -852,7 +871,7 @@ Table of Contents
 
           Figure 32: InsertWithNameReferenceInstruction definition
 
-5.8.1.3.  InsertWithoutNameReferenceInstruction
+7.1.3.  InsertWithoutNameReferenceInstruction
 
    InsertWithoutNameReferenceInstruction = {
        instruction_type: "insert_without_name_reference"
@@ -866,7 +885,7 @@ Table of Contents
 
         Figure 33: InsertWithoutNameReferenceInstruction definition
 
-5.8.1.4.  DuplicateInstruction
+7.1.4.  DuplicateInstruction
 
    DuplicateInstruction = {
        instruction_type: "duplicate"
@@ -875,7 +894,7 @@ Table of Contents
 
                  Figure 34: DuplicateInstruction definition
 
-5.8.1.5.  SectionAcknowledgementInstruction
+7.1.5.  SectionAcknowledgementInstruction
 
    SectionAcknowledgementInstruction = {
        instruction_type: "section_acknowledgement"
@@ -884,7 +903,7 @@ Table of Contents
 
           Figure 35: SectionAcknowledgementInstruction definition
 
-5.8.1.6.  StreamCancellationInstruction
+7.1.6.  StreamCancellationInstruction
 
    StreamCancellationInstruction = {
        instruction_type: "stream_cancellation"
@@ -893,7 +912,7 @@ Table of Contents
 
             Figure 36: StreamCancellationInstruction definition
 
-5.8.1.7.  InsertCountIncrementInstruction
+7.1.7.  InsertCountIncrementInstruction
 
    InsertCountIncrementInstruction = {
        instruction_type: "insert_count_increment"
@@ -902,7 +921,7 @@ Table of Contents
 
            Figure 37: InsertCountIncrementInstruction definition
 
-5.8.2.  QPACKHeaderBlockRepresentation
+7.2.  QPACKHeaderBlockRepresentation
 
    QPACKHeaderBlockRepresentation =  IndexedHeaderField /
                                      LiteralHeaderFieldWithName /
@@ -910,7 +929,7 @@ Table of Contents
 
             Figure 38: QPACKHeaderBlockRepresentation definition
 
-5.8.2.1.  IndexedHeaderField
+7.2.1.  IndexedHeaderField
 
    Note: also used for "indexed header field with post-base index"
 
@@ -928,7 +947,7 @@ Table of Contents
 
                   Figure 39: IndexedHeaderField definition
 
-5.8.2.2.  LiteralHeaderFieldWithName
+7.2.2.  LiteralHeaderFieldWithName
 
    Note: also used for "Literal header field with post-base name
    reference"
@@ -953,7 +972,7 @@ Table of Contents
 
               Figure 40: LiteralHeaderFieldWithName definition
 
-5.8.2.3.  LiteralHeaderFieldWithoutName
+7.2.3.  LiteralHeaderFieldWithoutName
 
    LiteralHeaderFieldWithoutName = {
        header_field_type: "literal_without_name"
@@ -971,7 +990,7 @@ Table of Contents
 
             Figure 41: LiteralHeaderFieldWithoutName definition
 
-5.8.3.  QPACKHeaderBlockPrefix
+7.3.  QPACKHeaderBlockPrefix
 
    QPACKHeaderBlockPrefix = {
        required_insert_count: uint32
@@ -981,21 +1000,21 @@ Table of Contents
 
                 Figure 42: QPACKHeaderBlockPrefix definition
 
-5.8.4.  QPACKTableType
+7.4.  QPACKTableType
 
    QPACKTableType = "static" / "dynamic"
 
                     Figure 43: QPACKTableType definition
 
-6.  Security Considerations
+8.  Security Considerations
 
    TBD
 
-7.  IANA Considerations
+9.  IANA Considerations
 
    TBD
 
-8.  Normative References
+10.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
