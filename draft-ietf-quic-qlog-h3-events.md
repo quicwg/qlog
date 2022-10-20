@@ -135,7 +135,7 @@ qlog, making it easier for users to interpret. In this case, both fields MUST ha
 the same value.
 
 
-# HTTP/3 and QPACK event definitions
+# HTTP/3 and QPACK Event Overview
 
 This document defines events in two categories, written as lowercase to follow convention: http ({{http-ev}}) and qpack
 ({{qpack-ev}}).
@@ -146,21 +146,21 @@ concatenation of category and type.
 {{h3-qpack-events}} summarizes the name value of each event type that is defined
 in this specification.
 
-| Name value                  |  Definition |
-|:----------------------------|:------------|
-| http:parameters_set         | {{http-parametersset}} |
-| http:parameters_restored    | {{http-parametersrestored}} |
-| http:stream_type_set        | {{http-streamtypeset}} |
-| http:frame_created          | {{http-framecreated}} |
-| http:frame_parsed           | {{http-frameparsed}} |
-| http:push_resolved          | {{http-pushresolved}} |
-| qpack:state_updated         | {{qpack-stateupdated}} |
-| qpack:stream_state_updated  | {{qpack-streamstateupdate}} |
-| qpack:dynamic_table_updated | {{qpack-dynamictableupdate}} |
-| qpack:headers_encoded       | {{qpack-headersencoded}} |
-| qpack:headers_decoded       | {{qpack-headersdecoded}} |
-| qpack:instruction_created   | {{qpack-instructioncreated}} |
-| qpack:instruction_parsed    | {{qpack-instructionparsed}} |
+| Name value                  | Importance |  Definition |
+|:----------------------------|:-----------|:------------|
+| http:parameters_set         | Base       | {{http-parametersset}} |
+| http:parameters_restored    | Base       | {{http-parametersrestored}} |
+| http:stream_type_set        | Base       | {{http-streamtypeset}} |
+| http:frame_created          | Core       | {{http-framecreated}} |
+| http:frame_parsed           | Core       | {{http-frameparsed}} |
+| http:push_resolved          | Extra      | {{http-pushresolved}} |
+| qpack:state_updated         | Base       | {{qpack-stateupdated}} |
+| qpack:stream_state_updated  | Core       | {{qpack-streamstateupdate}} |
+| qpack:dynamic_table_updated | Extra      | {{qpack-dynamictableupdate}} |
+| qpack:headers_encoded       | Base       | {{qpack-headersencoded}} |
+| qpack:headers_decoded       | Base       | {{qpack-headersdecoded}} |
+| qpack:instruction_created   | Base       | {{qpack-instructioncreated}} |
+| qpack:instruction_parsed    | Base       | {{qpack-instructionparsed}} |
 {: #h3-qpack-events title="HTTP/3 and QPACK Events"}
 
 # HTTP/3 Events {#http-ev}
