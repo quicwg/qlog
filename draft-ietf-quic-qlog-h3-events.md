@@ -536,9 +536,10 @@ QPACKInstructionParsed = {
 Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
-# Security Considerations
+# Security and Privacy Considerations
 
-TBD
+The security and privacy considerations discussed in {{QLOG-MAIN}} apply to this
+document as well.
 
 # IANA Considerations
 
@@ -968,7 +969,6 @@ title="QPACKHeaderBlockPrefix definition"}
 QPACKTableType = "static" / "dynamic"
 ~~~
 {: #qpacktabletype-def title="QPACKTableType definition"}
-
 
 # Change Log
 

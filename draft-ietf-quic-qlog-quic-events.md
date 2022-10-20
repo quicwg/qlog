@@ -1354,9 +1354,10 @@ RecoveryMarkedForRetransmit = {
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
 
-# Security Considerations
+# Security and Privacy Considerations
 
-TBD
+The security and privacy considerations discussed in {{QLOG-MAIN}} apply to this
+document as well.
 
 # IANA Considerations
 
