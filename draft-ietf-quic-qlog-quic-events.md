@@ -210,6 +210,36 @@ this specification.
 | recovery:marked_for_retransmit        | Extra      | {{recovery-markedforretransmit}} |
 {: #quic-events title="QUIC Events"}
 
+QUIC events extend the `$ProtocolEventBody` extension point defined in
+{{QLOG-MAIN}}.
+
+~~~ cddl
+QuicEvents = ConnectivityServerListening /
+             ConnectivityConnectionStarted /
+             ConnectivityConnectionClosed /
+             ConnectivityConnectionIDUpdated /
+             ConnectivitySpinBitUpdated /
+             ConnectivityConnectionStateUpdated /
+             ConnectivityMTUUpdated /
+             SecurityKeyUpdated / SecurityKeyDiscarded /
+             TransportVersionInformation / TransportALPNInformation /
+             TransportParametersSet / TransportParametersRestored /
+             TransportPacketSent / TransportPacketReceived /
+             TransportPacketDropped / TransportPacketBuffered /
+             TransportPacketsAcked / TransportDatagramsSent /
+             TransportDatagramsReceived / TransportDatagramDropped /
+             TransportStreamStateUpdated / TransportFramesProcessed /
+             TransportDataMoved /
+             RecoveryParametersSet / RecoveryMetricsUpdated /
+             RecoveryCongestionStateUpdated /
+             RecoveryLossTimerUpdated /
+             RecoveryPacketLost
+
+$ProtocolEventBody /= QuicEvents
+~~~
+{: #quicevents-def title="QuicEvents definition and ProtocolEventBody
+extension"}
+
 # Connectivity events {#conn-ev}
 
 ## server_listening {#connectivity-serverlistening}
@@ -1354,47 +1384,7 @@ RecoveryMarkedForRetransmit = {
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
 
-# Security Considerations
-
-TBD
-
-# IANA Considerations
-
-TBD
-
---- back
-
 # QUIC data field definitions
-
-## ProtocolEventBody extension
-
-We extend the `$ProtocolEventBody` extension point defined in
-{{QLOG-MAIN}} with the QUIC protocol events defined in this document.
-
-~~~ cddl
-QuicEvents = ConnectivityServerListening /
-             ConnectivityConnectionStarted /
-             ConnectivityConnectionClosed /
-             ConnectivityConnectionIDUpdated /
-             ConnectivitySpinBitUpdated /
-             ConnectivityConnectionStateUpdated /
-             ConnectivityMTUUpdated /
-             SecurityKeyUpdated / SecurityKeyDiscarded /
-             TransportVersionInformation / TransportALPNInformation /
-             TransportParametersSet / TransportParametersRestored /
-             TransportPacketSent / TransportPacketReceived /
-             TransportPacketDropped / TransportPacketBuffered /
-             TransportPacketsAcked / TransportDatagramsSent /
-             TransportDatagramsReceived / TransportDatagramDropped /
-             TransportStreamStateUpdated / TransportFramesProcessed /
-             TransportDataMoved /
-             RecoveryParametersSet / RecoveryMetricsUpdated /
-             RecoveryCongestionStateUpdated /
-             RecoveryLossTimerUpdated /
-             RecoveryPacketLost
-
-$ProtocolEventBody /= QuicEvents
-~~~
 
 ## QuicVersion
 
@@ -1909,6 +1899,17 @@ hex-encoded and zero-padded value of the TLS alert description.
 CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 ~~~
 {: #cryptoerror-def title="CryptoError definition"}
+
+# Security Considerations
+
+TBD
+
+# IANA Considerations
+
+TBD
+
+--- back
+
 
 # Change Log
 
