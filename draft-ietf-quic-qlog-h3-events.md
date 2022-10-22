@@ -192,6 +192,7 @@ Definition:
 HTTPParametersSet = {
     ? owner: Owner
     ~HTTPParameters
+
     ; qlog-specific
     ; indicates whether this implementation waits for a SETTINGS
     ; frame before processing requests
@@ -202,6 +203,7 @@ HTTPParameters = {
     ? max_header_list_size: uint64
     ? max_table_capacity: uint64
     ? blocked_streams_count: uint64
+
     ; additional settings for grease and extensions
     * text => uint64
 }
@@ -253,8 +255,10 @@ HTTPStreamTypeSet = {
     ? owner: Owner
     stream_id: uint64
     stream_type: HTTPStreamType
+
     ; only when stream_type === "unknown"
     ? raw_stream_type: uint64
+
     ; only when stream_type === "push"
     ? associated_push_id: uint64
 }
@@ -335,13 +339,15 @@ Definition:
 ~~~ cddl
 HTTPPushResolved = {
     ? push_id: uint64
+
     ; in case this is logged from a place that does not have access
     ; to the push_id
     ? stream_id: uint64
     decision: HTTPPushDecision
 }
 
-HTTPPushDecision = "claimed" / "abandoned"
+HTTPPushDecision = "claimed" / 
+                   "abandoned"
 ~~~
 {: #http-pushresolved-def title="HTTPPushResolved definition"}
 
@@ -374,6 +380,7 @@ Definition:
 QPACKStateUpdate = {
     owner: Owner
     ? dynamic_table_capacity: uint64
+
     ; effective current size, sum of all the entries
     ? dynamic_table_size: uint64
     ? known_received_count: uint64
@@ -396,12 +403,14 @@ Definition:
 ~~~ cddl
 QPACKStreamStateUpdate = {
     stream_id: uint64
+
     ; streams are assumed to start "unblocked"
     ; until they become "blocked"
     state: QPACKStreamState
 }
 
-QPACKStreamState = "blocked" / "unblocked"
+QPACKStreamState = "blocked" / 
+                   "unblocked"
 ~~~
 {: #qpack-streamstateupdate-def title="QPACKStreamStateUpdate definition"}
 
@@ -421,12 +430,15 @@ QPACKDynamicTableUpdate = {
     entries: [+ QPACKDynamicTableEntry]
 }
 
-QPACKDynamicTableUpdateType = "inserted" / "evicted"
+QPACKDynamicTableUpdateType = "inserted" /
+                              "evicted"
 
 QPACKDynamicTableEntry = {
     index: uint64
-    ? name: text / hexstring
-    ? value: text / hexstring
+    ? name: text /
+            hexstring
+    ? value: text /
+             hexstring
 }
 ~~~
 {: #qpack-dynamictableupdate-def title="QPACKDynamicTableUpdate definition"}
@@ -552,7 +564,8 @@ extension"}
 ## Owner
 
 ~~~ cddl
-Owner = "local" / "remote"
+Owner = "local" /
+        "remote"
 ~~~
 {: #owner-def title="Owner definition"}
 
@@ -666,6 +679,7 @@ HTTPPushPromiseFrame = {
 ~~~ cddl
 HTTPGoawayFrame = {
     frame_type: "goaway"
+
     ; Either stream_id or push_id.
     ; This is implicit from the sender of the frame
     id: uint64
@@ -877,9 +891,11 @@ Note: also used for "indexed header field with post-base index"
 ~~~ cddl
 IndexedHeaderField = {
     header_field_type: "indexed_header"
+
     ; MUST be "dynamic" if is_post_base is true
     table_type: QPACKTableType
     index: uint32
+
     ; to represent the "indexed header field with post-base index"
     ; header field type
     is_post_base: bool .default false
@@ -894,14 +910,17 @@ Note: also used for "Literal header field with post-base name reference"
 ~~~ cddl
 LiteralHeaderFieldWithName = {
     header_field_type: "literal_with_name"
+
     ; the 3rd "N" bit
     preserve_literal: bool
+
     ; MUST be "dynamic" if is_post_base is true
     table_type: QPACKTableType
     name_index: uint32
     huffman_encoded_value: bool
     ? value_length: uint32
     ? value: text
+
     ; to represent the "indexed header field with post-base index"
     ; header field type
     is_post_base: bool .default false
@@ -915,6 +934,7 @@ title="LiteralHeaderFieldWithName definition"}
 ~~~ cddl
 LiteralHeaderFieldWithoutName = {
     header_field_type: "literal_without_name"
+
     ; the 3rd "N" bit
     preserve_literal: bool
     huffman_encoded_name: bool
@@ -944,7 +964,8 @@ title="QPACKHeaderBlockPrefix definition"}
 ### QPACKTableType
 
 ~~~ cddl
-QPACKTableType = "static" / "dynamic"
+QPACKTableType = "static" /
+                 "dynamic"
 ~~~
 {: #qpacktabletype-def title="QPACKTableType definition"}
 
