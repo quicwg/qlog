@@ -301,7 +301,7 @@ Definition:
 HTTPFrameCreated = {
     stream_id: uint64
     ? length: uint64
-    frame: HTTPFrame
+    frame: $HTTPFrame
     ? raw: RawInfo
 }
 ~~~
@@ -328,7 +328,7 @@ Definition:
 HTTPFrameParsed = {
     stream_id: uint64
     ? length: uint64
-    frame: HTTPFrame
+    frame: $HTTPFrame
     ? raw: RawInfo
 }
 ~~~
@@ -378,8 +378,23 @@ Owner = "local" / "remote"
 
 ## HTTPFrame
 
+The generic `$HTTPFrame` is defined here as a CDDL extension point (a "socket"
+or "plug"). This allows other documents to extend this extension point when
+defining new HTTP/3 protocol frame types to enable automated validation of
+aggregated qlog schemas.
+
 ~~~ cddl
-HTTPFrame =  HTTPDataFrame /
+; The HTTPFrame is any key-value map (e.g., JSON object)
+$HTTPFrame /= {
+    * text => any
+}
+~~~
+{: #httpframe-def title="HTTPFrame plug definition"}
+
+The HTTP/3 frame types defined in this document are as follows:
+
+~~~ cddl
+HTTPBaseFrames =  HTTPDataFrame /
              HTTPHeadersFrame /
              HTTPCancelPushFrame /
              HTTPSettingsFrame /
@@ -388,8 +403,10 @@ HTTPFrame =  HTTPDataFrame /
              HTTPMaxPushIDFrame /
              HTTPReservedFrame /
              HTTPUnknownFrame
+
+$HTTPFrame /= HTTPBaseFrames
 ~~~
-{: #httpframe-def title="HTTPFrame definition"}
+{: #httpbaseframe-def title="HTTPFrames defined in this document"}
 
 ### HTTPDataFrame
 ~~~ cddl
