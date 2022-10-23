@@ -1044,7 +1044,7 @@ svg :is([stroke="fill"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 22 April 2023</td>
+<td class="center">Expires 26 April 2023</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1057,12 +1057,12 @@ svg :is([stroke="fill"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2022-10-19" class="published">19 October 2022</time>
+<time datetime="2022-10-23" class="published">23 October 2022</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2023-04-22">22 April 2023</time></dd>
+<dd class="expires"><time datetime="2023-04-26">26 April 2023</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1114,7 +1114,7 @@ in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 22 April 2023.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 26 April 2023.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1860,7 +1860,6 @@ ConnectivityConnectionStarted = {
     ? protocol: text .default "QUIC"
     ? src_port: uint16
     ? dst_port: uint16
-
     ? src_cid: ConnectionID
     ? dst_cid: ConnectionID
 }
@@ -1899,13 +1898,15 @@ multiple error codes can be set on the same event to reflect this.<a href="#sect
           <div id="section-4.3-5.1">
 <pre class="lang-cddl sourcecode">
 ConnectivityConnectionClosed = {
+
     ; which side closed the connection
     ? owner: Owner
-
-    ? connection_code: TransportError / CryptoError / uint32
-    ? application_code: $ApplicationError / uint32
+    ? connection_code: TransportError /
+                       CryptoError /
+                       uint32
+    ? application_code: $ApplicationError /
+                        uint32
     ? internal_code: uint32
-
     ? reason: text
     ? trigger:
         "clean" /
@@ -1947,7 +1948,6 @@ fields.<a href="#section-4.4-3" class="pilcrow">¶</a></p>
 <pre class="lang-cddl sourcecode">
 ConnectivityConnectionIDUpdated = {
     owner: Owner
-
     ? old: ConnectionID
     ? new: ConnectionID
 }
@@ -2009,8 +2009,10 @@ implementers should focus on support for the SimpleConnectionState set.<a href="
           <div id="section-4.7-4.1">
 <pre class="lang-cddl sourcecode">
 ConnectivityConnectionStateUpdated = {
-    ? old: ConnectionState / SimpleConnectionState
-    new: ConnectionState / SimpleConnectionState
+    ? old: ConnectionState /
+           SimpleConnectionState
+    new: ConnectionState /
+         SimpleConnectionState
 }
 
 ConnectionState =
@@ -2320,7 +2322,7 @@ event to indicate the updated values, as normal.<a href="#section-5.3-5" class="
 <span id="name-transportparametersset-defi"></span><div id="transport-parametersset-def">
 <figure id="figure-10">
           <div id="section-5.3-7.1">
-<pre class="breakable lang-cddl sourcecode">
+<pre class="lang-cddl sourcecode">
 TransportParametersSet = {
     ? owner: Owner
 
@@ -2349,24 +2351,20 @@ TransportParametersSet = {
     ? ack_delay_exponent: uint16
     ? max_ack_delay: uint16
     ? active_connection_id_limit: uint32
-
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
     ? initial_max_stream_data_bidi_remote: uint64
     ? initial_max_stream_data_uni: uint64
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
-
     ? preferred_address: PreferredAddress
 }
 
 PreferredAddress = {
     ip_v4: IPAddress
     ip_v6: IPAddress
-
     port_v4: uint16
     port_v6: uint16
-
     connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
 }
@@ -2400,11 +2398,9 @@ correct 0-RTT usage.<a href="#section-5.4-2" class="pilcrow">¶</a></p>
 <pre class="lang-cddl sourcecode">
 TransportParametersRestored = {
     ? disable_active_migration: bool
-
     ? max_idle_timeout: uint64
     ? max_udp_payload_size: uint32
     ? active_connection_id_limit: uint32
-
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
     ? initial_max_stream_data_bidi_remote: uint64,
@@ -2438,7 +2434,6 @@ TransportPacketSent = {
 
     ; see appendix for the QuicFrame definitions
     ? frames: [* QuicFrame]
-
     ? is_coalesced: bool .default false
 
     ; only if header.packet_type === "retry"
@@ -2450,12 +2445,9 @@ TransportPacketSent = {
 
     ; only if header.packet_type === "version_negotiation"
     ? supported_versions: [+ QuicVersion]
-
     ? raw: RawInfo
     ? datagram_id: uint32
-
     ? is_mtu_probe_packet: bool .default false
-
     ? trigger:
       ; draft-23 5.1.1
       "retransmit_reordered" /
@@ -2497,7 +2489,6 @@ TransportPacketReceived = {
 
     ; see appendix for the definitions
     ? frames: [* QuicFrame]
-
     ? is_coalesced: bool .default false
 
     ; only if header.packet_type === "retry"
@@ -2509,13 +2500,10 @@ TransportPacketReceived = {
 
     ; only if header.packet_type === "version_negotiation"
     ? supported_versions: [+ QuicVersion]
-
     ? raw: RawInfo
     ? datagram_id: uint32
-
     ? trigger:
-        ; if packet was buffered because
-        ; it couldn't be decrypted before
+        ; if packet was buffered because it couldn't be decrypted before
         "keys_available"
 }
 </pre>
@@ -2543,13 +2531,12 @@ when keeping track of packet coalescing.<a href="#section-5.6-5" class="pilcrow"
           <div id="section-5.7-4.1">
 <pre class="lang-cddl sourcecode">
 TransportPacketDropped = {
+
     ; primarily packet_type should be filled here,
     ; as other fields might not be parseable
     ? header: PacketHeader
-
     ? raw: RawInfo
     ? datagram_id: uint32
-
     ? trigger:
         "key_unavailable" /
         "unknown_connection_id" /
@@ -2595,10 +2582,8 @@ TransportPacketBuffered = {
     ; primarily packet_type and possible packet_number should be
     ; filled here as other elements might not be available yet
     ? header: PacketHeader
-
     ? raw: RawInfo
     ? datagram_id: uint32
-
     ? trigger:
         ; indicates the parser cannot keep up, temporarily buffers
         ; packet for later processing
@@ -2636,7 +2621,6 @@ used by implementations that do not log frame contents.<a href="#section-5.9-2" 
 <pre class="lang-cddl sourcecode">
 TransportPacketsAcked = {
     ? packet_number_space: PacketNumberSpace
-
     ? packet_numbers: [+ uint64]
 }
 </pre>
@@ -2664,13 +2648,13 @@ determining how QUIC packet buffers are drained to the OS.<a href="#section-5.10
           <div id="section-5.10-4.1">
 <pre class="lang-cddl sourcecode">
 TransportDatagramsSent = {
+
     ; to support passing multiple at once
     ? count: uint16
 
     ; RawInfo:length field indicates total length of the datagrams
     ; including UDP header length
     ? raw: [+ RawInfo]
-
     ? datagram_ids: [+ uint32]
 }
 </pre>
@@ -2703,13 +2687,13 @@ for determining how datagrams are passed to the user space stack from the OS.<a 
           <div id="section-5.11-4.1">
 <pre class="lang-cddl sourcecode">
 TransportDatagramsReceived = {
+
     ; to support passing multiple at once
     ? count: uint16
 
     ; RawInfo:length field indicates total length of the datagrams
     ; including UDP header length
     ? raw: [+ RawInfo]
-
     ? datagram_ids: [+ uint32]
 }
 </pre>
@@ -2760,18 +2744,18 @@ signals for these state changes.<a href="#section-5.13-2" class="pilcrow">¶</a>
 <figure id="figure-20">
           <div id="section-5.13-4.1">
 <pre class="lang-cddl sourcecode">
-StreamType = "unidirectional" / "bidirectional"
+StreamType = "unidirectional" /
+             "bidirectional"
 
 TransportStreamStateUpdated = {
     stream_id: uint64
 
     ; mainly useful when opening the stream
     ? stream_type: StreamType
-
     ? old: StreamState
     new: StreamState
-
-    ? stream_side: "sending" / "receiving"
+    ? stream_side: "sending" /
+    "receiving"
 }
 
 StreamState =
@@ -2781,23 +2765,19 @@ StreamState =
     "half_closed_local" /
     "half_closed_remote" /
     "closed" /
-
     ; sending-side stream states, draft-23 3.1.
     "ready" /
     "send" /
     "data_sent" /
     "reset_sent" /
     "reset_received" /
-
     ; receive-side stream states, draft-23 3.2.
     "receive" /
     "size_known" /
     "data_read" /
     "reset_read" /
-
     ; both-side states
     "data_received" /
-
     ; qlog-defined:
     ; memory actually freed
     "destroyed"
@@ -2849,9 +2829,9 @@ link this event to the packet_sent/received events.<a href="#section-5.14-6" cla
           <div id="section-5.14-8.1">
 <pre class="lang-cddl sourcecode">
 TransportFramesProcessed = {
+
     ; see appendix for the QuicFrame definitions
     frames: [* QuicFrame]
-
     ? packet_number: uint64
 }
 </pre>
@@ -2890,9 +2870,16 @@ TransportDataMoved = {
 
     ; byte length of the moved data
     ? length: uint64
-
-    ? from: "user" / "application" / "transport" / "network" / text
-    ? to: "user" / "application" / "transport" / "network" / text
+    ? from: "user" /
+            "application" /
+            "transport" /
+            "network" /
+            text
+    ? to: "user" /
+          "application" /
+          "transport" /
+          "network" /
+          text
 
     ; raw bytes that were transferred
     ? data: hexstring
@@ -2938,13 +2925,11 @@ debugging.<a href="#section-5.15-7" class="pilcrow">¶</a></p>
 <pre class="lang-cddl sourcecode">
 SecurityKeyUpdated = {
     key_type: KeyType
-
     ? old: hexstring
     new: hexstring
 
     ; needed for 1RTT key updates
     ? generation: uint32
-
     ? trigger:
         ; (e.g., initial, handshake and 0-RTT keys
         ; are generated by TLS)
@@ -2977,7 +2962,6 @@ SecurityKeyDiscarded = {
 
     ; needed for 1RTT key updates
     ? generation: uint32
-
     ? trigger:
         ; (e.g., initial, handshake and 0-RTT keys
         ; are generated by TLS)
@@ -3020,6 +3004,7 @@ execution, <span class="bcp14">MAY</span> emit the parameters_set event twice.<a
           <div id="section-7.1-4.1">
 <pre class="lang-cddl sourcecode">
 RecoveryParametersSet = {
+
     ; Loss detection, see recovery draft-23, Appendix A.2
     ; in amount of packets
     ? reordering_threshold: uint16
@@ -3076,13 +3061,13 @@ to contain at least one of the listed metrics.<a href="#section-7.2-2" class="pi
           <div id="section-7.2-4.1">
 <pre class="lang-cddl sourcecode">
 RecoveryMetricsUpdated = {
+
     ; Loss detection, see recovery draft-23, Appendix A.3
     ; all following rtt fields are expressed in ms
     ? min_rtt: float32
     ? smoothed_rtt: float32
     ? latest_rtt: float32
     ? rtt_variance: float32
-
     ? pto_count: uint16
 
     ; Congestion control, Appendix B.2.
@@ -3142,7 +3127,6 @@ the Recovery draft ("enhanced" New Reno), the following states are defined:<a hr
 RecoveryCongestionStateUpdated = {
     ? old: text
     new: text
-
     ? trigger:
         "persistent_congestion" /
         "ECN"
@@ -3182,11 +3166,14 @@ acknowledged, start idle period)<a href="#section-7.4-3.3" class="pilcrow">¶</a
           <div id="section-7.4-6.1">
 <pre class="lang-cddl sourcecode">
 RecoveryLossTimerUpdated = {
-    ; called "mode" in draft-23 A.9.
-    ? timer_type: "ack" / "pto"
-    ? packet_number_space: PacketNumberSpace
 
-    event_type: "set" / "expired" / "cancelled"
+    ; called "mode" in draft-23 A.9.
+    ? timer_type: "ack" /
+                  "pto"
+    ? packet_number_space: PacketNumberSpace
+    event_type: "set" /
+                "expired" /
+                "cancelled"
 
     ; if event_type === "set": delta time is in ms from
     ; this event's timestamp until when the timer will trigger
@@ -3216,6 +3203,7 @@ need to be? Just support QUIC-style recovery from the spec or broader?<a href="#
           <div id="section-7.5-4.1">
 <pre class="lang-cddl sourcecode">
 RecoveryPacketLost = {
+
     ; should include at least the packet_type and packet_number
     ? header: PacketHeader
 
@@ -3223,9 +3211,7 @@ RecoveryPacketLost = {
     ; packets, so these are optional
     ; see appendix for the QuicFrame definitions
     ? frames: [* QuicFrame]
-
     ? is_mtu_probe_packet: bool .default false
-
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
@@ -3269,6 +3255,7 @@ when data was retransmitted).<a href="#section-7.6-4" class="pilcrow">¶</a></p>
           <div id="section-7.6-6.1">
 <pre class="lang-cddl sourcecode">
 RecoveryMarkedForRetransmit = {
+
     ; see appendix for the QuicFrame definitions
     frames: [+ QuicFrame]
 }
@@ -3354,16 +3341,25 @@ QuicEvents = ConnectivityServerListening /
              ConnectivitySpinBitUpdated /
              ConnectivityConnectionStateUpdated /
              ConnectivityMTUUpdated /
-             SecurityKeyUpdated / SecurityKeyDiscarded /
-             TransportVersionInformation / TransportALPNInformation /
-             TransportParametersSet / TransportParametersRestored /
-             TransportPacketSent / TransportPacketReceived /
-             TransportPacketDropped / TransportPacketBuffered /
-             TransportPacketsAcked / TransportDatagramsSent /
-             TransportDatagramsReceived / TransportDatagramDropped /
-             TransportStreamStateUpdated / TransportFramesProcessed /
+             SecurityKeyUpdated /
+             SecurityKeyDiscarded /
+             TransportVersionInformation /
+             TransportALPNInformation /
+             TransportParametersSet /
+             TransportParametersRestored /
+             TransportPacketSent /
+             TransportPacketReceived /
+             TransportPacketDropped /
+             TransportPacketBuffered /
+             TransportPacketsAcked /
+             TransportDatagramsSent /
+             TransportDatagramsReceived /
+             TransportDatagramDropped /
+             TransportStreamStateUpdated /
+             TransportFramesProcessed /
              TransportDataMoved /
-             RecoveryParametersSet / RecoveryMetricsUpdated /
+             RecoveryParametersSet /
+             RecoveryMetricsUpdated /
              RecoveryCongestionStateUpdated /
              RecoveryLossTimerUpdated /
              RecoveryPacketLost
@@ -3418,7 +3414,8 @@ ConnectionID = hexstring
 <figure id="figure-33">
           <div id="appendix-A.4-1.1">
 <pre class="lang-cddl sourcecode">
-Owner = "local" / "remote"
+Owner = "local" /
+        "remote"
 </pre>
 </div>
 <figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
@@ -3440,7 +3437,8 @@ Owner = "local" / "remote"
 ; (e.g., "127.0.0.1" for v4 or
 ; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
 ; use a raw byte-form (as the string forms can be ambiguous)
-IPAddress = text / hexstring
+IPAddress = text /
+            hexstring
 </pre>
 </div>
 <figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
@@ -3451,7 +3449,8 @@ IPAddress = text / hexstring
 <figure id="figure-35">
           <div id="appendix-A.5-2.1">
 <pre class="lang-cddl sourcecode">
-IPVersion = "v4" / "v6"
+IPVersion = "v4" /
+            "v6"
 </pre>
 </div>
 <figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
@@ -3469,8 +3468,14 @@ IPVersion = "v4" / "v6"
 <figure id="figure-36">
           <div id="appendix-A.6-1.1">
 <pre class="lang-cddl sourcecode">
-PacketType = "initial" / "handshake" / "0RTT" / "1RTT" / "retry" /
-    "version_negotiation" / "stateless_reset" / "unknown"
+PacketType = "initial" /
+             "handshake" /
+             "0RTT" /
+             "1RTT" /
+             "retry" /
+             "version_negotiation" /
+             "stateless_reset" /
+             "unknown"
 </pre>
 </div>
 <figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
@@ -3488,7 +3493,9 @@ PacketType = "initial" / "handshake" / "0RTT" / "1RTT" / "retry" /
 <figure id="figure-37">
           <div id="appendix-A.7-1.1">
 <pre class="lang-cddl sourcecode">
-PacketNumberSpace = "initial" / "handshake" / "application_data"
+PacketNumberSpace = "initial" /
+                    "handshake" /
+                    "application_data"
 </pre>
 </div>
 <figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
@@ -3508,6 +3515,7 @@ PacketNumberSpace = "initial" / "handshake" / "application_data"
 <pre class="lang-cddl sourcecode">
 PacketHeader = {
     packet_type: PacketType
+
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
     ? packet_number: uint64
@@ -3551,7 +3559,8 @@ PacketHeader = {
           <div id="appendix-A.9-1.1">
 <pre class="lang-cddl sourcecode">
 Token = {
-    ? type: "retry" / "resumption"
+    ? type: "retry" /
+            "resumption"
 
     ; byte length of the token
     ? length: uint32
@@ -3608,11 +3617,14 @@ parameters and in NEW_CONNECTION_ID frames.<a href="#appendix-A.10-2" class="pil
 <figure id="figure-41">
           <div id="appendix-A.11-1.1">
 <pre class="lang-cddl sourcecode">
-KeyType =
-    "server_initial_secret" / "client_initial_secret" /
-    "server_handshake_secret" / "client_handshake_secret" /
-    "server_0rtt_secret" / "client_0rtt_secret" /
-    "server_1rtt_secret" / "client_1rtt_secret"
+KeyType = "server_initial_secret" /
+          "client_initial_secret" /
+          "server_handshake_secret" /
+          "client_handshake_secret" /
+          "server_0rtt_secret" /
+          "client_0rtt_secret" /
+          "server_1rtt_secret" /
+          "client_1rtt_secret"
 </pre>
 </div>
 <figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
@@ -3630,14 +3642,27 @@ KeyType =
 <figure id="figure-42">
           <div id="appendix-A.12-1.1">
 <pre class="lang-cddl sourcecode">
-QuicFrame =
-  PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
-  StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
-  MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
-  DataBlockedFrame / StreamDataBlockedFrame / StreamsBlockedFrame /
-  NewConnectionIDFrame / RetireConnectionIDFrame /
-  PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
-  HandshakeDoneFrame / UnknownFrame
+QuicFrame = PaddingFrame /
+            PingFrame /
+            AckFrame /
+            ResetStreamFrame /
+            StopSendingFrame /
+            CryptoFrame /
+            NewTokenFrame /
+            StreamFrame /
+            MaxDataFrame /
+            MaxStreamDataFrame /
+            MaxStreamsFrame /
+            DataBlockedFrame /
+            StreamDataBlockedFrame /
+            StreamsBlockedFrame /
+            NewConnectionIDFrame /
+            RetireConnectionIDFrame /
+            PathChallengeFrame /
+            PathResponseFrame /
+            ConnectionCloseFrame /
+            HandshakeDoneFrame /
+            UnknownFrame
 </pre>
 </div>
 <figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
@@ -3757,9 +3782,9 @@ log [120] instead and tools <span class="bcp14">MUST</span> be able to deal with
 <pre class="lang-cddl sourcecode">
 ResetStreamFrame = {
     frame_type: "reset_stream"
-
     stream_id: uint64
-    error_code: $ApplicationError / uint32
+    error_code: $ApplicationError /
+                uint32
 
     ; in bytes
     final_size: uint64
@@ -3787,9 +3812,9 @@ ResetStreamFrame = {
 <pre class="lang-cddl sourcecode">
 StopSendingFrame = {
     frame_type: "stop_sending"
-
     stream_id: uint64
-    error_code: $ApplicationError / uint32
+    error_code: $ApplicationError /
+                uint32
 
     ; total frame length, including frame header
     ? length: uint32
@@ -3814,10 +3839,8 @@ StopSendingFrame = {
 <pre class="lang-cddl sourcecode">
 CryptoFrame = {
     frame_type: "crypto"
-
     offset: uint64
     length: uint64
-
     ? payload_length: uint32
 }
 </pre>
@@ -3839,7 +3862,6 @@ CryptoFrame = {
 <pre class="lang-cddl sourcecode">
 NewTokenFrame = {
   frame_type: "new_token"
-
   token: Token
 }
 </pre>
@@ -3861,7 +3883,6 @@ NewTokenFrame = {
 <pre class="lang-cddl sourcecode">
 StreamFrame = {
     frame_type: "stream"
-
     stream_id: uint64
 
     ; These two MUST always be set
@@ -3873,7 +3894,6 @@ StreamFrame = {
     ; but MUST only be set if the value is true
     ; if absent, the value MUST be assumed to be false
     ? fin: bool .default false
-
     ? raw: hexstring
 }
 </pre>
@@ -3895,7 +3915,6 @@ StreamFrame = {
 <pre class="lang-cddl sourcecode">
 MaxDataFrame = {
   frame_type: "max_data"
-
   maximum: uint64
 }
 </pre>
@@ -3917,7 +3936,6 @@ MaxDataFrame = {
 <pre class="lang-cddl sourcecode">
 MaxStreamDataFrame = {
   frame_type: "max_stream_data"
-
   stream_id: uint64
   maximum: uint64
 }
@@ -3940,7 +3958,6 @@ MaxStreamDataFrame = {
 <pre class="lang-cddl sourcecode">
 MaxStreamsFrame = {
   frame_type: "max_streams"
-
   stream_type: StreamType
   maximum: uint64
 }
@@ -3963,7 +3980,6 @@ MaxStreamsFrame = {
 <pre class="lang-cddl sourcecode">
 DataBlockedFrame = {
   frame_type: "data_blocked"
-
   limit: uint64
 }
 </pre>
@@ -3985,7 +4001,6 @@ DataBlockedFrame = {
 <pre class="lang-cddl sourcecode">
 StreamDataBlockedFrame = {
   frame_type: "stream_data_blocked"
-
   stream_id: uint64
   limit: uint64
 }
@@ -4008,7 +4023,6 @@ StreamDataBlockedFrame = {
 <pre class="lang-cddl sourcecode">
 StreamsBlockedFrame = {
   frame_type: "streams_blocked"
-
   stream_type: StreamType
   limit: uint64
 }
@@ -4031,7 +4045,6 @@ StreamsBlockedFrame = {
 <pre class="lang-cddl sourcecode">
 NewConnectionIDFrame = {
   frame_type: "new_connection_id"
-
   sequence_number: uint32
   retire_prior_to: uint32
 
@@ -4039,7 +4052,6 @@ NewConnectionIDFrame = {
   ; connection_id cannot be logged
   ? connection_id_length: uint8
   connection_id: ConnectionID
-
   ? stateless_reset_token: StatelessResetToken
 }
 </pre>
@@ -4061,7 +4073,6 @@ NewConnectionIDFrame = {
 <pre class="lang-cddl sourcecode">
 RetireConnectionIDFrame = {
   frame_type: "retire_connection_id"
-
   sequence_number: uint32
 }
 </pre>
@@ -4129,19 +4140,23 @@ types are spread out over a range of codes (e.g., QUIC's crypto_error).<a href="
 <figure id="figure-61">
             <div id="appendix-A.12.19-2.1">
 <pre class="lang-cddl sourcecode">
-ErrorSpace = "transport" / "application"
+ErrorSpace = "transport" /
+             "application"
 
 ConnectionCloseFrame = {
     frame_type: "connection_close"
 
     ? error_space: ErrorSpace
-    ? error_code: TransportError / $ApplicationError / uint32
+    ? error_code: TransportError /
+                  $ApplicationError /
+                  uint32
     ? raw_error_code: uint32
     ? reason: text
 
     ; For known frame types, the appropriate "frame_type" string
     ; For unknown frame types, the hex encoded identifier value
-    ? trigger_frame_type: uint64 / text
+    ? trigger_frame_type: uint64 /
+                          text
 }
 </pre>
 </div>
@@ -4183,7 +4198,6 @@ HandshakeDoneFrame = {
 UnknownFrame = {
     frame_type: "unknown"
     raw_frame_type: uint64
-
     ? raw_length: uint32
     ? raw: hexstring
 }
@@ -4204,13 +4218,20 @@ UnknownFrame = {
 <figure id="figure-64">
             <div id="appendix-A.12.22-1.1">
 <pre class="lang-cddl sourcecode">
-TransportError = "no_error" / "internal_error" /
-    "connection_refused" / "flow_control_error" /
-    "stream_limit_error" / "stream_state_error" /
-    "final_size_error" / "frame_encoding_error" /
-    "transport_parameter_error" / "connection_id_limit_error" /
-    "protocol_violation" / "invalid_token" / "application_error" /
-    "crypto_buffer_exceeded"
+TransportError = "no_error" /
+                 "internal_error" /
+                 "connection_refused" /
+                 "flow_control_error" /
+                 "stream_limit_error" /
+                 "stream_state_error" /
+                 "final_size_error" /
+                 "frame_encoding_error" /
+                 "transport_parameter_error" /
+                 "connection_id_limit_error" /
+                 "protocol_violation" /
+                 "invalid_token" /
+                 "application_error" /
+                 "crypto_buffer_exceeded"
 </pre>
 </div>
 <figcaption><a href="#figure-64" class="selfRef">Figure 64</a>:
@@ -4229,7 +4250,8 @@ TransportError = "no_error" / "internal_error" /
 <p id="appendix-A.12.23-3">Application-level qlog definitions that wish to define new ApplicationError strings <span class="bcp14">MUST</span> do so by extending the $ApplicationError socket as such:<a href="#appendix-A.12.23-3" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="appendix-A.12.23-4">
 <pre>
-$ApplicationError /= "new_error_name" / "another_new_error_name"
+$ApplicationError /= "new_error_name" /
+                     "another_new_error_name"
 </pre><a href="#appendix-A.12.23-4" class="pilcrow">¶</a>
 </div>
 </section>
