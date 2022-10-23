@@ -346,7 +346,7 @@ HTTPPushResolved = {
     decision: HTTPPushDecision
 }
 
-HTTPPushDecision = "claimed" / 
+HTTPPushDecision = "claimed" /
                    "abandoned"
 ~~~
 {: #http-pushresolved-def title="HTTPPushResolved definition"}
@@ -409,7 +409,7 @@ QPACKStreamStateUpdate = {
     state: QPACKStreamState
 }
 
-QPACKStreamState = "blocked" / 
+QPACKStreamState = "blocked" /
                    "unblocked"
 ~~~
 {: #qpack-streamstateupdate-def title="QPACKStreamStateUpdate definition"}
