@@ -969,16 +969,17 @@ QPACKTableType = "static" / "dynamic"
 ~~~
 {: #qpacktabletype-def title="QPACKTableType definition"}
 
+# Security and Privacy Considerations
 
-# Security Considerations
-
-TBD
+The security and privacy considerations discussed in {{QLOG-MAIN}} apply to this
+document as well.
 
 # IANA Considerations
 
 TBD
 
 --- back
+
 
 # Change Log
 

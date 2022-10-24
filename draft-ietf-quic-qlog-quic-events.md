@@ -1905,9 +1905,10 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 ~~~
 {: #cryptoerror-def title="CryptoError definition"}
 
-# Security Considerations
+# Security and Privacy Considerations
 
-TBD
+The security and privacy considerations discussed in {{QLOG-MAIN}} apply to this
+document as well.
 
 # IANA Considerations
 
