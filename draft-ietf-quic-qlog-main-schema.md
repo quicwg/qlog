@@ -1912,9 +1912,13 @@ be carried in qlog data:
   of encrypted packets). Examples include high-resolution event timestamps or
   inter-event timings, event counts, packet and frame sizes.
 
-* Full or partial, encrypted or plaintext raw packet and frame payloads (e.g.,
-  HTTP Field values, HTTP response data, TLS SNI field values), which can
-  contain other sensitive information.
+* Full or partial encrypted raw packet and frame payloads, which can be used
+  with other data sources (e.g., captures of encrypted packets) to correlate
+  qlog data to a specific connection or session.
+
+* Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
+  values, HTTP response data, TLS SNI field values), which can contain directly
+  sensitive information.
 
 The simplest and most extreme form of protection against abuse of this
 information is the complete deletion of a given field, which is equivalent to
@@ -1947,25 +1951,23 @@ of compromise.
 To reduce the risk of data abuse after compromise, data can be anonymized,
 pseudonymized, otherwise permutated/replaced, truncated, (re-)encrypted, or
 aggregated. A partial discussion of applicable techniques (especially for IP
-address information) can be found in Appendix B of {{!DNS-PRIVACY=RFC8932}}.
+address information) can be found in {{Appendix B of !DNS-PRIVACY=RFC8932}}.
 Operators should, however, be aware that many of these techniques have been
 shown to be insufficient to safeguard user privacy and/or to protect user
 identity, especially if a qlog data set is large or easily correlated against
-other data sources. Differential privacy techniques might provide mitigations to
-this risk; see (TODO: add survey paper reference).
+other data sources.
 
 Finally, qlog operators should consider the interplay between their use case
-needs and end user rights or preferences (e.g., in the form of cookie laws, the
-GDPR, and other regional policies). While active user participation (as
+needs and end user rights or preferences. While active user participation (as
 indicated by {{!RFC6973}}) on a per-qlog basis is difficult, as logs are often
 captured out-of-band to the main user interaction and intent, general user
 expectations should be taken into account. qlog deployments that provide
 mechanisms to integrate the capture, storage and removal of qlogs with more
-general, often pre-existing, user consent and privacy control systems, improve
-the ability to protect data sensitive or confidential to the end user. In qlog,
-these data are typically (but not exclusively) contained in fields of the
-RawInfo type (see {{raw-info}}). qlog users should thus be particularly hesitant
-to include these fields for all but the most stringent use cases.
+general, often pre-existing, user preference and privacy control systems,
+improve the ability to protect data sensitive or confidential to the end user.
+In qlog, these data are typically (but not exclusively) contained in fields of
+the RawInfo type (see {{raw-info}}). qlog users should thus be particularly
+hesitant to include these fields for all but the most stringent use cases.
 
 # IANA Considerations
 
