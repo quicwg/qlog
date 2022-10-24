@@ -720,7 +720,7 @@ $ProtocolEventBody /= {
 ; NewProtocolEvents = EventType1 / EventType2 / ... / EventTypeN
 ; $ProtocolEventBody /= NewProtocolEvents
 ~~~
-{: #data-def title="ProtocolEventBody definition"}
+{: #protocoleventbody-def title="ProtocolEventBody definition"}
 
 One purely illustrative example for a QUIC "packet_sent" event is shown in
 {{data-ex}}:

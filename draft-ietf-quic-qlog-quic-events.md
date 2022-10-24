@@ -692,8 +692,7 @@ Definition:
 TransportPacketSent = {
     header: PacketHeader
 
-    ; see appendix for the QuicFrame definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
     ? is_coalesced: bool .default false
 
@@ -743,8 +742,7 @@ Definition:
 TransportPacketReceived = {
     header: PacketHeader
 
-    ; see appendix for the definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
     ? is_coalesced: bool .default false
 
@@ -1038,8 +1036,7 @@ Definition:
 
 ~~~ cddl
 TransportFramesProcessed = {
-    ; see appendix for the QuicFrame definitions
-    frames: [* QuicFrame]
+    frames: [* $QuicFrame]
 
     ? packet_number: uint64
 }
@@ -1330,8 +1327,7 @@ RecoveryPacketLost = {
 
     ; not all implementations will keep track of full
     ; packets, so these are optional
-    ; see appendix for the QuicFrame definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
     ? is_mtu_probe_packet: bool .default false
 
@@ -1373,8 +1369,7 @@ Definition:
 
 ~~~ cddl
 RecoveryMarkedForRetransmit = {
-    ; see appendix for the QuicFrame definitions
-    frames: [+ QuicFrame]
+    frames: [+ $QuicFrame]
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
@@ -1517,8 +1512,21 @@ KeyType =
 
 ## QUIC Frames
 
+The generic `$QuicFrame` is defined here as a CDDL extension point (a "socket"
+or "plug"). It can be extended to support additional QUIC frame types.
+
 ~~~ cddl
-QuicFrame =
+; The QuicFrame is any key-value map (e.g., JSON object)
+$QuicFrame /= {
+    * text => any
+}
+~~~
+{: #quicframe-def title="QuicFrame plug definition"}
+
+The QUIC frame types defined in this document are as follows:
+
+~~~ cddl
+QuicBaseFrames /=
   PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
   StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
   MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
@@ -1526,8 +1534,10 @@ QuicFrame =
   NewConnectionIDFrame / RetireConnectionIDFrame /
   PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
   HandshakeDoneFrame / UnknownFrame
+
+$QuicFrame /= QuicBaseFrames
 ~~~
-{: #quicframe-def title="QuicFrame definition"}
+{: #quicbaseframe-def title="QuicBaseFrames definition"}
 
 ### PaddingFrame
 
