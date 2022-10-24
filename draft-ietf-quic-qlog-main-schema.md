@@ -22,7 +22,7 @@ author:
     ins: L. Niccolini
     name: Luca Niccolini
     org: Meta
-    email: lniccolini@fb.com
+    email: lniccolini@meta.com
     role: editor
   -
     ins: M. Seemann
@@ -1945,18 +1945,6 @@ TODO: primarily the .well-known URI
 * Triggers are now properties on the "data" field value, instead of separate field
   types (#23)
 * group_ids in common_fields is now just also group_id
-
-# Design Variations
-
-* [Quic-trace](https://github.com/google/quic-trace) takes a slightly different
-  approach based on protocolbuffers.
-* [Spindump](https://github.com/EricssonResearch/spindump) also defines a custom
-  text-based format for in-network measurements
-* [Wireshark](https://www.wireshark.org/) also has a QUIC dissector and its
-  results can be transformed into a json output format using tshark.
-
-The idea is that qlog is able to encompass the use cases for both of these
-alternate designs and that all tooling converges on the qlog standard.
 
 # Acknowledgements
 {:numbered="false"}

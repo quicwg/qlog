@@ -22,7 +22,7 @@ author:
     ins: L. Niccolini
     name: Luca Niccolini
     org: Meta
-    email: lniccolini@fb.com
+    email: lniccolini@meta.com
     role: editor
   -
     ins: M. Seemann
@@ -135,9 +135,9 @@ qlog, making it easier for users to interpret. In this case, both fields MUST ha
 the same value.
 
 
-# HTTP/3 and QPACK event definitions
+# HTTP/3 and QPACK Event Overview
 
-This document defines events in two categories: http ({{http-ev}}) and qpack
+This document defines events in two categories, written as lowercase to follow convention: http ({{http-ev}}) and qpack
 ({{qpack-ev}}).
 
 As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
@@ -146,26 +146,36 @@ concatenation of category and type.
 {{h3-qpack-events}} summarizes the name value of each event type that is defined
 in this specification.
 
-| Name value                  |  Definition |
-|:----------------------------|:------------|
-| http:parameters_set         | {{http-parametersset}} |
-| http:parameters_restored    | {{http-parametersrestored}} |
-| http:stream_type_set        | {{http-streamtypeset}} |
-| http:frame_created          | {{http-framecreated}} |
-| http:frame_parsed           | {{http-frameparsed}} |
-| http:push_resolved          | {{http-pushresolved}} |
-| qpack:state_updated         | {{qpack-stateupdated}} |
-| qpack:stream_state_updated  | {{qpack-streamstateupdate}} |
-| qpack:dynamic_table_updated | {{qpack-dynamictableupdate}} |
-| qpack:headers_encoded       | {{qpack-headersencoded}} |
-| qpack:headers_decoded       | {{qpack-headersdecoded}} |
-| qpack:instruction_created   | {{qpack-instructioncreated}} |
-| qpack:instruction_parsed    | {{qpack-instructionparsed}} |
+| Name value                  | Importance |  Definition |
+|:----------------------------|:-----------|:------------|
+| http:parameters_set         | Base       | {{http-parametersset}} |
+| http:parameters_restored    | Base       | {{http-parametersrestored}} |
+| http:stream_type_set        | Base       | {{http-streamtypeset}} |
+| http:frame_created          | Core       | {{http-framecreated}} |
+| http:frame_parsed           | Core       | {{http-frameparsed}} |
+| http:push_resolved          | Extra      | {{http-pushresolved}} |
+| qpack:state_updated         | Base       | {{qpack-stateupdated}} |
+| qpack:stream_state_updated  | Core       | {{qpack-streamstateupdate}} |
+| qpack:dynamic_table_updated | Extra      | {{qpack-dynamictableupdate}} |
+| qpack:headers_encoded       | Base       | {{qpack-headersencoded}} |
+| qpack:headers_decoded       | Base       | {{qpack-headersdecoded}} |
+| qpack:instruction_created   | Base       | {{qpack-instructioncreated}} |
+| qpack:instruction_parsed    | Base       | {{qpack-instructionparsed}} |
 {: #h3-qpack-events title="HTTP/3 and QPACK Events"}
 
-# HTTP/3 events {#http-ev}
+# HTTP/3 Events {#http-ev}
 
-Note: like all category values, the "http" category is written in lowercase.
+HTTP/3 events extend the `$ProtocolEventBody` extension point defined in {{QLOG-MAIN}}.
+
+~~~ cddl
+HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
+             HTTPStreamTypeSet / HTTPFrameCreated /
+             HTTPFrameParsed / HTTPPushResolved
+
+$ProtocolEventBody /= HTTPEvents
+~~~
+{: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
+extension"}
 
 ## parameters_set {#http-parametersset}
 Importance: Base
@@ -355,11 +365,218 @@ HTTPPushDecision = "claimed" / "abandoned"
 ~~~
 {: #http-pushresolved-def title="HTTPPushResolved definition"}
 
-# qpack {#qpack-ev}
+# HTTP/3 Data Field Definitions
 
-Note: like all category values, the "qpack" category is written in lowercase.
+The following data field definitions can be used in HTTP/3 events.
 
-The QPACK events mainly serve as an aid to debug low-level QPACK issues. The
+## Owner
+
+~~~ cddl
+Owner = "local" / "remote"
+~~~
+{: #owner-def title="Owner definition"}
+
+## HTTPFrame
+
+~~~ cddl
+HTTPFrame =  HTTPDataFrame /
+             HTTPHeadersFrame /
+             HTTPCancelPushFrame /
+             HTTPSettingsFrame /
+             HTTPPushPromiseFrame /
+             HTTPGoawayFrame /
+             HTTPMaxPushIDFrame /
+             HTTPReservedFrame /
+             HTTPUnknownFrame
+~~~
+{: #httpframe-def title="HTTPFrame definition"}
+
+### HTTPDataFrame
+~~~ cddl
+HTTPDataFrame = {
+    frame_type: "data"
+    ? raw: hexstring
+}
+~~~
+{: #httpdataframe-def title="HTTPDataFrame definition"}
+
+### HTTPHeadersFrame
+
+This represents an *uncompressed*, plaintext HTTP Headers frame (e.g., no QPACK
+compression is applied).
+
+For example:
+
+~~~
+headers: [
+  {
+    "name": ":path",
+    "value": "/"
+  },
+  {
+    "name": ":method",
+    "value": "GET"
+  },
+  {
+    "name": ":authority",
+    "value": "127.0.0.1:4433"
+  },
+  {
+    "name": ":scheme",
+    "value": "https"
+  }
+]
+~~~
+{: #http-headersframe-ex title="HTTPHeadersFrame example"}
+
+~~~ cddl
+HTTPHeadersFrame = {
+    frame_type: "headers"
+    headers: [* HTTPField]
+}
+~~~
+{: #http-headersframe-def title="HTTPHeadersFrame definition"}
+
+~~~ cddl
+HTTPField = {
+    name: text
+    value: text
+}
+~~~
+{: #httpfield-def title="HTTPField definition"}
+
+### HTTPCancelPushFrame
+
+~~~ cddl
+HTTPCancelPushFrame = {
+    frame_type: "cancel_push"
+    push_id: uint64
+}
+~~~
+{: #http-cancelpushframe-def title="HTTPCancelPushFrame definition"}
+
+### HTTPSettingsFrame
+
+~~~ cddl
+HTTPSettingsFrame = {
+    frame_type: "settings"
+    settings: [* HTTPSetting]
+}
+
+HTTPSetting = {
+    name: text
+    value: uint64
+}
+~~~
+{: #httpsettingsframe-def title="HTTPSettingsFrame definition"}
+
+### HTTPPushPromiseFrame
+
+~~~ cddl
+HTTPPushPromiseFrame = {
+    frame_type: "push_promise"
+    push_id: uint64
+    headers: [* HTTPField]
+}
+~~~
+{: #httppushpromiseframe-def title="HTTPPushPromiseFrame definition"}
+
+### HTTPGoAwayFrame
+
+~~~ cddl
+HTTPGoawayFrame = {
+    frame_type: "goaway"
+
+    ; Either stream_id or push_id.
+    ; This is implicit from the sender of the frame
+    id: uint64
+}
+~~~
+{: #httpgoawayframe-def title="HTTPGoawayFrame definition"}
+
+### HTTPMaxPushIDFrame
+
+~~~ cddl
+HTTPMaxPushIDFrame = {
+    frame_type: "max_push_id"
+    push_id: uint64
+}
+~~~
+{: #httpmaxpushidframe-def title="HTTPMaxPushIDFrame definition"}
+
+### HTTPReservedFrame
+
+~~~ cddl
+HTTPReservedFrame = {
+    frame_type: "reserved"
+
+    ? length: uint64
+}
+~~~
+{: #httpreservedframe-def title="HTTPReservedFrame definition"}
+
+### HTTPUnknownFrame
+
+~~~ cddl
+HTTPUnknownFrame = {
+    frame_type: "unknown"
+    raw_frame_type: uint64
+
+    ? raw_length: uint32
+    ? raw: hexstring
+}
+~~~
+{: #httpunknownframe-def title="UnknownFrame definition"}
+
+### HTTPApplicationError
+
+~~~ cddl
+HTTPApplicationError =  "http_no_error" /
+                        "http_general_protocol_error" /
+                        "http_internal_error" /
+                        "http_stream_creation_error" /
+                        "http_closed_critical_stream" /
+                        "http_frame_unexpected" /
+                        "http_frame_error" /
+                        "http_excessive_load" /
+                        "http_id_error" /
+                        "http_settings_error" /
+                        "http_missing_settings" /
+                        "http_request_rejected" /
+                        "http_request_cancelled" /
+                        "http_request_incomplete" /
+                        "http_early_response" /
+                        "http_connect_error" /
+                        "http_version_fallback"
+~~~
+{: #httpapplicationerror-def title="HTTPApplicationError definition"}
+
+The HTTPApplicationError defines the general $ApplicationError
+definition in the qlog QUIC definition, see {{QLOG-QUIC}}.
+
+~~~ cddl
+; ensure HTTP errors are properly validate in QUIC events as well
+; e.g., QUIC's ConnectionClose Frame
+$ApplicationError /= HTTPApplicationError
+~~~
+
+# QPACK Events {#qpack-ev}
+
+QPACK events extend the `$ProtocolEventBody` extension point defined in
+{{QLOG-MAIN}}.
+
+~~~ cddl
+QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
+              QPACKDynamicTableUpdate / QPACKHeadersEncoded /
+              QPACKHeadersDecoded / QPACKInstructionCreated /
+              QPACKInstructionParsed
+
+$ProtocolEventBody /= QPACKEvents
+~~~
+{: #qpackevents-def title="QPACKEvents definition and ProtocolEventBody
+extension"}
+
+QPACK events mainly serve as an aid to debug low-level QPACK issues.The
 higher-level, plaintext header values SHOULD (also) be logged in the
 http.frame_created and http.frame_parsed event data (instead).
 
@@ -536,243 +753,11 @@ QPACKInstructionParsed = {
 Note: encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
-# Security Considerations
+# QPACK Data Field Definitions
 
-TBD
+The following data field definitions can be used in QPACK events.
 
-# IANA Considerations
-
-TBD
-
---- back
-
-# HTTP/3 data field definitions
-
-## ProtocolEventBody extension
-
-We extend the `$ProtocolEventBody` extension point defined in
-{{QLOG-MAIN}} with the HTTP/3 protocol events defined in this document.
-
-~~~ cddl
-HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
-             HTTPStreamTypeSet / HTTPFrameCreated /
-             HTTPFrameParsed / HTTPPushResolved
-
-$ProtocolEventBody /= HTTPEvents
-~~~
-{: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
-extension"}
-
-## Owner
-
-~~~ cddl
-Owner = "local" / "remote"
-~~~
-{: #owner-def title="Owner definition"}
-
-## HTTP/3 Frames
-
-~~~ cddl
-HTTPFrame =  HTTPDataFrame /
-             HTTPHeadersFrame /
-             HTTPCancelPushFrame /
-             HTTPSettingsFrame /
-             HTTPPushPromiseFrame /
-             HTTPGoawayFrame /
-             HTTPMaxPushIDFrame /
-             HTTPReservedFrame /
-             HTTPUnknownFrame
-~~~
-{: #httpframe-def title="HTTPFrame definition"}
-
-### DataFrame
-~~~ cddl
-HTTPDataFrame = {
-    frame_type: "data"
-    ? raw: hexstring
-}
-~~~
-{: #httpdataframe-def title="HTTPDataFrame definition"}
-
-### HeadersFrame
-
-This represents an *uncompressed*, plaintext HTTP Headers frame (e.g., no QPACK
-compression is applied).
-
-For example:
-
-~~~
-headers: [
-  {
-    "name": ":path",
-    "value": "/"
-  },
-  {
-    "name": ":method",
-    "value": "GET"
-  },
-  {
-    "name": ":authority",
-    "value": "127.0.0.1:4433"
-  },
-  {
-    "name": ":scheme",
-    "value": "https"
-  }
-]
-~~~
-{: #http-headersframe-ex title="HTTPHeadersFrame example"}
-
-~~~ cddl
-HTTPHeadersFrame = {
-    frame_type: "headers"
-    headers: [* HTTPField]
-}
-~~~
-{: #http-headersframe-def title="HTTPHeadersFrame definition"}
-
-~~~ cddl
-HTTPField = {
-    name: text
-    value: text
-}
-~~~
-{: #httpfield-def title="HTTPField definition"}
-
-### CancelPushFrame
-
-~~~ cddl
-HTTPCancelPushFrame = {
-    frame_type: "cancel_push"
-    push_id: uint64
-}
-~~~
-{: #http-cancelpushframe-def title="HTTPCancelPushFrame definition"}
-
-### SettingsFrame
-
-~~~ cddl
-HTTPSettingsFrame = {
-    frame_type: "settings"
-    settings: [* HTTPSetting]
-}
-
-HTTPSetting = {
-    name: text
-    value: uint64
-}
-~~~
-{: #httpsettingsframe-def title="HTTPSettingsFrame definition"}
-
-### PushPromiseFrame
-
-~~~ cddl
-HTTPPushPromiseFrame = {
-    frame_type: "push_promise"
-    push_id: uint64
-    headers: [* HTTPField]
-}
-~~~
-{: #httppushpromiseframe-def title="HTTPPushPromiseFrame definition"}
-
-### GoAwayFrame
-
-~~~ cddl
-HTTPGoawayFrame = {
-    frame_type: "goaway"
-
-    ; Either stream_id or push_id.
-    ; This is implicit from the sender of the frame
-    id: uint64
-}
-~~~
-{: #httpgoawayframe-def title="HTTPGoawayFrame definition"}
-
-### MaxPushIDFrame
-
-~~~ cddl
-HTTPMaxPushIDFrame = {
-    frame_type: "max_push_id"
-    push_id: uint64
-}
-~~~
-{: #httpmaxpushidframe-def title="HTTPMaxPushIDFrame definition"}
-
-### ReservedFrame
-
-~~~ cddl
-HTTPReservedFrame = {
-    frame_type: "reserved"
-
-    ? length: uint64
-}
-~~~
-{: #httpreservedframe-def title="HTTPReservedFrame definition"}
-
-### UnknownFrame
-
-~~~ cddl
-HTTPUnknownFrame = {
-    frame_type: "unknown"
-    raw_frame_type: uint64
-
-    ? raw_length: uint32
-    ? raw: hexstring
-}
-~~~
-{: #httpunknownframe-def title="UnknownFrame definition"}
-
-## ApplicationError
-
-~~~ cddl
-HTTPApplicationError =  "http_no_error" /
-                        "http_general_protocol_error" /
-                        "http_internal_error" /
-                        "http_stream_creation_error" /
-                        "http_closed_critical_stream" /
-                        "http_frame_unexpected" /
-                        "http_frame_error" /
-                        "http_excessive_load" /
-                        "http_id_error" /
-                        "http_settings_error" /
-                        "http_missing_settings" /
-                        "http_request_rejected" /
-                        "http_request_cancelled" /
-                        "http_request_incomplete" /
-                        "http_early_response" /
-                        "http_connect_error" /
-                        "http_version_fallback"
-~~~
-{: #httpapplicationerror-def title="HTTPApplicationError definition"}
-
-The HTTPApplicationError defines the general $ApplicationError
-definition in the qlog QUIC definition, see {{QLOG-QUIC}}.
-
-~~~ cddl
-; ensure HTTP errors are properly validate in QUIC events as well
-; e.g., QUIC's ConnectionClose Frame
-$ApplicationError /= HTTPApplicationError
-~~~
-
-# QPACK DATA type definitions
-
-## ProtocolEventBody extension
-
-We extend the `$ProtocolEventBody` extension point defined in
-{{QLOG-MAIN}} with the QPACK protocol events defined in this document.
-
-~~~ cddl
-QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
-              QPACKDynamicTableUpdate / QPACKHeadersEncoded /
-              QPACKHeadersDecoded / QPACKInstructionCreated /
-              QPACKInstructionParsed
-
-$ProtocolEventBody /= QPACKEvents
-~~~
-{: #qpackevents-def title="QPACKEvents definition and ProtocolEventBody
-extension"}
-
-## QPACK Instructions
+## QPACKInstruction
 
 Note: the instructions do not have explicit encoder/decoder types, since there is
 no overlap between the instructions of both types in neither name nor function.
@@ -874,7 +859,7 @@ InsertCountIncrementInstruction = {
 {: #insertcountincrementinstruction-def
 title="InsertCountIncrementInstruction definition"}
 
-## QPACK Header compression
+## QPACKHeaderBlockRepresentation
 
 ~~~ cddl
 QPACKHeaderBlockRepresentation =  IndexedHeaderField /
@@ -950,7 +935,7 @@ LiteralHeaderFieldWithoutName = {
 title="LiteralHeaderFieldWithoutName definition"}
 
 
-### QPACKHeaderBlockPrefix
+## QPACKHeaderBlockPrefix
 
 ~~~ cddl
 QPACKHeaderBlockPrefix = {
@@ -962,13 +947,23 @@ QPACKHeaderBlockPrefix = {
 {: #qpackheaderblockprefix-def
 title="QPACKHeaderBlockPrefix definition"}
 
-### QPACKTableType
+## QPACKTableType
 
 ~~~ cddl
 QPACKTableType = "static" / "dynamic"
 ~~~
 {: #qpacktabletype-def title="QPACKTableType definition"}
 
+
+# Security Considerations
+
+TBD
+
+# IANA Considerations
+
+TBD
+
+--- back
 
 # Change Log
 
@@ -1044,10 +1039,6 @@ Smaller changes:
 * Events are given an importance indicator (issue \#22)
 * Event names are more consistent and use past tense (issue \#21)
 * Triggers have been redefined as properties of the "data" field and updated for most events (issue \#23)
-
-# Design Variations
-
-TBD
 
 # Acknowledgements
 {:numbered="false"}
