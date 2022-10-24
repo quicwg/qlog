@@ -379,9 +379,7 @@ Owner = "local" / "remote"
 ## HTTPFrame
 
 The generic `$HTTPFrame` is defined here as a CDDL extension point (a "socket"
-or "plug"). This allows other documents to extend this extension point when
-defining new HTTP/3 protocol frame types to enable automated validation of
-aggregated qlog schemas.
+or "plug"). It can be extended to support additional HTTP/3 frame types.
 
 ~~~ cddl
 ; The HTTPFrame is any key-value map (e.g., JSON object)
@@ -406,7 +404,7 @@ HTTPBaseFrames =  HTTPDataFrame /
 
 $HTTPFrame /= HTTPBaseFrames
 ~~~
-{: #httpbaseframe-def title="HTTPFrames defined in this document"}
+{: #httpbaseframe-def title="HTTPBaseFrames definition"}
 
 ### HTTPDataFrame
 ~~~ cddl

@@ -1518,9 +1518,7 @@ KeyType =
 ## QUIC Frames
 
 The generic `$QuicFrame` is defined here as a CDDL extension point (a "socket"
-or "plug"). This allows other documents to extend this extension point when
-defining new QUIC protocol frame types to enable automated validation of
-aggregated qlog schemas.
+or "plug"). It can be extended to support additional QUIC frame types.
 
 ~~~ cddl
 ; The QuicFrame is any key-value map (e.g., JSON object)
@@ -1544,7 +1542,7 @@ QuicBaseFrames /=
 
 $QuicFrame /= QuicBaseFrames
 ~~~
-{: #quicbaseframe-def title="QuicFrames defined in this document"}
+{: #quicbaseframe-def title="QuicBaseFrames definition"}
 
 ### PaddingFrame
 
