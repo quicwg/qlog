@@ -182,7 +182,6 @@ this specification.
 | connectivity:connection_closed        | Base       | {{connectivity-connectionclosed}} |
 | connectivity:connection_id_updated    | Base       | {{connectivity-connectionidupdated}} |
 | connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
-| connectivity:connection_retried       | TODO       | {{connectivity-connectionretried}} |
 | connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
 | connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
 | transport:version_information         | Core       | {{transport-versioninformation}} |
@@ -380,10 +379,6 @@ ConnectivitySpinBitUpdated = {
 }
 ~~~
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
-
-## connection_retried {#connectivity-connectionretried}
-
-TODO
 
 ## connection_state_updated {#connectivity-connectionstateupdated}
 Importance: Base
@@ -1917,6 +1912,7 @@ TBD
 
 * Renamed key_retired to key_discarded (#185)
 * Add fields and events for DPLPMTUD (#135)
+* Removed connection_retried event placeholder
 
 ## Since draft-ietf-qlog-quic-events-01:
 
