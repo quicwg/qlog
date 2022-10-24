@@ -985,7 +985,13 @@ TBD
 
 ## Since draft-ietf-quic-qlog-h3-events-02:
 
-* TODO
+* Renamed HTTPStreamType data to request (#222)
+* Added HTTPStreamType value unknown (#227)
+* Added HTTPUnknownFrame (#224)
+* Replaced old and new fields with stream_type in HTTPStreamTypeSet (#240)
+* Changed HTTPFrame to a CDDL plug type (#257)
+* Moved data definitions out of the appendix into separate sections
+* Added overview Table of Contents
 
 ## Since draft-ietf-quic-qlog-h3-events-01:
 

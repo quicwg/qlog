@@ -1922,8 +1922,12 @@ TBD
 ## Since draft-ietf-qlog-quic-events-02:
 
 * Renamed key_retired to key_discarded (#185)
-* Add fields and events for DPLPMTUD (#135)
-* Removed connection_retried event placeholder
+* Added fields and events for DPLPMTUD (#135)
+* Made packet_number optional in PacketHeader (#244)
+* Removed connection_retried event placeholder (#255)
+* Changed QuicFrame to a CDDL plug type (#257)
+* Moved data definitions out of the appendix into separate sections
+* Added overview Table of Contents
 
 ## Since draft-ietf-qlog-quic-events-01:
 

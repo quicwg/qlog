@@ -1983,7 +1983,7 @@ TODO: primarily the .well-known URI
 
 ## Since draft-ietf-quic-qlog-main-schema-03:
 
-* Added security and privacy considerations discussion
+* Added security and privacy considerations discussion (#252)
 
 ## Since draft-ietf-quic-qlog-main-schema-02:
 
