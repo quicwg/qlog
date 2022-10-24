@@ -875,8 +875,7 @@ Table of Contents
    TransportPacketSent = {
        header: PacketHeader
 
-       ; see appendix for the QuicFrame definitions
-       ? frames: [* QuicFrame]
+       ? frames: [* $QuicFrame]
 
        ? is_coalesced: bool .default false
 
@@ -927,8 +926,7 @@ Table of Contents
    TransportPacketReceived = {
        header: PacketHeader
 
-       ; see appendix for the definitions
-       ? frames: [* QuicFrame]
+       ? frames: [* $QuicFrame]
 
        ? is_coalesced: bool .default false
 
@@ -1237,8 +1235,7 @@ Table of Contents
    Definition:
 
    TransportFramesProcessed = {
-       ; see appendix for the QuicFrame definitions
-       frames: [* QuicFrame]
+       frames: [* $QuicFrame]
 
        ? packet_number: uint64
    }
@@ -1548,8 +1545,7 @@ Table of Contents
 
        ; not all implementations will keep track of full
        ; packets, so these are optional
-       ; see appendix for the QuicFrame definitions
-       ? frames: [* QuicFrame]
+       ? frames: [* $QuicFrame]
 
        ? is_mtu_probe_packet: bool .default false
 
@@ -1593,8 +1589,7 @@ Table of Contents
    Definition:
 
    RecoveryMarkedForRetransmit = {
-       ; see appendix for the QuicFrame definitions
-       frames: [+ QuicFrame]
+       frames: [+ $QuicFrame]
    }
 
              Figure 31: RecoveryMarkedForRetransmit definition
@@ -1727,7 +1722,20 @@ Table of Contents
 
 8.11.  QUIC Frames
 
-   QuicFrame =
+   The generic $QuicFrame is defined here as a CDDL extension point (a
+   "socket" or "plug").  It can be extended to support additional QUIC
+   frame types.
+
+   ; The QuicFrame is any key-value map (e.g., JSON object)
+   $QuicFrame /= {
+       * text => any
+   }
+
+                    Figure 43: QuicFrame plug definition
+
+   The QUIC frame types defined in this document are as follows:
+
+   QuicBaseFrames /=
      PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
      StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
      MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
@@ -1736,7 +1744,9 @@ Table of Contents
      PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
      HandshakeDoneFrame / UnknownFrame
 
-                      Figure 43: QuicFrame definition
+   $QuicFrame /= QuicBaseFrames
+
+                    Figure 44: QuicBaseFrames definition
 
 8.11.1.  PaddingFrame
 
@@ -1757,7 +1767,7 @@ Table of Contents
        payload_length: uint32
    }
 
-                     Figure 44: PaddingFrame definition
+                     Figure 45: PaddingFrame definition
 
 8.11.2.  PingFrame
 
@@ -1769,7 +1779,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                      Figure 45: PingFrame definition
+                      Figure 46: PingFrame definition
 
 8.11.3.  AckFrame
 
@@ -1800,7 +1810,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                       Figure 46: AckFrame definition
+                       Figure 47: AckFrame definition
 
    Note: the packet ranges in AckFrame.acked_ranges do not necessarily
    have to be ordered (e.g., [[5,9],[1,4]] is a valid value).
@@ -1826,7 +1836,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 47: ResetStreamFrame definition
+                   Figure 48: ResetStreamFrame definition
 
 8.11.5.  StopSendingFrame
 
@@ -1841,7 +1851,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 48: StopSendingFrame definition
+                   Figure 49: StopSendingFrame definition
 
 8.11.6.  CryptoFrame
 
@@ -1854,7 +1864,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                     Figure 49: CryptoFrame definition
+                     Figure 50: CryptoFrame definition
 
 8.11.7.  NewTokenFrame
 
@@ -1864,7 +1874,7 @@ Table of Contents
      token: Token
    }
 
-                    Figure 50: NewTokenFrame definition
+                    Figure 51: NewTokenFrame definition
 
 8.11.8.  StreamFrame
 
@@ -1886,7 +1896,7 @@ Table of Contents
        ? raw: hexstring
    }
 
-                     Figure 51: StreamFrame definition
+                     Figure 52: StreamFrame definition
 
 8.11.9.  MaxDataFrame
 
@@ -1896,7 +1906,7 @@ Table of Contents
      maximum: uint64
    }
 
-                     Figure 52: MaxDataFrame definition
+                     Figure 53: MaxDataFrame definition
 
 8.11.10.  MaxStreamDataFrame
 
@@ -1907,7 +1917,7 @@ Table of Contents
      maximum: uint64
    }
 
-                  Figure 53: MaxStreamDataFrame definition
+                  Figure 54: MaxStreamDataFrame definition
 
 8.11.11.  MaxStreamsFrame
 
@@ -1918,7 +1928,7 @@ Table of Contents
      maximum: uint64
    }
 
-                   Figure 54: MaxStreamsFrame definition
+                   Figure 55: MaxStreamsFrame definition
 
 8.11.12.  DataBlockedFrame
 
@@ -1928,7 +1938,7 @@ Table of Contents
      limit: uint64
    }
 
-                   Figure 55: DataBlockedFrame definition
+                   Figure 56: DataBlockedFrame definition
 
 8.11.13.  StreamDataBlockedFrame
 
@@ -1939,7 +1949,7 @@ Table of Contents
      limit: uint64
    }
 
-                Figure 56: StreamDataBlockedFrame definition
+                Figure 57: StreamDataBlockedFrame definition
 
 8.11.14.  StreamsBlockedFrame
 
@@ -1950,7 +1960,7 @@ Table of Contents
      limit: uint64
    }
 
-                 Figure 57: StreamsBlockedFrame definition
+                 Figure 58: StreamsBlockedFrame definition
 
 8.11.15.  NewConnectionIDFrame
 
@@ -1968,7 +1978,7 @@ Table of Contents
      ? stateless_reset_token: StatelessResetToken
    }
 
-                 Figure 58: NewConnectionIDFrame definition
+                 Figure 59: NewConnectionIDFrame definition
 
 8.11.16.  RetireConnectionIDFrame
 
@@ -1978,7 +1988,7 @@ Table of Contents
      sequence_number: uint32
    }
 
-               Figure 59: RetireConnectionIDFrame definition
+               Figure 60: RetireConnectionIDFrame definition
 
 8.11.17.  PathChallengeFrame
 
@@ -1989,7 +1999,7 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 60: PathChallengeFrame definition
+                  Figure 61: PathChallengeFrame definition
 
 8.11.18.  PathResponseFrame
 
@@ -2000,7 +2010,7 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 61: PathResponseFrame definition
+                  Figure 62: PathResponseFrame definition
 
 8.11.19.  ConnectionCloseFrame
 
@@ -2023,7 +2033,7 @@ Table of Contents
        ? trigger_frame_type: uint64 / text
    }
 
-                 Figure 62: ConnectionCloseFrame definition
+                 Figure 63: ConnectionCloseFrame definition
 
 8.11.20.  HandshakeDoneFrame
 
@@ -2031,7 +2041,7 @@ Table of Contents
      frame_type: "handshake_done";
    }
 
-                  Figure 63: HandshakeDoneFrame definition
+                  Figure 64: HandshakeDoneFrame definition
 
 8.11.21.  UnknownFrame
 
@@ -2043,7 +2053,7 @@ Table of Contents
        ? raw: hexstring
    }
 
-                     Figure 64: UnknownFrame definition
+                     Figure 65: UnknownFrame definition
 
 8.11.22.  TransportError
 
@@ -2055,7 +2065,7 @@ Table of Contents
        "protocol_violation" / "invalid_token" / "application_error" /
        "crypto_buffer_exceeded"
 
-                    Figure 65: TransportError definition
+                    Figure 66: TransportError definition
 
 8.11.23.  ApplicationError
 
@@ -2087,7 +2097,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 66: CryptoError definition
+                     Figure 67: CryptoError definition
 
 9.  Security Considerations
 

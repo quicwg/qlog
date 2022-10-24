@@ -1741,7 +1741,7 @@ in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="
 HTTPFrameCreated = {
     stream_id: uint64
     ? length: uint64
-    frame: HTTPFrame
+    frame: $HTTPFrame
     ? raw: RawInfo
 }
 </pre>
@@ -1775,7 +1775,7 @@ the HTTP/3 data is actually received on the QUIC layer. For that, see the
 HTTPFrameParsed = {
     stream_id: uint64
     ? length: uint64
-    frame: HTTPFrame
+    frame: $HTTPFrame
     ? raw: RawInfo
 }
 </pre>
@@ -1856,11 +1856,28 @@ Owner = "local" / "remote"
         <h3 id="name-httpframe">
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-httpframe" class="section-name selfRef">HTTPFrame</a>
         </h3>
-<span id="name-httpframe-definition"></span><div id="httpframe-def">
+<p id="section-5.2-1">The generic <code>$HTTPFrame</code> is defined here as a CDDL extension point (a "socket"
+or "plug"). It can be extended to support additional HTTP/3 frame types.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<span id="name-httpframe-plug-definition"></span><div id="httpframe-def">
 <figure id="figure-9">
-          <div id="section-5.2-1.1">
+          <div id="section-5.2-2.1">
 <pre class="lang-cddl sourcecode">
-HTTPFrame =  HTTPDataFrame /
+; The HTTPFrame is any key-value map (e.g., JSON object)
+$HTTPFrame /= {
+    * text =&gt; any
+}
+</pre>
+</div>
+<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
+<a href="#name-httpframe-plug-definition" class="selfRef">HTTPFrame plug definition</a>
+          </figcaption></figure>
+</div>
+<p id="section-5.2-3">The HTTP/3 frame types defined in this document are as follows:<a href="#section-5.2-3" class="pilcrow">¶</a></p>
+<span id="name-httpbaseframes-definition"></span><div id="httpbaseframe-def">
+<figure id="figure-10">
+          <div id="section-5.2-4.1">
+<pre class="lang-cddl sourcecode">
+HTTPBaseFrames =  HTTPDataFrame /
              HTTPHeadersFrame /
              HTTPCancelPushFrame /
              HTTPSettingsFrame /
@@ -1869,10 +1886,12 @@ HTTPFrame =  HTTPDataFrame /
              HTTPMaxPushIDFrame /
              HTTPReservedFrame /
              HTTPUnknownFrame
+
+$HTTPFrame /= HTTPBaseFrames
 </pre>
 </div>
-<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
-<a href="#name-httpframe-definition" class="selfRef">HTTPFrame definition</a>
+<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
+<a href="#name-httpbaseframes-definition" class="selfRef">HTTPBaseFrames definition</a>
           </figcaption></figure>
 </div>
 <div id="httpdataframe">
@@ -1881,7 +1900,7 @@ HTTPFrame =  HTTPDataFrame /
 <a href="#section-5.2.1" class="section-number selfRef">5.2.1. </a><a href="#name-httpdataframe" class="section-name selfRef">HTTPDataFrame</a>
           </h4>
 <span id="name-httpdataframe-definition"></span><div id="httpdataframe-def">
-<figure id="figure-10">
+<figure id="figure-11">
             <div id="section-5.2.1-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPDataFrame = {
@@ -1890,7 +1909,7 @@ HTTPDataFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
+<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
 <a href="#name-httpdataframe-definition" class="selfRef">HTTPDataFrame definition</a>
             </figcaption></figure>
 </div>
@@ -1905,7 +1924,7 @@ HTTPDataFrame = {
 compression is applied).<a href="#section-5.2.2-1" class="pilcrow">¶</a></p>
 <p id="section-5.2.2-2">For example:<a href="#section-5.2.2-2" class="pilcrow">¶</a></p>
 <span id="name-httpheadersframe-example"></span><div id="http-headersframe-ex">
-<figure id="figure-11">
+<figure id="figure-12">
             <div class="alignLeft art-text artwork" id="section-5.2.2-3.1">
 <pre>
 headers: [
@@ -1928,12 +1947,12 @@ headers: [
 ]
 </pre>
 </div>
-<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
+<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
 <a href="#name-httpheadersframe-example" class="selfRef">HTTPHeadersFrame example</a>
             </figcaption></figure>
 </div>
 <span id="name-httpheadersframe-definition"></span><div id="http-headersframe-def">
-<figure id="figure-12">
+<figure id="figure-13">
             <div id="section-5.2.2-4.1">
 <pre class="lang-cddl sourcecode">
 HTTPHeadersFrame = {
@@ -1942,12 +1961,12 @@ HTTPHeadersFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
+<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
 <a href="#name-httpheadersframe-definition" class="selfRef">HTTPHeadersFrame definition</a>
             </figcaption></figure>
 </div>
 <span id="name-httpfield-definition"></span><div id="httpfield-def">
-<figure id="figure-13">
+<figure id="figure-14">
             <div id="section-5.2.2-5.1">
 <pre class="lang-cddl sourcecode">
 HTTPField = {
@@ -1956,7 +1975,7 @@ HTTPField = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
+<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
 <a href="#name-httpfield-definition" class="selfRef">HTTPField definition</a>
             </figcaption></figure>
 </div>
@@ -1968,7 +1987,7 @@ HTTPField = {
 <a href="#section-5.2.3" class="section-number selfRef">5.2.3. </a><a href="#name-httpcancelpushframe" class="section-name selfRef">HTTPCancelPushFrame</a>
           </h4>
 <span id="name-httpcancelpushframe-definit"></span><div id="http-cancelpushframe-def">
-<figure id="figure-14">
+<figure id="figure-15">
             <div id="section-5.2.3-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPCancelPushFrame = {
@@ -1977,7 +1996,7 @@ HTTPCancelPushFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
 <a href="#name-httpcancelpushframe-definit" class="selfRef">HTTPCancelPushFrame definition</a>
             </figcaption></figure>
 </div>
@@ -1989,7 +2008,7 @@ HTTPCancelPushFrame = {
 <a href="#section-5.2.4" class="section-number selfRef">5.2.4. </a><a href="#name-httpsettingsframe" class="section-name selfRef">HTTPSettingsFrame</a>
           </h4>
 <span id="name-httpsettingsframe-definitio"></span><div id="httpsettingsframe-def">
-<figure id="figure-15">
+<figure id="figure-16">
             <div id="section-5.2.4-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPSettingsFrame = {
@@ -2003,7 +2022,7 @@ HTTPSetting = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
+<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
 <a href="#name-httpsettingsframe-definitio" class="selfRef">HTTPSettingsFrame definition</a>
             </figcaption></figure>
 </div>
@@ -2015,7 +2034,7 @@ HTTPSetting = {
 <a href="#section-5.2.5" class="section-number selfRef">5.2.5. </a><a href="#name-httppushpromiseframe" class="section-name selfRef">HTTPPushPromiseFrame</a>
           </h4>
 <span id="name-httppushpromiseframe-defini"></span><div id="httppushpromiseframe-def">
-<figure id="figure-16">
+<figure id="figure-17">
             <div id="section-5.2.5-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPPushPromiseFrame = {
@@ -2025,7 +2044,7 @@ HTTPPushPromiseFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
+<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
 <a href="#name-httppushpromiseframe-defini" class="selfRef">HTTPPushPromiseFrame definition</a>
             </figcaption></figure>
 </div>
@@ -2037,7 +2056,7 @@ HTTPPushPromiseFrame = {
 <a href="#section-5.2.6" class="section-number selfRef">5.2.6. </a><a href="#name-httpgoawayframe" class="section-name selfRef">HTTPGoAwayFrame</a>
           </h4>
 <span id="name-httpgoawayframe-definition"></span><div id="httpgoawayframe-def">
-<figure id="figure-17">
+<figure id="figure-18">
             <div id="section-5.2.6-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPGoawayFrame = {
@@ -2049,7 +2068,7 @@ HTTPGoawayFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
 <a href="#name-httpgoawayframe-definition" class="selfRef">HTTPGoawayFrame definition</a>
             </figcaption></figure>
 </div>
@@ -2061,7 +2080,7 @@ HTTPGoawayFrame = {
 <a href="#section-5.2.7" class="section-number selfRef">5.2.7. </a><a href="#name-httpmaxpushidframe" class="section-name selfRef">HTTPMaxPushIDFrame</a>
           </h4>
 <span id="name-httpmaxpushidframe-definiti"></span><div id="httpmaxpushidframe-def">
-<figure id="figure-18">
+<figure id="figure-19">
             <div id="section-5.2.7-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPMaxPushIDFrame = {
@@ -2070,7 +2089,7 @@ HTTPMaxPushIDFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
 <a href="#name-httpmaxpushidframe-definiti" class="selfRef">HTTPMaxPushIDFrame definition</a>
             </figcaption></figure>
 </div>
@@ -2082,7 +2101,7 @@ HTTPMaxPushIDFrame = {
 <a href="#section-5.2.8" class="section-number selfRef">5.2.8. </a><a href="#name-httpreservedframe" class="section-name selfRef">HTTPReservedFrame</a>
           </h4>
 <span id="name-httpreservedframe-definitio"></span><div id="httpreservedframe-def">
-<figure id="figure-19">
+<figure id="figure-20">
             <div id="section-5.2.8-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPReservedFrame = {
@@ -2092,7 +2111,7 @@ HTTPReservedFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
+<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
 <a href="#name-httpreservedframe-definitio" class="selfRef">HTTPReservedFrame definition</a>
             </figcaption></figure>
 </div>
@@ -2104,7 +2123,7 @@ HTTPReservedFrame = {
 <a href="#section-5.2.9" class="section-number selfRef">5.2.9. </a><a href="#name-httpunknownframe" class="section-name selfRef">HTTPUnknownFrame</a>
           </h4>
 <span id="name-unknownframe-definition"></span><div id="httpunknownframe-def">
-<figure id="figure-20">
+<figure id="figure-21">
             <div id="section-5.2.9-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPUnknownFrame = {
@@ -2116,7 +2135,7 @@ HTTPUnknownFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
+<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
 <a href="#name-unknownframe-definition" class="selfRef">UnknownFrame definition</a>
             </figcaption></figure>
 </div>
@@ -2128,7 +2147,7 @@ HTTPUnknownFrame = {
 <a href="#section-5.2.10" class="section-number selfRef">5.2.10. </a><a href="#name-httpapplicationerror" class="section-name selfRef">HTTPApplicationError</a>
           </h4>
 <span id="name-httpapplicationerror-defini"></span><div id="httpapplicationerror-def">
-<figure id="figure-21">
+<figure id="figure-22">
             <div id="section-5.2.10-1.1">
 <pre class="lang-cddl sourcecode">
 HTTPApplicationError =  "http_no_error" /
@@ -2150,7 +2169,7 @@ HTTPApplicationError =  "http_no_error" /
                         "http_version_fallback"
 </pre>
 </div>
-<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
+<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
 <a href="#name-httpapplicationerror-defini" class="selfRef">HTTPApplicationError definition</a>
             </figcaption></figure>
 </div>
@@ -2177,7 +2196,7 @@ $ApplicationError /= HTTPApplicationError
 <p id="section-6-1">QPACK events extend the <code>$ProtocolEventBody</code> extension point defined in
 <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-6-1" class="pilcrow">¶</a></p>
 <span id="name-qpackevents-definition-and-"></span><div id="qpackevents-def">
-<figure id="figure-22">
+<figure id="figure-23">
         <div id="section-6-2.1">
 <pre class="lang-cddl sourcecode">
 QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
@@ -2188,7 +2207,7 @@ QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
 $ProtocolEventBody /= QPACKEvents
 </pre>
 </div>
-<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
+<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
 <a href="#name-qpackevents-definition-and-" class="selfRef">QPACKEvents definition and ProtocolEventBody extension</a>
         </figcaption></figure>
 </div>
@@ -2213,7 +2232,7 @@ you need to log settings from two sides, you <span class="bcp14">MUST</span> emi
 instances.<a href="#section-6.1-2" class="pilcrow">¶</a></p>
 <p id="section-6.1-3">Definition:<a href="#section-6.1-3" class="pilcrow">¶</a></p>
 <span id="name-qpackstateupdate-definition"></span><div id="qpack-stateupdate-def">
-<figure id="figure-23">
+<figure id="figure-24">
           <div id="section-6.1-4.1">
 <pre class="lang-cddl sourcecode">
 QPACKStateUpdate = {
@@ -2227,7 +2246,7 @@ QPACKStateUpdate = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
+<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
 <a href="#name-qpackstateupdate-definition" class="selfRef">QPACKStateUpdate definition</a>
           </figcaption></figure>
 </div>
@@ -2245,7 +2264,7 @@ decoding requests or QPACK instructions.<a href="#section-6.2-2" class="pilcrow"
 HTTP/3's observed performance.<a href="#section-6.2-3" class="pilcrow">¶</a></p>
 <p id="section-6.2-4">Definition:<a href="#section-6.2-4" class="pilcrow">¶</a></p>
 <span id="name-qpackstreamstateupdate-defi"></span><div id="qpack-streamstateupdate-def">
-<figure id="figure-24">
+<figure id="figure-25">
           <div id="section-6.2-5.1">
 <pre class="lang-cddl sourcecode">
 QPACKStreamStateUpdate = {
@@ -2258,7 +2277,7 @@ QPACKStreamStateUpdate = {
 QPACKStreamState = "blocked" / "unblocked"
 </pre>
 </div>
-<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
+<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
 <a href="#name-qpackstreamstateupdate-defi" class="selfRef">QPACKStreamStateUpdate definition</a>
           </figcaption></figure>
 </div>
@@ -2273,7 +2292,7 @@ QPACKStreamState = "blocked" / "unblocked"
 <p id="section-6.3-2">This event is emitted when one or more entries are inserted or evicted from QPACK's dynamic table.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
 <p id="section-6.3-3">Definition:<a href="#section-6.3-3" class="pilcrow">¶</a></p>
 <span id="name-qpackdynamictableupdate-def"></span><div id="qpack-dynamictableupdate-def">
-<figure id="figure-25">
+<figure id="figure-26">
           <div id="section-6.3-4.1">
 <pre class="lang-cddl sourcecode">
 QPACKDynamicTableUpdate = {
@@ -2294,7 +2313,7 @@ QPACKDynamicTableEntry = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
+<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
 <a href="#name-qpackdynamictableupdate-def" class="selfRef">QPACKDynamicTableUpdate definition</a>
           </figcaption></figure>
 </div>
@@ -2312,7 +2331,7 @@ When outputting both events, implementers <span class="bcp14">MAY</span> omit th
 event.<a href="#section-6.4-3" class="pilcrow">¶</a></p>
 <p id="section-6.4-4">Definition:<a href="#section-6.4-4" class="pilcrow">¶</a></p>
 <span id="name-qpackheadersencoded-definit"></span><div id="qpack-headersencoded-def">
-<figure id="figure-26">
+<figure id="figure-27">
           <div id="section-6.4-5.1">
 <pre class="lang-cddl sourcecode">
 QPACKHeadersEncoded = {
@@ -2327,7 +2346,7 @@ QPACKHeadersEncoded = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
+<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
 <a href="#name-qpackheadersencoded-definit" class="selfRef">QPACKHeadersEncoded definition</a>
           </figcaption></figure>
 </div>
@@ -2345,7 +2364,7 @@ When outputting both events, implementers <span class="bcp14">MAY</span> omit th
 event.<a href="#section-6.5-3" class="pilcrow">¶</a></p>
 <p id="section-6.5-4">Definition:<a href="#section-6.5-4" class="pilcrow">¶</a></p>
 <span id="name-qpackheadersdecoded-definit"></span><div id="qpack-headersdecoded-def">
-<figure id="figure-27">
+<figure id="figure-28">
           <div id="section-6.5-5.1">
 <pre class="lang-cddl sourcecode">
 QPACKHeadersDecoded = {
@@ -2360,7 +2379,7 @@ QPACKHeadersDecoded = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
+<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
 <a href="#name-qpackheadersdecoded-definit" class="selfRef">QPACKHeadersDecoded definition</a>
           </figcaption></figure>
 </div>
@@ -2376,7 +2395,7 @@ QPACKHeadersDecoded = {
 created and added to the encoder/decoder stream.<a href="#section-6.6-2" class="pilcrow">¶</a></p>
 <p id="section-6.6-3">Definition:<a href="#section-6.6-3" class="pilcrow">¶</a></p>
 <span id="name-qpackinstructioncreated-def"></span><div id="qpack-instructioncreated-def">
-<figure id="figure-28">
+<figure id="figure-29">
           <div id="section-6.6-4.1">
 <pre class="lang-cddl sourcecode">
 QPACKInstructionCreated = {
@@ -2387,7 +2406,7 @@ QPACKInstructionCreated = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
+<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
 <a href="#name-qpackinstructioncreated-def" class="selfRef">QPACKInstructionCreated definition</a>
           </figcaption></figure>
 </div>
@@ -2405,7 +2424,7 @@ instruction types or can be logged via other events (e.g., http.stream_type_set)
 from the encoder/decoder stream.<a href="#section-6.7-2" class="pilcrow">¶</a></p>
 <p id="section-6.7-3">Definition:<a href="#section-6.7-3" class="pilcrow">¶</a></p>
 <span id="name-qpackinstructionparsed-defi"></span><div id="qpack-instructionparsed-def">
-<figure id="figure-29">
+<figure id="figure-30">
           <div id="section-6.7-4.1">
 <pre class="lang-cddl sourcecode">
 QPACKInstructionParsed = {
@@ -2417,7 +2436,7 @@ QPACKInstructionParsed = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
+<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
 <a href="#name-qpackinstructionparsed-defi" class="selfRef">QPACKInstructionParsed definition</a>
           </figcaption></figure>
 </div>
@@ -2441,7 +2460,7 @@ instruction types or can be logged via other events (e.g., http.stream_type_set)
 <p id="section-7.1-1">Note: the instructions do not have explicit encoder/decoder types, since there is
 no overlap between the instructions of both types in neither name nor function.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
 <span id="name-qpackinstruction-definition"></span><div id="qpackinstruction-def">
-<figure id="figure-30">
+<figure id="figure-31">
           <div id="section-7.1-2.1">
 <pre class="lang-cddl sourcecode">
 QPACKInstruction =  SetDynamicTableCapacityInstruction /
@@ -2453,7 +2472,7 @@ QPACKInstruction =  SetDynamicTableCapacityInstruction /
                     InsertCountIncrementInstruction
 </pre>
 </div>
-<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
+<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
 <a href="#name-qpackinstruction-definition" class="selfRef">QPACKInstruction definition</a>
           </figcaption></figure>
 </div>
@@ -2463,7 +2482,7 @@ QPACKInstruction =  SetDynamicTableCapacityInstruction /
 <a href="#section-7.1.1" class="section-number selfRef">7.1.1. </a><a href="#name-setdynamictablecapacityinst" class="section-name selfRef">SetDynamicTableCapacityInstruction</a>
           </h4>
 <span id="name-setdynamictablecapacityinstr"></span><div id="setdynamictablecapacityinstruction-def">
-<figure id="figure-31">
+<figure id="figure-32">
             <div id="section-7.1.1-1.1">
 <pre class="lang-cddl sourcecode">
 SetDynamicTableCapacityInstruction = {
@@ -2472,7 +2491,7 @@ SetDynamicTableCapacityInstruction = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
+<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
 <a href="#name-setdynamictablecapacityinstr" class="selfRef">SetDynamicTableCapacityInstruction definition</a>
             </figcaption></figure>
 </div>
@@ -2484,7 +2503,7 @@ SetDynamicTableCapacityInstruction = {
 <a href="#section-7.1.2" class="section-number selfRef">7.1.2. </a><a href="#name-insertwithnamereferenceinst" class="section-name selfRef">InsertWithNameReferenceInstruction</a>
           </h4>
 <span id="name-insertwithnamereferenceinstr"></span><div id="insertwithnamereferenceinstruction-def">
-<figure id="figure-32">
+<figure id="figure-33">
             <div id="section-7.1.2-1.1">
 <pre class="lang-cddl sourcecode">
 InsertWithNameReferenceInstruction = {
@@ -2497,7 +2516,7 @@ InsertWithNameReferenceInstruction = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
+<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
 <a href="#name-insertwithnamereferenceinstr" class="selfRef">InsertWithNameReferenceInstruction definition</a>
             </figcaption></figure>
 </div>
@@ -2509,7 +2528,7 @@ InsertWithNameReferenceInstruction = {
 <a href="#section-7.1.3" class="section-number selfRef">7.1.3. </a><a href="#name-insertwithoutnamereferencei" class="section-name selfRef">InsertWithoutNameReferenceInstruction</a>
           </h4>
 <span id="name-insertwithoutnamereferencein"></span><div id="insertwithoutnamereferenceinstruction-def">
-<figure id="figure-33">
+<figure id="figure-34">
             <div id="section-7.1.3-1.1">
 <pre class="lang-cddl sourcecode">
 InsertWithoutNameReferenceInstruction = {
@@ -2523,7 +2542,7 @@ InsertWithoutNameReferenceInstruction = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
+<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
 <a href="#name-insertwithoutnamereferencein" class="selfRef">InsertWithoutNameReferenceInstruction definition</a>
             </figcaption></figure>
 </div>
@@ -2535,7 +2554,7 @@ InsertWithoutNameReferenceInstruction = {
 <a href="#section-7.1.4" class="section-number selfRef">7.1.4. </a><a href="#name-duplicateinstruction" class="section-name selfRef">DuplicateInstruction</a>
           </h4>
 <span id="name-duplicateinstruction-defini"></span><div id="duplicateinstruction-def">
-<figure id="figure-34">
+<figure id="figure-35">
             <div id="section-7.1.4-1.1">
 <pre class="lang-cddl sourcecode">
 DuplicateInstruction = {
@@ -2544,7 +2563,7 @@ DuplicateInstruction = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
+<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
 <a href="#name-duplicateinstruction-defini" class="selfRef">DuplicateInstruction definition</a>
             </figcaption></figure>
 </div>
@@ -2556,7 +2575,7 @@ DuplicateInstruction = {
 <a href="#section-7.1.5" class="section-number selfRef">7.1.5. </a><a href="#name-sectionacknowledgementinstr" class="section-name selfRef">SectionAcknowledgementInstruction</a>
           </h4>
 <span id="name-sectionacknowledgementinstru"></span><div id="sectionacknowledgementinstruction-def">
-<figure id="figure-35">
+<figure id="figure-36">
             <div id="section-7.1.5-1.1">
 <pre class="lang-cddl sourcecode">
 SectionAcknowledgementInstruction = {
@@ -2565,7 +2584,7 @@ SectionAcknowledgementInstruction = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
+<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
 <a href="#name-sectionacknowledgementinstru" class="selfRef">SectionAcknowledgementInstruction definition</a>
             </figcaption></figure>
 </div>
@@ -2577,7 +2596,7 @@ SectionAcknowledgementInstruction = {
 <a href="#section-7.1.6" class="section-number selfRef">7.1.6. </a><a href="#name-streamcancellationinstructi" class="section-name selfRef">StreamCancellationInstruction</a>
           </h4>
 <span id="name-streamcancellationinstructio"></span><div id="streamcancellationinstruction-def">
-<figure id="figure-36">
+<figure id="figure-37">
             <div id="section-7.1.6-1.1">
 <pre class="lang-cddl sourcecode">
 StreamCancellationInstruction = {
@@ -2586,7 +2605,7 @@ StreamCancellationInstruction = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
+<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
 <a href="#name-streamcancellationinstructio" class="selfRef">StreamCancellationInstruction definition</a>
             </figcaption></figure>
 </div>
@@ -2598,7 +2617,7 @@ StreamCancellationInstruction = {
 <a href="#section-7.1.7" class="section-number selfRef">7.1.7. </a><a href="#name-insertcountincrementinstruc" class="section-name selfRef">InsertCountIncrementInstruction</a>
           </h4>
 <span id="name-insertcountincrementinstruct"></span><div id="insertcountincrementinstruction-def">
-<figure id="figure-37">
+<figure id="figure-38">
             <div id="section-7.1.7-1.1">
 <pre class="lang-cddl sourcecode">
 InsertCountIncrementInstruction = {
@@ -2607,7 +2626,7 @@ InsertCountIncrementInstruction = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
+<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
 <a href="#name-insertcountincrementinstruct" class="selfRef">InsertCountIncrementInstruction definition</a>
             </figcaption></figure>
 </div>
@@ -2621,7 +2640,7 @@ InsertCountIncrementInstruction = {
 <a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-qpackheaderblockrepresentat" class="section-name selfRef">QPACKHeaderBlockRepresentation</a>
         </h3>
 <span id="name-qpackheaderblockrepresentati"></span><div id="qpackheaderblockrepresentation-def">
-<figure id="figure-38">
+<figure id="figure-39">
           <div id="section-7.2-1.1">
 <pre class="lang-cddl sourcecode">
 QPACKHeaderBlockRepresentation =  IndexedHeaderField /
@@ -2629,7 +2648,7 @@ QPACKHeaderBlockRepresentation =  IndexedHeaderField /
                                   LiteralHeaderFieldWithoutName
 </pre>
 </div>
-<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
+<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
 <a href="#name-qpackheaderblockrepresentati" class="selfRef">QPACKHeaderBlockRepresentation definition</a>
           </figcaption></figure>
 </div>
@@ -2640,7 +2659,7 @@ QPACKHeaderBlockRepresentation =  IndexedHeaderField /
           </h4>
 <p id="section-7.2.1-1">Note: also used for "indexed header field with post-base index"<a href="#section-7.2.1-1" class="pilcrow">¶</a></p>
 <span id="name-indexedheaderfield-definiti"></span><div id="indexedheaderfield-def">
-<figure id="figure-39">
+<figure id="figure-40">
             <div id="section-7.2.1-2.1">
 <pre class="lang-cddl sourcecode">
 IndexedHeaderField = {
@@ -2656,7 +2675,7 @@ IndexedHeaderField = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
+<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
 <a href="#name-indexedheaderfield-definiti" class="selfRef">IndexedHeaderField definition</a>
             </figcaption></figure>
 </div>
@@ -2669,7 +2688,7 @@ IndexedHeaderField = {
           </h4>
 <p id="section-7.2.2-1">Note: also used for "Literal header field with post-base name reference"<a href="#section-7.2.2-1" class="pilcrow">¶</a></p>
 <span id="name-literalheaderfieldwithname-"></span><div id="literalheaderfieldwithname-def">
-<figure id="figure-40">
+<figure id="figure-41">
             <div id="section-7.2.2-2.1">
 <pre class="lang-cddl sourcecode">
 LiteralHeaderFieldWithName = {
@@ -2691,7 +2710,7 @@ LiteralHeaderFieldWithName = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
+<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
 <a href="#name-literalheaderfieldwithname-" class="selfRef">LiteralHeaderFieldWithName definition</a>
             </figcaption></figure>
 </div>
@@ -2703,7 +2722,7 @@ LiteralHeaderFieldWithName = {
 <a href="#section-7.2.3" class="section-number selfRef">7.2.3. </a><a href="#name-literalheaderfieldwithoutna" class="section-name selfRef">LiteralHeaderFieldWithoutName</a>
           </h4>
 <span id="name-literalheaderfieldwithoutnam"></span><div id="literalheaderfieldwithoutname-def">
-<figure id="figure-41">
+<figure id="figure-42">
             <div id="section-7.2.3-1.1">
 <pre class="lang-cddl sourcecode">
 LiteralHeaderFieldWithoutName = {
@@ -2721,7 +2740,7 @@ LiteralHeaderFieldWithoutName = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
+<figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
 <a href="#name-literalheaderfieldwithoutnam" class="selfRef">LiteralHeaderFieldWithoutName definition</a>
             </figcaption></figure>
 </div>
@@ -2735,7 +2754,7 @@ LiteralHeaderFieldWithoutName = {
 <a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-qpackheaderblockprefix" class="section-name selfRef">QPACKHeaderBlockPrefix</a>
         </h3>
 <span id="name-qpackheaderblockprefix-defi"></span><div id="qpackheaderblockprefix-def">
-<figure id="figure-42">
+<figure id="figure-43">
           <div id="section-7.3-1.1">
 <pre class="lang-cddl sourcecode">
 QPACKHeaderBlockPrefix = {
@@ -2745,7 +2764,7 @@ QPACKHeaderBlockPrefix = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
+<figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
 <a href="#name-qpackheaderblockprefix-defi" class="selfRef">QPACKHeaderBlockPrefix definition</a>
           </figcaption></figure>
 </div>
@@ -2757,13 +2776,13 @@ QPACKHeaderBlockPrefix = {
 <a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-qpacktabletype" class="section-name selfRef">QPACKTableType</a>
         </h3>
 <span id="name-qpacktabletype-definition"></span><div id="qpacktabletype-def">
-<figure id="figure-43">
+<figure id="figure-44">
           <div id="section-7.4-1.1">
 <pre class="lang-cddl sourcecode">
 QPACKTableType = "static" / "dynamic"
 </pre>
 </div>
-<figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
+<figcaption><a href="#figure-44" class="selfRef">Figure 44</a>:
 <a href="#name-qpacktabletype-definition" class="selfRef">QPACKTableType definition</a>
           </figcaption></figure>
 </div>

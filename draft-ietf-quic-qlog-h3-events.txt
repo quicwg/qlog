@@ -385,7 +385,7 @@ Table of Contents
    HTTPFrameCreated = {
        stream_id: uint64
        ? length: uint64
-       frame: HTTPFrame
+       frame: $HTTPFrame
        ? raw: RawInfo
    }
 
@@ -411,7 +411,7 @@ Table of Contents
    HTTPFrameParsed = {
        stream_id: uint64
        ? length: uint64
-       frame: HTTPFrame
+       frame: $HTTPFrame
        ? raw: RawInfo
    }
 
@@ -461,7 +461,20 @@ Table of Contents
 
 5.2.  HTTPFrame
 
-   HTTPFrame =  HTTPDataFrame /
+   The generic $HTTPFrame is defined here as a CDDL extension point (a
+   "socket" or "plug").  It can be extended to support additional HTTP/3
+   frame types.
+
+   ; The HTTPFrame is any key-value map (e.g., JSON object)
+   $HTTPFrame /= {
+       * text => any
+   }
+
+                    Figure 9: HTTPFrame plug definition
+
+   The HTTP/3 frame types defined in this document are as follows:
+
+   HTTPBaseFrames =  HTTPDataFrame /
                 HTTPHeadersFrame /
                 HTTPCancelPushFrame /
                 HTTPSettingsFrame /
@@ -471,7 +484,9 @@ Table of Contents
                 HTTPReservedFrame /
                 HTTPUnknownFrame
 
-                       Figure 9: HTTPFrame definition
+   $HTTPFrame /= HTTPBaseFrames
+
+                    Figure 10: HTTPBaseFrames definition
 
 5.2.1.  HTTPDataFrame
 
@@ -480,7 +495,7 @@ Table of Contents
        ? raw: hexstring
    }
 
-                    Figure 10: HTTPDataFrame definition
+                    Figure 11: HTTPDataFrame definition
 
 5.2.2.  HTTPHeadersFrame
 
@@ -508,21 +523,21 @@ Table of Contents
      }
    ]
 
-                    Figure 11: HTTPHeadersFrame example
+                    Figure 12: HTTPHeadersFrame example
 
    HTTPHeadersFrame = {
        frame_type: "headers"
        headers: [* HTTPField]
    }
 
-                   Figure 12: HTTPHeadersFrame definition
+                   Figure 13: HTTPHeadersFrame definition
 
    HTTPField = {
        name: text
        value: text
    }
 
-                      Figure 13: HTTPField definition
+                      Figure 14: HTTPField definition
 
 5.2.3.  HTTPCancelPushFrame
 
@@ -531,7 +546,7 @@ Table of Contents
        push_id: uint64
    }
 
-                 Figure 14: HTTPCancelPushFrame definition
+                 Figure 15: HTTPCancelPushFrame definition
 
 5.2.4.  HTTPSettingsFrame
 
@@ -545,7 +560,7 @@ Table of Contents
        value: uint64
    }
 
-                  Figure 15: HTTPSettingsFrame definition
+                  Figure 16: HTTPSettingsFrame definition
 
 5.2.5.  HTTPPushPromiseFrame
 
@@ -555,7 +570,7 @@ Table of Contents
        headers: [* HTTPField]
    }
 
-                 Figure 16: HTTPPushPromiseFrame definition
+                 Figure 17: HTTPPushPromiseFrame definition
 
 5.2.6.  HTTPGoAwayFrame
 
@@ -567,7 +582,7 @@ Table of Contents
        id: uint64
    }
 
-                   Figure 17: HTTPGoawayFrame definition
+                   Figure 18: HTTPGoawayFrame definition
 
 5.2.7.  HTTPMaxPushIDFrame
 
@@ -576,7 +591,7 @@ Table of Contents
        push_id: uint64
    }
 
-                  Figure 18: HTTPMaxPushIDFrame definition
+                  Figure 19: HTTPMaxPushIDFrame definition
 
 5.2.8.  HTTPReservedFrame
 
@@ -586,7 +601,7 @@ Table of Contents
        ? length: uint64
    }
 
-                  Figure 19: HTTPReservedFrame definition
+                  Figure 20: HTTPReservedFrame definition
 
 5.2.9.  HTTPUnknownFrame
 
@@ -598,7 +613,7 @@ Table of Contents
        ? raw: hexstring
    }
 
-                     Figure 20: UnknownFrame definition
+                     Figure 21: UnknownFrame definition
 
 5.2.10.  HTTPApplicationError
 
@@ -620,7 +635,7 @@ Table of Contents
                            "http_connect_error" /
                            "http_version_fallback"
 
-                 Figure 21: HTTPApplicationError definition
+                 Figure 22: HTTPApplicationError definition
 
    The HTTPApplicationError defines the general $ApplicationError
    definition in the qlog QUIC definition, see [QLOG-QUIC].
@@ -641,7 +656,7 @@ Table of Contents
 
    $ProtocolEventBody /= QPACKEvents
 
-     Figure 22: QPACKEvents definition and ProtocolEventBody extension
+     Figure 23: QPACKEvents definition and ProtocolEventBody extension
 
    QPACK events mainly serve as an aid to debug low-level QPACK
    issues.The higher-level, plaintext header values SHOULD (also) be
@@ -678,7 +693,7 @@ Table of Contents
        ? current_insert_count: uint64
    }
 
-                   Figure 23: QPACKStateUpdate definition
+                   Figure 24: QPACKStateUpdate definition
 
 6.2.  stream_state_updated
 
@@ -701,7 +716,7 @@ Table of Contents
 
    QPACKStreamState = "blocked" / "unblocked"
 
-                Figure 24: QPACKStreamStateUpdate definition
+                Figure 25: QPACKStreamStateUpdate definition
 
 6.3.  dynamic_table_updated
 
@@ -729,7 +744,7 @@ Table of Contents
        ? value: text / hexstring
    }
 
-               Figure 25: QPACKDynamicTableUpdate definition
+               Figure 26: QPACKDynamicTableUpdate definition
 
 6.4.  headers_encoded
 
@@ -755,7 +770,7 @@ Table of Contents
        ? raw: hexstring
    }
 
-                 Figure 26: QPACKHeadersEncoded definition
+                 Figure 27: QPACKHeadersEncoded definition
 
 6.5.  headers_decoded
 
@@ -781,7 +796,7 @@ Table of Contents
        ? raw: hexstring
    }
 
-                 Figure 27: QPACKHeadersDecoded definition
+                 Figure 28: QPACKHeadersDecoded definition
 
 6.6.  instruction_created
 
@@ -799,7 +814,7 @@ Table of Contents
        ? raw: hexstring
    }
 
-               Figure 28: QPACKInstructionCreated definition
+               Figure 29: QPACKInstructionCreated definition
 
    Note: encoder/decoder semantics and stream_id's are implicit in
    either the instruction types or can be logged via other events (e.g.,
@@ -822,7 +837,7 @@ Table of Contents
        ? raw: hexstring
    }
 
-                Figure 29: QPACKInstructionParsed definition
+                Figure 30: QPACKInstructionParsed definition
 
    Note: encoder/decoder semantics and stream_id's are implicit in
    either the instruction types or can be logged via other events (e.g.,
@@ -846,7 +861,7 @@ Table of Contents
                        StreamCancellationInstruction /
                        InsertCountIncrementInstruction
 
-                   Figure 30: QPACKInstruction definition
+                   Figure 31: QPACKInstruction definition
 
 7.1.1.  SetDynamicTableCapacityInstruction
 
@@ -855,7 +870,7 @@ Table of Contents
        capacity: uint32
    }
 
-          Figure 31: SetDynamicTableCapacityInstruction definition
+          Figure 32: SetDynamicTableCapacityInstruction definition
 
 7.1.2.  InsertWithNameReferenceInstruction
 
@@ -868,7 +883,7 @@ Table of Contents
        ? value: text
    }
 
-          Figure 32: InsertWithNameReferenceInstruction definition
+          Figure 33: InsertWithNameReferenceInstruction definition
 
 7.1.3.  InsertWithoutNameReferenceInstruction
 
@@ -882,7 +897,7 @@ Table of Contents
        ? value: text
    }
 
-        Figure 33: InsertWithoutNameReferenceInstruction definition
+        Figure 34: InsertWithoutNameReferenceInstruction definition
 
 7.1.4.  DuplicateInstruction
 
@@ -891,7 +906,7 @@ Table of Contents
        index: uint32
    }
 
-                 Figure 34: DuplicateInstruction definition
+                 Figure 35: DuplicateInstruction definition
 
 7.1.5.  SectionAcknowledgementInstruction
 
@@ -900,7 +915,7 @@ Table of Contents
        stream_id: uint64
    }
 
-          Figure 35: SectionAcknowledgementInstruction definition
+          Figure 36: SectionAcknowledgementInstruction definition
 
 7.1.6.  StreamCancellationInstruction
 
@@ -909,7 +924,7 @@ Table of Contents
        stream_id: uint64
    }
 
-            Figure 36: StreamCancellationInstruction definition
+            Figure 37: StreamCancellationInstruction definition
 
 7.1.7.  InsertCountIncrementInstruction
 
@@ -918,7 +933,7 @@ Table of Contents
        increment: uint32
    }
 
-           Figure 37: InsertCountIncrementInstruction definition
+           Figure 38: InsertCountIncrementInstruction definition
 
 7.2.  QPACKHeaderBlockRepresentation
 
@@ -926,7 +941,7 @@ Table of Contents
                                      LiteralHeaderFieldWithName /
                                      LiteralHeaderFieldWithoutName
 
-            Figure 38: QPACKHeaderBlockRepresentation definition
+            Figure 39: QPACKHeaderBlockRepresentation definition
 
 7.2.1.  IndexedHeaderField
 
@@ -944,7 +959,7 @@ Table of Contents
        is_post_base: bool .default false
    }
 
-                  Figure 39: IndexedHeaderField definition
+                  Figure 40: IndexedHeaderField definition
 
 7.2.2.  LiteralHeaderFieldWithName
 
@@ -969,7 +984,7 @@ Table of Contents
        is_post_base: bool .default false
    }
 
-              Figure 40: LiteralHeaderFieldWithName definition
+              Figure 41: LiteralHeaderFieldWithName definition
 
 7.2.3.  LiteralHeaderFieldWithoutName
 
@@ -987,7 +1002,7 @@ Table of Contents
        ? value: text
    }
 
-            Figure 41: LiteralHeaderFieldWithoutName definition
+            Figure 42: LiteralHeaderFieldWithoutName definition
 
 7.3.  QPACKHeaderBlockPrefix
 
@@ -997,13 +1012,13 @@ Table of Contents
        delta_base: uint32
    }
 
-                Figure 42: QPACKHeaderBlockPrefix definition
+                Figure 43: QPACKHeaderBlockPrefix definition
 
 7.4.  QPACKTableType
 
    QPACKTableType = "static" / "dynamic"
 
-                    Figure 43: QPACKTableType definition
+                    Figure 44: QPACKTableType definition
 
 8.  Security Considerations
 
