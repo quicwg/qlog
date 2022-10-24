@@ -3638,14 +3638,95 @@ still provide adequate output for incomplete logs.<a href="#section-8-3" class="
       <h2 id="name-security-and-privacy-consid">
 <a href="#section-9" class="section-number selfRef">9. </a><a href="#name-security-and-privacy-consid" class="section-name selfRef">Security and privacy considerations</a>
       </h2>
-<p id="section-9-1">TODO : discuss privacy and security considerations (e.g., what NOT to log, what to
-strip out of a log before sharing, ...)<a href="#section-9-1" class="pilcrow">¶</a></p>
-<p id="section-9-2">TODO: strip out/don't log IPs, ports, specific CIDs, raw user data, exact times,
-HTTP HEADERS (or at least :path), SNI values<a href="#section-9-2" class="pilcrow">¶</a></p>
-<p id="section-9-3">TODO: see if there is merit in encrypting the logs and having the server choose an
-encryption key (e.g., sent in transport parameters)<a href="#section-9-3" class="pilcrow">¶</a></p>
-<p id="section-9-4">Good initial reference: <a href="https://huitema.wordpress.com/2020/07/21/scrubbing-quic-logs-for-privacy/">Christian Huitema's
-blogpost</a><a href="#section-9-4" class="pilcrow">¶</a></p>
+<p id="section-9-1">Protocols such as TLS <span>[<a href="#RFC8446" class="cite xref">RFC8446</a>]</span> and QUIC <span>[<a href="#RFC9000" class="cite xref">RFC9000</a>]</span> provide varying degrees
+of secure protection for the wire image <span>[<a href="#RFC8546" class="cite xref">RFC8546</a>]</span>. There is inevitably
+tension between security and observability, when logging can reveal aspects of
+the wire image, that would ordinarily be protected. This tension equally applies
+to any privacy considerations that build on security properties, especially if
+data can be correlated across data sources.<a href="#section-9-1" class="pilcrow">¶</a></p>
+<p id="section-9-2">qlog operators and implementers should be mindful of the security and privacy
+risks inherent in handling qlog data. This includes but is not limited to
+logging, storing, or using the data. Data might be considered as non-sensitive,
+potentially-sensitive, or sensitive; applying the considerations in this section
+may produce different risks depending on the nature of the data itself, or its
+handling. However, in many cases the largest risk factors arise from data that
+can be considered as potenially-sensitive or sensitive.<a href="#section-9-2" class="pilcrow">¶</a></p>
+<p id="section-9-3">The following is a non-exhaustive list of such fields and types of data that can
+be carried in qlog data:<a href="#section-9-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-9-4.1">IP addresses and transport protocol port numbers, which can be used to
+uniquely identify individual connections, endpoints, and potentially users.<a href="#section-9-4.1" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-9-4.2">Session, Connection, or User identifiers which can be used to correlate
+nominally separate contexts. For example, QUIC Connection IDs can be used to
+identify and track users across geographical networks <span><a href="https://rfc-editor.org/rfc/rfc9000#section-9.5" class="relref">Section 9.5</a> of [<a href="#RFC9000" class="cite xref">RFC9000</a>]</span>).<a href="#section-9-4.2" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-9-4.3">Stored State which can be used to correlate individual connections or sessions
+over time. Examples include QUIC address validation and retry tokens, TLS
+session tickets, and HTTP cookies.<a href="#section-9-4.3" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-9-4.4">Decryption keys, passwords, and tokens which can be used with other data
+sources (e.g., captures of encrypted packets) to correlate qlog data to a
+specific connection or user or leak additional information. Examples include
+TLS decryption keys and HTTP-level API access or authorization tokens.<a href="#section-9-4.4" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-9-4.5">Data that can be used to correlate qlogs to other data sources (e.g., captures
+of encrypted packets). Examples include high-resolution event timestamps or
+inter-event timings, event counts, packet and frame sizes.<a href="#section-9-4.5" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-9-4.6">Full or partial encrypted raw packet and frame payloads, which can be used
+with other data sources (e.g., captures of encrypted packets) to correlate
+qlog data to a specific connection or session.<a href="#section-9-4.6" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-9-4.7">Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
+values, HTTP response data, TLS SNI field values), which can contain directly
+sensitive information.<a href="#section-9-4.7" class="pilcrow">¶</a>
+</li>
+      </ul>
+<p id="section-9-5">The simplest and most extreme form of protection against abuse of this
+information is the complete deletion of a given field, which is equivalent to
+not logging the field(s) in question. While deletion completely protects the
+data in the deleted fields from the risk of compromise, it also reduces the
+utility of the dataset as a whole. As such, a balance should be found between
+logging these fields and the potential risks inherent in their (involuntary)
+disclosure. This balance depends on the use case at hand (e.g., research
+datasets might have different requirements to live operational troubleshooting).
+Capturing the minimal amount of data required for a specific purpose can help to
+minimize the risks associated with data usage. qlog implementations that provide
+fine-grained control over the inclusion of data fields, ideally on a
+per-use-case or per-connection basis, improve the ability to minimize data.<a href="#section-9-5" class="pilcrow">¶</a></p>
+<p id="section-9-6">Any data that is determined to be necessary for a use case at hand could be
+logged or captured. As per <span>[<a href="#RFC6973" class="cite xref">RFC6973</a>]</span>, operators must be aware that such data
+will be at risk of compromise. As such, measures should be taken to firstly
+reduce the risk of compromise and secondly reduce the risk of abuse of
+compromised data. While a full discussion of both aspects is out of scope for
+this document, the following paragraphs discuss high-level considerations that
+can be applied to qlog data.<a href="#section-9-6" class="pilcrow">¶</a></p>
+<p id="section-9-7">To reduce the risk of compromise, operators can take measures such as: limiting
+the length of time that data is stored, encrypting data in transit and at rest,
+limiting access rights to the data, and auditing data usage practices. qlog
+deployments that provide integrated options for automated or manual data
+deletion and (aggressive) aggregation, improve the ability to minimize the risk
+of compromise.<a href="#section-9-7" class="pilcrow">¶</a></p>
+<p id="section-9-8">To reduce the risk of data abuse after compromise, data can be anonymized,
+pseudonymized, otherwise permutated/replaced, truncated, (re-)encrypted, or
+aggregated. A partial discussion of applicable techniques (especially for IP
+address information) can be found in <span><a href="https://rfc-editor.org/rfc/rfc8932#appendix-B" class="relref">Appendix B</a> of [<a href="#DNS-PRIVACY" class="cite xref">DNS-PRIVACY</a>]</span>.
+Operators should, however, be aware that many of these techniques have been
+shown to be insufficient to safeguard user privacy and/or to protect user
+identity, especially if a qlog data set is large or easily correlated against
+other data sources.<a href="#section-9-8" class="pilcrow">¶</a></p>
+<p id="section-9-9">Finally, qlog operators should consider the interplay between their use case
+needs and end user rights or preferences. While active user participation (as
+indicated by <span>[<a href="#RFC6973" class="cite xref">RFC6973</a>]</span>) on a per-qlog basis is difficult, as logs are often
+captured out-of-band to the main user interaction and intent, general user
+expectations should be taken into account. qlog deployments that provide
+mechanisms to integrate the capture, storage and removal of qlogs with more
+general, often pre-existing, user preference and privacy control systems,
+improve the ability to protect data sensitive or confidential to the end user.
+In qlog, these data are typically (but not exclusively) contained in fields of
+the RawInfo type (see <a href="#raw-info" class="auto internal xref">Section 5.1</a>). qlog users should thus be particularly
+hesitant to include these fields for all but the most stringent use cases.<a href="#section-9-9" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iana-considerations">
@@ -3668,6 +3749,10 @@ blogpost</a><a href="#section-9-4" class="pilcrow">¶</a></p>
 <dt id="CDDL">[CDDL]</dt>
         <dd>
 <span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Vigano, C.</span>, and <span class="refAuthor">C. Bormann</span>, <span class="refTitle">"Concise Data Definition Language (CDDL): A Notational Convention to Express Concise Binary Object Representation (CBOR) and JSON Data Structures"</span>, <span class="seriesInfo">RFC 8610</span>, <span class="seriesInfo">DOI 10.17487/RFC8610</span>, <time datetime="2019-06" class="refDate">June 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8610">https://www.rfc-editor.org/rfc/rfc8610</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="DNS-PRIVACY">[DNS-PRIVACY]</dt>
+        <dd>
+<span class="refAuthor">Dickinson, S.</span>, <span class="refAuthor">Overeinder, B.</span>, <span class="refAuthor">van Rijswijk-Deij, R.</span>, and <span class="refAuthor">A. Mankin</span>, <span class="refTitle">"Recommendations for DNS Privacy Service Operators"</span>, <span class="seriesInfo">BCP 232</span>, <span class="seriesInfo">RFC 8932</span>, <span class="seriesInfo">DOI 10.17487/RFC8932</span>, <time datetime="2020-10" class="refDate">October 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8932">https://www.rfc-editor.org/rfc/rfc8932</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="I-JSON">[I-JSON]</dt>
         <dd>
@@ -3697,6 +3782,10 @@ blogpost</a><a href="#section-9-4" class="pilcrow">¶</a></p>
         <dd>
 <span class="refAuthor">Hansen, T.</span> and <span class="refAuthor">A. Melnikov</span>, <span class="refTitle">"Additional Media Type Structured Syntax Suffixes"</span>, <span class="seriesInfo">RFC 6839</span>, <span class="seriesInfo">DOI 10.17487/RFC6839</span>, <time datetime="2013-01" class="refDate">January 2013</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc6839">https://www.rfc-editor.org/rfc/rfc6839</a>&gt;</span>. </dd>
 <dd class="break"></dd>
+<dt id="RFC6973">[RFC6973]</dt>
+        <dd>
+<span class="refAuthor">Cooper, A.</span>, <span class="refAuthor">Tschofenig, H.</span>, <span class="refAuthor">Aboba, B.</span>, <span class="refAuthor">Peterson, J.</span>, <span class="refAuthor">Morris, J.</span>, <span class="refAuthor">Hansen, M.</span>, and <span class="refAuthor">R. Smith</span>, <span class="refTitle">"Privacy Considerations for Internet Protocols"</span>, <span class="seriesInfo">RFC 6973</span>, <span class="seriesInfo">DOI 10.17487/RFC6973</span>, <time datetime="2013-07" class="refDate">July 2013</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc6973">https://www.rfc-editor.org/rfc/rfc6973</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC7049">[RFC7049]</dt>
         <dd>
 <span class="refAuthor">Bormann, C.</span> and <span class="refAuthor">P. Hoffman</span>, <span class="refTitle">"Concise Binary Object Representation (CBOR)"</span>, <span class="seriesInfo">RFC 7049</span>, <span class="seriesInfo">DOI 10.17487/RFC7049</span>, <time datetime="2013-10" class="refDate">October 2013</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7049">https://www.rfc-editor.org/rfc/rfc7049</a>&gt;</span>. </dd>
@@ -3718,8 +3807,16 @@ blogpost</a><a href="#section-9-4" class="pilcrow">¶</a></p>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8259">[RFC8259]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Bray, T., Ed.</span>, <span class="refTitle">"The JavaScript Object Notation (JSON) Data Interchange Format"</span>, <span class="seriesInfo">STD 90</span>, <span class="seriesInfo">RFC 8259</span>, <span class="seriesInfo">DOI 10.17487/RFC8259</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8259">https://www.rfc-editor.org/rfc/rfc8259</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8446">[RFC8446]</dt>
+        <dd>
+<span class="refAuthor">Rescorla, E.</span>, <span class="refTitle">"The Transport Layer Security (TLS) Protocol Version 1.3"</span>, <span class="seriesInfo">RFC 8446</span>, <span class="seriesInfo">DOI 10.17487/RFC8446</span>, <time datetime="2018-08" class="refDate">August 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8446">https://www.rfc-editor.org/rfc/rfc8446</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9000">[RFC9000]</dt>
+      <dd>
+<span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="seriesInfo">RFC 9000</span>, <span class="seriesInfo">DOI 10.17487/RFC9000</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9000">https://www.rfc-editor.org/rfc/rfc9000</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
@@ -3735,6 +3832,10 @@ blogpost</a><a href="#section-9-4" class="pilcrow">¶</a></p>
 <dt id="QLOG-QUIC">[QLOG-QUIC]</dt>
         <dd>
 <span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, and <span class="refAuthor">M. Seemann</span>, <span class="refTitle">"QUIC event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-quic-events-02</span>, <time datetime="2022-08-31" class="refDate">31 August 2022</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-02">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-02</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8546">[RFC8546]</dt>
+        <dd>
+<span class="refAuthor">Trammell, B.</span> and <span class="refAuthor">M. Kuehlewind</span>, <span class="refTitle">"The Wire Image of a Network Protocol"</span>, <span class="seriesInfo">RFC 8546</span>, <span class="seriesInfo">DOI 10.17487/RFC8546</span>, <time datetime="2019-04" class="refDate">April 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8546">https://www.rfc-editor.org/rfc/rfc8546</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8742">[RFC8742]</dt>
       <dd>
@@ -3754,7 +3855,7 @@ blogpost</a><a href="#section-9-4" class="pilcrow">¶</a></p>
 <a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-since-draft-ietf-quic-qlog-" class="section-name selfRef">Since draft-ietf-quic-qlog-main-schema-03:</a>
         </h3>
 <ul class="normal">
-<li class="normal" id="appendix-A.1-1.1">TODO<a href="#appendix-A.1-1.1" class="pilcrow">¶</a>
+<li class="normal" id="appendix-A.1-1.1">Added security and privacy considerations discussion<a href="#appendix-A.1-1.1" class="pilcrow">¶</a>
 </li>
         </ul>
 </section>
