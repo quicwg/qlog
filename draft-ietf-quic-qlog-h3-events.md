@@ -177,6 +177,11 @@ $ProtocolEventBody /= HTTPEvents
 {: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
 extension"}
 
+HTTP events are logged when a certain condition happens at the application layer,
+and there isn't always a one to one mapping between HTTP and QUIC events.
+The exchange of data between the HTTP and QUIC layer is logged via the
+"data_moved" event in {{QLOG-QUIC}}.
+
 ## parameters_set {#http-parametersset}
 Importance: Base
 
@@ -185,16 +190,14 @@ the HTTP/3 SETTINGS frame. All these parameters are typically set once and never
 change. However, they are typically set at different times during the connection,
 so there can be several instances of this event with different fields set.
 
-Note that some settings have two variations (one set locally, one requested by the
+Some settings have two variations (one set locally, one requested by the
 remote peer). This is reflected in the "owner" field. As such, this field MUST be
-correct for all settings included a single event instance. If you need to log
+correct for all settings included in a single event instance. If you need to log
 settings from two sides, you MUST emit two separate event instances.
 
-Note: we use the CDDL unwrap operator (~) here to make HTTPParameters
-into a re-usable list of fields. The unwrap operator copies the fields
-from the referenced type into the target type directly, extending the
-target with the unwrapped fields. TODO: explain this better + provide
-reference and maybe an example.
+As a reminder the CDDL unwrap operator (~), see {{?RFC8610}}), copies the fields
+from the referenced type (HTTPParameters) into the target type directly, extending the
+target with the unwrapped fields.
 
 Definition:
 
@@ -221,13 +224,9 @@ HTTPParameters = {
 ~~~
 {: #http-parametersset-def title="HTTPParametersSet definition"}
 
-Note: enabling server push is not explicitly done in HTTP/3 by use of a setting or
-parameter. Instead, it is communicated by use of the MAX_PUSH_ID frame, which
-should be logged using the frame_created and frame_parsed events below.
-
-Additionally, this event can contain any number of unspecified fields. This is to
-reflect setting of for example unknown (greased) settings or parameters of
-(proprietary) extensions.
+This event can contain any number of unspecified fields. This is to
+allow representation of unknown settings like grease settings or parameters of
+non-standard extensions.
 
 ## parameters_restored {#http-parametersrestored}
 Importance: Base
@@ -247,7 +246,7 @@ HTTPParametersRestored = {
 ~~~
 {: #http-parametersrestored-def title="HTTPParametersRestored definition"}
 
-Note that, like for parameters_set above, this event can contain any number of
+Similarly to HTTPParametersSet this event can contain any number of
 unspecified fields to allow for additional and custom settings.
 
 ## stream_type_set {#http-streamtypeset}
@@ -255,11 +254,6 @@ Importance: Base
 
 Emitted when a stream's type becomes known. This is typically when a stream is
 opened and the stream's type indicator is sent or received.
-
-Note: most of this information can also be inferred by looking at a stream's id,
-since id's are strictly partitioned at the QUIC level. Even so, this event has a
-"Base" importance because it helps a lot in debugging to have this information
-clearly spelled out.
 
 Definition:
 
@@ -290,11 +284,6 @@ HTTPStreamType =  "request" /
 ## frame_created {#http-framecreated}
 Importance: Core
 
-HTTP equivalent to the packet_sent event. This event is emitted when the HTTP/3
-framing actually happens. Note: this is not necessarily the same as when the
-HTTP/3 data is passed on to the QUIC layer. For that, see the "data_moved" event
-in {{QLOG-QUIC}}.
-
 Definition:
 
 ~~~ cddl
@@ -307,20 +296,11 @@ HTTPFrameCreated = {
 ~~~
 {: #http-framecreated-def title="HTTPFrameCreated definition"}
 
-Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
-header overhead. As such, DATA frames can span many QUIC packets and can be
-created in a streaming fashion. In this case, the frame_created event is emitted
-once for the frame header, and further streamed data is indicated using the
-data_moved event.
+This event is logged at the time the frame header is created. A frame payload
+may require multiple write operations that are logged using data_moved events.
 
 ## frame_parsed {#http-frameparsed}
 Importance: Core
-
-HTTP equivalent to the packet_received event. This event is emitted when we
-actually parse the HTTP/3 frame. Note: this is not necessarily the same as when
-the HTTP/3 data is actually received on the QUIC layer. For that, see the
-"data_moved" event in {{QLOG-QUIC}}.
-
 
 Definition:
 
@@ -334,11 +314,9 @@ HTTPFrameParsed = {
 ~~~
 {: #http-frameparsed-def title="HTTPFrameParsed definition"}
 
-Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
-header overhead. As such, DATA frames can span many QUIC packets and can be
-processed in a streaming fashion. In this case, the frame_parsed event is emitted
-once for the frame header, and further streamed data is indicated using the
-data_moved event.
+This event is emitted when the HTTP Frame header is parsed.
+actually parse the HTTP/3 frame. The frame payload is logged using "data_moved"
+events.
 
 ## push_resolved {#http-pushresolved}
 Importance: Extra
