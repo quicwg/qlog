@@ -15,14 +15,14 @@ author:
   -
     ins: R. Marx
     name: Robin Marx
-    org: KU Leuven
-    email: robin.marx@kuleuven.be
+    org: Akamai
+    email: rmarx@akamai.com
     role: editor
   -
     ins: L. Niccolini
     name: Luca Niccolini
-    org: Facebook
-    email: lniccolini@fb.com
+    org: Meta
+    email: lniccolini@meta.com
     role: editor
   -
     ins: M. Seemann
@@ -30,53 +30,20 @@ author:
     org: Protocol Labs
     email: marten@protocol.ai
     role: editor
+  - ins: L. Pardue
+    name: Lucas Pardue
+    org: Cloudflare
+    email: lucaspardue.24.7@gmail.com
+    role: editor
 
 normative:
 
 informative:
   QLOG-QUIC:
-    title: "QUIC event definitions for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-quic-events-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
+    I-D.ietf-quic-qlog-quic-events
 
   QLOG-H3:
-    title: "HTTP/3 and QPACK event definitions for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-h3-events-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
+    I-D.ietf-quic-qlog-h3-events
 
 
 --- abstract
@@ -162,6 +129,15 @@ hexstring = text .regexp "([0-9a-f]{2})*"
 ~~~
 {: #cddl-custom-types-def title="Additional CDDL type definitions"}
 
+All timestamps and time-related values (e.g., offsets) in qlog are
+logged as `float64` in the millisecond resolution.
+
+Other qlog documents can define their own CDDL-compatible (struct) types
+(e.g., separately for each Packet type that a protocol supports).
+
+> Note to RFC editor: Please remove the following text in this section before
+publication.
+
 The main general CDDL syntax conventions in this document a reader
 should be aware of for easy reading comprehension are:
 
@@ -197,8 +173,8 @@ otherwise indicated.
 The main tenets for the qlog schema design are:
 
 * Streamable, event-based logging
-* Flexibility in the format, complexity in the tooling (e.g., few components are a
-  MUST, tools need to deal with this)
+* A flexible format that can reduce log producer overhead, at the cost of
+  increased complexity for consumers (e.g. tools)
 * Extensible and pragmatic
 * Aggregation and transformation friendly (e.g., the top-level element
   for the non-streaming format is a container for individual traces,
@@ -748,7 +724,7 @@ $ProtocolEventBody /= {
 ; NewProtocolEvents = EventType1 / EventType2 / ... / EventTypeN
 ; $ProtocolEventBody /= NewProtocolEvents
 ~~~
-{: #data-def title="ProtocolEventBody definition"}
+{: #protocoleventbody-def title="ProtocolEventBody definition"}
 
 One purely illustrative example for a QUIC "packet_sent" event is shown in
 {{data-ex}}:
@@ -1921,6 +1897,14 @@ TODO: primarily the .well-known URI
 
 # Change Log
 
+## Since draft-ietf-quic-qlog-main-schema-03:
+
+* TODO
+
+## Since draft-ietf-quic-qlog-main-schema-02:
+
+* No changes - new draft to prevent expiration
+
 ## Since draft-ietf-quic-qlog-main-schema-01:
 
 * Change the data definition language from TypeScript to CDDL (#143)
@@ -1966,23 +1950,13 @@ TODO: primarily the .well-known URI
   types (#23)
 * group_ids in common_fields is now just also group_id
 
-# Design Variations
-
-* [Quic-trace](https://github.com/google/quic-trace) takes a slightly different
-  approach based on protocolbuffers.
-* [Spindump](https://github.com/EricssonResearch/spindump) also defines a custom
-  text-based format for in-network measurements
-* [Wireshark](https://www.wireshark.org/) also has a QUIC dissector and its
-  results can be transformed into a json output format using tshark.
-
-The idea is that qlog is able to encompass the use cases for both of these
-alternate designs and that all tooling converges on the qlog standard.
-
 # Acknowledgements
+{:numbered="false"}
 
-Much of the initial work by Robin Marx was done at Hasselt University.
+Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé and Lucas
-Pardue for their feedback and suggestions.
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, and Jeremy Lainé for
+their feedback and suggestions.
 

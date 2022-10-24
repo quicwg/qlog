@@ -15,19 +15,25 @@ author:
   -
     ins: R. Marx
     name: Robin Marx
-    org: KU Leuven
-    email: robin.marx@kuleuven.be
+    org: Akamai
+    email: rmarx@akamai.com
+    role: editor
   -
     ins: L. Niccolini
     name: Luca Niccolini
-    org: Facebook
-    email: lniccolini@fb.com
+    org: Meta
+    email: lniccolini@meta.com
     role: editor
   -
     ins: M. Seemann
     name: Marten Seemann
     org: Protocol Labs
     email: marten@protocol.ai
+    role: editor
+  - ins: L. Pardue
+    name: Lucas Pardue
+    org: Cloudflare
+    email: lucaspardue.24.7@gmail.com
     role: editor
 
 normative:
@@ -36,48 +42,10 @@ normative:
     display: HTTP/3
 
   QLOG-MAIN:
-    title: "Main logging schema for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-main-schema-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
+    I-D.ietf-quic-qlog-main-schema
 
   QLOG-QUIC:
-    title: "QUIC event definitions for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-quic-events-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
+    I-D.ietf-quic-qlog-quic-events
 
 informative:
 
@@ -115,22 +83,23 @@ The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
+The following fields from {{QLOG-MAIN}} are imported and used: name, category,
+type, data, group_id, protocol_type, importance, RawInfo, and time-related
+fields.
+
 # Overview
 
-This document describes the values of the qlog "name" ("category" + "event") and
-"data" fields and their semantics for the HTTP/3 and QPACK protocols.
+This document describes how the HTTP/3 and QPACK can be expressed in qlog using
+the schema defined in {{QLOG-MAIN}}. HTTP/3 and QPACK events are defined with a
+category, a name (the concatenation of "category" and "event"), an "importance",
+an optional "trigger", and "data" fields.
 
-This document assumes the usage of the encompassing main qlog schema defined in
-{{QLOG-MAIN}}. Each subsection below defines a separate category (for example http,
-qpack) and each subsubsection is an event type (for example `frame_created`).
+Some data fields use complex datastructures. These are represented as enums or
+re-usable definitions, which are grouped together on the bottom of this document
+for clarity.
 
-For each event type, its importance and data definition is laid out, often
-accompanied by possible values for the optional "trigger" field. For the
-definition and semantics of "importance" and "trigger", see the main schema
-document.
-
-Most of the complex datastructures, enums and re-usable definitions are grouped
-together on the bottom of this document for clarity.
+When any event from this document is included in a qlog trace, the
+"protocol_type" qlog array field MUST contain an entry with the value "HTTP3".
 
 ## Usage with QUIC
 
@@ -146,16 +115,7 @@ identifier, potentially suffixed by the vantagepoint type (For example,
 abcd1234_server.qlog would contain the server-side trace of the connection with
 GUID abcd1234).
 
-## Links to the main schema
-
-This document re-uses all the fields defined in the main qlog schema (e.g., name,
-category, type, data, group_id, protocol_type, the time-related fields,
-importance, RawInfo, etc.).
-
-One entry in the "protocol_type" qlog array field MUST be "HTTP3" if events from
-this document are included in a qlog trace.
-
-### Raw packet and frame information
+## Raw packet and frame information
 
 This document re-uses the definition of the RawInfo data class from {{QLOG-MAIN}}.
 
@@ -175,20 +135,49 @@ qlog, making it easier for users to interpret. In this case, both fields MUST ha
 the same value.
 
 
-# HTTP/3 and QPACK event definitions
+# HTTP/3 and QPACK Event Overview
 
-Each subheading in this section is a qlog event category, while each
-sub-subheading is a qlog event type.
+This document defines events in two categories, written as lowercase to follow convention: http ({{http-ev}}) and qpack
+({{qpack-ev}}).
 
-For example, for the following two items, we have the category "http" and event
-type "parameters_set", resulting in a concatenated qlog "name" field value of
-"http:parameters_set".
+As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
+concatenation of category and type.
 
-## http
+{{h3-qpack-events}} summarizes the name value of each event type that is defined
+in this specification.
 
-Note: like all category values, the "http" category is written in lowercase.
+| Name value                  | Importance |  Definition |
+|:----------------------------|:-----------|:------------|
+| http:parameters_set         | Base       | {{http-parametersset}} |
+| http:parameters_restored    | Base       | {{http-parametersrestored}} |
+| http:stream_type_set        | Base       | {{http-streamtypeset}} |
+| http:frame_created          | Core       | {{http-framecreated}} |
+| http:frame_parsed           | Core       | {{http-frameparsed}} |
+| http:push_resolved          | Extra      | {{http-pushresolved}} |
+| qpack:state_updated         | Base       | {{qpack-stateupdated}} |
+| qpack:stream_state_updated  | Core       | {{qpack-streamstateupdate}} |
+| qpack:dynamic_table_updated | Extra      | {{qpack-dynamictableupdate}} |
+| qpack:headers_encoded       | Base       | {{qpack-headersencoded}} |
+| qpack:headers_decoded       | Base       | {{qpack-headersdecoded}} |
+| qpack:instruction_created   | Base       | {{qpack-instructioncreated}} |
+| qpack:instruction_parsed    | Base       | {{qpack-instructionparsed}} |
+{: #h3-qpack-events title="HTTP/3 and QPACK Events"}
 
-### parameters_set
+# HTTP/3 Events {#http-ev}
+
+HTTP/3 events extend the `$ProtocolEventBody` extension point defined in {{QLOG-MAIN}}.
+
+~~~ cddl
+HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
+             HTTPStreamTypeSet / HTTPFrameCreated /
+             HTTPFrameParsed / HTTPPushResolved
+
+$ProtocolEventBody /= HTTPEvents
+~~~
+{: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
+extension"}
+
+## parameters_set {#http-parametersset}
 Importance: Base
 
 This event contains HTTP/3 and QPACK-level settings, mostly those received from
@@ -240,7 +229,7 @@ Additionally, this event can contain any number of unspecified fields. This is t
 reflect setting of for example unknown (greased) settings or parameters of
 (proprietary) extensions.
 
-### parameters_restored
+## parameters_restored {#http-parametersrestored}
 Importance: Base
 
 When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
@@ -261,7 +250,7 @@ HTTPParametersRestored = {
 Note that, like for parameters_set above, this event can contain any number of
 unspecified fields to allow for additional and custom settings.
 
-### stream_type_set
+## stream_type_set {#http-streamtypeset}
 Importance: Base
 
 Emitted when a stream's type becomes known. This is typically when a stream is
@@ -279,23 +268,26 @@ HTTPStreamTypeSet = {
     ? owner: Owner
     stream_id: uint64
 
-    ? old: HTTPStreamType
-    new: HTTPStreamType
+    stream_type: HTTPStreamType
 
-    ; only when new === "push"
+    ; only when stream_type === "unknown"
+    ? raw_stream_type: uint64
+
+    ; only when stream_type === "push"
     ? associated_push_id: uint64
 }
 
-HTTPStreamType =  "data" /
+HTTPStreamType =  "request" /
                   "control" /
                   "push" /
                   "reserved" /
+                  "unknown" /
                   "qpack_encode" /
                   "qpack_decode"
 ~~~
 {: #https-streamtypeset-def title="HTTPStreamTypeSet definition"}
 
-### frame_created
+## frame_created {#http-framecreated}
 Importance: Core
 
 HTTP equivalent to the packet_sent event. This event is emitted when the HTTP/3
@@ -309,7 +301,7 @@ Definition:
 HTTPFrameCreated = {
     stream_id: uint64
     ? length: uint64
-    frame: HTTPFrame
+    frame: $HTTPFrame
     ? raw: RawInfo
 }
 ~~~
@@ -321,7 +313,7 @@ created in a streaming fashion. In this case, the frame_created event is emitted
 once for the frame header, and further streamed data is indicated using the
 data_moved event.
 
-### frame_parsed
+## frame_parsed {#http-frameparsed}
 Importance: Core
 
 HTTP equivalent to the packet_received event. This event is emitted when we
@@ -336,7 +328,7 @@ Definition:
 HTTPFrameParsed = {
     stream_id: uint64
     ? length: uint64
-    frame: HTTPFrame
+    frame: $HTTPFrame
     ? raw: RawInfo
 }
 ~~~
@@ -348,7 +340,7 @@ processed in a streaming fashion. In this case, the frame_parsed event is emitte
 once for the frame header, and further streamed data is indicated using the
 data_moved event.
 
-### push_resolved
+## push_resolved {#http-pushresolved}
 Importance: Extra
 
 This event is emitted when a pushed resource is successfully claimed (used) or,
@@ -373,213 +365,9 @@ HTTPPushDecision = "claimed" / "abandoned"
 ~~~
 {: #http-pushresolved-def title="HTTPPushResolved definition"}
 
-## qpack
+# HTTP/3 Data Field Definitions
 
-Note: like all category values, the "qpack" category is written in lowercase.
-
-The QPACK events mainly serve as an aid to debug low-level QPACK issues. The
-higher-level, plaintext header values SHOULD (also) be logged in the
-http.frame_created and http.frame_parsed event data (instead).
-
-Note: qpack does not have its own parameters_set event. This was merged with
-http.parameters_set for brevity, since qpack is a required extension for HTTP/3
-anyway. Other HTTP/3 extensions MAY also log their SETTINGS fields in
-http.parameters_set or MAY define their own events.
-
-### state_updated
-Importance: Base
-
-This event is emitted when one or more of the internal QPACK variables changes
-value. Note that some variables have two variations (one set locally, one
-requested by the remote peer). This is reflected in the "owner" field. As such,
-this field MUST be correct for all variables included a single event instance. If
-you need to log settings from two sides, you MUST emit two separate event
-instances.
-
-Definition:
-
-~~~ cddl
-QPACKStateUpdate = {
-    owner: Owner
-    ? dynamic_table_capacity: uint64
-
-    ; effective current size, sum of all the entries
-    ? dynamic_table_size: uint64
-    ? known_received_count: uint64
-    ? current_insert_count: uint64
-}
-~~~
-{: #qpack-stateupdate-def title="QPACKStateUpdate definition"}
-
-### stream_state_updated
-Importance: Core
-
-This event is emitted when a stream becomes blocked or unblocked by header
-decoding requests or QPACK instructions.
-
-Note: This event is of "Core" importance, as it might have a large impact on
-HTTP/3's observed performance.
-
-Definition:
-
-~~~ cddl
-QPACKStreamStateUpdate = {
-    stream_id: uint64
-    ; streams are assumed to start "unblocked"
-    ; until they become "blocked"
-    state: QPACKStreamState
-}
-
-QPACKStreamState = "blocked" / "unblocked"
-~~~
-{: #qpack-streamstateupdate-def title="QPACKStreamStateUpdate definition"}
-
-### dynamic_table_updated
-Importance: Extra
-
-This event is emitted when one or more entries are inserted or evicted from QPACK's dynamic table.
-
-Definition:
-
-~~~ cddl
-QPACKDynamicTableUpdate = {
-    ; local = the encoder's dynamic table
-    ; remote = the decoder's dynamic table
-    owner: Owner
-
-    update_type: QPACKDynamicTableUpdateType
-    entries: [+ QPACKDynamicTableEntry]
-}
-
-QPACKDynamicTableUpdateType = "inserted" / "evicted"
-
-QPACKDynamicTableEntry = {
-    index: uint64
-    ? name: text / hexstring
-    ? value: text / hexstring
-}
-~~~
-{: #qpack-dynamictableupdate-def title="QPACKDynamicTableUpdate definition"}
-
-### headers_encoded
-Importance: Base
-
-This event is emitted when an uncompressed header block is encoded successfully.
-
-Note: this event has overlap with http.frame_created for the HeadersFrame type.
-When outputting both events, implementers MAY omit the "headers" field in this
-event.
-
-Definition:
-
-~~~ cddl
-QPACKHeadersEncoded = {
-    ? stream_id: uint64
-    ? headers: [+ HTTPField]
-
-    block_prefix: QPACKHeaderBlockPrefix
-    header_block: [+ QPACKHeaderBlockRepresentation]
-
-    ? length: uint
-    ? raw: hexstring
-}
-~~~
-{: #qpack-headersencoded-def title="QPACKHeadersEncoded definition"}
-
-### headers_decoded
-Importance: Base
-
-This event is emitted when a compressed header block is decoded successfully.
-
-Note: this event has overlap with http.frame_parsed for the HeadersFrame type.
-When outputting both events, implementers MAY omit the "headers" field in this
-event.
-
-Definition:
-
-~~~ cddl
-QPACKHeadersDecoded = {
-    ? stream_id: uint64
-    ? headers: [+ HTTPField]
-
-    block_prefix: QPACKHeaderBlockPrefix
-    header_block: [+ QPACKHeaderBlockRepresentation]
-
-    ? length: uint32
-    ? raw: hexstring
-}
-~~~
-{: #qpack-headersdecoded-def title="QPACKHeadersDecoded definition"}
-
-### instruction_created
-Importance: Base
-
-This event is emitted when a QPACK instruction (both decoder and encoder) is
-created and added to the encoder/decoder stream.
-
-Definition:
-
-~~~ cddl
-QPACKInstructionCreated = {
-    ; see definition in appendix
-    instruction: QPACKInstruction
-    ? length: uint32
-    ? raw: hexstring
-}
-~~~
-{: #qpack-instructioncreated-def title="QPACKInstructionCreated definition"}
-
-Note: encoder/decoder semantics and stream_id's are implicit in either the
-instruction types or can be logged via other events (e.g., http.stream_type_set)
-
-### instruction_parsed
-Importance: Base
-
-This event is emitted when a QPACK instruction (both decoder and encoder) is read
-from the encoder/decoder stream.
-
-Definition:
-
-~~~ cddl
-QPACKInstructionParsed = {
-    ; see QPACKInstruction definition in appendix
-    instruction: QPACKInstruction
-
-    ? length: uint32
-    ? raw: hexstring
-}
-~~~
-{: #qpack-instructionparsed-def title="QPACKInstructionParsed definition"}
-
-Note: encoder/decoder semantics and stream_id's are implicit in either the
-instruction types or can be logged via other events (e.g., http.stream_type_set)
-
-# Security Considerations
-
-TBD
-
-# IANA Considerations
-
-TBD
-
---- back
-
-# HTTP/3 data field definitions
-
-## ProtocolEventBody extension
-
-We extend the `$ProtocolEventBody` extension point defined in
-{{QLOG-MAIN}} with the HTTP/3 protocol events defined in this document.
-
-~~~ cddl
-HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
-             HTTPStreamTypeSet / HTTPFrameCreated /
-             HTTPFrameParsed / HTTPPushResolved
-
-$ProtocolEventBody /= HTTPEvents
-~~~
-{: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
-extension"}
+The following data field definitions can be used in HTTP/3 events.
 
 ## Owner
 
@@ -588,10 +376,23 @@ Owner = "local" / "remote"
 ~~~
 {: #owner-def title="Owner definition"}
 
-## HTTP/3 Frames
+## HTTPFrame
+
+The generic `$HTTPFrame` is defined here as a CDDL extension point (a "socket"
+or "plug"). It can be extended to support additional HTTP/3 frame types.
 
 ~~~ cddl
-HTTPFrame =  HTTPDataFrame /
+; The HTTPFrame is any key-value map (e.g., JSON object)
+$HTTPFrame /= {
+    * text => any
+}
+~~~
+{: #httpframe-def title="HTTPFrame plug definition"}
+
+The HTTP/3 frame types defined in this document are as follows:
+
+~~~ cddl
+HTTPBaseFrames =  HTTPDataFrame /
              HTTPHeadersFrame /
              HTTPCancelPushFrame /
              HTTPSettingsFrame /
@@ -599,11 +400,13 @@ HTTPFrame =  HTTPDataFrame /
              HTTPGoawayFrame /
              HTTPMaxPushIDFrame /
              HTTPReservedFrame /
-             UnknownFrame
-~~~
-{: #httpframe-def title="HTTPFrame definition"}
+             HTTPUnknownFrame
 
-### DataFrame
+$HTTPFrame /= HTTPBaseFrames
+~~~
+{: #httpbaseframe-def title="HTTPBaseFrames definition"}
+
+### HTTPDataFrame
 ~~~ cddl
 HTTPDataFrame = {
     frame_type: "data"
@@ -612,7 +415,7 @@ HTTPDataFrame = {
 ~~~
 {: #httpdataframe-def title="HTTPDataFrame definition"}
 
-### HeadersFrame
+### HTTPHeadersFrame
 
 This represents an *uncompressed*, plaintext HTTP Headers frame (e.g., no QPACK
 compression is applied).
@@ -657,7 +460,7 @@ HTTPField = {
 ~~~
 {: #httpfield-def title="HTTPField definition"}
 
-### CancelPushFrame
+### HTTPCancelPushFrame
 
 ~~~ cddl
 HTTPCancelPushFrame = {
@@ -667,7 +470,7 @@ HTTPCancelPushFrame = {
 ~~~
 {: #http-cancelpushframe-def title="HTTPCancelPushFrame definition"}
 
-### SettingsFrame
+### HTTPSettingsFrame
 
 ~~~ cddl
 HTTPSettingsFrame = {
@@ -682,7 +485,7 @@ HTTPSetting = {
 ~~~
 {: #httpsettingsframe-def title="HTTPSettingsFrame definition"}
 
-### PushPromiseFrame
+### HTTPPushPromiseFrame
 
 ~~~ cddl
 HTTPPushPromiseFrame = {
@@ -693,7 +496,7 @@ HTTPPushPromiseFrame = {
 ~~~
 {: #httppushpromiseframe-def title="HTTPPushPromiseFrame definition"}
 
-### GoAwayFrame
+### HTTPGoAwayFrame
 
 ~~~ cddl
 HTTPGoawayFrame = {
@@ -706,7 +509,7 @@ HTTPGoawayFrame = {
 ~~~
 {: #httpgoawayframe-def title="HTTPGoawayFrame definition"}
 
-### MaxPushIDFrame
+### HTTPMaxPushIDFrame
 
 ~~~ cddl
 HTTPMaxPushIDFrame = {
@@ -716,7 +519,7 @@ HTTPMaxPushIDFrame = {
 ~~~
 {: #httpmaxpushidframe-def title="HTTPMaxPushIDFrame definition"}
 
-### ReservedFrame
+### HTTPReservedFrame
 
 ~~~ cddl
 HTTPReservedFrame = {
@@ -727,12 +530,20 @@ HTTPReservedFrame = {
 ~~~
 {: #httpreservedframe-def title="HTTPReservedFrame definition"}
 
-### UnknownFrame
+### HTTPUnknownFrame
 
-HTTP/3 qlog re-uses QUIC's UnknownFrame definition, since their values
-and usage overlaps. See {{QLOG-QUIC}}.
+~~~ cddl
+HTTPUnknownFrame = {
+    frame_type: "unknown"
+    raw_frame_type: uint64
 
-## ApplicationError
+    ? raw_length: uint32
+    ? raw: hexstring
+}
+~~~
+{: #httpunknownframe-def title="UnknownFrame definition"}
+
+### HTTPApplicationError
 
 ~~~ cddl
 HTTPApplicationError =  "http_no_error" /
@@ -764,12 +575,10 @@ definition in the qlog QUIC definition, see {{QLOG-QUIC}}.
 $ApplicationError /= HTTPApplicationError
 ~~~
 
-# QPACK DATA type definitions
+# QPACK Events {#qpack-ev}
 
-## ProtocolEventBody extension
-
-We extend the `$ProtocolEventBody` extension point defined in
-{{QLOG-MAIN}} with the QPACK protocol events defined in this document.
+QPACK events extend the `$ProtocolEventBody` extension point defined in
+{{QLOG-MAIN}}.
 
 ~~~ cddl
 QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
@@ -782,7 +591,188 @@ $ProtocolEventBody /= QPACKEvents
 {: #qpackevents-def title="QPACKEvents definition and ProtocolEventBody
 extension"}
 
-## QPACK Instructions
+QPACK events mainly serve as an aid to debug low-level QPACK issues.The
+higher-level, plaintext header values SHOULD (also) be logged in the
+http.frame_created and http.frame_parsed event data (instead).
+
+Note: qpack does not have its own parameters_set event. This was merged with
+http.parameters_set for brevity, since qpack is a required extension for HTTP/3
+anyway. Other HTTP/3 extensions MAY also log their SETTINGS fields in
+http.parameters_set or MAY define their own events.
+
+## state_updated {#qpack-stateupdated}
+Importance: Base
+
+This event is emitted when one or more of the internal QPACK variables changes
+value. Note that some variables have two variations (one set locally, one
+requested by the remote peer). This is reflected in the "owner" field. As such,
+this field MUST be correct for all variables included a single event instance. If
+you need to log settings from two sides, you MUST emit two separate event
+instances.
+
+Definition:
+
+~~~ cddl
+QPACKStateUpdate = {
+    owner: Owner
+    ? dynamic_table_capacity: uint64
+
+    ; effective current size, sum of all the entries
+    ? dynamic_table_size: uint64
+    ? known_received_count: uint64
+    ? current_insert_count: uint64
+}
+~~~
+{: #qpack-stateupdate-def title="QPACKStateUpdate definition"}
+
+## stream_state_updated {#qpack-streamstateupdate}
+Importance: Core
+
+This event is emitted when a stream becomes blocked or unblocked by header
+decoding requests or QPACK instructions.
+
+Note: This event is of "Core" importance, as it might have a large impact on
+HTTP/3's observed performance.
+
+Definition:
+
+~~~ cddl
+QPACKStreamStateUpdate = {
+    stream_id: uint64
+    ; streams are assumed to start "unblocked"
+    ; until they become "blocked"
+    state: QPACKStreamState
+}
+
+QPACKStreamState = "blocked" / "unblocked"
+~~~
+{: #qpack-streamstateupdate-def title="QPACKStreamStateUpdate definition"}
+
+## dynamic_table_updated {#qpack-dynamictableupdate}
+Importance: Extra
+
+This event is emitted when one or more entries are inserted or evicted from QPACK's dynamic table.
+
+Definition:
+
+~~~ cddl
+QPACKDynamicTableUpdate = {
+    ; local = the encoder's dynamic table
+    ; remote = the decoder's dynamic table
+    owner: Owner
+
+    update_type: QPACKDynamicTableUpdateType
+    entries: [+ QPACKDynamicTableEntry]
+}
+
+QPACKDynamicTableUpdateType = "inserted" / "evicted"
+
+QPACKDynamicTableEntry = {
+    index: uint64
+    ? name: text / hexstring
+    ? value: text / hexstring
+}
+~~~
+{: #qpack-dynamictableupdate-def title="QPACKDynamicTableUpdate definition"}
+
+## headers_encoded {#qpack-headersencoded}
+Importance: Base
+
+This event is emitted when an uncompressed header block is encoded successfully.
+
+Note: this event has overlap with http.frame_created for the HeadersFrame type.
+When outputting both events, implementers MAY omit the "headers" field in this
+event.
+
+Definition:
+
+~~~ cddl
+QPACKHeadersEncoded = {
+    ? stream_id: uint64
+    ? headers: [+ HTTPField]
+
+    block_prefix: QPACKHeaderBlockPrefix
+    header_block: [+ QPACKHeaderBlockRepresentation]
+
+    ? length: uint
+    ? raw: hexstring
+}
+~~~
+{: #qpack-headersencoded-def title="QPACKHeadersEncoded definition"}
+
+## headers_decoded {#qpack-headersdecoded}
+Importance: Base
+
+This event is emitted when a compressed header block is decoded successfully.
+
+Note: this event has overlap with http.frame_parsed for the HeadersFrame type.
+When outputting both events, implementers MAY omit the "headers" field in this
+event.
+
+Definition:
+
+~~~ cddl
+QPACKHeadersDecoded = {
+    ? stream_id: uint64
+    ? headers: [+ HTTPField]
+
+    block_prefix: QPACKHeaderBlockPrefix
+    header_block: [+ QPACKHeaderBlockRepresentation]
+
+    ? length: uint32
+    ? raw: hexstring
+}
+~~~
+{: #qpack-headersdecoded-def title="QPACKHeadersDecoded definition"}
+
+## instruction_created {#qpack-instructioncreated}
+Importance: Base
+
+This event is emitted when a QPACK instruction (both decoder and encoder) is
+created and added to the encoder/decoder stream.
+
+Definition:
+
+~~~ cddl
+QPACKInstructionCreated = {
+    ; see definition in appendix
+    instruction: QPACKInstruction
+    ? length: uint32
+    ? raw: hexstring
+}
+~~~
+{: #qpack-instructioncreated-def title="QPACKInstructionCreated definition"}
+
+Note: encoder/decoder semantics and stream_id's are implicit in either the
+instruction types or can be logged via other events (e.g., http.stream_type_set)
+
+## instruction_parsed {#qpack-instructionparsed}
+Importance: Base
+
+This event is emitted when a QPACK instruction (both decoder and encoder) is read
+from the encoder/decoder stream.
+
+Definition:
+
+~~~ cddl
+QPACKInstructionParsed = {
+    ; see QPACKInstruction definition in appendix
+    instruction: QPACKInstruction
+
+    ? length: uint32
+    ? raw: hexstring
+}
+~~~
+{: #qpack-instructionparsed-def title="QPACKInstructionParsed definition"}
+
+Note: encoder/decoder semantics and stream_id's are implicit in either the
+instruction types or can be logged via other events (e.g., http.stream_type_set)
+
+# QPACK Data Field Definitions
+
+The following data field definitions can be used in QPACK events.
+
+## QPACKInstruction
 
 Note: the instructions do not have explicit encoder/decoder types, since there is
 no overlap between the instructions of both types in neither name nor function.
@@ -884,7 +874,7 @@ InsertCountIncrementInstruction = {
 {: #insertcountincrementinstruction-def
 title="InsertCountIncrementInstruction definition"}
 
-## QPACK Header compression
+## QPACKHeaderBlockRepresentation
 
 ~~~ cddl
 QPACKHeaderBlockRepresentation =  IndexedHeaderField /
@@ -960,7 +950,7 @@ LiteralHeaderFieldWithoutName = {
 title="LiteralHeaderFieldWithoutName definition"}
 
 
-### QPACKHeaderBlockPrefix
+## QPACKHeaderBlockPrefix
 
 ~~~ cddl
 QPACKHeaderBlockPrefix = {
@@ -972,7 +962,7 @@ QPACKHeaderBlockPrefix = {
 {: #qpackheaderblockprefix-def
 title="QPACKHeaderBlockPrefix definition"}
 
-### QPACKTableType
+## QPACKTableType
 
 ~~~ cddl
 QPACKTableType = "static" / "dynamic"
@@ -980,7 +970,25 @@ QPACKTableType = "static" / "dynamic"
 {: #qpacktabletype-def title="QPACKTableType definition"}
 
 
+# Security Considerations
+
+TBD
+
+# IANA Considerations
+
+TBD
+
+--- back
+
 # Change Log
+
+## Since draft-ietf-quic-qlog-h3-events-02:
+
+* TODO
+
+## Since draft-ietf-quic-qlog-h3-events-01:
+
+* No changes - new draft to prevent expiration
 
 ## Since draft-ietf-quic-qlog-h3-events-00:
 
@@ -1047,16 +1055,13 @@ Smaller changes:
 * Event names are more consistent and use past tense (issue \#21)
 * Triggers have been redefined as properties of the "data" field and updated for most events (issue \#23)
 
-# Design Variations
-
-TBD
-
 # Acknowledgements
+{:numbered="false"}
 
-Much of the initial work by Robin Marx was done at Hasselt University.
+Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.
 
-Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
-Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy
-Lainé, Kazu Yamamoto, Christian Huitema, and Lucas Pardue for their feedback and
-suggestions.
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
+Yamamoto, and Christian Huitema for their feedback and suggestions.
 

@@ -15,13 +15,14 @@ author:
   -
     ins: R. Marx
     name: Robin Marx
-    org: KU Leuven
-    email: robin.marx@kuleuven.be
+    org: Akamai
+    email: rmarx@akamai.com
+    role: editor
   -
     ins: L. Niccolini
     name: Luca Niccolini
-    org: Facebook
-    email: lniccolini@fb.com
+    org: Meta
+    email: lniccolini@meta.com
     role: editor
   -
     ins: M. Seemann
@@ -29,30 +30,16 @@ author:
     org: Protocol Labs
     email: marten@protocol.ai
     role: editor
+  - ins: L. Pardue
+    name: Lucas Pardue
+    org: Cloudflare
+    email: lucaspardue.24.7@gmail.com
+    role: editor
 
 normative:
 
   QLOG-MAIN:
-    title: "Main logging schema for qlog"
-    date: {DATE}
-    seriesinfo:
-      Internet-Draft: draft-ietf-quic-qlog-main-schema-latest
-    author:
-      -
-        ins: R. Marx
-        name: Robin Marx
-        org: KU Leuven
-        role: editor
-      -
-        ins: L. Niccolini
-        name: Luca Niccolini
-        org: Facebook
-        role: editor
-      -
-        ins: M. Seemann
-        name: Marten Seemann
-        org: Protocol Labs
-        role: editor
+    I-D.ietf-quic-qlog-main-schema
 
 informative:
 
@@ -90,32 +77,23 @@ The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
+The following fields from {{QLOG-MAIN}} are imported and used: name, category,
+type, data, group_id, protocol_type, importance, RawInfo, and time-related
+fields.
+
 # Overview
 
-This document describes the values of the qlog "name" ("category" + "event") and
-"data" fields and their semantics for the QUIC protocol.
+This document describes how the QUIC protocol is can be expressed in qlog using
+the schema defined in {{QLOG-MAIN}}. QUIC protocol events are defined with a
+category, a name (the concatenation of "category" and "event"), an "importance",
+an optional "trigger", and "data" fields.
 
-This document assumes the usage of the encompassing main qlog schema defined in
-{{QLOG-MAIN}}. Each subsection below defines a separate category (for example
-connectivity, transport, recovery) and each subsubsection is an event type (for
-example `packet_received`).
+Some data fields use complex datastructures. These are represented as enums or
+re-usable definitions, which are grouped together on the bottom of this document
+for clarity.
 
-For each event type, its importance and data definition is laid out, often
-accompanied by possible values for the optional "trigger" field. For the
-definition and semantics of "importance" and "trigger", see the main schema
-document.
-
-Most of the complex datastructures, enums and re-usable definitions are grouped
-together on the bottom of this document for clarity.
-
-## Links to the main schema
-
-This document re-uses all the fields defined in the main qlog schema (e.g., name,
-category, type, data, group_id, protocol_type, the time-related fields,
-importance, RawInfo, etc.).
-
-One entry in the "protocol_type" qlog array field MUST be "QUIC" if events from
-this document are included in a qlog trace.
+When any event from this document is included in a qlog trace, the
+"protocol_type" qlog array field MUST contain an entry with the value "QUIC".
 
 When the qlog "group_id" field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
@@ -126,9 +104,7 @@ used as the qlog filename or file identifier, potentially suffixed by the
 vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
 trace of the connection with ODCID abcd1234).
 
-### Raw packet and frame information
-
-This document re-uses the definition of the RawInfo data class from {{QLOG-MAIN}}.
+## Raw packet and frame information
 
 Note:
 
@@ -158,7 +134,7 @@ are intentionally preserved in the event definitions. Even though this can lead 
 duplicate data when the full RawInfo is logged, it allows a more direct mapping of
 the QUIC specifications to qlog, making it easier for users to interpret.
 
-### Events not belonging to a single connection {#handling-unknown-connections}
+## Events not belonging to a single connection {#handling-unknown-connections}
 
 For several types of events, it is sometimes impossible to tie them to a specific
 conceptual QUIC connection (e.g., a packet_dropped event triggered because the
@@ -186,16 +162,86 @@ just the connection ID).
 
 
 
-# QUIC event definitions
+# QUIC Event Overview
 
-Each subheading in this section is a qlog event category, while each
-sub-subheading is a qlog event type. Concretely, for the following two items, we
-have the category "connectivity" and event type "server_listening", resulting in a
-concatenated qlog "name" field value of "connectivity:server_listening".
+QUIC connections consist of different phases and interaction events. In order to
+model this, QUIC event types are divided into general categories: connectivity
+({{conn-ev}}), security ({{sec-ev}}), transport {{trans-ev}}, and recovery
+{{rec-ev}}.
 
-## connectivity
+As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
+concatenation of category and type.
 
-### server_listening
+{{quic-events}} summarizes the name value of each event type that is defined in
+this specification.
+
+| Name value                            | Importance |  Definition |
+|:--------------------------------------|:-----------| :------------|
+| connectivity:server_listening         | Extra      | {{connectivity-serverlistening}} |
+| connectivity:connection_started       | Base       | {{connectivity-connectionstarted}} |
+| connectivity:connection_closed        | Base       | {{connectivity-connectionclosed}} |
+| connectivity:connection_id_updated    | Base       | {{connectivity-connectionidupdated}} |
+| connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
+| connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
+| connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
+| transport:version_information         | Core       | {{transport-versioninformation}} |
+| transport:alpn_information            | Core       | {{transport-alpninformation}} |
+| transport:parameters_set              | Core       | {{transport-parametersset}} |
+| transport:parameters_restored         | Base       | {{transport-parametersrestored}} |
+| transport:packet_sent                 | Core       | {{transport-packetsent}} |
+| transport:packet_received             | Core       | {{transport-packetreceived}} |
+| transport:packet_dropped              | Base       | {{transport-packetdropped}} |
+| transport:packet_buffered             | Base       | {{transport-packetbuffered}} |
+| transport:packets_acked               | Extra      | {{transport-packetsacked}} |
+| transport:datagrams_sent              | Extra      | {{transport-datagramssent}} |
+| transport:datagrams_received          | Extra      | {{transport-datagramsreceived}} |
+| transport:datagram_dropped            | Extra      | {{transport-datagramdropped}} |
+| transport:stream_state_updated        | Base       | {{transport-streamstateupdated}} |
+| transport:frames_processed            | Extra      | {{transport-framesprocessed}} |
+| transport:data_moved                  | Base       | {{transport-datamoved}} |
+| security:key_updated                  | Base       | {{security-keyupdated}} |
+| security:key_discarded                | Base       | {{security-keydiscarded}} |
+| recovery:parameters_set               | Base       | {{recovery-parametersset}} |
+| recovery:metrics_updated              | Core       | {{recovery-metricsupdated}} |
+| recovery:congestion_state_updated     | Base       | {{recovery-congestionstateupdated}} |
+| recovery:loss_timer_updated           | Extra      | {{recovery-losstimerupdated}} |
+| recovery:packet_lost                  | Core       | {{recovery-packetlost}} |
+| recovery:marked_for_retransmit        | Extra      | {{recovery-markedforretransmit}} |
+{: #quic-events title="QUIC Events"}
+
+QUIC events extend the `$ProtocolEventBody` extension point defined in
+{{QLOG-MAIN}}.
+
+~~~ cddl
+QuicEvents = ConnectivityServerListening /
+             ConnectivityConnectionStarted /
+             ConnectivityConnectionClosed /
+             ConnectivityConnectionIDUpdated /
+             ConnectivitySpinBitUpdated /
+             ConnectivityConnectionStateUpdated /
+             ConnectivityMTUUpdated /
+             SecurityKeyUpdated / SecurityKeyDiscarded /
+             TransportVersionInformation / TransportALPNInformation /
+             TransportParametersSet / TransportParametersRestored /
+             TransportPacketSent / TransportPacketReceived /
+             TransportPacketDropped / TransportPacketBuffered /
+             TransportPacketsAcked / TransportDatagramsSent /
+             TransportDatagramsReceived / TransportDatagramDropped /
+             TransportStreamStateUpdated / TransportFramesProcessed /
+             TransportDataMoved /
+             RecoveryParametersSet / RecoveryMetricsUpdated /
+             RecoveryCongestionStateUpdated /
+             RecoveryLossTimerUpdated /
+             RecoveryPacketLost
+
+$ProtocolEventBody /= QuicEvents
+~~~
+{: #quicevents-def title="QuicEvents definition and ProtocolEventBody
+extension"}
+
+# Connectivity events {#conn-ev}
+
+## server_listening {#connectivity-serverlistening}
 Importance: Extra
 
 Emitted when the server starts accepting connections.
@@ -219,7 +265,7 @@ ConnectivityServerListening = {
 Note: some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
-### connection_started
+## connection_started {#connectivity-connectionstarted}
 Importance: Base
 
 Used for both attempting (client-perspective) and accepting (server-perspective)
@@ -249,7 +295,7 @@ ConnectivityConnectionStarted = {
 Note: some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
-### connection_closed
+## connection_closed {#connectivity-connectionclosed}
 Importance: Base
 
 Used for logging when a connection was closed, typically when an error or timeout
@@ -294,7 +340,7 @@ ConnectivityConnectionClosed = {
 {: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
 
 
-### connection_id_updated
+## connection_id_updated {#connectivity-connectionidupdated}
 Importance: Base
 
 This event is emitted when either party updates their current Connection ID. As
@@ -319,7 +365,7 @@ ConnectivityConnectionIDUpdated = {
 ~~~
 {: #connectivity-connectionidupdated-def title="ConnectivityConnectionIDUpdated definition"}
 
-### spin_bit_updated
+## spin_bit_updated {#connectivity-spinbitupdated}
 Importance: Base
 
 To be emitted when the spin bit changes value. It SHOULD NOT be emitted if the
@@ -334,11 +380,7 @@ ConnectivitySpinBitUpdated = {
 ~~~
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
 
-### connection_retried
-
-TODO
-
-### connection_state_updated
+## connection_state_updated {#connectivity-connectionstateupdated}
 Importance: Base
 
 This event is used to track progress through QUIC's complex handshake and
@@ -428,7 +470,7 @@ conceptual event as the connection_started event above from the client's
 perspective. Similarly, a state of "closing" or "draining" corresponds to the
 connection_closed event.
 
-### MIGRATION-related events
+## MIGRATION-related events
 e.g., path_updated
 
 TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
@@ -436,63 +478,28 @@ TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
 
 For now, infer from other connectivity events and path_challenge/path_response frames
 
-## security
+## mtu_updated {#connectivity-mtuupdated}
+Importance: Extra
 
-### key_updated
-Importance: Base
+~~~ ccdl
+ConnectivityMTUUpdated = {
+  ? old: uint16
+  new: uint16
 
-Note: secret_updated would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
-
-Definition:
-
-~~~ cddl
-SecurityKeyUpdated = {
-    key_type: KeyType
-
-    ? old: hexstring
-    new: hexstring
-
-    ; needed for 1RTT key updates
-    ? generation: uint32
-
-    ? trigger:
-        ; (e.g., initial, handshake and 0-RTT keys
-        ; are generated by TLS)
-        "tls" /
-        "remote_update" /
-        "local_update"
+  ; at some point, MTU discovery stops, as a "good enough"
+  ; packet size has been found
+  ? done: bool .default false
 }
 ~~~
-{: #security-keyupdated-def title="SecurityKeyUpdated definition"}
+{: #connectivity-mtuupdated-def title="ConnectivityMTUUpdated definition"}
+
+This event indicates that the estimated Path MTU was updated. This happens as
+part of the Path MTU discovery process.
 
 
-### key_discarded
-Importance: Base
+# Transport events  {#trans-ev}
 
-Definition:
-
-~~~ cddl
-SecurityKeyDiscarded = {
-    key_type: KeyType
-    ? key: hexstring
-
-    ; needed for 1RTT key updates
-    ? generation: uint32
-
-    ? trigger:
-        ; (e.g., initial, handshake and 0-RTT keys
-        ; are generated by TLS)
-        "tls" /
-        "remote_update" /
-        "local_update"
-}
-~~~
-{: #security-keydiscarded-def title="SecurityKeyDiscarded definition"}
-
-
-## transport
-
-### version_information
+## version_information {#transport-versioninformation}
 Importance: Core
 
 QUIC endpoints each have their own list of of QUIC versions they support. The
@@ -528,7 +535,7 @@ Intended use:
   the version negotiation packet and chosen_version to the version it will use for
   the next initial packet
 
-### alpn_information
+## alpn_information {#transport-alpninformation}
 Importance: Core
 
 QUIC implementations each have their own list of application level protocols and
@@ -561,7 +568,7 @@ Intended use:
   receipt of the server initial to log this event with both client_alpns and
   chosen_alpn set.
 
-### parameters_set
+## parameters_set {#transport-parametersset}
 Importance: Core
 
 This event groups settings from several different sources (transport parameters,
@@ -643,7 +650,7 @@ Additionally, this event can contain any number of unspecified fields. This is t
 reflect setting of for example unknown (greased) transport parameters or employed
 (proprietary) extensions.
 
-### parameters_restored
+## parameters_restored {#transport-parametersrestored}
 Importance: Base
 
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
@@ -676,7 +683,7 @@ TransportParametersRestored = {
 Note that, like parameters_set above, this event can contain any number of
 unspecified fields to allow for additional/custom parameters.
 
-### packet_sent
+## packet_sent {#transport-packetsent}
 Importance: Core
 
 Definition:
@@ -685,8 +692,7 @@ Definition:
 TransportPacketSent = {
     header: PacketHeader
 
-    ; see appendix for the QuicFrame definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
     ? is_coalesced: bool .default false
 
@@ -724,10 +730,10 @@ TransportPacketSent = {
 Note: We do not explicitly log the encryption_level or packet_number_space: the
 header.packet_type specifies this by inference (assuming correct implementation)
 
-Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
-### packet_received
+## packet_received {#transport-packetreceived}
 Importance: Core
 
 Definition:
@@ -736,8 +742,7 @@ Definition:
 TransportPacketReceived = {
     header: PacketHeader
 
-    ; see appendix for the definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
     ? is_coalesced: bool .default false
 
@@ -765,10 +770,10 @@ TransportPacketReceived = {
 Note: We do not explicitly log the encryption_level or packet_number_space: the
 header.packet_type specifies this by inference (assuming correct implementation)
 
-Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
-### packet_dropped
+## packet_dropped {#transport-packetdropped}
 Importance: Base
 
 This event indicates a QUIC-level packet was dropped after partial or no parsing.
@@ -805,10 +810,10 @@ Note: sometimes packets are dropped before they can be associated with a
 particular connection (e.g., in case of "unsupported_version"). This situation is
 discussed more in {{handling-unknown-connections}}.
 
-Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
-### packet_buffered
+## packet_buffered {#transport-packetbuffered}
 Importance: Base
 
 This event is emitted when a packet is buffered because it cannot be processed
@@ -837,10 +842,10 @@ TransportPacketBuffered = {
 ~~~
 {: #transport-packetbuffered-def title="TransportPacketBuffered definition"}
 
-Note: for more details on "datagram_id", see {{datagram-id}}. It is only needed
+Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
-### packets_acked
+## packets_acked {#transport-packetsacked}
 Importance: Extra
 
 This event is emitted when a (group of) sent packet(s) is acknowledged by the
@@ -865,7 +870,7 @@ Note: if packet_number_space is omitted, it assumes the default value of
 PacketNumberSpace.application_data, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
-### datagrams_sent {#datagram-id}
+## datagrams_sent {#transport-datagramssent}
 Importance: Extra
 
 When we pass one or more UDP-level datagrams to the socket. This is useful for
@@ -896,7 +901,7 @@ same datagram. As packet coalescing typically only happens during the handshake
 (as it requires at least one long header packet), this can be done without much
 overhead.
 
-### datagrams_received
+## datagrams_received {#transport-datagramsreceived}
 Importance: Extra
 
 When we receive one or more UDP-level datagrams from the socket. This is useful
@@ -918,9 +923,9 @@ TransportDatagramsReceived = {
 ~~~
 {: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
 
-Note: for more details on "datagram_ids", see {{datagram-id}}.
+Note: for more details on "datagram_ids", see {{transport-datagramssent}}.
 
-### datagram_dropped
+## datagram_dropped {#transport-datagramdropped}
 Importance: Extra
 
 When we drop a UDP-level datagram. This is typically if it does not contain a
@@ -935,7 +940,7 @@ TransportDatagramDropped = {
 ~~~
 {: #transport-datagramdropped-def title="TransportDatagramDropped definition"}
 
-### stream_state_updated
+## stream_state_updated {#transport-streamstateupdated}
 Importance: Base
 
 This event is emitted whenever the internal state of a QUIC stream is updated, as
@@ -996,7 +1001,7 @@ fine-grained stream states (e.g., data_sent, reset_received). These latter ones 
 mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
 equally.
 
-### frames_processed
+## frames_processed {#transport-framesprocessed}
 Importance: Extra
 
 This event's main goal is to prevent a large proliferation of specific purpose
@@ -1031,15 +1036,14 @@ Definition:
 
 ~~~ cddl
 TransportFramesProcessed = {
-    ; see appendix for the QuicFrame definitions
-    frames: [* QuicFrame]
+    frames: [* $QuicFrame]
 
     ? packet_number: uint64
 }
 ~~~
 {: #transport-framesprocessed-def title="TransportFramesProcessed definition"}
 
-### data_moved
+## data_moved {#transport-datamoved}
 Importance: Base
 
 Used to indicate when data moves between the different layers (for example passing
@@ -1088,14 +1092,67 @@ points, or the raw data might not be in a byte-array form). In these situations,
 implementers can decide to define new, in-context fields to aid in manual
 debugging.
 
-## recovery
+# Security Events {#sec-ev}
+
+## key_updated {#security-keyupdated}
+Importance: Base
+
+Note: secret_updated would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
+
+Definition:
+
+~~~ cddl
+SecurityKeyUpdated = {
+    key_type: KeyType
+
+    ? old: hexstring
+    new: hexstring
+
+    ; needed for 1RTT key updates
+    ? generation: uint32
+
+    ? trigger:
+        ; (e.g., initial, handshake and 0-RTT keys
+        ; are generated by TLS)
+        "tls" /
+        "remote_update" /
+        "local_update"
+}
+~~~
+{: #security-keyupdated-def title="SecurityKeyUpdated definition"}
+
+
+## key_discarded {#security-keydiscarded}
+Importance: Base
+
+Definition:
+
+~~~ cddl
+SecurityKeyDiscarded = {
+    key_type: KeyType
+    ? key: hexstring
+
+    ; needed for 1RTT key updates
+    ? generation: uint32
+
+    ? trigger:
+        ; (e.g., initial, handshake and 0-RTT keys
+        ; are generated by TLS)
+        "tls" /
+        "remote_update" /
+        "local_update"
+}
+~~~
+{: #security-keydiscarded-def title="SecurityKeyDiscarded definition"}
+
+# Recovery events {#rec-ev}
 
 Note: most of the events in this category are kept generic to support different
 recovery approaches and various congestion control algorithms. Tool creators
 SHOULD make an effort to support and visualize even unknown data in these events
 (e.g., plot unknown congestion states by name on a timeline visualization).
 
-### parameters_set
+## parameters_set {#recovery-parametersset}
 Importance: Base
 
 This event groups initial parameters from both loss detection and congestion
@@ -1141,7 +1198,7 @@ RecoveryParametersSet = {
 Additionally, this event can contain any number of unspecified fields to support
 different recovery approaches.
 
-### metrics_updated
+## metrics_updated {#recovery-metricsupdated}
 Importance: Core
 
 This event is emitted when one or more of the observable recovery metrics changes
@@ -1190,7 +1247,7 @@ log only actual updates to values.
 Additionally, this event can contain any number of unspecified fields to support
 different recovery approaches.
 
-### congestion_state_updated
+## congestion_state_updated {#recovery-congestionstateupdated}
 Importance: Base
 
 This event signifies when the congestion controller enters a significant new state
@@ -1221,7 +1278,7 @@ The "trigger" field SHOULD be logged if there are multiple ways in which a state
 can occur but MAY be omitted if a given state can only be due to a single event
 occurring (e.g., slow start is exited only when ssthresh is exceeded).
 
-### loss_timer_updated
+## loss_timer_updated {#recovery-losstimerupdated}
 Importance: Extra
 
 This event is emitted when a recovery loss timer changes state. The three main
@@ -1256,7 +1313,7 @@ need to be? Just support QUIC-style recovery from the spec or broader?
 
 TODO: read up on the loss detection logic in draft-27 onward and see if this suffices
 
-### packet_lost
+## packet_lost {#recovery-packetlost}
 Importance: Core
 
 This event is emitted when a packet is deemed lost by loss detection.
@@ -1270,10 +1327,9 @@ RecoveryPacketLost = {
 
     ; not all implementations will keep track of full
     ; packets, so these are optional
-    ; see appendix for the QuicFrame definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
-    ? is_mtu_probe_packet: boolean .default false
+    ? is_mtu_probe_packet: bool .default false
 
     ? trigger:
         "reordering_threshold" /
@@ -1288,7 +1344,7 @@ For this event, the "trigger" field SHOULD be set (for example to one of the
 values below), as this helps tremendously in debugging.
 
 
-### marked_for_retransmit
+## marked_for_retransmit {#recovery-markedforretransmit}
 Importance: Extra
 
 This event indicates which data was marked for retransmit upon detecting a packet
@@ -1313,70 +1369,12 @@ Definition:
 
 ~~~ cddl
 RecoveryMarkedForRetransmit = {
-    ; see appendix for the QuicFrame definitions
-    frames: [+ QuicFrame]
+    frames: [+ $QuicFrame]
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
 
-## mtu_updated
-Importance: Extra
-
-~~~ ccdl
-MTUUpdated = {
-  ? mtu: uint16
-
-  ; at some point, MTU discovery stops, as a "good enough"
-  ; packet size has been found
-  ? done: boolean .default false
-}
-~~~
-{: #mtu-updated-def title="MTUUpdated definition"}
-
-This event indicates that the estimated Path MTU was updated. This happens as
-part of the Path MTU discovery process.
-
-
-# Security Considerations
-
-TBD
-
-# IANA Considerations
-
-TBD
-
---- back
-
 # QUIC data field definitions
-
-## ProtocolEventBody extension
-
-We extend the `$ProtocolEventBody` extension point defined in
-{{QLOG-MAIN}} with the QUIC protocol events defined in this document.
-
-~~~ cddl
-QuicEvents = ConnectivityServerListening /
-             ConnectivityConnectionStarted /
-             ConnectivityConnectionClosed /
-             ConnectivityConnectionIDUpdated /
-             ConnectivitySpinBitUpdated /
-             ConnectivityConnectionStateUpdated /
-             SecurityKeyUpdated / SecurityKeyDiscarded /
-             TransportVersionInformation / TransportALPNInformation /
-             TransportParametersSet / TransportParametersRestored /
-             TransportPacketSent / TransportPacketReceived /
-             TransportPacketDropped / TransportPacketBuffered /
-             TransportPacketsAcked / TransportDatagramsSent /
-             TransportDatagramsReceived / TransportDatagramDropped /
-             TransportStreamStateUpdated / TransportFramesProcessed /
-             TransportDataMoved /
-             RecoveryParametersSet / RecoveryMetricsUpdated /
-             RecoveryCongestionStateUpdated /
-             RecoveryLossTimerUpdated /
-             RecoveryPacketLost
-
-$ProtocolEventBody /= QuicEvents
-~~~
 
 ## QuicVersion
 
@@ -1435,7 +1433,9 @@ PacketNumberSpace = "initial" / "handshake" / "application_data"
 ~~~ cddl
 PacketHeader = {
     packet_type: PacketType
-    packet_number: uint64
+    ; only if packet_type === "initial" || "handshake" || "0RTT" ||
+    ;                         "1RTT"
+    ? packet_number: uint64
 
     ; the bit flags of the packet headers (spin bit, key update bit,
     ; etc. up to and including the packet number length bits
@@ -1512,8 +1512,21 @@ KeyType =
 
 ## QUIC Frames
 
+The generic `$QuicFrame` is defined here as a CDDL extension point (a "socket"
+or "plug"). It can be extended to support additional QUIC frame types.
+
 ~~~ cddl
-QuicFrame =
+; The QuicFrame is any key-value map (e.g., JSON object)
+$QuicFrame /= {
+    * text => any
+}
+~~~
+{: #quicframe-def title="QuicFrame plug definition"}
+
+The QUIC frame types defined in this document are as follows:
+
+~~~ cddl
+QuicBaseFrames /=
   PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
   StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
   MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
@@ -1521,8 +1534,10 @@ QuicFrame =
   NewConnectionIDFrame / RetireConnectionIDFrame /
   PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
   HandshakeDoneFrame / UnknownFrame
+
+$QuicFrame /= QuicBaseFrames
 ~~~
-{: #quicframe-def title="QuicFrame definition"}
+{: #quicbaseframe-def title="QuicBaseFrames definition"}
 
 ### PaddingFrame
 
@@ -1890,7 +1905,28 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 ~~~
 {: #cryptoerror-def title="CryptoError definition"}
 
+# Security Considerations
+
+TBD
+
+# IANA Considerations
+
+TBD
+
+--- back
+
+
 # Change Log
+
+## Since draft-ietf-qlog-quic-events-02:
+
+* Renamed key_retired to key_discarded (#185)
+* Add fields and events for DPLPMTUD (#135)
+* Removed connection_retried event placeholder
+
+## Since draft-ietf-qlog-quic-events-01:
+
+* Added Stateless Reset Token type (#122)
 
 ## Since draft-ietf-qlog-quic-events-00:
 
@@ -1958,15 +1994,12 @@ Smaller changes:
 * Event names are more consistent and use past tense (issue \#21)
 * Triggers have been redefined as properties of the "data" field and updated for most events (issue \#23)
 
-# Design Variations
-
-TBD
-
 # Acknowledgements
+{:numbered="false"}
 
-Much of the initial work by Robin Marx was done at Hasselt University.
+Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.
 
-Thanks to Marten Seemann, Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
-Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy
-Lainé, Kazu Yamamoto, Christian Huitema, and Lucas Pardue for their feedback and
-suggestions.
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
+Yamamoto, and Christian Huitema for their feedback and suggestions.
