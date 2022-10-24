@@ -79,6 +79,11 @@ with logs from a variety of different protocols and use cases.
 As such, this document contains concepts such as versioning, metadata inclusion,
 log aggregation, event grouping and log file size reduction techniques.
 
+The qlog schema can be serialized in many ways (e.g., JSON, CBOR, protobuf,
+etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
+{{!I-JSON=RFC7493}}, and its streamable derivative
+{{!JSON-Text-Sequences=RFC7464}}.
+
 > Note to RFC editor: Please remove the follow paragraphs in this section before
 publication.
 
@@ -152,17 +157,16 @@ should be aware of for easy reading comprehension are:
   have a string key that maps to any value. Used to indicate a generic
   JSON object.
 
-### Serialization
+All timestamps and time-related values (e.g., offsets) in qlog are
+logged as `float64` in the millisecond resolution.
 
-While the qlog schemas are format-agnostic, and can be serialized in
-many ways (e.g., JSON, CBOR, protobuf, ...), this document only
-describes how to employ {{!JSON=RFC8259}}, its subset
-{{!I-JSON=RFC7493}}, and its streamable derivative
-{{!JSON-Text-Sequences=RFC7464}} as textual serialization options. As
-such, examples are provided in {{!JSON=RFC8259}}. Other documents may
-describe how to utilize other concrete serialization options, though
-tips and requirements for these are also listed in this document
-({{concrete-formats}}).
+Other qlog documents can define their own CDDL-compatible (struct) types
+(e.g., separately for each Packet type that a protocol supports).
+
+### Serialization examples
+
+Serialization examples in this document use JSON ({{!JSON=RFC8259}}) unless
+otherwise indicated.
 
 # Design goals
 
