@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2022-10-25T01:26:03.724648+00:00",
+  "timestamp": "2022-11-03T01:08:38.800454+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3423,7 +3423,7 @@
       "id": "MDU6SXNzdWU3NDY3MjcwMTU=",
       "title": "Add support for QUIC DATAGRAM and HTTP/3 DATAGRAM frames",
       "url": "https://github.com/quicwg/qlog/issues/124",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -3436,8 +3436,8 @@
       ],
       "body": "[QUIC DATAGRAM spec](https://tools.ietf.org/html/draft-ietf-quic-datagram-01)\r\n\r\n[HTTP/3 DATAGRAM spec ](https://tools.ietf.org/html/draft-schinazi-quic-h3-datagram-05)\r\n\r\nAn interesting point was made about this by @lpardue, in that these frames are almost identical, with the H3 layer just adding a flow_id. \r\nFor this, their implementation somewhat abstracts away the difference between these two, and their H3 code doesn't really have the concept of a DATAGRAM frame. \r\nFor this, it would be interesting to have the flow_id field defined on the QUIC-level DATAGRAM as well, not just the HTTP/3 frame. \r\n\r\nTo me, this feels a bit dirty, qlog not mirroring the specs to make implementation/logging easier. Still, it's something to consider.\r\n\r\nAn alternative is to implement this purely in the tooling. For example, qvis could just look for a flow_id field on the QUIC DATAGRAM frame, even though it's not defined in qlog proper. Alternatively, it could parse raw.data and extract the flow-id from that (which is worse...). \r\n\r\nThis raises an overall point about the robustness of the tooling and whether we should mention something like this in the qlog texts. ",
       "createdAt": "2020-11-19T16:19:40Z",
-      "updatedAt": "2022-09-08T00:22:01Z",
-      "closedAt": null,
+      "updatedAt": "2022-11-01T10:34:14Z",
+      "closedAt": "2022-11-01T10:34:13Z",
       "comments": [
         {
           "author": "LPardue",
@@ -3459,6 +3459,13 @@
           "body": "Based on other discussions, I think we should punt QUIC or HTTP/3 extensions to their own documents. So suggest close with no action on these documents.",
           "createdAt": "2022-09-08T00:22:01Z",
           "updatedAt": "2022-09-08T00:22:01Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "After discussion, it was decided to indeed handle these (and other, future) extensions in their own documents. \r\n\r\nFor the DATAGRAM frames concretely, this has now been done at https://github.com/rmarx/draft-marx-quic-qlog-datagram. This is intended to be an example and testing ground of how to approach qlog extensibility in general. \r\n\r\nSmall note: the original discussion on this issue regarding `flow_id` is now mute due to changes in how the DATAGRAM frames have been defined in their respective RFCs. ",
+          "createdAt": "2022-11-01T10:34:13Z",
+          "updatedAt": "2022-11-01T10:34:13Z"
         }
       ]
     },
@@ -4096,7 +4103,7 @@
       "id": "MDU6SXNzdWU4MzQ3MDkwODQ=",
       "title": "How to deal with (aggregated) measurements",
       "url": "https://github.com/quicwg/qlog/issues/139",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -4106,8 +4113,8 @@
       ],
       "body": "The [spindump project](https://github.com/EricssonResearch/spindump) provides (aggregated) protocol measurements (e.g., RTT, loss, connection count, etc.) from middleboxes. They would like to use qlog as an output format and have [prototyped](https://github.com/EricssonResearch/spindump/blob/master/src/spindump_event_printer_qlog.c) what that [might look like](https://github.com/EricssonResearch/spindump/blob/master/Format.md#qlog-format).\r\n\r\nExample of their current output:\r\n```\r\n$ src/spindump --input-file src/../test/trace_quic_rfc_quant_long_qlog.pcap --textual --format text --not-report-notes --format qlog\r\n\r\n{\"qlog_version\": \"draft-02\", \"qlog_format\": \"JSON\", \"description\": \"Spindump measurements\", \"traces\": [\r\n\r\n { \"vantage_point\": { \"type\": \"network\" }, \"events\": [\r\n\r\n     {\"time\": 1614616215488286, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"connection_started\", \r\n\r\n      \"ip_version\": \"ipv4\", \"src_ip\": \"10.30.0.167\", \"dst_ip\": \"91.190.195.94\", \"src_port\": \"49702\", \"dst_port\": \"4433\", \"src_cid\": \"041d0cd3\", \"dst_cid\": \"c2e9970d6b5925175646\", \r\n\r\n      \"data\": {\"packets1\": 0, \"packets2\": 0, \"bytes1\": 0, \"bytes2\": 0}},\r\n\r\n     {\"time\": 1614616216598876, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"connection_started\", \r\n\r\n      \"ip_version\": \"ipv4\", \"src_ip\": \"10.30.0.167\", \"dst_ip\": \"91.190.195.94\", \"src_port\": \"49702\", \"dst_port\": \"4433\", \"src_cid\": \"041d0cd3\", \"dst_cid\": \"0487c887\", \r\n\r\n      \"data\": {\"packets1\": 2, \"packets2\": 1, \"bytes1\": 2728, \"bytes2\": 298, \"bandwidth1\": 1500, \"bandwidth2\": 298}},\r\n\r\n     {\"time\": 1614616216598876, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 2, \"packets2\": 1, \"bytes1\": 2728, \"bytes2\": 298, \"bandwidth1\": 1500, \"bandwidth2\": 298, \"right_rtt\": 109806}},\r\n\r\n     {\"time\": 1614616217177621, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 18, \"bytes1\": 3159, \"bytes2\": 21320, \"bandwidth1\": 1500, \"bandwidth2\": 21320, \"right_rtt\": 70432}},\r\n\r\n     {\"time\": 1614616217178198, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 19, \"bytes1\": 3159, \"bytes2\": 21415, \"bandwidth1\": 1500, \"bandwidth2\": 21415, \"left_rtt\": 577}},\r\n\r\n     {\"time\": 1614616217178198, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 7, \"packets2\": 19, \"bytes1\": 3159, \"bytes2\": 21415, \"bandwidth1\": 1500, \"bandwidth2\": 21415, \"full_rtt_initiator\": 71009}},\r\n\r\n     {\"time\": 1614616217545056, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 26, \"bytes1\": 3275, \"bytes2\": 30375, \"bandwidth1\": 1500, \"bandwidth2\": 30375, \"right_rtt\": 366858}},\r\n\r\n     {\"time\": 1614616217545056, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 26, \"bytes1\": 3275, \"bytes2\": 30375, \"bandwidth1\": 1500, \"bandwidth2\": 30375, \"full_rtt_responder\": 367435}},\r\n\r\n     {\"time\": 1614616217546034, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 30, \"bytes1\": 3275, \"bytes2\": 34607, \"bandwidth1\": 1500, \"bandwidth2\": 34607, \"left_rtt\": 978}},\r\n\r\n     {\"time\": 1614616217546034, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 9, \"packets2\": 30, \"bytes1\": 3275, \"bytes2\": 34607, \"bandwidth1\": 1500, \"bandwidth2\": 34607, \"full_rtt_initiator\": 367836}},\r\n\r\n     {\"time\": 1614616217643280, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 11, \"packets2\": 30, \"bytes1\": 3386, \"bytes2\": 34607, \"bandwidth1\": 1775, \"bandwidth2\": 34607, \"right_rtt\": 97246}},\r\n\r\n     {\"time\": 1614616217643280, \"protocol_type\": QUIC, \"group_id\": \"sd-0\", \"event\": \"measurement\", \r\n\r\n      \"data\": {\"packets1\": 11, \"packets2\": 30, \"bytes1\": 3386, \"bytes2\": 34607, \"bandwidth1\": 1775, \"bandwidth2\": 34607, \"full_rtt_responder\": 98224}}  \r\n\r\n ]}]}\r\n```\r\n\r\nThe semantics of logging measurements from a middlebox can differ from logging endpoint events, as the middlebox doesn't have all the contextual information.\r\n\r\nOne example is the `connection_started` event vs possible events like `connection_migrated` or `tuple_changed` (which we don't have yet, but will someday #79). The middlebox can't really tell the difference for a protocol like QUIC, and always logging either `_started` or `_changed` is semantically not 100% correct (it's more like \"first observed\").\r\n\r\nSomething similar can be said for using `recovery:metrics_updated` to log changes to e.g., RTT or loss rates. They have now defined a custom `measurement` event, which I feel is maybe too generic. You could also question if logging all measurement fields together in a single event is optimal (though this is the approach we do take with things like `metrics_updated`. See #85 for more discussion).\r\n\r\nAnother interesting observation is the need to log metrics in two directions, as the middlebox is somewhere in between 2 endpoints in the network. This all seems to indicate measurement-specific events is the way to go (i.e., not re-using existing qlog  endpoint events), as it would be confusing to have those semantics in endpoint events. \r\n\r\nSomething not yet reflected in here are the possibility to log percentiles, which seems interesting as a generic option for (aggregated) measurement logging. \r\n\r\nCC @jariarkko @ihlar\r\n\r\n ",
       "createdAt": "2021-03-18T11:40:32Z",
-      "updatedAt": "2022-09-29T14:19:14Z",
-      "closedAt": null,
+      "updatedAt": "2022-11-01T10:35:20Z",
+      "closedAt": "2022-11-01T10:35:20Z",
       "comments": [
         {
           "author": "LPardue",
@@ -5205,7 +5212,7 @@
       "id": "MDU6SXNzdWU5NTE0MzEwOTQ=",
       "title": "packet_number should not be required for vneg/retry packets",
       "url": "https://github.com/quicwg/qlog/issues/171",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -5217,9 +5224,17 @@
       ],
       "body": "Currently, the PacketHeader struct makes the `packet_number` field required.\r\n\r\nWe must add a comment that this is only true if `packet_type` is not version negotiation or retry (similar to how we define other optional fields there).\r\n\r\ncc @jlaine ",
       "createdAt": "2021-07-23T09:58:41Z",
-      "updatedAt": "2021-08-18T13:53:31Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2022-11-01T10:37:01Z",
+      "closedAt": "2022-11-01T10:37:00Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This was apparently a duplicate of #133 and fixed recently in https://github.com/quicwg/qlog/commit/b4e3f2634b27bdbb4566eceeeae6c79342a1efe8",
+          "createdAt": "2022-11-01T10:37:00Z",
+          "updatedAt": "2022-11-01T10:37:00Z"
+        }
+      ]
     },
     {
       "number": 172,
@@ -5412,11 +5427,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "rmarx"
+      ],
       "labels": [],
       "body": "Slightly related to #124\r\n\r\nhttps://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-3.3.15 defines the data_moved event. The stream_id field is optional. It isn't clear if the type of data I'm moving is stream data (and I don't have the stream ID) or if its datagram data (and I'll never have the stream ID).\r\n\r\nAn non-exhaustive list of options to address this are:\r\n\r\n1) leave it as is, and let tools assume that omitting the stream ID field implies datagram. (That breaks down for implementations that can't populate the stream ID for whatever reason)\r\n2) add a field to describe the type of data moved\r\n3) Be more clear that `data_moved` is only for stream data.Then possibly:\r\n  a) rename the event to `stream_data_moved`\r\n  b) add a new `datagram_data_moved` event\r\n\r\n",
       "createdAt": "2021-10-04T14:25:25Z",
-      "updatedAt": "2022-09-08T00:26:52Z",
+      "updatedAt": "2022-11-01T10:34:41Z",
       "closedAt": null,
       "comments": [
         {
@@ -6357,6 +6374,90 @@
       "updatedAt": "2022-10-19T14:32:18Z",
       "closedAt": "2022-10-19T14:32:18Z",
       "comments": []
+    },
+    {
+      "number": 259,
+      "id": "I_kwDOCrLn6M5VTmnF",
+      "title": "Security and Privacy: general structure and content",
+      "url": "https://github.com/quicwg/qlog/issues/259",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "The version of the [Security and Privacy Considerations in main-schema-draft-04](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-main-schema-04.html#name-security-and-privacy-consid) was intended to be a first proposal that can be iterated upon.\r\n\r\nIn particular, @martinthomson has already [proposed an alternative approach](https://github.com/quicwg/qlog/pull/252#pullrequestreview-1152379427):\r\n\r\n> This is a lot of text. I like the enumeration of the types of risk, but I fear that the extrapolation from there is both incomplete and a little long-winded.\r\n>\r\n> The focus on anonymization is not one that I would emphasize. I know that [Christian has toyed with the concept](https://huitema.wordpress.com/2020/07/21/scrubbing-quic-logs-for-privacy/), but that was idle speculation, not anything rigorous.\r\n> \r\n> In the end, this text should be very clear that qlog files present a privacy risk to those participating in the connection. They should therefore be treated accordingly. Any notion that these files might be sanitized in a way that might remove that risk should be changed to focus more on defense in depth. That is, look at access control and retention limits as primary means of protection, not anonymization.\r\n> \r\n> I would instead structure this roughly as follows:\r\n> \r\n> - A brief introductory piece.\r\n> - An articulation of the types of privacy risk that might be presented by capture, storage, and use of qlog data. This part is fairly lengthy and could probably be a subsection.\r\n> - A description of the operational implications and potential actions that might be taken first from a security standpoint, then for privacy remediation. qlog files that are records of interactions with peers are data that those peers (or users) potentially have rights over (I like this point, so make it prominently, but do not refer to laws; do not refer to the GDPR especially).\r\n> 1. Access controls required to enable qlog or to expand the information that is captured.\r\n> 2. Access controls required to access stored qlog files.\r\n> 3. Limits to retention of qlog files.\r\n> 4. Finally, observe that limiting what is captured or anonymization might be possible, but that this could either be insufficient from a privacy perspective, reduce the usefulness of the data, or (highly likely) both.\r\n> \r\n> It's easy to focus on the point about not being able to link qlog data with people. But it's safer to treat that as an open research problem than invite implementations and deployments to indulge in amateur research on the topic.\r\n\r\nThis issue serves to collect further thoughts and comments from the WG post IETF-115. It is a continuation of #142. \r\n\r\n_Note that we are explicitly trying to keep this part of the qlog documents quite concise. A deeper investigation on how to properly handle sensitive data in logs is a more general topic that we hope to tackle in the IETF in the near future. These initial qlog docs should provide just enough guidance to make users aware of the risk and to recommend best practices._ \r\n",
+      "createdAt": "2022-11-01T10:24:04Z",
+      "updatedAt": "2022-11-01T10:34:52Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 260,
+      "id": "I_kwDOCrLn6M5VToPR",
+      "title": "Security and Privacy: mentioning user consent and preferences",
+      "url": "https://github.com/quicwg/qlog/issues/260",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "The version of the [Security and Privacy Considerations in main-schema-draft-04](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-main-schema-04.html#name-security-and-privacy-consid) contains a discussion on end-user preference and privacy control systems. This was included because a) I found it an important aspect to discuss and b) it mirrors the approach in [RFC6973](https://www.rfc-editor.org/rfc/rfc6973), which I've used initially as a baseline for the section. \r\n\r\nAs @martinthomson noted in [an initial review of that paragraph](https://github.com/quicwg/qlog/pull/252#discussion_r1002779120), we should be quite careful about the terminology here and the recommendations we make. For the text in -04 I already removed direct mentions of things like the GDPR; it's likely other changes are needed to get this text into proper shape. \r\n\r\nRelated to #259. \r\n\r\n",
+      "createdAt": "2022-11-01T10:29:27Z",
+      "updatedAt": "2022-11-01T10:34:57Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 261,
+      "id": "I_kwDOCrLn6M5VTvrZ",
+      "title": "Approach for CDDL extension points",
+      "url": "https://github.com/quicwg/qlog/issues/261",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "It is expected that the initial 3 qlog documents will be extended in the future with new events and frames (e.g., for QUIC and H3 extensions like DATAGRAM or Multipath, but also for other protocols like H2, TLS and TCP).\r\n\r\nThe proposed approach is to define these qlog extensions in their own documents (either standalone or integrated into the docs that define the protocol extensions themselves). Ideally, these new documents wouldn't just extend qlog in prose only, but also properly extend the existing CDDL event and data type definitions. \r\n\r\nTo this end, the current documents define a few [CDDL plugs/sockets/extension points](https://www.rfc-editor.org/rfc/rfc8610.html#section-3.9) to make this possible:\r\n- [`$ProtocolEventBody`](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-main-schema-04.html#name-data)\r\n- [`$QuicFrame`](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-quic-events-03.html#name-quic-frames)\r\n- [`$HTTPFrame`](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-h3-events-03.html#name-httpframe)\r\n\r\nHowever, when trying to define [a simple extension for the QUIC and H3 DATAGRAM frames](https://github.com/rmarx/draft-marx-quic-qlog-datagram), I found we might need more extension points, specifically for QUIC Transport Parameters and HTTP SETTINGS (the DATAGRAM RFCs use those to negotiate support). These currently don't exist and the extension document uses some not-really-compatible CDDL at this point. \r\n\r\nWhile it's not a big problem to define new extension points for those two things, it begs the question if that would be enough. Do we need even more extension points down the line (e.g., for the `ConnectionState` in [connection_state_updated](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-quic-events-03.html#name-connection_state_updated)? For `StreamState` in [stream_state_updated](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-quic-events-03.html#name-stream_state_updated)? For data handling points in [data_moved](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-quic-events-03.html#name-data_moved)? For metrics in [metrics_updated](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-quic-events-03.html#name-metrics_updated)? etc.)\r\n\r\nConceptually, we can make EVERYTHING a CDDL extension point, but I'm not sure that's the best approach either. So the real question is: where do we draw the line? and what happens if it turns out we made the wrong decision/missed an important extension point down the line? \r\n\r\nRelated to #176, #170 and #124\r\n",
+      "createdAt": "2022-11-01T10:55:45Z",
+      "updatedAt": "2022-11-01T12:18:43Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I think we should provide strong support for every formal extension point in the protocols: frames, TPs, settings, error codes, etc.\r\n\r\nThe other type of extension point is for flexibility. qlog is very flexible for new/custom/undefined fields. As an implementer and user of qlog, sometimes I have a need of adding a new ad-hoc enumeration value (say, to StreamState). On the deserialization side, what I want to support the strongly-typed enumeration values and also any adhoc values that might be in there. One way I've though about supporting this is to add an \"any\" field to pretty much everything (probably text, or json). So fields that aren't primitive types end up as field = EnumerationType / any. The deserialization code would then try to match the strong type, and if needed fall back to a generic container holding \"any\", whereby my user-specific application code can manage the adhoc stuff I added.",
+          "createdAt": "2022-11-01T12:18:43Z",
+          "updatedAt": "2022-11-01T12:18:43Z"
+        }
+      ]
+    },
+    {
+      "number": 262,
+      "id": "I_kwDOCrLn6M5VU78f",
+      "title": "Split up HTTP/3 and QPACK into separate documents",
+      "url": "https://github.com/quicwg/qlog/issues/262",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, H3 and QPACK events are in the same document. However, they are separate RFCs and (relatively) separate concepts as well. \r\n\r\nFor other related documents, such as RFC9218, we would have a separate qlog document anyway, instead of integrating it into the same doc. \r\n\r\nFinally, editorially it also makes sense to be consistent with the QUIC events doc in terms of structure (now, the H3/QPACK doc already seems like 2 docs appended together in an ad-hoc fashion). \r\n\r\nHowever, arguments can of course also be made to just keep them together as they are somewhat related and we already have 3 base qlog documents without the split. ",
+      "createdAt": "2022-11-01T14:45:22Z",
+      "updatedAt": "2022-11-01T15:21:17Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I support splitting the documents up. The documents will be short and dry, but that seems fine for specifications defining schema based on other RFCs.",
+          "createdAt": "2022-11-01T15:21:17Z",
+          "updatedAt": "2022-11-01T15:21:17Z"
+        }
+      ]
     }
   ],
   "pulls": [
