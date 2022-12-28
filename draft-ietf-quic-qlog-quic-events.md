@@ -173,7 +173,7 @@ this specification.
 | connectivity:connection_closed        | Base       | {{connectivity-connectionclosed}} |
 | connectivity:connection_id_updated    | Base       | {{connectivity-connectionidupdated}} |
 | connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
-| connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
+| connectivity:connection_state_updated | Base       | {{cECNonnectivity-connectionstateupdated}} |
 | connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
 | quic:version_information         | Core       | {{quic-versioninformation}} |
 | quic:alpn_information            | Core       | {{quic-alpninformation}} |
@@ -698,6 +698,9 @@ QUICPacketSent = {
     ? raw: RawInfo
     ? datagram_id: uint32
     ? is_mtu_probe_packet: bool .default false
+
+    ? ecn: ECN
+
     ? trigger:
       ; draft-23 5.1.1
       "retransmit_reordered" /
@@ -743,6 +746,9 @@ QUICPacketReceived = {
     ? supported_versions: [+ QuicVersion]
     ? raw: RawInfo
     ? datagram_id: uint32
+
+    ? ecn: ECN
+
     ? trigger:
         ; if packet was buffered because it couldn't be
         ; decrypted before
@@ -1560,6 +1566,14 @@ KeyType = "server_initial_secret" /
           "client_1rtt_secret"
 ~~~
 {: #keytype-def title="KeyType definition"}
+
+## ECN
+~~~ cddl
+ECN = "00" / "01" / "10" / "11"
+~~~
+{: #ecn-def title="ECN definition"}
+
+The ECN bits carried in the IP header.
 
 ## QUIC Frames
 
