@@ -108,15 +108,16 @@ trace of the connection with ODCID abcd1234).
 
 Note:
 
-: QUIC packets always include an AEAD authentication tag ("trailer") at the end.
-As this tag is always the same size for a given connection (it depends on the used
-TLS cipher), this document does not define a separate "RawInfo:aead_tag_length"
-field here. Instead, this field is reflected in "transport:parameters_set" and can
-be logged only once.
+: QUIC packets always include an AEAD authentication tag at the end.
+As this tag is always the same size for a given connection (it depends on the
+used TLS cipher suite), this document does not define a separate
+"RawInfo:aead_tag_length" field here. Instead, this field is reflected in
+"transport:parameters_set" and can be logged only once.
 
 Note:
 
-: As QUIC uses trailers in packets, packet header_lengths can be calculated as:
+: As QUIC appends an authentication tag after the packet payload, the packet
+header_lengths can be calculated as:
 
 : header_length = length - payload_length - aead_tag_length
 
