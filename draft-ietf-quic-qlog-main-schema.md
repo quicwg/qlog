@@ -125,7 +125,7 @@ uint64 = uint .size 8
 ; examples: 82dc, 027339, 4cdbfd9bf0
 ; this is needed because the default CDDL binary string (bytes/bstr)
 ; is only CBOR and not JSON compatible
-hexstring = text .regexp "([0-9a-f]{2})*"
+hexstring = text .regexp "([0-9a-f]{2})+"
 ~~~
 {: #cddl-custom-types-def title="Additional CDDL type definitions"}
 
