@@ -17,7 +17,6 @@ CDDL_JSON_FILE="${BASE_FILENAME}.json"
 # $2: the output (.cddl) file
 function extract_cddl() {
     cat $1 | awk 'BEGIN{flag=0} /~~~ cddl/{flag=1; printf "\n"; next} /~~~/{flag=0; next} flag' >> $2
-    #sed -n '/^```cddl/,/^```/p' $1 | sed '1d;$d' >> $2
 }
 
 # Prepend an object with all the unused types to a CDDL file
