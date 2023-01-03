@@ -46,7 +46,12 @@ fi
 
 extract_cddl $INPUT_FILE $CDDL_FILE
 generate_aux_object $CDDL_FILE
+
 # The cddl command doesn't know how to work with .regexp with a give size.
 # We use that with hexstring sometimes, so clean that up
-sed -i '' "s/hexstring .size .*/hexstring/" $CDDL_FILE
+tmpfile=$(mktemp)
+sed "s/hexstring .size .*/hexstring/" $CDDL_FILE > $tmpfile
+mv $tmpfile $CDDL_FILE
+
+# run the CDDL validator and generate the sample JSON file
 cddl ${CDDL_FILE} json-generate > ${CDDL_JSON_FILE}
