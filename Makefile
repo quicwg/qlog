@@ -11,8 +11,8 @@ else
 endif
 
 # run cddl_validate.sh for all drafts_source files 
-cddl: $(drafts_source)
-	@for f in $^; do \
+cddl:
+	@for f in $(drafts_source); do \
 	    echo "Validating $$f"; \
 	    ./cddl_validate.sh $$f > /tmp/foo 2>&1 ; \
 	    if [ $$? -eq 0 ]; then \
@@ -34,4 +34,13 @@ deps::
 clean::
 		$(MAKE) -f $(LIBDIR)/main.mk $@
 		-rm -f \
-	    $(addsuffix -[0-9][0-9].{json$(COMMA)cddl},$(drafts))
+	    $(addsuffix -[0-9][0-9].{json$(COMMA)cddl},$(drafts)) \
+	    $(addsuffix .{json$(COMMA)cddl},$(drafts)) \
+			Gemfile.lock
+
+# override lib/main.mk deps target, to also install deps from Gemfile
+.PHONY: all
+all:: cddl
+		$(MAKE) -f $(LIBDIR)/main.mk $@
+
+
