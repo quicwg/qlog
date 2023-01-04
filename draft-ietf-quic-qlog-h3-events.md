@@ -137,8 +137,8 @@ the same value.
 
 # HTTP/3 and QPACK Event Overview
 
-This document defines events in two categories, written as lowercase to follow convention: http ({{http-ev}}) and qpack
-({{qpack-ev}}).
+This document defines events in two categories, written as lowercase to follow
+convention: http ({{http-ev}}) and qpack ({{qpack-ev}}).
 
 As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
 concatenation of category and type.
@@ -190,11 +190,10 @@ remote peer). This is reflected in the "owner" field. As such, this field MUST b
 correct for all settings included a single event instance. If you need to log
 settings from two sides, you MUST emit two separate event instances.
 
-Note: we use the CDDL unwrap operator (~) here to make HTTPParameters
-into a re-usable list of fields. The unwrap operator copies the fields
-from the referenced type into the target type directly, extending the
-target with the unwrapped fields. TODO: explain this better + provide
-reference and maybe an example.
+Note: The CDDL unwrap operator (~) makes HTTPParameters into a re-usable list
+of fields. The unwrap operator copies the fields from the referenced type into
+the target type directly, extending the target with the unwrapped fields. TODO:
+explain this better + provide reference and maybe an example.
 
 Definition:
 
@@ -316,9 +315,9 @@ data_moved event.
 ## frame_parsed {#http-frameparsed}
 Importance: Core
 
-HTTP equivalent to the packet_received event. This event is emitted when we
-actually parse the HTTP/3 frame. Note: this is not necessarily the same as when
-the HTTP/3 data is actually received on the QUIC layer. For that, see the
+HTTP equivalent to the packet_received event. This event is emitted when the
+HTTP/3 frame is parsed. Note: this is not necessarily the same as when the
+HTTP/3 data is actually received on the QUIC layer. For that, see the
 "data_moved" event in {{QLOG-QUIC}}.
 
 
