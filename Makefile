@@ -23,6 +23,12 @@ cddl: $(drafts_source)
 	    fi; \
 	done
 
+# override lib/main.mk deps target, to also install deps from Gemfile
+.PHONY: deps
+deps::
+		$(MAKE) -f $(LIBDIR)/main.mk $@
+		bundle install --gemfile=$(realpath $<)
+
 # override lib/main.mk clean target, to cleanup json and cddl files
 .PHONY: clean
 clean::
