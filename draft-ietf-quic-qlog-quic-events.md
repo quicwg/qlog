@@ -348,10 +348,10 @@ this typically happens only sparingly over the course of a connection, this even
 allows loggers to be more efficient than logging the observed CID with each packet
 in the .header field of the "packet_sent" or "packet_received" events.
 
-This is viewed from the perspective of the one applying the new id. As such, if we
-receive a new connection id from our peer, we will see the dst_ fields are set. If
-we update our own connection id (e.g., NEW_CONNECTION_ID frame), we log the src_
-fields.
+This is viewed from the perspective of the endpoint applying the new id. As such,
+when the endpoint receives a new connection id from the peer, it will see the
+dst_ fields are set. When the endpoint updates its own connection id
+(e.g., NEW_CONNECTION_ID frame), it logs the src_ fields.
 
 Definition:
 
@@ -727,8 +727,9 @@ TransportPacketSent = {
 ~~~
 {: #transport-packetsent-def title="TransportPacketSent definition"}
 
-Note: We do not explicitly log the encryption_level or packet_number_space: the
-header.packet_type specifies this by inference (assuming correct implementation)
+Note: The encryption_level and packet_number_space are not logged explicitly:
+the header.packet_type specifies this by inference (assuming correct
+implementation)
 
 Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
@@ -767,8 +768,9 @@ TransportPacketReceived = {
 ~~~
 {: #transport-packetreceived-def title="TransportPacketReceived definition"}
 
-Note: We do not explicitly log the encryption_level or packet_number_space: the
-header.packet_type specifies this by inference (assuming correct implementation)
+Note: The encryption_level and packet_number_space are not logged explicitly:
+the header.packet_type specifies this by inference (assuming correct
+implementation)
 
 Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
@@ -817,8 +819,9 @@ when keeping track of packet coalescing.
 Importance: Base
 
 This event is emitted when a packet is buffered because it cannot be processed
-yet. Typically, this is because the packet cannot be parsed yet, and thus we only
-log the full packet contents when it was parsed in a packet_received event.
+yet. Typically, this is because the packet cannot be parsed yet, and thus only
+the full packet contents can be logged when it was parsed in a packet_received
+event.
 
 Definition:
 
@@ -873,8 +876,8 @@ number space a typical QUIC connection will use.
 ## datagrams_sent {#transport-datagramssent}
 Importance: Extra
 
-When we pass one or more UDP-level datagrams to the socket. This is useful for
-determining how QUIC packet buffers are drained to the OS.
+When one or more UDP-level datagrams are passed to the socket. This is useful
+for determining how QUIC packet buffers are drained to the OS.
 
 Definition:
 
@@ -904,8 +907,9 @@ overhead.
 ## datagrams_received {#transport-datagramsreceived}
 Importance: Extra
 
-When we receive one or more UDP-level datagrams from the socket. This is useful
-for determining how datagrams are passed to the user space stack from the OS.
+When one or more UDP-level datagrams are received from the socket. This is
+useful for determining how datagrams are passed to the user space stack from
+the OS.
 
 Definition:
 
@@ -928,8 +932,8 @@ Note: for more details on "datagram_ids", see {{transport-datagramssent}}.
 ## datagram_dropped {#transport-datagramdropped}
 Importance: Extra
 
-When we drop a UDP-level datagram. This is typically if it does not contain a
-valid QUIC packet (in that case, use packet_dropped instead).
+When a UDP-level datagram is dropped. This is typically done if it does not
+contain a valid QUIC packet (in that case, use packet_dropped instead).
 
 Definition:
 
@@ -1006,11 +1010,11 @@ Importance: Extra
 
 This event's main goal is to prevent a large proliferation of specific purpose
 events (e.g., packets_acknowledged, flow_control_updated, stream_data_received).
-We want to give implementations the opportunity to (selectively) log this type of
+Implementations have the opportunity to (selectively) log this type of
 signal without having to log packet-level details (e.g., in packet_received).
 Since for almost all cases, the effects of applying a frame to the internal state
-of an implementation can be inferred from that frame's contents, we aggregate
-these events in this single "frames_processed" event.
+of an implementation can be inferred from that frame's contents, these events
+are aggregated into this single "frames_processed" event.
 
 Note: This event can be used to signal internal state change not resulting
 directly from the actual "parsing" of a frame (e.g., the frame could have been
@@ -1349,9 +1353,9 @@ Importance: Extra
 
 This event indicates which data was marked for retransmit upon detecting a packet
 loss (see packet_lost). Similar to our reasoning for the "frames_processed" event,
-in order to keep the amount of different events low, we group this signal for all
-types of retransmittable data in a single event based on existing QUIC frame
-definitions.
+in order to keep the amount of different events low, this signal is grouped into
+in a single event based on existing QUIC frame definitions for all types of
+retransmittable data.
 
 Implementations retransmitting full packets or frames directly can just log the
 constituent frames of the lost packet here (or do away with this event and use the
@@ -1878,9 +1882,11 @@ TransportError = "no_error" / "internal_error" /
 
 ### ApplicationError
 
-By definition, an application error is defined by the application-level protocol running on top of QUIC (e.g., HTTP/3).
+By definition, an application error is defined by the application-level
+protocol running on top of QUIC (e.g., HTTP/3).
 
-As such, we cannot define it here directly. Though we provide an extension point through the use of the CDDL "socket" mechanism.
+As such, it cannot be defined here directly. Applications MAY use the provided
+extension point through the use of the CDDL "socket" mechanism.
 
 Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:
 
@@ -1895,8 +1901,8 @@ connection error by converting the one-byte alert description into a QUIC error
 code. The alert description is added to 0x100 to produce a QUIC error code from
 the range reserved for CRYPTO_ERROR."
 
-This approach maps badly to a pre-defined enum. As such, we define the
-crypto_error string as having a dynamic component here, which should include the
+This approach maps badly to a pre-defined enum. As such, the crypto_error
+string is defined as having a dynamic component here, which should include the
 hex-encoded and zero-padded value of the TLS alert description.
 
 ~~~ cddl
