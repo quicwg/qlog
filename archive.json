@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-01-08T00:56:53.180431+00:00",
+  "timestamp": "2023-01-10T00:55:55.257794+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3369,7 +3369,7 @@
       ],
       "body": "Currently, we can log which params/settings were restored upon attempting 0-RTT, but not which ones were actually stored at the end of a connection (though we might assume it were the correct ones, using the values from `parameters_set`).\r\n\r\nFor a server which encodes this information in for example the SessionTicket, we also cannot log which values are in the ticket when sending it, nor when receiving it, nor if early data was denied because of a mismatch therein. ",
       "createdAt": "2020-11-02T23:14:15Z",
-      "updatedAt": "2022-12-28T03:20:39Z",
+      "updatedAt": "2023-01-09T14:36:34Z",
       "closedAt": null,
       "comments": [
         {
@@ -3385,6 +3385,13 @@
           "body": "Taking a long hard look at the documents, I suggest the following:\r\n* split the `TransportParametersSet` event. There should be one event (keeping the `TransportParametersSet` name) that only logs the QUIC transport parameters, and another TLS event\r\n* the TLS event will _only_ capture the parts that are relevant for QUIC, e.g. cipher suite (since this determines the header protection algorithm used), the QUIC parts of the session ticket, 0-RTT etc.",
           "createdAt": "2022-12-28T03:20:38Z",
           "updatedAt": "2022-12-28T03:20:38Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I'm not sure I understand how exactly that would aid solve this particular issue, unless you mean that the new TLS event would use a `dest`/`src` field as mentioned in your comment above to indicate `TLSParametersSaved` vs `TLSParametersRestored`.\r\n\r\nI do see the appeal of having a separate TLS event. I assume it would still be under the `transport` category? \r\n\r\nCan you make a (quick) mockup of what the `TLSParametersSet` would look like? \r\n",
+          "createdAt": "2023-01-09T14:36:14Z",
+          "updatedAt": "2023-01-09T14:36:34Z"
         }
       ]
     },
@@ -11566,7 +11573,7 @@
       "labels": [],
       "body": "Neither RFC 9000 nor 9001 call this a \"trailer\". We should avoid this terminology, since it could potentially be confused with HTTP trailers.",
       "createdAt": "2022-12-28T02:32:46Z",
-      "updatedAt": "2022-12-28T02:48:14Z",
+      "updatedAt": "2023-01-09T14:31:25Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
@@ -11577,7 +11584,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "First make a decision on #265, then revise this one, as it might need changes depending on that. ",
+          "createdAt": "2023-01-09T14:31:25Z",
+          "updatedAt": "2023-01-09T14:31:25Z"
+        }
+      ],
       "reviews": []
     },
     {
@@ -11592,7 +11607,7 @@
       "labels": [],
       "body": "This field is not particularly useful, because\r\n1. it will always be 16, see https://datatracker.ietf.org/doc/html/rfc9001#name-aead-usage\r\n2. it's a property of the TLS cipher suite in use, so it can be trivially looked up, if necessary",
       "createdAt": "2022-12-28T02:46:09Z",
-      "updatedAt": "2023-01-04T15:51:53Z",
+      "updatedAt": "2023-01-09T15:23:24Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
@@ -11610,6 +11625,13 @@
           "body": "So this is a bit of a tough one for me, since I've gone through the pain of trying to determine the length of the TLS trailer for TLS-over-TCP from wireshark output that does NOT explicitly include the size and also makes it difficult to get the proper cipher name to heuristically determine it. \r\n\r\nThat said, for QUIC V1 it's indeed all 16, so you -could- make an argument we can drop it here and add it back in with a V2.1/V3 if new ciphers start being used. I don't have a particularly big preference either way.\r\n\r\nIf we do this change though, the prose could use tightening, because in the current version we have 2 sentences after another that indicate the aead_length depends on the cipher suite. ",
           "createdAt": "2023-01-04T15:51:53Z",
           "updatedAt": "2023-01-04T15:51:53Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I'm leaning on the side of removing this field. The information is made redundant by the cipher suite. Things that care about the tag length can do a lookup or make their own assumptions based on other information",
+          "createdAt": "2023-01-09T15:23:24Z",
+          "updatedAt": "2023-01-09T15:23:24Z"
         }
       ],
       "reviews": [
@@ -11779,7 +11801,7 @@
       "labels": [],
       "body": "A zero-length connection id is the only use-cases I can find where an empty hexstring would make sense. But we are using an optional field for those?\nThis is a minor thing. Posting for discussion more than anything\n",
       "createdAt": "2023-01-02T23:37:31Z",
-      "updatedAt": "2023-01-06T15:28:09Z",
+      "updatedAt": "2023-01-09T15:07:17Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
@@ -11804,6 +11826,13 @@
           "body": "I think we should support empty. For instance packets using 0-length connection IDs.\r\n\r\nHelp me understand the change though. Does the PR propose allowing empty or restricting it?",
           "createdAt": "2023-01-06T15:28:09Z",
           "updatedAt": "2023-01-06T15:28:09Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@LPardue the PR restricts it. Currently, we do allow empty. However, nowhere in the text do we indicate this nuance between empty/omitted, which we probably should if we keep the current behaviour. \r\n\r\nAs I said above and as discussed on the call, I don't really have a preference. \r\n\r\nFor the CID case specifically though, I don't think anyone would actually log empty strings for the CID in each event. You can get the info that a 0-length CID was used from the long-header packet information, where the CID lengths are also logged. The `empty string` CIDs here would only be needed if you somehow didn't log the connection setup. ",
+          "createdAt": "2023-01-09T15:06:44Z",
+          "updatedAt": "2023-01-09T15:07:17Z"
         }
       ],
       "reviews": []
@@ -11820,7 +11849,7 @@
       "labels": [],
       "body": "the main_schema file is validated on its own,\nboth the http and quic event documents also include the main schema\n\nSample run\n```\n~/github/qlog (main*) \u00bb make cddl                                                                                  lnicco@Lucas-MacBook-Air\nValidating draft-ietf-quic-qlog-h3-events.md\n  OK\nValidating draft-ietf-quic-qlog-main-schema.md\n  OK\nValidating draft-ietf-quic-qlog-quic-events.md\n  ERROR\n  debug with: ./cddl_validate.sh draft-ietf-quic-qlog-quic-events.md\n```\n\nThe quic events file error is fixed in #267\n",
       "createdAt": "2023-01-03T00:55:06Z",
-      "updatedAt": "2023-01-04T22:11:03Z",
+      "updatedAt": "2023-01-09T22:53:02Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
@@ -11850,6 +11879,65 @@
               "body": "oops, forgot to cleanup this line",
               "createdAt": "2023-01-03T08:53:03Z",
               "updatedAt": "2023-01-03T08:54:02Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5J8mxf",
+          "commit": {
+            "abbreviatedOid": "41c7b39"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2023-01-09T14:52:39Z",
+          "updatedAt": "2023-01-09T14:56:27Z",
+          "comments": [
+            {
+              "originalPosition": 36,
+              "body": "```suggestion\r\n# override lib/main.mk all target, to also run the cddl validation on each make invocation\r\n```",
+              "createdAt": "2023-01-09T14:52:39Z",
+              "updatedAt": "2023-01-09T14:56:27Z"
+            },
+            {
+              "originalPosition": 25,
+              "body": "Looking at the makefiles from https://github.com/martinthomson/i-d-template, it seems it doesn't install ruby itself. This is somewhat fine, since the base template can function without Ruby, but the qlog repo can't. \r\n\r\nSo I'd say either make ruby auto-install as well here, or, if too difficult, check for ruby (e.g., as https://github.com/martinthomson/i-d-template/blob/main/deps.mk#L86) and throw error if not present?",
+              "createdAt": "2023-01-09T14:54:57Z",
+              "updatedAt": "2023-01-09T14:56:27Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5J88n-",
+          "commit": {
+            "abbreviatedOid": "41c7b39"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM modulo nits that others have raised",
+          "createdAt": "2023-01-09T15:43:00Z",
+          "updatedAt": "2023-01-09T15:43:00Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5J_O8G",
+          "commit": {
+            "abbreviatedOid": "41c7b39"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-09T22:53:02Z",
+          "updatedAt": "2023-01-09T22:53:02Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "very good point. \nI think checking and throwing an error is the best course of action. \n\nInstalling ruby or python is something that the lib makefile also doesn't do because it would get into the multi-platform rabbit hole. \nI'll cqll it out of scope \ud83d\ude05 and just check for ruby",
+              "createdAt": "2023-01-09T22:53:02Z",
+              "updatedAt": "2023-01-09T22:53:02Z"
             }
           ]
         }
@@ -11893,7 +11981,7 @@
       "labels": [],
       "body": "tested locally (on macos) with `act` https://github.com/nektos/act\n\n```\nact -j validate --container-architecture linux/amd64\n```\n",
       "createdAt": "2023-01-03T04:19:11Z",
-      "updatedAt": "2023-01-04T22:51:24Z",
+      "updatedAt": "2023-01-09T15:43:40Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9aaa61db8cee475810954e78473f87492d0f6e23",
@@ -11932,6 +12020,32 @@
           "body": "",
           "createdAt": "2023-01-04T22:13:41Z",
           "updatedAt": "2023-01-04T22:13:41Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5J8kZS",
+          "commit": {
+            "abbreviatedOid": "7ddc349"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-09T14:46:58Z",
+          "updatedAt": "2023-01-09T14:46:58Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5J885s",
+          "commit": {
+            "abbreviatedOid": "7ddc349"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-09T15:43:40Z",
+          "updatedAt": "2023-01-09T15:43:40Z",
           "comments": []
         }
       ]
