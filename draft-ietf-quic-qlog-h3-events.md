@@ -115,26 +115,6 @@ identifier, potentially suffixed by the vantagepoint type (For example,
 abcd1234_server.qlog would contain the server-side trace of the connection with
 GUID abcd1234).
 
-## Raw packet and frame information
-
-This document re-uses the definition of the RawInfo data class from {{QLOG-MAIN}}.
-
-Note:
-
-: As HTTP/3 does not use trailers in frames, each HTTP/3 frame header_length can
-be calculated as header_length = RawInfo:length - RawInfo:payload_length
-
-Note:
-
-: In some cases, the length fields are also explicitly reflected inside of frame
-headers. For example, all HTTP/3 frames include their explicit payload lengths in
-the frame header. In these cases, those fields are intentionally preserved in the
-event definitions. Even though this can lead to duplicate data when the full
-RawInfo is logged, it allows a more direct mapping of the HTTP/3 specifications to
-qlog, making it easier for users to interpret. In this case, both fields MUST have
-the same value.
-
-
 # HTTP/3 and QPACK Event Overview
 
 This document defines events in two categories, written as lowercase to follow
@@ -255,10 +235,8 @@ Importance: Base
 Emitted when a stream's type becomes known. This is typically when a stream is
 opened and the stream's type indicator is sent or received.
 
-Note: most of this information can also be inferred by looking at a stream's id,
-since id's are strictly partitioned at the QUIC level. Even so, this event has a
-"Base" importance because it helps a lot in debugging to have this information
-clearly spelled out.
+stream_type_value is the actual, numerical code (the parsed VLIE-encoded
+integer).
 
 Definition:
 
@@ -270,7 +248,7 @@ HTTPStreamTypeSet = {
     stream_type: HTTPStreamType
 
     ; only when stream_type === "unknown"
-    ? raw_stream_type: uint64
+    ? stream_type_value: uint64
 
     ; only when stream_type === "push"
     ? associated_push_id: uint64
@@ -289,10 +267,9 @@ HTTPStreamType =  "request" /
 ## frame_created {#http-framecreated}
 Importance: Core
 
-HTTP equivalent to the packet_sent event. This event is emitted when the HTTP/3
-framing actually happens. Note: this is not necessarily the same as when the
-HTTP/3 data is passed on to the QUIC layer. For that, see the "data_moved" event
-in {{QLOG-QUIC}}.
+This event is emitted when the HTTP/3 framing actually happens. Note: this is
+not necessarily the same as when the HTTP/3 data is passed on to the QUIC layer.
+For that, see the "data_moved" event in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -315,11 +292,9 @@ data_moved event.
 ## frame_parsed {#http-frameparsed}
 Importance: Core
 
-HTTP equivalent to the packet_received event. This event is emitted when the
-HTTP/3 frame is parsed. Note: this is not necessarily the same as when the
-HTTP/3 data is actually received on the QUIC layer. For that, see the
-"data_moved" event in {{QLOG-QUIC}}.
-
+This event is emitted when the HTTP/3 frame is parsed. Note: this is not
+necessarily the same as when the HTTP/3 data is actually received on the QUIC
+layer. For that, see the "data_moved" event in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -333,11 +308,10 @@ HTTPFrameParsed = {
 ~~~
 {: #http-frameparsed-def title="HTTPFrameParsed definition"}
 
-Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
-header overhead. As such, DATA frames can span many QUIC packets and can be
-processed in a streaming fashion. In this case, the frame_parsed event is emitted
-once for the frame header, and further streamed data is indicated using the
-data_moved event.
+HTTP/3 DATA frames can have arbitrarily large lengths to reduce frame header
+overhead. As such, DATA frames can span multiple QUIC packets. In this case, the
+frame_parsed event is emitted once for the frame header, and further streamed
+data is indicated using the data_moved event.
 
 ## push_resolved {#http-pushresolved}
 Importance: Extra
@@ -406,10 +380,11 @@ $HTTPFrame /= HTTPBaseFrames
 {: #httpbaseframe-def title="HTTPBaseFrames definition"}
 
 ### HTTPDataFrame
+
 ~~~ cddl
 HTTPDataFrame = {
     frame_type: "data"
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #httpdataframe-def title="HTTPDataFrame definition"}
@@ -531,13 +506,14 @@ HTTPReservedFrame = {
 
 ### HTTPUnknownFrame
 
+frame_type_value is the actual, numerical code (the parsed VLIE-encoded
+integer).
+
 ~~~ cddl
 HTTPUnknownFrame = {
     frame_type: "unknown"
-    raw_frame_type: uint64
-
-    ? raw_length: uint32
-    ? raw: hexstring
+    frame_type_value: uint64
+    ? raw: RawInfo
 }
 ~~~
 {: #httpunknownframe-def title="UnknownFrame definition"}
@@ -693,8 +669,7 @@ QPACKHeadersEncoded = {
     block_prefix: QPACKHeaderBlockPrefix
     header_block: [+ QPACKHeaderBlockRepresentation]
 
-    ? length: uint
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #qpack-headersencoded-def title="QPACKHeadersEncoded definition"}
@@ -718,8 +693,7 @@ QPACKHeadersDecoded = {
     block_prefix: QPACKHeaderBlockPrefix
     header_block: [+ QPACKHeaderBlockRepresentation]
 
-    ? length: uint32
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #qpack-headersdecoded-def title="QPACKHeadersDecoded definition"}
@@ -736,8 +710,7 @@ Definition:
 QPACKInstructionCreated = {
     ; see definition in appendix
     instruction: QPACKInstruction
-    ? length: uint32
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #qpack-instructioncreated-def title="QPACKInstructionCreated definition"}
@@ -758,8 +731,7 @@ QPACKInstructionParsed = {
     ; see QPACKInstruction definition in appendix
     instruction: QPACKInstruction
 
-    ? length: uint32
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #qpack-instructionparsed-def title="QPACKInstructionParsed definition"}
@@ -981,6 +953,12 @@ TBD
 
 
 # Change Log
+
+## Since draft-ietf-quic-qlog-h3-events-03:
+
+* Ensured consistent use of RawInfo to indicate raw wire bytes (#243)
+* Changed HTTPStreamTypeSet:raw_stream_type to stream_type_value (#54)
+* Changed HTTPUnknownFrame:raw_frame_type to frame_type_value (#54)
 
 ## Since draft-ietf-quic-qlog-h3-events-02:
 
