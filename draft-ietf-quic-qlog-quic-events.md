@@ -481,7 +481,7 @@ For now, infer from other connectivity events and path_challenge/path_response f
 ## mtu_updated {#connectivity-mtuupdated}
 Importance: Extra
 
-~~~ cddl
+~~~ ccdl
 ConnectivityMTUUpdated = {
   ? old: uint16
   new: uint16
