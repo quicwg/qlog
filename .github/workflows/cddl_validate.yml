@@ -1,0 +1,40 @@
+name: CDDL Validation
+
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: "Validates CDDL for all documents"
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        ruby-version: ['2.6']
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Apt update
+      run: apt update
+    - name: Install System Dependencies
+      run: apt-get install --yes libyaml-dev openssl
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: Install Ruby gems
+      run: gem install cddl
+    - name: validate CDDL (main schema)
+      run: ./cddl_validate.sh draft-ietf-quic-qlog-main-schema.md
+    - name: validate CDDL (quic events)
+      if: success() || failure()
+      run: ./cddl_validate.sh draft-ietf-quic-qlog-quic-events.md
+    - name: validate CDDL (h3 events)
+      if: success() || failure()
+      run: ./cddl_validate.sh draft-ietf-quic-qlog-h3-events.md
