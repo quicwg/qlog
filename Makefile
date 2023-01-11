@@ -23,12 +23,6 @@ cddl:
 	    fi; \
 	done
 
-# override lib/main.mk deps target, to also install deps from Gemfile
-.PHONY: deps
-deps::
-		$(MAKE) -f $(LIBDIR)/main.mk $@
-		bundle install --gemfile=$(realpath $<)
-
 # override lib/main.mk clean target, to cleanup json and cddl files
 .PHONY: clean
 clean::
@@ -38,9 +32,7 @@ clean::
 	    $(addsuffix .{json$(COMMA)cddl},$(drafts)) \
 			Gemfile.lock
 
-# override lib/main.mk deps target, to also install deps from Gemfile
+# override lib/main.mk all target, to also install deps from Gemfile
 .PHONY: all
 all:: cddl
 		$(MAKE) -f $(LIBDIR)/main.mk $@
-
-
