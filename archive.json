@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-01-10T00:55:55.257794+00:00",
+  "timestamp": "2023-01-12T00:55:02.922627+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -6505,6 +6505,37 @@
           "updatedAt": "2023-01-04T19:54:33Z"
         }
       ]
+    },
+    {
+      "number": 275,
+      "id": "I_kwDOCrLn6M5bKsGP",
+      "title": "Would an is_ack_eliciting flag be helpful for packet_sent events?",
+      "url": "https://github.com/quicwg/qlog/issues/275",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "This came up in discussion I had with someone about calculating timing between packets that require acks and the packets that ack them. Not all packets are ack-eliciting and although it can be determined by looking at the frames inside a packet, that's potentially a bit labourious. \r\n\r\nThere's prior art here, packet_sent already includes `is_mtu_probe_packet: bool .default false`, which seems like a similar use case.",
+      "createdAt": "2023-01-11T18:59:36Z",
+      "updatedAt": "2023-01-11T21:21:31Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Not sure if `is_mtu_probe_packet` can be considered prior art. There's no definitive way to tell that a packet is a MTU probe packet without this flag (you can only have heuristics, checking if this packet is larger than the packets sent so far).\r\n\r\nAlso, `is_mtu_probe_packet` would only be set on a very small number of packets per connection (O(1)), whereas `is_ack_eliciting` would be set on O(N) packets.",
+          "createdAt": "2023-01-11T21:15:25Z",
+          "updatedAt": "2023-01-11T21:15:25Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Fair point. \r\n\r\nI was also thinking that extension frames that are not eliciting and are not supported by tools would also cause those tools to draw the wrong conclusions.\r\n\r\nIf we flipped it and had an optional non-ack-eliciting field, I'd expect the impact to be lessened but still maybe too much for some people to bear.",
+          "createdAt": "2023-01-11T21:21:31Z",
+          "updatedAt": "2023-01-11T21:21:31Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -11842,25 +11873,35 @@
       "id": "PR_kwDOCrLn6M5Ggu8k",
       "title": "Script to validate CDDL for all documents",
       "url": "https://github.com/quicwg/qlog/pull/270",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "lnicco",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "the main_schema file is validated on its own,\nboth the http and quic event documents also include the main schema\n\nSample run\n```\n~/github/qlog (main*) \u00bb make cddl                                                                                  lnicco@Lucas-MacBook-Air\nValidating draft-ietf-quic-qlog-h3-events.md\n  OK\nValidating draft-ietf-quic-qlog-main-schema.md\n  OK\nValidating draft-ietf-quic-qlog-quic-events.md\n  ERROR\n  debug with: ./cddl_validate.sh draft-ietf-quic-qlog-quic-events.md\n```\n\nThe quic events file error is fixed in #267\n",
       "createdAt": "2023-01-03T00:55:06Z",
-      "updatedAt": "2023-01-09T22:53:02Z",
+      "updatedAt": "2023-01-11T21:04:20Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
       "headRepository": "quicwg/qlog",
       "headRefName": "cddl_validate",
-      "headRefOid": "41c7b39503cbff90c6ede7362b4a81f661b3f612",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "headRefOid": "007acb9937d6ae505386445184bd006be98880a0",
+      "closedAt": "2023-01-11T21:04:20Z",
+      "mergedAt": "2023-01-11T21:04:20Z",
+      "mergedBy": "lnicco",
+      "mergeCommit": {
+        "oid": "eba303c1ac9e4f8cabe48c9dc1ef067b549bb41d"
+      },
+      "comments": [
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I addressed the comments, by actually removing the `deps` override target all together. \r\nThe lib/ Makefile already takes care of that and checking for ruby installation. \r\n\r\nI will merge this and #272 and see how it works with Github actions. \r\nI'll address any issue separately",
+          "createdAt": "2023-01-11T21:04:12Z",
+          "updatedAt": "2023-01-11T21:04:12Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M5JkO2_",
@@ -11935,9 +11976,29 @@
           "comments": [
             {
               "originalPosition": 25,
-              "body": "very good point. \nI think checking and throwing an error is the best course of action. \n\nInstalling ruby or python is something that the lib makefile also doesn't do because it would get into the multi-platform rabbit hole. \nI'll cqll it out of scope \ud83d\ude05 and just check for ruby",
+              "body": "very good point. \r\nI think checking and throwing an error is the best course of action. \r\n\r\nInstalling ruby or python is something that the lib makefile also doesn't do because it would get into the multi-platform rabbit hole. \r\nI'll call it out of scope \ud83d\ude05 and just check for ruby",
               "createdAt": "2023-01-09T22:53:02Z",
-              "updatedAt": "2023-01-09T22:53:02Z"
+              "updatedAt": "2023-01-11T19:53:06Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KLzid",
+          "commit": {
+            "abbreviatedOid": "41c7b39"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-11T21:02:17Z",
+          "updatedAt": "2023-01-11T21:02:18Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "turns out the lib makefile is pure magic and it already does everything we want just by already checking for the presence of a local Gemfile .. MT for the win. ",
+              "createdAt": "2023-01-11T21:02:18Z",
+              "updatedAt": "2023-01-11T21:02:18Z"
             }
           ]
         }
@@ -11974,24 +12035,26 @@
       "id": "PR_kwDOCrLn6M5GhAto",
       "title": "Github Action to validate CDDL",
       "url": "https://github.com/quicwg/qlog/pull/272",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "lnicco",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "tested locally (on macos) with `act` https://github.com/nektos/act\n\n```\nact -j validate --container-architecture linux/amd64\n```\n",
       "createdAt": "2023-01-03T04:19:11Z",
-      "updatedAt": "2023-01-09T15:43:40Z",
+      "updatedAt": "2023-01-11T21:05:10Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9aaa61db8cee475810954e78473f87492d0f6e23",
       "headRepository": "quicwg/qlog",
       "headRefName": "cddl_validate_gh_action",
       "headRefOid": "7ddc34972bb759d9a10e48b7b6400584d0d64ef9",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2023-01-11T21:05:09Z",
+      "mergedAt": "2023-01-11T21:05:09Z",
+      "mergedBy": "lnicco",
+      "mergeCommit": {
+        "oid": "a6fc758cb1c7402055417500ec3689d2102b70d5"
+      },
       "comments": [
         {
           "author": "lnicco",
@@ -12046,6 +12109,220 @@
           "body": "",
           "createdAt": "2023-01-09T15:43:40Z",
           "updatedAt": "2023-01-09T15:43:40Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 274,
+      "id": "PR_kwDOCrLn6M5HFXjy",
+      "title": "Make use of raw and RawInfo more consistent",
+      "url": "https://github.com/quicwg/qlog/pull/274",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #243.\r\nPartially fixes #54.\r\nNeeds updates to adhere to #173 (plan is to change \"including UDP datagram headers\" to \"excluding\"). ",
+      "createdAt": "2023-01-10T15:57:46Z",
+      "updatedAt": "2023-01-11T19:49:26Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "ec25b5849940e7aa3d26045de405fe6d37fd8f9d",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "rawinfo_consistency",
+      "headRefOid": "94b072c388ddf954220e5ff1204e72901288ba86",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Looks good to me modulo a few nits and editorials",
+          "createdAt": "2023-01-11T19:49:26Z",
+          "updatedAt": "2023-01-11T19:49:26Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5KLXRz",
+          "commit": {
+            "abbreviatedOid": "94b072c"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-11T19:28:31Z",
+          "updatedAt": "2023-01-11T19:28:32Z",
+          "comments": [
+            {
+              "originalPosition": 16,
+              "body": "```suggestion\r\ntake up considerable space, and can have a considerable privacy and security\r\n```",
+              "createdAt": "2023-01-11T19:28:31Z",
+              "updatedAt": "2023-01-11T19:28:32Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KLXX8",
+          "commit": {
+            "abbreviatedOid": "94b072c"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-11T19:28:51Z",
+          "updatedAt": "2023-01-11T19:47:34Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "worth xref to security considerations?",
+              "createdAt": "2023-01-11T19:28:51Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            },
+            {
+              "originalPosition": 17,
+              "body": "```suggestion\r\nimpact. Where applicable, these fields are grouped in a separate, optional, field\r\n```",
+              "createdAt": "2023-01-11T19:29:20Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            },
+            {
+              "originalPosition": 65,
+              "body": "```suggestion\r\n{{truncated-values}}. In this case, the length and payload_length fields should\r\n```",
+              "createdAt": "2023-01-11T19:30:34Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            },
+            {
+              "originalPosition": 65,
+              "body": "is this a SHOULD requirement?\r\n\r\nEither way, it might help to explain why keeping the non-truncated length is advised.",
+              "createdAt": "2023-01-11T19:33:29Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            },
+            {
+              "originalPosition": 80,
+              "body": "```suggestion\r\nAEAD tag), event definitions documents SHOULD define a how to support\r\nheader_length calculation.\r\n```",
+              "createdAt": "2023-01-11T19:34:58Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            },
+            {
+              "originalPosition": 52,
+              "body": "Is this paragraph necessary? There are no events with a `direction` field. The purpose of from/too fields is already desdcribed in the earlier paragraphs. This text seems superflous to me.",
+              "createdAt": "2023-01-11T19:40:16Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            },
+            {
+              "originalPosition": 102,
+              "body": "I find this a bit ambigous to read. How about something like\r\n\r\n```suggestion\r\nThe error_code_value is the numerical value without VLIE encoding.\r\nThis is useful because some error types are spread out over a range of\r\ncodes (e.g., QUIC's crypto_error).\r\n```",
+              "createdAt": "2023-01-11T19:45:15Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            },
+            {
+              "originalPosition": 125,
+              "body": "Again, reads ambiguous to me.",
+              "createdAt": "2023-01-11T19:45:38Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            },
+            {
+              "originalPosition": 141,
+              "body": "```suggestion\r\n## Since draft-ietf-qlog-quic-events-03:\r\n```",
+              "createdAt": "2023-01-11T19:47:25Z",
+              "updatedAt": "2023-01-11T19:47:34Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 276,
+      "id": "PR_kwDOCrLn6M5HMT40",
+      "title": "[test-only] checking GH Actions for CDDL checl",
+      "url": "https://github.com/quicwg/qlog/pull/276",
+      "state": "CLOSED",
+      "author": "lnicco",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "test only, not for commit",
+      "createdAt": "2023-01-11T21:08:28Z",
+      "updatedAt": "2023-01-11T21:29:18Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "lnicco-test-gh-actions",
+      "headRefOid": "4be61faf88071e7fd0bb62ad1fe326c9603b6b67",
+      "closedAt": "2023-01-11T21:29:17Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Fantastic, it works. Thanks a lot @LPardue for the reviews \r\n\r\n<img width=\"322\" alt=\"image\" src=\"https://user-images.githubusercontent.com/54891/211921503-6c4447aa-5b14-47b0-a70d-2d53f3753cf7.png\">\r\n\r\n",
+          "createdAt": "2023-01-11T21:28:36Z",
+          "updatedAt": "2023-01-11T21:28:36Z"
+        },
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "test was successful. Closing",
+          "createdAt": "2023-01-11T21:29:17Z",
+          "updatedAt": "2023-01-11T21:29:17Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 277,
+      "id": "PR_kwDOCrLn6M5HMVX7",
+      "title": "run CDDL GH Action on all commits and pull requests",
+      "url": "https://github.com/quicwg/qlog/pull/277",
+      "state": "MERGED",
+      "author": "lnicco",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "\nI sent a sample PR (#276) and the Action didn't run\nhttps://github.com/quicwg/qlog/actions/workflows/cddl_validate.yml\n\nThis should fix it\n",
+      "createdAt": "2023-01-11T21:14:44Z",
+      "updatedAt": "2023-01-11T21:23:27Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "a6fc758cb1c7402055417500ec3689d2102b70d5",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "gh_action_cddl_always_run",
+      "headRefOid": "12ed20fbaabebfd89429bbb824c8abdd5dbd8a7f",
+      "closedAt": "2023-01-11T21:23:26Z",
+      "mergedAt": "2023-01-11T21:23:26Z",
+      "mergedBy": "lnicco",
+      "mergeCommit": {
+        "oid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa"
+      },
+      "comments": [
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "First successful run! \r\nhttps://github.com/quicwg/qlog/actions/runs/3896812322/jobs/6653788943",
+          "createdAt": "2023-01-11T21:22:05Z",
+          "updatedAt": "2023-01-11T21:22:05Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5KL46H",
+          "commit": {
+            "abbreviatedOid": "12ed20f"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-11T21:22:11Z",
+          "updatedAt": "2023-01-11T21:22:11Z",
           "comments": []
         }
       ]
