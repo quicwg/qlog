@@ -802,7 +802,8 @@ TransportPacketDropped = {
         "unsupported" /
         "invalid" /
         "connection_unknown" /
-        "decryption_failure"
+        "decryption_failure" /
+        "general"
 }
 ~~~
 {: #transport-packetdropped-def title="TransportPacketDropped definition"}
@@ -815,6 +816,7 @@ Some example situations for each of the trigger categories include:
 - invalid: packet parsing or validation error
 - connection_unknown: Connection ID is not known
 - decryption_failure: decryption key was unavailable, decryption failed
+- general: situations not clearly covered in the other categories
 
 For more details on "datagram_id", see {{transport-datagramssent}}.
 
