@@ -778,42 +778,45 @@ when keeping track of packet coalescing.
 ## packet_dropped {#transport-packetdropped}
 Importance: Base
 
-This event indicates a QUIC-level packet was dropped after partial or no parsing.
+This event indicates a QUIC-level packet was dropped.
+
+The trigger field indicates a general reason category for dropping the packet,
+while the details field can contain additional implementation-specific
+information.
 
 Definition:
 
 ~~~ cddl
 TransportPacketDropped = {
-    ; primarily packet_type should be filled here,
-    ; as other fields might not be parseable
+    ; Primarily packet_type should be filled here,
+    ; as other fields might not be decrypteable or parseable
     ? header: PacketHeader
 
     ? raw: RawInfo
     ? datagram_id: uint32
 
+    ? details: {* text => any}
     ? trigger:
-        "key_unavailable" /
-        "unknown_connection_id" /
-        "header_parse_error" /
-        "payload_decrypt_error" /
-        "protocol_violation" /
-        "dos_prevention" /
-        "unsupported_version" /
-        "unexpected_packet" /
-        "unexpected_source_connection_id" /
-        "unexpected_version" /
-        "duplicate" /
-        "invalid_initial"
+        "internal_error" /
+        "rejected" /
+        "unsupported" /
+        "invalid" /
+        "connection_unknown" /
+        "decryption_failure"
 }
 ~~~
 {: #transport-packetdropped-def title="TransportPacketDropped definition"}
 
-Note: sometimes packets are dropped before they can be associated with a
-particular connection (e.g., in case of "unsupported_version"). This situation is
-discussed more in {{handling-unknown-connections}}.
+Some example situations for each of the trigger categories include:
 
-Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
-when keeping track of packet coalescing.
+- internal_error: not initialize, out of memory
+- rejected: limits reached, DDoS protection, unwilling to track more paths, duplicate packet
+- unsupported: unknown or unsupported version. See also {{handling-unknown-connections}}.
+- invalid: packet parsing or validation error
+- connection_unknown: Connection ID is not known
+- decryption_failure: decryption key was unavailable, decryption failed
+
+For more details on "datagram_id", see {{transport-datagramssent}}.
 
 ## packet_buffered {#transport-packetbuffered}
 Importance: Base
