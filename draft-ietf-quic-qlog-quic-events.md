@@ -886,8 +886,7 @@ TransportDatagramsSent = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length fields indicate the total length of the datagram
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -895,14 +894,13 @@ TransportDatagramsSent = {
 ~~~
 {: #transport-datagramssent-def title="TransportDatagramsSent definition"}
 
-Note: QUIC itself does not have a concept of a "datagram_id". This field is a
-purely qlog-specific construct to allow tracking how multiple QUIC packets are
-coalesced inside of a single UDP datagram, which is an important optimization
-during the QUIC handshake. For this, implementations assign a (per-endpoint)
-unique ID to each datagram and keep track of which packets were coalesced into the
-same datagram. As packet coalescing typically only happens during the handshake
-(as it requires at least one long header packet), this can be done without much
-overhead.
+The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
+coalescing inside UDP datagrams. Implementations can assign a per-endpoint
+unique ID to each datagram, and reflect this in other events to track QUIC
+packets through processing steps.
+
+Since QUIC implementations rarely control UDP logic directly, the raw data
+excludes UDP-level headers in all fields.
 
 ## datagrams_received {#transport-datagramsreceived}
 Importance: Extra
@@ -918,8 +916,7 @@ TransportDatagramsReceived = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length fields indicate the total length of the datagram
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -927,20 +924,20 @@ TransportDatagramsReceived = {
 ~~~
 {: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
 
-Note: for more details on "datagram_ids", see {{transport-datagramssent}}.
+For more details on "datagram_ids", see {{transport-datagramssent}}.
 
 ## datagram_dropped {#transport-datagramdropped}
 Importance: Extra
 
 When a UDP-level datagram is dropped. This is typically done if it does not
-contain a valid QUIC packet (in that case, use packet_dropped instead).
+contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
+other reasons, {{transport-packetdropped}} should be used instead.
 
 Definition:
 
 ~~~ cddl
 TransportDatagramDropped = {
-    ; RawInfo:length field indicates the total length of the datagram
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: RawInfo
 }
 ~~~
