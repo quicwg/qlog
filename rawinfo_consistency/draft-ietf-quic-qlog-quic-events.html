@@ -1046,7 +1046,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 14 July 2023</td>
+<td class="center">Expires 17 July 2023</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1059,12 +1059,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2023-01-10" class="published">10 January 2023</time>
+<time datetime="2023-01-13" class="published">13 January 2023</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2023-07-14">14 July 2023</time></dd>
+<dd class="expires"><time datetime="2023-07-17">17 July 2023</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1116,7 +1116,7 @@ in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 14 July 2023.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 17 July 2023.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1405,7 +1405,7 @@ in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="
             <p id="section-toc.1-1.12.1"><a href="#appendix-A" class="auto internal xref">Appendix A</a>.  <a href="#name-change-log" class="internal xref">Change Log</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.1">
-                <p id="section-toc.1-1.12.2.1.1"><a href="#appendix-A.1" class="auto internal xref">A.1</a>.  <a href="#name-since-draft-ietf-qlog-quic-" class="internal xref">Since draft-ietf-qlog-quic-events-02:</a></p>
+                <p id="section-toc.1-1.12.2.1.1"><a href="#appendix-A.1" class="auto internal xref">A.1</a>.  <a href="#name-since-draft-ietf-qlog-quic-" class="internal xref">Since draft-ietf-qlog-quic-events-03:</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.2">
                 <p id="section-toc.1-1.12.2.2.1"><a href="#appendix-A.2" class="auto internal xref">A.2</a>.  <a href="#name-since-draft-ietf-qlog-quic-e" class="internal xref">Since draft-ietf-qlog-quic-events-02:</a></p>
@@ -2715,8 +2715,7 @@ TransportDatagramsSent = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length fields indicate the total length of the datagram
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -2727,14 +2726,12 @@ TransportDatagramsSent = {
 <a href="#name-transportdatagramssent-defi" class="selfRef">TransportDatagramsSent definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.10-5">Note: QUIC itself does not have a concept of a "datagram_id". This field is a
-purely qlog-specific construct to allow tracking how multiple QUIC packets are
-coalesced inside of a single UDP datagram, which is an important optimization
-during the QUIC handshake. For this, implementations assign a (per-endpoint)
-unique ID to each datagram and keep track of which packets were coalesced into the
-same datagram. As packet coalescing typically only happens during the handshake
-(as it requires at least one long header packet), this can be done without much
-overhead.<a href="#section-5.10-5" class="pilcrow">¶</a></p>
+<p id="section-5.10-5">The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
+coalescing inside UDP datagrams. Implementations can assign a per-endpoint
+unique ID to each datagram, and reflect this in other events to track QUIC
+packets through processing steps.<a href="#section-5.10-5" class="pilcrow">¶</a></p>
+<p id="section-5.10-6">Since QUIC implementations rarely control UDP logic directly, the raw data
+excludes UDP-level headers in all fields.<a href="#section-5.10-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="transport-datagramsreceived">
@@ -2755,8 +2752,7 @@ TransportDatagramsReceived = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length fields indicate the total length of the datagram
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -2767,7 +2763,7 @@ TransportDatagramsReceived = {
 <a href="#name-transportdatagramsreceived-" class="selfRef">TransportDatagramsReceived definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.11-5">Note: for more details on "datagram_ids", see <a href="#transport-datagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.11-5" class="pilcrow">¶</a></p>
+<p id="section-5.11-5">For more details on "datagram_ids", see <a href="#transport-datagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.11-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="transport-datagramdropped">
@@ -2777,15 +2773,15 @@ TransportDatagramsReceived = {
         </h3>
 <p id="section-5.12-1">Importance: Extra<a href="#section-5.12-1" class="pilcrow">¶</a></p>
 <p id="section-5.12-2">When a UDP-level datagram is dropped. This is typically done if it does not
-contain a valid QUIC packet (in that case, use packet_dropped instead).<a href="#section-5.12-2" class="pilcrow">¶</a></p>
+contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
+other reasons, <a href="#transport-packetdropped" class="auto internal xref">Section 5.7</a> should be used instead.<a href="#section-5.12-2" class="pilcrow">¶</a></p>
 <p id="section-5.12-3">Definition:<a href="#section-5.12-3" class="pilcrow">¶</a></p>
 <span id="name-transportdatagramdropped-de"></span><div id="transport-datagramdropped-def">
 <figure id="figure-20">
           <div class="lang-cddl sourcecode" id="section-5.12-4.1">
 <pre>
 TransportDatagramDropped = {
-    ; RawInfo:length field indicates the total length of the datagram
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: RawInfo
 }
 </pre>
@@ -2952,12 +2948,6 @@ TransportDataMoved = {
 <a href="#name-transportdatamoved-definiti" class="selfRef">TransportDataMoved definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.15-6">This event does not utilize a "direction" field (with values "up" and "down")
-to specify the data flow. This is because in some optimized implementations, data
-might skip some individual layers. Additionally, using explicit "from" and "to"
-fields is more flexible and allows the definition of other conceptual "layers"
-(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
-library or from HTTP/3 to QPACK).<a href="#section-5.15-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -4093,9 +4083,9 @@ PathResponseFrame = {
           <h4 id="name-connectioncloseframe">
 <a href="#section-8.11.19" class="section-number selfRef">8.11.19. </a><a href="#name-connectioncloseframe" class="section-name selfRef">ConnectionCloseFrame</a>
           </h4>
-<p id="section-8.11.19-1">error_code_value is the actual, numerical code (the parsed VLIE-encoded
-integer). This is useful because some error types are spread out over a range of
-codes (e.g., QUIC's crypto_error).<a href="#section-8.11.19-1" class="pilcrow">¶</a></p>
+<p id="section-8.11.19-1">The error_code_value field is the numerical value without VLIE encoding. This is
+useful because some error types are spread out over a range of codes (e.g.,
+QUIC's crypto_error).<a href="#section-8.11.19-1" class="pilcrow">¶</a></p>
 <span id="name-connectioncloseframe-defini"></span><div id="connectioncloseframe-def">
 <figure id="figure-63">
             <div class="lang-cddl sourcecode" id="section-8.11.19-2.1">
@@ -4147,8 +4137,7 @@ HandshakeDoneFrame = {
           <h4 id="name-unknownframe">
 <a href="#section-8.11.21" class="section-number selfRef">8.11.21. </a><a href="#name-unknownframe" class="section-name selfRef">UnknownFrame</a>
           </h4>
-<p id="section-8.11.21-1">frame_type_value is the actual, numerical code (the parsed VLIE-encoded
-integer).<a href="#section-8.11.21-1" class="pilcrow">¶</a></p>
+<p id="section-8.11.21-1">The frame_type_value field is the numerical value without VLIE encoding.<a href="#section-8.11.21-1" class="pilcrow">¶</a></p>
 <span id="name-unknownframe-definition"></span><div id="unknownframe-def">
 <figure id="figure-65">
             <div class="lang-cddl sourcecode" id="section-8.11.21-2.1">
@@ -4295,10 +4284,10 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
       <h2 id="name-change-log">
 <a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-change-log" class="section-name selfRef">Change Log</a>
       </h2>
-<div id="since-draft-ietf-qlog-quic-events-02">
+<div id="since-draft-ietf-qlog-quic-events-03">
 <section id="appendix-A.1">
         <h3 id="name-since-draft-ietf-qlog-quic-">
-<a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-since-draft-ietf-qlog-quic-" class="section-name selfRef">Since draft-ietf-qlog-quic-events-02:</a>
+<a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-since-draft-ietf-qlog-quic-" class="section-name selfRef">Since draft-ietf-qlog-quic-events-03:</a>
         </h3>
 <ul class="normal">
 <li class="normal" id="appendix-A.1-1.1">Ensured consistent use of RawInfo to indicate raw wire bytes (#243)<a href="#appendix-A.1-1.1" class="pilcrow">¶</a>
@@ -4310,7 +4299,7 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
         </ul>
 </section>
 </div>
-<div id="since-draft-ietf-qlog-quic-events-02-1">
+<div id="since-draft-ietf-qlog-quic-events-02">
 <section id="appendix-A.2">
         <h3 id="name-since-draft-ietf-qlog-quic-e">
 <a href="#appendix-A.2" class="section-number selfRef">A.2. </a><a href="#name-since-draft-ietf-qlog-quic-e" class="section-name selfRef">Since draft-ietf-qlog-quic-events-02:</a>

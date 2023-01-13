@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 14 July 2023                                               Meta
+Expires: 17 July 2023                                               Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         10 January 2023
+                                                         13 January 2023
 
 
                     QUIC event definitions for qlog
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 14 July 2023.
+   This Internet-Draft will expire on 17 July 2023.
 
 Copyright Notice
 
@@ -136,7 +136,7 @@ Table of Contents
    10. IANA Considerations
    11. Normative References
    Appendix A.  Change Log
-     A.1.  Since draft-ietf-qlog-quic-events-02:
+     A.1.  Since draft-ietf-qlog-quic-events-03:
      A.2.  Since draft-ietf-qlog-quic-events-02:
      A.3.  Since draft-ietf-qlog-quic-events-01:
      A.4.  Since draft-ietf-qlog-quic-events-00:
@@ -1076,8 +1076,7 @@ Table of Contents
        ; to support passing multiple at once
        ? count: uint16
 
-       ; RawInfo:length fields indicate the total length of the datagram
-       ; including UDP header length
+       ; The RawInfo fields do not include the UDP headers, only the UDP payload
        ? raw: [+ RawInfo]
 
        ? datagram_ids: [+ uint32]
@@ -1085,15 +1084,13 @@ Table of Contents
 
                 Figure 18: TransportDatagramsSent definition
 
-   Note: QUIC itself does not have a concept of a "datagram_id".  This
-   field is a purely qlog-specific construct to allow tracking how
-   multiple QUIC packets are coalesced inside of a single UDP datagram,
-   which is an important optimization during the QUIC handshake.  For
-   this, implementations assign a (per-endpoint) unique ID to each
-   datagram and keep track of which packets were coalesced into the same
-   datagram.  As packet coalescing typically only happens during the
-   handshake (as it requires at least one long header packet), this can
-   be done without much overhead.
+   The "datagram_id" is a qlog-specific concept to allow tracking of
+   QUIC packet coalescing inside UDP datagrams.  Implementations can
+   assign a per-endpoint unique ID to each datagram, and reflect this in
+   other events to track QUIC packets through processing steps.
+
+   Since QUIC implementations rarely control UDP logic directly, the raw
+   data excludes UDP-level headers in all fields.
 
 5.11.  datagrams_received
 
@@ -1109,8 +1106,7 @@ Table of Contents
        ; to support passing multiple at once
        ? count: uint16
 
-       ; RawInfo:length fields indicate the total length of the datagram
-       ; including UDP header length
+       ; The RawInfo fields do not include the UDP headers, only the UDP payload
        ? raw: [+ RawInfo]
 
        ? datagram_ids: [+ uint32]
@@ -1118,21 +1114,21 @@ Table of Contents
 
               Figure 19: TransportDatagramsReceived definition
 
-   Note: for more details on "datagram_ids", see Section 5.10.
+   For more details on "datagram_ids", see Section 5.10.
 
 5.12.  datagram_dropped
 
    Importance: Extra
 
    When a UDP-level datagram is dropped.  This is typically done if it
-   does not contain a valid QUIC packet (in that case, use
-   packet_dropped instead).
+   does not contain a valid QUIC packet.  If it does, but the QUIC
+   packet is dropped for other reasons, Section 5.7 should be used
+   instead.
 
    Definition:
 
    TransportDatagramDropped = {
-       ; RawInfo:length field indicates the total length of the datagram
-       ; including UDP header length
+       ; The RawInfo fields do not include the UDP headers, only the UDP payload
        ? raw: RawInfo
    }
 
@@ -1282,14 +1278,6 @@ Table of Contents
    }
 
                   Figure 23: TransportDataMoved definition
-
-   This event does not utilize a "direction" field (with values "up" and
-   "down") to specify the data flow.  This is because in some optimized
-   implementations, data might skip some individual layers.
-   Additionally, using explicit "from" and "to" fields is more flexible
-   and allows the definition of other conceptual "layers" (for example
-   to indicate data from QUIC CRYPTO frames being passed to a TLS
-   library or from HTTP/3 to QPACK).
 
 6.  Security Events
 
@@ -2007,9 +1995,9 @@ Table of Contents
 
 8.11.19.  ConnectionCloseFrame
 
-   error_code_value is the actual, numerical code (the parsed VLIE-
-   encoded integer).  This is useful because some error types are spread
-   out over a range of codes (e.g., QUIC's crypto_error).
+   The error_code_value field is the numerical value without VLIE
+   encoding.  This is useful because some error types are spread out
+   over a range of codes (e.g., QUIC's crypto_error).
 
    ErrorSpace = "transport" / "application"
 
@@ -2038,8 +2026,8 @@ Table of Contents
 
 8.11.21.  UnknownFrame
 
-   frame_type_value is the actual, numerical code (the parsed VLIE-
-   encoded integer).
+   The frame_type_value field is the numerical value without VLIE
+   encoding.
 
    UnknownFrame = {
        frame_type: "unknown"
@@ -2146,7 +2134,7 @@ Table of Contents
 
 Appendix A.  Change Log
 
-A.1.  Since draft-ietf-qlog-quic-events-02:
+A.1.  Since draft-ietf-qlog-quic-events-03:
 
    *  Ensured consistent use of RawInfo to indicate raw wire bytes
       (#243)
