@@ -1083,13 +1083,6 @@ TransportDataMoved = {
 ~~~~
 {: #transport-datamoved-def title="TransportDataMoved definition"}
 
-This event does not utilize a "direction" field (with values "up" and "down")
-to specify the data flow. This is because in some optimized implementations, data
-might skip some individual layers. Additionally, using explicit "from" and "to"
-fields is more flexible and allows the definition of other conceptual "layers"
-(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
-library or from HTTP/3 to QPACK).
-
 # Security Events {#sec-ev}
 
 ## key_updated {#security-keyupdated}
@@ -1814,9 +1807,9 @@ PathResponseFrame = {
 
 ### ConnectionCloseFrame
 
-error_code_value is the actual, numerical code (the parsed VLIE-encoded
-integer). This is useful because some error types are spread out over a range of
-codes (e.g., QUIC's crypto_error).
+The error_code_value field is the numerical value without VLIE encoding. This is
+useful because some error types are spread out over a range of codes (e.g.,
+QUIC's crypto_error).
 
 ~~~ cddl
 ErrorSpace = "transport" / "application"
@@ -1847,8 +1840,7 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
-frame_type_value is the actual, numerical code (the parsed VLIE-encoded
-integer).
+The frame_type_value field is the numerical value without VLIE encoding.
 
 ~~~ cddl
 UnknownFrame = {
@@ -1918,7 +1910,7 @@ TBD
 
 # Change Log
 
-## Since draft-ietf-qlog-quic-events-02:
+## Since draft-ietf-qlog-quic-events-03:
 
 * Ensured consistent use of RawInfo to indicate raw wire bytes (#243)
 * Renamed UnknownFrame:raw_frame_type to :frame_type_value (#54)

@@ -1087,10 +1087,10 @@ While qlog is a high-level logging format, it also allows the inclusion of most
 raw wire image information, such as byte lengths and byte values. This is useful
 when for example investigating or tuning packetization behavior or determining
 encoding/framing overheads. However, these fields are not always necessary, can
-take up considerable space and can have a considerable privacy and security
-impact. Where applicable, these fields are grouped in a separate optional field
-named "raw" of type RawInfo. The exact definition of entities, headers, trailers
-and payloads depend on the protocol used.
+take up considerable space, and can have a considerable privacy and security
+impact (see {{privacy}}). Where applicable, these fields are grouped in a
+separate, optional, field named "raw" of type RawInfo. The exact definition of
+entities, headers, trailers and payloads depend on the protocol used.
 
 Definition:
 
@@ -1112,14 +1112,14 @@ RawInfo = {
 {: #raw-info-def title="RawInfo definition"}
 
 The RawInfo:data field can be truncated for privacy or security purposes, see
-{{truncated-values}}. In this case, the length and payload_lenght fields should
-still indicate the non-truncated lengths.
+{{truncated-values}}. In this case, the length and payload_length fields should
+still indicate the non-truncated lengths when used for debugging purposes.
 
 This document does not specify explicit header_length or trailer_length fields.
 In protocols without trailers, header_length can be calculated by subtracting
 the payload_length from the length. In protocols with trailers (e.g., QUIC's
-AEAD tag), event definitions documents SHOULD define a way to make the
-header_length calculation possible.
+AEAD tag), event definition documents SHOULD define how to support header_length
+calculation.
 
 ## Generic events
 

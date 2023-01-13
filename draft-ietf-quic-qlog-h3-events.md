@@ -235,8 +235,7 @@ Importance: Base
 Emitted when a stream's type becomes known. This is typically when a stream is
 opened and the stream's type indicator is sent or received.
 
-stream_type_value is the actual, numerical code (the parsed VLIE-encoded
-integer).
+The stream_type_value field is the numerical value without VLIE encoding.
 
 Definition:
 
@@ -506,8 +505,7 @@ HTTPReservedFrame = {
 
 ### HTTPUnknownFrame
 
-frame_type_value is the actual, numerical code (the parsed VLIE-encoded
-integer).
+The frame_type_value field is the numerical value without VLIE encoding.
 
 ~~~ cddl
 HTTPUnknownFrame = {
