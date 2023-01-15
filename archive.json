@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-01-12T00:55:02.922627+00:00",
+  "timestamp": "2023-01-15T00:57:16.547617+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -2665,7 +2665,7 @@
       "id": "MDU6SXNzdWU2NTMxMzAxNTY=",
       "title": "consider removing StreamFrame.raw",
       "url": "https://github.com/quicwg/qlog/issues/104",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -2676,8 +2676,8 @@
       ],
       "body": "I can't see how logging the exact contents of a STREAM frame could facilitate debugging / analysis of QUIC connections.\r\n\r\nArguably, a transport-level logging system should not log application data exchanged, as this might expose user data to places where it doesn't belong. While qlog can't prevent implementations from adding additional JSON fields to existing events, it should not encourage this behavior.",
       "createdAt": "2020-07-08T09:14:00Z",
-      "updatedAt": "2021-08-18T10:10:23Z",
-      "closedAt": null,
+      "updatedAt": "2023-01-13T15:03:54Z",
+      "closedAt": "2023-01-13T15:03:53Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2692,6 +2692,13 @@
           "body": "Added a generic \"RawInfo:data\" field in the last commit. Byte-fields can be logged in a truncated form now as well (see main draft), which alleviates some of the privacy issues. \r\n\r\nKeeping this issue open to remember to add stringent prohibitions on logging/exposing raw data in the privacy section later. \r\n",
           "createdAt": "2020-11-02T16:49:14Z",
           "updatedAt": "2020-11-02T16:49:14Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This is now in the privacy considerations and cross-referenced in several places.",
+          "createdAt": "2023-01-13T15:03:53Z",
+          "updatedAt": "2023-01-13T15:03:53Z"
         }
       ]
     },
@@ -6536,6 +6543,22 @@
           "updatedAt": "2023-01-11T21:21:31Z"
         }
       ]
+    },
+    {
+      "number": 280,
+      "id": "I_kwDOCrLn6M5bWNYb",
+      "title": "Commentary on H3 frames and data_moved events",
+      "url": "https://github.com/quicwg/qlog/issues/280",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "The DATA frame section includes some commentary on H3, frames and streams. In reviewing a PR, I made the following observations:\r\n\r\n> This seems like it can be genericised and moved somewhere else: there is no tight coupling between H3 and QUIC frame boundaries meaning a H3 frames could span many packets, or many frames could be in a single packet.\r\n\r\n> Implementations can deploy streaming strategies to any H3 frame parsing. I agree that DATA frames are the most likely, but really any frame could be larger than a packet. \r\n\r\n> Furthermore, due to varint H3 frame fields and the lack of preserved boundaries, some implementations might generate data_moved events before frame_parsed events. Cloudflare quiche does this, for example. \r\n\r\n_Originally posted by @LPardue in https://github.com/quicwg/qlog/pull/274#discussion_r1069621693_\r\n            ",
+      "createdAt": "2023-01-13T16:04:17Z",
+      "updatedAt": "2023-01-13T16:04:17Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -12123,15 +12146,15 @@
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
-      "body": "Fixes #243.\r\nPartially fixes #54.\r\nNeeds updates to adhere to #173 (plan is to change \"including UDP datagram headers\" to \"excluding\"). ",
+      "body": "Fixes #243, #54 and #173.\r\nPartially fixes #174.",
       "createdAt": "2023-01-10T15:57:46Z",
-      "updatedAt": "2023-01-11T19:49:26Z",
+      "updatedAt": "2023-01-13T16:02:44Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "ec25b5849940e7aa3d26045de405fe6d37fd8f9d",
       "headRepository": "quicwg/qlog",
       "headRefName": "rawinfo_consistency",
-      "headRefOid": "94b072c388ddf954220e5ff1204e72901288ba86",
+      "headRefOid": "0f001953fc386b7adb615913ae511f1a8aecbd75",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -12233,6 +12256,70 @@
               "updatedAt": "2023-01-11T19:47:34Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KYO_w",
+          "commit": {
+            "abbreviatedOid": "0f00195"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-13T15:43:50Z",
+          "updatedAt": "2023-01-13T15:59:32Z",
+          "comments": [
+            {
+              "originalPosition": 57,
+              "body": "```suggestion\r\nThis event is emitted when the HTTP/3 framing actually happens. This does\r\nnot necessarily coincide with HTTP/3 data getting passed to the QUIC layer.\r\n```",
+              "createdAt": "2023-01-13T15:43:50Z",
+              "updatedAt": "2023-01-13T15:59:32Z"
+            },
+            {
+              "originalPosition": 89,
+              "body": "This seems like it can be genericised and moved somewhere else: there is no tight coupling between H3 and QUIC frame boundaries meaning a H3 frames could span many packets, or many frames could be in a single packet.\r\n\r\nImplementations can deploy streaming strategies to any H3 frame parsing. I agree that DATA frames are the most likely, but really any frame could be larger than a packet. \r\n\r\nFurthermore, due to varint H3 frame fields and the lack of preserved boundaries, some implementations might generate data_moved events before frame_parsed events. Cloudlfare quiche does this, for example. \r\n\r\nThe text is better than the old text, so lets not block the PR. I'll open a separate issue.",
+              "createdAt": "2023-01-13T15:54:13Z",
+              "updatedAt": "2023-01-13T15:59:32Z"
+            },
+            {
+              "originalPosition": 23,
+              "body": "I realise this text was already there but why is it per-endpoint?",
+              "createdAt": "2023-01-13T15:56:20Z",
+              "updatedAt": "2023-01-13T15:59:32Z"
+            },
+            {
+              "originalPosition": 28,
+              "body": "Consider moving this above the previous paragraph to match the ordering of the fields",
+              "createdAt": "2023-01-13T15:57:19Z",
+              "updatedAt": "2023-01-13T15:59:32Z"
+            },
+            {
+              "originalPosition": 55,
+              "body": "This would just render as a section number right? That's not very reader-friendly.\r\n```suggestion\r\nother reasons, packet_dropped ({{transport-packetdropped}}) should be used instead.\r\n```",
+              "createdAt": "2023-01-13T15:58:43Z",
+              "updatedAt": "2023-01-13T15:59:32Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KYcEB",
+          "commit": {
+            "abbreviatedOid": "0f00195"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-13T16:02:44Z",
+          "updatedAt": "2023-01-13T16:02:44Z",
+          "comments": [
+            {
+              "originalPosition": 23,
+              "body": "Because there is no (obvious?) in-band way to share datagram-ids between individually logging endpoints? To keep them consistent, you'd have to have a stable hash or something? ",
+              "createdAt": "2023-01-13T16:02:44Z",
+              "updatedAt": "2023-01-13T16:02:44Z"
+            }
+          ]
         }
       ]
     },
@@ -12324,6 +12411,106 @@
           "createdAt": "2023-01-11T21:22:11Z",
           "updatedAt": "2023-01-11T21:22:11Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 278,
+      "id": "PR_kwDOCrLn6M5HVwkB",
+      "title": "Clean up packet_dropped",
+      "url": "https://github.com/quicwg/qlog/pull/278",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #25. ",
+      "createdAt": "2023-01-13T15:28:17Z",
+      "updatedAt": "2023-01-13T15:40:34Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "clean_packetdropped",
+      "headRefOid": "3f854107e1b3258c2f6036629be5ab29efc37474",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5KYKoQ",
+          "commit": {
+            "abbreviatedOid": "3f85410"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM modulo nits",
+          "createdAt": "2023-01-13T15:36:48Z",
+          "updatedAt": "2023-01-13T15:40:34Z",
+          "comments": [
+            {
+              "originalPosition": 56,
+              "body": "```suggestion\r\n- internal_error: not initialized, out of memory\r\n```",
+              "createdAt": "2023-01-13T15:36:48Z",
+              "updatedAt": "2023-01-13T15:40:34Z"
+            },
+            {
+              "originalPosition": 60,
+              "body": "more generic version \r\n\r\n```suggestion\r\n- connection_unknown: packet does not relate to a known connection\r\n```",
+              "createdAt": "2023-01-13T15:38:02Z",
+              "updatedAt": "2023-01-13T15:40:34Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 279,
+      "id": "PR_kwDOCrLn6M5HV8qX",
+      "title": "Clean up text around events not belonging to a single connection",
+      "url": "https://github.com/quicwg/qlog/pull/279",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #35 ",
+      "createdAt": "2023-01-13T16:01:03Z",
+      "updatedAt": "2023-01-13T16:18:03Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "clean-serverguidance",
+      "headRefOid": "47d038e7e3a4a68cb61e47068c0d192e4083294b",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5KYlnJ",
+          "commit": {
+            "abbreviatedOid": "47d038e"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-13T16:18:02Z",
+          "updatedAt": "2023-01-13T16:18:03Z",
+          "comments": [
+            {
+              "originalPosition": 37,
+              "body": "grammar police: more difficult to implement than what?\r\n\r\nIf there are challenges or difficulties we can say that, but the \"more\" qualifier makes the sentence a comparison and this could be misinterpreted to mean that we are comparing this option to the others. If we are actually trying to compare the options (I don't think we are but I could be wrong) then we probably want to restructure a bit.",
+              "createdAt": "2023-01-13T16:18:03Z",
+              "updatedAt": "2023-01-13T16:18:03Z"
+            }
+          ]
         }
       ]
     }
