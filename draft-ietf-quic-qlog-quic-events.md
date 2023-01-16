@@ -810,11 +810,11 @@ TransportPacketDropped = {
 
 Some example situations for each of the trigger categories include:
 
-- internal_error: not initialize, out of memory
+- internal_error: not initialized, out of memory
 - rejected: limits reached, DDoS protection, unwilling to track more paths, duplicate packet
 - unsupported: unknown or unsupported version. See also {{handling-unknown-connections}}.
 - invalid: packet parsing or validation error
-- connection_unknown: Connection ID is not known
+- connection_unknown: packet does not relate to a known connection or Connection ID
 - decryption_failure: decryption key was unavailable, decryption failed
 - general: situations not clearly covered in the other categories
 
