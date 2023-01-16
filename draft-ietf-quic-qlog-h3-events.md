@@ -266,9 +266,9 @@ HTTPStreamType =  "request" /
 ## frame_created {#http-framecreated}
 Importance: Core
 
-This event is emitted when the HTTP/3 framing actually happens. Note: this is
-not necessarily the same as when the HTTP/3 data is passed on to the QUIC layer.
-For that, see the "data_moved" event in {{QLOG-QUIC}}.
+This event is emitted when the HTTP/3 framing actually happens. This does not
+necessarily coincide with HTTP/3 data getting passed to the QUIC layer. For
+that, see the "data_moved" event in {{QLOG-QUIC}}.
 
 Definition:
 

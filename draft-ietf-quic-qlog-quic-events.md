@@ -894,13 +894,13 @@ TransportDatagramsSent = {
 ~~~
 {: #transport-datagramssent-def title="TransportDatagramsSent definition"}
 
+Since QUIC implementations rarely control UDP logic directly, the raw data
+excludes UDP-level headers in all fields.
+
 The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
 coalescing inside UDP datagrams. Implementations can assign a per-endpoint
 unique ID to each datagram, and reflect this in other events to track QUIC
 packets through processing steps.
-
-Since QUIC implementations rarely control UDP logic directly, the raw data
-excludes UDP-level headers in all fields.
 
 ## datagrams_received {#transport-datagramsreceived}
 Importance: Extra
@@ -931,7 +931,7 @@ Importance: Extra
 
 When a UDP-level datagram is dropped. This is typically done if it does not
 contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
-other reasons, {{transport-packetdropped}} should be used instead.
+other reasons, packet_dropped ({{transport-packetdropped}}) should be used instead.
 
 Definition:
 
