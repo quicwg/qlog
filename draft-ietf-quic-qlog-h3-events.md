@@ -138,7 +138,7 @@ the same value.
 # HTTP/3 and QPACK Event Overview
 
 This document defines events in two categories, written as lowercase to follow
-convention: http ({{http-ev}}) and qpack ({{qpack-ev}}).
+convention: http ({{h3-ev}}) and qpack ({{qpack-ev}}).
 
 As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
 concatenation of category and type.
@@ -148,12 +148,12 @@ in this specification.
 
 | Name value                  | Importance |  Definition |
 |:----------------------------|:-----------|:------------|
-| http:parameters_set         | Base       | {{http-parametersset}} |
-| http:parameters_restored    | Base       | {{http-parametersrestored}} |
-| http:stream_type_set        | Base       | {{http-streamtypeset}} |
-| http:frame_created          | Core       | {{http-framecreated}} |
-| http:frame_parsed           | Core       | {{http-frameparsed}} |
-| http:push_resolved          | Extra      | {{http-pushresolved}} |
+| h3:parameters_set           | Base       | {{h3-parametersset}} |
+| h3:parameters_restored      | Base       | {{h3-parametersrestored}} |
+| h3:stream_type_set          | Base       | {{h3-streamtypeset}} |
+| h3:frame_created            | Core       | {{h3-framecreated}} |
+| h3:frame_parsed             | Core       | {{h3-frameparsed}} |
+| h3:push_resolved            | Extra      | {{h3-pushresolved}} |
 | qpack:state_updated         | Base       | {{qpack-stateupdated}} |
 | qpack:stream_state_updated  | Core       | {{qpack-streamstateupdate}} |
 | qpack:dynamic_table_updated | Extra      | {{qpack-dynamictableupdate}} |
@@ -163,21 +163,21 @@ in this specification.
 | qpack:instruction_parsed    | Base       | {{qpack-instructionparsed}} |
 {: #h3-qpack-events title="HTTP/3 and QPACK Events"}
 
-# HTTP/3 Events {#http-ev}
+# HTTP/3 Events {#h3-ev}
 
 HTTP/3 events extend the `$ProtocolEventBody` extension point defined in {{QLOG-MAIN}}.
 
 ~~~ cddl
-HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
-             HTTPStreamTypeSet / HTTPFrameCreated /
-             HTTPFrameParsed / HTTPPushResolved
+H3Events = H3ParametersSet / H3ParametersRestored /
+             H3StreamTypeSet / H3FrameCreated /
+             H3FrameParsed / H3PushResolved
 
-$ProtocolEventBody /= HTTPEvents
+$ProtocolEventBody /= H3Events
 ~~~
-{: #httpevents-def title="HTTPEvents definition and ProtocolEventBody
+{: #h3events-def title="H3Events definition and ProtocolEventBody
 extension"}
 
-## parameters_set {#http-parametersset}
+## parameters_set {#h3-parametersset}
 Importance: Base
 
 This event contains HTTP/3 and QPACK-level settings, mostly those received from
@@ -198,10 +198,10 @@ explain this better + provide reference and maybe an example.
 Definition:
 
 ~~~ cddl
-HTTPParametersSet = {
+H3ParametersSet = {
     ? owner: Owner
 
-    ~HTTPParameters
+    ~H3Parameters
 
     ; qlog-specific
     ; indicates whether this implementation waits for a SETTINGS
@@ -209,7 +209,7 @@ HTTPParametersSet = {
     ? waits_for_settings: bool
 }
 
-HTTPParameters = {
+H3Parameters = {
     ? max_header_list_size: uint64
     ? max_table_capacity: uint64
     ? blocked_streams_count: uint64
@@ -218,7 +218,7 @@ HTTPParameters = {
     * text => uint64
 }
 ~~~
-{: #http-parametersset-def title="HTTPParametersSet definition"}
+{: #h3-parametersset-def title="H3ParametersSet definition"}
 
 Note: enabling server push is not explicitly done in HTTP/3 by use of a setting or
 parameter. Instead, it is communicated by use of the MAX_PUSH_ID frame, which
@@ -228,7 +228,7 @@ Additionally, this event can contain any number of unspecified fields. This is t
 reflect setting of for example unknown (greased) settings or parameters of
 (proprietary) extensions.
 
-## parameters_restored {#http-parametersrestored}
+## parameters_restored {#h3-parametersrestored}
 Importance: Base
 
 When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
@@ -238,18 +238,18 @@ which HTTP/3 settings were restored and to which values when utilizing 0-RTT.
 Definition:
 
 ~~~ cddl
-HTTPParametersRestored = {
+H3ParametersRestored = {
 
-    ~HTTPParameters
+    ~H3Parameters
 
 }
 ~~~
-{: #http-parametersrestored-def title="HTTPParametersRestored definition"}
+{: #h3-parametersrestored-def title="H3ParametersRestored definition"}
 
 Note that, like for parameters_set above, this event can contain any number of
 unspecified fields to allow for additional and custom settings.
 
-## stream_type_set {#http-streamtypeset}
+## stream_type_set {#h3-streamtypeset}
 Importance: Base
 
 Emitted when a stream's type becomes known. This is typically when a stream is
@@ -263,11 +263,11 @@ clearly spelled out.
 Definition:
 
 ~~~ cddl
-HTTPStreamTypeSet = {
+H3StreamTypeSet = {
     ? owner: Owner
     stream_id: uint64
 
-    stream_type: HTTPStreamType
+    stream_type: H3StreamType
 
     ; only when stream_type === "unknown"
     ? raw_stream_type: uint64
@@ -276,7 +276,7 @@ HTTPStreamTypeSet = {
     ? associated_push_id: uint64
 }
 
-HTTPStreamType =  "request" /
+H3StreamType =  "request" /
                   "control" /
                   "push" /
                   "reserved" /
@@ -284,9 +284,9 @@ HTTPStreamType =  "request" /
                   "qpack_encode" /
                   "qpack_decode"
 ~~~
-{: #https-streamtypeset-def title="HTTPStreamTypeSet definition"}
+{: #h3-streamtypeset-def title="H3StreamTypeSet definition"}
 
-## frame_created {#http-framecreated}
+## frame_created {#h3-framecreated}
 Importance: Core
 
 HTTP equivalent to the packet_sent event. This event is emitted when the HTTP/3
@@ -297,14 +297,14 @@ in {{QLOG-QUIC}}.
 Definition:
 
 ~~~ cddl
-HTTPFrameCreated = {
+H3FrameCreated = {
     stream_id: uint64
     ? length: uint64
-    frame: $HTTPFrame
+    frame: $H3Frame
     ? raw: RawInfo
 }
 ~~~
-{: #http-framecreated-def title="HTTPFrameCreated definition"}
+{: #h3-framecreated-def title="H3FrameCreated definition"}
 
 Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
 header overhead. As such, DATA frames can span many QUIC packets and can be
@@ -312,7 +312,7 @@ created in a streaming fashion. In this case, the frame_created event is emitted
 once for the frame header, and further streamed data is indicated using the
 data_moved event.
 
-## frame_parsed {#http-frameparsed}
+## frame_parsed {#h3-frameparsed}
 Importance: Core
 
 HTTP equivalent to the packet_received event. This event is emitted when the
@@ -324,14 +324,14 @@ HTTP/3 data is actually received on the QUIC layer. For that, see the
 Definition:
 
 ~~~ cddl
-HTTPFrameParsed = {
+H3FrameParsed = {
     stream_id: uint64
     ? length: uint64
-    frame: $HTTPFrame
+    frame: $H3Frame
     ? raw: RawInfo
 }
 ~~~
-{: #http-frameparsed-def title="HTTPFrameParsed definition"}
+{: #h3-frameparsed-def title="H3FrameParsed definition"}
 
 Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
 header overhead. As such, DATA frames can span many QUIC packets and can be
@@ -339,7 +339,7 @@ processed in a streaming fashion. In this case, the frame_parsed event is emitte
 once for the frame header, and further streamed data is indicated using the
 data_moved event.
 
-## push_resolved {#http-pushresolved}
+## push_resolved {#h3-pushresolved}
 Importance: Extra
 
 This event is emitted when a pushed resource is successfully claimed (used) or,
@@ -350,19 +350,19 @@ behaviour, which is commonplace with HTTP/2.
 Definition:
 
 ~~~ cddl
-HTTPPushResolved = {
+H3PushResolved = {
     ? push_id: uint64
 
     ; in case this is logged from a place that does not have access
     ; to the push_id
     ? stream_id: uint64
 
-    decision: HTTPPushDecision
+    decision: H3PushDecision
 }
 
-HTTPPushDecision = "claimed" / "abandoned"
+H3PushDecision = "claimed" / "abandoned"
 ~~~
-{: #http-pushresolved-def title="HTTPPushResolved definition"}
+{: #h3-pushresolved-def title="H3PushResolved definition"}
 
 # HTTP/3 Data Field Definitions
 
@@ -375,46 +375,46 @@ Owner = "local" / "remote"
 ~~~
 {: #owner-def title="Owner definition"}
 
-## HTTPFrame
+## H3Frame
 
-The generic `$HTTPFrame` is defined here as a CDDL extension point (a "socket"
+The generic `$H3Frame` is defined here as a CDDL extension point (a "socket"
 or "plug"). It can be extended to support additional HTTP/3 frame types.
 
 ~~~ cddl
-; The HTTPFrame is any key-value map (e.g., JSON object)
-$HTTPFrame /= {
+; The H3Frame is any key-value map (e.g., JSON object)
+$H3Frame /= {
     * text => any
 }
 ~~~
-{: #httpframe-def title="HTTPFrame plug definition"}
+{: #h3frame-def title="H3Frame plug definition"}
 
 The HTTP/3 frame types defined in this document are as follows:
 
 ~~~ cddl
-HTTPBaseFrames =  HTTPDataFrame /
-             HTTPHeadersFrame /
-             HTTPCancelPushFrame /
-             HTTPSettingsFrame /
-             HTTPPushPromiseFrame /
-             HTTPGoawayFrame /
-             HTTPMaxPushIDFrame /
-             HTTPReservedFrame /
-             HTTPUnknownFrame
+H3BaseFrames =  H3DataFrame /
+             H3HeadersFrame /
+             H3CancelPushFrame /
+             H3SettingsFrame /
+             H3PushPromiseFrame /
+             H3GoawayFrame /
+             H3MaxPushIDFrame /
+             H3ReservedFrame /
+             H3UnknownFrame
 
-$HTTPFrame /= HTTPBaseFrames
+$H3Frame /= H3BaseFrames
 ~~~
-{: #httpbaseframe-def title="HTTPBaseFrames definition"}
+{: #h3baseframe-def title="H3BaseFrames definition"}
 
-### HTTPDataFrame
+### H3DataFrame
 ~~~ cddl
-HTTPDataFrame = {
+H3DataFrame = {
     frame_type: "data"
     ? raw: hexstring
 }
 ~~~
-{: #httpdataframe-def title="HTTPDataFrame definition"}
+{: #h3dataframe-def title="H3DataFrame definition"}
 
-### HTTPHeadersFrame
+### H3HeadersFrame
 
 This represents an *uncompressed*, plaintext HTTP Headers frame (e.g., no QPACK
 compression is applied).
@@ -441,15 +441,15 @@ headers: [
   }
 ]
 ~~~
-{: #http-headersframe-ex title="HTTPHeadersFrame example"}
+{: #h3-headersframe-ex title="H3HeadersFrame example"}
 
 ~~~ cddl
-HTTPHeadersFrame = {
+H3HeadersFrame = {
     frame_type: "headers"
     headers: [* HTTPField]
 }
 ~~~
-{: #http-headersframe-def title="HTTPHeadersFrame definition"}
+{: #h3-headersframe-def title="H3HeadersFrame definition"}
 
 ~~~ cddl
 HTTPField = {
@@ -459,46 +459,46 @@ HTTPField = {
 ~~~
 {: #httpfield-def title="HTTPField definition"}
 
-### HTTPCancelPushFrame
+### H3CancelPushFrame
 
 ~~~ cddl
-HTTPCancelPushFrame = {
+H3CancelPushFrame = {
     frame_type: "cancel_push"
     push_id: uint64
 }
 ~~~
-{: #http-cancelpushframe-def title="HTTPCancelPushFrame definition"}
+{: #h3-cancelpushframe-def title="H3CancelPushFrame definition"}
 
-### HTTPSettingsFrame
+### H3SettingsFrame
 
 ~~~ cddl
-HTTPSettingsFrame = {
+H3SettingsFrame = {
     frame_type: "settings"
-    settings: [* HTTPSetting]
+    settings: [* H3Setting]
 }
 
-HTTPSetting = {
+H3Setting = {
     name: text
     value: uint64
 }
 ~~~
-{: #httpsettingsframe-def title="HTTPSettingsFrame definition"}
+{: #h3settingsframe-def title="H3SettingsFrame definition"}
 
-### HTTPPushPromiseFrame
+### H3PushPromiseFrame
 
 ~~~ cddl
-HTTPPushPromiseFrame = {
+H3PushPromiseFrame = {
     frame_type: "push_promise"
     push_id: uint64
     headers: [* HTTPField]
 }
 ~~~
-{: #httppushpromiseframe-def title="HTTPPushPromiseFrame definition"}
+{: #h3pushpromiseframe-def title="H3PushPromiseFrame definition"}
 
-### HTTPGoAwayFrame
+### H3GoAwayFrame
 
 ~~~ cddl
-HTTPGoawayFrame = {
+H3GoawayFrame = {
     frame_type: "goaway"
 
     ; Either stream_id or push_id.
@@ -506,33 +506,33 @@ HTTPGoawayFrame = {
     id: uint64
 }
 ~~~
-{: #httpgoawayframe-def title="HTTPGoawayFrame definition"}
+{: #h3goawayframe-def title="H3GoawayFrame definition"}
 
-### HTTPMaxPushIDFrame
+### H3MaxPushIDFrame
 
 ~~~ cddl
-HTTPMaxPushIDFrame = {
+H3MaxPushIDFrame = {
     frame_type: "max_push_id"
     push_id: uint64
 }
 ~~~
-{: #httpmaxpushidframe-def title="HTTPMaxPushIDFrame definition"}
+{: #h3maxpushidframe-def title="H3MaxPushIDFrame definition"}
 
-### HTTPReservedFrame
+### H3ReservedFrame
 
 ~~~ cddl
-HTTPReservedFrame = {
+H3ReservedFrame = {
     frame_type: "reserved"
 
     ? length: uint64
 }
 ~~~
-{: #httpreservedframe-def title="HTTPReservedFrame definition"}
+{: #h3reservedframe-def title="H3ReservedFrame definition"}
 
-### HTTPUnknownFrame
+### H3UnknownFrame
 
 ~~~ cddl
-HTTPUnknownFrame = {
+H3UnknownFrame = {
     frame_type: "unknown"
     raw_frame_type: uint64
 
@@ -540,12 +540,12 @@ HTTPUnknownFrame = {
     ? raw: hexstring
 }
 ~~~
-{: #httpunknownframe-def title="UnknownFrame definition"}
+{: #h3unknownframe-def title="UnknownFrame definition"}
 
-### HTTPApplicationError
+### H3ApplicationError
 
 ~~~ cddl
-HTTPApplicationError =  "http_no_error" /
+H3ApplicationError =  "http_no_error" /
                         "http_general_protocol_error" /
                         "http_internal_error" /
                         "http_stream_creation_error" /
@@ -563,15 +563,15 @@ HTTPApplicationError =  "http_no_error" /
                         "http_connect_error" /
                         "http_version_fallback"
 ~~~
-{: #httpapplicationerror-def title="HTTPApplicationError definition"}
+{: #h3applicationerror-def title="H3ApplicationError definition"}
 
-The HTTPApplicationError defines the general $ApplicationError
+The H3ApplicationError defines the general $ApplicationError
 definition in the qlog QUIC definition, see {{QLOG-QUIC}}.
 
 ~~~ cddl
 ; ensure HTTP errors are properly validate in QUIC events as well
 ; e.g., QUIC's ConnectionClose Frame
-$ApplicationError /= HTTPApplicationError
+$ApplicationError /= H3ApplicationError
 ~~~
 
 # QPACK Events {#qpack-ev}
