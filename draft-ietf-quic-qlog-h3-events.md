@@ -210,7 +210,7 @@ HTTPParametersSet = {
 }
 
 HTTPParameters = {
-    ? max_header_list_size: uint64
+    ? max_field_section_size: uint64
     ? max_table_capacity: uint64
     ? blocked_streams_count: uint64
 
@@ -978,7 +978,6 @@ document as well.
 TBD
 
 --- back
-
 
 # Change Log
 
