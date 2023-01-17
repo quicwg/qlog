@@ -209,6 +209,14 @@ In order to make it easier to parse and identify qlog files and their
 serialization format, the "qlog_version" and "qlog_format" fields and their values
 SHOULD be in the first 256 characters/bytes of the resulting log file.
 
+A qlog Trace ({{trace}} can include Events. This document defines several
+generic events ({{generic-events-and-data-classes}}). Additional event
+definitions, e.g., protocol-specific events, can be defined in additional
+schema; see {{guidelines}}. The "additional_schema" field can be used to
+indicate the additional schema used for traces in a qlog file. It is RECOMMENDED
+that schema defined by the IETF are referenced by their case-insensitive
+document name e.g., "draft-ietf-quic-qlog-quic-events-03" or "rfcNNNN".
+
 An example of the qlog file's top-level structure is shown in {{qlog-file-def}}.
 
 Definition:
@@ -217,6 +225,7 @@ Definition:
 QlogFile = {
     qlog_version: text
     ? qlog_format: text .default "JSON"
+    ? additional_schema: [+ text]
     ? title: text
     ? description: text
     ? traces: [+ Trace /
@@ -231,6 +240,10 @@ JSON serialization example:
 {
     "qlog_version": "0.4",
     "qlog_format": "JSON",
+    "additional_schema": [
+      "draft-ietf-quic-qlog-quic-events-03",
+      "draft-ietf-quic-qlog-quic-h3-events-03"
+    ],
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
     "traces": [...]
@@ -876,7 +889,7 @@ trace has a different value for a given field, this field MUST NOT be added to
 common_fields but instead defined on each event individually. Good example of such
 fields are "time" and "data", who are divergent by nature.
 
-# Guidelines for event definition documents
+# Guidelines for event definition documents {#guidelines}
 
 This document only defines the main schema for the qlog format. This is intended
 to be used together with specific, per-protocol event definitions that specify the

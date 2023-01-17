@@ -87,9 +87,9 @@ fields.
 # Overview
 
 This document describes how the QUIC protocol is can be expressed in qlog using
-the schema defined in {{QLOG-MAIN}}. QUIC protocol events are defined with a
-category, a name (the concatenation of "category" and "event"), an "importance",
-an optional "trigger", and "data" fields.
+the schema defined in {{QLOG-MAIN}} with "qlog_version" of "0.4". QUIC protocol
+events are defined with a category, a name (the concatenation of "category" and
+"event"), an "importance", an optional "trigger", and "data" fields.
 
 Some data fields use complex datastructures. These are represented as enums or
 re-usable definitions, which are grouped together on the bottom of this document

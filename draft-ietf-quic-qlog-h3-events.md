@@ -107,9 +107,9 @@ When any event from this document is included in a qlog trace, the
 ## Usage with QUIC
 
 The events described in this document can be used with or without logging the
-related QUIC events defined in {{QLOG-QUIC}}. If used with QUIC events, the QUIC
-document takes precedence in terms of recommended filenames and trace separation
-setups.
+related QUIC events defined in {{QLOG-QUIC}} with "qlog_version" of "0.4". If
+used with QUIC events, the QUIC document takes precedence in terms of
+recommended filenames and trace separation setups.
 
 If used without QUIC events, it is recommended that the implementation assign a
 globally unique identifier to each HTTP/3 connection. This ID can then be used as
