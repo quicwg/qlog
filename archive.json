@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-01-15T00:57:16.547617+00:00",
+  "timestamp": "2023-01-17T00:53:44.061450+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -6559,6 +6559,30 @@
       "updatedAt": "2023-01-13T16:04:17Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 281,
+      "id": "I_kwDOCrLn6M5bfcHn",
+      "title": "Revisit use of datagram_id",
+      "url": "https://github.com/quicwg/qlog/issues/281",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Currently, we have a mechanism for tracking QUIC packet coalescing in a single UDP datagram by means of the `datagram_id` field. This was originally added as per #91. \r\n\r\nMain intended use: when a UDP payload is received containing multiple coalesced QUIC packets, those QUIC packets are given the same \"datagram ID\" (which is a receiver-side chosen number that's unique per received datagram, which is needed because UDP datagrams don't have a packet number or similar). As such, when 2 separate packets are logged in 2 separate `packet_received` events, but they have the same value for the `datagram_id` field, it's clear they were coalesced. Similarly, 2 `packet_sent` events with the same `datagram_id` indicate sender-side coalescing. \r\n\r\nAs the original issue #91 indicates, this can be deduced from the `datagram_*` events as well, but those are often too chatty to leave on. The `datagram_ids` fields on the `datagram_*` events are for completeness / ability to track coalesced packets across the different events. \r\n\r\nI'm personally not the biggest fan of this solution (did you eventually implement this in quic-go, @marten-seemann?), but I don't immediately see a better approach.\r\n\r\nCC @LPardue as he indicated the use of `datagram_id` wasn't clear to him, which means we either need to revisit or clarify its use.",
+      "createdAt": "2023-01-16T13:46:43Z",
+      "updatedAt": "2023-01-16T15:35:38Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I'll try to summarise my understanding. \r\n\r\nThe `datagram_id` is specified for the following events\r\n\r\n* packet_sent\r\n* packet_received\r\n* packet_buffered\r\n* packet_dropped\r\n* datagrams_sent (an array here, but same purpose)\r\n* datagrams_received (an array here, but same purpose)\r\n\r\nThe use of the ID is given in https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-datagrams_sent and currently says:\r\n\r\n> Note: QUIC itself does not have a concept of a \"datagram_id\". This field is a purely qlog-specific construct to allow tracking how multiple QUIC packets are coalesced inside of a single UDP datagram, which is an important optimization during the QUIC handshake. For this, implementations assign a (per-endpoint) unique ID to each datagram and keep track of which packets were coalesced into the same datagram. As packet coalescing typically only happens during the handshake (as it requires at least one long header packet), this can be done without much overhead.\r\n\r\nI don't mind the motivating use case. I'm not sure exactly how my implementations could use it for packet sending events because we generate the packet and qlog it before we get into UDP datagram realms. Changes might address that but I'm not sure it's worth overhead. Other implementations might find it far more natural to use though.\r\n\r\nThe main part I find confusing is the part about `implementations assign a per-endpoint unique ID`. This is vague and quite specific at the same time. How unique does something need to be? Can I just use a counter like datagram_id = 0, datagram_id=1 for the packets sent on a connection? Or is the expectation that the identifier is more like a UUID, so that  packets are uniquely traceable? Maybe it depends if we are capturing single connections or traces that span mutliple things, so perhaps a reword to state the requirements and expectations of the datagram_id value could help. E.g. \"Since QUIC traces may contain many UDP events, unique identifiers are required for each datagram in order to avoid them being confused. Identifiers are not exchanged on the wire, they are only relevant to the logging endpoint. Selecting identifier values is left to implementations that should consider how to generate unique values within the scope of the traces they generate\"",
+          "createdAt": "2023-01-16T15:35:38Z",
+          "updatedAt": "2023-01-16T15:35:38Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -12148,13 +12172,13 @@
       "labels": [],
       "body": "Fixes #243, #54 and #173.\r\nPartially fixes #174.",
       "createdAt": "2023-01-10T15:57:46Z",
-      "updatedAt": "2023-01-13T16:02:44Z",
+      "updatedAt": "2023-01-16T15:36:22Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "ec25b5849940e7aa3d26045de405fe6d37fd8f9d",
       "headRepository": "quicwg/qlog",
       "headRefName": "rawinfo_consistency",
-      "headRefOid": "0f001953fc386b7adb615913ae511f1a8aecbd75",
+      "headRefOid": "1bb53cffea0b385aa4f9d266b1c98d99552f377b",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -12320,6 +12344,39 @@
               "updatedAt": "2023-01-13T16:02:44Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KhE4j",
+          "commit": {
+            "abbreviatedOid": "0f00195"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-16T13:36:15Z",
+          "updatedAt": "2023-01-16T13:36:16Z",
+          "comments": [
+            {
+              "originalPosition": 23,
+              "body": "Opened a separate issue for this. see #281 ",
+              "createdAt": "2023-01-16T13:36:15Z",
+              "updatedAt": "2023-01-16T13:47:11Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KhxHj",
+          "commit": {
+            "abbreviatedOid": "1bb53cf"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-16T15:36:21Z",
+          "updatedAt": "2023-01-16T15:36:21Z",
+          "comments": []
         }
       ]
     },
@@ -12426,13 +12483,13 @@
       "labels": [],
       "body": "Fixes #25. ",
       "createdAt": "2023-01-13T15:28:17Z",
-      "updatedAt": "2023-01-13T15:40:34Z",
+      "updatedAt": "2023-01-16T13:50:28Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
       "headRepository": "quicwg/qlog",
       "headRefName": "clean_packetdropped",
-      "headRefOid": "3f854107e1b3258c2f6036629be5ab29efc37474",
+      "headRefOid": "aec792cb7b32e6e1a51562bffcdf8ba9555ced26",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
