@@ -70,17 +70,17 @@ Table of Contents
      4.6.  push_resolved
    5.  HTTP/3 Data Field Definitions
      5.1.  Owner
-     5.2.  HTTPFrame
-       5.2.1.  HTTPDataFrame
-       5.2.2.  HTTPHeadersFrame
-       5.2.3.  HTTPCancelPushFrame
-       5.2.4.  HTTPSettingsFrame
-       5.2.5.  HTTPPushPromiseFrame
-       5.2.6.  HTTPGoAwayFrame
-       5.2.7.  HTTPMaxPushIDFrame
-       5.2.8.  HTTPReservedFrame
-       5.2.9.  HTTPUnknownFrame
-       5.2.10. HTTPApplicationError
+     5.2.  H3Frame
+       5.2.1.  H3DataFrame
+       5.2.2.  H3HeadersFrame
+       5.2.3.  H3CancelPushFrame
+       5.2.4.  H3SettingsFrame
+       5.2.5.  H3PushPromiseFrame
+       5.2.6.  H3GoAwayFrame
+       5.2.7.  H3MaxPushIDFrame
+       5.2.8.  H3ReservedFrame
+       5.2.9.  H3UnknownFrame
+       5.2.10. H3ApplicationError
    6.  QPACK Events
      6.1.  state_updated
      6.2.  stream_state_updated
@@ -248,13 +248,13 @@ Table of Contents
    HTTP/3 events extend the $ProtocolEventBody extension point defined
    in [QLOG-MAIN].
 
-   HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
-                HTTPStreamTypeSet / HTTPFrameCreated /
-                HTTPFrameParsed / HTTPPushResolved
+   H3Events = H3ParametersSet / H3ParametersRestored /
+                H3StreamTypeSet / H3FrameCreated /
+                H3FrameParsed / H3PushResolved
 
-   $ProtocolEventBody /= HTTPEvents
+   $ProtocolEventBody /= H3Events
 
-      Figure 1: HTTPEvents definition and ProtocolEventBody extension
+       Figure 1: H3Events definition and ProtocolEventBody extension
 
 4.1.  parameters_set
 
@@ -280,10 +280,10 @@ Table of Contents
 
    Definition:
 
-   HTTPParametersSet = {
+   H3ParametersSet = {
        ? owner: Owner
 
-       ~HTTPParameters
+       ~H3Parameters
 
        ; qlog-specific
        ; indicates whether this implementation waits for a SETTINGS
@@ -291,7 +291,7 @@ Table of Contents
        ? waits_for_settings: bool
    }
 
-   HTTPParameters = {
+   H3Parameters = {
        ? max_header_list_size: uint64
        ? max_table_capacity: uint64
        ? blocked_streams_count: uint64
@@ -300,7 +300,7 @@ Table of Contents
        * text => uint64
    }
 
-                   Figure 2: HTTPParametersSet definition
+                    Figure 2: H3ParametersSet definition
 
    Note: enabling server push is not explicitly done in HTTP/3 by use of
    a setting or parameter.  Instead, it is communicated by use of the
@@ -322,13 +322,13 @@ Table of Contents
 
    Definition:
 
-   HTTPParametersRestored = {
+   H3ParametersRestored = {
 
-       ~HTTPParameters
+       ~H3Parameters
 
    }
 
-                Figure 3: HTTPParametersRestored definition
+                 Figure 3: H3ParametersRestored definition
 
    Note that, like for parameters_set above, this event can contain any
    number of unspecified fields to allow for additional and custom
@@ -348,11 +348,11 @@ Table of Contents
 
    Definition:
 
-   HTTPStreamTypeSet = {
+   H3StreamTypeSet = {
        ? owner: Owner
        stream_id: uint64
 
-       stream_type: HTTPStreamType
+       stream_type: H3StreamType
 
        ; only when stream_type === "unknown"
        ? raw_stream_type: uint64
@@ -361,7 +361,7 @@ Table of Contents
        ? associated_push_id: uint64
    }
 
-   HTTPStreamType =  "request" /
+   H3StreamType =  "request" /
                      "control" /
                      "push" /
                      "reserved" /
@@ -369,7 +369,7 @@ Table of Contents
                      "qpack_encode" /
                      "qpack_decode"
 
-                   Figure 4: HTTPStreamTypeSet definition
+                    Figure 4: H3StreamTypeSet definition
 
 4.4.  frame_created
 
@@ -382,14 +382,14 @@ Table of Contents
 
    Definition:
 
-   HTTPFrameCreated = {
+   H3FrameCreated = {
        stream_id: uint64
        ? length: uint64
-       frame: $HTTPFrame
+       frame: $H3Frame
        ? raw: RawInfo
    }
 
-                   Figure 5: HTTPFrameCreated definition
+                    Figure 5: H3FrameCreated definition
 
    Note: in HTTP/3, DATA frames can have arbitrarily large lengths to
    reduce frame header overhead.  As such, DATA frames can span many
@@ -408,14 +408,14 @@ Table of Contents
 
    Definition:
 
-   HTTPFrameParsed = {
+   H3FrameParsed = {
        stream_id: uint64
        ? length: uint64
-       frame: $HTTPFrame
+       frame: $H3Frame
        ? raw: RawInfo
    }
 
-                    Figure 6: HTTPFrameParsed definition
+                     Figure 6: H3FrameParsed definition
 
    Note: in HTTP/3, DATA frames can have arbitrarily large lengths to
    reduce frame header overhead.  As such, DATA frames can span many
@@ -435,19 +435,19 @@ Table of Contents
 
    Definition:
 
-   HTTPPushResolved = {
+   H3PushResolved = {
        ? push_id: uint64
 
        ; in case this is logged from a place that does not have access
        ; to the push_id
        ? stream_id: uint64
 
-       decision: HTTPPushDecision
+       decision: H3PushDecision
    }
 
-   HTTPPushDecision = "claimed" / "abandoned"
+   H3PushDecision = "claimed" / "abandoned"
 
-                   Figure 7: HTTPPushResolved definition
+                    Figure 7: H3PushResolved definition
 
 5.  HTTP/3 Data Field Definitions
 
@@ -459,45 +459,45 @@ Table of Contents
 
                          Figure 8: Owner definition
 
-5.2.  HTTPFrame
+5.2.  H3Frame
 
-   The generic $HTTPFrame is defined here as a CDDL extension point (a
+   The generic $H3Frame is defined here as a CDDL extension point (a
    "socket" or "plug").  It can be extended to support additional HTTP/3
    frame types.
 
-   ; The HTTPFrame is any key-value map (e.g., JSON object)
-   $HTTPFrame /= {
+   ; The H3Frame is any key-value map (e.g., JSON object)
+   $H3Frame /= {
        * text => any
    }
 
-                    Figure 9: HTTPFrame plug definition
+                     Figure 9: H3Frame plug definition
 
    The HTTP/3 frame types defined in this document are as follows:
 
-   HTTPBaseFrames =  HTTPDataFrame /
-                HTTPHeadersFrame /
-                HTTPCancelPushFrame /
-                HTTPSettingsFrame /
-                HTTPPushPromiseFrame /
-                HTTPGoawayFrame /
-                HTTPMaxPushIDFrame /
-                HTTPReservedFrame /
-                HTTPUnknownFrame
+   H3BaseFrames =  H3DataFrame /
+                H3HeadersFrame /
+                H3CancelPushFrame /
+                H3SettingsFrame /
+                H3PushPromiseFrame /
+                H3GoawayFrame /
+                H3MaxPushIDFrame /
+                H3ReservedFrame /
+                H3UnknownFrame
 
-   $HTTPFrame /= HTTPBaseFrames
+   $H3Frame /= H3BaseFrames
 
-                    Figure 10: HTTPBaseFrames definition
+                     Figure 10: H3BaseFrames definition
 
-5.2.1.  HTTPDataFrame
+5.2.1.  H3DataFrame
 
-   HTTPDataFrame = {
+   H3DataFrame = {
        frame_type: "data"
        ? raw: hexstring
    }
 
-                    Figure 11: HTTPDataFrame definition
+                     Figure 11: H3DataFrame definition
 
-5.2.2.  HTTPHeadersFrame
+5.2.2.  H3HeadersFrame
 
    This represents an _uncompressed_, plaintext HTTP Headers frame
    (e.g., no QPACK compression is applied).
@@ -523,14 +523,14 @@ Table of Contents
      }
    ]
 
-                    Figure 12: HTTPHeadersFrame example
+                     Figure 12: H3HeadersFrame example
 
-   HTTPHeadersFrame = {
+   H3HeadersFrame = {
        frame_type: "headers"
        headers: [* HTTPField]
    }
 
-                   Figure 13: HTTPHeadersFrame definition
+                    Figure 13: H3HeadersFrame definition
 
    HTTPField = {
        name: text
@@ -539,42 +539,42 @@ Table of Contents
 
                       Figure 14: HTTPField definition
 
-5.2.3.  HTTPCancelPushFrame
+5.2.3.  H3CancelPushFrame
 
-   HTTPCancelPushFrame = {
+   H3CancelPushFrame = {
        frame_type: "cancel_push"
        push_id: uint64
    }
 
-                 Figure 15: HTTPCancelPushFrame definition
+                  Figure 15: H3CancelPushFrame definition
 
-5.2.4.  HTTPSettingsFrame
+5.2.4.  H3SettingsFrame
 
-   HTTPSettingsFrame = {
+   H3SettingsFrame = {
        frame_type: "settings"
-       settings: [* HTTPSetting]
+       settings: [* H3Setting]
    }
 
-   HTTPSetting = {
+   H3Setting = {
        name: text
        value: uint64
    }
 
-                  Figure 16: HTTPSettingsFrame definition
+                   Figure 16: H3SettingsFrame definition
 
-5.2.5.  HTTPPushPromiseFrame
+5.2.5.  H3PushPromiseFrame
 
-   HTTPPushPromiseFrame = {
+   H3PushPromiseFrame = {
        frame_type: "push_promise"
        push_id: uint64
        headers: [* HTTPField]
    }
 
-                 Figure 17: HTTPPushPromiseFrame definition
+                  Figure 17: H3PushPromiseFrame definition
 
-5.2.6.  HTTPGoAwayFrame
+5.2.6.  H3GoAwayFrame
 
-   HTTPGoawayFrame = {
+   H3GoawayFrame = {
        frame_type: "goaway"
 
        ; Either stream_id or push_id.
@@ -582,30 +582,30 @@ Table of Contents
        id: uint64
    }
 
-                   Figure 18: HTTPGoawayFrame definition
+                    Figure 18: H3GoawayFrame definition
 
-5.2.7.  HTTPMaxPushIDFrame
+5.2.7.  H3MaxPushIDFrame
 
-   HTTPMaxPushIDFrame = {
+   H3MaxPushIDFrame = {
        frame_type: "max_push_id"
        push_id: uint64
    }
 
-                  Figure 19: HTTPMaxPushIDFrame definition
+                   Figure 19: H3MaxPushIDFrame definition
 
-5.2.8.  HTTPReservedFrame
+5.2.8.  H3ReservedFrame
 
-   HTTPReservedFrame = {
+   H3ReservedFrame = {
        frame_type: "reserved"
 
        ? length: uint64
    }
 
-                  Figure 20: HTTPReservedFrame definition
+                   Figure 20: H3ReservedFrame definition
 
-5.2.9.  HTTPUnknownFrame
+5.2.9.  H3UnknownFrame
 
-   HTTPUnknownFrame = {
+   H3UnknownFrame = {
        frame_type: "unknown"
        raw_frame_type: uint64
 
@@ -615,9 +615,9 @@ Table of Contents
 
                      Figure 21: UnknownFrame definition
 
-5.2.10.  HTTPApplicationError
+5.2.10.  H3ApplicationError
 
-   HTTPApplicationError =  "http_no_error" /
+   H3ApplicationError =  "http_no_error" /
                            "http_general_protocol_error" /
                            "http_internal_error" /
                            "http_stream_creation_error" /
@@ -635,14 +635,14 @@ Table of Contents
                            "http_connect_error" /
                            "http_version_fallback"
 
-                 Figure 22: HTTPApplicationError definition
+                  Figure 22: H3ApplicationError definition
 
-   The HTTPApplicationError defines the general $ApplicationError
+   The H3ApplicationError defines the general $ApplicationError
    definition in the qlog QUIC definition, see [QLOG-QUIC].
 
    ; ensure HTTP errors are properly validate in QUIC events as well
    ; e.g., QUIC's ConnectionClose Frame
-   $ApplicationError /= HTTPApplicationError
+   $ApplicationError /= H3ApplicationError
 
 6.  QPACK Events
 
