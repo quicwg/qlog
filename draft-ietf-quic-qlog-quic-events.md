@@ -1878,7 +1878,7 @@ TransportError = "no_error" / "internal_error" /
     "protocol_violation" / "invalid_token" / "application_error" /
     "crypto_buffer_exceeded" / "key_update_error" / "aead_limit_reached" /
     "no_viable_path"
-    ; there is no value to reflect CRYPTO_ERROR, instead use CryptoError type
+    ; there is no value to reflect CRYPTO_ERROR; use the CryptoError type instead
 ~~~
 {: #transporterror-def title="TransportError definition"}
 
