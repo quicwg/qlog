@@ -1329,7 +1329,7 @@ easy enough to parse with existing implementations (i.e., by splitting the file
 into its component records and feeding them to a normal JSON parser individually,
 as each record by itself is a valid JSON object).
 
-### Truncated values {#truncated-values}
+## Truncated values {#truncated-values}
 
 For some use cases (e.g., limiting file size, privacy), it can be
 necessary not to log a full raw blob (using the `hexstring` type) but
