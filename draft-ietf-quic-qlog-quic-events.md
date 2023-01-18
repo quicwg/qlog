@@ -1190,7 +1190,7 @@ RecoveryParametersSet = {
 
     ; Note: this could change when max_datagram_size changes
     ; in bytes
-    ? minimum_congestion_window: uint32
+    ? minimum_congestion_window: uint64
     ? loss_reduction_factor: float32
 
     ; as PTO multiplier
