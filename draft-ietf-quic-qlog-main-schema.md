@@ -1383,7 +1383,7 @@ The main possible permutations are shown by example in
 {: #truncated-values-ex title="Example for serializing truncated
 hexstrings"}
 
-## Other optimized formatting options {#optimizations}
+## Optimization of serialized data {#optimizations}
 
 Both the JSON and JSON-SEQ formatting options described above are serviceable in
 general small to medium scale (debugging) setups. However, these approaches tend
@@ -1397,14 +1397,9 @@ and optimization options were assessed and the results are [summarized on the ql
 github
 repository](https://github.com/quiclog/internet-drafts/issues/30#issuecomment-617675097).
 
-The rest of this section discusses some of these approaches implementations could
-choose and the expected gains and tradeoffs inherent therein. Tools SHOULD support
-mainly the compression options listed in {{compression}}, as they provide the
-largest wins for the least cost overall.
-
 Formal definition of additional qlog formats or encodings that use the
 optimization techniques described here, or any other optimization technique is
-left to future activity.
+left to future activity that can apply the following guidelines.
 
 It is important that tooling can correctly parse and process serialized qlog. It
 is RECOMMENDED that new formats also define suitable file extensions and media types. This provides a clear signal and avoids the need to provide out-of-band information or to rely on heuristic fallbacks; see {{tooling}}.
@@ -1417,102 +1412,11 @@ the extension ".qlog.A.B". This allows tooling reverse the applied optimizations
 to arrive at the expected qlog representation. This recommendation applies to
 both file extensions and media types.
 
-### Data structure optimizations {#structure-optimizations}
-
-The first general category of optimizations is to alter the representation of data
-within an JSON(-SEQ) qlog file to reduce file size.
-
-The first option, dubbed named headers, employs a scheme similar to the CSV
-(comma-separated value {{!RFC4180}}) format. In JSON qlog, several field names
-are repeated with each event (i.e., time, name, data). These names could be
-extracted into a separate list (similar to CSV column headers), after which qlog
-events could be serialized as an array of values, as opposed to a full object.
-
-The named headers approach was a key part of the early qlog formats before
-standardization. However, tests showed that it only provided a
-modest mean file size reduction of 5% (e.g., from 100MB to 95MB) while
-significantly increasing the implementation complexity. These factors led to the
-switching back to conventional JSON.
-
-The second option, dubbed dictionary, is to replace field values and/or names
-with indices into a (dynamic) lookup table. This is a common compression
-technique and can provide significant file size reductions (tests indicated up
-to 50%, e.g., from 100MB to 50MB). However, this approach is even more difficult
-to implement efficiently and requires either including the (dynamic) table in
-the resulting file (an approach taken by for example [Chromium's NetLog
-format](https://www.chromium.org/developers/design-documents/network-stack/netlog))
-or defining a (static) table up-front and sharing this between implementations.
-
-Named header and dictionary optimization formats based on JSON would still
-produce valid JSON. They could be indicated as an appended optimization as
-described in {{concrete-formats}}} and {{optimizations}}.
-
-### Compression {#compression}
-
-The second general category of optimizations is to utilize a (generic) compression
-scheme for textual data. As qlog in the JSON(-SEQ) format typically contains a
-large amount of repetition, off-the-shelf (text) compression techniques typically
-succeed very well in bringing down file sizes. Testing has shown it is possible to regularly achieve compression ratios of up to two orders of magnitude, even for "fast" compression levels. As such, utilizing
-compression is recommended before attempting other optimization options, even
-though this might (somewhat) increase processing costs due to the additional
-compression step.
-
-There are many compression algorithms suited to qlog in JSON(-SEQ) format. GZIP
-and Brotli compression are widely implemented, tunable, and available in
-web-based environments making a good starting point for interoperable tooling.
-However, other existing or future algorithms can also be applied without
-restriction. In any and all cases, the "qlog_format" field should should still
-reflect the original formatting (e.g., "JSON" or "JSON-SEQ").
-
-GZIP compression ({{!RFC1952}}) provides multiple compression levels (providing
-a trade-off between compression speed and size reduction). Testing has shown
-that level 6 (a medium setting) can compresses qlog JSON files to 7% of their
-initial size on average (e.g., from 100MB to 7MB). GZIP files conventionally use
-the "gz" file extension, so, for example, a JSON GZIP compressed file that used the file extension "qlog.gz" would meet the expectations of both GZIP- and qlog-supporting software.
-
-Brotli compression ({{!RFC7932}}), while similar to GZIP, can provide better
-efficiency. Brotli also also provides multiple compression levels. Level 4 (a
-medium setting), can compresses qlog JSON files to 7% of their
-initial size on average (e.g., from 100MB to 7MB). Brotli files conventionally use
-the "br" file extension, so, for example, a JSON brotli compressed file that used the file extension "qlog.br" would meet the expectations of both brotli- and qlog-supporting software.
-
-### Binary formats {#binary}
-
-The third general category of optimizations is to use a more optimized (often
-binary) format instead of the textual JSON format. This approach inherently
-produces smaller files and often has better (de)serialization performance.
-However, the resultant files are no longer human readable and some formats require
-hard tradeoffs between flexibility for performance.
-
-The first option is to use the CBOR (Concise Binary Object Representation
-{{!RFC7049}}) format. For the purposes of qlog, CBOR can be viewed as a straightforward
-binary variant of JSON. As such, existing JSON qlog files can be trivially
-converted to and from CBOR (though slightly more work is needed for JSON-SEQ
-qlogs to convert them to CBOR-SEQ, see {{?RFC8742}}). While CBOR thus does
-retain the full qlog flexibility, testing has shown it only provides a 25% file
-size reduction (e.g., from 100MB to 75MB) compared to textual JSON(-SEQ). A CBOR-based format should still reflect the original JSON formatting of the
-qlog data (e.g., "JSON" or "JSON-SEQ"). However, indicating CBOR or CBOR Sequences in the file extension and media type would improve operability.
-
-A second option is to use a more specialized binary format, such as [Protocol
-Buffers](https://developers.google.com/protocol-buffers) (protobuf). This format
-is battle-tested, has support for optional fields and has libraries in most
-programming languages. Still, it is significantly less flexible than textual
-JSON or CBOR, as it relies on a separate, pre-defined schema (a .proto file). As
-such, it it not possible to (easily) log new event types in protobuf files
-without adjusting this schema as well, which has its own practical challenges.
-The lower flexibility does lead to significantly reduced file sizes. An
-experimental mapping of the qlog main schema and QUIC/HTTP3 event types to
-protobuf resulted in qlog files 24% as large as the raw JSON equivalents (e.g.,
-from 100MB to 24MB). A binary format would need to be indicated with a different
-"qlog_format", file extension and media type.
-
-Note that binary formats can also be used in conjunction with compression (see
-{{compression}}). For example, testing has shown that CBOR compresses well (to
-about 6% of the original textual JSON size (e.g., from 100MB to 6MB) for both
-gzip and brotli) and so does protobuf (5% (gzip) to 3% (brotli)). Compressing
-binary formats is therefore a incremental improvement. However, these gains are
-similar to those achieved by simply compressing the textual JSON equivalents
-directly (7%, see {{compression}}).
+A survey of optimization options including expected gains and tradeoffs is
+presented in {{optimization-survey}}. Notably, compression options listed in
+{{compression}}, provide large wins for a low overall cost; tools that support
+compression are likely to see great improvements with respect to serialized data
+sizes in any format.
 
 
 ## Conversion between formats {#conversion}
@@ -1830,3 +1734,113 @@ their feedback and suggestions.
 * Triggers are now properties on the "data" field value, instead of separate field
   types (#23)
 * group_ids in common_fields is now just also group_id
+
+# Survey of serialization optimizations {#optimization-survey}
+## Data structure optimizations {#structure-optimizations}
+
+The first general category of optimizations is to alter the representation of data
+within an JSON(-SEQ) qlog file to reduce file size.
+
+The first option, dubbed named headers, employs a scheme similar to the CSV
+(comma-separated value {{!RFC4180}}) format. In JSON qlog, several field names
+are repeated with each event (i.e., time, name, data). These names could be
+extracted into a separate list (similar to CSV column headers), after which qlog
+events could be serialized as an array of values, as opposed to a full object.
+
+The named headers approach was a key part of the early qlog formats before
+standardization. However, tests showed that it only provided a
+modest mean file size reduction of 5% (e.g., from 100MB to 95MB) while
+significantly increasing the implementation complexity. These factors led to the
+switching back to conventional JSON.
+
+The second option, dubbed dictionary, is to replace field values and/or names
+with indices into a (dynamic) lookup table. This is a common compression
+technique and can provide significant file size reductions (tests indicated up
+to 50%, e.g., from 100MB to 50MB). However, this approach is even more difficult
+to implement efficiently and requires either including the (dynamic) table in
+the resulting file (an approach taken by for example [Chromium's NetLog
+format](https://www.chromium.org/developers/design-documents/network-stack/netlog))
+or defining a (static) table up-front and sharing this between implementations.
+
+Named header and dictionary optimization formats based on JSON would still
+produce valid JSON. They could be indicated as an appended optimization as
+described in {{concrete-formats}}} and {{optimizations}}.
+
+## Compression {#compression}
+
+The second general category of optimizations is to utilize a (generic) compression
+scheme for textual data. As qlog in the JSON(-SEQ) format typically contains a
+large amount of repetition, off-the-shelf (text) compression techniques typically
+succeed very well in bringing down file sizes. Testing has shown it is possible to regularly achieve compression ratios of up to two orders of magnitude, even for "fast" compression levels. As such, utilizing
+compression is recommended before attempting other optimization options, even
+though this might (somewhat) increase processing costs due to the additional
+compression step.
+
+There are many compression algorithms suited to qlog in JSON(-SEQ) format. GZIP
+and Brotli compression are widely implemented, tunable, and available in
+web-based environments making a good starting point for interoperable tooling.
+However, other existing or future algorithms can also be applied without
+restriction. In any and all cases, the "qlog_format" field should should still
+reflect the original formatting (e.g., "JSON" or "JSON-SEQ").
+
+GZIP compression ({{!RFC1952}}) provides multiple compression levels (providing
+a trade-off between compression speed and size reduction). Testing has shown
+that level 6 (a medium setting) can compresses qlog JSON files to 7% of their
+initial size on average (e.g., from 100MB to 7MB). GZIP files conventionally use
+the "gz" file extension, so, for example, a JSON GZIP compressed file that used the file extension "qlog.gz" would meet the expectations of both GZIP- and qlog-supporting software.
+
+Brotli compression ({{!RFC7932}}), while similar to GZIP, can provide better
+efficiency. Brotli also also provides multiple compression levels. Level 4 (a
+medium setting), can compresses qlog JSON files to 7% of their
+initial size on average (e.g., from 100MB to 7MB). Brotli files conventionally use
+the "br" file extension, so, for example, a JSON GZIP compressed file that used the file extension "qlog.br" would meet the expectations of both brotli- and qlog-supporting software.
+
+## Binary formats {#binary}
+
+The third general category of optimizations is to use a more optimized (often
+binary) format instead of the textual JSON format. This approach inherently
+produces smaller files and often has better (de)serialization performance.
+However, the resultant files are no longer human readable and some formats require
+hard tradeoffs between flexibility for performance.
+
+The first option is to use the CBOR (Concise Binary Object Representation
+{{!RFC7049}}) format. For our purposes, CBOR can be viewed as a straightforward
+binary variant of JSON. As such, existing JSON qlog files can be trivially
+converted to and from CBOR (though slightly more work is needed for JSON-SEQ
+qlogs to convert them to CBOR-SEQ, see {{?RFC8742}}). While CBOR thus does
+retain the full qlog flexibility, testing has shown it only provides a 25% file
+size reduction (e.g., from 100MB to 75MB) compared to textual JSON(-SEQ). A CBOR-based format should still reflect the original JSON formatting of the
+qlog data (e.g., "JSON" or "JSON-SEQ"). However, indicating CBOR or CBOR Sequences in the file extension and media type would improve operability.
+
+A second option is to use a more specialized binary format, such as [Protocol
+Buffers](https://developers.google.com/protocol-buffers) (protobuf). This format
+is battle-tested, has support for optional fields and has libraries in most
+programming languages. Still, it is significantly less flexible than textual
+JSON or CBOR, as it relies on a separate, pre-defined schema (a .proto file). As
+such, it it not possible to (easily) log new event types in protobuf files
+without adjusting this schema as well, which has its own practical challenges.
+The lower flexibility does lead to significantly reduced file sizes. An
+experimental mapping of the qlog main schema and QUIC/HTTP3 event types to
+protobuf resulted in qlog files 24% as large as the raw JSON equivalents (e.g.,
+from 100MB to 24MB). A binary format would need to be indicated with a different
+"qlog_format", file extension and media type.
+
+Note that binary formats can also be used in conjunction with compression (see
+{{compression}}). For example, testing has shown that CBOR compresses well (to
+about 6% of the original textual JSON size (e.g., from 100MB to 6MB) for both
+gzip and brotli) and so does protobuf (5% (gzip) to 3% (brotli)). Compressing
+binary formats is therefore a incremental improvement. However, these gains are
+similar to those achieved by simply compressing the textual JSON equivalents
+directly (7%, see {{compression}}).
+
+
+# Acknowledgements
+{:numbered="false"}
+
+Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.
+
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, and Jeremy Lainé for
+their feedback and suggestions.
+
