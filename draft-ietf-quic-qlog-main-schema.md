@@ -1283,6 +1283,52 @@ uint64 = text /
 ~~~
 {: #cddl-ijson-uint64-def title="Custom uint64 definition for I-JSON"}
 
+## qlog to JSON Text Sequences mapping {#format-json-seq}
+
+JSON Text Sequences are very similar to JSON, except that JSON objects are
+serialized as individual records, each prefixed by an ASCII Record Separator
+(\<RS\>, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Note
+that each record can also contain any amount of newlines in its body, as long as
+it ends with a newline character before the next \<RS\> character.
+
+In order to leverage the streaming capability, each qlog event is serialized and
+interpreted as an individual JSON Text Sequence record, that is appended as a
+new object to the back of an event stream or log file. Put differently, unlike
+default JSON, it does not require a document to be wrapped as a full object with
+"{ ... }" or "\[... \]".
+
+This alternative record streaming approach cannot be accommodated by QlogFile
+({{qlog-file-def}}). Instead, QlogFileSeq is defined in {{qlog-file-seq-def}},
+which notably includes only a single trace (TraceSeq) and omits an explicit
+events field. An example is provided in {{json-seq-ex}}.
+
+When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
+"JSON-SEQ". Rhe file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
+The Media Type, if any, SHOULD be "application/qlog+json-seq" per {{!RFC8091}}.
+
+While not specifically required by the JSON-SEQ specification, all qlog
+field names in a JSON-SEQ serialization MUST be lowercase.
+
+In order to serialize all other CDDL-based qlog event and data structure
+definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
+{{Appendix E of CDDL}} SHOULD be employed.
+
+Note that the "group_id" field can still be used on a per-event basis to include
+events from conceptually different sources in a single JSON-SEQ qlog file.
+
+When using JSON-SEQ serialization, the file extension/suffix SHOULD be
+".sqlog" (for "streaming" qlog) and the Media Type (if any) SHOULD be
+"application/qlog+json-seq" per {{!RFC8091}}.
+
+### Supporting JSON Text Sequences in tooling
+
+Note that JSON Text Sequences are not supported in most default programming
+environments (unlike normal JSON). However, several custom JSON-SEQ parsing
+libraries exist in most programming languages that can be used and the format is
+easy enough to parse with existing implementations (i.e., by splitting the file
+into its component records and feeding them to a normal JSON parser individually,
+as each record by itself is a valid JSON object).
+
 ### Truncated values {#truncated-values}
 
 For some use cases (e.g., limiting file size, privacy), it can be
@@ -1336,52 +1382,6 @@ The main possible permutations are shown by example in
 ~~~~~~~~
 {: #truncated-values-ex title="Example for serializing truncated
 hexstrings"}
-
-## qlog to JSON Text Sequences mapping {#format-json-seq}
-
-JSON Text Sequences are very similar to JSON, except that JSON objects are
-serialized as individual records, each prefixed by an ASCII Record Separator
-(\<RS\>, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Note
-that each record can also contain any amount of newlines in its body, as long as
-it ends with a newline character before the next \<RS\> character.
-
-In order to leverage the streaming capability, each qlog event is serialized and
-interpreted as an individual JSON Text Sequence record, that is appended as a
-new object to the back of an event stream or log file. Put differently, unlike
-default JSON, it does not require a document to be wrapped as a full object with
-"{ ... }" or "\[... \]".
-
-This alternative record streaming approach cannot be accommodated by QlogFile
-({{qlog-file-def}}). Instead, QlogFileSeq is defined in {{qlog-file-seq-def}},
-which notably includes only a single trace (TraceSeq) and omits an explicit
-events field. An example is provided in {{json-seq-ex}}.
-
-When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
-"JSON-SEQ". Rhe file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
-The Media Type, if any, SHOULD be "application/qlog+json-seq" per {{!RFC8091}}.
-
-While not specifically required by the JSON-SEQ specification, all qlog
-field names in a JSON-SEQ serialization MUST be lowercase.
-
-In order to serialize all other CDDL-based qlog event and data structure
-definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
-{{Appendix E of CDDL}} SHOULD be employed.
-
-Note that the "group_id" field can still be used on a per-event basis to include
-events from conceptually different sources in a single JSON-SEQ qlog file.
-
-When using JSON-SEQ serialization, the file extension/suffix SHOULD be
-".sqlog" (for "streaming" qlog) and the Media Type (if any) SHOULD be
-"application/qlog+json-seq" per {{!RFC8091}}.
-
-### Supporting JSON Text Sequences in tooling
-
-Note that JSON Text Sequences are not supported in most default programming
-environments (unlike normal JSON). However, several custom JSON-SEQ parsing
-libraries exist in most programming languages that can be used and the format is
-easy enough to parse with existing implementations (i.e., by splitting the file
-into its component records and feeding them to a normal JSON parser individually,
-as each record by itself is a valid JSON object).
 
 ## Other optimized formatting options {#optimizations}
 
