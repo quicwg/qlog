@@ -1174,7 +1174,7 @@ RecoveryParametersSet = {
 
     ; Note: this could change when max_datagram_size changes
     ; in bytes
-    ? minimum_congestion_window: uint32
+    ? minimum_congestion_window: uint64
     ? loss_reduction_factor: float32
 
     ; as PTO multiplier
@@ -1858,7 +1858,9 @@ TransportError = "no_error" / "internal_error" /
     "final_size_error" / "frame_encoding_error" /
     "transport_parameter_error" / "connection_id_limit_error" /
     "protocol_violation" / "invalid_token" / "application_error" /
-    "crypto_buffer_exceeded"
+    "crypto_buffer_exceeded" / "key_update_error" / "aead_limit_reached" /
+    "no_viable_path"
+    ; there is no value to reflect CRYPTO_ERROR; use the CryptoError type instead
 ~~~
 {: #transporterror-def title="TransportError definition"}
 
