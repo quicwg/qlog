@@ -1418,39 +1418,8 @@ presented in {{optimization-survey}}. Notably, compression options listed in
 compression are likely to see great improvements with respect to serialized data
 sizes in any format.
 
-
-## Conversion between formats {#conversion}
-
-As discussed in the previous sections, a qlog file can be serialized in a
-multitude of formats, each of which can conceivably be transformed into or from
-one another without loss of information. For example, a number of JSON-SEQ
-streamed qlogs could be combined into a JSON formatted qlog for later processing.
-Similarly, a captured binary qlog could be transformed to JSON for easier
-interpretation and sharing.
-
-Secondly, other structured logging approaches contain
-similar (though typically not identical) data to qlog, like raw packet capture
-files (for example .pcap files from tcpdump) or endpoint-specific logging formats
-(for example the NetLog format in Google Chrome). These are sometimes the only
-options, if an implementation cannot or will not support direct qlog output for
-any reason, but does provide other internal or external (e.g., SSLKEYLOGFILE
-export to allow decryption of packet captures) logging options For this second
-category, a (partial) transformation from/to qlog can also be defined.
-
-As such, when defining a new qlog serialization format or wanting to utilize
-qlog-compatible tools with existing codebases lacking qlog support, it is
-recommended to define and provide a concrete mapping from one format to default
-JSON-serialized qlog. Several of such mappings exist. Firstly,
-[pcap2qlog]((https://github.com/quiclog/pcap2qlog) transforms QUIC and HTTP/3
-packet capture files to qlog. Secondly,
-[netlog2qlog](https://github.com/quiclog/qvis/tree/master/visualizations/src/components/filemanager/netlogconverter)
-converts chromium's internal dictionary-encoded JSON format to qlog. Finally,
-[quictrace2qlog](https://github.com/quiclog/quictrace2qlog) converts the older
-quictrace format to JSON qlog. Tools can then easily integrate with these
-converters (either by incorporating them directly or for example using them as a
-(web-based) API) so users can provide different file types with ease. For example,
-the [qvis](https://qvis.edm.uhasselt.be) toolsuite supports a multitude of formats
-and qlog serializations.
+Considerations for converting between serialized qlog data formats are presented
+in {{conversion}}.
 
 # Methods of access and generation
 
@@ -1833,6 +1802,38 @@ binary formats is therefore a incremental improvement. However, these gains are
 similar to those achieved by simply compressing the textual JSON equivalents
 directly (7%, see {{compression}}).
 
+# Conversion between formats {#conversion}
+
+As discussed in {{concrete-formats}}, a qlog file can be serialized in a
+multitude of formats, each of which can conceivably be transformed into or from
+one another without loss of information. For example, a number of JSON-SEQ
+streamed qlogs could be combined into a JSON formatted qlog for later processing.
+Similarly, a captured binary qlog could be transformed to JSON for easier
+interpretation and sharing.
+
+Secondly, we can also consider other structured logging approaches that contain
+similar (though typically not identical) data to qlog, like raw packet capture
+files (for example .pcap files from tcpdump) or endpoint-specific logging formats
+(for example the NetLog format in Google Chrome). These are sometimes the only
+options, if an implementation cannot or will not support direct qlog output for
+any reason, but does provide other internal or external (e.g., SSLKEYLOGFILE
+export to allow decryption of packet captures) logging options For this second
+category, a (partial) transformation from/to qlog can also be defined.
+
+As such, when defining a new qlog serialization format or wanting to utilize
+qlog-compatible tools with existing codebases lacking qlog support, it is
+recommended to define and provide a concrete mapping from one format to default
+JSON-serialized qlog. Several of such mappings exist. Firstly,
+[pcap2qlog]((https://github.com/quiclog/pcap2qlog) transforms QUIC and HTTP/3
+packet capture files to qlog. Secondly,
+[netlog2qlog](https://github.com/quiclog/qvis/tree/master/visualizations/src/components/filemanager/netlogconverter)
+converts chromium's internal dictionary-encoded JSON format to qlog. Finally,
+[quictrace2qlog](https://github.com/quiclog/quictrace2qlog) converts the older
+quictrace format to JSON qlog. Tools can then easily integrate with these
+converters (either by incorporating them directly or for example using them as a
+(web-based) API) so users can provide different file types with ease. For example,
+the [qvis](https://qvis.edm.uhasselt.be) toolsuite supports a multitude of formats
+and qlog serializations.
 
 # Acknowledgements
 {:numbered="false"}
