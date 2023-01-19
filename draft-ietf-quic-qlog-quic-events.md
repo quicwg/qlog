@@ -886,8 +886,7 @@ TransportDatagramsSent = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length field indicates total length of the datagrams
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -895,14 +894,13 @@ TransportDatagramsSent = {
 ~~~
 {: #transport-datagramssent-def title="TransportDatagramsSent definition"}
 
-Note: QUIC itself does not have a concept of a "datagram_id". This field is a
-purely qlog-specific construct to allow tracking how multiple QUIC packets are
-coalesced inside of a single UDP datagram, which is an important optimization
-during the QUIC handshake. For this, implementations assign a (per-endpoint)
-unique ID to each datagram and keep track of which packets were coalesced into the
-same datagram. As packet coalescing typically only happens during the handshake
-(as it requires at least one long header packet), this can be done without much
-overhead.
+Since QUIC implementations rarely control UDP logic directly, the raw data
+excludes UDP-level headers in all fields.
+
+The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
+coalescing inside UDP datagrams. Implementations can assign a per-endpoint
+unique ID to each datagram, and reflect this in other events to track QUIC
+packets through processing steps.
 
 ## datagrams_received {#transport-datagramsreceived}
 Importance: Extra
@@ -918,8 +916,7 @@ TransportDatagramsReceived = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length field indicates total length of the datagrams
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -927,18 +924,20 @@ TransportDatagramsReceived = {
 ~~~
 {: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
 
-Note: for more details on "datagram_ids", see {{transport-datagramssent}}.
+For more details on "datagram_ids", see {{transport-datagramssent}}.
 
 ## datagram_dropped {#transport-datagramdropped}
 Importance: Extra
 
 When a UDP-level datagram is dropped. This is typically done if it does not
-contain a valid QUIC packet (in that case, use packet_dropped instead).
+contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
+other reasons, packet_dropped ({{transport-packetdropped}}) should be used instead.
 
 Definition:
 
 ~~~ cddl
 TransportDatagramDropped = {
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: RawInfo
 }
 ~~~
@@ -1076,25 +1075,10 @@ TransportDataMoved = {
     ? from: "user" / "application" / "transport" / "network" / text
     ? to: "user" / "application" / "transport" / "network" / text
 
-    ; raw bytes that were transferred
-    ? data: hexstring
+    ? raw: RawInfo
 }
 ~~~~
 {: #transport-datamoved-def title="TransportDataMoved definition"}
-
-Note: we do not for example use a "direction" field (with values "up" and "down")
-to specify the data flow. This is because in some optimized implementations, data
-might skip some individual layers. Additionally, using explicit "from" and "to"
-fields is more flexible and allows the definition of other conceptual "layers"
-(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
-library ("security") or from HTTP/3 to QPACK ("qpack")).
-
-Note: this event type is part of the "transport" category, but really spans all
-the different layers. This means we have a few leaky abstractions here (for
-example, the stream_id or stream offset might not be available at some logging
-points, or the raw data might not be in a byte-array form). In these situations,
-implementers can decide to define new, in-context fields to aid in manual
-debugging.
 
 # Security Events {#sec-ev}
 
@@ -1471,17 +1455,13 @@ PacketHeader = {
 Token = {
     ? type: "retry" / "resumption"
 
-    ; byte length of the token
-    ? length: uint32
-
-    ; raw byte value of the token
-    ? data: hexstring
-
     ; decoded fields included in the token
     ; (typically: peer's IP address, creation time)
     ? details: {
       * text => any
     }
+
+    ? raw: RawInfo
 }
 ~~~
 {: #token-def title="Token definition"}
@@ -1491,7 +1471,7 @@ packet, or one originally provided by the server in a NEW_TOKEN frame used when
 resuming a connection (e.g., for address validation purposes). Retry and
 resumption tokens typically contain encoded metadata to check the token's
 validity when it is used, but this metadata and its format is implementation
-specific. For that, this field includes a general-purpose "details" field.
+specific. For that, this event includes a general-purpose "details" field.
 
 ## Stateless Reset Token
 
@@ -1693,7 +1673,7 @@ StreamFrame = {
     ; if absent, the value MUST be assumed to be false
     ? fin: bool .default false
 
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #streamframe-def title="StreamFrame definition"}
@@ -1824,8 +1804,9 @@ PathResponseFrame = {
 
 ### ConnectionCloseFrame
 
-raw_error_code is the actual, numerical code. This is useful because some error
-types are spread out over a range of codes (e.g., QUIC's crypto_error).
+The error_code_value field is the numerical value without VLIE encoding. This is
+useful because some error types are spread out over a range of codes (e.g.,
+QUIC's crypto_error).
 
 ~~~ cddl
 ErrorSpace = "transport" / "application"
@@ -1835,11 +1816,11 @@ ConnectionCloseFrame = {
 
     ? error_space: ErrorSpace
     ? error_code: TransportError / $ApplicationError / uint32
-    ? raw_error_code: uint32
+    ? error_code_value: uint64
     ? reason: text
 
     ; For known frame types, the appropriate "frame_type" string
-    ; For unknown frame types, the hex encoded identifier value
+    ; For unknown frame types, the hex encoded frame identifier value
     ? trigger_frame_type: uint64 / text
 }
 ~~~
@@ -1856,13 +1837,14 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
+The frame_type_value field is the numerical value without VLIE encoding.
+
 ~~~ cddl
 UnknownFrame = {
     frame_type: "unknown"
-    raw_frame_type: uint64
+    frame_type_value: uint64
 
-    ? raw_length: uint32
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #unknownframe-def title="UnknownFrame definition"}
@@ -1926,6 +1908,12 @@ TBD
 
 
 # Change Log
+
+## Since draft-ietf-qlog-quic-events-03:
+
+* Ensured consistent use of RawInfo to indicate raw wire bytes (#243)
+* Renamed UnknownFrame:raw_frame_type to :frame_type_value (#54)
+* Renamed ConnectionCloseFrame:raw_error_code to :error_code_value (#54)
 
 ## Since draft-ietf-qlog-quic-events-02:
 
