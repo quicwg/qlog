@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 22 July 2023                                               Meta
+Expires: 23 July 2023                                               Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         18 January 2023
+                                                         19 January 2023
 
 
                       Main logging schema for qlog
@@ -41,7 +41,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 22 July 2023.
+   This Internet-Draft will expire on 23 July 2023.
 
 Copyright Notice
 
@@ -1197,62 +1197,45 @@ Table of Contents
 
 5.1.  Raw packet and frame information
 
-   While qlog is a more high-level logging format, it also allows the
+   While qlog is a high-level logging format, it also allows the
    inclusion of most raw wire image information, such as byte lengths
-   and even raw byte values.  This can be useful when for example
-   investigating or tuning packetization behavior or determining
-   encoding/framing overheads.  However, these fields are not always
-   necessary and can take up considerable space if logged for each
-   packet or frame.  They can also have a considerable privacy and
-   security impact.  As such, they are grouped in a separate optional
-   field called "raw" of type RawInfo (where applicable).
+   and byte values.  This is useful when for example investigating or
+   tuning packetization behavior or determining encoding/framing
+   overheads.  However, these fields are not always necessary, can take
+   up considerable space, and can have a considerable privacy and
+   security impact (see Section 9).  Where applicable, these fields are
+   grouped in a separate, optional, field named "raw" of type RawInfo.
+   The exact definition of entities, headers, trailers and payloads
+   depend on the protocol used.
 
    Definition:
 
    RawInfo = {
        ; the full byte length of the entity (e.g., packet or frame),
-       ; including headers and trailers
+       ; including possible headers and trailers
        ? length: uint64
 
        ; the byte length of the entity's payload,
-       ; without headers or trailers
+       ; excluding possible headers or trailers
        ? payload_length: uint64
 
-       ; the contents of the full entity,
-       ; including headers and trailers
+       ; the (potentially truncated) contents of the full entity,
+       ; including headers and possibly trailers
        ? data: hexstring
    }
 
                        Figure 28: RawInfo definition
 
-   Note:  The RawInfo:data field can be truncated for privacy or
-      security purposes (for example excluding payload data), see
-      Section 6.1.2.  In this case, the length properties should still
-      indicate the non-truncated lengths.
+   The RawInfo:data field can be truncated for privacy or security
+   purposes, see Section 6.1.2.  In this case, the length and
+   payload_length fields should still indicate the non-truncated lengths
+   when used for debugging purposes.
 
-   Note:  We do not specify explicit header_length or trailer_length
-      fields.  In most protocols, header_length can be calculated by
-      subtracting the payload_length from the length (e.g., if
-      trailer_length is always 0).  In protocols with trailers (e.g.,
-      QUIC's AEAD tag), event definitions documents SHOULD define other
-      ways of logging the trailer_length to make the header_length
-      calculation possible.
-
-      The exact definitions entities, headers, trailers and payloads
-      depend on the protocol used.  If this is non-trivial, event
-      definitions documents SHOULD include a clear explanation of how
-      entities are mapped into the RawInfo structure.
-
-   Note:  Relatedly, many modern protocols use Variable-Length Integer
-      Encoded (VLIE) values in their headers, which are of a dynamic
-      length.  Because of this, we cannot deterministically reconstruct
-      the header encoding/length from non-RawInfo qlog data, as
-      implementations might not necessarily employ the most efficient
-      VLIE scheme for all values.  As such, to make exact size-analysis
-      possible, implementers should use explicit lengths in RawInfo
-      rather than reconstructing them from other qlog data.  Similarly,
-      tool developers should only utilize RawInfo (and related
-      information) in such tools to prevent errors.
+   This document does not specify explicit header_length or
+   trailer_length fields.  In protocols without trailers, header_length
+   can be calculated by subtracting the payload_length from the length.
+   In protocols with trailers (e.g., QUIC's AEAD tag), event definition
+   documents SHOULD define how to support header_length calculation.
 
 5.2.  Generic events
 
