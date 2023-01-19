@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-01-17T00:53:44.061450+00:00",
+  "timestamp": "2023-01-19T00:55:51.174776+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3600,7 +3600,7 @@
       "id": "MDU6SXNzdWU3ODE3NDY3NTk=",
       "title": "TransportError",
       "url": "https://github.com/quicwg/qlog/issues/129",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kazu-yamamoto",
       "authorAssociation": "NONE",
       "assignees": [],
@@ -3611,8 +3611,8 @@
       ],
       "body": " A.7.22.  `TransportError` should catch up the latest transport draft. Probably four errors are missing.",
       "createdAt": "2021-01-08T00:34:45Z",
-      "updatedAt": "2021-08-18T10:21:05Z",
-      "closedAt": null,
+      "updatedAt": "2023-01-18T19:59:48Z",
+      "closedAt": "2023-01-18T19:59:48Z",
       "comments": []
     },
     {
@@ -3669,9 +3669,24 @@
       ],
       "body": "As discussed on Slack, i find definition of event and data object a bit confusing. \r\nSome suggestions for improvement:\r\n- https://tools.ietf.org/html/draft-marx-qlog-main-schema-02#section-3.4.3: TransportPacketSentEvent is not an event in the terminology of this document, but an example of data object; as such, i'd suggest to name it TransportPacketSentData\r\n- it would help if the data serialization example in the same section would also show how the data object fits into the event (i.e. include the event in the example)\r\n- https://tools.ietf.org/html/draft-marx-qlog-event-definitions-quic-h3-02#section-5: i'd suggest to also mention each subsubheading / event-type will define the data class that is referred to in main-schema\r\n- why not use the more formal way of defining a data class used in the main-schema document (e.g. class TransportPacketSentData) in stead of the informal \"Data\" label this is now used in quic-schema? The latter confuses me, because it makes me wonder how it fits in the formal definition of event. Also, it would be helpful as one can find the QUIC example in main-schema (TransportPacketSentEvent) in the QUIC-document; currently this example cannot be found in the quic-doc, which is a bit confusing also as it states the example is taken from QUIC ;-)\r\n- the definition (example) of TransportPacketSentEvent in main-schema does not match the definition in quic-doc  section 3.5.3; either make them equal or add a note in the main-schema document that it is only partial.",
       "createdAt": "2021-01-17T09:33:04Z",
-      "updatedAt": "2021-08-18T10:22:30Z",
+      "updatedAt": "2023-01-17T18:02:17Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Since this ticket was opened, we've switched to CDDL and tightened up our terminology usage around Events and Data. I think some of the original points have been addressed but it would be good to double check. \r\n\r\nOne comment that might have hungover is \r\n\r\n> TransportPacketSentEvent is not an event in the terminology of this document, but an example of data object; as such, i'd suggest to name it TransportPacketSentData\r\n\r\nThis is now called simply `TransportPacketSent`, however it belongs to `QuicEvents`, which extends `$ProtocolEventBody`, which is defined in https://www.ietf.org/archive/id/draft-ietf-quic-qlog-main-schema-04.html#figure-15 as \r\n\r\n```\r\nEvent = {\r\n    time: float64\r\n    name: text\r\n    data: $ProtocolEventBody\r\n\r\n    ? time_format: TimeFormat\r\n\r\n    ? protocol_type: ProtocolType\r\n    ? group_id: GroupID\r\n\r\n    ; events can contain any amount of custom fields\r\n    * text => any\r\n}\r\n```",
+          "createdAt": "2023-01-17T17:45:08Z",
+          "updatedAt": "2023-01-17T17:45:08Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "To add a bit more. I don't really have much problem with an Event's `data` field containing an abstract notion of something called `QuicEvents` or similar. When it comes to concrete events in serialized form it'll all tend to look the same. However, if we really wanted to consistent with terminology, perhaps something to consider is\r\n\r\n1. Rename `$ProtocolEventBody` to `$ProtocolEventData` throughout\r\n1. Recommend that extensions are names `NewProtocolEventData`\r\n1. Rename our extensions\r\n   * QuicEvents -> QuicEventData\r\n   * HTTPEvents -> HTTPEventData\r\n   * QPACKEvent -> QPACKEventData",
+          "createdAt": "2023-01-17T18:01:53Z",
+          "updatedAt": "2023-01-17T18:02:17Z"
+        }
+      ]
     },
     {
       "number": 132,
@@ -4419,7 +4434,7 @@
       ],
       "body": "Currently, `protocol_type` is a single string which typically has the value \"QUIC_HTTP3\". \r\n\r\nHowever, this doesn't particularly scale to aggregated logs down the line (e.g., in #139 we can have a plethora of different protocols represented), and it isn't clear how to define new strings for new protocol types (e.g., is it TCP_HTTP2 or TCP_TLS_HTTP2 and in that case, why isn't it QUIC_TLS_HTTP3? etc.)\r\n\r\nOne direct solution might be to make the field an array of individual values (i.e., `protocol_type = [\"QUIC\", \"HTTP3\"]`), but that potentially adds additional overhead if the field is logged for each event individually. \r\n\r\nAnother option would be to prefix event names with the protocol (e.g., `transport:packet_sent` becomes `quic:transport:packet_sent`) but that reduces the future potential to re-use events across protocols (not a big deal for QUIC vs TCP probably, but higher level logic events (say, `recovery:metrics_updated`) could suffer). \r\n\r\nThis is somewhat tied to #85, as some events will be implicitly tied to a particular protocol anyway. ",
       "createdAt": "2021-04-02T14:55:11Z",
-      "updatedAt": "2021-08-18T13:45:24Z",
+      "updatedAt": "2023-01-17T18:35:54Z",
       "closedAt": null,
       "comments": [
         {
@@ -4442,6 +4457,13 @@
           "body": "This also has a potential impact on how we define the high-level `name` field vs the separate `category` and `event/type` fields, as tracked in #150 and #153. ",
           "createdAt": "2021-08-18T13:41:30Z",
           "updatedAt": "2021-08-18T13:45:24Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "We changed the spec so now `protocol_type` is an array.\r\n\r\n```\r\n? protocol_type: ProtocolType\r\n```\r\n\r\nand \r\n\r\n```\r\nProtocolType = [+ text]\r\n```\r\n\r\nWe also currently prefix category to event names.\r\n\r\nI'd say the OP issue was resolved and we should close this. \r\n\r\nWhether we should keep `protocol_type` at all is a different question, and we should open a new issue ",
+          "createdAt": "2023-01-17T18:35:54Z",
+          "updatedAt": "2023-01-17T18:35:54Z"
         }
       ]
     },
@@ -4681,7 +4703,7 @@
       ],
       "body": "Prior to draft-02, we had separate category and type fields. The idea was that this would be easier to filter on (e.g., show me only events in the `transport` category). I'm still not sure people actually use it this way. \r\n\r\nWith the move to normal JSON in -02, I introduced the `name` field, which concatenates to `category:type`. The motivation for that was mainly reducing JSON overhead by not having to repeat `\"category\"` and `\"type\"` strings for each event. \r\n\r\nNow, we have the discussion around `protocol_type` in #85, indicating it might make more sense to tie events more closely to protocols and not have generic/high-level categories (instead of `transport:packet_sent` and a separate `protocol_type` of QUIC, we would for example have `quic_packet_sent` and `tcp_packet_sent`). \r\n\r\nI guess the main question is if there's value in splitting up events in type + category for high-level filtering, or if that's not necessary in practice. From my experience in qvis, it isn't all that useful, since filtering on category still requires looping over all events (and keeping things in lookup maps is also possible without explicit qlog-level categories).",
       "createdAt": "2021-04-21T08:44:56Z",
-      "updatedAt": "2021-08-18T13:45:49Z",
+      "updatedAt": "2023-01-17T18:29:29Z",
       "closedAt": null,
       "comments": [
         {
@@ -4697,6 +4719,13 @@
           "body": "My two cents here would: \"just go with `name`\", as it's unusual to have to key off two fields to know how to interpret an event (think for instance of the JS `Event`).\r\n\r\nI could also live with separate category / type, but what I'd really NOT like is to have an ambiguous spec with two different ways of identifying events.",
           "createdAt": "2021-07-23T10:09:38Z",
           "updatedAt": "2021-07-23T10:09:38Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Based on continued experience, I would just stick with `name`. If we want to define events with different names for different protocols, that fine, but its a tangential question. \r\n\r\nAbsent anyone else supporting the idea of split category and type, I'd close this ticket.",
+          "createdAt": "2023-01-17T18:29:29Z",
+          "updatedAt": "2023-01-17T18:29:29Z"
         }
       ]
     },
@@ -5017,7 +5046,7 @@
       "id": "MDU6SXNzdWU5MzgxMDIyNDk=",
       "title": "units of src_port, dst_port, minimum_congestion_window",
       "url": "https://github.com/quicwg/qlog/issues/164",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "junhochoi",
       "authorAssociation": "NONE",
       "assignees": [
@@ -5030,8 +5059,8 @@
       ],
       "body": "While I read the some of the event definitions, I have some questions:\r\n\r\nhttps://github.com/quicwg/qlog/blob/main/draft-ietf-quic-qlog-quic-events.md#L312\r\n\r\n```\r\n    src_port?: uint32,\r\n    dst_port?: uint32,\r\n```\r\n`uint16` for udp port numbers (https://datatracker.ietf.org/doc/html/rfc768) looks good enough.\r\n\r\nhttps://github.com/quicwg/qlog/blob/main/draft-ietf-quic-qlog-quic-events.md#L1106\r\n\r\n```\r\n    initial_congestion_window?:uint64, // in bytes\r\n    minimum_congestion_window?:uint32, // in bytes // Note: this could change when max_datagram_size changes\r\n```\r\n\r\nSince both are congestion window values, using `uint64` for both makes sense to me.\r\n\r\n",
       "createdAt": "2021-07-06T17:14:31Z",
-      "updatedAt": "2021-08-18T13:50:06Z",
-      "closedAt": null,
+      "updatedAt": "2023-01-18T19:57:07Z",
+      "closedAt": "2023-01-18T19:57:07Z",
       "comments": [
         {
           "author": "rmarx",
@@ -5399,7 +5428,7 @@
       "id": "MDU6SXNzdWU5ODUxMDI4NDQ=",
       "title": "h3 parameters: s/max_header_list_size/max_field_section_size",
       "url": "https://github.com/quicwg/qlog/issues/175",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -5412,8 +5441,8 @@
       ],
       "body": "The name of the setting was changed in draft 28",
       "createdAt": "2021-09-01T12:40:41Z",
-      "updatedAt": "2022-02-18T14:21:51Z",
-      "closedAt": null,
+      "updatedAt": "2023-01-18T20:00:36Z",
+      "closedAt": "2023-01-18T20:00:36Z",
       "comments": [
         {
           "author": "rmarx",
@@ -6581,6 +6610,60 @@
           "body": "I'll try to summarise my understanding. \r\n\r\nThe `datagram_id` is specified for the following events\r\n\r\n* packet_sent\r\n* packet_received\r\n* packet_buffered\r\n* packet_dropped\r\n* datagrams_sent (an array here, but same purpose)\r\n* datagrams_received (an array here, but same purpose)\r\n\r\nThe use of the ID is given in https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-datagrams_sent and currently says:\r\n\r\n> Note: QUIC itself does not have a concept of a \"datagram_id\". This field is a purely qlog-specific construct to allow tracking how multiple QUIC packets are coalesced inside of a single UDP datagram, which is an important optimization during the QUIC handshake. For this, implementations assign a (per-endpoint) unique ID to each datagram and keep track of which packets were coalesced into the same datagram. As packet coalescing typically only happens during the handshake (as it requires at least one long header packet), this can be done without much overhead.\r\n\r\nI don't mind the motivating use case. I'm not sure exactly how my implementations could use it for packet sending events because we generate the packet and qlog it before we get into UDP datagram realms. Changes might address that but I'm not sure it's worth overhead. Other implementations might find it far more natural to use though.\r\n\r\nThe main part I find confusing is the part about `implementations assign a per-endpoint unique ID`. This is vague and quite specific at the same time. How unique does something need to be? Can I just use a counter like datagram_id = 0, datagram_id=1 for the packets sent on a connection? Or is the expectation that the identifier is more like a UUID, so that  packets are uniquely traceable? Maybe it depends if we are capturing single connections or traces that span mutliple things, so perhaps a reword to state the requirements and expectations of the datagram_id value could help. E.g. \"Since QUIC traces may contain many UDP events, unique identifiers are required for each datagram in order to avoid them being confused. Identifiers are not exchanged on the wire, they are only relevant to the logging endpoint. Selecting identifier values is left to implementations that should consider how to generate unique values within the scope of the traces they generate\"",
           "createdAt": "2023-01-16T15:35:38Z",
           "updatedAt": "2023-01-16T15:35:38Z"
+        }
+      ]
+    },
+    {
+      "number": 283,
+      "id": "I_kwDOCrLn6M5blUhK",
+      "title": "Versioning for additional schema",
+      "url": "https://github.com/quicwg/qlog/issues/283",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "We presently have 3 documents: main schema, quic schema, HTTP/3 and QPACK schema.\r\n\r\nWe presently have 1 version field `qlog_version` to express changes in any of these documents.\r\n\r\nWe  make efforts to keep these things in lock step, but the relationship is quite implicit and not explicitly stated. That's not brilliant and adds some friction.\r\n\r\nOne proposal I have is to articulate the schema(s) used in the log. I don't think we need to go as far as XML does (e.g. https://www.oreilly.com/library/view/xml-in-a/0596007647/re168.html) but we could just include the I-D or RFC name as a string. Then each additional schema document can express what version of qlog main schema it depends on. I'll write this up as a PR.",
+      "createdAt": "2023-01-17T14:48:29Z",
+      "updatedAt": "2023-01-17T14:48:29Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 286,
+      "id": "I_kwDOCrLn6M5bmfOw",
+      "title": "Stop HTTP/3 events from squatting on the HTTP namespace",
+      "url": "https://github.com/quicwg/qlog/issues/286",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Not all HTTPs are the same. I've just learned by meddling with netlogs that HTTP/2 and HTTP/3 might be quite similar but have subtle and annoying differences when it comes to logging. \r\n\r\nWe have \r\n\r\n```\r\nhttp:parameters_set \tBase \tSection 4.1\r\nhttp:parameters_restored \tBase \tSection 4.2\r\nhttp:stream_type_set \tBase \tSection 4.3\r\nhttp:frame_created \tCore \tSection 4.4\r\nhttp:frame_parsed \tCore \tSection 4.5\r\nhttp:push_resolved \tExtra \tSection 4.6\r\n```\r\nand the event definitions themselves use `HTTP` as a prefix.\r\n\r\nI'd suggest we just rename these to use `h3` and `http` respectively.",
+      "createdAt": "2023-01-17T18:07:33Z",
+      "updatedAt": "2023-01-18T20:20:44Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I think this is a bigger issue than just HTTP/3... for QUIC we're currently using `transport`, but as I've also noticed e.g., TCP does not map nicely to the QUIC events. So potentially worth to discuss changing `transport` to `quic` as well (and what to do with the `datagram*` and TLS-related events then ;) \r\n\r\nAs mentioned in https://github.com/quicwg/qlog/issues/153, this might also mean we can remove `protocol_type`",
+          "createdAt": "2023-01-18T09:58:55Z",
+          "updatedAt": "2023-01-18T11:02:18Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Sure, but those are separate issues with their own considerations to make. \r\n\r\nThe HTTP case is a lot more cut and dry to me. So I'd go ahead and fix it now via my PR.",
+          "createdAt": "2023-01-18T13:35:30Z",
+          "updatedAt": "2023-01-18T13:35:30Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed on call: general principle is ok. Create new issue to track `transport` changes. ",
+          "createdAt": "2023-01-18T20:20:44Z",
+          "updatedAt": "2023-01-18T20:20:44Z"
         }
       ]
     }
@@ -11591,7 +11674,7 @@
       "labels": [],
       "body": "This is just a start. While these are editorial changes they will\ndefinitely require discussion for how it's best to change each Note:.\n",
       "createdAt": "2022-10-24T06:52:13Z",
-      "updatedAt": "2022-10-24T15:50:05Z",
+      "updatedAt": "2023-01-18T20:07:20Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "8180b5741c033e615a9f341457a721b98f44d263",
@@ -11603,7 +11686,58 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5EvsuA",
+          "commit": {
+            "abbreviatedOid": "28475da"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-10-24T15:31:43Z",
+          "updatedAt": "2023-01-18T20:07:20Z",
+          "comments": [
+            {
+              "originalPosition": 21,
+              "body": "I still find this paragraph confusing even with the edits. How about cutting more text to something like,\r\n\r\n> The \"owner\" field reflects how Settings are exchanged on a connection. Sent settings have the value \"local\" and received settings have the value \"received\". A qlog can have multiple instances of this event.",
+              "createdAt": "2022-10-24T15:31:44Z",
+              "updatedAt": "2023-01-18T20:07:20Z"
+            },
+            {
+              "originalPosition": 47,
+              "body": "I think this is what we're trying to say?\r\n\r\n```suggestion\r\nThis event can contain any number of unspecified fields. This\r\nallows for representation of reserved settings (aka grease) or ad-hoc support for extension settings\r\nthat do not have a related qlog schema definition .\r\n```",
+              "createdAt": "2022-10-24T15:40:31Z",
+              "updatedAt": "2023-01-18T20:07:20Z"
+            },
+            {
+              "originalPosition": 56,
+              "body": "```suggestion\r\nSimilar to HTTPParametersSet, this event can contain any number of\r\n```",
+              "createdAt": "2022-10-24T15:41:22Z",
+              "updatedAt": "2023-01-18T20:07:20Z"
+            },
+            {
+              "originalPosition": 57,
+              "body": "```suggestion\r\nunspecified fields to allow for reserved or extension settings.\r\n```",
+              "createdAt": "2022-10-24T15:42:00Z",
+              "updatedAt": "2023-01-18T20:07:20Z"
+            },
+            {
+              "originalPosition": 94,
+              "body": "```suggestion\r\nmight extend over multiple write operations, which would be logged using multiple data_moved events.\r\n```",
+              "createdAt": "2022-10-24T15:45:04Z",
+              "updatedAt": "2023-01-18T20:07:20Z"
+            },
+            {
+              "originalPosition": 118,
+              "body": "hangover fragment sentence?",
+              "createdAt": "2022-10-24T15:50:05Z",
+              "updatedAt": "2023-01-18T20:07:20Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 263,
@@ -11872,21 +12006,21 @@
       "id": "PR_kwDOCrLn6M5GgpAf",
       "title": "can a hexstring field be empty ?",
       "url": "https://github.com/quicwg/qlog/pull/269",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "lnicco",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "A zero-length connection id is the only use-cases I can find where an empty hexstring would make sense. But we are using an optional field for those?\nThis is a minor thing. Posting for discussion more than anything\n",
       "createdAt": "2023-01-02T23:37:31Z",
-      "updatedAt": "2023-01-09T15:07:17Z",
+      "updatedAt": "2023-01-18T20:05:45Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
       "headRepository": "quicwg/qlog",
       "headRefName": "hexstring_def",
       "headRefOid": "9ba588a638941d42ec240b224fa5dbfa0c35f687",
-      "closedAt": null,
+      "closedAt": "2023-01-18T20:05:45Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -11911,6 +12045,13 @@
           "body": "@LPardue the PR restricts it. Currently, we do allow empty. However, nowhere in the text do we indicate this nuance between empty/omitted, which we probably should if we keep the current behaviour. \r\n\r\nAs I said above and as discussed on the call, I don't really have a preference. \r\n\r\nFor the CID case specifically though, I don't think anyone would actually log empty strings for the CID in each event. You can get the info that a 0-length CID was used from the long-header packet information, where the CID lengths are also logged. The `empty string` CIDs here would only be needed if you somehow didn't log the connection setup. ",
           "createdAt": "2023-01-09T15:06:44Z",
           "updatedAt": "2023-01-09T15:07:17Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed on call. No clear preference, so keep as-is. ",
+          "createdAt": "2023-01-18T20:05:45Z",
+          "updatedAt": "2023-01-18T20:05:45Z"
         }
       ],
       "reviews": []
@@ -12172,13 +12313,13 @@
       "labels": [],
       "body": "Fixes #243, #54 and #173.\r\nPartially fixes #174.",
       "createdAt": "2023-01-10T15:57:46Z",
-      "updatedAt": "2023-01-16T15:36:22Z",
+      "updatedAt": "2023-01-18T20:04:32Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "ec25b5849940e7aa3d26045de405fe6d37fd8f9d",
+      "baseRefOid": "2cfb43774779407f8bdc1100d3785f1a5997b54e",
       "headRepository": "quicwg/qlog",
       "headRefName": "rawinfo_consistency",
-      "headRefOid": "1bb53cffea0b385aa4f9d266b1c98d99552f377b",
+      "headRefOid": "731b1ac7e896177dc4ea4e1f30f33f5697112dfe",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -12536,7 +12677,7 @@
       "labels": [],
       "body": "Fixes #35 ",
       "createdAt": "2023-01-13T16:01:03Z",
-      "updatedAt": "2023-01-13T16:18:03Z",
+      "updatedAt": "2023-01-18T20:13:37Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
@@ -12568,8 +12709,328 @@
               "updatedAt": "2023-01-13T16:18:03Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KwkwU",
+          "commit": {
+            "abbreviatedOid": "47d038e"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-18T20:13:36Z",
+          "updatedAt": "2023-01-18T20:13:37Z",
+          "comments": [
+            {
+              "originalPosition": 37,
+              "body": "Discussed on call. Best to just remove these parts here, unless we have concrete data/proof or examples. ",
+              "createdAt": "2023-01-18T20:13:37Z",
+              "updatedAt": "2023-01-18T20:13:37Z"
+            }
+          ]
         }
       ]
+    },
+    {
+      "number": 282,
+      "id": "PR_kwDOCrLn6M5Hi_BD",
+      "title": "s/max_header_list_size/max_field_section_size",
+      "url": "https://github.com/quicwg/qlog/pull/282",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #175\n",
+      "createdAt": "2023-01-17T14:26:08Z",
+      "updatedAt": "2023-01-18T20:00:39Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "max_field-section",
+      "headRefOid": "5f6deb2981e7679ecdacdd780cd36d46eca4a84e",
+      "closedAt": "2023-01-18T20:00:35Z",
+      "mergedAt": "2023-01-18T20:00:35Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "2cfb43774779407f8bdc1100d3785f1a5997b54e"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5Kmvus",
+          "commit": {
+            "abbreviatedOid": "5f6deb2"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-17T14:34:59Z",
+          "updatedAt": "2023-01-17T14:34:59Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KweCg",
+          "commit": {
+            "abbreviatedOid": "5f6deb2"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-18T20:00:27Z",
+          "updatedAt": "2023-01-18T20:00:27Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 284,
+      "id": "PR_kwDOCrLn6M5Hjjax",
+      "title": "Add addtional_schema field",
+      "url": "https://github.com/quicwg/qlog/pull/284",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "This adds the additional_schema field to QlogFile defined in the main\nschema. The purpose being to explicitly identify the schema used for\nadditional events (possibly) included in qlog traces.\n\nThe field is free-forma and could be anything. We could go XML style\nand require a URL. I've started by just proposing that we reference\nthe document name:\n\nfor I-Ds, this makes it easy to manage iterative versions\nfor RFCs, these have a canonical source already. If an RFC update\nis published and an implementation switches to it, we can change\neasily.\n\nCloses #283\n",
+      "createdAt": "2023-01-17T16:03:32Z",
+      "updatedAt": "2023-01-17T16:51:12Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "versioning-schema",
+      "headRefOid": "b21b93b1aedec582240affaee7cebdae92a83057",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 285,
+      "id": "PR_kwDOCrLn6M5Hj70_",
+      "title": "Add missing QUIC transport error values",
+      "url": "https://github.com/quicwg/qlog/pull/285",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Adds missing code points except for CRYPTO_ERROR. Since we make an\nexplicit choice to represent that as a CryptoError type, call that\nout in a note\n\nFixes #129\n",
+      "createdAt": "2023-01-17T17:17:10Z",
+      "updatedAt": "2023-01-18T19:59:47Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "add-missing-transport-errors",
+      "headRefOid": "db4ed41b32b24d3ec21a5d102d98902ae118940e",
+      "closedAt": "2023-01-18T19:59:46Z",
+      "mergedAt": "2023-01-18T19:59:46Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "02574ec6fc6110e71f44c17ed0afc4370e632edb"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5KswV8",
+          "commit": {
+            "abbreviatedOid": "5b36af6"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-18T10:50:59Z",
+          "updatedAt": "2023-01-18T10:51:00Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "```suggestion\r\n    ; there is no value to reflect CRYPTO_ERROR; use the CryptoError type instead\r\n```",
+              "createdAt": "2023-01-18T10:51:00Z",
+              "updatedAt": "2023-01-18T10:51:00Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5Kswbb",
+          "commit": {
+            "abbreviatedOid": "5b36af6"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "LGTM minus nit",
+          "createdAt": "2023-01-18T10:51:14Z",
+          "updatedAt": "2023-01-18T10:51:14Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5KwdoK",
+          "commit": {
+            "abbreviatedOid": "db4ed41"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-18T19:59:32Z",
+          "updatedAt": "2023-01-18T19:59:32Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 287,
+      "id": "PR_kwDOCrLn6M5HkMMd",
+      "title": "Move HTTP/3 events and their related data to their own prefix",
+      "url": "https://github.com/quicwg/qlog/pull/287",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Since most of these events are HTTP/3 specific, lets just rename them to\nuse an H3 prefix.\n\nThe one exception is `HTTPField` because it is actually aligned to HTTP\nSemantics rather than any particular wire format.\n\nFixes #286\n",
+      "createdAt": "2023-01-17T18:18:53Z",
+      "updatedAt": "2023-01-18T20:18:46Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "http-stop-squatting",
+      "headRefOid": "6bcb29aad1f2779df6ea0718e119e0fd49b98e1a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "This breaks lots of alignment in subtle ways, I can't recall if we decided on rules for that but let me know",
+          "createdAt": "2023-01-17T18:21:05Z",
+          "updatedAt": "2023-01-17T18:21:05Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5KwnaA",
+          "commit": {
+            "abbreviatedOid": "6bcb29a"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-01-18T20:18:45Z",
+          "updatedAt": "2023-01-18T20:18:46Z",
+          "comments": [
+            {
+              "originalPosition": 319,
+              "body": "Discussed on call. Rename to H3HTTPField. Dirty, but consistent. ",
+              "createdAt": "2023-01-18T20:18:45Z",
+              "updatedAt": "2023-01-18T20:18:46Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 288,
+      "id": "PR_kwDOCrLn6M5HknGl",
+      "title": "Make minimum_congestion_window uint64 for consistency",
+      "url": "https://github.com/quicwg/qlog/pull/288",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "If it's ok for the congestion_window and the initial_congestion_window to be uint64, lets make minimum_congestion_window the same.\r\n\r\nWe might split hairs about the initial being smaller in reality but that's presumptious and we don't want to retread Bill Gate's steps. Lets just pick uint64 and move on.\r\n\r\nCloses #164\r\n",
+      "createdAt": "2023-01-17T19:54:58Z",
+      "updatedAt": "2023-01-18T19:57:10Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "consistent-cwnd-primitive-types",
+      "headRefOid": "0025a3fd4c2e484b14dd313d607f88d4c06173db",
+      "closedAt": "2023-01-18T19:57:05Z",
+      "mergedAt": "2023-01-18T19:57:05Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "a3ce09d53c259e87dc88036842a2f9cb01fd98d4"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5KpvzV",
+          "commit": {
+            "abbreviatedOid": "0025a3f"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-17T21:08:41Z",
+          "updatedAt": "2023-01-17T21:08:41Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5Kslvx",
+          "commit": {
+            "abbreviatedOid": "0025a3f"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-18T10:22:24Z",
+          "updatedAt": "2023-01-18T10:22:24Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 289,
+      "id": "PR_kwDOCrLn6M5HoODp",
+      "title": "editorialize serialization section",
+      "url": "https://github.com/quicwg/qlog/pull/289",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "- Judicious editorial change to section 6\n- move truncation section below json-seq\n- Split optimization to guidelines and survey/speculation\n- move conversion considerations to appendix\n- fixup: promote truncation a level\n",
+      "createdAt": "2023-01-18T14:00:11Z",
+      "updatedAt": "2023-01-18T14:11:49Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "editorialize-serialization-section",
+      "headRefOid": "b3ac2d45f457e273165343963c975e21fa300554",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "To add more colour to this PR, section 6 is very large and ranges between discussing things we really want implementers to consider - like mapping to JSON or JSON-SEQ, to other information that verges on research results or speculation. optimizations. It then oddly appears to say we aren't defining these optimizations formally but that there's normative language for how their file extensions and media types are to be handled. This sort of mixed messaging is likely to come up in wider review.\r\n\r\nSo this PR is a strawman for breaking apart the section to focus on what implementers need to do in the main body. It punts the more subjective stuff to the appendix while also watering down our guidance about how they would treat extensions or media types.\r\n\r\nOne could make the argument that compression of JSON and JSON-SEQ is mature enough an optimization to make it into the main body. I could agree with that but wanted to start somewhere.",
+          "createdAt": "2023-01-18T14:11:48Z",
+          "updatedAt": "2023-01-18T14:11:48Z"
+        }
+      ],
+      "reviews": []
     }
   ]
 }
