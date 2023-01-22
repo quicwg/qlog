@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-01-19T00:55:51.174776+00:00",
+  "timestamp": "2023-01-22T00:56:56.886843+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -1553,7 +1553,7 @@
       "id": "MDU6SXNzdWU1NzExOTQ3MDA=",
       "title": "Allow more wire-image indicators",
       "url": "https://github.com/quicwg/qlog/issues/54",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -1566,8 +1566,8 @@
       ],
       "body": "Currently, we abstract out a lot of the on-the-wire specifics.\r\n\r\nA good example is in the STREAM frame: there, the length and offset fields are optional, depending on how the frame should be handled. Simply having the same fields optional in qlog doesn't convey quite the same semantics: did the implementation simply not log them or were they not present from the start? \r\n\r\nMore importantly though: if no length is set, the frame extends to the end of the packet, so it does have a length, which you'd probably want to log (that's the way it's currently designed), but so you loose the info that the length field wasn't encoded on the wire. \r\n\r\nThis is just one example of similar problems across the board. I rather like the simplicity of the current setup, but we should have ways to signal the explicit wire image as well. \r\n\r\ncc @huitema",
       "createdAt": "2020-02-26T09:36:21Z",
-      "updatedAt": "2022-09-07T23:46:45Z",
-      "closedAt": null,
+      "updatedAt": "2023-01-19T11:19:58Z",
+      "closedAt": "2023-01-19T11:19:58Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1617,6 +1617,13 @@
           "body": "how about an optional field `frame_type_value: uin64`, which can be used in any frame type that spans a range of possible values. Then we'll update UnknownFrame s/raw_frame_type/frame_type_value.",
           "createdAt": "2022-09-07T23:46:45Z",
           "updatedAt": "2022-09-07T23:46:45Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Fixed by #274 ",
+          "createdAt": "2023-01-19T11:19:58Z",
+          "updatedAt": "2023-01-19T11:19:58Z"
         }
       ]
     },
@@ -5356,7 +5363,7 @@
       "id": "MDU6SXNzdWU5NjI4MTExMzg=",
       "title": "RawInfo doesn't play well with UDP datagram headers",
       "url": "https://github.com/quicwg/qlog/issues/173",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -5367,9 +5374,17 @@
       ],
       "body": "Currently, we re-use the RawInfo struct to give a simple re-usable way to log raw packet/frame/datagram contents.\r\n\r\nIn the struct, we have two length-fields: the full `length` and `payload_length`, assuming the header length can be calculated from those two. \r\n\r\nHowever, we do not have a way to log e.g., only the payload without the header (we can only log the full value truncated, but not indicate it starts at the payload).\r\n\r\nThis isn't a problem for QUIC/H3 packets/frames, but as @jlaine pointed out, it is a problem for UDP datagrams. In most stacks, you don't get the pure UDP packet header and so can't log it (so you'd always start with the payload).\r\n\r\nThis can be solved in several different ways:\r\n1. disallow usage of RawInfo for datagrams\r\n2. make explicit that datagram-related events start at the payload\r\n3. log a fixed-value/fixed-size dummy UDP datagram (e.g., 8 bytes of zeroes)\r\n4. extend RawInfo to make it more flexible\r\n\r\nI'm currently most in favor of 2, as I don't see many people logging full UDP datagrams instead of logging the QUIC packets. \r\n\r\n",
       "createdAt": "2021-08-06T14:55:06Z",
-      "updatedAt": "2021-08-18T13:53:51Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2023-01-19T11:20:15Z",
+      "closedAt": "2023-01-19T11:20:15Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Fixed by #274 ",
+          "createdAt": "2023-01-19T11:20:11Z",
+          "updatedAt": "2023-01-19T11:20:11Z"
+        }
+      ]
     },
     {
       "number": 174,
@@ -5390,7 +5405,7 @@
       ],
       "body": "since qlog started early on in the quic/H3 design process, we have some leftovers from early drafts in the docs.\r\n\r\nWe've updated most things over time as they were changed, but some aspects (e.g., most of the quic recovery events mention draft-23/27, `stream_state_updated` mentions draft-23, `packet_sent` triggers refer draft-23/19, etc.)\r\n\r\nWe need to go through each event and match it to terminology used in the final versions of the documents. \r\nFor most things, this would just require removing mentions of old drafts, but in some cases this might require further changes. \r\n\r\nFinally, many events in the quic/H3 docs incorrectly use the pre-draft-02 way of logging raw information (e.g., as bytes fields directly), instead of properly using the new `raw:RawInfo` type. This should be updated.\r\n\r\nSubsumes #46. ",
       "createdAt": "2021-08-18T09:57:41Z",
-      "updatedAt": "2021-08-18T14:48:45Z",
+      "updatedAt": "2023-01-19T11:20:24Z",
       "closedAt": null,
       "comments": [
         {
@@ -6378,7 +6393,7 @@
       "id": "I_kwDOCrLn6M5S5fT2",
       "title": "Properly use RawInfo everywhere",
       "url": "https://github.com/quicwg/qlog/issues/243",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -6387,8 +6402,8 @@
       "labels": [],
       "body": "Currently, most events use `RawInfo`, but some still use a separate `raw: hexstring` + `raw_length: uint32` setup. \r\n\r\n1. Figure out why (probably just forgot to update all when making the change)\r\n2. Change to `RawInfo` where appropriate, or add comment why `RawInfo` isn't used",
       "createdAt": "2022-09-29T12:39:17Z",
-      "updatedAt": "2022-09-29T12:39:17Z",
-      "closedAt": null,
+      "updatedAt": "2023-01-19T10:56:50Z",
+      "closedAt": "2023-01-19T10:56:50Z",
       "comments": []
     },
     {
@@ -6625,9 +6640,24 @@
       "labels": [],
       "body": "We presently have 3 documents: main schema, quic schema, HTTP/3 and QPACK schema.\r\n\r\nWe presently have 1 version field `qlog_version` to express changes in any of these documents.\r\n\r\nWe  make efforts to keep these things in lock step, but the relationship is quite implicit and not explicitly stated. That's not brilliant and adds some friction.\r\n\r\nOne proposal I have is to articulate the schema(s) used in the log. I don't think we need to go as far as XML does (e.g. https://www.oreilly.com/library/view/xml-in-a/0596007647/re168.html) but we could just include the I-D or RFC name as a string. Then each additional schema document can express what version of qlog main schema it depends on. I'll write this up as a PR.",
       "createdAt": "2023-01-17T14:48:29Z",
-      "updatedAt": "2023-01-17T14:48:29Z",
+      "updatedAt": "2023-01-19T13:12:43Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "As discussed on the call yesterday, everyone generally likes this concept on how to tackle versioning. Additionally, it can help replace `protocol_type` together with #286. \r\n\r\nOne thing I personally did not really love in current PR #284 is that we use a separate approach for the main schema version (indicated via `qlog_version`) and the protocol event defintion versions (indicated via the new `additional_schema` field). Another option would be to treat the main schema as just another one in the list.\r\n\r\nPut differently, this is what the PR currently proposes: \r\n```\r\n\"qlog_version\": \"0.3\",\r\n\"qlog_format\": \"JSON\",\r\n\"additional_schema\": [\r\n  \"draft-ietf-quic-qlog-quic-events-03\",\r\n  \"draft-ietf-quic-qlog-quic-h3-events-03\"\r\n],\r\n```\r\nWhile a more consistent option would be:\r\n```\r\n\"qlog_format\": \"JSON\",\r\n\"qlog_schemas\": [\r\n  \"draft-ietf-quic-qlog-main-schema-04\",\r\n  \"draft-ietf-quic-qlog-quic-events-03\",\r\n  \"draft-ietf-quic-qlog-quic-h3-events-03\"\r\n],\r\n```\r\n\r\nDownsides I could find:\r\n- We're stuck with the `qlog_schemas` field and its definition forever. No way to e.g., refactor it to a list of protocols and their versions (e.g., instead of `\"draft-ietf-quic-qlog-quic-events-03\"` it could say `[\"HTTP/3\", \"v5.1\"]`). This is true for the `qlog_version` field as well, but that seems like much less of an issue.\r\n- For parsers that can handle multiple different versions, it's easier to do a quick check on `qlog_version`, rather than having to parse the full `qlog_schemas` field to find the main-schema entry and decide if they support it or not.\r\n\r\nI think those downsides are sufficient to go with the original proposal, but in that case, I'd rename `additional_schema` to `protocol_schemas` or `event_schemas` (or the `qlog_version` field to `qlog_schema_version` ;))\r\n",
+          "createdAt": "2023-01-19T11:05:50Z",
+          "updatedAt": "2023-01-19T11:05:50Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "So the issue with a list of name and value tuples is, you'd need to go to the effort of defining  naming strategy and a registry to hold those names to avoid conflicts. That's overhead I'd like to avoid.\r\n\r\n`qlog_schema_version` sounds fine to me.\r\n\r\nI'd stuck with something like `additional_schemas` though. There's no restriction I can think of that means new schema are constrained about what they can extend.",
+          "createdAt": "2023-01-19T13:12:42Z",
+          "updatedAt": "2023-01-19T13:12:42Z"
+        }
+      ]
     },
     {
       "number": 286,
@@ -12306,24 +12336,26 @@
       "id": "PR_kwDOCrLn6M5HFXjy",
       "title": "Make use of raw and RawInfo more consistent",
       "url": "https://github.com/quicwg/qlog/pull/274",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #243, #54 and #173.\r\nPartially fixes #174.",
       "createdAt": "2023-01-10T15:57:46Z",
-      "updatedAt": "2023-01-18T20:04:32Z",
+      "updatedAt": "2023-01-19T10:56:56Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2cfb43774779407f8bdc1100d3785f1a5997b54e",
       "headRepository": "quicwg/qlog",
       "headRefName": "rawinfo_consistency",
       "headRefOid": "731b1ac7e896177dc4ea4e1f30f33f5697112dfe",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2023-01-19T10:56:48Z",
+      "mergedAt": "2023-01-19T10:56:48Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "148d91306aa96ee6af6e08554cecb6c0e7277b0f"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -12624,7 +12656,7 @@
       "labels": [],
       "body": "Fixes #25. ",
       "createdAt": "2023-01-13T15:28:17Z",
-      "updatedAt": "2023-01-16T13:50:28Z",
+      "updatedAt": "2023-01-19T11:10:48Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
@@ -12635,7 +12667,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Hey @nibanks, we think this PR is ready to be merged. If you have some time this week for a quick review, that would be splendid :) ",
+          "createdAt": "2023-01-19T10:55:46Z",
+          "updatedAt": "2023-01-19T10:55:46Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M5KYKoQ",
@@ -12662,6 +12702,19 @@
               "updatedAt": "2023-01-13T15:40:34Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5LMhyv",
+          "commit": {
+            "abbreviatedOid": "aec792c"
+          },
+          "author": "nibanks",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-01-19T11:10:48Z",
+          "updatedAt": "2023-01-19T11:10:48Z",
+          "comments": []
         }
       ]
     },
