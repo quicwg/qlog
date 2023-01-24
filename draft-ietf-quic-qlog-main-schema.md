@@ -675,8 +675,8 @@ relative:
 
 monotonic:
 : A relative timestamp based on an opaque monotonically nondecreasing clock.
-  The "reference_time" field MUST NOT be applied to this format, since it's based
-  on an opaque clock that cannot be interpreted beyond the process that
+  The "reference_time" field MUST NOT be applied to this format, since monotonic
+  time is measured against an opaque clock that cannot be interpreted beyond the system that
   instantiated it.
 
 Events in each individual trace SHOULD be logged in strictly ascending timestamp
