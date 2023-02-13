@@ -891,7 +891,8 @@ TransportDatagramsSent = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; The RawInfo fields do not include the UDP headers, only the UDP payload
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -921,7 +922,8 @@ TransportDatagramsReceived = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; The RawInfo fields do not include the UDP headers, only the UDP payload
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -942,7 +944,8 @@ Definition:
 
 ~~~ cddl
 TransportDatagramDropped = {
-    ; The RawInfo fields do not include the UDP headers, only the UDP payload
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: RawInfo
 }
 ~~~
@@ -1863,9 +1866,10 @@ TransportError = "no_error" / "internal_error" /
     "final_size_error" / "frame_encoding_error" /
     "transport_parameter_error" / "connection_id_limit_error" /
     "protocol_violation" / "invalid_token" / "application_error" /
-    "crypto_buffer_exceeded" / "key_update_error" / "aead_limit_reached" /
-    "no_viable_path"
-    ; there is no value to reflect CRYPTO_ERROR; use the CryptoError type instead
+    "crypto_buffer_exceeded" / "key_update_error" /
+    "aead_limit_reached" / "no_viable_path"
+    ; there is no value to reflect CRYPTO_ERROR
+    ; use the CryptoError type instead
 ~~~
 {: #transporterror-def title="TransportError definition"}
 
@@ -1920,6 +1924,8 @@ TBD
 * Renamed UnknownFrame:raw_frame_type to :frame_type_value (#54)
 * Renamed ConnectionCloseFrame:raw_error_code to :error_code_value (#54)
 * Changed triggers for packet_dropped (#278)
+* Added entries to TransportError enum (#285)
+* Changed minimum_congestion_window to uint64 (#288)
 
 ## Since draft-ietf-qlog-quic-events-02:
 

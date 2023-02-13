@@ -956,6 +956,7 @@ TBD
 * Ensured consistent use of RawInfo to indicate raw wire bytes (#243)
 * Changed HTTPStreamTypeSet:raw_stream_type to stream_type_value (#54)
 * Changed HTTPUnknownFrame:raw_frame_type to frame_type_value (#54)
+* Renamed max_header_list_size to max_field_section_size (#282)
 
 ## Since draft-ietf-quic-qlog-h3-events-02:
 

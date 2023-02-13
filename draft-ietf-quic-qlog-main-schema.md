@@ -1961,6 +1961,10 @@ TODO: primarily the .well-known URI
 
 # Change Log
 
+## Since draft-ietf-quic-qlog-main-schema-04:
+
+* Updated RawInfo definition and guidance (#243)
+
 ## Since draft-ietf-quic-qlog-main-schema-03:
 
 * Added security and privacy considerations discussion (#252)
