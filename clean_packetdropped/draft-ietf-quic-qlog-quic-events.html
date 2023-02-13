@@ -2727,8 +2727,7 @@ TransportDatagramsSent = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length field indicates total length of the datagrams
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -2739,14 +2738,12 @@ TransportDatagramsSent = {
 <a href="#name-transportdatagramssent-defi" class="selfRef">TransportDatagramsSent definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.10-5">Note: QUIC itself does not have a concept of a "datagram_id". This field is a
-purely qlog-specific construct to allow tracking how multiple QUIC packets are
-coalesced inside of a single UDP datagram, which is an important optimization
-during the QUIC handshake. For this, implementations assign a (per-endpoint)
-unique ID to each datagram and keep track of which packets were coalesced into the
-same datagram. As packet coalescing typically only happens during the handshake
-(as it requires at least one long header packet), this can be done without much
-overhead.<a href="#section-5.10-5" class="pilcrow">¶</a></p>
+<p id="section-5.10-5">Since QUIC implementations rarely control UDP logic directly, the raw data
+excludes UDP-level headers in all fields.<a href="#section-5.10-5" class="pilcrow">¶</a></p>
+<p id="section-5.10-6">The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
+coalescing inside UDP datagrams. Implementations can assign a per-endpoint
+unique ID to each datagram, and reflect this in other events to track QUIC
+packets through processing steps.<a href="#section-5.10-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="transport-datagramsreceived">
@@ -2767,8 +2764,7 @@ TransportDatagramsReceived = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length field indicates total length of the datagrams
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -2779,7 +2775,7 @@ TransportDatagramsReceived = {
 <a href="#name-transportdatagramsreceived-" class="selfRef">TransportDatagramsReceived definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.11-5">Note: for more details on "datagram_ids", see <a href="#transport-datagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.11-5" class="pilcrow">¶</a></p>
+<p id="section-5.11-5">For more details on "datagram_ids", see <a href="#transport-datagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.11-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="transport-datagramdropped">
@@ -2789,13 +2785,15 @@ TransportDatagramsReceived = {
         </h3>
 <p id="section-5.12-1">Importance: Extra<a href="#section-5.12-1" class="pilcrow">¶</a></p>
 <p id="section-5.12-2">When a UDP-level datagram is dropped. This is typically done if it does not
-contain a valid QUIC packet (in that case, use packet_dropped instead).<a href="#section-5.12-2" class="pilcrow">¶</a></p>
+contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
+other reasons, packet_dropped (<a href="#transport-packetdropped" class="auto internal xref">Section 5.7</a>) should be used instead.<a href="#section-5.12-2" class="pilcrow">¶</a></p>
 <p id="section-5.12-3">Definition:<a href="#section-5.12-3" class="pilcrow">¶</a></p>
 <span id="name-transportdatagramdropped-de"></span><div id="transport-datagramdropped-def">
 <figure id="figure-20">
           <div class="lang-cddl sourcecode" id="section-5.12-4.1">
 <pre>
 TransportDatagramDropped = {
+    ; The RawInfo fields do not include the UDP headers, only the UDP payload
     ? raw: RawInfo
 }
 </pre>
@@ -2954,8 +2952,7 @@ TransportDataMoved = {
     ? from: "user" / "application" / "transport" / "network" / text
     ? to: "user" / "application" / "transport" / "network" / text
 
-    ; raw bytes that were transferred
-    ? data: hexstring
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -2963,18 +2960,6 @@ TransportDataMoved = {
 <a href="#name-transportdatamoved-definiti" class="selfRef">TransportDataMoved definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.15-6">Note: we do not for example use a "direction" field (with values "up" and "down")
-to specify the data flow. This is because in some optimized implementations, data
-might skip some individual layers. Additionally, using explicit "from" and "to"
-fields is more flexible and allows the definition of other conceptual "layers"
-(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
-library ("security") or from HTTP/3 to QPACK ("qpack")).<a href="#section-5.15-6" class="pilcrow">¶</a></p>
-<p id="section-5.15-7">Note: this event type is part of the "transport" category, but really spans all
-the different layers. This means we have a few leaky abstractions here (for
-example, the stream_id or stream offset might not be available at some logging
-points, or the raw data might not be in a byte-array form). In these situations,
-implementers can decide to define new, in-context fields to aid in manual
-debugging.<a href="#section-5.15-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -3102,7 +3087,7 @@ RecoveryParametersSet = {
 
     ; Note: this could change when max_datagram_size changes
     ; in bytes
-    ? minimum_congestion_window: uint32
+    ? minimum_congestion_window: uint64
     ? loss_reduction_factor: float32
 
     ; as PTO multiplier
@@ -3525,17 +3510,13 @@ PacketHeader = {
 Token = {
     ? type: "retry" / "resumption"
 
-    ; byte length of the token
-    ? length: uint32
-
-    ; raw byte value of the token
-    ? data: hexstring
-
     ; decoded fields included in the token
     ; (typically: peer's IP address, creation time)
     ? details: {
       * text =&gt; any
     }
+
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -3548,7 +3529,7 @@ packet, or one originally provided by the server in a NEW_TOKEN frame used when
 resuming a connection (e.g., for address validation purposes). Retry and
 resumption tokens typically contain encoded metadata to check the token's
 validity when it is used, but this metadata and its format is implementation
-specific. For that, this field includes a general-purpose "details" field.<a href="#section-8.8-2" class="pilcrow">¶</a></p>
+specific. For that, this event includes a general-purpose "details" field.<a href="#section-8.8-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="stateless-reset-token">
@@ -3865,7 +3846,7 @@ StreamFrame = {
     ; if absent, the value MUST be assumed to be false
     ? fin: bool .default false
 
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4114,8 +4095,9 @@ PathResponseFrame = {
           <h4 id="name-connectioncloseframe">
 <a href="#section-8.11.19" class="section-number selfRef">8.11.19. </a><a href="#name-connectioncloseframe" class="section-name selfRef">ConnectionCloseFrame</a>
           </h4>
-<p id="section-8.11.19-1">raw_error_code is the actual, numerical code. This is useful because some error
-types are spread out over a range of codes (e.g., QUIC's crypto_error).<a href="#section-8.11.19-1" class="pilcrow">¶</a></p>
+<p id="section-8.11.19-1">The error_code_value field is the numerical value without VLIE encoding. This is
+useful because some error types are spread out over a range of codes (e.g.,
+QUIC's crypto_error).<a href="#section-8.11.19-1" class="pilcrow">¶</a></p>
 <span id="name-connectioncloseframe-defini"></span><div id="connectioncloseframe-def">
 <figure id="figure-63">
             <div class="lang-cddl sourcecode" id="section-8.11.19-2.1">
@@ -4127,11 +4109,11 @@ ConnectionCloseFrame = {
 
     ? error_space: ErrorSpace
     ? error_code: TransportError / $ApplicationError / uint32
-    ? raw_error_code: uint32
+    ? error_code_value: uint64
     ? reason: text
 
     ; For known frame types, the appropriate "frame_type" string
-    ; For unknown frame types, the hex encoded identifier value
+    ; For unknown frame types, the hex encoded frame identifier value
     ? trigger_frame_type: uint64 / text
 }
 </pre>
@@ -4167,16 +4149,16 @@ HandshakeDoneFrame = {
           <h4 id="name-unknownframe">
 <a href="#section-8.11.21" class="section-number selfRef">8.11.21. </a><a href="#name-unknownframe" class="section-name selfRef">UnknownFrame</a>
           </h4>
+<p id="section-8.11.21-1">The frame_type_value field is the numerical value without VLIE encoding.<a href="#section-8.11.21-1" class="pilcrow">¶</a></p>
 <span id="name-unknownframe-definition"></span><div id="unknownframe-def">
 <figure id="figure-65">
-            <div class="lang-cddl sourcecode" id="section-8.11.21-1.1">
+            <div class="lang-cddl sourcecode" id="section-8.11.21-2.1">
 <pre>
 UnknownFrame = {
     frame_type: "unknown"
-    raw_frame_type: uint64
+    frame_type_value: uint64
 
-    ? raw_length: uint32
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4201,7 +4183,9 @@ TransportError = "no_error" / "internal_error" /
     "final_size_error" / "frame_encoding_error" /
     "transport_parameter_error" / "connection_id_limit_error" /
     "protocol_violation" / "invalid_token" / "application_error" /
-    "crypto_buffer_exceeded"
+    "crypto_buffer_exceeded" / "key_update_error" / "aead_limit_reached" /
+    "no_viable_path"
+    ; there is no value to reflect CRYPTO_ERROR; use the CryptoError type instead
 </pre>
 </div>
 <figcaption><a href="#figure-66" class="selfRef">Figure 66</a>:
@@ -4320,7 +4304,13 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
 <a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-since-draft-ietf-qlog-quic-" class="section-name selfRef">Since draft-ietf-qlog-quic-events-03:</a>
         </h3>
 <ul class="normal">
-<li class="normal" id="appendix-A.1-1.1">Changed triggers for packet_dropped (#278)<a href="#appendix-A.1-1.1" class="pilcrow">¶</a>
+<li class="normal" id="appendix-A.1-1.1">Ensured consistent use of RawInfo to indicate raw wire bytes (#243)<a href="#appendix-A.1-1.1" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-A.1-1.2">Renamed UnknownFrame:raw_frame_type to :frame_type_value (#54)<a href="#appendix-A.1-1.2" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-A.1-1.3">Renamed ConnectionCloseFrame:raw_error_code to :error_code_value (#54)<a href="#appendix-A.1-1.3" class="pilcrow">¶</a>
+</li>
+          <li class="normal" id="appendix-A.1-1.4">Changed triggers for packet_dropped (#278)<a href="#appendix-A.1-1.4" class="pilcrow">¶</a>
 </li>
         </ul>
 </section>
