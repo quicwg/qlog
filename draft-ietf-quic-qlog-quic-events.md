@@ -1930,6 +1930,10 @@ TBD
 
 # Change Log
 
+## Since draft-ietf-qlog-quic-events-03:
+
+* Changed triggers for packet_dropped (#278)
+
 ## Since draft-ietf-qlog-quic-events-02:
 
 * Renamed key_retired to key_discarded (#185)
