@@ -908,7 +908,7 @@ The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
 coalescing inside UDP datagrams. Since QUIC generates many UDP datagrams, unique
 identifiers are required to be able to track them individually in qlog traces.
 However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
-Selecting identifier is values is thus left to qlog implementations, that should
+Selecting identifier values is thus left to qlog implementations, which should
 consider how to generate unique values within the scope of their created traces.
 
 ## datagrams_received {#transport-datagramsreceived}
