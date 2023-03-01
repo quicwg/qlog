@@ -141,17 +141,17 @@ However, for several types of events (for example, a {{transport-packetdropped}}
 event with trigger value of "connection_unknown"), it can be impossible to tie
 them to a specific QUIC connection, especially on the server.
 
-Implementations are free to choose how to handle these events. Some options include:
+There are various ways to handle these events, each making certain tradeoffs
+between file size overhead, flexibility, ease of use, or ease of
+implementation. Some options include:
 
 * Log them in a separate endpoint-wide trace (or use a special group_id value)
-  not associated with a single connection. This can be more difficult to implement.
-* Log them in the most recently used trace. This can make the trace more
-  confusing to interpret.
+  not associated with a single connection.
+* Log them in the most recently used trace.
 * Use additional heuristics for connection identification (for example use the
-  four-tuple in addition to the Connection ID). This can increase qlog overhead.
+  four-tuple in addition to the Connection ID).
 * Buffer events until they can be assigned to a connection (for example for
-  version negotiation and retry events). This can be more difficult to
-  implement.
+  version negotiation and retry events).
 
 # QUIC Event Overview
 
@@ -1915,6 +1915,10 @@ TBD
 
 
 # Change Log
+
+## Since draft-ietf-qlog-quic-events-04:
+
+* Updated guidance on logging events across connections (#279)
 
 ## Since draft-ietf-qlog-quic-events-02:
 
