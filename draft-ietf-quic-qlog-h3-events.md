@@ -446,13 +446,13 @@ headers: [
 ~~~ cddl
 H3HeadersFrame = {
     frame_type: "headers"
-    headers: [* HTTPField]
+    headers: [* H3HTTPField]
 }
 ~~~
 {: #h3-headersframe-def title="H3HeadersFrame definition"}
 
 ~~~ cddl
-HTTPField = {
+H3HTTPField = {
     name: text
     value: text
 }
