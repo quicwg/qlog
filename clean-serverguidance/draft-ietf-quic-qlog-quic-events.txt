@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 22 July 2023                                               Meta
+Expires: 2 September 2023                                           Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         18 January 2023
+                                                            1 March 2023
 
 
                     QUIC event definitions for qlog
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 22 July 2023.
+   This Internet-Draft will expire on 2 September 2023.
 
 Copyright Notice
 
@@ -136,12 +136,13 @@ Table of Contents
    10. IANA Considerations
    11. Normative References
    Appendix A.  Change Log
-     A.1.  Since draft-ietf-qlog-quic-events-02:
-     A.2.  Since draft-ietf-qlog-quic-events-01:
-     A.3.  Since draft-ietf-qlog-quic-events-00:
-     A.4.  Since draft-marx-qlog-event-definitions-quic-h3-02:
-     A.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
-     A.6.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+     A.1.  Since draft-ietf-qlog-quic-events-04:
+     A.2.  Since draft-ietf-qlog-quic-events-02:
+     A.3.  Since draft-ietf-qlog-quic-events-01:
+     A.4.  Since draft-ietf-qlog-quic-events-00:
+     A.5.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+     A.6.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+     A.7.  Since draft-marx-qlog-event-definitions-quic-h3-00:
    Acknowledgements
    Authors' Addresses
 
@@ -235,31 +236,26 @@ Table of Contents
 
 2.2.  Events not belonging to a single connection
 
-   For several types of events, it is sometimes impossible to tie them
-   to a specific conceptual QUIC connection (e.g., a packet_dropped
-   event triggered because the packet has an unknown connection_id in
-   the header).  Since qlog events in a trace are typically associated
-   with a single connection, it is unclear how to log these events.
+   A single qlog event trace is typically associated with a single QUIC
+   connection.  However, for several types of events (for example, a
+   Section 5.7 event with trigger value of "connection_unknown"), it can
+   be impossible to tie them to a specific QUIC connection, especially
+   on the server.
 
-   Ideally, implementers SHOULD create a separate, individual "endpoint-
-   level" trace file (or group_id value), not associated with a specific
-   connection (for example a "server.qlog" or group_id = "client"), and
-   log all events that do not belong to a single connection to this
-   grouping trace.  However, this is not always practical, depending on
-   the implementation.  Because the semantics of most of these events
-   are well-defined in the protocols and because they are difficult to
-   mis-interpret as belonging to a connection, implementers MAY choose
-   to log events not belonging to a particular connection in any other
-   trace, even those strongly associated with a single connection.
+   There are various ways to handle these events, each making certain
+   tradeoffs between file size overhead, flexibility, ease of use, or
+   ease of implementation.  Some options include:
 
-   Note that this can make it difficult to match logs from different
-   vantage points with each other.  For example, from the client side,
-   it is easy to log connections with version negotiation or retry in
-   the same trace, while on the server they would most likely be logged
-   in separate traces.  Servers can take extra efforts (and keep
-   additional state) to keep these events combined in a single trace
-   however (for example by also matching connections on their four-tuple
-   instead of just the connection ID).
+   *  Log them in a separate endpoint-wide trace (or use a special
+      group_id value) not associated with a single connection.
+
+   *  Log them in the most recently used trace.
+
+   *  Use additional heuristics for connection identification (for
+      example use the four-tuple in addition to the Connection ID).
+
+   *  Buffer events until they can be assigned to a connection (for
+      example for version negotiation and retry events).
 
 3.  QUIC Event Overview
 
@@ -2122,9 +2118,9 @@ Table of Contents
    [QLOG-MAIN]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue, "Main
               logging schema for qlog", Work in Progress, Internet-
-              Draft, draft-ietf-quic-qlog-main-schema-04, 24 October
-              2022, <https://datatracker.ietf.org/doc/html/draft-ietf-
-              quic-qlog-main-schema-04>.
+              Draft, draft-ietf-quic-qlog-main-schema-05, 13 February
+              2023, <https://datatracker.ietf.org/doc/html/draft-ietf-
+              quic-qlog-main-schema-05>.
 
    [QUIC-RECOVERY]
               Iyengar, J., Ed. and I. Swett, Ed., "QUIC Loss Detection
@@ -2153,7 +2149,11 @@ Table of Contents
 
 Appendix A.  Change Log
 
-A.1.  Since draft-ietf-qlog-quic-events-02:
+A.1.  Since draft-ietf-qlog-quic-events-04:
+
+   *  Updated guidance on logging events across connections (#279)
+
+A.2.  Since draft-ietf-qlog-quic-events-02:
 
    *  Renamed key_retired to key_discarded (#185)
 
@@ -2169,15 +2169,15 @@ A.1.  Since draft-ietf-qlog-quic-events-02:
 
    *  Added overview Table of Contents
 
-A.2.  Since draft-ietf-qlog-quic-events-01:
+A.3.  Since draft-ietf-qlog-quic-events-01:
 
    *  Added Stateless Reset Token type (#122)
 
-A.3.  Since draft-ietf-qlog-quic-events-00:
+A.4.  Since draft-ietf-qlog-quic-events-00:
 
    *  Change the data definition language from TypeScript to CDDL (#143)
 
-A.4.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+A.5.  Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  These changes were done in preparation of the adoption of the
       drafts by the QUIC working group (#137)
@@ -2189,7 +2189,7 @@ A.4.  Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  Changed to/from value options of the data_moved event
 
-A.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+A.6.  Since draft-marx-qlog-event-definitions-quic-h3-01:
 
    Major changes:
 
@@ -2261,7 +2261,7 @@ A.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
    *  Extended connection_state_updated with more fine-grained states
       (#49)
 
-A.6.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+A.7.  Since draft-marx-qlog-event-definitions-quic-h3-00:
 
    *  Event and category names are now all lowercase
 
@@ -2284,9 +2284,9 @@ Acknowledgements
    Leuven Universities.
 
    Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
-   Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja
-   Kuehlewind, Jeremy Laine, Kazu Yamamoto, and Christian Huitema for
-   their feedback and suggestions.
+   Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind,
+   Jeremy Lainé, Kazu Yamamoto, and Christian Huitema for their feedback
+   and suggestions.
 
 Authors' Addresses
 
