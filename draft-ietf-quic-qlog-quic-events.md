@@ -904,9 +904,11 @@ Since QUIC implementations rarely control UDP logic directly, the raw data
 excludes UDP-level headers in all fields.
 
 The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
-coalescing inside UDP datagrams. Implementations can assign a per-endpoint
-unique ID to each datagram, and reflect this in other events to track QUIC
-packets through processing steps.
+coalescing inside UDP datagrams. Since QUIC generates many UDP datagrams, unique
+identifiers are required to be able to track them individually in qlog traces.
+However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
+Selecting identifier is values is thus left to qlog implementations, that should
+consider how to generate unique values within the scope of their created traces.
 
 ## datagrams_received {#transport-datagramsreceived}
 Importance: Extra
