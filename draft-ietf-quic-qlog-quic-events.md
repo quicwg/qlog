@@ -137,31 +137,22 @@ the QUIC specifications to qlog, making it easier for users to interpret.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
-For several types of events, it is sometimes impossible to tie them to a specific
-conceptual QUIC connection (e.g., a packet_dropped event triggered because the
-packet has an unknown connection_id in the header). Since qlog events in a trace
-are typically associated with a single connection, it is unclear how to log these
-events.
+A single qlog event trace is typically associated with a single QUIC connection.
+However, for several types of events (for example, a {{transport-packetdropped}}
+event with trigger value of "connection_unknown"), it can be impossible to tie
+them to a specific QUIC connection, especially on the server.
 
-Ideally, implementers SHOULD create a separate, individual "endpoint-level" trace
-file (or group_id value), not associated with a specific connection (for example a
-"server.qlog" or group_id = "client"), and log all events that do not belong to a
-single connection to this grouping trace. However, this is not always practical,
-depending on the implementation. Because the semantics of most of these events are
-well-defined in the protocols and because they are difficult to mis-interpret as
-belonging to a connection, implementers MAY choose to log events not belonging to
-a particular connection in any other trace, even those strongly associated with a
-single connection.
+There are various ways to handle these events, each making certain tradeoffs
+between file size overhead, flexibility, ease of use, or ease of
+implementation. Some options include:
 
-Note that this can make it difficult to match logs from different vantage points
-with each other. For example, from the client side, it is easy to log connections
-with version negotiation or retry in the same trace, while on the server they
-would most likely be logged in separate traces. Servers can take extra efforts
-(and keep additional state) to keep these events combined in a single trace
-however (for example by also matching connections on their four-tuple instead of
-just the connection ID).
-
-
+* Log them in a separate endpoint-wide trace (or use a special group_id value)
+  not associated with a single connection.
+* Log them in the most recently used trace.
+* Use additional heuristics for connection identification (for example use the
+  four-tuple in addition to the Connection ID).
+* Buffer events until they can be assigned to a connection (for example for
+  version negotiation and retry events).
 
 # QUIC Event Overview
 
@@ -1920,6 +1911,10 @@ TBD
 
 
 # Change Log
+
+## Since draft-ietf-qlog-quic-events-04:
+
+* Updated guidance on logging events across connections (#279)
 
 ## Since draft-ietf-qlog-quic-events-03:
 
