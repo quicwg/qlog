@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-02-14T00:57:05.430949+00:00",
+  "timestamp": "2023-03-02T01:00:54.771585+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -4071,7 +4071,7 @@
       "id": "MDU6SXNzdWU4MDI5Mjc3MTg=",
       "title": "add a field to log the code version",
       "url": "https://github.com/quicwg/qlog/issues/136",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -4084,8 +4084,8 @@
       ],
       "body": "With many iterations of my qlog implementation running in production now, it would be helpful if there was a way to tell which version of my code generated any particular qlog file (even better if qvis could display it somewhere).\r\n\r\nI suggest adding an optional `code_version` to the `Trace` container. Implementations could fill this field with whatever they want. In quic-go, I'd probably use something like `quic-go $(git describe --long --dirty)`.",
       "createdAt": "2021-02-07T11:14:07Z",
-      "updatedAt": "2022-09-16T14:39:44Z",
-      "closedAt": null,
+      "updatedAt": "2023-03-01T19:38:45Z",
+      "closedAt": "2023-03-01T19:38:45Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -4114,6 +4114,13 @@
           "body": "So, I remain of the opinion that it would not make much sense to standardize this (whether it's Configuration, Summary, Environment or a combination thereof). The proposed new field in #208 as simply a generic text value reinforces that opinion. \r\n\r\nHowever, if we do want to do this, I'd propose to just merge all of this into a single field of a generic object type, i.e.,:\r\n\r\n```\r\nBikesheddedTypeName = {\r\n    * text => any\r\n}\r\n```\r\n\r\nWhere people can go crazy adding `configuration`, `environment`, etc. members as they see fit. This feels more flexible than having a `text` field. \r\n\r\nFinally, #208 only adds this to the Trace object, not TraceSeq. Any chosen solution should be enforced on both trace types. ",
           "createdAt": "2022-09-16T14:39:44Z",
           "updatedAt": "2022-09-16T14:39:44Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed on call. Decided to close this and associated PR with no action and keep the `configuration` field for this purpose. ",
+          "createdAt": "2023-03-01T19:38:45Z",
+          "updatedAt": "2023-03-01T19:38:45Z"
         }
       ]
     },
@@ -5925,9 +5932,17 @@
       "labels": [],
       "body": "We had a question about quiche's logging on https://github.com/cloudflare/quiche/issues/1197 this got me thinking some more about representations of time in qlog.\r\n\r\nIn quiche, we use a monotonic non-decreasing clock. When a trace is started, we store a monotonic start time internally and don't put that in the qlog. As events are created, we calculate a relative time since the start and record that.\r\n\r\nI've now realised this behaviour seems to differ from what the qlog draft states in https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#name-timestamps\r\n\r\n> Relative: Specify a full \"reference_time\" timestamp (typically this is done up-front in \"common_fields\", see [Section 3.4.7](https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#common-fields)) and include only relatively-encoded values based on this reference_time with each event. The \"reference_time\" value is typically the first absolute timestamp. This approach uses a medium amount of characters.\r\n\r\nThe problem is that clock drift can occur. The spec mentions this briefly but I wonder if the problem is larger than people give consideration to. For the relative and base time formats, you'd potentially end up smaller or negative values, which might break qlog tooling.\r\n\r\nI don't have much insight into solving clock drift problems but could we consider adding a monotonic time format type in addition?",
       "createdAt": "2022-03-19T15:31:19Z",
-      "updatedAt": "2022-03-19T15:31:19Z",
+      "updatedAt": "2023-03-01T21:09:37Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "@rmarx asked me to explain this further or more clearly. So lets try a different angle.\r\n\r\nHere is what qlog says\r\n\r\n> The \"time\" field indicates the timestamp at which the event occurred. Its value is typically the Unix timestamp since the 1970 epoch (number of milliseconds since midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports two more succinct timestamps formats to allow reducing file size. The employed format is indicated in the \"time_format\" field, which allows one of three values: \"absolute\", \"delta\" or \"relative\".\r\n\r\nEach event has a timestamp, whose value is calculated according to the format. qlog hints that the UNIX epoch is \"typical\", which leaves the door open to other epoch. But qlog doesn't really support expressing what the epoch is explicitly. \r\n\r\nThe `relative` encoding is described as:\r\n\r\n> specify a full \"reference_time\" timestamp (typically this is done up-front in \"common_fields\", see [Section 3.4.7](https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#common-fields)) and include only relatively-encoded values based on this reference_time with each event. The \"reference_time\" value is typically the first absolute timestamp. This approach uses a medium amount of characters.\r\n\r\nIf wishing to not use the unix epoch as the relative format's epoch, the spec if not clear how to represent that. `reference_time` is just a float64. If qlog producers are free to insert any value into this, it is not clear how qlog consumers are expected to consume the value. One use case could be in tooling to convert the relative-encoded timestamps back to into an absolute time for the purposes of converting into a human-readable format like a string, such a tool might assume the value of `relative_time` is the number of seconds since the unix epoch and, if it isn't, the calculation would be wrong.\r\n\r\nA common producer use case is to want to log events starting with a timestamp of 0, and then to progress forward in ascending time durations. For this use case, the reference_time field does not add much value. Setting a `reference_time` of 0 could be confused with \"0 seconds since the unix epoch\" because the qlog specification is not tight enough.\r\n\r\nAn implied reference clock based on e.g. the unix clock, sets up other caveats. In some environments, it is possible to operate in abstract time durations, where the epoch cannot be serialized to a value that makes sense for any other system.  For example, Rust provides an [Instant](https://doc.rust-lang.org/std/time/struct.SystemTime.html#method.duration_since) type against which monotonic time durations can be calculated. The alternative would be to use SystemTime time, where durations do not have the same guarantee due the possibility of clocks being moved forward or backwards; see https://doc.rust-lang.org/std/time/struct.SystemTime.html#method.duration_since\r\n\r\n Finally, qlog recommends \r\n \r\n > Events in each individual trace SHOULD be logged in strictly ascending timestamp order (though not necessarily absolute value, for the \"delta\" format). Tools CAN sort all events on the timestamp before processing them, though are not required to (as this could impose a significant processing overhead). This can be a problem especially for multi-threaded and/or streaming loggers, who could consider using a separate post-processor to order qlog events in time if a tool do not provide this feature.\r\n \r\n While it alludes to some of the problems of time-synchronization, it could probably be clearer. This is especially true if using a relative time format based on a wall clock reference where clock changes could cause a negative value to be logged in the timestamp. Naively sorting these logs based on the relative timestamp would produce an incorrect view of the connection's events. Instead, a tool trying to do some log consolidation and sorting needs to be very date-time aware. That probably extends to qlog consumers, for example, if they convert to a human-friendly representation then it should not be unexpected that clocks go backward or forward.",
+          "createdAt": "2023-03-01T21:09:05Z",
+          "updatedAt": "2023-03-01T21:09:37Z"
+        }
+      ]
     },
     {
       "number": 199,
@@ -6640,7 +6655,7 @@
       "labels": [],
       "body": "We presently have 3 documents: main schema, quic schema, HTTP/3 and QPACK schema.\r\n\r\nWe presently have 1 version field `qlog_version` to express changes in any of these documents.\r\n\r\nWe  make efforts to keep these things in lock step, but the relationship is quite implicit and not explicitly stated. That's not brilliant and adds some friction.\r\n\r\nOne proposal I have is to articulate the schema(s) used in the log. I don't think we need to go as far as XML does (e.g. https://www.oreilly.com/library/view/xml-in-a/0596007647/re168.html) but we could just include the I-D or RFC name as a string. Then each additional schema document can express what version of qlog main schema it depends on. I'll write this up as a PR.",
       "createdAt": "2023-01-17T14:48:29Z",
-      "updatedAt": "2023-01-19T13:12:43Z",
+      "updatedAt": "2023-03-01T19:50:05Z",
       "closedAt": null,
       "comments": [
         {
@@ -6656,6 +6671,27 @@
           "body": "So the issue with a list of name and value tuples is, you'd need to go to the effort of defining  naming strategy and a registry to hold those names to avoid conflicts. That's overhead I'd like to avoid.\r\n\r\n`qlog_schema_version` sounds fine to me.\r\n\r\nI'd stuck with something like `additional_schemas` though. There's no restriction I can think of that means new schema are constrained about what they can extend.",
           "createdAt": "2023-01-19T13:12:42Z",
           "updatedAt": "2023-01-19T13:12:42Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thinking about this more and comparing with other similar projects, I think keeping the original proposal is fine, but that we should probably use the term \"namespace\" instead of \"schema\" (seems to be used quite consistently across XML, YAML, even [CDDL 2.0](https://www.ietf.org/archive/id/draft-bormann-cbor-cddl-2-draft-00.html#name-explicitly-interacting-with)). \r\n\r\nThus:\r\n```\r\n\"qlog_version\": \"0.3\", # version of the \"default\" namespace, which is the \"main-schema\" document\r\n\"qlog_format\": \"JSON\",\r\n\"namespaces\": [\r\n  \"draft-ietf-quic-qlog-quic-events-03\",\r\n  \"draft-ietf-quic-qlog-quic-h3-events-03\"\r\n],\r\n```\r\n",
+          "createdAt": "2023-03-01T15:53:12Z",
+          "updatedAt": "2023-03-01T15:53:12Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "qlog doesn't define the term namespace anywhere, so it would have to do that. Realistically, I think that pushes us towards making this all much more explicit. I.e. providing guidelines defining namespaces and registering them in a new  IANA registry. That's not far off what we talked about earlier with the tuple suggestion but I don't see a good reason to have a separate version field. ",
+          "createdAt": "2023-03-01T16:51:48Z",
+          "updatedAt": "2023-03-01T16:51:48Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed on the call: namespaces has some implicit connotations that imply things like versioning and uniqueness, which we don't want because they need IANA support. Keep `additional_schema` and make clear the entries refer to datatracker documents only. Basically Merge the PR after doublechecking it's good :) ",
+          "createdAt": "2023-03-01T19:50:05Z",
+          "updatedAt": "2023-03-01T19:50:05Z"
         }
       ]
     },
@@ -9075,21 +9111,21 @@
       "id": "PR_kwDOCrLn6M46jmzU",
       "title": "add an environment field to the trace",
       "url": "https://github.com/quicwg/qlog/pull/208",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #136.",
       "createdAt": "2022-06-29T10:39:41Z",
-      "updatedAt": "2022-09-16T14:41:04Z",
+      "updatedAt": "2023-03-01T19:38:54Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "3909bbb9cd3b958b23528f40c9f191851ec26b6d",
       "headRepository": "quicwg/qlog",
       "headRefName": "trace-environment",
       "headRefOid": "64cea727290997a78cbbe9b6a739e7d7d9f0516b",
-      "closedAt": null,
+      "closedAt": "2023-03-01T19:38:54Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -11808,24 +11844,26 @@
       "id": "PR_kwDOCrLn6M5GRl2m",
       "title": "don't call the AEAD auth tag \"trailer\"",
       "url": "https://github.com/quicwg/qlog/pull/264",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Neither RFC 9000 nor 9001 call this a \"trailer\". We should avoid this terminology, since it could potentially be confused with HTTP trailers.",
       "createdAt": "2022-12-28T02:32:46Z",
-      "updatedAt": "2023-01-09T14:31:25Z",
+      "updatedAt": "2023-03-01T19:31:37Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-trailer",
       "headRefOid": "4030e396f90472566cafe86b72d3f0c531217a78",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2023-03-01T19:31:36Z",
+      "mergedAt": "2023-03-01T19:31:36Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "7b3c14029d08af1d1a8e42433ff020b52c7fcecf"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -11849,7 +11887,7 @@
       "labels": [],
       "body": "This field is not particularly useful, because\r\n1. it will always be 16, see https://datatracker.ietf.org/doc/html/rfc9001#name-aead-usage\r\n2. it's a property of the TLS cipher suite in use, so it can be trivially looked up, if necessary",
       "createdAt": "2022-12-28T02:46:09Z",
-      "updatedAt": "2023-01-09T15:23:24Z",
+      "updatedAt": "2023-03-01T19:28:22Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
@@ -11874,6 +11912,13 @@
           "body": "I'm leaning on the side of removing this field. The information is made redundant by the cipher suite. Things that care about the tag length can do a lookup or make their own assumptions based on other information",
           "createdAt": "2023-01-09T15:23:24Z",
           "updatedAt": "2023-01-09T15:23:24Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed on call. @marten-seemann will make the requested prose change and should be good to go. ",
+          "createdAt": "2023-03-01T19:28:22Z",
+          "updatedAt": "2023-03-01T19:28:22Z"
         }
       ],
       "reviews": [
@@ -12732,13 +12777,13 @@
       "labels": [],
       "body": "Fixes #35 ",
       "createdAt": "2023-01-13T16:01:03Z",
-      "updatedAt": "2023-01-18T20:13:37Z",
+      "updatedAt": "2023-03-01T19:22:02Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
       "headRepository": "quicwg/qlog",
       "headRefName": "clean-serverguidance",
-      "headRefOid": "47d038e7e3a4a68cb61e47068c0d192e4083294b",
+      "headRefOid": "2548d74047b244533f7271f24ea0fd9e32818045",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -12784,6 +12829,19 @@
               "updatedAt": "2023-01-18T20:13:37Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5OtOzp",
+          "commit": {
+            "abbreviatedOid": "2548d74"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-03-01T19:22:01Z",
+          "updatedAt": "2023-03-01T19:22:01Z",
+          "comments": []
         }
       ]
     },
@@ -12955,13 +13013,13 @@
       "labels": [],
       "body": "Since most of these events are HTTP/3 specific, lets just rename them to\nuse an H3 prefix.\n\nThe one exception is `HTTPField` because it is actually aligned to HTTP\nSemantics rather than any particular wire format.\n\nFixes #286\n",
       "createdAt": "2023-01-17T18:18:53Z",
-      "updatedAt": "2023-01-18T20:18:46Z",
+      "updatedAt": "2023-03-01T19:28:42Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
       "headRepository": "quicwg/qlog",
       "headRefName": "http-stop-squatting",
-      "headRefOid": "6bcb29aad1f2779df6ea0718e119e0fd49b98e1a",
+      "headRefOid": "96743bc0968d893607b9f6a56377e7a34e59911b",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -12993,6 +13051,72 @@
               "body": "Discussed on call. Rename to H3HTTPField. Dirty, but consistent. ",
               "createdAt": "2023-01-18T20:18:45Z",
               "updatedAt": "2023-01-18T20:18:46Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5OtP9K",
+          "commit": {
+            "abbreviatedOid": "6bcb29a"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-03-01T19:25:26Z",
+          "updatedAt": "2023-03-01T19:25:27Z",
+          "comments": [
+            {
+              "originalPosition": 319,
+              "body": "Discussed on call. Postpone merge until we have an equivalent transport PR to merge along and until #253 is merged. ",
+              "createdAt": "2023-03-01T19:25:26Z",
+              "updatedAt": "2023-03-01T19:25:27Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5OtQBo",
+          "commit": {
+            "abbreviatedOid": "6bcb29a"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-03-01T19:25:39Z",
+          "updatedAt": "2023-03-01T19:25:54Z",
+          "comments": [
+            {
+              "originalPosition": 372,
+              "body": "NIT: case is not consistent GoAway in the title vs Goaway in the Frame definition",
+              "createdAt": "2023-03-01T19:25:39Z",
+              "updatedAt": "2023-03-01T19:25:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5OtQrG",
+          "commit": {
+            "abbreviatedOid": "6bcb29a"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-03-01T19:27:37Z",
+          "updatedAt": "2023-03-01T19:27:59Z",
+          "comments": [
+            {
+              "originalPosition": 319,
+              "body": "```suggestion\r\nH3HTTPField = {\r\n```",
+              "createdAt": "2023-03-01T19:27:37Z",
+              "updatedAt": "2023-03-01T19:27:59Z"
+            },
+            {
+              "originalPosition": 312,
+              "body": "```suggestion\r\n    headers: [* H3HTTPField]\r\n```",
+              "createdAt": "2023-03-01T19:27:47Z",
+              "updatedAt": "2023-03-01T19:27:59Z"
             }
           ]
         }
@@ -13065,7 +13189,7 @@
       "labels": [],
       "body": "- Judicious editorial change to section 6\n- move truncation section below json-seq\n- Split optimization to guidelines and survey/speculation\n- move conversion considerations to appendix\n- fixup: promote truncation a level\n",
       "createdAt": "2023-01-18T14:00:11Z",
-      "updatedAt": "2023-01-18T14:11:49Z",
+      "updatedAt": "2023-02-28T16:19:44Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6e40c4e0d342a09aa0bebdfa94856e8a76d821fa",
@@ -13085,7 +13209,148 @@
           "updatedAt": "2023-01-18T14:11:48Z"
         }
       ],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5OjVAu",
+          "commit": {
+            "abbreviatedOid": "b3ac2d4"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "Generally, this is in good shape. The now-appendices need some editorial love to align with the (intended) tone of the rest of the text, but that might be done in another PR later. ",
+          "createdAt": "2023-02-28T15:32:44Z",
+          "updatedAt": "2023-02-28T16:19:42Z",
+          "comments": [
+            {
+              "originalPosition": 87,
+              "body": "```suggestion\r\nI-JSON {{format-ijson}}, and its streaming counterpart JSON Text Sequences ({{format-json-seq}}. Furthermore,\r\n```",
+              "createdAt": "2023-02-28T15:32:45Z",
+              "updatedAt": "2023-02-28T16:19:42Z"
+            },
+            {
+              "originalPosition": 86,
+              "body": "```suggestion\r\ngiven on how to map qlog to JSON ({{format-json}}, its subset\r\n```",
+              "createdAt": "2023-02-28T15:33:19Z",
+              "updatedAt": "2023-02-28T16:19:42Z"
+            },
+            {
+              "originalPosition": 92,
+              "body": "```suggestion\r\n\"qlog_format\" field ({{top-level}}) is used to indicate the chosen serialization\r\n```",
+              "createdAt": "2023-02-28T15:33:55Z",
+              "updatedAt": "2023-02-28T16:19:42Z"
+            },
+            {
+              "originalPosition": 119,
+              "body": "```suggestion\r\nUTF-8 both for the file itself and the string values it contains. In addition, all qlog\r\n```",
+              "createdAt": "2023-02-28T15:36:44Z",
+              "updatedAt": "2023-02-28T16:19:42Z"
+            },
+            {
+              "originalPosition": 120,
+              "body": "I've called this \"field names\" consistently throughout the qlog documents. However, double-checking this with the JSON RFC at https://www.rfc-editor.org/rfc/rfc8259#section-4, they use \"member names\" or \"object member names\" instead. \r\n\r\nI'm not sure that makes things any clearer for readers unfamiliar with JSON terminology, and changing things would be a big overall update across the docs, but potentially worth it for consistency? Either way, would require a new issue/PR. ",
+              "createdAt": "2023-02-28T15:41:43Z",
+              "updatedAt": "2023-02-28T16:19:42Z"
+            },
+            {
+              "originalPosition": 150,
+              "body": "```suggestion\r\nintegrated within a JavaScript environment (e.g., Web browsers, NodeJS). For use\r\n```",
+              "createdAt": "2023-02-28T15:42:25Z",
+              "updatedAt": "2023-02-28T16:19:42Z"
+            },
+            {
+              "originalPosition": 171,
+              "body": "I found this part to have a bit of a weird build-up, so thought maybe this flows better:\r\n\r\n\r\n> This can be problematic, as some protocols (e.g., QUIC, HTTP/3), might use the full int64/uint64\r\nrange and we therefore need a qlog serialization format to support it. One solution to this is to allow a string-based representation of 64-bit integers in addition to the numerical, but range-limited representation. \r\n\r\n> As such, when using I-JSON in these situations, the following CDDL definition of uint64 should override the original and parsers should take into account that a uint64 field can either be a number or string. \r\n",
+              "createdAt": "2023-02-28T15:51:28Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 250,
+              "body": "```suggestion\r\nmost JSON parsers will fail if a document is malformed. Some streaming JSON parsers are able to handle missing closing tags, however they are not widely deployed in popular environments (e.g., Web browsers)\r\n```",
+              "createdAt": "2023-02-28T15:54:24Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 247,
+              "body": "```suggestion\r\nthem, and then finalizing the log by appending appropriate closing tags e.g.,\r\n```",
+              "createdAt": "2023-02-28T15:54:50Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 147,
+              "body": "Since we removed truncation from this, it's a bit weird to have just a single subsection under JSON. It's also weird we don't explicitly say anything about \"qlog_format\"/file extension/MIME type when employing I-JSON (it's still just \"JSON\", but that should be explicitly spelled out imo).\r\n\r\nIt makes more sense to promote I-JSON to a `##` here, so we have 3 sections for the 3 formats (this is also how they're introduced atm). ",
+              "createdAt": "2023-02-28T15:57:34Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 289,
+              "body": "```suggestion\r\n\"events\" array. An example is provided in {{json-seq-ex}}.\r\n```",
+              "createdAt": "2023-02-28T15:59:41Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 292,
+              "body": "```suggestion\r\n\"JSON-SEQ\". The file extension/suffix SHOULD be \".sqlog\" (for \"streaming\" qlog).\r\n```",
+              "createdAt": "2023-02-28T16:00:04Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 302,
+              "body": "Imo this should be moved up to right after the Trace vs TraceSeq discussion (line 1400 above, \"which notably includes only a single trace (TraceSeq) and omits an explicit events field\")",
+              "createdAt": "2023-02-28T16:02:29Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 339,
+              "body": "```suggestion\r\ninstead a truncated value. For example, one might only store the first 100 bytes of an\r\nHTTP response body to be able to discern which file it actually\r\ncontained. In these cases, the original byte-size length cannot be\r\n```",
+              "createdAt": "2023-02-28T16:04:12Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 421,
+              "body": "```suggestion\r\n~~~~~~~~\r\n// both the content's value and its length are present\r\n// (length is redundant)\r\n{\r\n    \"content_length\": 5,\r\n    \"content\": \"051428abff\"\r\n}\r\n```",
+              "createdAt": "2023-02-28T16:06:38Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 432,
+              "body": "```suggestion\r\n// only the content value is present, indicating it\r\n// represents the content's full value. The byte\r\n// length is obtained by calculating content.length / 2\r\n{\r\n    \"content\": \"051428abff\"\r\n}\r\n```",
+              "createdAt": "2023-02-28T16:07:16Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 439,
+              "body": "```suggestion\r\n// only the length is present, meaning the value\r\n// was omitted\r\n{\r\n    \"content_length\": 5,\r\n}\r\n```",
+              "createdAt": "2023-02-28T16:07:48Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 454,
+              "body": "```suggestion\r\n// both value and length are present, but the lengths \r\n// do not match: the value was truncated to \r\n// the first three bytes.\r\n{\r\n    \"content_length\": 5,\r\n    \"content\": \"051428\"\r\n}\r\n```",
+              "createdAt": "2023-02-28T16:10:26Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 593,
+              "body": "This first sentence seems a bit... obvious. Did this get lost in \"translation\"? What are we actually trying to say? Process serialized JSON / I-JSON / JSON-SEQ qlog?",
+              "createdAt": "2023-02-28T16:12:51Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 616,
+              "body": "I really wonder if we should keep this kind of thing in here, especially if we don't include any concrete examples anymore. Then we should also remove a similar paragraph up-top when discussing `qlog_format` for the first time. ",
+              "createdAt": "2023-02-28T16:14:06Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            },
+            {
+              "originalPosition": 651,
+              "body": "I feel this one can be removed... it's unlikely people will return to this and I don't see much historical value having it in the RFC rather than people looking it up in earlier versions of the drafts themselves. ",
+              "createdAt": "2023-02-28T16:15:56Z",
+              "updatedAt": "2023-02-28T16:19:43Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 290,
@@ -13319,6 +13584,155 @@
               "updatedAt": "2023-01-24T16:12:46Z"
             }
           ]
+        }
+      ]
+    },
+    {
+      "number": 291,
+      "id": "PR_kwDOCrLn6M5LDENH",
+      "title": "Update description of datagram_id usage",
+      "url": "https://github.com/quicwg/qlog/pull/291",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #281",
+      "createdAt": "2023-03-01T16:20:58Z",
+      "updatedAt": "2023-03-01T19:22:01Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "47c4c28d9262018206bcfc7a5d541b2c85bf3c3b",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "clarify-datagramid",
+      "headRefOid": "5db90c2d29cc61ff3c376af271066ed5b174e8f2",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "rebase on main should fix the cddl tests",
+          "createdAt": "2023-03-01T18:50:38Z",
+          "updatedAt": "2023-03-01T18:50:38Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5OsYdj",
+          "commit": {
+            "abbreviatedOid": "948bec5"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-03-01T16:56:11Z",
+          "updatedAt": "2023-03-01T16:56:12Z",
+          "comments": [
+            {
+              "originalPosition": 10,
+              "body": "```suggestion\r\nSelecting identifier values is thus left to qlog implementations, which should\r\n```",
+              "createdAt": "2023-03-01T16:56:11Z",
+              "updatedAt": "2023-03-01T16:56:12Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5OshgT",
+          "commit": {
+            "abbreviatedOid": "948bec5"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM modulo nit",
+          "createdAt": "2023-03-01T17:17:10Z",
+          "updatedAt": "2023-03-01T17:17:10Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 292,
+      "id": "PR_kwDOCrLn6M5LDSzf",
+      "title": "bump CDDL workflow ubuntu version",
+      "url": "https://github.com/quicwg/qlog/pull/292",
+      "state": "CLOSED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-03-01T17:03:07Z",
+      "updatedAt": "2023-03-01T17:09:06Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "47c4c28d9262018206bcfc7a5d541b2c85bf3c3b",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "bump-cddl-ubuntu",
+      "headRefOid": "a0009ebaf7a73679f90a25fcb6f98f0f9d95abc0",
+      "closedAt": "2023-03-01T17:09:01Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 293,
+      "id": "PR_kwDOCrLn6M5LDVMP",
+      "title": "Update cddl_validate.yml",
+      "url": "https://github.com/quicwg/qlog/pull/293",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-03-01T17:10:00Z",
+      "updatedAt": "2023-03-01T18:50:13Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "47c4c28d9262018206bcfc7a5d541b2c85bf3c3b",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "bump-cddl-ubuntu",
+      "headRefOid": "c070dcac36337ab4df5df28ea9812a84d3963875",
+      "closedAt": "2023-03-01T18:50:13Z",
+      "mergedAt": "2023-03-01T18:50:13Z",
+      "mergedBy": "lnicco",
+      "mergeCommit": {
+        "oid": "91bd4b71ee1e3b29f9353f735fb436fc5b2d41ce"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5Os9Nq",
+          "commit": {
+            "abbreviatedOid": "c070dca"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-03-01T18:32:33Z",
+          "updatedAt": "2023-03-01T18:32:33Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5OtDZ_",
+          "commit": {
+            "abbreviatedOid": "c070dca"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "thanks! ",
+          "createdAt": "2023-03-01T18:49:39Z",
+          "updatedAt": "2023-03-01T18:49:39Z",
+          "comments": []
         }
       ]
     }
