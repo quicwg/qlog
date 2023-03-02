@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 2 September 2023                                           Meta
+Expires: 3 September 2023                                           Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            1 March 2023
+                                                            2 March 2023
 
 
                 HTTP/3 and QPACK qlog event definitions
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 September 2023.
+   This Internet-Draft will expire on 3 September 2023.
 
 Copyright Notice
 
@@ -59,7 +59,6 @@ Table of Contents
      1.1.  Notational Conventions
    2.  Overview
      2.1.  Usage with QUIC
-     2.2.  Raw packet and frame information
    3.  HTTP/3 and QPACK Event Overview
    4.  HTTP/3 Events
      4.1.  parameters_set
@@ -108,12 +107,13 @@ Table of Contents
    9.  IANA Considerations
    10. Normative References
    Appendix A.  Change Log
-     A.1.  Since draft-ietf-quic-qlog-h3-events-02:
-     A.2.  Since draft-ietf-quic-qlog-h3-events-01:
-     A.3.  Since draft-ietf-quic-qlog-h3-events-00:
-     A.4.  Since draft-marx-qlog-event-definitions-quic-h3-02:
-     A.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
-     A.6.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+     A.1.  Since draft-ietf-quic-qlog-h3-events-03:
+     A.2.  Since draft-ietf-quic-qlog-h3-events-02:
+     A.3.  Since draft-ietf-quic-qlog-h3-events-01:
+     A.4.  Since draft-ietf-quic-qlog-h3-events-00:
+     A.5.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+     A.6.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+     A.7.  Since draft-marx-qlog-event-definitions-quic-h3-00:
    Acknowledgements
    Authors' Addresses
 
@@ -181,24 +181,6 @@ Table of Contents
    potentially suffixed by the vantagepoint type (For example,
    abcd1234_server.qlog would contain the server-side trace of the
    connection with GUID abcd1234).
-
-2.2.  Raw packet and frame information
-
-   This document re-uses the definition of the RawInfo data class from
-   [QLOG-MAIN].
-
-   Note:  As HTTP/3 does not use trailers in frames, each HTTP/3 frame
-      header_length can be calculated as header_length = RawInfo:length
-      - RawInfo:payload_length
-
-   Note:  In some cases, the length fields are also explicitly reflected
-      inside of frame headers.  For example, all HTTP/3 frames include
-      their explicit payload lengths in the frame header.  In these
-      cases, those fields are intentionally preserved in the event
-      definitions.  Even though this can lead to duplicate data when the
-      full RawInfo is logged, it allows a more direct mapping of the
-      HTTP/3 specifications to qlog, making it easier for users to
-      interpret.  In this case, both fields MUST have the same value.
 
 3.  HTTP/3 and QPACK Event Overview
 
@@ -292,7 +274,7 @@ Table of Contents
    }
 
    HTTPParameters = {
-       ? max_header_list_size: uint64
+       ? max_field_section_size: uint64
        ? max_table_capacity: uint64
        ? blocked_streams_count: uint64
 
@@ -341,10 +323,8 @@ Table of Contents
    Emitted when a stream's type becomes known.  This is typically when a
    stream is opened and the stream's type indicator is sent or received.
 
-   Note: most of this information can also be inferred by looking at a
-   stream's id, since id's are strictly partitioned at the QUIC level.
-   Even so, this event has a "Base" importance because it helps a lot in
-   debugging to have this information clearly spelled out.
+   The stream_type_value field is the numerical value without VLIE
+   encoding.
 
    Definition:
 
@@ -355,7 +335,7 @@ Table of Contents
        stream_type: HTTPStreamType
 
        ; only when stream_type === "unknown"
-       ? raw_stream_type: uint64
+       ? stream_type_value: uint64
 
        ; only when stream_type === "push"
        ? associated_push_id: uint64
@@ -375,10 +355,9 @@ Table of Contents
 
    Importance: Core
 
-   HTTP equivalent to the packet_sent event.  This event is emitted when
-   the HTTP/3 framing actually happens.  Note: this is not necessarily
-   the same as when the HTTP/3 data is passed on to the QUIC layer.  For
-   that, see the "data_moved" event in [QLOG-QUIC].
+   This event is emitted when the HTTP/3 framing actually happens.  This
+   does not necessarily coincide with HTTP/3 data getting passed to the
+   QUIC layer.  For that, see the "data_moved" event in [QLOG-QUIC].
 
    Definition:
 
@@ -401,10 +380,10 @@ Table of Contents
 
    Importance: Core
 
-   HTTP equivalent to the packet_received event.  This event is emitted
-   when the HTTP/3 frame is parsed.  Note: this is not necessarily the
-   same as when the HTTP/3 data is actually received on the QUIC layer.
-   For that, see the "data_moved" event in [QLOG-QUIC].
+   This event is emitted when the HTTP/3 frame is parsed.  Note: this is
+   not necessarily the same as when the HTTP/3 data is actually received
+   on the QUIC layer.  For that, see the "data_moved" event in
+   [QLOG-QUIC].
 
    Definition:
 
@@ -417,11 +396,11 @@ Table of Contents
 
                     Figure 6: HTTPFrameParsed definition
 
-   Note: in HTTP/3, DATA frames can have arbitrarily large lengths to
-   reduce frame header overhead.  As such, DATA frames can span many
-   QUIC packets and can be processed in a streaming fashion.  In this
-   case, the frame_parsed event is emitted once for the frame header,
-   and further streamed data is indicated using the data_moved event.
+   HTTP/3 DATA frames can have arbitrarily large lengths to reduce frame
+   header overhead.  As such, DATA frames can span multiple QUIC
+   packets.  In this case, the frame_parsed event is emitted once for
+   the frame header, and further streamed data is indicated using the
+   data_moved event.
 
 4.6.  push_resolved
 
@@ -492,7 +471,7 @@ Table of Contents
 
    HTTPDataFrame = {
        frame_type: "data"
-       ? raw: hexstring
+       ? raw: RawInfo
    }
 
                     Figure 11: HTTPDataFrame definition
@@ -605,12 +584,13 @@ Table of Contents
 
 5.2.9.  HTTPUnknownFrame
 
+   The frame_type_value field is the numerical value without VLIE
+   encoding.
+
    HTTPUnknownFrame = {
        frame_type: "unknown"
-       raw_frame_type: uint64
-
-       ? raw_length: uint32
-       ? raw: hexstring
+       frame_type_value: uint64
+       ? raw: RawInfo
    }
 
                      Figure 21: UnknownFrame definition
@@ -766,8 +746,7 @@ Table of Contents
        block_prefix: QPACKHeaderBlockPrefix
        header_block: [+ QPACKHeaderBlockRepresentation]
 
-       ? length: uint
-       ? raw: hexstring
+       ? raw: RawInfo
    }
 
                  Figure 27: QPACKHeadersEncoded definition
@@ -792,8 +771,7 @@ Table of Contents
        block_prefix: QPACKHeaderBlockPrefix
        header_block: [+ QPACKHeaderBlockRepresentation]
 
-       ? length: uint32
-       ? raw: hexstring
+       ? raw: RawInfo
    }
 
                  Figure 28: QPACKHeadersDecoded definition
@@ -810,8 +788,7 @@ Table of Contents
    QPACKInstructionCreated = {
        ; see definition in appendix
        instruction: QPACKInstruction
-       ? length: uint32
-       ? raw: hexstring
+       ? raw: RawInfo
    }
 
                Figure 29: QPACKInstructionCreated definition
@@ -833,8 +810,7 @@ Table of Contents
        ; see QPACKInstruction definition in appendix
        instruction: QPACKInstruction
 
-       ? length: uint32
-       ? raw: hexstring
+       ? raw: RawInfo
    }
 
                 Figure 30: QPACKInstructionParsed definition
@@ -1070,7 +1046,19 @@ Table of Contents
 
 Appendix A.  Change Log
 
-A.1.  Since draft-ietf-quic-qlog-h3-events-02:
+A.1.  Since draft-ietf-quic-qlog-h3-events-03:
+
+   *  Ensured consistent use of RawInfo to indicate raw wire bytes
+      (#243)
+
+   *  Changed HTTPStreamTypeSet:raw_stream_type to stream_type_value
+      (#54)
+
+   *  Changed HTTPUnknownFrame:raw_frame_type to frame_type_value (#54)
+
+   *  Renamed max_header_list_size to max_field_section_size (#282)
+
+A.2.  Since draft-ietf-quic-qlog-h3-events-02:
 
    *  Renamed HTTPStreamType data to request (#222)
 
@@ -1087,15 +1075,15 @@ A.1.  Since draft-ietf-quic-qlog-h3-events-02:
 
    *  Added overview Table of Contents
 
-A.2.  Since draft-ietf-quic-qlog-h3-events-01:
+A.3.  Since draft-ietf-quic-qlog-h3-events-01:
 
    *  No changes - new draft to prevent expiration
 
-A.3.  Since draft-ietf-quic-qlog-h3-events-00:
+A.4.  Since draft-ietf-quic-qlog-h3-events-00:
 
    *  Change the data definition language from TypeScript to CDDL (#143)
 
-A.4.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+A.5.  Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  These changes were done in preparation of the adoption of the
       drafts by the QUIC working group (#137)
@@ -1105,7 +1093,7 @@ A.4.  Since draft-marx-qlog-event-definitions-quic-h3-02:
    *  Moved RawInfo, Importance, Generic events and Simulation events to
       the main schema document.
 
-A.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+A.6.  Since draft-marx-qlog-event-definitions-quic-h3-01:
 
    Major changes:
 
@@ -1177,7 +1165,7 @@ A.5.  Since draft-marx-qlog-event-definitions-quic-h3-01:
    *  Extended connection_state_updated with more fine-grained states
       (#49)
 
-A.6.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+A.7.  Since draft-marx-qlog-event-definitions-quic-h3-00:
 
    *  Event and category names are now all lowercase
 
