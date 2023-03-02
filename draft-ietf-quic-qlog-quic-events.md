@@ -108,15 +108,16 @@ trace of the connection with ODCID abcd1234).
 
 Note:
 
-: QUIC packets always include an AEAD authentication tag ("trailer") at the end.
-As this tag is always the same size for a given connection (it depends on the used
-TLS cipher), this document does not define a separate "RawInfo:aead_tag_length"
-field here. Instead, this field is reflected in "transport:parameters_set" and can
-be logged only once.
+: QUIC packets always include an AEAD authentication tag at the end.
+As this tag is always the same size for a given connection (it depends on the
+used TLS cipher suite), this document does not define a separate
+"RawInfo:aead_tag_length" field here. Instead, this field is reflected in
+"transport:parameters_set" and can be logged only once.
 
 Note:
 
-: As QUIC uses trailers in packets, packet header_lengths can be calculated as:
+: As QUIC appends an authentication tag after the packet payload, the packet
+header_lengths can be calculated as:
 
 : header_length = length - payload_length - aead_tag_length
 
@@ -769,42 +770,47 @@ when keeping track of packet coalescing.
 ## packet_dropped {#transport-packetdropped}
 Importance: Base
 
-This event indicates a QUIC-level packet was dropped after partial or no parsing.
+This event indicates a QUIC-level packet was dropped.
+
+The trigger field indicates a general reason category for dropping the packet,
+while the details field can contain additional implementation-specific
+information.
 
 Definition:
 
 ~~~ cddl
 TransportPacketDropped = {
-    ; primarily packet_type should be filled here,
-    ; as other fields might not be parseable
+    ; Primarily packet_type should be filled here,
+    ; as other fields might not be decrypteable or parseable
     ? header: PacketHeader
 
     ? raw: RawInfo
     ? datagram_id: uint32
 
+    ? details: {* text => any}
     ? trigger:
-        "key_unavailable" /
-        "unknown_connection_id" /
-        "header_parse_error" /
-        "payload_decrypt_error" /
-        "protocol_violation" /
-        "dos_prevention" /
-        "unsupported_version" /
-        "unexpected_packet" /
-        "unexpected_source_connection_id" /
-        "unexpected_version" /
-        "duplicate" /
-        "invalid_initial"
+        "internal_error" /
+        "rejected" /
+        "unsupported" /
+        "invalid" /
+        "connection_unknown" /
+        "decryption_failure" /
+        "general"
 }
 ~~~
 {: #transport-packetdropped-def title="TransportPacketDropped definition"}
 
-Note: sometimes packets are dropped before they can be associated with a
-particular connection (e.g., in case of "unsupported_version"). This situation is
-discussed more in {{handling-unknown-connections}}.
+Some example situations for each of the trigger categories include:
 
-Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
-when keeping track of packet coalescing.
+- internal_error: not initialized, out of memory
+- rejected: limits reached, DDoS protection, unwilling to track more paths, duplicate packet
+- unsupported: unknown or unsupported version. See also {{handling-unknown-connections}}.
+- invalid: packet parsing or validation error
+- connection_unknown: packet does not relate to a known connection or Connection ID
+- decryption_failure: decryption key was unavailable, decryption failed
+- general: situations not clearly covered in the other categories
+
+For more details on "datagram_id", see {{transport-datagramssent}}.
 
 ## packet_buffered {#transport-packetbuffered}
 Importance: Base
@@ -877,8 +883,8 @@ TransportDatagramsSent = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length field indicates total length of the datagrams
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -886,14 +892,15 @@ TransportDatagramsSent = {
 ~~~
 {: #transport-datagramssent-def title="TransportDatagramsSent definition"}
 
-Note: QUIC itself does not have a concept of a "datagram_id". This field is a
-purely qlog-specific construct to allow tracking how multiple QUIC packets are
-coalesced inside of a single UDP datagram, which is an important optimization
-during the QUIC handshake. For this, implementations assign a (per-endpoint)
-unique ID to each datagram and keep track of which packets were coalesced into the
-same datagram. As packet coalescing typically only happens during the handshake
-(as it requires at least one long header packet), this can be done without much
-overhead.
+Since QUIC implementations rarely control UDP logic directly, the raw data
+excludes UDP-level headers in all fields.
+
+The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
+coalescing inside UDP datagrams. Since QUIC generates many UDP datagrams, unique
+identifiers are required to be able to track them individually in qlog traces.
+However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
+Selecting identifier values is thus left to qlog implementations, which should
+consider how to generate unique values within the scope of their created traces.
 
 ## datagrams_received {#transport-datagramsreceived}
 Importance: Extra
@@ -909,8 +916,8 @@ TransportDatagramsReceived = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length field indicates total length of the datagrams
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -918,18 +925,21 @@ TransportDatagramsReceived = {
 ~~~
 {: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
 
-Note: for more details on "datagram_ids", see {{transport-datagramssent}}.
+For more details on "datagram_ids", see {{transport-datagramssent}}.
 
 ## datagram_dropped {#transport-datagramdropped}
 Importance: Extra
 
 When a UDP-level datagram is dropped. This is typically done if it does not
-contain a valid QUIC packet (in that case, use packet_dropped instead).
+contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
+other reasons, packet_dropped ({{transport-packetdropped}}) should be used instead.
 
 Definition:
 
 ~~~ cddl
 TransportDatagramDropped = {
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: RawInfo
 }
 ~~~
@@ -1067,25 +1077,10 @@ TransportDataMoved = {
     ? from: "user" / "application" / "transport" / "network" / text
     ? to: "user" / "application" / "transport" / "network" / text
 
-    ; raw bytes that were transferred
-    ? data: hexstring
+    ? raw: RawInfo
 }
 ~~~~
 {: #transport-datamoved-def title="TransportDataMoved definition"}
-
-Note: we do not for example use a "direction" field (with values "up" and "down")
-to specify the data flow. This is because in some optimized implementations, data
-might skip some individual layers. Additionally, using explicit "from" and "to"
-fields is more flexible and allows the definition of other conceptual "layers"
-(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
-library ("security") or from HTTP/3 to QPACK ("qpack")).
-
-Note: this event type is part of the "transport" category, but really spans all
-the different layers. This means we have a few leaky abstractions here (for
-example, the stream_id or stream offset might not be available at some logging
-points, or the raw data might not be in a byte-array form). In these situations,
-implementers can decide to define new, in-context fields to aid in manual
-debugging.
 
 # Security Events {#sec-ev}
 
@@ -1181,7 +1176,7 @@ RecoveryParametersSet = {
 
     ; Note: this could change when max_datagram_size changes
     ; in bytes
-    ? minimum_congestion_window: uint32
+    ? minimum_congestion_window: uint64
     ? loss_reduction_factor: float32
 
     ; as PTO multiplier
@@ -1462,17 +1457,13 @@ PacketHeader = {
 Token = {
     ? type: "retry" / "resumption"
 
-    ; byte length of the token
-    ? length: uint32
-
-    ; raw byte value of the token
-    ? data: hexstring
-
     ; decoded fields included in the token
     ; (typically: peer's IP address, creation time)
     ? details: {
       * text => any
     }
+
+    ? raw: RawInfo
 }
 ~~~
 {: #token-def title="Token definition"}
@@ -1482,7 +1473,7 @@ packet, or one originally provided by the server in a NEW_TOKEN frame used when
 resuming a connection (e.g., for address validation purposes). Retry and
 resumption tokens typically contain encoded metadata to check the token's
 validity when it is used, but this metadata and its format is implementation
-specific. For that, this field includes a general-purpose "details" field.
+specific. For that, this event includes a general-purpose "details" field.
 
 ## Stateless Reset Token
 
@@ -1684,7 +1675,7 @@ StreamFrame = {
     ; if absent, the value MUST be assumed to be false
     ? fin: bool .default false
 
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #streamframe-def title="StreamFrame definition"}
@@ -1815,8 +1806,9 @@ PathResponseFrame = {
 
 ### ConnectionCloseFrame
 
-raw_error_code is the actual, numerical code. This is useful because some error
-types are spread out over a range of codes (e.g., QUIC's crypto_error).
+The error_code_value field is the numerical value without VLIE encoding. This is
+useful because some error types are spread out over a range of codes (e.g.,
+QUIC's crypto_error).
 
 ~~~ cddl
 ErrorSpace = "transport" / "application"
@@ -1826,11 +1818,11 @@ ConnectionCloseFrame = {
 
     ? error_space: ErrorSpace
     ? error_code: TransportError / $ApplicationError / uint32
-    ? raw_error_code: uint32
+    ? error_code_value: uint64
     ? reason: text
 
     ; For known frame types, the appropriate "frame_type" string
-    ; For unknown frame types, the hex encoded identifier value
+    ; For unknown frame types, the hex encoded frame identifier value
     ? trigger_frame_type: uint64 / text
 }
 ~~~
@@ -1847,13 +1839,14 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
+The frame_type_value field is the numerical value without VLIE encoding.
+
 ~~~ cddl
 UnknownFrame = {
     frame_type: "unknown"
-    raw_frame_type: uint64
+    frame_type_value: uint64
 
-    ? raw_length: uint32
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #unknownframe-def title="UnknownFrame definition"}
@@ -1867,7 +1860,10 @@ TransportError = "no_error" / "internal_error" /
     "final_size_error" / "frame_encoding_error" /
     "transport_parameter_error" / "connection_id_limit_error" /
     "protocol_violation" / "invalid_token" / "application_error" /
-    "crypto_buffer_exceeded"
+    "crypto_buffer_exceeded" / "key_update_error" /
+    "aead_limit_reached" / "no_viable_path"
+    ; there is no value to reflect CRYPTO_ERROR
+    ; use the CryptoError type instead
 ~~~
 {: #transporterror-def title="TransportError definition"}
 
@@ -1919,6 +1915,15 @@ TBD
 ## Since draft-ietf-qlog-quic-events-04:
 
 * Updated guidance on logging events across connections (#279)
+
+## Since draft-ietf-qlog-quic-events-03:
+
+* Ensured consistent use of RawInfo to indicate raw wire bytes (#243)
+* Renamed UnknownFrame:raw_frame_type to :frame_type_value (#54)
+* Renamed ConnectionCloseFrame:raw_error_code to :error_code_value (#54)
+* Changed triggers for packet_dropped (#278)
+* Added entries to TransportError enum (#285)
+* Changed minimum_congestion_window to uint64 (#288)
 
 ## Since draft-ietf-qlog-quic-events-02:
 
