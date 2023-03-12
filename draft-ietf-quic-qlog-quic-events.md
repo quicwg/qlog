@@ -108,7 +108,7 @@ trace of the connection with ODCID abcd1234).
 
 QUIC packets always include an AEAD authentication tag at the end.
 In general, the length of the AEAD tag depends on the TLS cipher
-suite, although all cipher suites used for QUIC use a 16 byte tag.
+suite, although all cipher suites used in QUIC v1 use a 16 byte tag.
 
 Note:
 
