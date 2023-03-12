@@ -699,8 +699,6 @@ QUICPacketSent = {
     ? datagram_id: uint32
     ? is_mtu_probe_packet: bool .default false
 
-    ? ecn: ECN
-
     ? trigger:
       ; draft-23 5.1.1
       "retransmit_reordered" /
@@ -746,8 +744,6 @@ QUICPacketReceived = {
     ? supported_versions: [+ QuicVersion]
     ? raw: RawInfo
     ? datagram_id: uint32
-
-    ? ecn: ECN
 
     ? trigger:
         ; if packet was buffered because it couldn't be
@@ -881,6 +877,11 @@ QUICDatagramsSent = {
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: [+ RawInfo]
+
+    ; ECN bits in the IP header
+    ; if not set, defaults to Non-ECT
+    ? ecn: [+ ECN]
+
     ? datagram_ids: [+ uint32]
 }
 ~~~
@@ -914,6 +915,11 @@ QUICDatagramsReceived = {
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: [+ RawInfo]
+
+    ; ECN bits in the IP header
+    ; if not set, defaults to Non-ECT
+    ? ecn: [+ ECN]
+
     ? datagram_ids: [+ uint32]
 }
 ~~~
@@ -1674,7 +1680,7 @@ AckFrame = {
     ; ECN (explicit congestion notification) related fields
     ; (not always present)
     ? ect1: uint64
-    ? ect0:uint64
+    ? ect0: uint64
     ? ce: uint64
 
     ; total frame length, including frame header
