@@ -106,20 +106,16 @@ trace of the connection with ODCID abcd1234).
 
 ## Raw packet and frame information
 
-Note:
-
-: QUIC packets always include an AEAD authentication tag at the end.
-As this tag is always the same size for a given connection (it depends on the
-used TLS cipher suite), this document does not define a separate
-"RawInfo:aead_tag_length" field here. Instead, this field is reflected in
-"transport:parameters_set" and can be logged only once.
+QUIC packets always include an AEAD authentication tag at the end.
+In general, the length of the AEAD tag depends on the TLS cipher
+suite, although all cipher suites used in QUIC v1 use a 16 byte tag.
 
 Note:
 
 : As QUIC appends an authentication tag after the packet payload, the packet
 header_lengths can be calculated as:
 
-: header_length = length - payload_length - aead_tag_length
+: header_length = length - payload_length - 16
 
 : For UDP datagrams, the calculation is simpler:
 
@@ -597,10 +593,6 @@ TransportParametersSet = {
 
     ; e.g., "AES_128_GCM_SHA256"
     ? tls_cipher: text
-
-    ; depends on the TLS cipher, but it's easier to be explicit.
-    ; in bytes
-    ? aead_tag_length: uint8 .default 16
 
     ; transport parameters from the TLS layer:
     ? original_destination_connection_id: ConnectionID
