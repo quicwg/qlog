@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-03-12T00:58:19.077349+00:00",
+  "timestamp": "2023-03-14T00:48:06.798633+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7617,21 +7617,21 @@
       "id": "MDExOlB1bGxSZXF1ZXN0NTkyNjg5Mzk3",
       "title": "introduce a VersionNegotiationError",
       "url": "https://github.com/quicwg/qlog/pull/138",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "When a client receives a Version Negotiation packet indicating that there's no commonly supported version, it aborts the connection attempt. Currently, qlog doesn't allow to log this.",
       "createdAt": "2021-03-15T02:43:58Z",
-      "updatedAt": "2022-09-29T15:08:19Z",
+      "updatedAt": "2023-03-12T09:06:38Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "d4b62cd84b73338c8be1b749f7686cccd2754967",
       "headRepository": "marten-seemann/internet-drafts",
       "headRefName": "version-negotiation-error",
       "headRefOid": "d532844064683e5a3c229d64ff1df541d99bfd2a",
-      "closedAt": null,
+      "closedAt": "2023-03-12T09:06:37Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -7656,6 +7656,13 @@
           "body": "@marten-seemann I'm not sure how to proceed on this one. From my perspective, my approach in the previous comment should be sufficient and this PR can be closed?\r\n\r\nHowever, I did notice a few more aspects around this that I listed in #241. I suggest closing this PR and continuing discussion on that issue. \r\n",
           "createdAt": "2022-09-28T13:26:16Z",
           "updatedAt": "2022-09-28T13:26:16Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@rmarx Sorry for dropping the ball on this. After re-reading this:\r\n\r\n> to know which versions were offered and supported by both sides, you'd use the version_information event and supported_versions fields of packet_sent/received (see discussion in https://github.com/quicwg/qlog/issues/75)\r\n\r\nOr the `TransportPacketSent` with `header.packet_type == \"version_negotiation\"`.\r\n\r\n> client logs connection_closed with trigger of value version_mismatch (which is already in -02, though potentially not perfectly named). Did you maybe miss that trigger?\r\n\r\nLooks like I did.\r\n\r\nI think this resolves the problem I was trying to solve, so we won't need this PR.",
+          "createdAt": "2023-03-12T09:06:37Z",
+          "updatedAt": "2023-03-12T09:06:37Z"
         }
       ],
       "reviews": [
@@ -11817,13 +11824,13 @@
       "labels": [],
       "body": "Partial fix for #212. Doesn't add any ECN probing events for now.",
       "createdAt": "2022-12-28T02:20:34Z",
-      "updatedAt": "2023-01-04T19:47:22Z",
+      "updatedAt": "2023-03-13T19:53:17Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
       "headRepository": "quicwg/qlog",
       "headRefName": "ecn",
-      "headRefOid": "765bc547cb6083dafbc71c546ff2efd0b940d5e0",
+      "headRefOid": "d9ad2b48f671cbf87eb0d63665d26963b6e43f2f",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -11835,6 +11842,27 @@
           "body": "2023-01-05 conversation:\r\n* should this be on the datagram_ instead of packet_ event?\r\n* is there a default value? Should this be a separate event like the spin bit?\r\n* use semantic names?",
           "createdAt": "2023-01-04T19:47:22Z",
           "updatedAt": "2023-01-04T19:47:22Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I've updated the PR to:\r\n* use the semantic names instead of the two bits\r\n* defined Non-ECT as the default value\r\n* moved this to the datagram_ events\r\n\r\nWhile technically more correct, I'm not a big fan of the last one, as the datagram_ events have an importance of \"Extra\", so it's more likely ECN won't be logged. For example, quic-go currently doesn't use the datagram_ events at all.",
+          "createdAt": "2023-03-12T08:59:34Z",
+          "updatedAt": "2023-03-12T08:59:34Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I think that's a fair point about `datagrams_` vs `packet_`. IIUC, the only place where this matters anyway is during the handshake, as there can be only a single 1-RTT packet in one datagram. I'm not sure if/how much ECN comes into play during the handshake?\r\n\r\nI think the argument could be made that for the handshake, the ECN bits could be reflected on/copied to each of the potentially coalesced QUIC `packet_` events. They can still be tracked to the singular datagram they were in using the `datagram_id` construction after all. \r\n\r\nIt's a bit less \"clean\"/\"correct\", but that can be said of many things in qlog ;) What do you think, @LPardue?",
+          "createdAt": "2023-03-13T09:34:13Z",
+          "updatedAt": "2023-03-13T09:34:13Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "We could also put it on both event types, and allow implementations that don\u2019t log datagram events to put it in the packet. Of course, this shifts some complexity to consumers of the qlog.",
+          "createdAt": "2023-03-13T19:53:17Z",
+          "updatedAt": "2023-03-13T19:53:17Z"
         }
       ],
       "reviews": []
@@ -11880,24 +11908,26 @@
       "id": "PR_kwDOCrLn6M5GRnBN",
       "title": "remove the aead_tag_length field from TransportParametersSet",
       "url": "https://github.com/quicwg/qlog/pull/265",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "This field is not particularly useful, because\r\n1. it will always be 16, see https://datatracker.ietf.org/doc/html/rfc9001#name-aead-usage\r\n2. it's a property of the TLS cipher suite in use, so it can be trivially looked up, if necessary",
       "createdAt": "2022-12-28T02:46:09Z",
-      "updatedAt": "2023-03-10T13:58:07Z",
+      "updatedAt": "2023-03-13T20:07:53Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "439244f16b3b596179a184dda57e7fbbacf6f47e",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-aead-tag-length",
-      "headRefOid": "f806ecfce616ee4b5b5f2542259be6274cc92600",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "caecb3eb03388342314b01c737eaa38bbe46a139",
+      "closedAt": "2023-03-13T20:07:52Z",
+      "mergedAt": "2023-03-13T20:07:52Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "e226e9f92fcadd0b9ff3a30bbfe3d61ea47c7bb8"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -11980,6 +12010,19 @@
           "body": "",
           "createdAt": "2023-03-10T13:58:07Z",
           "updatedAt": "2023-03-10T13:58:07Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5Pqizm",
+          "commit": {
+            "abbreviatedOid": "caecb3e"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-03-13T09:27:17Z",
+          "updatedAt": "2023-03-13T09:27:17Z",
           "comments": []
         }
       ]
