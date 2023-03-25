@@ -1088,7 +1088,7 @@ SecurityKeyUpdated = {
     key_type: KeyType
 
     ? old: hexstring
-    new: hexstring
+    ? new: hexstring
 
     ; needed for 1RTT key updates
     ? generation: uint32
