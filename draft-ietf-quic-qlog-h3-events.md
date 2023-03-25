@@ -428,7 +428,7 @@ HTTPHeadersFrame = {
 ~~~ cddl
 HTTPField = {
     name: text
-    ?value: text
+    ? value: text
 }
 ~~~
 {: #httpfield-def title="HTTPField definition"}
