@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-03-14T00:48:06.798633+00:00",
+  "timestamp": "2023-03-26T01:02:34.464366+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -1489,13 +1489,15 @@
       "state": "OPEN",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "marten-seemann"
+      ],
       "labels": [
         "future-versions"
       ],
       "body": "On a production system you probably don't want to log TLS secrets, even if you qlog (some of the) connections. The `new` field in the `key_updated` event therefore should not be mandatory. \r\n\r\nI'm not sure I understand the `old` field either. If you're logging 1-RTT key updates and their sequence numbers, the key would already be written to the qlog, so there's no need to export it again. Or am I missing something?\r\n\r\nMaybe it would be a good idea to keep key material to the SSLKEYLOGFILE and not even offer an option to write them to qlog?",
       "createdAt": "2020-02-17T07:49:23Z",
-      "updatedAt": "2020-10-31T13:57:58Z",
+      "updatedAt": "2023-03-25T06:48:32Z",
       "closedAt": null,
       "comments": [
         {
@@ -1504,6 +1506,13 @@
           "body": "Additionally, we should add an \"owner\" field to the `key_update` event.\r\n\r\nNow, difference between client/server keys is made with the trigger and also the KeyType: this should be made more consistent with the other events. See also #44. \r\n\r\nAn endpoint would then emit separate events for client and server key updates, which *should* work event if key calculation is delayed (though not 100% sure yet). \r\n",
           "createdAt": "2020-02-17T10:27:58Z",
           "updatedAt": "2020-02-17T11:05:46Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I support not logging secrets",
+          "createdAt": "2023-03-25T06:48:17Z",
+          "updatedAt": "2023-03-25T06:48:17Z"
         }
       ]
     },
@@ -6732,6 +6741,53 @@
           "updatedAt": "2023-01-18T20:20:44Z"
         }
       ]
+    },
+    {
+      "number": 295,
+      "id": "I_kwDOCrLn6M5hxp69",
+      "title": "HTTP header values (and possibly names also) should be optional",
+      "url": "https://github.com/quicwg/qlog/issues/295",
+      "state": "OPEN",
+      "author": "kazuho",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "At the moment, the definition says that the value is mandatory.\r\n```\r\nHTTPField = {\r\n    name: text\r\n    value: text\r\n}\r\n```\r\n\r\nHowever there are cases where the we do not want to log header values (consider a Cookie header).",
+      "createdAt": "2023-03-25T06:55:08Z",
+      "updatedAt": "2023-03-25T07:18:13Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Yes, I think we should make the value optional and add some guidance in the security and privacy section specifically for header values",
+          "createdAt": "2023-03-25T07:00:42Z",
+          "updatedAt": "2023-03-25T07:00:42Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Oh the main schema already has HTTP field value consideration described in https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-9-4.7, so all we need to do is change the schema",
+          "createdAt": "2023-03-25T07:18:13Z",
+          "updatedAt": "2023-03-25T07:18:13Z"
+        }
+      ]
+    },
+    {
+      "number": 297,
+      "id": "I_kwDOCrLn6M5hxzGi",
+      "title": "Logging for paced packet sending",
+      "url": "https://github.com/quicwg/qlog/issues/297",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Today qlog has packet_sent events and datagrams_sent events, which can be used to log the event and the time it occurred.\r\n\r\nIn some scenarios, the application generating packets or even datagrams is not in direct control of the emission of those packets to the wire. For example, a QUIC library may be called to generate a batch of packets that are intended to be sent out on a future time schedule. If the pacing is offloaded to some other component, such as the kernel, then reporting events in a qlog might be practically hard.\r\n\r\nSomething we've done in quiche is to add an additional `send_at_time` field in the packet_sent event. This contains a timestamp that the QUIC layer decided that the packet should be sent out at. We can keep that as custom extension but I was curious if others had any opinions.",
+      "createdAt": "2023-03-25T09:17:35Z",
+      "updatedAt": "2023-03-25T09:17:35Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -13827,6 +13883,101 @@
           "createdAt": "2023-03-01T18:49:39Z",
           "updatedAt": "2023-03-01T18:49:39Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 294,
+      "id": "PR_kwDOCrLn6M5M4wIy",
+      "title": "key_updated: don't require logging the actual key",
+      "url": "https://github.com/quicwg/qlog/pull/294",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #52.",
+      "createdAt": "2023-03-25T06:50:42Z",
+      "updatedAt": "2023-03-25T07:01:52Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "e226e9f92fcadd0b9ff3a30bbfe3d61ea47c7bb8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "key-updated-no-key-logging",
+      "headRefOid": "d6609b29d63913090e97e2e53df78ef6c86de00d",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5Q7jIw",
+          "commit": {
+            "abbreviatedOid": "d6609b2"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-03-25T07:01:52Z",
+          "updatedAt": "2023-03-25T07:01:52Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 296,
+      "id": "PR_kwDOCrLn6M5M4ziq",
+      "title": "Make HTTPField name optional",
+      "url": "https://github.com/quicwg/qlog/pull/296",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-03-25T07:57:52Z",
+      "updatedAt": "2023-03-25T08:04:47Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "e226e9f92fcadd0b9ff3a30bbfe3d61ea47c7bb8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "lucas/field-name-optional",
+      "headRefOid": "aa2dbbf02d665a9fd121278814d076a282cbc0fc",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Fixes #295 ",
+          "createdAt": "2023-03-25T07:59:02Z",
+          "updatedAt": "2023-03-25T07:59:02Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5Q7k1m",
+          "commit": {
+            "abbreviatedOid": "a3b0915"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2023-03-25T08:03:54Z",
+          "updatedAt": "2023-03-25T08:04:00Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "```suggestion\r\n    ? value: text\r\n```",
+              "createdAt": "2023-03-25T08:03:54Z",
+              "updatedAt": "2023-03-25T08:04:00Z"
+            }
+          ]
         }
       ]
     }
