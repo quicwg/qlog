@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-03-26T01:02:34.464366+00:00",
+  "timestamp": "2023-03-28T00:54:37.182225+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -5967,7 +5967,7 @@
       "labels": [],
       "body": "At the moment, the QPACK events very closely mimic the QPACK instructions as defined in the draft (Or at least, they should... the current definitions are somewhat outdated wrt the final QPACK draft, mostly in terms of naming).\r\n\r\nHowever, to my knowledge, not a single QPACK implementation has actually implemented qlog output. Additionally, the QPACK instructions are likely not the easiest to understand or use for debugging outside of the key QPACK implementers. Put differently: higher-level events (e.g., indicating when things were HOL blocked on QPACK, when `SETTINGS_QPACK_BLOCKED_STREAMS` or `SETTINGS_QPACK_MAX_TABLE_CAPACITY` are reached, when errors occur, when a header is added/removed to the dynamic table, etc.) might be more interesting overall. \r\n\r\nThis would however require someone with considerable QPACK experience to come in an help define these events, preferably in tandem with a QPACK/H3 implementation also outputting qlog events for this. CC @afrind ",
       "createdAt": "2022-03-20T15:53:06Z",
-      "updatedAt": "2022-07-18T16:36:42Z",
+      "updatedAt": "2023-03-27T02:34:50Z",
       "closedAt": null,
       "comments": [
         {
@@ -5976,6 +5976,20 @@
           "body": "I think the kind of blocked events you are talking about are the most likely to be of general use, since one doesn't really need to be a QPACK expert to understand that latency at the HTTP layer is being introduced because of a QPACK dependency. \r\n\r\nI can also imagine somewhat more detailed error information being useful when QPACK hits an error.\r\n\r\nWe had a jump in QPACK errors last year that required a significant bit of debugging (and as you note, we don't have QPACK QLOG events).  I'm trying to recall the debugging steps and I think it might have been helpful to have every QPACK instruction logged at both the encoder and decoder.  To exonerate QPACK in this instance, the issue turned out to be transport related.  However, this is likely to be produce a lot of data that is not generally useful, and can be especially sensitive for PII reasons compared to generic QLOG transport data.  So I can see implementations not using this detailed mode all the time or by default.",
           "createdAt": "2022-03-21T09:24:17Z",
           "updatedAt": "2022-03-21T09:24:17Z"
+        },
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "**A proposal for QPACK events** -- @afrind \r\n\r\nThe current QLOG events for QPACK focus on 3 main event types: \r\n\r\nHeader block encoded/decoded, state updates, and raw instructions.\r\n\r\nThe most common reasons to examine QPACK interactions in detail are to investigate correctness or performance issues. This is a proposal for a restructuring of the QPACK events to represent higher level conditions that would be most useful to that end, rather than a pure instruction-by-instruction log.\r\n\r\nWe also propose an event with a summary of QPACK stats for the whole connection.\r\n\r\n--- \r\n**Encoder Events:**\r\n\r\n* **Encoded a field section block**:\r\n\r\n      [required] Application bytes\r\n      [required] Compressed bytes sent\r\n           In this block\r\n           On the encoder stream, directly attributable to this block\r\n      [required] Number of field lines in the block\r\n      [required] Blocking Risk (bool) \u2013 (references an unacknowledged dynamic table entry)\r\n      Number of dynamic table inserts triggered by encoding this block\r\n      Number of Static table references (names & values)\r\n      Number of Static table name references with literal values\r\n      Number of Dynamic table references (names & values)\r\n      Number of Dynamic table name references with literal values\r\n      Number of entries with literal names and values\r\n      Number of application bytes sent as literals\r\n      Number of bytes sent as huffman literals (To compute compression ratio from huffman)\r\n      Minimum dynamic table reference\r\n      Maximum dynamic table reference\r\n\r\n\r\n* **Blocked Insertion**: Wanted to insert an entry into the dynamic table, but eviction was blocked due to unacknowledged references\r\n \r\n* **Avoided Reference**: Wanted to reference an older entry in the dynamic table but chose not to because doing so might result in blocking future evictions\r\n\r\n* **Blocked Reference**: Wanted to reference the dynamic table but reached max blocking\r\n\r\n* **Encoder Stream Flow Control Blocked**: Ran out of Encoder Stream flow control\r\n\r\n--- \r\n**Decoder Events:**\r\n\r\n* **Decoded a field section block:**\r\n\r\n      [required] Application bytes\r\n      [required] Compressed bytes received in this block\r\n      [required] Number of field lines in this block\r\n      Number of dynamic table inserts triggered by encoding this block\r\n      Number of Static table references (names & values)\r\n      Number of Static table name references with literal values\r\n      Number of Dynamic table references (names & values)\r\n      Number of Dynamic table name references with literal values\r\n      Number of entries with literal names and values\r\n      Number of application bytes sent as literals\r\n      Number of bytes sent as huffman literals (To compute compression ratio from huffman)\r\n      Queue time (how long blocked waiting for dynamic table)\r\n\r\n* **Decoding Blocked**: Received block that could not be decoded because it depends on dynamic table entries that have not arrived\r\n\r\n* **Insert Count Increment**: - indicates delayed block arrival or processing, or speculative inserts\r\n\r\n---\r\n**Connection End Event (summary):**\r\n\r\nShould have an encoder and decoder section\r\n\r\n    Total application header bytes\r\n    Total compressed header bytes sent or received (including encoder/decoder bytes)\r\n    Num Static table name/value references \r\n    Static table name references \r\n    Dynamic table name/value references\r\n    Dynamic table name references\r\n    Num insertions\r\n    Num evictions\r\n    Num duplications\r\n    [optional] QPACK Connection Error Detail\r\n    [encoder only] Num blocked insertions\r\n    [decoder only] Num queued decodes\r\n    [decoder only] Total queued decode latency\r\n    [decoder only] Num QPACK Stream Errors\r\n",
+          "createdAt": "2023-03-26T20:35:16Z",
+          "updatedAt": "2023-03-26T20:35:16Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Dumb question 1 - can these events be generalised to cover HPACK and QPACK? I think the blocking bits probably mean no but figured I'd ask.\r\n\r\nDumb question 2 - what does `Num QPACK Stream Errors` mean? Isn't a single error a terminal problem for the connection, or can there be more than one?",
+          "createdAt": "2023-03-27T02:34:49Z",
+          "updatedAt": "2023-03-27T02:34:49Z"
         }
       ]
     },
