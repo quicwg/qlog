@@ -1227,12 +1227,12 @@ Considering these tradeoffs, JSON-based serialization formats provide features
 that make them a good starting point for qlog flexibility and interoperability.
 For these reasons, JSON is a recommended default and expanded considerations are
 given to how to map qlog to JSON ({{format-json}}, its subset
-{{format-ijson}},and JSON-Text-Sequence ({{format-json-seq}}. Furthermore,
+I-JSON {{format-ijson}}, and its streaming counterpart JSON Text Sequences ({{format-json-seq}}. Furthermore,
 potential optimizations to these formats, such as reducing storage or processing
 overheads, are presented in {{optimizations}}.
 
 Serialization formats require appropriate deserializers/parsers. The
-"qlog_format" field ({{top-level}} is used to indicate the chosen serialization
+"qlog_format" field ({{top-level}}) is used to indicate the chosen serialization
 format. This field is a string, but can be made hierarchical by the use of the
 "." separator between entries. For example, a value of "JSON.optimizationA" can
 indicate that a default JSON format is being used, with an example "type A"
@@ -1247,7 +1247,7 @@ be ".qlog". The Media Type, if any, SHOULD be "application/qlog+json" per
 {{!RFC6839}}.
 
 In accordance with {{Section 8.1 of !RFC8259}}, JSON files are required to use
-use UTF-8 both for the file itself and the string values. In addition, all qlog
+UTF-8 both for the file itself and the string values it contains. In addition, all qlog
 field names in a JSON serialization MUST be lowercase.
 
 In order to serialize CDDL-based qlog event and data structure
@@ -1257,7 +1257,7 @@ definitions to JSON, the official CDDL-to-JSON mapping defined in
 ### I-JSON {#format-ijson}
 
 Not all popular JSON parsers support the full JSON format, especially those
-integrated with a JavaScript environment (e.g., Web browsers, NodeJS). For use
+integrated within a JavaScript environment (e.g., Web browsers, NodeJS). For use
 cases that involve these environments, it can be beneficial to use the JSON
 subset dubbed I-JSON (or Internet-JSON); see {{!I-JSON=RFC7493}}.
 
@@ -1285,6 +1285,16 @@ uint64 = text /
 
 ## qlog to JSON Text Sequences mapping {#format-json-seq}
 
+One of the downsides of using normal JSON is that it is inherently a
+non-streamable format. A qlog serializer could work around this by opening a
+file, writing the required opening data, streaming qlog events by appending
+them, and then finalizing the log by appending appropriate closing tags e.g.,
+"]}]}". However, failure to append closing tags, could lead to problems because
+most JSON parsers will fail if a document is malformed. Some streaming JSON parsers are able to handle missing closing tags, however they are not widely deployed in popular environments (e.g., Web browsers)
+
+To overcome the issues related to JSON streaming, a qlog mapping to a streamable
+JSON format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}) is provided.
+
 JSON Text Sequences are very similar to JSON, except that JSON objects are
 serialized as individual records, each prefixed by an ASCII Record Separator
 (\<RS\>, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Note
@@ -1300,10 +1310,10 @@ default JSON, it does not require a document to be wrapped as a full object with
 This alternative record streaming approach cannot be accommodated by QlogFile
 ({{qlog-file-def}}). Instead, QlogFileSeq is defined in {{qlog-file-seq-def}},
 which notably includes only a single trace (TraceSeq) and omits an explicit
-events field. An example is provided in {{json-seq-ex}}.
+"events" array. An example is provided in {{json-seq-ex}}.
 
 When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
-"JSON-SEQ". Rhe file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
+"JSON-SEQ". The file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
 The Media Type, if any, SHOULD be "application/qlog+json-seq" per {{!RFC8091}}.
 
 While not specifically required by the JSON-SEQ specification, all qlog
@@ -1333,9 +1343,9 @@ as each record by itself is a valid JSON object).
 
 For some use cases (e.g., limiting file size, privacy), it can be
 necessary not to log a full raw blob (using the `hexstring` type) but
-instead a truncated value (for example, only the first 100 bytes of an
+instead a truncated value. For example, one might only store the first 100 bytes of an
 HTTP response body to be able to discern which file it actually
-contained). In these cases, the original byte-size length cannot be
+contained. In these cases, the original byte-size length cannot be
 obtained from the serialized value directly.
 
 As such, all qlog schema definitions SHOULD include a separate,
@@ -1353,31 +1363,32 @@ The main possible permutations are shown by example in
 {{truncated-values-ex}}.
 
 ~~~~~~~~
-// both the full raw value and its length are present
+// both the content's value and its length are present
 // (length is redundant)
 {
-    "raw_length": 5,
-    "raw": "051428abff"
+    "content_length": 5,
+    "content": "051428abff"
 }
 
-// only the raw value is present, indicating it
-// represents the fields full value the byte
-// length is obtained by calculating raw.length / 2
+// only the content value is present, indicating it
+// represents the content's full value. The byte
+// length is obtained by calculating content.length / 2
 {
-    "raw": "051428abff"
+    "content": "051428abff"
 }
 
-// only the length field is present, meaning the
-// value was omitted
+// only the length is present, meaning the value
+// was omitted
 {
-    "raw_length": 5,
+    "content_length": 5,
 }
 
-// both fields are present and the lengths do not match:
-// the value was truncated to the first three bytes.
+// both value and length are present, but the lengths
+// do not match: the value was truncated to
+// the first three bytes.
 {
-    "raw_length": 5,
-    "raw": "051428"
+    "content_length": 5,
+    "content": "051428"
 }
 ~~~~~~~~
 {: #truncated-values-ex title="Example for serializing truncated
