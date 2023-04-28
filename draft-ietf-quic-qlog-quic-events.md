@@ -692,6 +692,8 @@ TransportPacketSent = {
 
     ? raw: RawInfo
     ? datagram_id: uint32
+    ? src_ip: IPAddress
+    ? dst_ip: IPAddress
 
     ? is_mtu_probe_packet: bool .default false
 
@@ -743,6 +745,8 @@ TransportPacketReceived = {
 
     ? raw: RawInfo
     ? datagram_id: uint32
+    ? src_ip: IPAddress
+    ? dst_ip: IPAddress
 
     ? trigger:
         ; if packet was buffered because
@@ -778,6 +782,8 @@ TransportPacketDropped = {
 
     ? raw: RawInfo
     ? datagram_id: uint32
+    ? src_ip: IPAddress
+    ? dst_ip: IPAddress
 
     ? details: {* text => any}
     ? trigger:
@@ -822,6 +828,8 @@ TransportPacketBuffered = {
 
     ? raw: RawInfo
     ? datagram_id: uint32
+    ? src_ip: IPAddress
+    ? dst_ip: IPAddress
 
     ? trigger:
         ; indicates the parser cannot keep up, temporarily buffers
