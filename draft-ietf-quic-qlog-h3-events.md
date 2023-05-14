@@ -170,10 +170,9 @@ the HTTP/3 SETTINGS frame. All these parameters are typically set once and never
 change. However, they are typically set at different times during the connection,
 so there can be several instances of this event with different fields set.
 
-Some settings have two variations (one set locally, one requested by the
-remote peer). This is reflected in the "owner" field. As such, this field MUST be
-correct for all settings included in a single event instance. If you need to log
-settings from two sides, you MUST emit two separate event instances.
+The "owner" field reflects how Settings are exchanged on a connection. Sent
+settings have the value "local" and received settings have the value
+"received". A qlog can have multiple instances of this event.
 
 As a reminder the CDDL unwrap operator (~), see {{?RFC8610}}), copies the fields
 from the referenced type (HTTPParameters) into the target type directly, extending the
@@ -204,9 +203,9 @@ HTTPParameters = {
 ~~~
 {: #http-parametersset-def title="HTTPParametersSet definition"}
 
-This event can contain any number of unspecified fields. This is to
-allow representation of unknown settings like grease settings or parameters of
-non-standard extensions.
+This event can contain any number of unspecified fields. This allows for
+representation of reserved settings (aka grease) or ad-hoc support for
+extension settings that do not have a related qlog schema definition.
 
 ## parameters_restored {#http-parametersrestored}
 Importance: Base
@@ -226,8 +225,8 @@ HTTPParametersRestored = {
 ~~~
 {: #http-parametersrestored-def title="HTTPParametersRestored definition"}
 
-Similarly to HTTPParametersSet this event can contain any number of
-unspecified fields to allow for additional and custom settings.
+Similar to HTTPParametersSet this event can contain any number of unspecified
+fields to allow for reserved or extension settings.
 
 ## stream_type_set {#http-streamtypeset}
 Importance: Base
@@ -281,9 +280,6 @@ HTTPFrameCreated = {
 }
 ~~~
 {: #http-framecreated-def title="HTTPFrameCreated definition"}
-
-This event is logged at the time the frame header is created. A frame payload
-may require multiple write operations that are logged using data_moved events.
 
 ## frame_parsed {#http-frameparsed}
 Importance: Core
