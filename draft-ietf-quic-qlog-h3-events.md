@@ -148,9 +148,12 @@ in this specification.
 HTTP/3 events extend the `$ProtocolEventBody` extension point defined in {{QLOG-MAIN}}.
 
 ~~~ cddl
-HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
-             HTTPStreamTypeSet / HTTPFrameCreated /
-             HTTPFrameParsed / HTTPPushResolved
+HTTPEvents = HTTPParametersSet /
+             HTTPParametersRestored /
+             HTTPStreamTypeSet /
+             HTTPFrameCreated /
+             HTTPFrameParsed /
+             HTTPPushResolved
 
 $ProtocolEventBody /= HTTPEvents
 ~~~
@@ -180,7 +183,6 @@ Definition:
 ~~~ cddl
 HTTPParametersSet = {
     ? owner: Owner
-
     ~HTTPParameters
 
     ; qlog-specific
@@ -219,9 +221,7 @@ Definition:
 
 ~~~ cddl
 HTTPParametersRestored = {
-
     ~HTTPParameters
-
 }
 ~~~
 {: #http-parametersrestored-def title="HTTPParametersRestored definition"}
@@ -243,7 +243,6 @@ Definition:
 HTTPStreamTypeSet = {
     ? owner: Owner
     stream_id: uint64
-
     stream_type: HTTPStreamType
 
     ; only when stream_type === "unknown"
@@ -329,11 +328,11 @@ HTTPPushResolved = {
     ; in case this is logged from a place that does not have access
     ; to the push_id
     ? stream_id: uint64
-
     decision: HTTPPushDecision
 }
 
-HTTPPushDecision = "claimed" / "abandoned"
+HTTPPushDecision = "claimed" /
+                   "abandoned"
 ~~~
 {: #http-pushresolved-def title="HTTPPushResolved definition"}
 
@@ -344,7 +343,8 @@ The following data field definitions can be used in HTTP/3 events.
 ## Owner
 
 ~~~ cddl
-Owner = "local" / "remote"
+Owner = "local" /
+        "remote"
 ~~~
 {: #owner-def title="Owner definition"}
 
@@ -364,15 +364,15 @@ $HTTPFrame /= {
 The HTTP/3 frame types defined in this document are as follows:
 
 ~~~ cddl
-HTTPBaseFrames =  HTTPDataFrame /
-             HTTPHeadersFrame /
-             HTTPCancelPushFrame /
-             HTTPSettingsFrame /
-             HTTPPushPromiseFrame /
-             HTTPGoawayFrame /
-             HTTPMaxPushIDFrame /
-             HTTPReservedFrame /
-             HTTPUnknownFrame
+HTTPBaseFrames = HTTPDataFrame /
+                 HTTPHeadersFrame /
+                 HTTPCancelPushFrame /
+                 HTTPSettingsFrame /
+                 HTTPPushPromiseFrame /
+                 HTTPGoawayFrame /
+                 HTTPMaxPushIDFrame /
+                 HTTPReservedFrame /
+                 HTTPUnknownFrame
 
 $HTTPFrame /= HTTPBaseFrames
 ~~~
@@ -497,7 +497,6 @@ HTTPMaxPushIDFrame = {
 ~~~ cddl
 HTTPReservedFrame = {
     frame_type: "reserved"
-
     ? length: uint64
 }
 ~~~
@@ -519,23 +518,23 @@ HTTPUnknownFrame = {
 ### HTTPApplicationError
 
 ~~~ cddl
-HTTPApplicationError =  "http_no_error" /
-                        "http_general_protocol_error" /
-                        "http_internal_error" /
-                        "http_stream_creation_error" /
-                        "http_closed_critical_stream" /
-                        "http_frame_unexpected" /
-                        "http_frame_error" /
-                        "http_excessive_load" /
-                        "http_id_error" /
-                        "http_settings_error" /
-                        "http_missing_settings" /
-                        "http_request_rejected" /
-                        "http_request_cancelled" /
-                        "http_request_incomplete" /
-                        "http_early_response" /
-                        "http_connect_error" /
-                        "http_version_fallback"
+HTTPApplicationError = "http_no_error" /
+                       "http_general_protocol_error" /
+                       "http_internal_error" /
+                       "http_stream_creation_error" /
+                       "http_closed_critical_stream" /
+                       "http_frame_unexpected" /
+                       "http_frame_error" /
+                       "http_excessive_load" /
+                       "http_id_error" /
+                       "http_settings_error" /
+                       "http_missing_settings" /
+                       "http_request_rejected" /
+                       "http_request_cancelled" /
+                       "http_request_incomplete" /
+                       "http_early_response" /
+                       "http_connect_error" /
+                       "http_version_fallback"
 ~~~
 {: #httpapplicationerror-def title="HTTPApplicationError definition"}
 
@@ -554,9 +553,12 @@ QPACK events extend the `$ProtocolEventBody` extension point defined in
 {{QLOG-MAIN}}.
 
 ~~~ cddl
-QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
-              QPACKDynamicTableUpdate / QPACKHeadersEncoded /
-              QPACKHeadersDecoded / QPACKInstructionCreated /
+QPACKEvents = QPACKStateUpdate /
+              QPACKStreamStateUpdate /
+              QPACKDynamicTableUpdate /
+              QPACKHeadersEncoded /
+              QPACKHeadersDecoded /
+              QPACKInstructionCreated /
               QPACKInstructionParsed
 
 $ProtocolEventBody /= QPACKEvents
@@ -612,12 +614,14 @@ Definition:
 ~~~ cddl
 QPACKStreamStateUpdate = {
     stream_id: uint64
+
     ; streams are assumed to start "unblocked"
     ; until they become "blocked"
     state: QPACKStreamState
 }
 
-QPACKStreamState = "blocked" / "unblocked"
+QPACKStreamState = "blocked" /
+                   "unblocked"
 ~~~
 {: #qpack-streamstateupdate-def title="QPACKStreamStateUpdate definition"}
 
@@ -633,17 +637,19 @@ QPACKDynamicTableUpdate = {
     ; local = the encoder's dynamic table
     ; remote = the decoder's dynamic table
     owner: Owner
-
     update_type: QPACKDynamicTableUpdateType
     entries: [+ QPACKDynamicTableEntry]
 }
 
-QPACKDynamicTableUpdateType = "inserted" / "evicted"
+QPACKDynamicTableUpdateType = "inserted" /
+                              "evicted"
 
 QPACKDynamicTableEntry = {
     index: uint64
-    ? name: text / hexstring
-    ? value: text / hexstring
+    ? name: text /
+            hexstring
+    ? value: text /
+             hexstring
 }
 ~~~
 {: #qpack-dynamictableupdate-def title="QPACKDynamicTableUpdate definition"}
@@ -663,10 +669,8 @@ Definition:
 QPACKHeadersEncoded = {
     ? stream_id: uint64
     ? headers: [+ HTTPField]
-
     block_prefix: QPACKHeaderBlockPrefix
     header_block: [+ QPACKHeaderBlockRepresentation]
-
     ? raw: RawInfo
 }
 ~~~
@@ -687,10 +691,8 @@ Definition:
 QPACKHeadersDecoded = {
     ? stream_id: uint64
     ? headers: [+ HTTPField]
-
     block_prefix: QPACKHeaderBlockPrefix
     header_block: [+ QPACKHeaderBlockRepresentation]
-
     ? raw: RawInfo
 }
 ~~~
@@ -728,7 +730,6 @@ Definition:
 QPACKInstructionParsed = {
     ; see QPACKInstruction definition in appendix
     instruction: QPACKInstruction
-
     ? raw: RawInfo
 }
 ~~~
@@ -747,13 +748,13 @@ Note: the instructions do not have explicit encoder/decoder types, since there i
 no overlap between the instructions of both types in neither name nor function.
 
 ~~~ cddl
-QPACKInstruction =  SetDynamicTableCapacityInstruction /
-                    InsertWithNameReferenceInstruction /
-                    InsertWithoutNameReferenceInstruction /
-                    DuplicateInstruction /
-                    SectionAcknowledgementInstruction /
-                    StreamCancellationInstruction /
-                    InsertCountIncrementInstruction
+QPACKInstruction = SetDynamicTableCapacityInstruction /
+                   InsertWithNameReferenceInstruction /
+                   InsertWithoutNameReferenceInstruction /
+                   DuplicateInstruction /
+                   SectionAcknowledgementInstruction /
+                   StreamCancellationInstruction /
+                   InsertCountIncrementInstruction
 ~~~
 {: #qpackinstruction-def title="QPACKInstruction definition"}
 
@@ -846,9 +847,9 @@ title="InsertCountIncrementInstruction definition"}
 ## QPACKHeaderBlockRepresentation
 
 ~~~ cddl
-QPACKHeaderBlockRepresentation =  IndexedHeaderField /
-                                  LiteralHeaderFieldWithName /
-                                  LiteralHeaderFieldWithoutName
+QPACKHeaderBlockRepresentation = IndexedHeaderField /
+                                 LiteralHeaderFieldWithName /
+                                 LiteralHeaderFieldWithoutName
 ~~~
 {: #qpackheaderblockrepresentation-def
 title="QPACKHeaderBlockRepresentation definition"}
@@ -909,7 +910,6 @@ LiteralHeaderFieldWithoutName = {
     huffman_encoded_name: bool
     ? name_length: uint32
     ? name: text
-
     huffman_encoded_value: bool
     ? value_length: uint32
     ? value: text
@@ -934,7 +934,8 @@ title="QPACKHeaderBlockPrefix definition"}
 ## QPACKTableType
 
 ~~~ cddl
-QPACKTableType = "static" / "dynamic"
+QPACKTableType = "static" /
+                 "dynamic"
 ~~~
 {: #qpacktabletype-def title="QPACKTableType definition"}
 
