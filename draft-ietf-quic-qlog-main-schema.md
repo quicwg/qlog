@@ -220,7 +220,8 @@ QlogFile = {
     ? title: text
     ? description: text
     ? summary: Summary
-    ? traces: [+ Trace / TraceError]
+    ? traces: [+ Trace /
+                 TraceError]
 }
 ~~~
 {: #qlog-file-def title="QlogFile definition"}
@@ -259,6 +260,7 @@ Definition:
 
 ~~~ cddl
 Summary = {
+
     ; summary can contain any type of custom information
     ; text here doesn't mean the type text,
     ; but the fact that keys/names in the objects are strings
@@ -309,6 +311,7 @@ Definition:
 ~~~ cddl
 TraceError = {
     error_description: text
+
     ; the original URI at which we attempted to find the file
     ? uri: text
     ? vantage_point: VantagePoint
@@ -399,6 +402,7 @@ Definition:
 
 ~~~ cddl
 Configuration = {
+
     ; time_offset is in milliseconds
     time_offset: float64
     original_uris:[* text]
@@ -484,7 +488,10 @@ VantagePoint = {
 ; client = endpoint which initiates the connection
 ; server = endpoint which accepts the connection
 ; network = observer in between client and server
-VantagePointType = "client" / "server" / "network" / "unknown"
+VantagePointType = "client" /
+                   "server" /
+                   "network" /
+                   "unknown"
 ~~~
 {: #vantage-point-def title="VantagePoint definition"}
 
@@ -559,9 +566,7 @@ Event = {
     time: float64
     name: text
     data: $ProtocolEventBody
-
     ? time_format: TimeFormat
-
     ? protocol_type: ProtocolType
     ? group_id: GroupID
 
@@ -602,7 +607,9 @@ is indicated in the "time_format" field, which allows one of three values:
 Definition:
 
 ~~~ cddl
-TimeFormat = "absolute" / "delta" / "relative"
+TimeFormat = "absolute" /
+             "delta" /
+             "relative"
 ~~~
 {: #time-format-def title="TimeFormat definition"}
 
@@ -721,7 +728,10 @@ $ProtocolEventBody /= {
     * text => any
 }
 ; event documents are intended to extend this socket by using:
-; NewProtocolEvents = EventType1 / EventType2 / ... / EventTypeN
+; NewProtocolEvents = EventType1 /
+;                     EventType2 /
+;                     ... /
+;                     EventTypeN
 ; $ProtocolEventBody /= NewProtocolEvents
 ~~~
 {: #protocoleventbody-def title="ProtocolEventBody definition"}
@@ -734,7 +744,9 @@ TransportPacketSent = {
     ? packet_size: uint16
     header: PacketHeader
     ? frames:[* QuicFrame]
-    ? trigger: "pto_probe" / "retransmit_timeout" / "bandwidth_probe"
+    ? trigger: "pto_probe" /
+               "retransmit_timeout" /
+               "bandwidth_probe"
 }
 
 could be serialized as
@@ -807,9 +819,10 @@ One purely illustrative example of some potential triggers for QUIC's
 TransportPacketDropped = {
     ? packet_type: PacketType
     ? raw_length: uint16
-
-    ? trigger: "key_unavailable" / "unknown_connection_id" /
-               "decrypt_error" / "unsupported_version"
+    ? trigger: "key_unavailable" /
+               "unknown_connection_id" /
+               "decrypt_error" /
+               "unsupported_version"
 }
 ~~~~~~~~
 {: #trigger-ex title="Trigger example"}
@@ -962,10 +975,8 @@ Definition:
 CommonFields = {
     ? time_format: TimeFormat
     ? reference_time: float64
-
     ? protocol_type: ProtocolType
     ? group_id: GroupID
-
     * text => any
 }
 ~~~
@@ -1096,6 +1107,7 @@ Definition:
 
 ~~~ cddl
 RawInfo = {
+
     ; the full byte length of the entity (e.g., packet or frame),
     ; including possible headers and trailers
     ? length: uint64
@@ -1339,7 +1351,8 @@ original and (web-based) tools should take into account that a uint64
 field can be either a number or string.
 
 ~~~
-uint64 = text / uint .size 8
+uint64 = text /
+         uint .size 8
 ~~~
 {: #cddl-ijson-uint64-def title="Custom uint64 definition for I-JSON"}
 
@@ -1455,7 +1468,6 @@ Definition:
 ~~~ cddl
 QlogFileSeq = {
     qlog_format: "JSON-SEQ"
-
     qlog_version: text
     ? title: text
     ? description: text
