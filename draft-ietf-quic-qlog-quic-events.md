@@ -106,19 +106,16 @@ trace of the connection with ODCID abcd1234).
 
 ## Raw packet and frame information
 
-Note:
-
-: QUIC packets always include an AEAD authentication tag ("trailer") at the end.
-As this tag is always the same size for a given connection (it depends on the used
-TLS cipher), this document does not define a separate "RawInfo:aead_tag_length"
-field here. Instead, this field is reflected in "transport:parameters_set" and can
-be logged only once.
+QUIC packets always include an AEAD authentication tag at the end.
+In general, the length of the AEAD tag depends on the TLS cipher
+suite, although all cipher suites used in QUIC v1 use a 16 byte tag.
 
 Note:
 
-: As QUIC uses trailers in packets, packet header_lengths can be calculated as:
+: As QUIC appends an authentication tag after the packet payload, the packet
+header_lengths can be calculated as:
 
-: header_length = length - payload_length - aead_tag_length
+: header_length = length - payload_length - 16
 
 : For UDP datagrams, the calculation is simpler:
 
@@ -136,31 +133,22 @@ the QUIC specifications to qlog, making it easier for users to interpret.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
-For several types of events, it is sometimes impossible to tie them to a specific
-conceptual QUIC connection (e.g., a packet_dropped event triggered because the
-packet has an unknown connection_id in the header). Since qlog events in a trace
-are typically associated with a single connection, it is unclear how to log these
-events.
+A single qlog event trace is typically associated with a single QUIC connection.
+However, for several types of events (for example, a {{transport-packetdropped}}
+event with trigger value of "connection_unknown"), it can be impossible to tie
+them to a specific QUIC connection, especially on the server.
 
-Ideally, implementers SHOULD create a separate, individual "endpoint-level" trace
-file (or group_id value), not associated with a specific connection (for example a
-"server.qlog" or group_id = "client"), and log all events that do not belong to a
-single connection to this grouping trace. However, this is not always practical,
-depending on the implementation. Because the semantics of most of these events are
-well-defined in the protocols and because they are difficult to mis-interpret as
-belonging to a connection, implementers MAY choose to log events not belonging to
-a particular connection in any other trace, even those strongly associated with a
-single connection.
+There are various ways to handle these events, each making certain tradeoffs
+between file size overhead, flexibility, ease of use, or ease of
+implementation. Some options include:
 
-Note that this can make it difficult to match logs from different vantage points
-with each other. For example, from the client side, it is easy to log connections
-with version negotiation or retry in the same trace, while on the server they
-would most likely be logged in separate traces. Servers can take extra efforts
-(and keep additional state) to keep these events combined in a single trace
-however (for example by also matching connections on their four-tuple instead of
-just the connection ID).
-
-
+* Log them in a separate endpoint-wide trace (or use a special group_id value)
+  not associated with a single connection.
+* Log them in the most recently used trace.
+* Use additional heuristics for connection identification (for example use the
+  four-tuple in addition to the Connection ID).
+* Buffer events until they can be assigned to a connection (for example for
+  version negotiation and retry events).
 
 # QUIC Event Overview
 
@@ -182,7 +170,6 @@ this specification.
 | connectivity:connection_closed        | Base       | {{connectivity-connectionclosed}} |
 | connectivity:connection_id_updated    | Base       | {{connectivity-connectionidupdated}} |
 | connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
-| connectivity:connection_retried       | TODO       | {{connectivity-connectionretried}} |
 | connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
 | connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
 | transport:version_information         | Core       | {{transport-versioninformation}} |
@@ -349,10 +336,10 @@ this typically happens only sparingly over the course of a connection, this even
 allows loggers to be more efficient than logging the observed CID with each packet
 in the .header field of the "packet_sent" or "packet_received" events.
 
-This is viewed from the perspective of the one applying the new id. As such, if we
-receive a new connection id from our peer, we will see the dst_ fields are set. If
-we update our own connection id (e.g., NEW_CONNECTION_ID frame), we log the src_
-fields.
+This is viewed from the perspective of the endpoint applying the new id. As such,
+when the endpoint receives a new connection id from the peer, it will see the
+dst_ fields are set. When the endpoint updates its own connection id
+(e.g., NEW_CONNECTION_ID frame), it logs the src_ fields.
 
 Definition:
 
@@ -380,10 +367,6 @@ ConnectivitySpinBitUpdated = {
 }
 ~~~
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
-
-## connection_retried {#connectivity-connectionretried}
-
-TODO
 
 ## connection_state_updated {#connectivity-connectionstateupdated}
 Importance: Base
@@ -486,7 +469,7 @@ For now, infer from other connectivity events and path_challenge/path_response f
 ## mtu_updated {#connectivity-mtuupdated}
 Importance: Extra
 
-~~~ ccdl
+~~~ cddl
 ConnectivityMTUUpdated = {
   ? old: uint16
   new: uint16
@@ -611,10 +594,6 @@ TransportParametersSet = {
     ; e.g., "AES_128_GCM_SHA256"
     ? tls_cipher: text
 
-    ; depends on the TLS cipher, but it's easier to be explicit.
-    ; in bytes
-    ? aead_tag_length: uint8 .default 16
-
     ; transport parameters from the TLS layer:
     ? original_destination_connection_id: ConnectionID
     ? initial_source_connection_id: ConnectionID
@@ -697,8 +676,7 @@ Definition:
 TransportPacketSent = {
     header: PacketHeader
 
-    ; see appendix for the QuicFrame definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
     ? is_coalesced: bool .default false
 
@@ -733,8 +711,9 @@ TransportPacketSent = {
 ~~~
 {: #transport-packetsent-def title="TransportPacketSent definition"}
 
-Note: We do not explicitly log the encryption_level or packet_number_space: the
-header.packet_type specifies this by inference (assuming correct implementation)
+Note: The encryption_level and packet_number_space are not logged explicitly:
+the header.packet_type specifies this by inference (assuming correct
+implementation)
 
 Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
@@ -748,8 +727,7 @@ Definition:
 TransportPacketReceived = {
     header: PacketHeader
 
-    ; see appendix for the definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
     ? is_coalesced: bool .default false
 
@@ -774,8 +752,9 @@ TransportPacketReceived = {
 ~~~
 {: #transport-packetreceived-def title="TransportPacketReceived definition"}
 
-Note: We do not explicitly log the encryption_level or packet_number_space: the
-header.packet_type specifies this by inference (assuming correct implementation)
+Note: The encryption_level and packet_number_space are not logged explicitly:
+the header.packet_type specifies this by inference (assuming correct
+implementation)
 
 Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
@@ -783,49 +762,55 @@ when keeping track of packet coalescing.
 ## packet_dropped {#transport-packetdropped}
 Importance: Base
 
-This event indicates a QUIC-level packet was dropped after partial or no parsing.
+This event indicates a QUIC-level packet was dropped.
+
+The trigger field indicates a general reason category for dropping the packet,
+while the details field can contain additional implementation-specific
+information.
 
 Definition:
 
 ~~~ cddl
 TransportPacketDropped = {
-    ; primarily packet_type should be filled here,
-    ; as other fields might not be parseable
+    ; Primarily packet_type should be filled here,
+    ; as other fields might not be decrypteable or parseable
     ? header: PacketHeader
 
     ? raw: RawInfo
     ? datagram_id: uint32
 
+    ? details: {* text => any}
     ? trigger:
-        "key_unavailable" /
-        "unknown_connection_id" /
-        "header_parse_error" /
-        "payload_decrypt_error" /
-        "protocol_violation" /
-        "dos_prevention" /
-        "unsupported_version" /
-        "unexpected_packet" /
-        "unexpected_source_connection_id" /
-        "unexpected_version" /
-        "duplicate" /
-        "invalid_initial"
+        "internal_error" /
+        "rejected" /
+        "unsupported" /
+        "invalid" /
+        "connection_unknown" /
+        "decryption_failure" /
+        "general"
 }
 ~~~
 {: #transport-packetdropped-def title="TransportPacketDropped definition"}
 
-Note: sometimes packets are dropped before they can be associated with a
-particular connection (e.g., in case of "unsupported_version"). This situation is
-discussed more in {{handling-unknown-connections}}.
+Some example situations for each of the trigger categories include:
 
-Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
-when keeping track of packet coalescing.
+- internal_error: not initialized, out of memory
+- rejected: limits reached, DDoS protection, unwilling to track more paths, duplicate packet
+- unsupported: unknown or unsupported version. See also {{handling-unknown-connections}}.
+- invalid: packet parsing or validation error
+- connection_unknown: packet does not relate to a known connection or Connection ID
+- decryption_failure: decryption key was unavailable, decryption failed
+- general: situations not clearly covered in the other categories
+
+For more details on "datagram_id", see {{transport-datagramssent}}.
 
 ## packet_buffered {#transport-packetbuffered}
 Importance: Base
 
 This event is emitted when a packet is buffered because it cannot be processed
-yet. Typically, this is because the packet cannot be parsed yet, and thus we only
-log the full packet contents when it was parsed in a packet_received event.
+yet. Typically, this is because the packet cannot be parsed yet, and thus only
+the full packet contents can be logged when it was parsed in a packet_received
+event.
 
 Definition:
 
@@ -880,8 +865,8 @@ number space a typical QUIC connection will use.
 ## datagrams_sent {#transport-datagramssent}
 Importance: Extra
 
-When we pass one or more UDP-level datagrams to the socket. This is useful for
-determining how QUIC packet buffers are drained to the OS.
+When one or more UDP-level datagrams are passed to the socket. This is useful
+for determining how QUIC packet buffers are drained to the OS.
 
 Definition:
 
@@ -890,8 +875,8 @@ TransportDatagramsSent = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length field indicates total length of the datagrams
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -899,20 +884,22 @@ TransportDatagramsSent = {
 ~~~
 {: #transport-datagramssent-def title="TransportDatagramsSent definition"}
 
-Note: QUIC itself does not have a concept of a "datagram_id". This field is a
-purely qlog-specific construct to allow tracking how multiple QUIC packets are
-coalesced inside of a single UDP datagram, which is an important optimization
-during the QUIC handshake. For this, implementations assign a (per-endpoint)
-unique ID to each datagram and keep track of which packets were coalesced into the
-same datagram. As packet coalescing typically only happens during the handshake
-(as it requires at least one long header packet), this can be done without much
-overhead.
+Since QUIC implementations rarely control UDP logic directly, the raw data
+excludes UDP-level headers in all fields.
+
+The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
+coalescing inside UDP datagrams. Since QUIC generates many UDP datagrams, unique
+identifiers are required to be able to track them individually in qlog traces.
+However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
+Selecting identifier values is thus left to qlog implementations, which should
+consider how to generate unique values within the scope of their created traces.
 
 ## datagrams_received {#transport-datagramsreceived}
 Importance: Extra
 
-When we receive one or more UDP-level datagrams from the socket. This is useful
-for determining how datagrams are passed to the user space stack from the OS.
+When one or more UDP-level datagrams are received from the socket. This is
+useful for determining how datagrams are passed to the user space stack from
+the OS.
 
 Definition:
 
@@ -921,8 +908,8 @@ TransportDatagramsReceived = {
     ; to support passing multiple at once
     ? count: uint16
 
-    ; RawInfo:length field indicates total length of the datagrams
-    ; including UDP header length
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: [+ RawInfo]
 
     ? datagram_ids: [+ uint32]
@@ -930,18 +917,21 @@ TransportDatagramsReceived = {
 ~~~
 {: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
 
-Note: for more details on "datagram_ids", see {{transport-datagramssent}}.
+For more details on "datagram_ids", see {{transport-datagramssent}}.
 
 ## datagram_dropped {#transport-datagramdropped}
 Importance: Extra
 
-When we drop a UDP-level datagram. This is typically if it does not contain a
-valid QUIC packet (in that case, use packet_dropped instead).
+When a UDP-level datagram is dropped. This is typically done if it does not
+contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
+other reasons, packet_dropped ({{transport-packetdropped}}) should be used instead.
 
 Definition:
 
 ~~~ cddl
 TransportDatagramDropped = {
+    ; The RawInfo fields do not include the UDP headers,
+    ; only the UDP payload
     ? raw: RawInfo
 }
 ~~~
@@ -1013,11 +1003,11 @@ Importance: Extra
 
 This event's main goal is to prevent a large proliferation of specific purpose
 events (e.g., packets_acknowledged, flow_control_updated, stream_data_received).
-We want to give implementations the opportunity to (selectively) log this type of
+Implementations have the opportunity to (selectively) log this type of
 signal without having to log packet-level details (e.g., in packet_received).
 Since for almost all cases, the effects of applying a frame to the internal state
-of an implementation can be inferred from that frame's contents, we aggregate
-these events in this single "frames_processed" event.
+of an implementation can be inferred from that frame's contents, these events
+are aggregated into this single "frames_processed" event.
 
 Note: This event can be used to signal internal state change not resulting
 directly from the actual "parsing" of a frame (e.g., the frame could have been
@@ -1043,8 +1033,7 @@ Definition:
 
 ~~~ cddl
 TransportFramesProcessed = {
-    ; see appendix for the QuicFrame definitions
-    frames: [* QuicFrame]
+    frames: [* $QuicFrame]
 
     ? packet_number: uint64
 }
@@ -1080,25 +1069,10 @@ TransportDataMoved = {
     ? from: "user" / "application" / "transport" / "network" / text
     ? to: "user" / "application" / "transport" / "network" / text
 
-    ; raw bytes that were transferred
-    ? data: hexstring
+    ? raw: RawInfo
 }
 ~~~~
 {: #transport-datamoved-def title="TransportDataMoved definition"}
-
-Note: we do not for example use a "direction" field (with values "up" and "down")
-to specify the data flow. This is because in some optimized implementations, data
-might skip some individual layers. Additionally, using explicit "from" and "to"
-fields is more flexible and allows the definition of other conceptual "layers"
-(for example to indicate data from QUIC CRYPTO frames being passed to a TLS
-library ("security") or from HTTP/3 to QPACK ("qpack")).
-
-Note: this event type is part of the "transport" category, but really spans all
-the different layers. This means we have a few leaky abstractions here (for
-example, the stream_id or stream offset might not be available at some logging
-points, or the raw data might not be in a byte-array form). In these situations,
-implementers can decide to define new, in-context fields to aid in manual
-debugging.
 
 # Security Events {#sec-ev}
 
@@ -1194,7 +1168,7 @@ RecoveryParametersSet = {
 
     ; Note: this could change when max_datagram_size changes
     ; in bytes
-    ? minimum_congestion_window: uint32
+    ? minimum_congestion_window: uint64
     ? loss_reduction_factor: float32
 
     ; as PTO multiplier
@@ -1335,8 +1309,7 @@ RecoveryPacketLost = {
 
     ; not all implementations will keep track of full
     ; packets, so these are optional
-    ; see appendix for the QuicFrame definitions
-    ? frames: [* QuicFrame]
+    ? frames: [* $QuicFrame]
 
     ? is_mtu_probe_packet: bool .default false
 
@@ -1358,9 +1331,9 @@ Importance: Extra
 
 This event indicates which data was marked for retransmit upon detecting a packet
 loss (see packet_lost). Similar to our reasoning for the "frames_processed" event,
-in order to keep the amount of different events low, we group this signal for all
-types of retransmittable data in a single event based on existing QUIC frame
-definitions.
+in order to keep the amount of different events low, this signal is grouped into
+in a single event based on existing QUIC frame definitions for all types of
+retransmittable data.
 
 Implementations retransmitting full packets or frames directly can just log the
 constituent frames of the lost packet here (or do away with this event and use the
@@ -1378,8 +1351,7 @@ Definition:
 
 ~~~ cddl
 RecoveryMarkedForRetransmit = {
-    ; see appendix for the QuicFrame definitions
-    frames: [+ QuicFrame]
+    frames: [+ $QuicFrame]
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
@@ -1477,17 +1449,13 @@ PacketHeader = {
 Token = {
     ? type: "retry" / "resumption"
 
-    ; byte length of the token
-    ? length: uint32
-
-    ; raw byte value of the token
-    ? data: hexstring
-
     ; decoded fields included in the token
     ; (typically: peer's IP address, creation time)
     ? details: {
       * text => any
     }
+
+    ? raw: RawInfo
 }
 ~~~
 {: #token-def title="Token definition"}
@@ -1497,7 +1465,7 @@ packet, or one originally provided by the server in a NEW_TOKEN frame used when
 resuming a connection (e.g., for address validation purposes). Retry and
 resumption tokens typically contain encoded metadata to check the token's
 validity when it is used, but this metadata and its format is implementation
-specific. For that, this field includes a general-purpose "details" field.
+specific. For that, this event includes a general-purpose "details" field.
 
 ## Stateless Reset Token
 
@@ -1522,8 +1490,21 @@ KeyType =
 
 ## QUIC Frames
 
+The generic `$QuicFrame` is defined here as a CDDL extension point (a "socket"
+or "plug"). It can be extended to support additional QUIC frame types.
+
 ~~~ cddl
-QuicFrame =
+; The QuicFrame is any key-value map (e.g., JSON object)
+$QuicFrame /= {
+    * text => any
+}
+~~~
+{: #quicframe-def title="QuicFrame plug definition"}
+
+The QUIC frame types defined in this document are as follows:
+
+~~~ cddl
+QuicBaseFrames /=
   PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
   StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
   MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
@@ -1531,8 +1512,10 @@ QuicFrame =
   NewConnectionIDFrame / RetireConnectionIDFrame /
   PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
   HandshakeDoneFrame / UnknownFrame
+
+$QuicFrame /= QuicBaseFrames
 ~~~
-{: #quicframe-def title="QuicFrame definition"}
+{: #quicbaseframe-def title="QuicBaseFrames definition"}
 
 ### PaddingFrame
 
@@ -1684,7 +1667,7 @@ StreamFrame = {
     ; if absent, the value MUST be assumed to be false
     ? fin: bool .default false
 
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #streamframe-def title="StreamFrame definition"}
@@ -1815,8 +1798,9 @@ PathResponseFrame = {
 
 ### ConnectionCloseFrame
 
-raw_error_code is the actual, numerical code. This is useful because some error
-types are spread out over a range of codes (e.g., QUIC's crypto_error).
+The error_code_value field is the numerical value without VLIE encoding. This is
+useful because some error types are spread out over a range of codes (e.g.,
+QUIC's crypto_error).
 
 ~~~ cddl
 ErrorSpace = "transport" / "application"
@@ -1826,11 +1810,11 @@ ConnectionCloseFrame = {
 
     ? error_space: ErrorSpace
     ? error_code: TransportError / $ApplicationError / uint32
-    ? raw_error_code: uint32
+    ? error_code_value: uint64
     ? reason: text
 
     ; For known frame types, the appropriate "frame_type" string
-    ; For unknown frame types, the hex encoded identifier value
+    ; For unknown frame types, the hex encoded frame identifier value
     ? trigger_frame_type: uint64 / text
 }
 ~~~
@@ -1847,13 +1831,14 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
+The frame_type_value field is the numerical value without VLIE encoding.
+
 ~~~ cddl
 UnknownFrame = {
     frame_type: "unknown"
-    raw_frame_type: uint64
+    frame_type_value: uint64
 
-    ? raw_length: uint32
-    ? raw: hexstring
+    ? raw: RawInfo
 }
 ~~~
 {: #unknownframe-def title="UnknownFrame definition"}
@@ -1867,15 +1852,20 @@ TransportError = "no_error" / "internal_error" /
     "final_size_error" / "frame_encoding_error" /
     "transport_parameter_error" / "connection_id_limit_error" /
     "protocol_violation" / "invalid_token" / "application_error" /
-    "crypto_buffer_exceeded"
+    "crypto_buffer_exceeded" / "key_update_error" /
+    "aead_limit_reached" / "no_viable_path"
+    ; there is no value to reflect CRYPTO_ERROR
+    ; use the CryptoError type instead
 ~~~
 {: #transporterror-def title="TransportError definition"}
 
 ### ApplicationError
 
-By definition, an application error is defined by the application-level protocol running on top of QUIC (e.g., HTTP/3).
+By definition, an application error is defined by the application-level
+protocol running on top of QUIC (e.g., HTTP/3).
 
-As such, we cannot define it here directly. Though we provide an extension point through the use of the CDDL "socket" mechanism.
+As such, it cannot be defined here directly. Applications MAY use the provided
+extension point through the use of the CDDL "socket" mechanism.
 
 Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:
 
@@ -1890,8 +1880,8 @@ connection error by converting the one-byte alert description into a QUIC error
 code. The alert description is added to 0x100 to produce a QUIC error code from
 the range reserved for CRYPTO_ERROR."
 
-This approach maps badly to a pre-defined enum. As such, we define the
-crypto_error string as having a dynamic component here, which should include the
+This approach maps badly to a pre-defined enum. As such, the crypto_error
+string is defined as having a dynamic component here, which should include the
 hex-encoded and zero-padded value of the TLS alert description.
 
 ~~~ cddl
@@ -1900,9 +1890,10 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 ~~~
 {: #cryptoerror-def title="CryptoError definition"}
 
-# Security Considerations
+# Security and Privacy Considerations
 
-TBD
+The security and privacy considerations discussed in {{QLOG-MAIN}} apply to this
+document as well.
 
 # IANA Considerations
 
@@ -1913,10 +1904,28 @@ TBD
 
 # Change Log
 
+## Since draft-ietf-qlog-quic-events-04:
+
+* Updated guidance on logging events across connections (#279)
+
+## Since draft-ietf-qlog-quic-events-03:
+
+* Ensured consistent use of RawInfo to indicate raw wire bytes (#243)
+* Renamed UnknownFrame:raw_frame_type to :frame_type_value (#54)
+* Renamed ConnectionCloseFrame:raw_error_code to :error_code_value (#54)
+* Changed triggers for packet_dropped (#278)
+* Added entries to TransportError enum (#285)
+* Changed minimum_congestion_window to uint64 (#288)
+
 ## Since draft-ietf-qlog-quic-events-02:
 
 * Renamed key_retired to key_discarded (#185)
-* Add fields and events for DPLPMTUD (#135)
+* Added fields and events for DPLPMTUD (#135)
+* Made packet_number optional in PacketHeader (#244)
+* Removed connection_retried event placeholder (#255)
+* Changed QuicFrame to a CDDL plug type (#257)
+* Moved data definitions out of the appendix into separate sections
+* Added overview Table of Contents
 
 ## Since draft-ietf-qlog-quic-events-01:
 
