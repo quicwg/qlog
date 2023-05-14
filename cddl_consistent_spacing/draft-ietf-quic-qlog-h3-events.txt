@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 13 September 2023                                          Meta
+Expires: 15 November 2023                                           Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                           12 March 2023
+                                                             14 May 2023
 
 
                 HTTP/3 and QPACK qlog event definitions
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 13 September 2023.
+   This Internet-Draft will expire on 15 November 2023.
 
 Copyright Notice
 
@@ -230,9 +230,12 @@ Table of Contents
    HTTP/3 events extend the $ProtocolEventBody extension point defined
    in [QLOG-MAIN].
 
-   HTTPEvents = HTTPParametersSet / HTTPParametersRestored /
-                HTTPStreamTypeSet / HTTPFrameCreated /
-                HTTPFrameParsed / HTTPPushResolved
+   HTTPEvents = HTTPParametersSet /
+                HTTPParametersRestored /
+                HTTPStreamTypeSet /
+                HTTPFrameCreated /
+                HTTPFrameParsed /
+                HTTPPushResolved
 
    $ProtocolEventBody /= HTTPEvents
 
@@ -264,7 +267,6 @@ Table of Contents
 
    HTTPParametersSet = {
        ? owner: Owner
-
        ~HTTPParameters
 
        ; qlog-specific
@@ -305,9 +307,7 @@ Table of Contents
    Definition:
 
    HTTPParametersRestored = {
-
        ~HTTPParameters
-
    }
 
                 Figure 3: HTTPParametersRestored definition
@@ -331,7 +331,6 @@ Table of Contents
    HTTPStreamTypeSet = {
        ? owner: Owner
        stream_id: uint64
-
        stream_type: HTTPStreamType
 
        ; only when stream_type === "unknown"
@@ -420,11 +419,11 @@ Table of Contents
        ; in case this is logged from a place that does not have access
        ; to the push_id
        ? stream_id: uint64
-
        decision: HTTPPushDecision
    }
 
-   HTTPPushDecision = "claimed" / "abandoned"
+   HTTPPushDecision = "claimed" /
+                      "abandoned"
 
                    Figure 7: HTTPPushResolved definition
 
@@ -434,7 +433,8 @@ Table of Contents
 
 5.1.  Owner
 
-   Owner = "local" / "remote"
+   Owner = "local" /
+           "remote"
 
                          Figure 8: Owner definition
 
@@ -453,15 +453,15 @@ Table of Contents
 
    The HTTP/3 frame types defined in this document are as follows:
 
-   HTTPBaseFrames =  HTTPDataFrame /
-                HTTPHeadersFrame /
-                HTTPCancelPushFrame /
-                HTTPSettingsFrame /
-                HTTPPushPromiseFrame /
-                HTTPGoawayFrame /
-                HTTPMaxPushIDFrame /
-                HTTPReservedFrame /
-                HTTPUnknownFrame
+   HTTPBaseFrames = HTTPDataFrame /
+                    HTTPHeadersFrame /
+                    HTTPCancelPushFrame /
+                    HTTPSettingsFrame /
+                    HTTPPushPromiseFrame /
+                    HTTPGoawayFrame /
+                    HTTPMaxPushIDFrame /
+                    HTTPReservedFrame /
+                    HTTPUnknownFrame
 
    $HTTPFrame /= HTTPBaseFrames
 
@@ -576,7 +576,6 @@ Table of Contents
 
    HTTPReservedFrame = {
        frame_type: "reserved"
-
        ? length: uint64
    }
 
@@ -597,23 +596,23 @@ Table of Contents
 
 5.2.10.  HTTPApplicationError
 
-   HTTPApplicationError =  "http_no_error" /
-                           "http_general_protocol_error" /
-                           "http_internal_error" /
-                           "http_stream_creation_error" /
-                           "http_closed_critical_stream" /
-                           "http_frame_unexpected" /
-                           "http_frame_error" /
-                           "http_excessive_load" /
-                           "http_id_error" /
-                           "http_settings_error" /
-                           "http_missing_settings" /
-                           "http_request_rejected" /
-                           "http_request_cancelled" /
-                           "http_request_incomplete" /
-                           "http_early_response" /
-                           "http_connect_error" /
-                           "http_version_fallback"
+   HTTPApplicationError = "http_no_error" /
+                          "http_general_protocol_error" /
+                          "http_internal_error" /
+                          "http_stream_creation_error" /
+                          "http_closed_critical_stream" /
+                          "http_frame_unexpected" /
+                          "http_frame_error" /
+                          "http_excessive_load" /
+                          "http_id_error" /
+                          "http_settings_error" /
+                          "http_missing_settings" /
+                          "http_request_rejected" /
+                          "http_request_cancelled" /
+                          "http_request_incomplete" /
+                          "http_early_response" /
+                          "http_connect_error" /
+                          "http_version_fallback"
 
                  Figure 22: HTTPApplicationError definition
 
@@ -629,9 +628,12 @@ Table of Contents
    QPACK events extend the $ProtocolEventBody extension point defined in
    [QLOG-MAIN].
 
-   QPACKEvents = QPACKStateUpdate / QPACKStreamStateUpdate /
-                 QPACKDynamicTableUpdate / QPACKHeadersEncoded /
-                 QPACKHeadersDecoded / QPACKInstructionCreated /
+   QPACKEvents = QPACKStateUpdate /
+                 QPACKStreamStateUpdate /
+                 QPACKDynamicTableUpdate /
+                 QPACKHeadersEncoded /
+                 QPACKHeadersDecoded /
+                 QPACKInstructionCreated /
                  QPACKInstructionParsed
 
    $ProtocolEventBody /= QPACKEvents
@@ -689,12 +691,14 @@ Table of Contents
 
    QPACKStreamStateUpdate = {
        stream_id: uint64
+
        ; streams are assumed to start "unblocked"
        ; until they become "blocked"
        state: QPACKStreamState
    }
 
-   QPACKStreamState = "blocked" / "unblocked"
+   QPACKStreamState = "blocked" /
+                      "unblocked"
 
                 Figure 25: QPACKStreamStateUpdate definition
 
@@ -711,17 +715,19 @@ Table of Contents
        ; local = the encoder's dynamic table
        ; remote = the decoder's dynamic table
        owner: Owner
-
        update_type: QPACKDynamicTableUpdateType
        entries: [+ QPACKDynamicTableEntry]
    }
 
-   QPACKDynamicTableUpdateType = "inserted" / "evicted"
+   QPACKDynamicTableUpdateType = "inserted" /
+                                 "evicted"
 
    QPACKDynamicTableEntry = {
        index: uint64
-       ? name: text / hexstring
-       ? value: text / hexstring
+       ? name: text /
+               hexstring
+       ? value: text /
+                hexstring
    }
 
                Figure 26: QPACKDynamicTableUpdate definition
@@ -742,10 +748,8 @@ Table of Contents
    QPACKHeadersEncoded = {
        ? stream_id: uint64
        ? headers: [+ HTTPField]
-
        block_prefix: QPACKHeaderBlockPrefix
        header_block: [+ QPACKHeaderBlockRepresentation]
-
        ? raw: RawInfo
    }
 
@@ -767,10 +771,8 @@ Table of Contents
    QPACKHeadersDecoded = {
        ? stream_id: uint64
        ? headers: [+ HTTPField]
-
        block_prefix: QPACKHeaderBlockPrefix
        header_block: [+ QPACKHeaderBlockRepresentation]
-
        ? raw: RawInfo
    }
 
@@ -809,7 +811,6 @@ Table of Contents
    QPACKInstructionParsed = {
        ; see QPACKInstruction definition in appendix
        instruction: QPACKInstruction
-
        ? raw: RawInfo
    }
 
@@ -829,13 +830,13 @@ Table of Contents
    since there is no overlap between the instructions of both types in
    neither name nor function.
 
-   QPACKInstruction =  SetDynamicTableCapacityInstruction /
-                       InsertWithNameReferenceInstruction /
-                       InsertWithoutNameReferenceInstruction /
-                       DuplicateInstruction /
-                       SectionAcknowledgementInstruction /
-                       StreamCancellationInstruction /
-                       InsertCountIncrementInstruction
+   QPACKInstruction = SetDynamicTableCapacityInstruction /
+                      InsertWithNameReferenceInstruction /
+                      InsertWithoutNameReferenceInstruction /
+                      DuplicateInstruction /
+                      SectionAcknowledgementInstruction /
+                      StreamCancellationInstruction /
+                      InsertCountIncrementInstruction
 
                    Figure 31: QPACKInstruction definition
 
@@ -913,9 +914,9 @@ Table of Contents
 
 7.2.  QPACKHeaderBlockRepresentation
 
-   QPACKHeaderBlockRepresentation =  IndexedHeaderField /
-                                     LiteralHeaderFieldWithName /
-                                     LiteralHeaderFieldWithoutName
+   QPACKHeaderBlockRepresentation = IndexedHeaderField /
+                                    LiteralHeaderFieldWithName /
+                                    LiteralHeaderFieldWithoutName
 
             Figure 39: QPACKHeaderBlockRepresentation definition
 
@@ -972,7 +973,6 @@ Table of Contents
        huffman_encoded_name: bool
        ? name_length: uint32
        ? name: text
-
        huffman_encoded_value: bool
        ? value_length: uint32
        ? value: text
@@ -992,7 +992,8 @@ Table of Contents
 
 7.4.  QPACKTableType
 
-   QPACKTableType = "static" / "dynamic"
+   QPACKTableType = "static" /
+                    "dynamic"
 
                     Figure 44: QPACKTableType definition
 

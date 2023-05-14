@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 13 September 2023                                          Meta
+Expires: 15 November 2023                                           Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                           12 March 2023
+                                                             14 May 2023
 
 
                       Main logging schema for qlog
@@ -41,7 +41,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 13 September 2023.
+   This Internet-Draft will expire on 15 November 2023.
 
 Copyright Notice
 
@@ -115,13 +115,14 @@ Table of Contents
      11.1.  Normative References
      11.2.  Informative References
    Appendix A.  Change Log
-     A.1.  Since draft-ietf-quic-qlog-main-schema-03:
-     A.2.  Since draft-ietf-quic-qlog-main-schema-02:
-     A.3.  Since draft-ietf-quic-qlog-main-schema-01:
-     A.4.  Since draft-ietf-quic-qlog-main-schema-00:
-     A.5.  Since draft-marx-qlog-main-schema-draft-02:
-     A.6.  Since draft-marx-qlog-main-schema-01:
-     A.7.  Since draft-marx-qlog-main-schema-00:
+     A.1.  Since draft-ietf-quic-qlog-main-schema-04:
+     A.2.  Since draft-ietf-quic-qlog-main-schema-03:
+     A.3.  Since draft-ietf-quic-qlog-main-schema-02:
+     A.4.  Since draft-ietf-quic-qlog-main-schema-01:
+     A.5.  Since draft-ietf-quic-qlog-main-schema-00:
+     A.6.  Since draft-marx-qlog-main-schema-draft-02:
+     A.7.  Since draft-marx-qlog-main-schema-01:
+     A.8.  Since draft-marx-qlog-main-schema-00:
    Acknowledgements
    Authors' Addresses
 
@@ -312,7 +313,8 @@ Table of Contents
        ? title: text
        ? description: text
        ? summary: Summary
-       ? traces: [+ Trace / TraceError]
+       ? traces: [+ Trace /
+                    TraceError]
    }
 
                        Figure 2: QlogFile definition
@@ -350,6 +352,7 @@ Table of Contents
    Definition:
 
    Summary = {
+
        ; summary can contain any type of custom information
        ; text here doesn't mean the type text,
        ; but the fact that keys/names in the objects are strings
@@ -398,6 +401,7 @@ Table of Contents
 
    TraceError = {
        error_description: text
+
        ; the original URI at which we attempted to find the file
        ? uri: text
        ? vantage_point: VantagePoint
@@ -488,6 +492,7 @@ Table of Contents
    Definition:
 
    Configuration = {
+
        ; time_offset is in milliseconds
        time_offset: float64
        original_uris:[* text]
@@ -574,7 +579,10 @@ Table of Contents
    ; client = endpoint which initiates the connection
    ; server = endpoint which accepts the connection
    ; network = observer in between client and server
-   VantagePointType = "client" / "server" / "network" / "unknown"
+   VantagePointType = "client" /
+                      "server" /
+                      "network" /
+                      "unknown"
 
                      Figure 13: VantagePoint definition
 
@@ -650,9 +658,7 @@ Table of Contents
        time: float64
        name: text
        data: $ProtocolEventBody
-
        ? time_format: TimeFormat
-
        ? protocol_type: ProtocolType
        ? group_id: GroupID
 
@@ -692,7 +698,9 @@ Table of Contents
 
    Definition:
 
-   TimeFormat = "absolute" / "delta" / "relative"
+   TimeFormat = "absolute" /
+                "delta" /
+                "relative"
 
                       Figure 17: TimeFormat definition
 
@@ -820,7 +828,10 @@ Table of Contents
        * text => any
    }
    ; event documents are intended to extend this socket by using:
-   ; NewProtocolEvents = EventType1 / EventType2 / ... / EventTypeN
+   ; NewProtocolEvents = EventType1 /
+   ;                     EventType2 /
+   ;                     ... /
+   ;                     EventTypeN
    ; $ProtocolEventBody /= NewProtocolEvents
 
                   Figure 20: ProtocolEventBody definition
@@ -832,7 +843,9 @@ Table of Contents
        ? packet_size: uint16
        header: PacketHeader
        ? frames:[* QuicFrame]
-       ? trigger: "pto_probe" / "retransmit_timeout" / "bandwidth_probe"
+       ? trigger: "pto_probe" /
+                  "retransmit_timeout" /
+                  "bandwidth_probe"
    }
 
    could be serialized as
@@ -905,9 +918,10 @@ Table of Contents
    TransportPacketDropped = {
        ? packet_type: PacketType
        ? raw_length: uint16
-
-       ? trigger: "key_unavailable" / "unknown_connection_id" /
-                  "decrypt_error" / "unsupported_version"
+       ? trigger: "key_unavailable" /
+                  "unknown_connection_id" /
+                  "decrypt_error" /
+                  "unsupported_version"
    }
 
                          Figure 23: Trigger example
@@ -1062,10 +1076,8 @@ Table of Contents
    CommonFields = {
        ? time_format: TimeFormat
        ? reference_time: float64
-
        ? protocol_type: ProtocolType
        ? group_id: GroupID
-
        * text => any
    }
 
@@ -1197,62 +1209,46 @@ Table of Contents
 
 5.1.  Raw packet and frame information
 
-   While qlog is a more high-level logging format, it also allows the
+   While qlog is a high-level logging format, it also allows the
    inclusion of most raw wire image information, such as byte lengths
-   and even raw byte values.  This can be useful when for example
-   investigating or tuning packetization behavior or determining
-   encoding/framing overheads.  However, these fields are not always
-   necessary and can take up considerable space if logged for each
-   packet or frame.  They can also have a considerable privacy and
-   security impact.  As such, they are grouped in a separate optional
-   field called "raw" of type RawInfo (where applicable).
+   and byte values.  This is useful when for example investigating or
+   tuning packetization behavior or determining encoding/framing
+   overheads.  However, these fields are not always necessary, can take
+   up considerable space, and can have a considerable privacy and
+   security impact (see Section 9).  Where applicable, these fields are
+   grouped in a separate, optional, field named "raw" of type RawInfo.
+   The exact definition of entities, headers, trailers and payloads
+   depend on the protocol used.
 
    Definition:
 
    RawInfo = {
+
        ; the full byte length of the entity (e.g., packet or frame),
-       ; including headers and trailers
+       ; including possible headers and trailers
        ? length: uint64
 
        ; the byte length of the entity's payload,
-       ; without headers or trailers
+       ; excluding possible headers or trailers
        ? payload_length: uint64
 
-       ; the contents of the full entity,
-       ; including headers and trailers
+       ; the (potentially truncated) contents of the full entity,
+       ; including headers and possibly trailers
        ? data: hexstring
    }
 
                        Figure 28: RawInfo definition
 
-   Note:  The RawInfo:data field can be truncated for privacy or
-      security purposes (for example excluding payload data), see
-      Section 6.1.2.  In this case, the length properties should still
-      indicate the non-truncated lengths.
+   The RawInfo:data field can be truncated for privacy or security
+   purposes, see Section 6.1.2.  In this case, the length and
+   payload_length fields should still indicate the non-truncated lengths
+   when used for debugging purposes.
 
-   Note:  We do not specify explicit header_length or trailer_length
-      fields.  In most protocols, header_length can be calculated by
-      subtracting the payload_length from the length (e.g., if
-      trailer_length is always 0).  In protocols with trailers (e.g.,
-      QUIC's AEAD tag), event definitions documents SHOULD define other
-      ways of logging the trailer_length to make the header_length
-      calculation possible.
-
-      The exact definitions entities, headers, trailers and payloads
-      depend on the protocol used.  If this is non-trivial, event
-      definitions documents SHOULD include a clear explanation of how
-      entities are mapped into the RawInfo structure.
-
-   Note:  Relatedly, many modern protocols use Variable-Length Integer
-      Encoded (VLIE) values in their headers, which are of a dynamic
-      length.  Because of this, we cannot deterministically reconstruct
-      the header encoding/length from non-RawInfo qlog data, as
-      implementations might not necessarily employ the most efficient
-      VLIE scheme for all values.  As such, to make exact size-analysis
-      possible, implementers should use explicit lengths in RawInfo
-      rather than reconstructing them from other qlog data.  Similarly,
-      tool developers should only utilize RawInfo (and related
-      information) in such tools to prevent errors.
+   This document does not specify explicit header_length or
+   trailer_length fields.  In protocols without trailers, header_length
+   can be calculated by subtracting the payload_length from the length.
+   In protocols with trailers (e.g., QUIC's AEAD tag), event definition
+   documents SHOULD define how to support header_length calculation.
 
 5.2.  Generic events
 
@@ -1483,7 +1479,8 @@ Table of Contents
    should override the original and (web-based) tools should take into
    account that a uint64 field can be either a number or string.
 
-   uint64 = text / uint .size 8
+   uint64 = text /
+            uint .size 8
 
                Figure 36: Custom uint64 definition for I-JSON
 
@@ -1598,7 +1595,6 @@ Table of Contents
 
    QlogFileSeq = {
        qlog_format: "JSON-SEQ"
-
        qlog_version: text
        ? title: text
        ? description: text
@@ -2295,19 +2291,23 @@ Table of Contents
 
 Appendix A.  Change Log
 
-A.1.  Since draft-ietf-quic-qlog-main-schema-03:
+A.1.  Since draft-ietf-quic-qlog-main-schema-04:
+
+   *  Updated RawInfo definition and guidance (#243)
+
+A.2.  Since draft-ietf-quic-qlog-main-schema-03:
 
    *  Added security and privacy considerations discussion (#252)
 
-A.2.  Since draft-ietf-quic-qlog-main-schema-02:
+A.3.  Since draft-ietf-quic-qlog-main-schema-02:
 
    *  No changes - new draft to prevent expiration
 
-A.3.  Since draft-ietf-quic-qlog-main-schema-01:
+A.4.  Since draft-ietf-quic-qlog-main-schema-01:
 
    *  Change the data definition language from TypeScript to CDDL (#143)
 
-A.4.  Since draft-ietf-quic-qlog-main-schema-00:
+A.5.  Since draft-ietf-quic-qlog-main-schema-00:
 
    *  Changed the streaming serialization format from NDJSON to JSON
       Text Sequences (#172)
@@ -2316,7 +2316,7 @@ A.4.  Since draft-ietf-quic-qlog-main-schema-00:
 
    *  Changed to semantic versioning
 
-A.5.  Since draft-marx-qlog-main-schema-draft-02:
+A.6.  Since draft-marx-qlog-main-schema-draft-02:
 
    *  These changes were done in preparation of the adoption of the
       drafts by the QUIC working group (#137)
@@ -2328,7 +2328,7 @@ A.5.  Since draft-marx-qlog-main-schema-draft-02:
 
    *  Made protocol_type an array instead of a string (#146)
 
-A.6.  Since draft-marx-qlog-main-schema-01:
+A.7.  Since draft-marx-qlog-main-schema-01:
 
    *  Decoupled qlog from the JSON format and described a mapping
       instead (#89)
@@ -2358,7 +2358,7 @@ A.6.  Since draft-marx-qlog-main-schema-01:
 
    *  Overall tightened up the text and added more examples
 
-A.7.  Since draft-marx-qlog-main-schema-00:
+A.8.  Since draft-marx-qlog-main-schema-00:
 
    *  All field names are now lowercase (e.g., category instead of
       CATEGORY)

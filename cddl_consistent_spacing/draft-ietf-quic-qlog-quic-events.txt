@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 26 September 2023                                          Meta
+Expires: 15 November 2023                                           Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                           25 March 2023
+                                                             14 May 2023
 
 
                     QUIC event definitions for qlog
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 26 September 2023.
+   This Internet-Draft will expire on 15 November 2023.
 
 Copyright Notice
 
@@ -350,16 +350,25 @@ Table of Contents
                 ConnectivitySpinBitUpdated /
                 ConnectivityConnectionStateUpdated /
                 ConnectivityMTUUpdated /
-                SecurityKeyUpdated / SecurityKeyDiscarded /
-                TransportVersionInformation / TransportALPNInformation /
-                TransportParametersSet / TransportParametersRestored /
-                TransportPacketSent / TransportPacketReceived /
-                TransportPacketDropped / TransportPacketBuffered /
-                TransportPacketsAcked / TransportDatagramsSent /
-                TransportDatagramsReceived / TransportDatagramDropped /
-                TransportStreamStateUpdated / TransportFramesProcessed /
+                SecurityKeyUpdated /
+                SecurityKeyDiscarded /
+                TransportVersionInformation /
+                TransportALPNInformation /
+                TransportParametersSet /
+                TransportParametersRestored /
+                TransportPacketSent /
+                TransportPacketReceived /
+                TransportPacketDropped /
+                TransportPacketBuffered /
+                TransportPacketsAcked /
+                TransportDatagramsSent /
+                TransportDatagramsReceived /
+                TransportDatagramDropped /
+                TransportStreamStateUpdated /
+                TransportFramesProcessed /
                 TransportDataMoved /
-                RecoveryParametersSet / RecoveryMetricsUpdated /
+                RecoveryParametersSet /
+                RecoveryMetricsUpdated /
                 RecoveryCongestionStateUpdated /
                 RecoveryLossTimerUpdated /
                 RecoveryPacketLost
@@ -414,7 +423,6 @@ Table of Contents
        ? protocol: text .default "QUIC"
        ? src_port: uint16
        ? dst_port: uint16
-
        ? src_cid: ConnectionID
        ? dst_cid: ConnectionID
    }
@@ -450,11 +458,12 @@ Table of Contents
    ConnectivityConnectionClosed = {
        ; which side closed the connection
        ? owner: Owner
-
-       ? connection_code: TransportError / CryptoError / uint32
-       ? application_code: $ApplicationError / uint32
+       ? connection_code: TransportError /
+                          CryptoError /
+                          uint32
+       ? application_code: $ApplicationError /
+                           uint32
        ? internal_code: uint32
-
        ? reason: text
        ? trigger:
            "clean" /
@@ -490,7 +499,6 @@ Table of Contents
 
    ConnectivityConnectionIDUpdated = {
        owner: Owner
-
        ? old: ConnectionID
        ? new: ConnectionID
    }
@@ -528,8 +536,10 @@ Table of Contents
    Definition:
 
    ConnectivityConnectionStateUpdated = {
-       ? old: ConnectionState / SimpleConnectionState
-       new: ConnectionState / SimpleConnectionState
+       ? old: ConnectionState /
+              SimpleConnectionState
+       new: ConnectionState /
+            SimpleConnectionState
    }
 
    ConnectionState =
@@ -788,30 +798,25 @@ Table of Contents
        ? retry_source_connection_id: ConnectionID
        ? stateless_reset_token: StatelessResetToken
        ? disable_active_migration: bool
-
        ? max_idle_timeout: uint64
        ? max_udp_payload_size: uint32
        ? ack_delay_exponent: uint16
        ? max_ack_delay: uint16
        ? active_connection_id_limit: uint32
-
        ? initial_max_data: uint64
        ? initial_max_stream_data_bidi_local: uint64
        ? initial_max_stream_data_bidi_remote: uint64
        ? initial_max_stream_data_uni: uint64
        ? initial_max_streams_bidi: uint64
        ? initial_max_streams_uni: uint64
-
        ? preferred_address: PreferredAddress
    }
 
    PreferredAddress = {
        ip_v4: IPAddress
        ip_v6: IPAddress
-
        port_v4: uint16
        port_v6: uint16
-
        connection_id: ConnectionID
        stateless_reset_token: StatelessResetToken
    }
@@ -838,11 +843,9 @@ Table of Contents
 
    TransportParametersRestored = {
        ? disable_active_migration: bool
-
        ? max_idle_timeout: uint64
        ? max_udp_payload_size: uint32
        ? active_connection_id_limit: uint32
-
        ? initial_max_data: uint64
        ? initial_max_stream_data_bidi_local: uint64
        ? initial_max_stream_data_bidi_remote: uint64,
@@ -865,9 +868,7 @@ Table of Contents
 
    TransportPacketSent = {
        header: PacketHeader
-
        ? frames: [* $QuicFrame]
-
        ? is_coalesced: bool .default false
 
        ; only if header.packet_type === "retry"
@@ -879,12 +880,9 @@ Table of Contents
 
        ; only if header.packet_type === "version_negotiation"
        ? supported_versions: [+ QuicVersion]
-
        ? raw: RawInfo
        ? datagram_id: uint32
-
        ? is_mtu_probe_packet: bool .default false
-
        ? trigger:
          ; draft-23 5.1.1
          "retransmit_reordered" /
@@ -916,9 +914,7 @@ Table of Contents
 
    TransportPacketReceived = {
        header: PacketHeader
-
        ? frames: [* $QuicFrame]
-
        ? is_coalesced: bool .default false
 
        ; only if header.packet_type === "retry"
@@ -930,13 +926,10 @@ Table of Contents
 
        ; only if header.packet_type === "version_negotiation"
        ? supported_versions: [+ QuicVersion]
-
        ? raw: RawInfo
        ? datagram_id: uint32
-
        ? trigger:
-           ; if packet was buffered because
-           ; it couldn't be decrypted before
+           ; if packet was buffered because it couldn't be decrypted before
            "keys_available"
    }
 
@@ -962,13 +955,12 @@ Table of Contents
    Definition:
 
    TransportPacketDropped = {
+
        ; Primarily packet_type should be filled here,
        ; as other fields might not be decrypteable or parseable
        ? header: PacketHeader
-
        ? raw: RawInfo
        ? datagram_id: uint32
-
        ? details: {* text => any}
        ? trigger:
            "internal_error" /
@@ -1019,10 +1011,8 @@ Table of Contents
        ; primarily packet_type and possible packet_number should be
        ; filled here as other elements might not be available yet
        ? header: PacketHeader
-
        ? raw: RawInfo
        ? datagram_id: uint32
-
        ? trigger:
            ; indicates the parser cannot keep up, temporarily buffers
            ; packet for later processing
@@ -1054,7 +1044,6 @@ Table of Contents
 
    TransportPacketsAcked = {
        ? packet_number_space: PacketNumberSpace
-
        ? packet_numbers: [+ uint64]
    }
 
@@ -1075,13 +1064,13 @@ Table of Contents
    Definition:
 
    TransportDatagramsSent = {
+
        ; to support passing multiple at once
        ? count: uint16
 
        ; The RawInfo fields do not include the UDP headers,
        ; only the UDP payload
        ? raw: [+ RawInfo]
-
        ? datagram_ids: [+ uint32]
    }
 
@@ -1110,13 +1099,13 @@ Table of Contents
    Definition:
 
    TransportDatagramsReceived = {
+
        ; to support passing multiple at once
        ? count: uint16
 
        ; The RawInfo fields do not include the UDP headers,
        ; only the UDP payload
        ? raw: [+ RawInfo]
-
        ? datagram_ids: [+ uint32]
    }
 
@@ -1155,18 +1144,18 @@ Table of Contents
 
    Definition:
 
-   StreamType = "unidirectional" / "bidirectional"
+   StreamType = "unidirectional" /
+                "bidirectional"
 
    TransportStreamStateUpdated = {
        stream_id: uint64
 
        ; mainly useful when opening the stream
        ? stream_type: StreamType
-
        ? old: StreamState
        new: StreamState
-
-       ? stream_side: "sending" / "receiving"
+       ? stream_side: "sending" /
+                      "receiving"
    }
 
    StreamState =
@@ -1176,23 +1165,19 @@ Table of Contents
        "half_closed_local" /
        "half_closed_remote" /
        "closed" /
-
        ; sending-side stream states, draft-23 3.1.
        "ready" /
        "send" /
        "data_sent" /
        "reset_sent" /
        "reset_received" /
-
        ; receive-side stream states, draft-23 3.2.
        "receive" /
        "size_known" /
        "data_read" /
        "reset_read" /
-
        ; both-side states
        "data_received" /
-
        ; qlog-defined:
        ; memory actually freed
        "destroyed"
@@ -1246,7 +1231,6 @@ Table of Contents
 
    TransportFramesProcessed = {
        frames: [* $QuicFrame]
-
        ? packet_number: uint64
    }
 
@@ -1279,10 +1263,16 @@ Table of Contents
 
        ; byte length of the moved data
        ? length: uint64
-
-       ? from: "user" / "application" / "transport" / "network" / text
-       ? to: "user" / "application" / "transport" / "network" / text
-
+       ? from: "user" /
+               "application" /
+               "transport" /
+               "network" /
+               text
+       ? to: "user" /
+             "application" /
+             "transport" /
+             "network" /
+             text
        ? raw: RawInfo
    }
 
@@ -1301,13 +1291,11 @@ Table of Contents
 
    SecurityKeyUpdated = {
        key_type: KeyType
-
        ? old: hexstring
-       ? new: hexstring
+       new: hexstring
 
        ; needed for 1RTT key updates
        ? generation: uint32
-
        ? trigger:
            ; (e.g., initial, handshake and 0-RTT keys
            ; are generated by TLS)
@@ -1330,7 +1318,6 @@ Table of Contents
 
        ; needed for 1RTT key updates
        ? generation: uint32
-
        ? trigger:
            ; (e.g., initial, handshake and 0-RTT keys
            ; are generated by TLS)
@@ -1362,6 +1349,7 @@ Table of Contents
    Definition:
 
    RecoveryParametersSet = {
+
        ; Loss detection, see recovery draft-23, Appendix A.2
        ; in amount of packets
        ? reordering_threshold: uint16
@@ -1411,13 +1399,13 @@ Table of Contents
    Definition:
 
    RecoveryMetricsUpdated = {
+
        ; Loss detection, see recovery draft-23, Appendix A.3
        ; all following rtt fields are expressed in ms
        ? min_rtt: float32
        ? smoothed_rtt: float32
        ? latest_rtt: float32
        ? rtt_variance: float32
-
        ? pto_count: uint16
 
        ; Congestion control, Appendix B.2.
@@ -1470,7 +1458,6 @@ Table of Contents
    RecoveryCongestionStateUpdated = {
        ? old: text
        new: text
-
        ? trigger:
            "persistent_congestion" /
            "ECN"
@@ -1505,11 +1492,14 @@ Table of Contents
    Definition:
 
    RecoveryLossTimerUpdated = {
-       ; called "mode" in draft-23 A.9.
-       ? timer_type: "ack" / "pto"
-       ? packet_number_space: PacketNumberSpace
 
-       event_type: "set" / "expired" / "cancelled"
+       ; called "mode" in draft-23 A.9.
+       ? timer_type: "ack" /
+                     "pto"
+       ? packet_number_space: PacketNumberSpace
+       event_type: "set" /
+                   "expired" /
+                   "cancelled"
 
        ; if event_type === "set": delta time is in ms from
        ; this event's timestamp until when the timer will trigger
@@ -1534,15 +1524,14 @@ Table of Contents
    Definition:
 
    RecoveryPacketLost = {
+
        ; should include at least the packet_type and packet_number
        ? header: PacketHeader
 
        ; not all implementations will keep track of full
        ; packets, so these are optional
        ? frames: [* $QuicFrame]
-
        ? is_mtu_probe_packet: bool .default false
-
        ? trigger:
            "reordering_threshold" /
            "time_threshold" /
@@ -1604,7 +1593,8 @@ Table of Contents
 
 8.3.  Owner
 
-   Owner = "local" / "remote"
+   Owner = "local" /
+           "remote"
 
                         Figure 34: Owner definition
 
@@ -1614,24 +1604,34 @@ Table of Contents
    ; (e.g., "127.0.0.1" for v4 or
    ; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
    ; use a raw byte-form (as the string forms can be ambiguous)
-   IPAddress = text / hexstring
+   IPAddress = text /
+               hexstring
 
                       Figure 35: IPAddress definition
 
-   IPVersion = "v4" / "v6"
+   IPVersion = "v4" /
+               "v6"
 
                       Figure 36: IPVersion definition
 
 8.5.  PacketType
 
-   PacketType = "initial" / "handshake" / "0RTT" / "1RTT" / "retry" /
-       "version_negotiation" / "stateless_reset" / "unknown"
+   PacketType = "initial" /
+                "handshake" /
+                "0RTT" /
+                "1RTT" /
+                "retry" /
+                "version_negotiation" /
+                "stateless_reset" /
+                "unknown"
 
                       Figure 37: PacketType definition
 
 8.6.  PacketNumberSpace
 
-   PacketNumberSpace = "initial" / "handshake" / "application_data"
+   PacketNumberSpace = "initial" /
+                       "handshake" /
+                       "application_data"
 
                   Figure 38: PacketNumberSpace definition
 
@@ -1670,14 +1670,14 @@ Table of Contents
 8.8.  Token
 
    Token = {
-       ? type: "retry" / "resumption"
+       ? type: "retry" /
+               "resumption"
 
        ; decoded fields included in the token
        ; (typically: peer's IP address, creation time)
        ? details: {
          * text => any
        }
-
        ? raw: RawInfo
    }
 
@@ -1702,11 +1702,14 @@ Table of Contents
 
 8.10.  KeyType
 
-   KeyType =
-       "server_initial_secret" / "client_initial_secret" /
-       "server_handshake_secret" / "client_handshake_secret" /
-       "server_0rtt_secret" / "client_0rtt_secret" /
-       "server_1rtt_secret" / "client_1rtt_secret"
+   KeyType = "server_initial_secret" /
+             "client_initial_secret" /
+             "server_handshake_secret" /
+             "client_handshake_secret" /
+             "server_0rtt_secret" /
+             "client_0rtt_secret" /
+             "server_1rtt_secret" /
+             "client_1rtt_secret"
 
                        Figure 42: KeyType definition
 
@@ -1725,14 +1728,27 @@ Table of Contents
 
    The QUIC frame types defined in this document are as follows:
 
-   QuicBaseFrames /=
-     PaddingFrame / PingFrame / AckFrame / ResetStreamFrame /
-     StopSendingFrame / CryptoFrame / NewTokenFrame / StreamFrame /
-     MaxDataFrame / MaxStreamDataFrame / MaxStreamsFrame /
-     DataBlockedFrame / StreamDataBlockedFrame / StreamsBlockedFrame /
-     NewConnectionIDFrame / RetireConnectionIDFrame /
-     PathChallengeFrame / PathResponseFrame / ConnectionCloseFrame /
-     HandshakeDoneFrame / UnknownFrame
+   QuicBaseFrames /= PaddingFrame /
+                     PingFrame /
+                     AckFrame /
+                     ResetStreamFrame /
+                     StopSendingFrame /
+                     CryptoFrame /
+                     NewTokenFrame /
+                     StreamFrame /
+                     MaxDataFrame /
+                     MaxStreamDataFrame /
+                     MaxStreamsFrame /
+                     DataBlockedFrame /
+                     StreamDataBlockedFrame /
+                     StreamsBlockedFrame /
+                     NewConnectionIDFrame /
+                     RetireConnectionIDFrame /
+                     PathChallengeFrame /
+                     PathResponseFrame /
+                     ConnectionCloseFrame /
+                     HandshakeDoneFrame /
+                     UnknownFrame
 
    $QuicFrame /= QuicBaseFrames
 
@@ -1814,9 +1830,9 @@ Table of Contents
 
    ResetStreamFrame = {
        frame_type: "reset_stream"
-
        stream_id: uint64
-       error_code: $ApplicationError / uint32
+       error_code: $ApplicationError /
+                   uint32
 
        ; in bytes
        final_size: uint64
@@ -1832,9 +1848,9 @@ Table of Contents
 
    StopSendingFrame = {
        frame_type: "stop_sending"
-
        stream_id: uint64
-       error_code: $ApplicationError / uint32
+       error_code: $ApplicationError /
+                   uint32
 
        ; total frame length, including frame header
        ? length: uint32
@@ -1847,10 +1863,8 @@ Table of Contents
 
    CryptoFrame = {
        frame_type: "crypto"
-
        offset: uint64
        length: uint64
-
        ? payload_length: uint32
    }
 
@@ -1860,7 +1874,6 @@ Table of Contents
 
    NewTokenFrame = {
      frame_type: "new_token"
-
      token: Token
    }
 
@@ -1870,7 +1883,6 @@ Table of Contents
 
    StreamFrame = {
        frame_type: "stream"
-
        stream_id: uint64
 
        ; These two MUST always be set
@@ -1882,7 +1894,6 @@ Table of Contents
        ; but MUST only be set if the value is true
        ; if absent, the value MUST be assumed to be false
        ? fin: bool .default false
-
        ? raw: RawInfo
    }
 
@@ -1892,7 +1903,6 @@ Table of Contents
 
    MaxDataFrame = {
      frame_type: "max_data"
-
      maximum: uint64
    }
 
@@ -1902,7 +1912,6 @@ Table of Contents
 
    MaxStreamDataFrame = {
      frame_type: "max_stream_data"
-
      stream_id: uint64
      maximum: uint64
    }
@@ -1913,7 +1922,6 @@ Table of Contents
 
    MaxStreamsFrame = {
      frame_type: "max_streams"
-
      stream_type: StreamType
      maximum: uint64
    }
@@ -1924,7 +1932,6 @@ Table of Contents
 
    DataBlockedFrame = {
      frame_type: "data_blocked"
-
      limit: uint64
    }
 
@@ -1934,7 +1941,6 @@ Table of Contents
 
    StreamDataBlockedFrame = {
      frame_type: "stream_data_blocked"
-
      stream_id: uint64
      limit: uint64
    }
@@ -1945,7 +1951,6 @@ Table of Contents
 
    StreamsBlockedFrame = {
      frame_type: "streams_blocked"
-
      stream_type: StreamType
      limit: uint64
    }
@@ -1956,7 +1961,6 @@ Table of Contents
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
-
      sequence_number: uint32
      retire_prior_to: uint32
 
@@ -1964,7 +1968,6 @@ Table of Contents
      ; connection_id cannot be logged
      ? connection_id_length: uint8
      connection_id: ConnectionID
-
      ? stateless_reset_token: StatelessResetToken
    }
 
@@ -1974,7 +1977,6 @@ Table of Contents
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
-
      sequence_number: uint32
    }
 
@@ -2008,19 +2010,22 @@ Table of Contents
    encoding.  This is useful because some error types are spread out
    over a range of codes (e.g., QUIC's crypto_error).
 
-   ErrorSpace = "transport" / "application"
+   ErrorSpace = "transport" /
+                "application"
 
    ConnectionCloseFrame = {
        frame_type: "connection_close"
-
        ? error_space: ErrorSpace
-       ? error_code: TransportError / $ApplicationError / uint32
+       ? error_code: TransportError /
+                     $ApplicationError /
+                     uint32
        ? error_code_value: uint64
        ? reason: text
 
        ; For known frame types, the appropriate "frame_type" string
        ; For unknown frame types, the hex encoded frame identifier value
-       ? trigger_frame_type: uint64 / text
+       ? trigger_frame_type: uint64 /
+                             text
    }
 
                  Figure 63: ConnectionCloseFrame definition
@@ -2041,7 +2046,6 @@ Table of Contents
    UnknownFrame = {
        frame_type: "unknown"
        frame_type_value: uint64
-
        ? raw: RawInfo
    }
 
@@ -2049,16 +2053,25 @@ Table of Contents
 
 8.11.22.  TransportError
 
-   TransportError = "no_error" / "internal_error" /
-       "connection_refused" / "flow_control_error" /
-       "stream_limit_error" / "stream_state_error" /
-       "final_size_error" / "frame_encoding_error" /
-       "transport_parameter_error" / "connection_id_limit_error" /
-       "protocol_violation" / "invalid_token" / "application_error" /
-       "crypto_buffer_exceeded" / "key_update_error" /
-       "aead_limit_reached" / "no_viable_path"
-       ; there is no value to reflect CRYPTO_ERROR
-       ; use the CryptoError type instead
+   TransportError = "no_error" /
+                    "internal_error" /
+                    "connection_refused" /
+                    "flow_control_error" /
+                    "stream_limit_error" /
+                    "stream_state_error" /
+                    "final_size_error" /
+                    "frame_encoding_error" /
+                    "transport_parameter_error" /
+                    "connection_id_limit_error" /
+                    "protocol_violation" /
+                    "invalid_token" /
+                    "application_error" /
+                    "crypto_buffer_exceeded" /
+                    "key_update_error" /
+                    "aead_limit_reached" /
+                    "no_viable_path"
+                    ; there is no value to reflect CRYPTO_ERROR
+                    ; use the CryptoError type instead
 
                     Figure 66: TransportError definition
 
@@ -2075,7 +2088,8 @@ Table of Contents
    ApplicationError strings MUST do so by extending the
    $ApplicationError socket as such:
 
-   $ApplicationError /= "new_error_name" / "another_new_error_name"
+   $ApplicationError /= "new_error_name" /
+                        "another_new_error_name"
 
 8.11.24.  CryptoError
 
