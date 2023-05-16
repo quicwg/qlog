@@ -105,7 +105,9 @@ Table of Contents
      7.4.  QPACKTableType
    8.  Security and Privacy Considerations
    9.  IANA Considerations
-   10. Normative References
+   10. References
+     10.1.  Normative References
+     10.2.  Informative References
    Appendix A.  Change Log
      A.1.  Since draft-ietf-quic-qlog-h3-events-03:
      A.2.  Since draft-ietf-quic-qlog-h3-events-02:
@@ -241,6 +243,11 @@ Table of Contents
 
       Figure 1: HTTPEvents definition and ProtocolEventBody extension
 
+   HTTP events are logged when a certain condition happens at the
+   application layer, and there isn't always a one to one mapping
+   between HTTP and QUIC events.  The exchange of data between the HTTP
+   and QUIC layer is logged via the "data_moved" event in [QLOG-QUIC].
+
 4.1.  parameters_set
 
    Importance: Base
@@ -251,17 +258,14 @@ Table of Contents
    at different times during the connection, so there can be several
    instances of this event with different fields set.
 
-   Note that some settings have two variations (one set locally, one
-   requested by the remote peer).  This is reflected in the "owner"
-   field.  As such, this field MUST be correct for all settings included
-   a single event instance.  If you need to log settings from two sides,
-   you MUST emit two separate event instances.
+   The "owner" field reflects how Settings are exchanged on a
+   connection.  Sent settings have the value "local" and received
+   settings have the value "received".  A qlog can have multiple
+   instances of this event.
 
-   Note: The CDDL unwrap operator (~) makes HTTPParameters into a re-
-   usable list of fields.  The unwrap operator copies the fields from
-   the referenced type into the target type directly, extending the
-   target with the unwrapped fields.  TODO: explain this better +
-   provide reference and maybe an example.
+   As a reminder the CDDL unwrap operator (~), see [RFC8610]), copies
+   the fields from the referenced type (HTTPParameters) into the target
+   type directly, extending the target with the unwrapped fields.
 
    Definition:
 
@@ -286,14 +290,10 @@ Table of Contents
 
                    Figure 2: HTTPParametersSet definition
 
-   Note: enabling server push is not explicitly done in HTTP/3 by use of
-   a setting or parameter.  Instead, it is communicated by use of the
-   MAX_PUSH_ID frame, which should be logged using the frame_created and
-   frame_parsed events below.
-
-   Additionally, this event can contain any number of unspecified
-   fields.  This is to reflect setting of for example unknown (greased)
-   settings or parameters of (proprietary) extensions.
+   This event can contain any number of unspecified fields.  This allows
+   for representation of reserved settings (aka grease) or ad-hoc
+   support for extension settings that do not have a related qlog schema
+   definition.
 
 4.2.  parameters_restored
 
@@ -312,9 +312,8 @@ Table of Contents
 
                 Figure 3: HTTPParametersRestored definition
 
-   Note that, like for parameters_set above, this event can contain any
-   number of unspecified fields to allow for additional and custom
-   settings.
+   Similar to HTTPParametersSet this event can contain any number of
+   unspecified fields to allow for reserved or extension settings.
 
 4.3.  stream_type_set
 
@@ -368,12 +367,6 @@ Table of Contents
    }
 
                    Figure 5: HTTPFrameCreated definition
-
-   Note: in HTTP/3, DATA frames can have arbitrarily large lengths to
-   reduce frame header overhead.  As such, DATA frames can span many
-   QUIC packets and can be created in a streaming fashion.  In this
-   case, the frame_created event is emitted once for the frame header,
-   and further streamed data is indicated using the data_moved event.
 
 4.5.  frame_parsed
 
@@ -1006,7 +999,9 @@ Table of Contents
 
    TBD
 
-10.  Normative References
+10.  References
+
+10.1.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -1044,6 +1039,14 @@ Table of Contents
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+10.2.  Informative References
+
+   [RFC8610]  Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
+              Definition Language (CDDL): A Notational Convention to
+              Express Concise Binary Object Representation (CBOR) and
+              JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
+              June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
 
 Appendix A.  Change Log
 

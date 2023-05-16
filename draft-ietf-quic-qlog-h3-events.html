@@ -1323,7 +1323,15 @@ level schema defined in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN<
             <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
-            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.1">
+                <p id="section-toc.1-1.10.2.1.1"><a href="#section-10.1" class="auto internal xref">10.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10.2.2">
+                <p id="section-toc.1-1.10.2.2.1"><a href="#section-10.2" class="auto internal xref">10.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
             <p id="section-toc.1-1.11.1"><a href="#appendix-A" class="auto internal xref">Appendix A</a>.  <a href="#name-change-log" class="internal xref">Change Log</a></p>
@@ -1579,6 +1587,10 @@ $ProtocolEventBody /= HTTPEvents
 <a href="#name-httpevents-definition-and-p" class="selfRef">HTTPEvents definition and ProtocolEventBody extension</a>
         </figcaption></figure>
 </div>
+<p id="section-4-3">HTTP events are logged when a certain condition happens at the application layer,
+and there isn't always a one to one mapping between HTTP and QUIC events.
+The exchange of data between the HTTP and QUIC layer is logged via the
+"data_moved" event in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-4-3" class="pilcrow">¶</a></p>
 <div id="http-parametersset">
 <section id="section-4.1">
         <h3 id="name-parameters_set">
@@ -1589,14 +1601,12 @@ $ProtocolEventBody /= HTTPEvents
 the HTTP/3 SETTINGS frame. All these parameters are typically set once and never
 change. However, they are typically set at different times during the connection,
 so there can be several instances of this event with different fields set.<a href="#section-4.1-2" class="pilcrow">¶</a></p>
-<p id="section-4.1-3">Note that some settings have two variations (one set locally, one requested by the
-remote peer). This is reflected in the "owner" field. As such, this field <span class="bcp14">MUST</span> be
-correct for all settings included a single event instance. If you need to log
-settings from two sides, you <span class="bcp14">MUST</span> emit two separate event instances.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
-<p id="section-4.1-4">Note: The CDDL unwrap operator (~) makes HTTPParameters into a re-usable list
-of fields. The unwrap operator copies the fields from the referenced type into
-the target type directly, extending the target with the unwrapped fields. TODO:
-explain this better + provide reference and maybe an example.<a href="#section-4.1-4" class="pilcrow">¶</a></p>
+<p id="section-4.1-3">The "owner" field reflects how Settings are exchanged on a connection. Sent
+settings have the value "local" and received settings have the value
+"received". A qlog can have multiple instances of this event.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
+<p id="section-4.1-4">As a reminder the CDDL unwrap operator (~), see <span>[<a href="#RFC8610" class="cite xref">RFC8610</a>]</span>), copies the fields
+from the referenced type (HTTPParameters) into the target type directly, extending the
+target with the unwrapped fields.<a href="#section-4.1-4" class="pilcrow">¶</a></p>
 <p id="section-4.1-5">Definition:<a href="#section-4.1-5" class="pilcrow">¶</a></p>
 <span id="name-httpparametersset-definitio"></span><div id="http-parametersset-def">
 <figure id="figure-2">
@@ -1626,12 +1636,9 @@ HTTPParameters = {
 <a href="#name-httpparametersset-definitio" class="selfRef">HTTPParametersSet definition</a>
           </figcaption></figure>
 </div>
-<p id="section-4.1-7">Note: enabling server push is not explicitly done in HTTP/3 by use of a setting or
-parameter. Instead, it is communicated by use of the MAX_PUSH_ID frame, which
-should be logged using the frame_created and frame_parsed events below.<a href="#section-4.1-7" class="pilcrow">¶</a></p>
-<p id="section-4.1-8">Additionally, this event can contain any number of unspecified fields. This is to
-reflect setting of for example unknown (greased) settings or parameters of
-(proprietary) extensions.<a href="#section-4.1-8" class="pilcrow">¶</a></p>
+<p id="section-4.1-7">This event can contain any number of unspecified fields. This allows for
+representation of reserved settings (aka grease) or ad-hoc support for
+extension settings that do not have a related qlog schema definition.<a href="#section-4.1-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="http-parametersrestored">
@@ -1657,8 +1664,8 @@ HTTPParametersRestored = {
 <a href="#name-httpparametersrestored-defi" class="selfRef">HTTPParametersRestored definition</a>
           </figcaption></figure>
 </div>
-<p id="section-4.2-5">Note that, like for parameters_set above, this event can contain any number of
-unspecified fields to allow for additional and custom settings.<a href="#section-4.2-5" class="pilcrow">¶</a></p>
+<p id="section-4.2-5">Similar to HTTPParametersSet this event can contain any number of unspecified
+fields to allow for reserved or extension settings.<a href="#section-4.2-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="http-streamtypeset">
@@ -1728,11 +1735,6 @@ HTTPFrameCreated = {
 <a href="#name-httpframecreated-definition" class="selfRef">HTTPFrameCreated definition</a>
           </figcaption></figure>
 </div>
-<p id="section-4.4-5">Note: in HTTP/3, DATA frames can have arbitrarily large lengths to reduce frame
-header overhead. As such, DATA frames can span many QUIC packets and can be
-created in a streaming fashion. In this case, the frame_created event is emitted
-once for the frame header, and further streamed data is indicated using the
-data_moved event.<a href="#section-4.4-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="http-frameparsed">
@@ -2781,39 +2783,55 @@ document as well.<a href="#section-8-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <section id="section-10">
-      <h2 id="name-normative-references">
-<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      <h2 id="name-references">
+<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-references" class="section-name selfRef">References</a>
       </h2>
+<section id="section-10.1">
+        <h3 id="name-normative-references">
+<a href="#section-10.1" class="section-number selfRef">10.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
 <dl class="references">
 <dt id="CDDL">[CDDL]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Vigano, C.</span>, and <span class="refAuthor">C. Bormann</span>, <span class="refTitle">"Concise Data Definition Language (CDDL): A Notational Convention to Express Concise Binary Object Representation (CBOR) and JSON Data Structures"</span>, <span class="seriesInfo">RFC 8610</span>, <span class="seriesInfo">DOI 10.17487/RFC8610</span>, <time datetime="2019-06" class="refDate">June 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8610">https://www.rfc-editor.org/rfc/rfc8610</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC9114">[HTTP/3]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Bishop, M., Ed.</span>, <span class="refTitle">"HTTP/3"</span>, <span class="seriesInfo">RFC 9114</span>, <span class="seriesInfo">DOI 10.17487/RFC9114</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9114">https://www.rfc-editor.org/rfc/rfc9114</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QLOG-MAIN">[QLOG-MAIN]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Main logging schema for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-main-schema-05</span>, <time datetime="2023-02-13" class="refDate">13 February 2023</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-05">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-05</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QLOG-QUIC">[QLOG-QUIC]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"QUIC event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-quic-events-04</span>, <time datetime="2023-02-13" class="refDate">13 February 2023</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-04">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-04</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QPACK">[QPACK]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Krasic, C.</span>, <span class="refAuthor">Bishop, M.</span>, and <span class="refAuthor">A. Frindell, Ed.</span>, <span class="refTitle">"QPACK: Field Compression for HTTP/3"</span>, <span class="seriesInfo">RFC 9204</span>, <span class="seriesInfo">DOI 10.17487/RFC9204</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9204">https://www.rfc-editor.org/rfc/rfc9204</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
-    <dd>
+      <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
+</section>
+<section id="section-10.2">
+        <h3 id="name-informative-references">
+<a href="#section-10.2" class="section-number selfRef">10.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC8610">[RFC8610]</dt>
+      <dd>
+<span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Vigano, C.</span>, and <span class="refAuthor">C. Bormann</span>, <span class="refTitle">"Concise Data Definition Language (CDDL): A Notational Convention to Express Concise Binary Object Representation (CBOR) and JSON Data Structures"</span>, <span class="seriesInfo">RFC 8610</span>, <span class="seriesInfo">DOI 10.17487/RFC8610</span>, <time datetime="2019-06" class="refDate">June 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8610">https://www.rfc-editor.org/rfc/rfc8610</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
 </section>
 <div id="change-log">
 <section id="appendix-A">
