@@ -634,6 +634,7 @@ Definition:
 
 ~~~ cddl
 QPACKDynamicTableUpdate = {
+
     ; local = the encoder's dynamic table
     ; remote = the decoder's dynamic table
     owner: Owner
@@ -708,6 +709,7 @@ Definition:
 
 ~~~ cddl
 QPACKInstructionCreated = {
+
     ; see definition in appendix
     instruction: QPACKInstruction
     ? raw: RawInfo
@@ -728,6 +730,7 @@ Definition:
 
 ~~~ cddl
 QPACKInstructionParsed = {
+
     ; see QPACKInstruction definition in appendix
     instruction: QPACKInstruction
     ? raw: RawInfo
