@@ -313,6 +313,7 @@ Definition:
 
 ~~~ cddl
 ConnectivityConnectionClosed = {
+
     ; which side closed the connection
     ? owner: Owner
     ? connection_code: TransportError /
@@ -808,6 +809,7 @@ Definition:
 
 ~~~ cddl
 TransportPacketBuffered = {
+
     ; primarily packet_type and possible packet_number should be
     ; filled here as other elements might not be available yet
     ? header: PacketHeader
@@ -919,6 +921,7 @@ Definition:
 
 ~~~ cddl
 TransportDatagramDropped = {
+
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: RawInfo
@@ -1042,7 +1045,7 @@ turn can help identify bottlenecks or scheduling problems.
 
 Definition:
 
-~~~~ cddl
+~~~ cddl
 TransportDataMoved = {
     ? stream_id: uint64
     ? offset: uint64
@@ -1061,7 +1064,7 @@ TransportDataMoved = {
           text
     ? raw: RawInfo
 }
-~~~~
+~~~
 {: #transport-datamoved-def title="TransportDataMoved definition"}
 
 # Security Events {#sec-ev}
@@ -1415,6 +1418,7 @@ PacketNumberSpace = "initial" /
 ~~~ cddl
 PacketHeader = {
     packet_type: PacketType
+
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
     ? packet_number: uint64
