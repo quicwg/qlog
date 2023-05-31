@@ -134,7 +134,7 @@ the QUIC specifications to qlog, making it easier for users to interpret.
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
 A single qlog event trace is typically associated with a single QUIC connection.
-However, for several types of events (for example, a {{transport-packetdropped}}
+However, for several types of events (for example, a {{quic-packetdropped}}
 event with trigger value of "connection_unknown"), it can be impossible to tie
 them to a specific QUIC connection, especially on the server.
 
@@ -154,7 +154,7 @@ implementation. Some options include:
 
 QUIC connections consist of different phases and interaction events. In order to
 model this, QUIC event types are divided into general categories: connectivity
-({{conn-ev}}), security ({{sec-ev}}), transport {{trans-ev}}, and recovery
+({{conn-ev}}), security ({{sec-ev}}), quic {{quic-ev}}, and recovery
 {{rec-ev}}.
 
 As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
@@ -172,21 +172,21 @@ this specification.
 | connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
 | connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
 | connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
-| transport:version_information         | Core       | {{transport-versioninformation}} |
-| transport:alpn_information            | Core       | {{transport-alpninformation}} |
-| transport:parameters_set              | Core       | {{transport-parametersset}} |
-| transport:parameters_restored         | Base       | {{transport-parametersrestored}} |
-| transport:packet_sent                 | Core       | {{transport-packetsent}} |
-| transport:packet_received             | Core       | {{transport-packetreceived}} |
-| transport:packet_dropped              | Base       | {{transport-packetdropped}} |
-| transport:packet_buffered             | Base       | {{transport-packetbuffered}} |
-| transport:packets_acked               | Extra      | {{transport-packetsacked}} |
-| transport:datagrams_sent              | Extra      | {{transport-datagramssent}} |
-| transport:datagrams_received          | Extra      | {{transport-datagramsreceived}} |
-| transport:datagram_dropped            | Extra      | {{transport-datagramdropped}} |
-| transport:stream_state_updated        | Base       | {{transport-streamstateupdated}} |
-| transport:frames_processed            | Extra      | {{transport-framesprocessed}} |
-| transport:data_moved                  | Base       | {{transport-datamoved}} |
+| quic:version_information         | Core       | {{quic-versioninformation}} |
+| quic:alpn_information            | Core       | {{quic-alpninformation}} |
+| quic:parameters_set              | Core       | {{quic-parametersset}} |
+| quic:parameters_restored         | Base       | {{quic-parametersrestored}} |
+| quic:packet_sent                 | Core       | {{quic-packetsent}} |
+| quic:packet_received             | Core       | {{quic-packetreceived}} |
+| quic:packet_dropped              | Base       | {{quic-packetdropped}} |
+| quic:packet_buffered             | Base       | {{quic-packetbuffered}} |
+| quic:packets_acked               | Extra      | {{quic-packetsacked}} |
+| quic:datagrams_sent              | Extra      | {{quic-datagramssent}} |
+| quic:datagrams_received          | Extra      | {{quic-datagramsreceived}} |
+| quic:datagram_dropped            | Extra      | {{quic-datagramdropped}} |
+| quic:stream_state_updated        | Base       | {{quic-streamstateupdated}} |
+| quic:frames_processed            | Extra      | {{quic-framesprocessed}} |
+| quic:data_moved                  | Base       | {{quic-datamoved}} |
 | security:key_updated                  | Base       | {{security-keyupdated}} |
 | security:key_discarded                | Base       | {{security-keydiscarded}} |
 | recovery:parameters_set               | Base       | {{recovery-parametersset}} |
@@ -210,21 +210,21 @@ QuicEvents = ConnectivityServerListening /
              ConnectivityMTUUpdated /
              SecurityKeyUpdated /
              SecurityKeyDiscarded /
-             TransportVersionInformation /
-             TransportALPNInformation /
-             TransportParametersSet /
-             TransportParametersRestored /
-             TransportPacketSent /
-             TransportPacketReceived /
-             TransportPacketDropped /
-             TransportPacketBuffered /
-             TransportPacketsAcked /
-             TransportDatagramsSent /
-             TransportDatagramsReceived /
-             TransportDatagramDropped /
-             TransportStreamStateUpdated /
-             TransportFramesProcessed /
-             TransportDataMoved /
+             QUICVersionInformation /
+             QUICALPNInformation /
+             QUICParametersSet /
+             QUICParametersRestored /
+             QUICPacketSent /
+             QUICPacketReceived /
+             QUICPacketDropped /
+             QUICPacketBuffered /
+             QUICPacketsAcked /
+             QUICDatagramsSent /
+             QUICDatagramsReceived /
+             QUICDatagramDropped /
+             QUICStreamStateUpdated /
+             QUICFramesProcessed /
+             QUICDataMoved /
              RecoveryParametersSet /
              RecoveryMetricsUpdated /
              RecoveryCongestionStateUpdated /
@@ -496,9 +496,9 @@ This event indicates that the estimated Path MTU was updated. This happens as
 part of the Path MTU discovery process.
 
 
-# Transport events  {#trans-ev}
+# QUIC events  {#quic-ev}
 
-## version_information {#transport-versioninformation}
+## version_information {#quic-versioninformation}
 Importance: Core
 
 QUIC endpoints each have their own list of of QUIC versions they support. The
@@ -511,13 +511,13 @@ versions at an endpoint without actual version negotiation needing to happen.
 Definition:
 
 ~~~ cddl
-TransportVersionInformation = {
+QUICVersionInformation = {
     ? server_versions: [+ QuicVersion]
     ? client_versions: [+ QuicVersion]
     ? chosen_version: QuicVersion
 }
 ~~~
-{: #transport-versioninformation-def title="TransportVersionInformation definition"}
+{: #quic-versioninformation-def title="QUICVersionInformation definition"}
 
 Intended use:
 
@@ -534,7 +534,7 @@ Intended use:
   the version negotiation packet and chosen_version to the version it will use for
   the next initial packet
 
-## alpn_information {#transport-alpninformation}
+## alpn_information {#quic-alpninformation}
 Importance: Core
 
 QUIC implementations each have their own list of application level protocols and
@@ -547,13 +547,13 @@ connection is closed.
 Definition:
 
 ~~~ cddl
-TransportALPNInformation = {
+QUICALPNInformation = {
     ? server_alpns: [* text]
     ? client_alpns: [* text]
     ? chosen_alpn: text
 }
 ~~~
-{: #transport-alpninformation-def title="TransportALPNInformation definition"}
+{: #quic-alpninformation-def title="QUICALPNInformation definition"}
 
 Intended use:
 
@@ -567,7 +567,7 @@ Intended use:
   receipt of the server initial to log this event with both client_alpns and
   chosen_alpn set.
 
-## parameters_set {#transport-parametersset}
+## parameters_set {#quic-parametersset}
 Importance: Core
 
 This event groups settings from several different sources (transport parameters,
@@ -593,7 +593,7 @@ event to indicate the updated values, as normal.
 Definition:
 
 ~~~ cddl
-TransportParametersSet = {
+QUICParametersSet = {
     ? owner: Owner
 
     ; true if valid session ticket was received
@@ -634,13 +634,13 @@ PreferredAddress = {
     stateless_reset_token: StatelessResetToken
 }
 ~~~
-{: #transport-parametersset-def title="TransportParametersSet definition"}
+{: #quic-parametersset-def title="QUICParametersSet definition"}
 
 Additionally, this event can contain any number of unspecified fields. This is to
 reflect setting of for example unknown (greased) transport parameters or employed
 (proprietary) extensions.
 
-## parameters_restored {#transport-parametersrestored}
+## parameters_restored {#quic-parametersrestored}
 Importance: Base
 
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
@@ -653,7 +653,7 @@ correct 0-RTT usage.
 Definition:
 
 ~~~ cddl
-TransportParametersRestored = {
+QUICParametersRestored = {
     ? disable_active_migration: bool
     ? max_idle_timeout: uint64
     ? max_udp_payload_size: uint32
@@ -666,18 +666,18 @@ TransportParametersRestored = {
     ? initial_max_streams_uni: uint64
 }
 ~~~
-{: #transport-parametersrestored-def title="TransportParametersRestored definition"}
+{: #quic-parametersrestored-def title="QUICParametersRestored definition"}
 
 Note that, like parameters_set above, this event can contain any number of
 unspecified fields to allow for additional/custom parameters.
 
-## packet_sent {#transport-packetsent}
+## packet_sent {#quic-packetsent}
 Importance: Core
 
 Definition:
 
 ~~~ cddl
-TransportPacketSent = {
+QUICPacketSent = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
     ? is_coalesced: bool .default false
@@ -708,22 +708,22 @@ TransportPacketSent = {
       "cc_bandwidth_probe"
 }
 ~~~
-{: #transport-packetsent-def title="TransportPacketSent definition"}
+{: #quic-packetsent-def title="QUICPacketSent definition"}
 
 Note: The encryption_level and packet_number_space are not logged explicitly:
 the header.packet_type specifies this by inference (assuming correct
 implementation)
 
-Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
+Note: for more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
-## packet_received {#transport-packetreceived}
+## packet_received {#quic-packetreceived}
 Importance: Core
 
 Definition:
 
 ~~~ cddl
-TransportPacketReceived = {
+QUICPacketReceived = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
     ? is_coalesced: bool .default false
@@ -744,16 +744,16 @@ TransportPacketReceived = {
         "keys_available"
 }
 ~~~
-{: #transport-packetreceived-def title="TransportPacketReceived definition"}
+{: #quic-packetreceived-def title="QUICPacketReceived definition"}
 
 Note: The encryption_level and packet_number_space are not logged explicitly:
 the header.packet_type specifies this by inference (assuming correct
 implementation)
 
-Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
+Note: for more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
-## packet_dropped {#transport-packetdropped}
+## packet_dropped {#quic-packetdropped}
 Importance: Base
 
 This event indicates a QUIC-level packet was dropped.
@@ -765,7 +765,7 @@ information.
 Definition:
 
 ~~~ cddl
-TransportPacketDropped = {
+QUICPacketDropped = {
 
     ; Primarily packet_type should be filled here,
     ; as other fields might not be decrypteable or parseable
@@ -783,7 +783,7 @@ TransportPacketDropped = {
         "general"
 }
 ~~~
-{: #transport-packetdropped-def title="TransportPacketDropped definition"}
+{: #quic-packetdropped-def title="QUICPacketDropped definition"}
 
 Some example situations for each of the trigger categories include:
 
@@ -795,9 +795,9 @@ Some example situations for each of the trigger categories include:
 - decryption_failure: decryption key was unavailable, decryption failed
 - general: situations not clearly covered in the other categories
 
-For more details on "datagram_id", see {{transport-datagramssent}}.
+For more details on "datagram_id", see {{quic-datagramssent}}.
 
-## packet_buffered {#transport-packetbuffered}
+## packet_buffered {#quic-packetbuffered}
 Importance: Base
 
 This event is emitted when a packet is buffered because it cannot be processed
@@ -808,7 +808,7 @@ event.
 Definition:
 
 ~~~ cddl
-TransportPacketBuffered = {
+QUICPacketBuffered = {
 
     ; primarily packet_type and possible packet_number should be
     ; filled here as other elements might not be available yet
@@ -824,12 +824,12 @@ TransportPacketBuffered = {
         "keys_unavailable"
 }
 ~~~
-{: #transport-packetbuffered-def title="TransportPacketBuffered definition"}
+{: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
-Note: for more details on "datagram_id", see {{transport-datagramssent}}. It is only needed
+Note: for more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
-## packets_acked {#transport-packetsacked}
+## packets_acked {#quic-packetsacked}
 Importance: Extra
 
 This event is emitted when a (group of) sent packet(s) is acknowledged by the
@@ -842,18 +842,18 @@ used by implementations that do not log frame contents.
 Definition:
 
 ~~~ cddl
-TransportPacketsAcked = {
+QUICPacketsAcked = {
     ? packet_number_space: PacketNumberSpace
     ? packet_numbers: [+ uint64]
 }
 ~~~
-{: #transport-packetsacked-def title="TransportPacketsAcked definition"}
+{: #quic-packetsacked-def title="QUICPacketsAcked definition"}
 
 Note: if packet_number_space is omitted, it assumes the default value of
 PacketNumberSpace.application_data, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
-## datagrams_sent {#transport-datagramssent}
+## datagrams_sent {#quic-datagramssent}
 Importance: Extra
 
 When one or more UDP-level datagrams are passed to the socket. This is useful
@@ -862,7 +862,7 @@ for determining how QUIC packet buffers are drained to the OS.
 Definition:
 
 ~~~ cddl
-TransportDatagramsSent = {
+QUICDatagramsSent = {
 
     ; to support passing multiple at once
     ? count: uint16
@@ -873,7 +873,7 @@ TransportDatagramsSent = {
     ? datagram_ids: [+ uint32]
 }
 ~~~
-{: #transport-datagramssent-def title="TransportDatagramsSent definition"}
+{: #quic-datagramssent-def title="QUICDatagramsSent definition"}
 
 Since QUIC implementations rarely control UDP logic directly, the raw data
 excludes UDP-level headers in all fields.
@@ -885,7 +885,7 @@ However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
 Selecting identifier values is thus left to qlog implementations, which should
 consider how to generate unique values within the scope of their created traces.
 
-## datagrams_received {#transport-datagramsreceived}
+## datagrams_received {#quic-datagramsreceived}
 Importance: Extra
 
 When one or more UDP-level datagrams are received from the socket. This is
@@ -895,7 +895,7 @@ the OS.
 Definition:
 
 ~~~ cddl
-TransportDatagramsReceived = {
+QUICDatagramsReceived = {
 
     ; to support passing multiple at once
     ? count: uint16
@@ -906,30 +906,30 @@ TransportDatagramsReceived = {
     ? datagram_ids: [+ uint32]
 }
 ~~~
-{: #transport-datagramsreceived-def title="TransportDatagramsReceived definition"}
+{: #quic-datagramsreceived-def title="QUICDatagramsReceived definition"}
 
-For more details on "datagram_ids", see {{transport-datagramssent}}.
+For more details on "datagram_ids", see {{quic-datagramssent}}.
 
-## datagram_dropped {#transport-datagramdropped}
+## datagram_dropped {#quic-datagramdropped}
 Importance: Extra
 
 When a UDP-level datagram is dropped. This is typically done if it does not
 contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
-other reasons, packet_dropped ({{transport-packetdropped}}) should be used instead.
+other reasons, packet_dropped ({{quic-packetdropped}}) should be used instead.
 
 Definition:
 
 ~~~ cddl
-TransportDatagramDropped = {
+QUICDatagramDropped = {
 
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: RawInfo
 }
 ~~~
-{: #transport-datagramdropped-def title="TransportDatagramDropped definition"}
+{: #quic-datagramdropped-def title="QUICDatagramDropped definition"}
 
-## stream_state_updated {#transport-streamstateupdated}
+## stream_state_updated {#quic-streamstateupdated}
 Importance: Base
 
 This event is emitted whenever the internal state of a QUIC stream is updated, as
@@ -943,7 +943,7 @@ Definition:
 StreamType = "unidirectional" /
              "bidirectional"
 
-TransportStreamStateUpdated = {
+QUICStreamStateUpdated = {
     stream_id: uint64
 
     ; mainly useful when opening the stream
@@ -978,7 +978,7 @@ StreamState =
     ; memory actually freed
     "destroyed"
 ~~~
-{: #transport-streamstateupdated-def title="TransportStreamStateUpdated definition"}
+{: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
 Note: QUIC implementations SHOULD mainly log the simplified bidirectional
 (HTTP/2-alike) stream states (e.g., idle, open, closed) instead of the more
@@ -986,7 +986,7 @@ fine-grained stream states (e.g., data_sent, reset_received). These latter ones 
 mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
 equally.
 
-## frames_processed {#transport-framesprocessed}
+## frames_processed {#quic-framesprocessed}
 Importance: Extra
 
 This event's main goal is to prevent a large proliferation of specific purpose
@@ -1020,14 +1020,14 @@ link this event to the packet_sent/received events.
 Definition:
 
 ~~~ cddl
-TransportFramesProcessed = {
+QUICFramesProcessed = {
     frames: [* $QuicFrame]
     ? packet_number: uint64
 }
 ~~~
-{: #transport-framesprocessed-def title="TransportFramesProcessed definition"}
+{: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
 
-## data_moved {#transport-datamoved}
+## data_moved {#quic-datamoved}
 Importance: Base
 
 Used to indicate when data moves between the different layers (for example passing
@@ -1046,7 +1046,7 @@ turn can help identify bottlenecks or scheduling problems.
 Definition:
 
 ~~~ cddl
-TransportDataMoved = {
+QUICDataMoved = {
     ? stream_id: uint64
     ? offset: uint64
 
@@ -1065,7 +1065,7 @@ TransportDataMoved = {
     ? raw: RawInfo
 }
 ~~~
-{: #transport-datamoved-def title="TransportDataMoved definition"}
+{: #quic-datamoved-def title="QUICDataMoved definition"}
 
 # Security Events {#sec-ev}
 

@@ -582,7 +582,7 @@ JSON serialization:
 {
     "time": 1553986553572,
 
-    "name": "transport:packet_sent",
+    "name": "quic:packet_sent",
     "data": { ... },
 
     "protocol_type":  ["QUIC","HTTP3"],
@@ -670,9 +670,9 @@ identify a given event and how to interpret its metadata in the "data" field (se
 as a concatenation of two other fields, namely event "category" and event "type".
 
 Category allows a higher-level grouping of events per specific event type. For
-example for QUIC and HTTP/3, the different categories could be "transport",
-"http", "qpack", and "recovery". Within these categories, the event Type provides
-additional granularity. For example for QUIC and HTTP/3, within the "transport"
+example for QUIC and HTTP/3, the different categories could be "quic", "http",
+"qpack", and "recovery". Within these categories, the event Type provides
+additional granularity. For example for QUIC and HTTP/3, within the "quic"
 Category, there would be "packet_sent" and "packet_received" events.
 
 Logging category and type separately conceptually allows for fast and high-level
@@ -687,13 +687,13 @@ such, qlog category and type names MUST NOT include this character.
 ~~~
 JSON serialization using separate fields:
 {
-    "category": "transport",
+    "category": "quic",
     "type": "packet_sent"
 }
 
 JSON serialization using ":" concatenated field:
 {
-    "name": "transport:packet_sent"
+    "name": "quic:packet_sent"
 }
 ~~~
 {: #name-ex title="Ways of logging category, type and name of an event."}
@@ -868,14 +868,14 @@ and QUIC connection IDs:
         "protocol_type": ["TCP", "TLS", "HTTP2"],
         "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
                    ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
-        "name": "transport:packet_received",
+        "name": "quic:packet_received",
         "data": { ... }
     },
     {
         "time": 1553986553581,
         "protocol_type": ["QUIC","HTTP3"],
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "name": "transport:packet_sent",
+        "name": "quic:packet_sent",
         "data": { ... }
     }
 ]
@@ -919,7 +919,7 @@ per-event instance:
             "reference_time": 1553986553572,
 
             "time": 2,
-            "name": "transport:packet_received",
+            "name": "quic:packet_received",
             "data": { ... }
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
@@ -947,7 +947,7 @@ extracted to common_fields:
     "events": [
         {
             "time": 2,
-            "name": "transport:packet_received",
+            "name": "quic:packet_received",
             "data": { ... }
         },{
             "time": 7,
@@ -1506,8 +1506,8 @@ JSON-SEQ serialization examples:
       }
     }
 }
-<RS>{"time": 2, "name": "transport:parameters_set", "data": { ... } }
-<RS>{"time": 7, "name": "transport:packet_sent", "data": { ... } }
+<RS>{"time": 2, "name": "quic:parameters_set", "data": { ... } }
+<RS>{"time": 7, "name": "quic:packet_sent", "data": { ... } }
 ...
 ~~~~~~~~
 {: #json-seq-ex title="Top-level element"}
