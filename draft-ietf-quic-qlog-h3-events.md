@@ -421,7 +421,7 @@ H3HeadersFrame = {
 ~~~ cddl
 H3HTTPField = {
     name: text
-    value: text
+    ? value: text
 }
 ~~~
 {: #h3field-def title="H3HTTPField definition"}
