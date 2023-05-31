@@ -118,7 +118,7 @@ GUID abcd1234).
 # HTTP/3 and QPACK Event Overview
 
 This document defines events in two categories, written as lowercase to follow
-convention: hh3 ({{h3-ev}}) and qpack ({{qpack-ev}}).
+convention: h3 ({{h3-ev}}) and qpack ({{qpack-ev}}).
 
 As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
 concatenation of category and type.
