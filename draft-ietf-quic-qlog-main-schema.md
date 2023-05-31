@@ -114,7 +114,7 @@ clarity:
 
 ~~~ cddl
 ; CDDL's uint is defined as being 64-bit in size
-; but for many protocol fields it is better to bee restrictive and explicit
+; but for many protocol fields it is better to be restrictive and explicit
 uint8 = uint .size 1
 uint16 = uint .size 2
 uint32 = uint .size 4
