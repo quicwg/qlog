@@ -283,7 +283,7 @@ H3FrameCreated = {
 ## frame_parsed {#h3-frameparsed}
 Importance: Core
 
-This event is emitted when the HTTP/3 frame is parsed. Note: this is not
+This event is emitted when the HTTP/3 frame is parsed. This is not
 necessarily the same as when the HTTP/3 data is actually received on the QUIC
 layer. For that, see the "data_moved" event in {{QLOG-QUIC}}.
 
@@ -563,7 +563,7 @@ QPACK events mainly serve as an aid to debug low-level QPACK issues.The
 higher-level, plaintext header values SHOULD (also) be logged in the
 http.frame_created and http.frame_parsed event data (instead).
 
-Note: qpack does not have its own parameters_set event. This was merged with
+QPACK does not have its own parameters_set event. This was merged with
 http.parameters_set for brevity, since qpack is a required extension for HTTP/3
 anyway. Other HTTP/3 extensions MAY also log their SETTINGS fields in
 http.parameters_set or MAY define their own events.
@@ -599,7 +599,7 @@ Importance: Core
 This event is emitted when a stream becomes blocked or unblocked by header
 decoding requests or QPACK instructions.
 
-Note: This event is of "Core" importance, as it might have a large impact on
+This event is of "Core" importance, as it might have a large impact on
 HTTP/3's observed performance.
 
 Definition:
@@ -653,7 +653,7 @@ Importance: Base
 
 This event is emitted when an uncompressed header block is encoded successfully.
 
-Note: this event has overlap with http.frame_created for the HeadersFrame type.
+This event has overlap with http.frame_created for the HeadersFrame type.
 When outputting both events, implementers MAY omit the "headers" field in this
 event.
 
@@ -675,7 +675,7 @@ Importance: Base
 
 This event is emitted when a compressed header block is decoded successfully.
 
-Note: this event has overlap with http.frame_parsed for the HeadersFrame type.
+This event has overlap with http.frame_parsed for the HeadersFrame type.
 When outputting both events, implementers MAY omit the "headers" field in this
 event.
 
@@ -710,7 +710,7 @@ QPACKInstructionCreated = {
 ~~~
 {: #qpack-instructioncreated-def title="QPACKInstructionCreated definition"}
 
-Note: encoder/decoder semantics and stream_id's are implicit in either the
+Encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
 ## instruction_parsed {#qpack-instructionparsed}
@@ -731,7 +731,7 @@ QPACKInstructionParsed = {
 ~~~
 {: #qpack-instructionparsed-def title="QPACKInstructionParsed definition"}
 
-Note: encoder/decoder semantics and stream_id's are implicit in either the
+Encoder/decoder semantics and stream_id's are implicit in either the
 instruction types or can be logged via other events (e.g., http.stream_type_set)
 
 # QPACK Data Field Definitions
@@ -740,7 +740,7 @@ The following data field definitions can be used in QPACK events.
 
 ## QPACKInstruction
 
-Note: the instructions do not have explicit encoder/decoder types, since there is
+The instructions do not have explicit encoder/decoder types, since there is
 no overlap between the instructions of both types in neither name nor function.
 
 ~~~ cddl
@@ -852,7 +852,7 @@ title="QPACKHeaderBlockRepresentation definition"}
 
 ### IndexedHeaderField
 
-Note: also used for "indexed header field with post-base index"
+This is also used for "indexed header field with post-base index"
 
 ~~~ cddl
 IndexedHeaderField = {
@@ -871,7 +871,7 @@ IndexedHeaderField = {
 
 ### LiteralHeaderFieldWithName
 
-Note: also used for "Literal header field with post-base name reference"
+This is also used for "Literal header field with post-base name reference".
 
 ~~~ cddl
 LiteralHeaderFieldWithName = {

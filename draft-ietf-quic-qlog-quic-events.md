@@ -259,7 +259,7 @@ ConnectivityServerListening = {
 ~~~
 {: #connectivity-serverlistening-def title="ConnectivityServerListening definition"}
 
-Note: some QUIC stacks do not handle sockets directly and are thus unable to log
+Some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
 ## connection_started {#connectivity-connectionstarted}
@@ -288,7 +288,7 @@ ConnectivityConnectionStarted = {
 ~~~
 {: #connectivity-connectionstarted-def title="ConnectivityConnectionStarted definition"}
 
-Note: some QUIC stacks do not handle sockets directly and are thus unable to log
+Some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
 ## connection_closed {#connectivity-connectionclosed}
@@ -710,11 +710,11 @@ QUICPacketSent = {
 ~~~
 {: #quic-packetsent-def title="QUICPacketSent definition"}
 
-Note: The encryption_level and packet_number_space are not logged explicitly:
+The encryption_level and packet_number_space are not logged explicitly:
 the header.packet_type specifies this by inference (assuming correct
 implementation)
 
-Note: for more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
+For more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packet_received {#quic-packetreceived}
@@ -746,11 +746,11 @@ QUICPacketReceived = {
 ~~~
 {: #quic-packetreceived-def title="QUICPacketReceived definition"}
 
-Note: The encryption_level and packet_number_space are not logged explicitly:
+The encryption_level and packet_number_space are not logged explicitly:
 the header.packet_type specifies this by inference (assuming correct
 implementation)
 
-Note: for more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
+For more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packet_dropped {#quic-packetdropped}
@@ -826,7 +826,7 @@ QUICPacketBuffered = {
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
-Note: for more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
+For more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packets_acked {#quic-packetsacked}
@@ -849,7 +849,7 @@ QUICPacketsAcked = {
 ~~~
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
 
-Note: if packet_number_space is omitted, it assumes the default value of
+If packet_number_space is omitted, it assumes the default value of
 PacketNumberSpace.application_data, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
@@ -980,7 +980,7 @@ StreamState =
 ~~~
 {: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
-Note: QUIC implementations SHOULD mainly log the simplified bidirectional
+QUIC implementations SHOULD mainly log the simplified bidirectional
 (HTTP/2-alike) stream states (e.g., idle, open, closed) instead of the more
 fine-grained stream states (e.g., data_sent, reset_received). These latter ones are
 mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
@@ -997,22 +997,22 @@ Since for almost all cases, the effects of applying a frame to the internal stat
 of an implementation can be inferred from that frame's contents, these events
 are aggregated into this single "frames_processed" event.
 
-Note: This event can be used to signal internal state change not resulting
+This event can be used to signal internal state change not resulting
 directly from the actual "parsing" of a frame (e.g., the frame could have been
 parsed, data put into a buffer, then later processed, then logged with this
 event).
 
-Note: Implementations logging "packet_received" and which include all of the
+Implementations logging "packet_received" and which include all of the
 packet's constituent frames therein, are not expected to emit this
 "frames_processed" event. Rather, implementations not wishing to log full packets
 or that wish to explicitly convey extra information about when frames are
 processed (if not directly tied to their reception) can use this event.
 
-Note: for some events, this approach will lose some information (e.g., for which
+Note that for some events, this approach will lose some information (e.g., for which
 encryption level are packets being acknowledged?). If this information is
-important, please use the packet_received event instead.
+important, the packet_received event can be used instead.
 
-Note: in some implementations, it can be difficult to log frames directly, even
+In some implementations, it can be difficult to log frames directly, even
 when using packet_sent and packet_received events. For these cases, this event
 also contains the direct packet_number field, which can be used to more explicitly
 link this event to the packet_sent/received events.
@@ -1072,8 +1072,6 @@ QUICDataMoved = {
 ## key_updated {#security-keyupdated}
 Importance: Base
 
-Note: secret_updated would be more correct, but in the draft it's called KEY_UPDATE, so stick with that for consistency
-
 Definition:
 
 ~~~ cddl
@@ -1119,7 +1117,7 @@ SecurityKeyDiscarded = {
 
 # Recovery events {#rec-ev}
 
-Note: most of the events in this category are kept generic to support different
+Most of the events in this category are kept generic to support different
 recovery approaches and various congestion control algorithms. Tool creators
 SHOULD make an effort to support and visualize even unknown data in these events
 (e.g., plot unknown congestion states by name on a timeline visualization).
@@ -1151,13 +1149,13 @@ RecoveryParametersSet = {
     ? initial_rtt:float32
 
     ; congestion control, Appendix B.1.
-    ; in bytes. Note: this could be updated after pmtud
+    ; in bytes. Note that this could be updated after pmtud
     ? max_datagram_size: uint32
 
     ; in bytes
     ? initial_congestion_window: uint64
 
-    ; Note: this could change when max_datagram_size changes
+    ; Note that this could change when max_datagram_size changes
     ; in bytes
     ? minimum_congestion_window: uint64
     ? loss_reduction_factor: float32
@@ -1212,7 +1210,7 @@ RecoveryMetricsUpdated = {
 ~~~
 {: #recovery-metricsupdated-def title="RecoveryMetricsUpdated definition"}
 
-Note: to make logging easier, implementations MAY log values even if they are the
+In order to make logging easier, implementations MAY log values even if they are the
 same as previously reported values (e.g., two subsequent RecoveryMetricsUpdated entries can
 both report the exact same value for min_rtt). However, applications SHOULD try to
 log only actual updates to values.
@@ -1261,7 +1259,7 @@ event types are:
 * cancelled: when a timer is cancelled (e.g., all outstanding packets are
   acknowledged, start idle period)
 
-Note: to indicate an active timer's timeout update, a new "set" event is used.
+In order to indicate an active timer's timeout update, a new "set" event is used.
 
 Definition:
 
@@ -1322,7 +1320,7 @@ values below), as this helps tremendously in debugging.
 Importance: Extra
 
 This event indicates which data was marked for retransmit upon detecting a packet
-loss (see packet_lost). Similar to our reasoning for the "frames_processed" event,
+loss (see packet_lost). Similar to the reasoning for the "frames_processed" event,
 in order to keep the amount of different events low, this signal is grouped into
 in a single event based on existing QUIC frame definitions for all types of
 retransmittable data.
@@ -1335,7 +1333,7 @@ or that do not track sent frames in full (e.g., only stream offset + length), ca
 translate their internal behaviour into the appropriate frame instance here even
 if that frame was never or will never be put on the wire.
 
-Note: much of this data can be inferred if implementations log packet_sent events
+Much of this data can be inferred if implementations log packet_sent events
 (e.g., looking at overlapping stream data offsets and length, one can determine
 when data was retransmitted).
 
@@ -1603,10 +1601,10 @@ AckFrame = {
 ~~~
 {: #ackframe-def title="AckFrame definition"}
 
-Note: the packet ranges in AckFrame.acked_ranges do not necessarily have to be
+Note that the packet ranges in AckFrame.acked_ranges do not necessarily have to be
 ordered (e.g., \[\[5,9\],\[1,4\]\] is a valid value).
 
-Note: the two numbers in the packet range can be the same (e.g., \[120,120\] means
+Note that the two numbers in the packet range can be the same (e.g., \[120,120\] means
 that packet with number 120 was ACKed). However, in that case, implementers SHOULD
 log \[120\] instead and tools MUST be able to deal with both notations.
 
