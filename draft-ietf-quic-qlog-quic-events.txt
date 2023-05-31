@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 17 November 2023                                           Meta
+Expires: 2 December 2023                                            Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             16 May 2023
+                                                             31 May 2023
 
 
                     QUIC event definitions for qlog
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 17 November 2023.
+   This Internet-Draft will expire on 2 December 2023.
 
 Copyright Notice
 
@@ -70,7 +70,7 @@ Table of Contents
      4.6.  connection_state_updated
      4.7.  MIGRATION-related events
      4.8.  mtu_updated
-   5.  Transport events
+   5.  QUIC events
      5.1.  version_information
      5.2.  alpn_information
      5.3.  parameters_set
@@ -259,7 +259,7 @@ Table of Contents
 
    QUIC connections consist of different phases and interaction events.
    In order to model this, QUIC event types are divided into general
-   categories: connectivity (Section 4), security (Section 6), transport
+   categories: connectivity (Section 4), security (Section 6), quic
    Section 5, and recovery Section 7.
 
    As described in Section 3.4.2 of [QLOG-MAIN], the qlog "name" field
@@ -285,40 +285,40 @@ Table of Contents
    +---------------------------------------+------------+--------------+
    | connectivity:mtu_updated              | Extra      | Section 4.8  |
    +---------------------------------------+------------+--------------+
-   | transport:version_information         | Core       | Section 5.1  |
+   | quic:version_information              | Core       | Section 5.1  |
    +---------------------------------------+------------+--------------+
-   | transport:alpn_information            | Core       | Section 5.2  |
+   | quic:alpn_information                 | Core       | Section 5.2  |
    +---------------------------------------+------------+--------------+
-   | transport:parameters_set              | Core       | Section 5.3  |
+   | quic:parameters_set                   | Core       | Section 5.3  |
    +---------------------------------------+------------+--------------+
-   | transport:parameters_restored         | Base       | Section 5.4  |
+   | quic:parameters_restored              | Base       | Section 5.4  |
    +---------------------------------------+------------+--------------+
-   | transport:packet_sent                 | Core       | Section 5.5  |
+   | quic:packet_sent                      | Core       | Section 5.5  |
    +---------------------------------------+------------+--------------+
-   | transport:packet_received             | Core       | Section 5.6  |
+   | quic:packet_received                  | Core       | Section 5.6  |
    +---------------------------------------+------------+--------------+
-   | transport:packet_dropped              | Base       | Section 5.7  |
+   | quic:packet_dropped                   | Base       | Section 5.7  |
    +---------------------------------------+------------+--------------+
-   | transport:packet_buffered             | Base       | Section 5.8  |
+   | quic:packet_buffered                  | Base       | Section 5.8  |
    +---------------------------------------+------------+--------------+
-   | transport:packets_acked               | Extra      | Section 5.9  |
+   | quic:packets_acked                    | Extra      | Section 5.9  |
    +---------------------------------------+------------+--------------+
-   | transport:datagrams_sent              | Extra      | Section      |
+   | quic:datagrams_sent                   | Extra      | Section      |
    |                                       |            | 5.10         |
    +---------------------------------------+------------+--------------+
-   | transport:datagrams_received          | Extra      | Section      |
+   | quic:datagrams_received               | Extra      | Section      |
    |                                       |            | 5.11         |
    +---------------------------------------+------------+--------------+
-   | transport:datagram_dropped            | Extra      | Section      |
+   | quic:datagram_dropped                 | Extra      | Section      |
    |                                       |            | 5.12         |
    +---------------------------------------+------------+--------------+
-   | transport:stream_state_updated        | Base       | Section      |
+   | quic:stream_state_updated             | Base       | Section      |
    |                                       |            | 5.13         |
    +---------------------------------------+------------+--------------+
-   | transport:frames_processed            | Extra      | Section      |
+   | quic:frames_processed                 | Extra      | Section      |
    |                                       |            | 5.14         |
    +---------------------------------------+------------+--------------+
-   | transport:data_moved                  | Base       | Section      |
+   | quic:data_moved                       | Base       | Section      |
    |                                       |            | 5.15         |
    +---------------------------------------+------------+--------------+
    | security:key_updated                  | Base       | Section 6.1  |
@@ -352,21 +352,21 @@ Table of Contents
                 ConnectivityMTUUpdated /
                 SecurityKeyUpdated /
                 SecurityKeyDiscarded /
-                TransportVersionInformation /
-                TransportALPNInformation /
-                TransportParametersSet /
-                TransportParametersRestored /
-                TransportPacketSent /
-                TransportPacketReceived /
-                TransportPacketDropped /
-                TransportPacketBuffered /
-                TransportPacketsAcked /
-                TransportDatagramsSent /
-                TransportDatagramsReceived /
-                TransportDatagramDropped /
-                TransportStreamStateUpdated /
-                TransportFramesProcessed /
-                TransportDataMoved /
+                QUICVersionInformation /
+                QUICALPNInformation /
+                QUICParametersSet /
+                QUICParametersRestored /
+                QUICPacketSent /
+                QUICPacketReceived /
+                QUICPacketDropped /
+                QUICPacketBuffered /
+                QUICPacketsAcked /
+                QUICDatagramsSent /
+                QUICDatagramsReceived /
+                QUICDatagramDropped /
+                QUICStreamStateUpdated /
+                QUICFramesProcessed /
+                QUICDataMoved /
                 RecoveryParametersSet /
                 RecoveryMetricsUpdated /
                 RecoveryCongestionStateUpdated /
@@ -667,7 +667,7 @@ Table of Contents
    This event indicates that the estimated Path MTU was updated.  This
    happens as part of the Path MTU discovery process.
 
-5.  Transport events
+5.  QUIC events
 
 5.1.  version_information
 
@@ -684,13 +684,13 @@ Table of Contents
 
    Definition:
 
-   TransportVersionInformation = {
+   QUICVersionInformation = {
        ? server_versions: [+ QuicVersion]
        ? client_versions: [+ QuicVersion]
        ? chosen_version: QuicVersion
    }
 
-              Figure 9: TransportVersionInformation definition
+                Figure 9: QUICVersionInformation definition
 
    Intended use:
 
@@ -726,13 +726,13 @@ Table of Contents
 
    Definition:
 
-   TransportALPNInformation = {
+   QUICALPNInformation = {
        ? server_alpns: [* text]
        ? client_alpns: [* text]
        ? chosen_alpn: text
    }
 
-               Figure 10: TransportALPNInformation definition
+                 Figure 10: QUICALPNInformation definition
 
    Intended use:
 
@@ -781,7 +781,7 @@ Table of Contents
 
    Definition:
 
-   TransportParametersSet = {
+   QUICParametersSet = {
        ? owner: Owner
 
        ; true if valid session ticket was received
@@ -822,7 +822,7 @@ Table of Contents
        stateless_reset_token: StatelessResetToken
    }
 
-                Figure 11: TransportParametersSet definition
+                  Figure 11: QUICParametersSet definition
 
    Additionally, this event can contain any number of unspecified
    fields.  This is to reflect setting of for example unknown (greased)
@@ -842,7 +842,7 @@ Table of Contents
 
    Definition:
 
-   TransportParametersRestored = {
+   QUICParametersRestored = {
        ? disable_active_migration: bool
        ? max_idle_timeout: uint64
        ? max_udp_payload_size: uint32
@@ -855,7 +855,7 @@ Table of Contents
        ? initial_max_streams_uni: uint64
    }
 
-             Figure 12: TransportParametersRestored definition
+                Figure 12: QUICParametersRestored definition
 
    Note that, like parameters_set above, this event can contain any
    number of unspecified fields to allow for additional/custom
@@ -867,7 +867,7 @@ Table of Contents
 
    Definition:
 
-   TransportPacketSent = {
+   QUICPacketSent = {
        header: PacketHeader
        ? frames: [* $QuicFrame]
        ? is_coalesced: bool .default false
@@ -898,7 +898,7 @@ Table of Contents
          "cc_bandwidth_probe"
    }
 
-                 Figure 13: TransportPacketSent definition
+                    Figure 13: QUICPacketSent definition
 
    Note: The encryption_level and packet_number_space are not logged
    explicitly: the header.packet_type specifies this by inference
@@ -913,7 +913,7 @@ Table of Contents
 
    Definition:
 
-   TransportPacketReceived = {
+   QUICPacketReceived = {
        header: PacketHeader
        ? frames: [* $QuicFrame]
        ? is_coalesced: bool .default false
@@ -934,7 +934,7 @@ Table of Contents
            "keys_available"
    }
 
-               Figure 14: TransportPacketReceived definition
+                  Figure 14: QUICPacketReceived definition
 
    Note: The encryption_level and packet_number_space are not logged
    explicitly: the header.packet_type specifies this by inference
@@ -955,7 +955,7 @@ Table of Contents
 
    Definition:
 
-   TransportPacketDropped = {
+   QUICPacketDropped = {
 
        ; Primarily packet_type should be filled here,
        ; as other fields might not be decrypteable or parseable
@@ -973,7 +973,7 @@ Table of Contents
            "general"
    }
 
-                Figure 15: TransportPacketDropped definition
+                  Figure 15: QUICPacketDropped definition
 
    Some example situations for each of the trigger categories include:
 
@@ -1008,7 +1008,7 @@ Table of Contents
 
    Definition:
 
-   TransportPacketBuffered = {
+   QUICPacketBuffered = {
 
        ; primarily packet_type and possible packet_number should be
        ; filled here as other elements might not be available yet
@@ -1024,7 +1024,7 @@ Table of Contents
            "keys_unavailable"
    }
 
-               Figure 16: TransportPacketBuffered definition
+                  Figure 16: QUICPacketBuffered definition
 
    Note: for more details on "datagram_id", see Section 5.10.  It is
    only needed when keeping track of packet coalescing.
@@ -1044,12 +1044,12 @@ Table of Contents
 
    Definition:
 
-   TransportPacketsAcked = {
+   QUICPacketsAcked = {
        ? packet_number_space: PacketNumberSpace
        ? packet_numbers: [+ uint64]
    }
 
-                Figure 17: TransportPacketsAcked definition
+                   Figure 17: QUICPacketsAcked definition
 
    Note: if packet_number_space is omitted, it assumes the default value
    of PacketNumberSpace.application_data, as this is by far the most
@@ -1065,7 +1065,7 @@ Table of Contents
 
    Definition:
 
-   TransportDatagramsSent = {
+   QUICDatagramsSent = {
 
        ; to support passing multiple at once
        ? count: uint16
@@ -1076,7 +1076,7 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-                Figure 18: TransportDatagramsSent definition
+                  Figure 18: QUICDatagramsSent definition
 
    Since QUIC implementations rarely control UDP logic directly, the raw
    data excludes UDP-level headers in all fields.
@@ -1100,7 +1100,7 @@ Table of Contents
 
    Definition:
 
-   TransportDatagramsReceived = {
+   QUICDatagramsReceived = {
 
        ; to support passing multiple at once
        ? count: uint16
@@ -1111,7 +1111,7 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-              Figure 19: TransportDatagramsReceived definition
+                Figure 19: QUICDatagramsReceived definition
 
    For more details on "datagram_ids", see Section 5.10.
 
@@ -1126,14 +1126,14 @@ Table of Contents
 
    Definition:
 
-   TransportDatagramDropped = {
+   QUICDatagramDropped = {
 
        ; The RawInfo fields do not include the UDP headers,
        ; only the UDP payload
        ? raw: RawInfo
    }
 
-               Figure 20: TransportDatagramDropped definition
+                 Figure 20: QUICDatagramDropped definition
 
 5.13.  stream_state_updated
 
@@ -1150,7 +1150,7 @@ Table of Contents
    StreamType = "unidirectional" /
                 "bidirectional"
 
-   TransportStreamStateUpdated = {
+   QUICStreamStateUpdated = {
        stream_id: uint64
 
        ; mainly useful when opening the stream
@@ -1185,7 +1185,7 @@ Table of Contents
        ; memory actually freed
        "destroyed"
 
-             Figure 21: TransportStreamStateUpdated definition
+                Figure 21: QUICStreamStateUpdated definition
 
    Note: QUIC implementations SHOULD mainly log the simplified
    bidirectional (HTTP/2-alike) stream states (e.g., idle, open, closed)
@@ -1232,12 +1232,12 @@ Table of Contents
 
    Definition:
 
-   TransportFramesProcessed = {
+   QUICFramesProcessed = {
        frames: [* $QuicFrame]
        ? packet_number: uint64
    }
 
-               Figure 22: TransportFramesProcessed definition
+                 Figure 22: QUICFramesProcessed definition
 
 5.15.  data_moved
 
@@ -1260,7 +1260,7 @@ Table of Contents
 
    Definition:
 
-   TransportDataMoved = {
+   QUICDataMoved = {
        ? stream_id: uint64
        ? offset: uint64
 
@@ -1279,7 +1279,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 23: TransportDataMoved definition
+                    Figure 23: QUICDataMoved definition
 
 6.  Security Events
 
