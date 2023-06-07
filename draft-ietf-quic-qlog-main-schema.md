@@ -189,9 +189,9 @@ element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
 MUST have a value of "0.3".
 
-Note:
+> Note on versioning:
 
-: there have been several previously broadly deployed qlog versions based on older
+> There have been several previously broadly deployed qlog versions based on older
 drafts of this document (see draft-marx-qlog-main-schema). The old values for the
 "qlog_version" field were "draft-00", "draft-01" and "draft-02". When qlog was
 moved to the QUIC working group, it was decided to switch to a new versioning scheme
@@ -1510,7 +1510,7 @@ JSON-SEQ serialization examples:
 ~~~~~~~~
 {: #json-seq-ex title="Top-level element"}
 
-Note: while not specifically required by the JSON-SEQ specification, all qlog
+While not specifically required by the JSON-SEQ specification, all qlog
 field names in a JSON-SEQ serialization MUST be lowercase.
 
 In order to serialize all other CDDL-based qlog event and data structure
