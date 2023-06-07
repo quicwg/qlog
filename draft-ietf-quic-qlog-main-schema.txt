@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 2 December 2023                                            Meta
+Expires: 9 December 2023                                            Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             31 May 2023
+                                                             7 June 2023
 
 
                       Main logging schema for qlog
@@ -41,7 +41,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 December 2023.
+   This Internet-Draft will expire on 9 December 2023.
 
 Copyright Notice
 
@@ -190,8 +190,7 @@ Table of Contents
    clarity:
 
    ; CDDL's uint is defined as being 64-bit in size
-   ; but for many protocol fields we want to be more restrictive
-   ; and explicit
+   ; but for many protocol fields it is better to be restrictive and explicit
    uint8 = uint .size 1
    uint16 = uint .size 2
    uint32 = uint .size 4
@@ -286,10 +285,11 @@ Table of Contents
       versions based on older drafts of this document (see draft-marx-
       qlog-main-schema).  The old values for the "qlog_version" field
       were "draft-00", "draft-01" and "draft-02".  When qlog was moved
-      to the QUIC working group, we decided to switch to a new
+      to the QUIC working group, it was decided to switch to a new
       versioning scheme which is independent of individual draft
-      document numbers.  However, we did start from 0.3, as conceptually
-      0.0, 0.1 and 0.2 can map to draft-00, draft-01 and draft-02.
+      document numbers.  However, the start value was selected to be
+      0.3, as conceptually 0.0, 0.1 and 0.2 can map to draft-00,
+      draft-01 and draft-02.
 
    As qlog can be serialized in a variety of ways, the "qlog_format"
    field is used to indicate which serialization option was chosen.  Its
@@ -376,11 +376,11 @@ Table of Contents
 3.2.  traces
 
    It is often advantageous to group several related qlog traces
-   together in a single file.  For example, we can simultaneously
-   perform logging on the client, on the server and on a single point on
-   their common network path.  For analysis, it is useful to aggregate
-   these three individual traces together into a single file, so it can
-   be uniquely stored, transferred and annotated.
+   together in a single file.  For example, it is possible to
+   simultaneously perform logging on the client, on the server and on a
+   single point on their common network path.  For analysis, it is
+   useful to aggregate these three individual traces together into a
+   single file, so it can be uniquely stored, transferred and annotated.
 
    As such, the "traces" array contains a list of individual qlog
    traces.  Typical qlogs will only contain a single trace in this
@@ -391,18 +391,18 @@ Table of Contents
 
    The "traces" array can thus contain both normal traces (for the
    definition of the Trace type, see Section 3.3), but also "error"
-   entries.  These indicate that we tried to find/convert a file for
-   inclusion in the aggregated qlog, but there was an error during the
-   process.  Rather than silently dropping the erroneous file, we can
-   opt to explicitly include it in the qlog file as an entry in the
-   "traces" array, as shown in Figure 6.
+   entries.  These indicate that an attempt to find/convert a file for
+   inclusion in the aggregated qlog was made, but there was an error
+   during the process.  Rather than silently dropping the erroneous
+   file, it can be explicitly included in the qlog file as an entry in
+   the "traces" array, as shown in Figure 6.
 
    Definition:
 
    TraceError = {
        error_description: text
 
-       ; the original URI at which we attempted to find the file
+       ; the original URI used for attempted find of the file
        ? uri: text
        ? vantage_point: VantagePoint
    }
@@ -475,12 +475,11 @@ Table of Contents
 
 3.3.1.  Configuration
 
-   We take into account that a qlog file is usually not used in
-   isolation, but by means of various tools.  Especially when
-   aggregating various traces together or preparing traces for a
-   demonstration, one might wish to persist certain tool-based settings
-   inside the qlog file itself.  For this, the configuration field is
-   used.
+   A qlog file is usually not used in isolation but by means of various
+   tools.  Especially when aggregating various traces together or
+   preparing traces for a demonstration, one might wish to persist
+   certain tool-based settings inside the qlog file itself.  For this,
+   the configuration field is used.
 
    The configuration field can be viewed as a generic metadata field
    that tools can fill with their own fields, based on per-tool logic.
@@ -933,15 +932,15 @@ Table of Contents
    from one endpoint can also contain events from a variety of sources.
    For example, a server implementation might choose to log events for
    all incoming connections in a single large (streamed) qlog file.  As
-   such, we need a method for splitting up events belonging to separate
-   logical entities.
+   such, a method for splitting up events belonging to separate logical
+   entities is required.
 
    The simplest way to perform this splitting is by associating a "group
    identifier" to each event that indicates to which conceptual "group"
    each event belongs.  A post-processing step can then extract events
    per group.  However, this group identifier can be highly protocol and
-   context-specific.  In the example above, we might use QUIC's
-   "Original Destination Connection ID" to uniquely identify a
+   context-specific.  In the example above, the QUIC "Original
+   Destination Connection ID" could be used to uniquely identify a
    connection.  As such, they might add a "ODCID" field to each event.
    However, a middlebox logging IP or TCP traffic might rather use four-
    tuples to identify connections, and add a "four_tuple" field.
@@ -1110,23 +1109,24 @@ Table of Contents
    TODO: pending QUIC working group discussion.  This text reflects the
    initial (qlog draft 01 and 02) setup.
 
-   There are several ways of defining qlog events.  In practice, we have
-   seen two main types used so far: a) those that map directly to
-   concepts seen in the protocols (e.g., packet_sent) and b) those that
-   act as aggregating events that combine data from several possible
-   protocol behaviors or code paths into one (e.g., parameters_set).
-   The latter are typically used as a means to reduce the amount of
-   unique event definitions, as reflecting each possible protocol event
-   as a separate qlog entity would cause an explosion of event types.
+   There are several ways of defining qlog events.  In practice, two
+   main types of approach have been observed: a) those that map directly
+   to concepts seen in the protocols (e.g., packet_sent) and b) those
+   that act as aggregating events that combine data from several
+   possible protocol behaviors or code paths into one (e.g.,
+   parameters_set).  The latter are typically used as a means to reduce
+   the amount of unique event definitions, as reflecting each possible
+   protocol event as a separate qlog entity would cause an explosion of
+   event types.
 
    Additionally, logging duplicate data is typically prevented as much
    as possible.  For example, packet header values that remain
    consistent across many packets are split into separate events (for
    example spin_bit_updated or connection_id_updated for QUIC).
 
-   Finally, we have typically refrained from adding additional state
-   change events if those state changes can be directly inferred from
-   data on the wire (for example flow control limit changes) if the
+   Finally, logging additional state change events, if those state
+   changes can be directly inferred from data on the wire (for example
+   flow control limit changes) is typically avoided, if the
    implementation is bug-free and spec-compliant.  Exceptions have been
    made for common events that benefit from being easily identifiable or
    individually logged (for example packets_acked).
@@ -1141,9 +1141,9 @@ Table of Contents
    precedence if e.g., both are present and provide conflicting
    information.
 
-   To aid in this decision making, we recommend that each event SHOULD
-   have an "importance indicator" with one of three values, in
-   decreasing order of importance and expected usage:
+   To aid in this decision making, each event SHOULD have an "importance
+   indicator" with one of three values, in decreasing order of
+   importance and expected usage:
 
    *  Core
 
@@ -1422,9 +1422,9 @@ Table of Contents
    Storage overhead can be managed well in practice by employing
    compression.  For this reason, this document details how to
    practically transform qlog schema definitions to [JSON], its subset
-   [I-JSON], and its streamable derivative [JSON-Text-Sequences]s.  We
-   discuss concrete options to bring down JSON size and processing
-   overheads in Section 6.3.
+   [I-JSON], and its streamable derivative [JSON-Text-Sequences]s.
+   Concrete options to bring down JSON size and processing overheads are
+   discuseed in Section 6.3.
 
    As depending on the employed format different deserializers/parsers
    should be used, the "qlog_format" field is used to indicate the
@@ -1666,9 +1666,9 @@ Table of Contents
    formats more challenging (though still practical
    (https://qlog.edm.uhasselt.be/anrw/)) to use in large scale setups.
 
-   During the development of qlog, we compared a multitude of
-   alternative formatting and optimization options.  The results of this
-   study are summarized on the qlog github repository
+   During the development of qlog, a multitude of alternative formatting
+   and optimization options were compared.  The results of this study
+   are summarized on the qlog github repository
    (https://github.com/quiclog/internet-drafts/issues/30#issuecomment-
    617675097).  The rest of this section discusses some of these
    approaches implementations could choose and the expected gains and
@@ -1678,7 +1678,7 @@ Table of Contents
 
    Over time, specific qlog formats and encodings can be created that
    more formally define and combine some of the discussed optimizations
-   or add new ones.  We choose to define these schemes in separate
+   or add new ones.  It was decided to define these schemes in separate
    documents to keep the main qlog definition clean and generalizable,
    as not all contexts require the same performance or flexibility as
    others and qlog is intended to be a broadly usable and extensible
@@ -1691,16 +1691,16 @@ Table of Contents
    To be able to easily distinguish between these options in qlog
    compatible tooling (without the need to have the user provide out-of-
    band information or to (heuristically) parse and process files in a
-   multitude of ways, see also Section 8), we recommend using explicit
-   file extensions to indicate specific formats.  As there are no
-   standards in place for this type of extension to format mapping, we
-   employ a commonly used scheme here.  Our approach is to list the
-   applied optimizations in the extension in ascending order of
-   application (e.g., if a qlog file is first optimized with technique A
-   and then compressed with technique B, the resulting file would have
-   the extension ".(s)qlog.A.B").  This allows tooling to start at the
-   back of the extension to "undo" applied optimizations to finally
-   arrive at the expected qlog representation.
+   multitude of ways, see also Section 8), it is recommended that
+   explicit file extensions are used to indicate specific formats.  As
+   there are no standards in place for this type of extension to format
+   mapping, a commonly used scheme is proposed: list the applied
+   optimizations in the extension in ascending order of application
+   (e.g., if a qlog file is first optimized with technique A and then
+   compressed with technique B, the resulting file would have the
+   extension ".(s)qlog.A.B").  This allows tooling to start at the back
+   of the extension to "undo" applied optimizations to finally arrive at
+   the expected qlog representation.
 
 6.3.1.  Data structure optimizations
 
@@ -1728,7 +1728,7 @@ Table of Contents
    The second option is to replace field values and/or names with
    indices into a (dynamic) lookup table.  This is a common compression
    technique and can provide significant file size reductions (up to 50%
-   in our tests, 100MB to 50MB).  However, this approach is even more
+   in tests, 100MB to 50MB).  However, this approach is even more
    difficult to implement efficiently and requires either including the
    (dynamic) table in the resulting file (an approach taken by for
    example Chromium's NetLog format
@@ -1751,8 +1751,8 @@ Table of Contents
    SEQ) format typically contains a large amount of repetition, off-the-
    shelf (text) compression techniques typically succeed very well in
    bringing down file sizes (regularly with up to two orders of
-   magnitude in our tests, even for "fast" compression levels).  As
-   such, utilizing compression is recommended before attempting other
+   magnitude in tests, even for "fast" compression levels).  As such,
+   utilizing compression is recommended before attempting other
    optimization options, even though this might (somewhat) increase
    processing costs due to the additional compression step.
 
@@ -1779,9 +1779,9 @@ Table of Contents
    SEQ").
 
    Other compression algorithms of course exist (for example xz, zstd,
-   and lz4).  We mainly recommend gzip and brotli because of their
+   and lz4).  The gzip and brotli are recommended because of their
    tweakable behaviour and wide support in web-based environments, which
-   we envision as the main tooling ecosystem (see also Section 8).
+   is envisioned as the main tooling ecosystem (see also Section 8).
 
 6.3.3.  Binary formats
 
@@ -1793,8 +1793,8 @@ Table of Contents
    flexibility for performance.
 
    The first option is to use the CBOR (Concise Binary Object
-   Representation [RFC7049]) format.  For our purposes, CBOR can be
-   viewed as a straightforward binary variant of JSON.  As such,
+   Representation [RFC7049]) format.  For the purposes of qlog, CBOR can
+   be viewed as a straightforward binary variant of JSON.  As such,
    existing JSON qlog files can be trivially converted to and from CBOR
    (though slightly more work is needed for JSON-SEQ qlogs to convert
    them to CBOR-SEQ, see [RFC8742]).  While CBOR thus does retain the
@@ -1820,7 +1820,7 @@ Table of Contents
    challenges.  As qlog is intended to be a flexible, general purpose
    format, this type of format was not chosen as its basic
    serialization.  The lower flexibility does lead to significantly
-   reduced file sizes.  Our straightforward mapping of the qlog main
+   reduced file sizes.  A straightforward mapping of the qlog main
    schema and QUIC/HTTP3 event types to protobuf created qlog files 24%
    as large as the raw JSON equivalents (100MB to 24MB).  For this
    option, the file extension .(s)qlog.protobuf SHOULD BE used.  The
@@ -1834,8 +1834,8 @@ Table of Contents
    (brotli)).  However, these gains are similar to the ones achieved by
    simply compression the textual JSON equivalents directly (7%, see
    Section 6.3.2).  As such, since compression is still needed to
-   achieve optimal file size reductions event with binary formats, we
-   feel the more flexible compressed textual JSON options are a better
+   achieve optimal file size reductions event with binary formats, the
+   more flexible compressed textual JSON options are likely a better
    default for the qlog format in general.
 
 
@@ -1906,16 +1906,15 @@ Table of Contents
    captured binary qlog could be transformed to JSON for easier
    interpretation and sharing.
 
-   Secondly, we can also consider other structured logging approaches
-   that contain similar (though typically not identical) data to qlog,
-   like raw packet capture files (for example .pcap files from tcpdump)
-   or endpoint-specific logging formats (for example the NetLog format
-   in Google Chrome).  These are sometimes the only options, if an
-   implementation cannot or will not support direct qlog output for any
-   reason, but does provide other internal or external (e.g.,
-   SSLKEYLOGFILE export to allow decryption of packet captures) logging
-   options For this second category, a (partial) transformation from/to
-   qlog can also be defined.
+   Secondly, other structured logging approaches contain similar (though
+   typically not identical) data to qlog, like raw packet capture files
+   (for example .pcap files from tcpdump) or endpoint-specific logging
+   formats (for example the NetLog format in Google Chrome).  These are
+   sometimes the only options, if an implementation cannot or will not
+   support direct qlog output for any reason, but does provide other
+   internal or external (e.g., SSLKEYLOGFILE export to allow decryption
+   of packet captures) logging options For this second category, a
+   (partial) transformation from/to qlog can also be defined.
 
    As such, when defining a new qlog serialization format or wanting to
    utilize qlog-compatible tools with existing codebases lacking qlog
@@ -1945,11 +1944,12 @@ Table of Contents
 7.1.  Set file output destination via an environment variable
 
    To provide users control over where and how qlog files are created,
-   we define two environment variables.  The first, QLOGFILE, indicates
-   a full path to where an individual qlog file should be stored.  This
-   path MUST include the full file extension.  The second, QLOGDIR, sets
-   a general directory path in which qlog files should be placed.  This
-   path MUST include the directory separator character at the end.
+   two environment variables are defined.  The first, QLOGFILE,
+   indicates a full path to where an individual qlog file should be
+   stored.  This path MUST include the full file extension.  The second,
+   QLOGDIR, sets a general directory path in which qlog files should be
+   placed.  This path MUST include the directory separator character at
+   the end.
 
    In general, QLOGDIR should be preferred over QLOGFILE if an endpoint
    is prone to generate multiple qlog files.  This can for example be
