@@ -469,14 +469,6 @@ conceptual event as the connection_started event above from the client's
 perspective. Similarly, a state of "closing" or "draining" corresponds to the
 connection_closed event.
 
-## MIGRATION-related events
-e.g., path_updated
-
-TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
-TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
-
-For now, infer from other connectivity events and path_challenge/path_response frames
-
 ## mtu_updated {#connectivity-mtuupdated}
 Importance: Extra
 
