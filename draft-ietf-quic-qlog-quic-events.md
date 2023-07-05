@@ -1014,18 +1014,41 @@ important, the packet_received event can be used instead.
 
 In some implementations, it can be difficult to log frames directly, even
 when using packet_sent and packet_received events. For these cases, this event
-also contains the direct packet_number field, which can be used to more explicitly
-link this event to the packet_sent/received events.
+also contains the packet_numbers field, which can be used to more explicitly
+link this event to the packet_sent/received events. The field is an array, which
+supports using a single "frames_processed" event for multiple frames received
+over multiple packets. To map between frames and packets, the position and order
+of entries in the "frames" and "packet_numbers" is used. If the optional "packet_numbers"
+field is used, each frame MUST have a corresponding packet number at the same
+index.
 
 Definition:
 
 ~~~ cddl
 QUICFramesProcessed = {
     frames: [* $QuicFrame]
-    ? packet_number: uint64
+    ? packet_numbers: [* uint64]
 }
 ~~~
 {: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
+
+For example, an instance of this event that represents four STREAM frames
+received over two packets would have the fields serialized as:
+
+~~~
+"frames":[
+  {"frame_type":"stream","stream_id":0,"offset":0,"length":500},
+  {"frame_type":"stream","stream_id":0,"offset":500,"length":200},
+  {"frame_type":"stream","stream_id":1,"offset":0,"length":300},
+  {"frame_type":"stream","stream_id":1,"offset":300,"length":50}
+  ],
+"packet_numbers":[
+  1,
+  1,
+  2,
+  2
+]
+~~~
 
 ## data_moved {#quic-datamoved}
 Importance: Base
