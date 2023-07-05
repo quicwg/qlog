@@ -2896,8 +2896,13 @@ encryption level are packets being acknowledged?). If this information is
 important, the packet_received event can be used instead.<a href="#section-5.14-5" class="pilcrow">¶</a></p>
 <p id="section-5.14-6">In some implementations, it can be difficult to log frames directly, even
 when using packet_sent and packet_received events. For these cases, this event
-also contains the direct packet_number field, which can be used to more explicitly
-link this event to the packet_sent/received events.<a href="#section-5.14-6" class="pilcrow">¶</a></p>
+also contains the packet_numbers field, which can be used to more explicitly
+link this event to the packet_sent/received events. The field is an array, which
+supports using a single "frames_processed" event for multiple frames received
+over multiple packets. To map between frames and packets, the position and order
+of entries in the "frames" and "packet_numbers" is used. If the optional "packet_numbers"
+field is used, each frame <span class="bcp14">MUST</span> have a corresponding packet number at the same
+index.<a href="#section-5.14-6" class="pilcrow">¶</a></p>
 <p id="section-5.14-7">Definition:<a href="#section-5.14-7" class="pilcrow">¶</a></p>
 <span id="name-quicframesprocessed-definit"></span><div id="quic-framesprocessed-def">
 <figure id="figure-22">
@@ -2905,13 +2910,31 @@ link this event to the packet_sent/received events.<a href="#section-5.14-6" cla
 <pre>
 QUICFramesProcessed = {
     frames: [* $QuicFrame]
-    ? packet_number: uint64
+    ? packet_numbers: [* uint64]
 }
 </pre>
 </div>
 <figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
 <a href="#name-quicframesprocessed-definit" class="selfRef">QUICFramesProcessed definition</a>
           </figcaption></figure>
+</div>
+<p id="section-5.14-9">For example, an instance of this event that represents four STREAM frames
+received over two packets would have the fields serialized as:<a href="#section-5.14-9" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.14-10">
+<pre>
+"frames":[
+  {"frame_type":"stream","stream_id":0,"offset":0,"length":500},
+  {"frame_type":"stream","stream_id":0,"offset":500,"length":200},
+  {"frame_type":"stream","stream_id":1,"offset":0,"length":300},
+  {"frame_type":"stream","stream_id":1,"offset":300,"length":50}
+  ],
+"packet_numbers":[
+  1,
+  1,
+  2,
+  2
+]
+</pre><a href="#section-5.14-10" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
