@@ -57,6 +57,9 @@ This document describes the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for QUIC; see {{!QUIC-TRANSPORT=RFC9000}},
 {{!QUIC-RECOVERY=RFC9002}}, and {{!QUIC-TLS=RFC9003}}.
 
+This document also adds events and fields for {{!GREASEBIT=RFC9287}} (TODO:
+update this once #310 is merged).
+
 > Note to RFC editor: Please remove the follow paragraphs in this section before
 publication.
 
@@ -623,6 +626,10 @@ QUICParametersSet = {
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
     ? preferred_address: PreferredAddress
+
+    ; RFC9287
+    ; true if present, absent or false if extension not negotiated
+    ? grease_quic_bit: bool
 }
 
 PreferredAddress = {
@@ -1441,6 +1448,9 @@ PacketHeader = {
     ? dcil: uint8
     ? scid: ConnectionID
     ? dcid: ConnectionID
+
+    ; RFC9287
+    ? quic_bit: bool .default true
 }
 ~~~
 {: #packetheader-def title="PacketHeader definition"}
