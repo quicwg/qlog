@@ -60,8 +60,9 @@ level schema defined in {{QLOG-MAIN}}.
 # Introduction
 
 This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for HTTP/3 {{RFC9114}} and QPACK
-{{!QPACK=RFC9204}}.
+"data" fields and their semantics for the HTTP/3 protocol {{!HTTP3=RFC9114}},
+QPACK {{!QPACK=RFC9204}}, and some of their extensions (see
+{{!H3-DATAGRAM=RFC9297}}).
 
 > Note to RFC editor: Please remove the follow paragraphs in this section before
 publication.
@@ -195,9 +196,15 @@ H3ParametersSet = {
 }
 
 H3Parameters = {
+    ; RFC9114
     ? max_field_section_size: uint64
+
+    ; RFC9204
     ? max_table_capacity: uint64
     ? blocked_streams_count: uint64
+
+    ; RFC9297 (SETTINGS_H3_DATAGRAM)
+    ? h3_datagram: uint16
 
     ; additional settings for grease and extensions
     * text => uint64
@@ -206,7 +213,7 @@ H3Parameters = {
 {: #h3-parametersset-def title="H3ParametersSet definition"}
 
 This event can contain any number of unspecified fields. This allows for
-representation of reserved settings (aka grease) or ad-hoc support for
+representation of reserved settings (aka GREASE) or ad-hoc support for
 extension settings that do not have a related qlog schema definition.
 
 ## parameters_restored {#h3-parametersrestored}
@@ -365,7 +372,8 @@ H3BaseFrames = H3DataFrame /
                H3GoawayFrame /
                H3MaxPushIDFrame /
                H3ReservedFrame /
-               H3UnknownFrame
+               H3UnknownFrame /
+               H3DatagramFrame
 
 $H3Frame /= H3BaseFrames
 ~~~
@@ -507,6 +515,19 @@ H3UnknownFrame = {
 }
 ~~~
 {: #h3unknownframe-def title="UnknownFrame definition"}
+
+## H3DatagramFrame Definition
+
+The HTTP/3 DATAGRAM frame is defined in {{Section 2 of !RFC9297}}.
+
+~~~ cddl
+H3DatagramFrame = {
+    frame_type: "datagram"
+    quarter_stream_id: uint64
+    ? raw: RawInfo
+}
+~~~
+{: #h3datagramframe-def title="h3datagramframe definition"}
 
 ### H3ApplicationError
 

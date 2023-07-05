@@ -54,8 +54,9 @@ in {{QLOG-MAIN}}.
 # Introduction
 
 This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for QUIC; see {{!QUIC-TRANSPORT=RFC9000}},
-{{!QUIC-RECOVERY=RFC9002}}, and {{!QUIC-TLS=RFC9003}}.
+"data" fields and their semantics for the QUIC protocol (see
+{{!QUIC-TRANSPORT=RFC9000}}, {{!QUIC-RECOVERY=RFC9002}}, and
+{{!QUIC-TLS=RFC9003}}) and some of its extensions (see {{!QUIC-DATAGRAM=RFC9221}}).
 
 > Note to RFC editor: Please remove the follow paragraphs in this section before
 publication.
@@ -605,7 +606,7 @@ QUICParametersSet = {
     ; e.g., "AES_128_GCM_SHA256"
     ? tls_cipher: text
 
-    ; transport parameters from the TLS layer:
+    ; RFC9000
     ? original_destination_connection_id: ConnectionID
     ? initial_source_connection_id: ConnectionID
     ? retry_source_connection_id: ConnectionID
@@ -623,6 +624,9 @@ QUICParametersSet = {
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
     ? preferred_address: PreferredAddress
+
+    ; RFC9221
+    ? max_datagram_frame_size: uint64
 }
 
 PreferredAddress = {
@@ -1529,7 +1533,8 @@ QuicBaseFrames /= PaddingFrame /
                   PathResponseFrame /
                   ConnectionCloseFrame /
                   HandshakeDoneFrame /
-                  UnknownFrame
+                  UnknownFrame /
+                  DatagramFrame
 
 $QuicFrame /= QuicBaseFrames
 ~~~
@@ -1848,6 +1853,19 @@ UnknownFrame = {
 }
 ~~~
 {: #unknownframe-def title="UnknownFrame definition"}
+
+### DatagramFrame
+
+The QUIC DATAGRAM frame is defined in {{Section 4 of !RFC9221}}.
+
+~~~ cddl
+DatagramFrame = {
+    frame_type: "datagram"
+    ? length: uint64
+    ? raw: RawInfo
+}
+~~~
+{: #datagramframe-def title="DatagramFrame definition"}
 
 ### TransportError
 
