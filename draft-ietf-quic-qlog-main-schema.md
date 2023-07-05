@@ -894,7 +894,7 @@ instance, this field is typically logged once in "common_fields", see
 
 ### system_info
 
-The "sys_info" field can be used to record system-specific details related to an
+The "system_info" field can be used to record system-specific details related to an
 event. This is useful, for instance, where an application splits work across
 CPUs, processes, or threads and events for a single trace occur on potentially
 different combinations thereof. Each field is optional to support deployment
