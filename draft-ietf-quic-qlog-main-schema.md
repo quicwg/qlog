@@ -1864,7 +1864,7 @@ hesitant to include these fields for all but the most stringent use cases.
 
 # IANA Considerations
 
-TODO: primarily the .well-known URI
+There are no IANA considerations.
 
 --- back
 
