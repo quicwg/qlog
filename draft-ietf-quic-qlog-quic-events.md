@@ -1289,7 +1289,9 @@ TODO: read up on the loss detection logic in draft-27 onward and see if this suf
 ## packet_lost {#recovery-packetlost}
 Importance: Core
 
-This event is emitted when a packet is deemed lost by loss detection.
+This event is emitted when a packet is deemed lost by loss detection. It is
+RECOMMENDED to populate the optional "trigger" field in order to help
+disambiguate among the various possible causes of a loss declaration.
 
 Definition:
 
@@ -1306,15 +1308,11 @@ RecoveryPacketLost = {
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
-        ; draft-23 section 5.3.1, MAY
+        ; RFC 9002 Section 6.2.4 paragraph 6, MAY
         "pto_expired"
 }
 ~~~
 {: #recovery-packetlost-def title="RecoveryPacketLost definition"}
-
-For this event, the "trigger" field SHOULD be set (for example to one of the
-values below), as this helps tremendously in debugging.
-
 
 ## marked_for_retransmit {#recovery-markedforretransmit}
 Importance: Extra
