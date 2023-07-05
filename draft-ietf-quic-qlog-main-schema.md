@@ -568,6 +568,7 @@ Event = {
     ? time_format: TimeFormat
     ? protocol_type: ProtocolType
     ? group_id: GroupID
+    ? system_info: SystemInformation
 
     ; events can contain any amount of custom fields
     * text => any
@@ -890,6 +891,24 @@ single logical group (for example, an individual QUIC connection). As such,
 instead of logging the "group_id" field with an identical value for each event
 instance, this field is typically logged once in "common_fields", see
 {{common-fields}}.
+
+### system_info
+
+The "system_info" field can be used to record system-specific details related to an
+event. This is useful, for instance, where an application splits work across
+CPUs, processes, or threads and events for a single trace occur on potentially
+different combinations thereof. Each field is optional to support deployment
+diversity.
+
+Definition:
+
+~~~ cddl
+SystemInformation = {
+  ? processor_id: uint32
+  ? process_id: uint32
+  ? thread_id: uint32
+}
+~~~
 
 ### common_fields {#common-fields}
 
@@ -1892,6 +1911,8 @@ be carried in qlog data:
   nominally separate contexts. For example, QUIC Connection IDs can be used to
   identify and track users across geographical networks {{Section 9.5 of
   !RFC9000}}).
+
+* System-level information such as CPU, process, or thread identifiers.
 
 * Stored State which can be used to correlate individual connections or sessions
   over time. Examples include QUIC address validation and retry tokens, TLS
