@@ -546,46 +546,30 @@ Tools SHOULD NOT assume the ability to derive the absolute Unix timestamp from
 qlog traces, nor allow on them to relatively order events across two or more
 separate traces (in this case, clock drift should also be taken into account).
 
-### Category and Event Type {#name-field}
+### Event Names {#name-field}
 
-Events differ mainly in the type of metadata associated with them. To help
-identify a given event and how to interpret its metadata in the "data" field (see
-{{data-field}}), each event has an associated "name" field. This can be considered
-as a concatenation of two other fields, namely event "category" and event "type".
+Events differ mainly in the type of metadata associated with them. The "name"
+field is an identifier that parsers can use to decide how to interpret the event
+metadata contained in the "data" field (see {{data-field}}).
+
+Event names indicate a category and type. The "name" field MUST contain a
+non-empty character sequence representing a category, followed by a colon (':'),
+followed by a non-empty non-empty character sequence representing a type.
 
 Category allows a higher-level grouping of events per specific event type. For
 example for QUIC and HTTP/3, the different categories could be "quic", "http",
 "qpack", and "recovery". Within these categories, the event Type provides
 additional granularity. For example for QUIC and HTTP/3, within the "quic"
-Category, there would be "packet_sent" and "packet_received" events.
+category, there would be "packet_sent" and "packet_received" events.
 
-Logging category and type separately conceptually allows for fast and high-level
-filtering based on category and the re-use of event types across categories.
-However, it also considerably inflates the log size and this flexibility is not
-used extensively in practice at the time of writing.
-
-As such, the default approach in qlog is to concatenate both field values using
-the ":" character in the "name" field, as can be seen in {{name-ex}}. As
-such, qlog category and type names MUST NOT include this character.
+JSON serialization example:
 
 ~~~
-JSON serialization using separate fields:
-{
-    "category": "quic",
-    "type": "packet_sent"
-}
-
-JSON serialization using ":" concatenated field:
 {
     "name": "quic:packet_sent"
 }
 ~~~
-{: #name-ex title="Ways of logging category, type and name of an event."}
-
-Certain serializations CAN emit category and type as separate fields, and qlog
-tools SHOULD be able to deal with both the concatenated "name" field, and the
-separate "category" and "type" fields. Text-based serializations however are
-encouraged to employ the concatenated "name" field for efficiency.
+{: #name-ex title="An event with category \"quic\" and type \"packet_sent\"."}
 
 ### Data {#data-field}
 
