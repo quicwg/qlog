@@ -17,22 +17,22 @@ intended to be protocol-agnostic. Separate documents specify how the format shou
 be used for specific protocol data. The schema is also format-agnostic, and can be
 represented in for example JSON, csv or protobuf. 
     " name="description">
-<meta content="xml2rfc 3.17.1" name="generator">
+<meta content="xml2rfc 3.17.4" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-ietf-quic-qlog-main-schema-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.17.1
-    Python 3.10.11
-    appdirs 1.4.4
+  xml2rfc 3.17.4
+    Python 3.11.4
     ConfigArgParse 1.5.3
-    google-i18n-address 2.5.2
+    google-i18n-address 3.1.0
     intervaltree 3.1.0
     Jinja2 3.1.2
     lxml 4.9.2
+    platformdirs 3.8.0
     pycountry 22.3.5
     PyYAML 6.0
-    requests 2.28.1
-    setuptools 65.6.0
+    requests 2.31.0
+    setuptools 67.7.2
     six 1.16.0
     wcwidth 0.2.6
 -->
@@ -616,6 +616,7 @@ sub, sup {
   clear: left;
   float: left;
   text-align: right;
+  margin-right: 1ch;
 }
 #identifiers dd {
   margin: 0;
@@ -1054,11 +1055,11 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">Main logging schema for qlog</td>
-<td class="right">May 2023</td>
+<td class="right">July 2023</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 17 November 2023</td>
+<td class="center">Expires 6 January 2024</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1071,12 +1072,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-main-schema-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2023-05-16" class="published">16 May 2023</time>
+<time datetime="2023-07-05" class="published">5 July 2023</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2023-11-17">17 November 2023</time></dd>
+<dd class="expires"><time datetime="2024-01-06">6 January 2024</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1131,7 +1132,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 17 November 2023.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 6 January 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1221,7 +1222,10 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
                     <p id="section-toc.1-1.3.2.4.2.6.1"><a href="#section-3.4.6" class="auto internal xref">3.4.6</a>.  <a href="#name-group_id" class="internal xref">group_id</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.7">
-                    <p id="section-toc.1-1.3.2.4.2.7.1"><a href="#section-3.4.7" class="auto internal xref">3.4.7</a>.  <a href="#name-common_fields" class="internal xref">common_fields</a></p>
+                    <p id="section-toc.1-1.3.2.4.2.7.1"><a href="#section-3.4.7" class="auto internal xref">3.4.7</a>.  <a href="#name-system_info" class="internal xref">system_info</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.8">
+                    <p id="section-toc.1-1.3.2.4.2.8.1"><a href="#section-3.4.8" class="auto internal xref">3.4.8</a>.  <a href="#name-common_fields" class="internal xref">common_fields</a></p>
 </li>
                 </ul>
 </li>
@@ -1459,8 +1463,7 @@ clarity:<a href="#section-1.1.1-2" class="pilcrow">¶</a></p>
             <div class="lang-cddl sourcecode" id="section-1.1.1-3.1">
 <pre>
 ; CDDL's uint is defined as being 64-bit in size
-; but for many protocol fields we want to be more restrictive
-; and explicit
+; but for many protocol fields it is better to be restrictive and explicit
 uint8 = uint .size 1
 uint16 = uint .size 2
 uint32 = uint .size 4
@@ -1578,31 +1581,34 @@ multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
 <span class="bcp14">MUST</span> have a value of "0.3".<a href="#section-3-1" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="section-3-2">
-        <dt id="section-3-2.1">Note:</dt>
-        <dd style="margin-left: 1.5em" id="section-3-2.2">
-          <p id="section-3-2.2.1">there have been several previously broadly deployed qlog versions based on older
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-3-2.1">
+          <p id="section-3-2.1.1">Note on versioning:<a href="#section-3-2.1.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<ul class="normal ulEmpty">
+<li class="normal ulEmpty" id="section-3-3.1">
+          <p id="section-3-3.1.1">There have been several previously broadly deployed qlog versions based on older
 drafts of this document (see draft-marx-qlog-main-schema). The old values for the
 "qlog_version" field were "draft-00", "draft-01" and "draft-02". When qlog was
-moved to the QUIC working group, we decided to switch to a new versioning scheme
-which is independent of individual draft document numbers. However, we did start
-from 0.3, as conceptually 0.0, 0.1 and 0.2 can map to draft-00, draft-01 and
-draft-02.<a href="#section-3-2.2.1" class="pilcrow">¶</a></p>
-</dd>
-      <dd class="break"></dd>
-</dl>
-<p id="section-3-3">As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
+moved to the QUIC working group, it was decided to switch to a new versioning scheme
+which is independent of individual draft document numbers. However, the start
+value was selected to be 0.3, as conceptually 0.0, 0.1 and 0.2 can map to
+draft-00, draft-01 and draft-02.<a href="#section-3-3.1.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-3-4">As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
 indicate which serialization option was chosen. Its value <span class="bcp14">MUST</span> either be one of
 the options defined in this document (e.g., <a href="#concrete-formats" class="auto internal xref">Section 6</a>) or the field
-must be omitted entirely, in which case it assumes the default value of "JSON".<a href="#section-3-3" class="pilcrow">¶</a></p>
-<p id="section-3-4">In order to make it easier to parse and identify qlog files and their
+must be omitted entirely, in which case it assumes the default value of "JSON".<a href="#section-3-4" class="pilcrow">¶</a></p>
+<p id="section-3-5">In order to make it easier to parse and identify qlog files and their
 serialization format, the "qlog_version" and "qlog_format" fields and their values
-<span class="bcp14">SHOULD</span> be in the first 256 characters/bytes of the resulting log file.<a href="#section-3-4" class="pilcrow">¶</a></p>
-<p id="section-3-5">An example of the qlog file's top-level structure is shown in <a href="#qlog-file-def" class="auto internal xref">Figure 2</a>.<a href="#section-3-5" class="pilcrow">¶</a></p>
-<p id="section-3-6">Definition:<a href="#section-3-6" class="pilcrow">¶</a></p>
+<span class="bcp14">SHOULD</span> be in the first 256 characters/bytes of the resulting log file.<a href="#section-3-5" class="pilcrow">¶</a></p>
+<p id="section-3-6">An example of the qlog file's top-level structure is shown in <a href="#qlog-file-def" class="auto internal xref">Figure 2</a>.<a href="#section-3-6" class="pilcrow">¶</a></p>
+<p id="section-3-7">Definition:<a href="#section-3-7" class="pilcrow">¶</a></p>
 <span id="name-qlogfile-definition"></span><div id="qlog-file-def">
 <figure id="figure-2">
-        <div class="lang-cddl sourcecode" id="section-3-7.1">
+        <div class="lang-cddl sourcecode" id="section-3-8.1">
 <pre>
 QlogFile = {
     qlog_version: text
@@ -1619,10 +1625,10 @@ QlogFile = {
 <a href="#name-qlogfile-definition" class="selfRef">QlogFile definition</a>
         </figcaption></figure>
 </div>
-<p id="section-3-8">JSON serialization example:<a href="#section-3-8" class="pilcrow">¶</a></p>
+<p id="section-3-9">JSON serialization example:<a href="#section-3-9" class="pilcrow">¶</a></p>
 <span id="name-qlogfile-example"></span><div id="qlog-file-ex">
 <figure id="figure-3">
-        <div class="alignLeft art-text artwork" id="section-3-9.1">
+        <div class="alignLeft art-text artwork" id="section-3-10.1">
 <pre>
 {
     "qlog_version": "0.3",
@@ -1699,7 +1705,7 @@ Summary = {
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-traces" class="section-name selfRef">traces</a>
         </h3>
 <p id="section-3.2-1">It is often advantageous to group several related qlog traces together in a single
-file. For example, we can simultaneously perform logging on the client, on the
+file. For example, it is possible to simultaneously perform logging on the client, on the
 server and on a single point on their common network path. For analysis, it is
 useful to aggregate these three individual traces together into a single file, so
 it can be uniquely stored, transferred and annotated.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
@@ -1709,10 +1715,10 @@ into a single qlog file by taking the "traces" entry/entries for each qlog file
 individually and copying them to the "traces" array of a new, aggregated qlog
 file. This is typically done in a post-processing step.<a href="#section-3.2-2" class="pilcrow">¶</a></p>
 <p id="section-3.2-3">The "traces" array can thus contain both normal traces (for the definition of the
-Trace type, see <a href="#trace" class="auto internal xref">Section 3.3</a>), but also "error" entries. These indicate that we tried
-to find/convert a file for inclusion in the aggregated qlog, but there was an
-error during the process. Rather than silently dropping the erroneous file, we can
-opt to explicitly include it in the qlog file as an entry in the "traces" array,
+Trace type, see <a href="#trace" class="auto internal xref">Section 3.3</a>), but also "error" entries. These indicate that an attempt
+to find/convert a file for inclusion in the aggregated qlog was made, but there was an
+error during the process. Rather than silently dropping the erroneous file, it can
+be explicitly included in the qlog file as an entry in the "traces" array,
 as shown in <a href="#trace-error-def" class="auto internal xref">Figure 6</a>.<a href="#section-3.2-3" class="pilcrow">¶</a></p>
 <p id="section-3.2-4">Definition:<a href="#section-3.2-4" class="pilcrow">¶</a></p>
 <span id="name-traceerror-definition"></span><div id="trace-error-def">
@@ -1722,7 +1728,7 @@ as shown in <a href="#trace-error-def" class="auto internal xref">Figure 6</a>.<
 TraceError = {
     error_description: text
 
-    ; the original URI at which we attempted to find the file
+    ; the original URI used for attempted find of the file
     ? uri: text
     ? vantage_point: VantagePoint
 }
@@ -1819,7 +1825,7 @@ Trace = {
           <h4 id="name-configuration">
 <a href="#section-3.3.1" class="section-number selfRef">3.3.1. </a><a href="#name-configuration" class="section-name selfRef">Configuration</a>
           </h4>
-<p id="section-3.3.1-1">We take into account that a qlog file is usually not used in isolation, but by
+<p id="section-3.3.1-1">A qlog file is usually not used in isolation but by
 means of various tools. Especially when aggregating various traces together or
 preparing traces for a demonstration, one might wish to persist certain tool-based
 settings inside the qlog file itself. For this, the configuration field is used.<a href="#section-3.3.1-1" class="pilcrow">¶</a></p>
@@ -2018,7 +2024,7 @@ semantics and expected corresponding value formats.<a href="#section-3.4-1" clas
 "time_format" (<a href="#time-based-fields" class="auto internal xref">Section 3.4.1</a>), "protocol_type" (<a href="#protocol-type-field" class="auto internal xref">Section 3.4.4</a>),
 "trigger" (<a href="#trigger-field" class="auto internal xref">Section 3.4.5</a>), and "group_id" <a href="#group-ids" class="auto internal xref">Section 3.4.6</a>. As especially these
 later fields typically have identical values across individual event instances,
-they are normally logged separately in the "common_fields" (<a href="#common-fields" class="auto internal xref">Section 3.4.7</a>).<a href="#section-3.4-2" class="pilcrow">¶</a></p>
+they are normally logged separately in the "common_fields" (<a href="#common-fields" class="auto internal xref">Section 3.4.8</a>).<a href="#section-3.4-2" class="pilcrow">¶</a></p>
 <p id="section-3.4-3">The specific values for each of these fields and their semantics are defined in
 separate documents, specific per protocol or use case. For example: event
 definitions for QUIC, HTTP/3 and QPACK can be found in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and
@@ -2041,6 +2047,7 @@ Event = {
     ? time_format: TimeFormat
     ? protocol_type: ProtocolType
     ? group_id: GroupID
+    ? system_info: SystemInformation
 
     ; events can contain any amount of custom fields
     * text =&gt; any
@@ -2059,7 +2066,7 @@ Event = {
 {
     "time": 1553986553572,
 
-    "name": "transport:packet_sent",
+    "name": "quic:packet_sent",
     "data": { ... },
 
     "protocol_type":  ["QUIC","HTTP3"],
@@ -2110,7 +2117,7 @@ event in a trace typically logs the full absolute timestamp. This approach uses
 the least amount of characters.<a href="#section-3.4.1-4.2" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-3.4.1-4.3">Relative: Specify a full "reference_time" timestamp (typically this is done
-up-front in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 3.4.7</a>) and include only
+up-front in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 3.4.8</a>) and include only
 relatively-encoded values based on this reference_time with each event. The
 "reference_time" value is typically the first absolute timestamp. This approach
 uses a medium amount of characters.<a href="#section-3.4.1-4.3" class="pilcrow">¶</a>
@@ -2167,9 +2174,9 @@ identify a given event and how to interpret its metadata in the "data" field (se
 <a href="#data-field" class="auto internal xref">Section 3.4.3</a>), each event has an associated "name" field. This can be considered
 as a concatenation of two other fields, namely event "category" and event "type".<a href="#section-3.4.2-1" class="pilcrow">¶</a></p>
 <p id="section-3.4.2-2">Category allows a higher-level grouping of events per specific event type. For
-example for QUIC and HTTP/3, the different categories could be "transport",
-"http", "qpack", and "recovery". Within these categories, the event Type provides
-additional granularity. For example for QUIC and HTTP/3, within the "transport"
+example for QUIC and HTTP/3, the different categories could be "quic", "http",
+"qpack", and "recovery". Within these categories, the event Type provides
+additional granularity. For example for QUIC and HTTP/3, within the "quic"
 Category, there would be "packet_sent" and "packet_received" events.<a href="#section-3.4.2-2" class="pilcrow">¶</a></p>
 <p id="section-3.4.2-3">Logging category and type separately conceptually allows for fast and high-level
 filtering based on category and the re-use of event types across categories.
@@ -2184,13 +2191,13 @@ such, qlog category and type names <span class="bcp14">MUST NOT</span> include t
 <pre>
 JSON serialization using separate fields:
 {
-    "category": "transport",
+    "category": "quic",
     "type": "packet_sent"
 }
 
 JSON serialization using ":" concatenated field:
 {
-    "name": "transport:packet_sent"
+    "name": "quic:packet_sent"
 }
 </pre>
 </div>
@@ -2308,7 +2315,7 @@ ProtocolType = [+ text]
 <p id="section-3.4.4-4">For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
 entry values, see <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span>.<a href="#section-3.4.4-4" class="pilcrow">¶</a></p>
 <p id="section-3.4.4-5">Typically however, all events in a single trace are of the same few protocols, and
-this array field is logged once in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 3.4.7</a>.<a href="#section-3.4.4-5" class="pilcrow">¶</a></p>
+this array field is logged once in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 3.4.8</a>.<a href="#section-3.4.4-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="trigger-field">
@@ -2364,13 +2371,13 @@ TransportPacketDropped = {
 from different vantage points. However, a single trace from one endpoint can also
 contain events from a variety of sources. For example, a server implementation
 might choose to log events for all incoming connections in a single large
-(streamed) qlog file. As such, we need a method for splitting up events belonging
-to separate logical entities.<a href="#section-3.4.6-1" class="pilcrow">¶</a></p>
+(streamed) qlog file. As such, a method for splitting up events belonging
+to separate logical entities is required.<a href="#section-3.4.6-1" class="pilcrow">¶</a></p>
 <p id="section-3.4.6-2">The simplest way to perform this splitting is by associating a "group identifier"
 to each event that indicates to which conceptual "group" each event belongs. A
 post-processing step can then extract events per group. However, this group
-identifier can be highly protocol and context-specific. In the example above, we
-might use QUIC's "Original Destination Connection ID" to uniquely identify a
+identifier can be highly protocol and context-specific. In the example above,
+the QUIC "Original Destination Connection ID" could be used to uniquely identify a
 connection. As such, they might add a "ODCID" field to each event. However, a
 middlebox logging IP or TCP traffic might rather use four-tuples to identify
 connections, and add a "four_tuple" field.<a href="#section-3.4.6-2" class="pilcrow">¶</a></p>
@@ -2403,14 +2410,14 @@ and QUIC connection IDs:<a href="#section-3.4.6-6" class="pilcrow">¶</a></p>
         "protocol_type": ["TCP", "TLS", "HTTP2"],
         "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
                    ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
-        "name": "transport:packet_received",
+        "name": "quic:packet_received",
         "data": { ... }
     },
     {
         "time": 1553986553581,
         "protocol_type": ["QUIC","HTTP3"],
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "name": "transport:packet_sent",
+        "name": "quic:packet_sent",
         "data": { ... }
     }
 ]
@@ -2427,28 +2434,50 @@ rather than use the group_id field for that purpose.<a href="#section-3.4.6-8" c
 single logical group (for example, an individual QUIC connection). As such,
 instead of logging the "group_id" field with an identical value for each event
 instance, this field is typically logged once in "common_fields", see
-<a href="#common-fields" class="auto internal xref">Section 3.4.7</a>.<a href="#section-3.4.6-9" class="pilcrow">¶</a></p>
+<a href="#common-fields" class="auto internal xref">Section 3.4.8</a>.<a href="#section-3.4.6-9" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="systeminfo">
+<section id="section-3.4.7">
+          <h4 id="name-system_info">
+<a href="#section-3.4.7" class="section-number selfRef">3.4.7. </a><a href="#name-system_info" class="section-name selfRef">system_info</a>
+          </h4>
+<p id="section-3.4.7-1">The "sys_info" field can be used to record system-specific details related to an
+event. This is useful, for instance, where an application splits work across
+CPUs, processes, or threads and events for a single trace occur on potentially
+different combinations thereof. Each field is optional to support deployment
+diversity.<a href="#section-3.4.7-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.7-2">Definition:<a href="#section-3.4.7-2" class="pilcrow">¶</a></p>
+<div class="lang-cddl sourcecode" id="section-3.4.7-3">
+<pre>
+SystemInformation = {
+  ? processor_id: uint32
+  ? process_id: uint32
+  ? thread_id: uint32
+}
+</pre><a href="#section-3.4.7-3" class="pilcrow">¶</a>
+</div>
 </section>
 </div>
 <div id="common-fields">
-<section id="section-3.4.7">
+<section id="section-3.4.8">
           <h4 id="name-common_fields">
-<a href="#section-3.4.7" class="section-number selfRef">3.4.7. </a><a href="#name-common_fields" class="section-name selfRef">common_fields</a>
+<a href="#section-3.4.8" class="section-number selfRef">3.4.8. </a><a href="#name-common_fields" class="section-name selfRef">common_fields</a>
           </h4>
-<p id="section-3.4.7-1">As discussed in the previous sections, information for a typical qlog event varies
+<p id="section-3.4.8-1">As discussed in the previous sections, information for a typical qlog event varies
 in three main fields: "time", "name" and associated data. Additionally, there are
 also several more advanced fields that allow mixing events from different
 protocols and contexts inside of the same trace (for example "protocol_type" and
 "group_id"). In most "normal" use cases however, the values of these advanced
 fields are consistent for each event instance (for example, a single trace
-contains events for a single QUIC connection).<a href="#section-3.4.7-1" class="pilcrow">¶</a></p>
-<p id="section-3.4.7-2">To reduce file size and making logging easier, qlog uses the "common_fields" list
+contains events for a single QUIC connection).<a href="#section-3.4.8-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.8-2">To reduce file size and making logging easier, qlog uses the "common_fields" list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
-event. An example of this is shown in <a href="#common-fields-ex" class="auto internal xref">Figure 26</a>.<a href="#section-3.4.7-2" class="pilcrow">¶</a></p>
+event. An example of this is shown in <a href="#common-fields-ex" class="auto internal xref">Figure 26</a>.<a href="#section-3.4.8-2" class="pilcrow">¶</a></p>
 <span id="name-commonfields-example"></span><div id="common-fields-ex">
 <figure id="figure-26">
-            <div class="alignLeft art-text artwork" id="section-3.4.7-3.1">
+            <div class="alignLeft art-text artwork" id="section-3.4.8-3.1">
 <pre>
 JSON serialization with repeated field values
 per-event instance:
@@ -2461,7 +2490,7 @@ per-event instance:
             "reference_time": 1553986553572,
 
             "time": 2,
-            "name": "transport:packet_received",
+            "name": "quic:packet_received",
             "data": { ... }
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
@@ -2489,7 +2518,7 @@ extracted to common_fields:
     "events": [
         {
             "time": 2,
-            "name": "transport:packet_received",
+            "name": "quic:packet_received",
             "data": { ... }
         },{
             "time": 7,
@@ -2504,18 +2533,18 @@ extracted to common_fields:
 <a href="#name-commonfields-example" class="selfRef">CommonFields example</a>
             </figcaption></figure>
 </div>
-<p id="section-3.4.7-4">The "common_fields" field is a generic dictionary of key-value pairs, where the
+<p id="section-3.4.8-4">The "common_fields" field is a generic dictionary of key-value pairs, where the
 key is always a string and the value can be of any type, but is typically also a
 string or number. As such, unknown entries in this dictionary <span class="bcp14">MUST</span> be disregarded
 by the user and tools (i.e., the presence of an unknown field is explicitly NOT an
-error).<a href="#section-3.4.7-4" class="pilcrow">¶</a></p>
-<p id="section-3.4.7-5">The list of default qlog fields that are typically logged in common_fields (as
+error).<a href="#section-3.4.8-4" class="pilcrow">¶</a></p>
+<p id="section-3.4.8-5">The list of default qlog fields that are typically logged in common_fields (as
 opposed to as individual fields per event instance) are shown in the listing
-below:<a href="#section-3.4.7-5" class="pilcrow">¶</a></p>
-<p id="section-3.4.7-6">Definition:<a href="#section-3.4.7-6" class="pilcrow">¶</a></p>
+below:<a href="#section-3.4.8-5" class="pilcrow">¶</a></p>
+<p id="section-3.4.8-6">Definition:<a href="#section-3.4.8-6" class="pilcrow">¶</a></p>
 <span id="name-commonfields-definition"></span><div id="common-fields-def">
 <figure id="figure-27">
-            <div class="lang-cddl sourcecode" id="section-3.4.7-7.1">
+            <div class="lang-cddl sourcecode" id="section-3.4.8-7.1">
 <pre>
 CommonFields = {
     ? time_format: TimeFormat
@@ -2530,11 +2559,11 @@ CommonFields = {
 <a href="#name-commonfields-definition" class="selfRef">CommonFields definition</a>
             </figcaption></figure>
 </div>
-<p id="section-3.4.7-8">Tools <span class="bcp14">MUST</span> be able to deal with these fields being defined either on each event
+<p id="section-3.4.8-8">Tools <span class="bcp14">MUST</span> be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
 trace has a different value for a given field, this field <span class="bcp14">MUST NOT</span> be added to
 common_fields but instead defined on each event individually. Good example of such
-fields are "time" and "data", who are divergent by nature.<a href="#section-3.4.7-8" class="pilcrow">¶</a></p>
+fields are "time" and "data", who are divergent by nature.<a href="#section-3.4.8-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2562,8 +2591,8 @@ easier for qlog implementers to extrapolate from one protocol to another.<a href
         </h3>
 <p id="section-4.1-1">TODO: pending QUIC working group discussion. This text reflects the initial (qlog
 draft 01 and 02) setup.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
-<p id="section-4.1-2">There are several ways of defining qlog events. In practice, we have seen two main
-types used so far: a) those that map directly to concepts seen in the protocols
+<p id="section-4.1-2">There are several ways of defining qlog events. In practice, two main
+types of approach have been observed: a) those that map directly to concepts seen in the protocols
 (e.g., <code>packet_sent</code>) and b) those that act as aggregating events that combine
 data from several possible protocol behaviors or code paths into one (e.g.,
 <code>parameters_set</code>). The latter are typically used as a means to reduce the amount
@@ -2573,9 +2602,9 @@ separate qlog entity would cause an explosion of event types.<a href="#section-4
 For example, packet header values that remain consistent across many packets are
 split into separate events (for example <code>spin_bit_updated</code> or
 <code>connection_id_updated</code> for QUIC).<a href="#section-4.1-3" class="pilcrow">¶</a></p>
-<p id="section-4.1-4">Finally, we have typically refrained from adding additional state change events if
+<p id="section-4.1-4">Finally, logging additional state change events, if
 those state changes can be directly inferred from data on the wire (for example
-flow control limit changes) if the implementation is bug-free and spec-compliant.
+flow control limit changes) is typically avoided, if the implementation is bug-free and spec-compliant.
 Exceptions have been made for common events that benefit from being easily
 identifiable or individually logged (for example <code>packets_acked</code>).<a href="#section-4.1-4" class="pilcrow">¶</a></p>
 </section>
@@ -2591,7 +2620,7 @@ logging of similar or overlapping data. For example the separate QUIC
 <code>connection_state_updated</code>. In these cases, it is not always clear which event
 should be logged or used, and which event should take precedence if e.g., both are
 present and provide conflicting information.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
-<p id="section-4.2-2">To aid in this decision making, we recommend that each event <span class="bcp14">SHOULD</span> have an
+<p id="section-4.2-2">To aid in this decision making, each event <span class="bcp14">SHOULD</span> have an
 "importance indicator" with one of three values, in decreasing order of importance
 and expected usage:<a href="#section-4.2-2" class="pilcrow">¶</a></p>
 <ul class="normal">
@@ -2937,9 +2966,8 @@ as it retains full flexibility and maximum interoperability. Storage
 overhead can be managed well in practice by employing compression. For
 this reason, this document details how to practically transform qlog
 schema definitions to <span>[<a href="#JSON" class="cite xref">JSON</a>]</span>, its subset <span>[<a href="#I-JSON" class="cite xref">I-JSON</a>]</span>,
-and its streamable derivative <span>[<a href="#JSON-Text-Sequences" class="cite xref">JSON-Text-Sequences</a>]</span>s. We
-discuss concrete options to bring down JSON size and processing
-overheads in <a href="#optimizations" class="auto internal xref">Section 6.3</a>.<a href="#section-6-3" class="pilcrow">¶</a></p>
+and its streamable derivative <span>[<a href="#JSON-Text-Sequences" class="cite xref">JSON-Text-Sequences</a>]</span>s. Concrete options
+to bring down JSON size and processing overheads are discuseed in <a href="#optimizations" class="auto internal xref">Section 6.3</a>.<a href="#section-6-3" class="pilcrow">¶</a></p>
 <p id="section-6-4">As depending on the employed format different deserializers/parsers should be
 used, the "qlog_format" field is used to indicate the chosen serialization
 approach. This field is always a string, but can be made hierarchical by the use
@@ -3171,8 +3199,8 @@ QlogFileSeq = {
       }
     }
 }
-&lt;RS&gt;{"time": 2, "name": "transport:parameters_set", "data": { ... } }
-&lt;RS&gt;{"time": 7, "name": "transport:packet_sent", "data": { ... } }
+&lt;RS&gt;{"time": 2, "name": "quic:parameters_set", "data": { ... } }
+&lt;RS&gt;{"time": 7, "name": "quic:packet_sent", "data": { ... } }
 ...
 </pre>
 </div>
@@ -3180,7 +3208,7 @@ QlogFileSeq = {
 <a href="#name-top-level-element" class="selfRef">Top-level element</a>
           </figcaption></figure>
 </div>
-<p id="section-6.2-13">Note: while not specifically required by the JSON-SEQ specification, all qlog
+<p id="section-6.2-13">While not specifically required by the JSON-SEQ specification, all qlog
 field names in a JSON-SEQ serialization <span class="bcp14">MUST</span> be lowercase.<a href="#section-6.2-13" class="pilcrow">¶</a></p>
 <p id="section-6.2-14">In order to serialize all other CDDL-based qlog event and data structure
 definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
@@ -3212,8 +3240,8 @@ JSON(-SEQ) (de)serialization performance is typically (slightly) lower than that
 of more optimized and predictable formats. Both aspects make these formats more
 challenging (<a href="https://qlog.edm.uhasselt.be/anrw/">though still practical</a>) to use
 in large scale setups.<a href="#section-6.3-1" class="pilcrow">¶</a></p>
-<p id="section-6.3-2">During the development of qlog, we compared a multitude of alternative formatting
-and optimization options. The results of this study are <a href="https://github.com/quiclog/internet-drafts/issues/30#issuecomment-617675097">summarized on the qlog
+<p id="section-6.3-2">During the development of qlog, a multitude of alternative formatting
+and optimization options were compared. The results of this study are <a href="https://github.com/quiclog/internet-drafts/issues/30#issuecomment-617675097">summarized on the qlog
 github
 repository</a>.
 The rest of this section discusses some of these approaches implementations could
@@ -3221,8 +3249,8 @@ choose and the expected gains and tradeoffs inherent therein. Tools <span class=
 mainly the compression options listed in <a href="#compression" class="auto internal xref">Section 6.3.2</a>, as they provide the
 largest wins for the least cost overall.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
 <p id="section-6.3-3">Over time, specific qlog formats and encodings can be created that more formally
-define and combine some of the discussed optimizations or add new ones. We choose
-to define these schemes in separate documents to keep the main qlog definition
+define and combine some of the discussed optimizations or add new ones. It was
+decided to define these schemes in separate documents to keep the main qlog definition
 clean and generalizable, as not all contexts require the same performance or
 flexibility as others and qlog is intended to be a broadly usable and extensible
 format (for example more flexibility is needed in earlier stages of protocol
@@ -3232,9 +3260,9 @@ instead of a more performant option.<a href="#section-6.3-3" class="pilcrow">¶<
 <p id="section-6.3-4">To be able to easily distinguish between these options in qlog compatible tooling
 (without the need to have the user provide out-of-band information or to
 (heuristically) parse and process files in a multitude of ways, see also
-<a href="#tooling" class="auto internal xref">Section 8</a>), we recommend using explicit file extensions to indicate specific
+<a href="#tooling" class="auto internal xref">Section 8</a>), it is recommended that explicit file extensions are used to indicate specific
 formats. As there are no standards in place for this type of extension to format
-mapping, we employ a commonly used scheme here. Our approach is to list the
+mapping, a commonly used scheme is proposed: list the
 applied optimizations in the extension in ascending order of application (e.g., if
 a qlog file is first optimized with technique A and then compressed with technique
 B, the resulting file would have the extension ".(s)qlog.A.B"). This allows
@@ -3262,7 +3290,7 @@ it still uses JSON), but rather employ a new value of "JSON.namedheaders" (or
 "JSON-SEQ.namedheaders") for the "qlog_format" field (see <a href="#top-level" class="auto internal xref">Section 3</a>).<a href="#section-6.3.1-2" class="pilcrow">¶</a></p>
 <p id="section-6.3.1-3">The second option is to replace field values and/or names with indices into a
 (dynamic) lookup table. This is a common compression technique and can provide
-significant file size reductions (up to 50% in our tests, 100MB to 50MB). However,
+significant file size reductions (up to 50% in tests, 100MB to 50MB). However,
 this approach is even more difficult to implement efficiently and requires either
 including the (dynamic) table in the resulting file (an approach taken by for
 example <a href="https://www.chromium.org/developers/design-documents/network-stack/netlog">Chromium's NetLog
@@ -3286,7 +3314,7 @@ inherently part of qlog.<a href="#section-6.3.1-4" class="pilcrow">¶</a></p>
 scheme for textual data. As qlog in the JSON(-SEQ) format typically contains a
 large amount of repetition, off-the-shelf (text) compression techniques typically
 succeed very well in bringing down file sizes (regularly with up to two orders of
-magnitude in our tests, even for "fast" compression levels). As such, utilizing
+magnitude in tests, even for "fast" compression levels). As such, utilizing
 compression is recommended before attempting other optimization options, even
 though this might (somewhat) increase processing costs due to the additional
 compression step.<a href="#section-6.3.2-1" class="pilcrow">¶</a></p>
@@ -3306,9 +3334,9 @@ brotli compresses qlog JSON files to 7% of their initial size on average (100MB 
 7MB). For this option, the file extension .(s)qlog.br <span class="bcp14">SHOULD</span> BE used. The
 "qlog_format" field should still reflect the original JSON formatting of the qlog
 data (e.g., "JSON" or "JSON-SEQ").<a href="#section-6.3.2-3" class="pilcrow">¶</a></p>
-<p id="section-6.3.2-4">Other compression algorithms of course exist (for example xz, zstd, and lz4). We
-mainly recommend gzip and brotli because of their tweakable behaviour and wide
-support in web-based environments, which we envision as the main tooling ecosystem
+<p id="section-6.3.2-4">Other compression algorithms of course exist (for example xz, zstd, and lz4). The
+gzip and brotli are recommended because of their tweakable behaviour and wide
+support in web-based environments, which is envisioned as the main tooling ecosystem
 (see also <a href="#tooling" class="auto internal xref">Section 8</a>).<a href="#section-6.3.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -3323,7 +3351,7 @@ produces smaller files and often has better (de)serialization performance.
 However, the resultant files are no longer human readable and some formats require
 hard tradeoffs between flexibility for performance.<a href="#section-6.3.3-1" class="pilcrow">¶</a></p>
 <p id="section-6.3.3-2">The first option is to use the CBOR (Concise Binary Object Representation
-<span>[<a href="#RFC7049" class="cite xref">RFC7049</a>]</span>) format. For our purposes, CBOR can be viewed as a straightforward
+<span>[<a href="#RFC7049" class="cite xref">RFC7049</a>]</span>) format. For the purposes of qlog, CBOR can be viewed as a straightforward
 binary variant of JSON. As such, existing JSON qlog files can be trivially
 converted to and from CBOR (though slightly more work is needed for JSON-SEQ qlogs
 to convert them to CBOR-SEQ, see <span>[<a href="#RFC8742" class="cite xref">RFC8742</a>]</span>). While CBOR thus does retain the
@@ -3344,7 +3372,7 @@ it it not possible to (easily) log new event types in protobuf files without
 adjusting this schema as well, which has its own practical challenges. As qlog is
 intended to be a flexible, general purpose format, this type of format was not
 chosen as its basic serialization. The lower flexibility does lead to
-significantly reduced file sizes. Our straightforward mapping of the qlog main
+significantly reduced file sizes. A straightforward mapping of the qlog main
 schema and QUIC/HTTP3 event types to protobuf created qlog files 24% as large as
 the raw JSON equivalents (100MB to 24MB). For this option, the file extension
 .(s)qlog.protobuf <span class="bcp14">SHOULD</span> BE used. The "qlog_format" field should reflect the
@@ -3355,8 +3383,8 @@ of the original textual JSON size (100MB to 6MB) for both gzip and brotli) and s
 does protobuf (5% (gzip) to 3% (brotli)). However, these gains are similar to the
 ones achieved by simply compression the textual JSON equivalents directly (7%, see
 <a href="#compression" class="auto internal xref">Section 6.3.2</a>). As such, since compression is still needed to achieve optimal
-file size reductions event with binary formats, we feel the more flexible
-compressed textual JSON options are a better default for the qlog format in
+file size reductions event with binary formats, the more flexible
+compressed textual JSON options are likely a better default for the qlog format in
 general.<a href="#section-6.3.3-4" class="pilcrow">¶</a></p>
 <p id="section-6.3.3-5"></p>
 </section>
@@ -3468,7 +3496,7 @@ one another without loss of information. For example, a number of JSON-SEQ
 streamed qlogs could be combined into a JSON formatted qlog for later processing.
 Similarly, a captured binary qlog could be transformed to JSON for easier
 interpretation and sharing.<a href="#section-6.4-1" class="pilcrow">¶</a></p>
-<p id="section-6.4-2">Secondly, we can also consider other structured logging approaches that contain
+<p id="section-6.4-2">Secondly, other structured logging approaches contain
 similar (though typically not identical) data to qlog, like raw packet capture
 files (for example .pcap files from tcpdump) or endpoint-specific logging formats
 (for example the NetLog format in Google Chrome). These are sometimes the only
@@ -3507,8 +3535,8 @@ steer this generation and access of the results.<a href="#section-7-1" class="pi
         <h3 id="name-set-file-output-destination">
 <a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-set-file-output-destination" class="section-name selfRef">Set file output destination via an environment variable</a>
         </h3>
-<p id="section-7.1-1">To provide users control over where and how qlog files are created, we define two
-environment variables. The first, QLOGFILE, indicates a full path to where an
+<p id="section-7.1-1">To provide users control over where and how qlog files are created, two
+environment variables are defined. The first, QLOGFILE, indicates a full path to where an
 individual qlog file should be stored. This path <span class="bcp14">MUST</span> include the full file
 extension. The second, QLOGDIR, sets a general directory path in which qlog files
 should be placed. This path <span class="bcp14">MUST</span> include the directory separator character at the
@@ -3657,26 +3685,28 @@ uniquely identify individual connections, endpoints, and potentially users.<a hr
 nominally separate contexts. For example, QUIC Connection IDs can be used to
 identify and track users across geographical networks <span><a href="https://rfc-editor.org/rfc/rfc9000#section-9.5" class="relref">Section 9.5</a> of [<a href="#RFC9000" class="cite xref">RFC9000</a>]</span>).<a href="#section-9-4.2" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.3">Stored State which can be used to correlate individual connections or sessions
-over time. Examples include QUIC address validation and retry tokens, TLS
-session tickets, and HTTP cookies.<a href="#section-9-4.3" class="pilcrow">¶</a>
+        <li class="normal" id="section-9-4.3">System-level information such as CPU, process, or thread identifiers.<a href="#section-9-4.3" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.4">Decryption keys, passwords, and tokens which can be used with other data
+        <li class="normal" id="section-9-4.4">Stored State which can be used to correlate individual connections or sessions
+over time. Examples include QUIC address validation and retry tokens, TLS
+session tickets, and HTTP cookies.<a href="#section-9-4.4" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-9-4.5">Decryption keys, passwords, and tokens which can be used with other data
 sources (e.g., captures of encrypted packets) to correlate qlog data to a
 specific connection or user or leak additional information. Examples include
-TLS decryption keys and HTTP-level API access or authorization tokens.<a href="#section-9-4.4" class="pilcrow">¶</a>
+TLS decryption keys and HTTP-level API access or authorization tokens.<a href="#section-9-4.5" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.5">Data that can be used to correlate qlogs to other data sources (e.g., captures
+        <li class="normal" id="section-9-4.6">Data that can be used to correlate qlogs to other data sources (e.g., captures
 of encrypted packets). Examples include high-resolution event timestamps or
-inter-event timings, event counts, packet and frame sizes.<a href="#section-9-4.5" class="pilcrow">¶</a>
+inter-event timings, event counts, packet and frame sizes.<a href="#section-9-4.6" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.6">Full or partial encrypted raw packet and frame payloads, which can be used
+        <li class="normal" id="section-9-4.7">Full or partial encrypted raw packet and frame payloads, which can be used
 with other data sources (e.g., captures of encrypted packets) to correlate
-qlog data to a specific connection or session.<a href="#section-9-4.6" class="pilcrow">¶</a>
+qlog data to a specific connection or session.<a href="#section-9-4.7" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.7">Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
+        <li class="normal" id="section-9-4.8">Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
 values, HTTP response data, TLS SNI field values), which can contain directly
-sensitive information.<a href="#section-9-4.7" class="pilcrow">¶</a>
+sensitive information.<a href="#section-9-4.8" class="pilcrow">¶</a>
 </li>
       </ul>
 <p id="section-9-5">The simplest and most extreme form of protection against abuse of this
