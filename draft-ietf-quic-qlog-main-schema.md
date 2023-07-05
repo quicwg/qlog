@@ -354,10 +354,9 @@ an empty array.
 ### vantage_point {#vantage-point}
 
 The vantage_point field describes the vantage point from which the trace
-originates, see {{vantage-point-def}}. Each trace can have only a single vantage_point
-and thus all events in a trace MUST BE from the perspective of this vantage_point.
-To include events from multiple vantage_points, implementers can for example
-include multiple traces, split by vantage_point, in a single qlog file.
+originates, see {{vantage-point-def}}. Each trace MUST have a single
+vantage_point. By virtue of this, a single qlog file can only include events
+from multiple vantage_points if it includes multiple traces.
 
 Definitions:
 
