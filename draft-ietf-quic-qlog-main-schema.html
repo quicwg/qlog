@@ -1222,7 +1222,10 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
                     <p id="section-toc.1-1.3.2.4.2.6.1"><a href="#section-3.4.6" class="auto internal xref">3.4.6</a>.  <a href="#name-group_id" class="internal xref">group_id</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.7">
-                    <p id="section-toc.1-1.3.2.4.2.7.1"><a href="#section-3.4.7" class="auto internal xref">3.4.7</a>.  <a href="#name-common_fields" class="internal xref">common_fields</a></p>
+                    <p id="section-toc.1-1.3.2.4.2.7.1"><a href="#section-3.4.7" class="auto internal xref">3.4.7</a>.  <a href="#name-system_info" class="internal xref">system_info</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4.2.8">
+                    <p id="section-toc.1-1.3.2.4.2.8.1"><a href="#section-3.4.8" class="auto internal xref">3.4.8</a>.  <a href="#name-common_fields" class="internal xref">common_fields</a></p>
 </li>
                 </ul>
 </li>
@@ -2021,7 +2024,7 @@ semantics and expected corresponding value formats.<a href="#section-3.4-1" clas
 "time_format" (<a href="#time-based-fields" class="auto internal xref">Section 3.4.1</a>), "protocol_type" (<a href="#protocol-type-field" class="auto internal xref">Section 3.4.4</a>),
 "trigger" (<a href="#trigger-field" class="auto internal xref">Section 3.4.5</a>), and "group_id" <a href="#group-ids" class="auto internal xref">Section 3.4.6</a>. As especially these
 later fields typically have identical values across individual event instances,
-they are normally logged separately in the "common_fields" (<a href="#common-fields" class="auto internal xref">Section 3.4.7</a>).<a href="#section-3.4-2" class="pilcrow">¶</a></p>
+they are normally logged separately in the "common_fields" (<a href="#common-fields" class="auto internal xref">Section 3.4.8</a>).<a href="#section-3.4-2" class="pilcrow">¶</a></p>
 <p id="section-3.4-3">The specific values for each of these fields and their semantics are defined in
 separate documents, specific per protocol or use case. For example: event
 definitions for QUIC, HTTP/3 and QPACK can be found in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and
@@ -2044,6 +2047,7 @@ Event = {
     ? time_format: TimeFormat
     ? protocol_type: ProtocolType
     ? group_id: GroupID
+    ? system_info: SystemInformation
 
     ; events can contain any amount of custom fields
     * text =&gt; any
@@ -2113,7 +2117,7 @@ event in a trace typically logs the full absolute timestamp. This approach uses
 the least amount of characters.<a href="#section-3.4.1-4.2" class="pilcrow">¶</a>
 </li>
             <li class="normal" id="section-3.4.1-4.3">Relative: Specify a full "reference_time" timestamp (typically this is done
-up-front in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 3.4.7</a>) and include only
+up-front in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 3.4.8</a>) and include only
 relatively-encoded values based on this reference_time with each event. The
 "reference_time" value is typically the first absolute timestamp. This approach
 uses a medium amount of characters.<a href="#section-3.4.1-4.3" class="pilcrow">¶</a>
@@ -2311,7 +2315,7 @@ ProtocolType = [+ text]
 <p id="section-3.4.4-4">For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
 entry values, see <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span>.<a href="#section-3.4.4-4" class="pilcrow">¶</a></p>
 <p id="section-3.4.4-5">Typically however, all events in a single trace are of the same few protocols, and
-this array field is logged once in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 3.4.7</a>.<a href="#section-3.4.4-5" class="pilcrow">¶</a></p>
+this array field is logged once in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 3.4.8</a>.<a href="#section-3.4.4-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="trigger-field">
@@ -2430,28 +2434,50 @@ rather than use the group_id field for that purpose.<a href="#section-3.4.6-8" c
 single logical group (for example, an individual QUIC connection). As such,
 instead of logging the "group_id" field with an identical value for each event
 instance, this field is typically logged once in "common_fields", see
-<a href="#common-fields" class="auto internal xref">Section 3.4.7</a>.<a href="#section-3.4.6-9" class="pilcrow">¶</a></p>
+<a href="#common-fields" class="auto internal xref">Section 3.4.8</a>.<a href="#section-3.4.6-9" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="systeminfo">
+<section id="section-3.4.7">
+          <h4 id="name-system_info">
+<a href="#section-3.4.7" class="section-number selfRef">3.4.7. </a><a href="#name-system_info" class="section-name selfRef">system_info</a>
+          </h4>
+<p id="section-3.4.7-1">The "system_info" field can be used to record system-specific details related to an
+event. This is useful, for instance, where an application splits work across
+CPUs, processes, or threads and events for a single trace occur on potentially
+different combinations thereof. Each field is optional to support deployment
+diversity.<a href="#section-3.4.7-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.7-2">Definition:<a href="#section-3.4.7-2" class="pilcrow">¶</a></p>
+<div class="lang-cddl sourcecode" id="section-3.4.7-3">
+<pre>
+SystemInformation = {
+  ? processor_id: uint32
+  ? process_id: uint32
+  ? thread_id: uint32
+}
+</pre><a href="#section-3.4.7-3" class="pilcrow">¶</a>
+</div>
 </section>
 </div>
 <div id="common-fields">
-<section id="section-3.4.7">
+<section id="section-3.4.8">
           <h4 id="name-common_fields">
-<a href="#section-3.4.7" class="section-number selfRef">3.4.7. </a><a href="#name-common_fields" class="section-name selfRef">common_fields</a>
+<a href="#section-3.4.8" class="section-number selfRef">3.4.8. </a><a href="#name-common_fields" class="section-name selfRef">common_fields</a>
           </h4>
-<p id="section-3.4.7-1">As discussed in the previous sections, information for a typical qlog event varies
+<p id="section-3.4.8-1">As discussed in the previous sections, information for a typical qlog event varies
 in three main fields: "time", "name" and associated data. Additionally, there are
 also several more advanced fields that allow mixing events from different
 protocols and contexts inside of the same trace (for example "protocol_type" and
 "group_id"). In most "normal" use cases however, the values of these advanced
 fields are consistent for each event instance (for example, a single trace
-contains events for a single QUIC connection).<a href="#section-3.4.7-1" class="pilcrow">¶</a></p>
-<p id="section-3.4.7-2">To reduce file size and making logging easier, qlog uses the "common_fields" list
+contains events for a single QUIC connection).<a href="#section-3.4.8-1" class="pilcrow">¶</a></p>
+<p id="section-3.4.8-2">To reduce file size and making logging easier, qlog uses the "common_fields" list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
-event. An example of this is shown in <a href="#common-fields-ex" class="auto internal xref">Figure 26</a>.<a href="#section-3.4.7-2" class="pilcrow">¶</a></p>
+event. An example of this is shown in <a href="#common-fields-ex" class="auto internal xref">Figure 26</a>.<a href="#section-3.4.8-2" class="pilcrow">¶</a></p>
 <span id="name-commonfields-example"></span><div id="common-fields-ex">
 <figure id="figure-26">
-            <div class="alignLeft art-text artwork" id="section-3.4.7-3.1">
+            <div class="alignLeft art-text artwork" id="section-3.4.8-3.1">
 <pre>
 JSON serialization with repeated field values
 per-event instance:
@@ -2507,18 +2533,18 @@ extracted to common_fields:
 <a href="#name-commonfields-example" class="selfRef">CommonFields example</a>
             </figcaption></figure>
 </div>
-<p id="section-3.4.7-4">The "common_fields" field is a generic dictionary of key-value pairs, where the
+<p id="section-3.4.8-4">The "common_fields" field is a generic dictionary of key-value pairs, where the
 key is always a string and the value can be of any type, but is typically also a
 string or number. As such, unknown entries in this dictionary <span class="bcp14">MUST</span> be disregarded
 by the user and tools (i.e., the presence of an unknown field is explicitly NOT an
-error).<a href="#section-3.4.7-4" class="pilcrow">¶</a></p>
-<p id="section-3.4.7-5">The list of default qlog fields that are typically logged in common_fields (as
+error).<a href="#section-3.4.8-4" class="pilcrow">¶</a></p>
+<p id="section-3.4.8-5">The list of default qlog fields that are typically logged in common_fields (as
 opposed to as individual fields per event instance) are shown in the listing
-below:<a href="#section-3.4.7-5" class="pilcrow">¶</a></p>
-<p id="section-3.4.7-6">Definition:<a href="#section-3.4.7-6" class="pilcrow">¶</a></p>
+below:<a href="#section-3.4.8-5" class="pilcrow">¶</a></p>
+<p id="section-3.4.8-6">Definition:<a href="#section-3.4.8-6" class="pilcrow">¶</a></p>
 <span id="name-commonfields-definition"></span><div id="common-fields-def">
 <figure id="figure-27">
-            <div class="lang-cddl sourcecode" id="section-3.4.7-7.1">
+            <div class="lang-cddl sourcecode" id="section-3.4.8-7.1">
 <pre>
 CommonFields = {
     ? time_format: TimeFormat
@@ -2533,11 +2559,11 @@ CommonFields = {
 <a href="#name-commonfields-definition" class="selfRef">CommonFields definition</a>
             </figcaption></figure>
 </div>
-<p id="section-3.4.7-8">Tools <span class="bcp14">MUST</span> be able to deal with these fields being defined either on each event
+<p id="section-3.4.8-8">Tools <span class="bcp14">MUST</span> be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
 trace has a different value for a given field, this field <span class="bcp14">MUST NOT</span> be added to
 common_fields but instead defined on each event individually. Good example of such
-fields are "time" and "data", who are divergent by nature.<a href="#section-3.4.7-8" class="pilcrow">¶</a></p>
+fields are "time" and "data", who are divergent by nature.<a href="#section-3.4.8-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -3659,26 +3685,28 @@ uniquely identify individual connections, endpoints, and potentially users.<a hr
 nominally separate contexts. For example, QUIC Connection IDs can be used to
 identify and track users across geographical networks <span><a href="https://rfc-editor.org/rfc/rfc9000#section-9.5" class="relref">Section 9.5</a> of [<a href="#RFC9000" class="cite xref">RFC9000</a>]</span>).<a href="#section-9-4.2" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.3">Stored State which can be used to correlate individual connections or sessions
-over time. Examples include QUIC address validation and retry tokens, TLS
-session tickets, and HTTP cookies.<a href="#section-9-4.3" class="pilcrow">¶</a>
+        <li class="normal" id="section-9-4.3">System-level information such as CPU, process, or thread identifiers.<a href="#section-9-4.3" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.4">Decryption keys, passwords, and tokens which can be used with other data
+        <li class="normal" id="section-9-4.4">Stored State which can be used to correlate individual connections or sessions
+over time. Examples include QUIC address validation and retry tokens, TLS
+session tickets, and HTTP cookies.<a href="#section-9-4.4" class="pilcrow">¶</a>
+</li>
+        <li class="normal" id="section-9-4.5">Decryption keys, passwords, and tokens which can be used with other data
 sources (e.g., captures of encrypted packets) to correlate qlog data to a
 specific connection or user or leak additional information. Examples include
-TLS decryption keys and HTTP-level API access or authorization tokens.<a href="#section-9-4.4" class="pilcrow">¶</a>
+TLS decryption keys and HTTP-level API access or authorization tokens.<a href="#section-9-4.5" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.5">Data that can be used to correlate qlogs to other data sources (e.g., captures
+        <li class="normal" id="section-9-4.6">Data that can be used to correlate qlogs to other data sources (e.g., captures
 of encrypted packets). Examples include high-resolution event timestamps or
-inter-event timings, event counts, packet and frame sizes.<a href="#section-9-4.5" class="pilcrow">¶</a>
+inter-event timings, event counts, packet and frame sizes.<a href="#section-9-4.6" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.6">Full or partial encrypted raw packet and frame payloads, which can be used
+        <li class="normal" id="section-9-4.7">Full or partial encrypted raw packet and frame payloads, which can be used
 with other data sources (e.g., captures of encrypted packets) to correlate
-qlog data to a specific connection or session.<a href="#section-9-4.6" class="pilcrow">¶</a>
+qlog data to a specific connection or session.<a href="#section-9-4.7" class="pilcrow">¶</a>
 </li>
-        <li class="normal" id="section-9-4.7">Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
+        <li class="normal" id="section-9-4.8">Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
 values, HTTP response data, TLS SNI field values), which can contain directly
-sensitive information.<a href="#section-9-4.7" class="pilcrow">¶</a>
+sensitive information.<a href="#section-9-4.8" class="pilcrow">¶</a>
 </li>
       </ul>
 <p id="section-9-5">The simplest and most extreme form of protection against abuse of this

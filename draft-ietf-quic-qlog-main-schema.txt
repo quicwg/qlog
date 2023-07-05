@@ -77,7 +77,8 @@ Table of Contents
        3.4.4.  protocol_type
        3.4.5.  Triggers
        3.4.6.  group_id
-       3.4.7.  common_fields
+       3.4.7.  system_info
+       3.4.8.  common_fields
    4.  Guidelines for event definition documents
      4.1.  Event design guidelines
      4.2.  Event importance indicators
@@ -637,7 +638,7 @@ Table of Contents
    (Section 3.4.4), "trigger" (Section 3.4.5), and "group_id"
    Section 3.4.6.  As especially these later fields typically have
    identical values across individual event instances, they are normally
-   logged separately in the "common_fields" (Section 3.4.7).
+   logged separately in the "common_fields" (Section 3.4.8).
 
    The specific values for each of these fields and their semantics are
    defined in separate documents, specific per protocol or use case.
@@ -661,6 +662,7 @@ Table of Contents
        ? time_format: TimeFormat
        ? protocol_type: ProtocolType
        ? group_id: GroupID
+       ? system_info: SystemInformation
 
        ; events can contain any amount of custom fields
        * text => any
@@ -714,7 +716,7 @@ Table of Contents
       characters.
 
    *  Relative: Specify a full "reference_time" timestamp (typically
-      this is done up-front in "common_fields", see Section 3.4.7) and
+      this is done up-front in "common_fields", see Section 3.4.8) and
       include only relatively-encoded values based on this
       reference_time with each event.  The "reference_time" value is
       typically the first absolute timestamp.  This approach uses a
@@ -888,7 +890,7 @@ Table of Contents
 
    Typically however, all events in a single trace are of the same few
    protocols, and this array field is logged once in "common_fields",
-   see Section 3.4.7.
+   see Section 3.4.8.
 
 3.4.5.  Triggers
 
@@ -991,9 +993,25 @@ Table of Contents
    belonging to a single logical group (for example, an individual QUIC
    connection).  As such, instead of logging the "group_id" field with
    an identical value for each event instance, this field is typically
-   logged once in "common_fields", see Section 3.4.7.
+   logged once in "common_fields", see Section 3.4.8.
 
-3.4.7.  common_fields
+3.4.7.  system_info
+
+   The "system_info" field can be used to record system-specific details
+   related to an event.  This is useful, for instance, where an
+   application splits work across CPUs, processes, or threads and events
+   for a single trace occur on potentially different combinations
+   thereof.  Each field is optional to support deployment diversity.
+
+   Definition:
+
+   SystemInformation = {
+     ? processor_id: uint32
+     ? process_id: uint32
+     ? thread_id: uint32
+   }
+
+3.4.8.  common_fields
 
    As discussed in the previous sections, information for a typical qlog
    event varies in three main fields: "time", "name" and associated
@@ -2092,6 +2110,9 @@ Table of Contents
       correlate nominally separate contexts.  For example, QUIC
       Connection IDs can be used to identify and track users across
       geographical networks Section 9.5 of [RFC9000]).
+
+   *  System-level information such as CPU, process, or thread
+      identifiers.
 
    *  Stored State which can be used to correlate individual connections
       or sessions over time.  Examples include QUIC address validation
