@@ -63,6 +63,9 @@ This document describes the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for HTTP/3 {{RFC9114}} and QPACK
 {{!QPACK=RFC9204}}.
 
+It also describes events for {{!H3_PRIORITIZATION=RFC9218}} (TODO: change this
+once #310 is merged!).
+
 > Note to RFC editor: Please remove the follow paragraphs in this section before
 publication.
 
@@ -128,12 +131,13 @@ in this specification.
 
 | Name value                  | Importance |  Definition |
 |:----------------------------|:-----------|:------------|
-| h3:parameters_set         | Base       | {{h3-parametersset}} |
-| h3:parameters_restored    | Base       | {{h3-parametersrestored}} |
-| h3:stream_type_set        | Base       | {{h3-streamtypeset}} |
-| h3:frame_created          | Core       | {{h3-framecreated}} |
-| h3:frame_parsed           | Core       | {{h3-frameparsed}} |
-| h3:push_resolved          | Extra      | {{h3-pushresolved}} |
+| h3:parameters_set           | Base       | {{h3-parametersset}} |
+| h3:parameters_restored      | Base       | {{h3-parametersrestored}} |
+| h3:stream_type_set          | Base       | {{h3-streamtypeset}} |
+| h3:priority_updated         | Base       | {{h3-priorityupdated}} |
+| h3:frame_created            | Core       | {{h3-framecreated}} |
+| h3:frame_parsed             | Core       | {{h3-frameparsed}} |
+| h3:push_resolved            | Extra      | {{h3-pushresolved}} |
 | qpack:state_updated         | Base       | {{qpack-stateupdated}} |
 | qpack:stream_state_updated  | Core       | {{qpack-streamstateupdate}} |
 | qpack:dynamic_table_updated | Extra      | {{qpack-dynamictableupdate}} |
@@ -151,6 +155,7 @@ HTTP/3 events extend the `$ProtocolEventBody` extension point defined in {{QLOG-
 H3Events = H3ParametersSet /
            H3ParametersRestored /
            H3StreamTypeSet /
+           H3PriorityUpdated /
            H3FrameCreated /
            H3FrameParsed /
            H3PushResolved
@@ -260,6 +265,35 @@ H3StreamType =  "request" /
                   "qpack_decode"
 ~~~
 {: #h3-streamtypeset-def title="H3StreamTypeSet definition"}
+
+## priority_updated {#h3-priorityupdated}
+Importance: Base
+
+Emitted when a stream or server push's priority is initialized or updated
+through mechanisms defined in {{!RFC9218}}. Specifically: an initial value is
+set by default, an initial value is set through an HTTP Field in a HEADERS or
+PUSH_PROMISE frame, or an updated value is set through an HTTP Field in a
+PRIORITY_UPDATE frame.
+
+Definition:
+
+~~~ cddl
+H3PriorityUpdated = {
+    ; if the prioritized element is a stream
+    ? stream_id: uint64
+
+    ; if the prioritized element is a push operation
+    ? push_id: uint64
+
+    ? old: H3Priority
+    new: H3Priority
+}
+
+; The priority value in ASCII text, encoded using Structured Fields
+; Example: u=5, i
+H3Priority = text
+~~~
+{: #h3-priorityupdated-def title="H3PriorityUpdated definition"}
 
 ## frame_created {#h3-framecreated}
 Importance: Core
@@ -484,6 +518,25 @@ H3MaxPushIDFrame = {
 }
 ~~~
 {: #h3maxpushidframe-def title="H3MaxPushIDFrame definition"}
+
+### H3PriorityUpdateFrame
+
+The PRIORITY_UPDATE frame is defined in {{!RFC9218}}.
+
+~~~ cddl
+H3PriorityUpdateFrame = {
+    frame_type: "priority_update"
+
+    ; if the prioritized element is a stream
+    ? stream_id: uint64
+
+    ; if the prioritized element is a push operation
+    ? push_id: uint64
+
+    priority_field_value: text
+}
+~~~
+{: #h3priorityupdateframe-def title="h3priorityupdateframe definition"}
 
 ### H3ReservedFrame
 
