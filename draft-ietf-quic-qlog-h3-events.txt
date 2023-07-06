@@ -64,11 +64,12 @@ Table of Contents
      4.1.  parameters_set
      4.2.  parameters_restored
      4.3.  stream_type_set
-     4.4.  frame_created
-     4.5.  frame_parsed
-     4.6.  datagram_created
-     4.7.  datagram_parsed
-     4.8.  push_resolved
+     4.4.  priority_updated
+     4.5.  frame_created
+     4.6.  frame_parsed
+     4.7.  datagram_created
+     4.8.  datagram_parsed
+     4.9.  push_resolved
    5.  HTTP/3 Data Field Definitions
      5.1.  Owner
      5.2.  H3Frame
@@ -80,9 +81,10 @@ Table of Contents
        5.3.5.  H3PushPromiseFrame
        5.3.6.  H3GoAwayFrame
        5.3.7.  H3MaxPushIDFrame
-       5.3.8.  H3ReservedFrame
-       5.3.9.  H3UnknownFrame
-       5.3.10. H3ApplicationError
+       5.3.8.  H3PriorityUpdateFrame
+       5.3.9.  H3ReservedFrame
+       5.3.10. H3UnknownFrame
+       5.3.11. H3ApplicationError
    6.  QPACK Events
      6.1.  state_updated
      6.2.  stream_state_updated
@@ -128,6 +130,9 @@ Table of Contents
    "event") and "data" fields and their semantics for the HTTP/3
    protocol [HTTP3], QPACK [QPACK], and some of their extensions (see
    [H3-DATAGRAM]).
+
+   It also describes events for [H3_PRIORITIZATION] (TODO: change this
+   once #310 is merged!).
 
       Note to RFC editor: Please remove the follow paragraphs in this
       section before publication.
@@ -208,15 +213,17 @@ Table of Contents
         +-----------------------------+------------+-------------+
         | h3:stream_type_set          | Base       | Section 4.3 |
         +-----------------------------+------------+-------------+
-        | h3:frame_created            | Core       | Section 4.4 |
+        | h3:priority_updated         | Base       | Section 4.4 |
         +-----------------------------+------------+-------------+
-        | h3:frame_parsed             | Core       | Section 4.5 |
+        | h3:frame_created            | Core       | Section 4.5 |
         +-----------------------------+------------+-------------+
-        | h3:datagram_created         | Base       | Section 4.6 |
+        | h3:frame_parsed             | Core       | Section 4.6 |
         +-----------------------------+------------+-------------+
-        | h3:datagram_parsed          | Base       | Section 4.7 |
+        | h3:datagram_created         | Base       | Section 4.7 |
         +-----------------------------+------------+-------------+
-        | h3:push_resolved            | Extra      | Section 4.8 |
+        | h3:datagram_parsed          | Base       | Section 4.8 |
+        +-----------------------------+------------+-------------+
+        | h3:push_resolved            | Extra      | Section 4.9 |
         +-----------------------------+------------+-------------+
         | qpack:state_updated         | Base       | Section 6.1 |
         +-----------------------------+------------+-------------+
@@ -243,6 +250,7 @@ Table of Contents
    H3Events = H3ParametersSet /
               H3ParametersRestored /
               H3StreamTypeSet /
+              H3PriorityUpdated /
               H3FrameCreated /
               H3FrameParsed /
               H3DatagramCreated /
@@ -366,7 +374,32 @@ Table of Contents
 
                     Figure 4: H3StreamTypeSet definition
 
-4.4.  frame_created
+4.4.  priority_updated
+
+   Importance: Base
+
+   Emitted when the priority of a request stream or push stream is
+   initialized or updated through mechanisms defined in [RFC9218].  For
+   example, the priority can be updated through signals received from
+   client and/or server (e.g., in HTTP/3 HEADERS or PRIORITY_UPDATE
+   frames) or it can be changed or overridden due to local policies.
+
+   Definition:
+
+   H3PriorityUpdated = {
+       ; if the prioritized element is a request stream
+       ? stream_id: uint64
+
+       ; if the prioritized element is a push stream
+       ? push_id: uint64
+
+       ? old: H3Priority
+       new: H3Priority
+   }
+
+                   Figure 5: H3PriorityUpdated definition
+
+4.5.  frame_created
 
    Importance: Core
 
@@ -384,9 +417,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 5: H3FrameCreated definition
+                    Figure 6: H3FrameCreated definition
 
-4.5.  frame_parsed
+4.6.  frame_parsed
 
    Importance: Core
 
@@ -404,7 +437,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 6: H3FrameParsed definition
+                     Figure 7: H3FrameParsed definition
 
    HTTP/3 DATA frames can have arbitrarily large lengths to reduce frame
    header overhead.  As such, DATA frames can span multiple QUIC
@@ -412,7 +445,7 @@ Table of Contents
    the frame header, and further streamed data is indicated using the
    stream_data_moved event.
 
-4.6.  datagram_created
+4.7.  datagram_created
 
    Importance: Base
 
@@ -429,9 +462,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 7: H3DatagramCreated definition
+                   Figure 8: H3DatagramCreated definition
 
-4.7.  datagram_parsed
+4.8.  datagram_parsed
 
    Importance: Base
 
@@ -448,9 +481,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 8: H3DatagramParsed definition
+                   Figure 9: H3DatagramParsed definition
 
-4.8.  push_resolved
+4.9.  push_resolved
 
    Importance: Extra
 
@@ -474,7 +507,7 @@ Table of Contents
    H3PushDecision = "claimed" /
                       "abandoned"
 
-                    Figure 9: H3PushResolved definition
+                    Figure 10: H3PushResolved definition
 
 5.  HTTP/3 Data Field Definitions
 
@@ -485,7 +518,7 @@ Table of Contents
    Owner = "local" /
            "remote"
 
-                        Figure 10: Owner definition
+                        Figure 11: Owner definition
 
 5.2.  H3Frame
 
@@ -498,7 +531,7 @@ Table of Contents
        * text => any
    }
 
-                     Figure 11: H3Frame plug definition
+                     Figure 12: H3Frame plug definition
 
    The HTTP/3 frame types defined in this document are as follows:
 
@@ -514,7 +547,7 @@ Table of Contents
 
    $H3Frame /= H3BaseFrames
 
-                     Figure 12: H3BaseFrames definition
+                     Figure 13: H3BaseFrames definition
 
 5.3.  H3Datagram
 
@@ -528,7 +561,7 @@ Table of Contents
        * text => any
    }
 
-                   Figure 13: H3Datagram plug definition
+                   Figure 14: H3Datagram plug definition
 
 5.3.1.  H3DataFrame
 
@@ -537,7 +570,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 14: H3DataFrame definition
+                     Figure 15: H3DataFrame definition
 
 5.3.2.  H3HeadersFrame
 
@@ -565,21 +598,21 @@ Table of Contents
      }
    ]
 
-                     Figure 15: H3HeadersFrame example
+                     Figure 16: H3HeadersFrame example
 
    H3HeadersFrame = {
        frame_type: "headers"
        headers: [* H3HTTPField]
    }
 
-                    Figure 16: H3HeadersFrame definition
+                    Figure 17: H3HeadersFrame definition
 
    H3HTTPField = {
        name: text
        ? value: text
    }
 
-                     Figure 17: H3HTTPField definition
+                     Figure 18: H3HTTPField definition
 
 5.3.3.  H3CancelPushFrame
 
@@ -588,7 +621,7 @@ Table of Contents
        push_id: uint64
    }
 
-                  Figure 18: H3CancelPushFrame definition
+                  Figure 19: H3CancelPushFrame definition
 
 5.3.4.  H3SettingsFrame
 
@@ -602,7 +635,7 @@ Table of Contents
        value: uint64
    }
 
-                   Figure 19: H3SettingsFrame definition
+                   Figure 20: H3SettingsFrame definition
 
 5.3.5.  H3PushPromiseFrame
 
@@ -612,7 +645,7 @@ Table of Contents
        headers: [* H3HTTPField]
    }
 
-                  Figure 20: H3PushPromiseFrame definition
+                  Figure 21: H3PushPromiseFrame definition
 
 5.3.6.  H3GoAwayFrame
 
@@ -624,7 +657,7 @@ Table of Contents
        id: uint64
    }
 
-                    Figure 21: H3GoawayFrame definition
+                    Figure 22: H3GoawayFrame definition
 
 5.3.7.  H3MaxPushIDFrame
 
@@ -633,18 +666,40 @@ Table of Contents
        push_id: uint64
    }
 
-                   Figure 22: H3MaxPushIDFrame definition
+                   Figure 23: H3MaxPushIDFrame definition
 
-5.3.8.  H3ReservedFrame
+5.3.8.  H3PriorityUpdateFrame
+
+   The PRIORITY_UPDATE frame is defined in [RFC9218].
+
+   H3PriorityUpdateFrame = {
+       frame_type: "priority_update"
+
+       ; if the prioritized element is a request stream
+       ? stream_id: uint64
+
+       ; if the prioritized element is a push stream
+       ? push_id: uint64
+
+       priority_field_value: H3Priority
+   }
+
+   ; The priority value in ASCII text, encoded using Structured Fields
+   ; Example: u=5, i
+   H3Priority = text
+
+                Figure 24: h3priorityupdateframe definition
+
+5.3.9.  H3ReservedFrame
 
    H3ReservedFrame = {
        frame_type: "reserved"
        ? length: uint64
    }
 
-                   Figure 23: H3ReservedFrame definition
+                   Figure 25: H3ReservedFrame definition
 
-5.3.9.  H3UnknownFrame
+5.3.10.  H3UnknownFrame
 
    The frame_type_value field is the numerical value without VLIE
    encoding.
@@ -655,9 +710,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 24: UnknownFrame definition
+                     Figure 26: UnknownFrame definition
 
-5.3.10.  H3ApplicationError
+5.3.11.  H3ApplicationError
 
    H3ApplicationError = "http_no_error" /
                           "http_general_protocol_error" /
@@ -677,7 +732,7 @@ Table of Contents
                           "http_connect_error" /
                           "http_version_fallback"
 
-                  Figure 25: H3ApplicationError definition
+                  Figure 27: H3ApplicationError definition
 
    The H3ApplicationError defines the general $ApplicationError
    definition in the qlog QUIC definition, see [QLOG-QUIC].
@@ -701,7 +756,7 @@ Table of Contents
 
    $ProtocolEventBody /= QPACKEvents
 
-     Figure 26: QPACKEvents definition and ProtocolEventBody extension
+     Figure 28: QPACKEvents definition and ProtocolEventBody extension
 
    QPACK events mainly serve as an aid to debug low-level QPACK
    issues.The higher-level, plaintext header values SHOULD (also) be
@@ -738,7 +793,7 @@ Table of Contents
        ? current_insert_count: uint64
    }
 
-                   Figure 27: QPACKStateUpdate definition
+                   Figure 29: QPACKStateUpdate definition
 
 6.2.  stream_state_updated
 
@@ -763,7 +818,7 @@ Table of Contents
    QPACKStreamState = "blocked" /
                       "unblocked"
 
-                Figure 28: QPACKStreamStateUpdate definition
+                Figure 30: QPACKStreamStateUpdate definition
 
 6.3.  dynamic_table_updated
 
@@ -794,7 +849,7 @@ Table of Contents
                 hexstring
    }
 
-               Figure 29: QPACKDynamicTableUpdate definition
+               Figure 31: QPACKDynamicTableUpdate definition
 
 6.4.  headers_encoded
 
@@ -817,7 +872,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 30: QPACKHeadersEncoded definition
+                 Figure 32: QPACKHeadersEncoded definition
 
 6.5.  headers_decoded
 
@@ -840,7 +895,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 31: QPACKHeadersDecoded definition
+                 Figure 33: QPACKHeadersDecoded definition
 
 6.6.  instruction_created
 
@@ -858,7 +913,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-               Figure 32: QPACKInstructionCreated definition
+               Figure 34: QPACKInstructionCreated definition
 
    Encoder/decoder semantics and stream_id's are implicit in either the
    instruction types or can be logged via other events (e.g.,
@@ -880,7 +935,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                Figure 33: QPACKInstructionParsed definition
+                Figure 35: QPACKInstructionParsed definition
 
    Encoder/decoder semantics and stream_id's are implicit in either the
    instruction types or can be logged via other events (e.g.,
@@ -904,7 +959,7 @@ Table of Contents
                       StreamCancellationInstruction /
                       InsertCountIncrementInstruction
 
-                   Figure 34: QPACKInstruction definition
+                   Figure 36: QPACKInstruction definition
 
 7.1.1.  SetDynamicTableCapacityInstruction
 
@@ -913,7 +968,7 @@ Table of Contents
        capacity: uint32
    }
 
-          Figure 35: SetDynamicTableCapacityInstruction definition
+          Figure 37: SetDynamicTableCapacityInstruction definition
 
 7.1.2.  InsertWithNameReferenceInstruction
 
@@ -926,7 +981,7 @@ Table of Contents
        ? value: text
    }
 
-          Figure 36: InsertWithNameReferenceInstruction definition
+          Figure 38: InsertWithNameReferenceInstruction definition
 
 7.1.3.  InsertWithoutNameReferenceInstruction
 
@@ -940,7 +995,7 @@ Table of Contents
        ? value: text
    }
 
-        Figure 37: InsertWithoutNameReferenceInstruction definition
+        Figure 39: InsertWithoutNameReferenceInstruction definition
 
 7.1.4.  DuplicateInstruction
 
@@ -949,7 +1004,7 @@ Table of Contents
        index: uint32
    }
 
-                 Figure 38: DuplicateInstruction definition
+                 Figure 40: DuplicateInstruction definition
 
 7.1.5.  SectionAcknowledgementInstruction
 
@@ -958,7 +1013,7 @@ Table of Contents
        stream_id: uint64
    }
 
-          Figure 39: SectionAcknowledgementInstruction definition
+          Figure 41: SectionAcknowledgementInstruction definition
 
 7.1.6.  StreamCancellationInstruction
 
@@ -967,7 +1022,7 @@ Table of Contents
        stream_id: uint64
    }
 
-            Figure 40: StreamCancellationInstruction definition
+            Figure 42: StreamCancellationInstruction definition
 
 7.1.7.  InsertCountIncrementInstruction
 
@@ -976,7 +1031,7 @@ Table of Contents
        increment: uint32
    }
 
-           Figure 41: InsertCountIncrementInstruction definition
+           Figure 43: InsertCountIncrementInstruction definition
 
 7.2.  QPACKHeaderBlockRepresentation
 
@@ -984,7 +1039,7 @@ Table of Contents
                                     LiteralHeaderFieldWithName /
                                     LiteralHeaderFieldWithoutName
 
-            Figure 42: QPACKHeaderBlockRepresentation definition
+            Figure 44: QPACKHeaderBlockRepresentation definition
 
 7.2.1.  IndexedHeaderField
 
@@ -1002,7 +1057,7 @@ Table of Contents
        is_post_base: bool .default false
    }
 
-                  Figure 43: IndexedHeaderField definition
+                  Figure 45: IndexedHeaderField definition
 
 7.2.2.  LiteralHeaderFieldWithName
 
@@ -1027,7 +1082,7 @@ Table of Contents
        is_post_base: bool .default false
    }
 
-              Figure 44: LiteralHeaderFieldWithName definition
+              Figure 46: LiteralHeaderFieldWithName definition
 
 7.2.3.  LiteralHeaderFieldWithoutName
 
@@ -1044,7 +1099,7 @@ Table of Contents
        ? value: text
    }
 
-            Figure 45: LiteralHeaderFieldWithoutName definition
+            Figure 47: LiteralHeaderFieldWithoutName definition
 
 7.3.  QPACKHeaderBlockPrefix
 
@@ -1054,14 +1109,14 @@ Table of Contents
        delta_base: uint32
    }
 
-                Figure 46: QPACKHeaderBlockPrefix definition
+                Figure 48: QPACKHeaderBlockPrefix definition
 
 7.4.  QPACKTableType
 
    QPACKTableType = "static" /
                     "dynamic"
 
-                    Figure 47: QPACKTableType definition
+                    Figure 49: QPACKTableType definition
 
 8.  Security and Privacy Considerations
 
@@ -1086,6 +1141,11 @@ Table of Contents
               Schinazi, D. and L. Pardue, "HTTP Datagrams and the
               Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
               2022, <https://www.rfc-editor.org/rfc/rfc9297>.
+
+   [H3_PRIORITIZATION]
+              Oku, K. and L. Pardue, "Extensible Prioritization Scheme
+              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
+              <https://www.rfc-editor.org/rfc/rfc9218>.
 
    [HTTP/3]   Bishop, M., Ed., "HTTP/3", RFC 9114, DOI 10.17487/RFC9114,
               June 2022, <https://www.rfc-editor.org/rfc/rfc9114>.
@@ -1120,6 +1180,10 @@ Table of Contents
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
+
+   [RFC9218]  Oku, K. and L. Pardue, "Extensible Prioritization Scheme
+              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
+              <https://www.rfc-editor.org/rfc/rfc9218>.
 
    [RFC9297]  Schinazi, D. and L. Pardue, "HTTP Datagrams and the
               Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
