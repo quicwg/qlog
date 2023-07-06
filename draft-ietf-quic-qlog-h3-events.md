@@ -64,6 +64,9 @@ This document describes the values of the qlog name ("category" + "event") and
 QPACK {{!QPACK=RFC9204}}, and some of their extensions (see
 {{!H3-DATAGRAM=RFC9297}}).
 
+It also describes events for {{!H3_PRIORITIZATION=RFC9218}} (TODO: change this
+once #310 is merged!).
+
 > Note to RFC editor: Please remove the follow paragraphs in this section before
 publication.
 
@@ -132,6 +135,7 @@ in this specification.
 | h3:parameters_set         | Base       | {{h3-parametersset}} |
 | h3:parameters_restored    | Base       | {{h3-parametersrestored}} |
 | h3:stream_type_set        | Base       | {{h3-streamtypeset}} |
+| h3:priority_updated       | Base       | {{h3-priorityupdated}} |
 | h3:frame_created          | Core       | {{h3-framecreated}} |
 | h3:frame_parsed           | Core       | {{h3-frameparsed}} |
 | h3:datagram_created       | Base       | {{h3-datagramcreated}} |
@@ -154,6 +158,7 @@ HTTP/3 events extend the `$ProtocolEventBody` extension point defined in {{QLOG-
 H3Events = H3ParametersSet /
            H3ParametersRestored /
            H3StreamTypeSet /
+           H3PriorityUpdated /
            H3FrameCreated /
            H3FrameParsed /
            H3DatagramCreated /
@@ -271,6 +276,31 @@ H3StreamType =  "request" /
                   "qpack_decode"
 ~~~
 {: #h3-streamtypeset-def title="H3StreamTypeSet definition"}
+
+## priority_updated {#h3-priorityupdated}
+Importance: Base
+
+Emitted when the priority of a request stream or push stream is initialized or
+updated through mechanisms defined in {{!RFC9218}}. For example, the priority
+can be updated through signals received from client and/or server (e.g., in
+HTTP/3 HEADERS or PRIORITY_UPDATE frames) or it can be changed or overridden due
+to local policies.
+
+Definition:
+
+~~~ cddl
+H3PriorityUpdated = {
+    ; if the prioritized element is a request stream
+    ? stream_id: uint64
+
+    ; if the prioritized element is a push stream
+    ? push_id: uint64
+
+    ? old: H3Priority
+    new: H3Priority
+}
+~~~
+{: #h3-priorityupdated-def title="H3PriorityUpdated definition"}
 
 ## frame_created {#h3-framecreated}
 Importance: Core
@@ -546,6 +576,29 @@ H3MaxPushIDFrame = {
 }
 ~~~
 {: #h3maxpushidframe-def title="H3MaxPushIDFrame definition"}
+
+### H3PriorityUpdateFrame
+
+The PRIORITY_UPDATE frame is defined in {{!RFC9218}}.
+
+~~~ cddl
+H3PriorityUpdateFrame = {
+    frame_type: "priority_update"
+
+    ; if the prioritized element is a request stream
+    ? stream_id: uint64
+
+    ; if the prioritized element is a push stream
+    ? push_id: uint64
+
+    priority_field_value: H3Priority
+}
+
+; The priority value in ASCII text, encoded using Structured Fields
+; Example: u=5, i
+H3Priority = text
+~~~
+{: #h3priorityupdateframe-def title="h3priorityupdateframe definition"}
 
 ### H3ReservedFrame
 
