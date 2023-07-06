@@ -554,11 +554,11 @@ metadata contained in the "data" field (see {{data-field}}).
 
 Event names indicate a category and type. The "name" field MUST contain a
 non-empty character sequence representing a category, followed by a colon (':'),
-followed by a non-empty non-empty character sequence representing a type.
+followed by a non-empty character sequence representing a type.
 
 Category allows a higher-level grouping of events per specific event type. For
 example for QUIC and HTTP/3, the different categories could be "quic", "http",
-"qpack", and "recovery". Within these categories, the event Type provides
+"qpack", and "recovery". Within these categories, the event type provides
 additional granularity. For example for QUIC and HTTP/3, within the "quic"
 category, there would be "packet_sent" and "packet_received" events.
 
