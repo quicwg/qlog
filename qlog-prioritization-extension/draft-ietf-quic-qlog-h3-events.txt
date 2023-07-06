@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 6 January 2024                                             Meta
+Expires: 7 January 2024                                             Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             5 July 2023
+                                                             6 July 2023
 
 
                 HTTP/3 and QPACK qlog event definitions
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 January 2024.
+   This Internet-Draft will expire on 7 January 2024.
 
 Copyright Notice
 
@@ -361,28 +361,24 @@ Table of Contents
 
    Importance: Base
 
-   Emitted when a stream or server push's priority is initialized or
-   updated through mechanisms defined in [RFC9218].  Specifically: an
-   initial value is set by default, an initial value is set through an
-   HTTP Field in a HEADERS or PUSH_PROMISE frame, or an updated value is
-   set through an HTTP Field in a PRIORITY_UPDATE frame.
+   Emitted when the priority of a request stream or push stream is
+   initialized or updated through mechanisms defined in [RFC9218].  For
+   example, the priority can be updated through signals received from
+   client and/or server (e.g., in HTTP/3 HEADERS or PRIORITY_UPDATE
+   frames) or it can be changed or overridden due to local policies.
 
    Definition:
 
    H3PriorityUpdated = {
-       ; if the prioritized element is a stream
+       ; if the prioritized element is a request stream
        ? stream_id: uint64
 
-       ; if the prioritized element is a push operation
+       ; if the prioritized element is a push stream
        ? push_id: uint64
 
        ? old: H3Priority
        new: H3Priority
    }
-
-   ; The priority value in ASCII text, encoded using Structured Fields
-   ; Example: u=5, i
-   H3Priority = text
 
                    Figure 5: H3PriorityUpdated definition
 
@@ -608,14 +604,18 @@ Table of Contents
    H3PriorityUpdateFrame = {
        frame_type: "priority_update"
 
-       ; if the prioritized element is a stream
+       ; if the prioritized element is a request stream
        ? stream_id: uint64
 
-       ; if the prioritized element is a push operation
+       ; if the prioritized element is a push stream
        ? push_id: uint64
 
-       priority_field_value: text
+       priority_field_value: H3Priority
    }
+
+   ; The priority value in ASCII text, encoded using Structured Fields
+   ; Example: u=5, i
+   H3Priority = text
 
                 Figure 21: h3priorityupdateframe definition
 
