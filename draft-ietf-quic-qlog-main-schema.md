@@ -354,10 +354,9 @@ an empty array.
 ### vantage_point {#vantage-point}
 
 The vantage_point field describes the vantage point from which the trace
-originates, see {{vantage-point-def}}. Each trace can have only a single vantage_point
-and thus all events in a trace MUST BE from the perspective of this vantage_point.
-To include events from multiple vantage_points, implementers can for example
-include multiple traces, split by vantage_point, in a single qlog file.
+originates, see {{vantage-point-def}}. Each trace MUST have a single
+vantage_point. By virtue of this, a single qlog file can only include events
+from multiple vantage_points if it includes multiple traces.
 
 Definitions:
 
@@ -422,22 +421,24 @@ exact member field names and their formats can differ across implementations. Th
 section lists the main, pre-defined and reserved field names with specific
 semantics and expected corresponding value formats.
 
-Each qlog event at minimum requires the "time" ({{time-based-fields}}), "name"
-({{name-field}}) and "data" ({{data-field}}) fields. Other typical fields are
-"time_format" ({{time-based-fields}}), "protocol_type" ({{protocol-type-field}}),
-"trigger" ({{trigger-field}}), and "group_id" {{group-ids}}. As especially these
-later fields typically have identical values across individual event instances,
-they are normally logged separately in the "common_fields" ({{common-fields}}).
+Each qlog event MUST contain the mandatory fields: "time"
+({{time-based-fields}}), "name" ({{name-field}}), and "data" ({{data-field}}).
+
+Each qlog event MAY contain the optional fields: "time_format"
+({{time-based-fields}}), "protocol_type" ({{protocol-type-field}}), "trigger"
+({{trigger-field}}), and "group_id" {{group-ids}}. Some of these fields will
+contain identical values across individual events in a trace, it is possible
+to optimize out this duplication using "common_fields" ({{common-fields}}).
 
 The specific values for each of these fields and their semantics are defined in
 separate documents, specific per protocol or use case. For example: event
 definitions for QUIC, HTTP/3 and QPACK can be found in {{QLOG-QUIC}} and
 {{QLOG-H3}}.
 
-Other fields are explicitly allowed by the qlog approach, and tools SHOULD allow
-for the presence of unknown event fields, but their semantics depend on the
-context of the log usage (e.g., for QUIC, the ODCID field is used), see
-{{QLOG-QUIC}}.
+Events are intended to be extended with custom fields, therefore they MAY
+contain other fields not defined in this document. Custom fields may be known or
+unknown to tools. Tools SHOULD allow for the presence of unknown event fields,
+but their semantics depend on the context of the log usage.
 
 An example of a qlog event with its component fields is shown in
 {{event-def}}.
