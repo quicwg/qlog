@@ -1422,6 +1422,7 @@ PacketNumberSpace = "initial" /
 
 ~~~ cddl
 PacketHeader = {
+    ? quic_bit: bool .default true
     packet_type: PacketType
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
@@ -1448,9 +1449,6 @@ PacketHeader = {
     ? dcil: uint8
     ? scid: ConnectionID
     ? dcid: ConnectionID
-
-    ; RFC9287
-    ? quic_bit: bool .default true
 }
 ~~~
 {: #packetheader-def title="PacketHeader definition"}
