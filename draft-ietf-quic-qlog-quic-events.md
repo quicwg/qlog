@@ -54,8 +54,9 @@ in {{QLOG-MAIN}}.
 # Introduction
 
 This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for QUIC; see {{!QUIC-TRANSPORT=RFC9000}},
-{{!QUIC-RECOVERY=RFC9002}}, and {{!QUIC-TLS=RFC9003}}.
+"data" fields and their semantics for the QUIC protocol (see
+{{!QUIC-TRANSPORT=RFC9000}}, {{!QUIC-RECOVERY=RFC9002}}, and
+{{!QUIC-TLS=RFC9003}}) and some of its extensions (see {{!QUIC-DATAGRAM=RFC9221}}).
 
 This document also adds events and fields for {{!GREASEBIT=RFC9287}} (TODO:
 update this once #310 is merged).
@@ -189,7 +190,8 @@ this specification.
 | quic:datagram_dropped            | Extra      | {{quic-datagramdropped}} |
 | quic:stream_state_updated        | Base       | {{quic-streamstateupdated}} |
 | quic:frames_processed            | Extra      | {{quic-framesprocessed}} |
-| quic:data_moved                  | Base       | {{quic-datamoved}} |
+| quic:stream_data_moved                | Base       | {{quic-streamdatamoved}} |
+| quic:datagram_data_moved              | Base       | {{quic-datagramdatamoved}} |
 | security:key_updated                  | Base       | {{security-keyupdated}} |
 | security:key_discarded                | Base       | {{security-keydiscarded}} |
 | recovery:parameters_set               | Base       | {{recovery-parametersset}} |
@@ -227,7 +229,8 @@ QuicEvents = ConnectivityServerListening /
              QUICDatagramDropped /
              QUICStreamStateUpdated /
              QUICFramesProcessed /
-             QUICDataMoved /
+             QUICStreamDataMoved /
+             QUICDatagramDataMoved /
              RecoveryParametersSet /
              RecoveryMetricsUpdated /
              RecoveryCongestionStateUpdated /
@@ -600,7 +603,7 @@ QUICParametersSet = {
     ; e.g., "AES_128_GCM_SHA256"
     ? tls_cipher: text
 
-    ; transport parameters from the TLS layer:
+    ; RFC9000
     ? original_destination_connection_id: ConnectionID
     ? initial_source_connection_id: ConnectionID
     ? retry_source_connection_id: ConnectionID
@@ -618,6 +621,9 @@ QUICParametersSet = {
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
     ? preferred_address: PreferredAddress
+
+    ; RFC9221
+    ? max_datagram_frame_size: uint64
 
     ; RFC9287
     ; true if present, absent or false if extension not negotiated
@@ -1049,26 +1055,30 @@ received over two packets would have the fields serialized as:
 ]
 ~~~
 
-## data_moved {#quic-datamoved}
+## stream_data_moved {#quic-streamdatamoved}
 Importance: Base
 
-Used to indicate when data moves between the different layers (for example passing
-from the application protocol (e.g., HTTP) to QUIC stream buffers and vice versa)
-or between the application protocol (e.g., HTTP) and the actual user application
-on top (for example a browser engine). This helps make clear the flow of data, how
-long data remains in various buffers and the overheads introduced by individual
-layers.
+Used to indicate when QUIC stream data moves between the different layers (for
+example passing from the application protocol (e.g., HTTP) to QUIC stream
+buffers and vice versa) or between the application protocol (e.g., HTTP) and the
+actual user application on top (for example a browser engine). This helps make
+clear the flow of data, how long data remains in various buffers and the
+overheads introduced by individual layers.
 
-For example, this helps make clear whether received data on a QUIC stream is moved
-to the application protocol immediately (for example per received packet) or in
-larger batches (for example, all QUIC packets are processed first and afterwards
-the application layer reads from the streams with newly available data). This in
-turn can help identify bottlenecks or scheduling problems.
+For example, this helps make clear whether received data on a QUIC stream is
+moved to the application protocol immediately (for example per received packet)
+or in larger batches (for example, all QUIC packets are processed first and
+afterwards the application layer reads from the streams with newly available
+data). This in turn can help identify bottlenecks, flow control issues or
+scheduling problems.
+
+This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
+see {{quic-datagramdatamoved}}.
 
 Definition:
 
 ~~~ cddl
-QUICDataMoved = {
+QUICStreamDataMoved = {
     ? stream_id: uint64
     ? offset: uint64
 
@@ -1087,7 +1097,49 @@ QUICDataMoved = {
     ? raw: RawInfo
 }
 ~~~
-{: #quic-datamoved-def title="QUICDataMoved definition"}
+{: #quic-streamdatamoved-def title="QUICStreamDataMoved definition"}
+
+
+## datagram_data_moved {#quic-datagramdatamoved}
+Importance: Base
+
+Used to indicate when QUIC Datagram Frame data (see {{!RFC9221}}) moves between
+the different layers (for example passing from the application protocol (e.g.,
+WebTransport) to QUIC Datagram Frame buffers and vice versa) or between the
+application protocol and the actual user application on top (for example a
+gaming engine or media playback software). This helps make clear the flow of
+data, how long data remains in various buffers and the overheads introduced by
+individual layers.
+
+For example, this helps make clear whether received data in a QUIC Datagram
+Frame is moved to the application protocol immediately (for example per received
+packet) or in larger batches (for example, all QUIC packets are processed first
+and afterwards the application layer reads all Datagrams at once). This in turn
+can help identify bottlenecks or scheduling problems.
+
+This event is only for data in QUIC Datagram Frames. For data in QUIC streams,
+see {{quic-streamdatamoved}}.
+
+Definition:
+
+~~~ cddl
+QUICDatagramDataMoved = {
+    ; byte length of the moved data
+    ? length: uint64
+    ? from: "user" /
+            "application" /
+            "transport" /
+            "network" /
+            text
+    ? to: "user" /
+          "application" /
+          "transport" /
+          "network" /
+          text
+    ? raw: RawInfo
+}
+~~~
+{: #quic-datagramdatamoved-def title="QUICDatagramDataMoved definition"}
 
 # Security Events {#sec-ev}
 
@@ -1550,7 +1602,8 @@ QuicBaseFrames /= PaddingFrame /
                   PathResponseFrame /
                   ConnectionCloseFrame /
                   HandshakeDoneFrame /
-                  UnknownFrame
+                  UnknownFrame /
+                  DatagramFrame
 
 $QuicFrame /= QuicBaseFrames
 ~~~
@@ -1869,6 +1922,19 @@ UnknownFrame = {
 }
 ~~~
 {: #unknownframe-def title="UnknownFrame definition"}
+
+### DatagramFrame
+
+The QUIC DATAGRAM frame is defined in {{Section 4 of !RFC9221}}.
+
+~~~ cddl
+DatagramFrame = {
+    frame_type: "datagram"
+    ? length: uint64
+    ? raw: RawInfo
+}
+~~~
+{: #datagramframe-def title="DatagramFrame definition"}
 
 ### TransportError
 
