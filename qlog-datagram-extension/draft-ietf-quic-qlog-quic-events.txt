@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 6 January 2024                                             Meta
+Expires: 7 January 2024                                             Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             5 July 2023
+                                                             6 July 2023
 
 
                     QUIC event definitions for qlog
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 January 2024.
+   This Internet-Draft will expire on 7 January 2024.
 
 Copyright Notice
 
@@ -85,7 +85,8 @@ Table of Contents
      5.12. datagram_dropped
      5.13. stream_state_updated
      5.14. frames_processed
-     5.15. data_moved
+     5.15. stream_data_moved
+     5.16. datagram_data_moved
    6.  Security Events
      6.1.  key_updated
      6.2.  key_discarded
@@ -320,8 +321,11 @@ Table of Contents
    | quic:frames_processed                 | Extra      | Section      |
    |                                       |            | 5.14         |
    +---------------------------------------+------------+--------------+
-   | quic:data_moved                       | Base       | Section      |
+   | quic:stream_data_moved                | Base       | Section      |
    |                                       |            | 5.15         |
+   +---------------------------------------+------------+--------------+
+   | quic:datagram_data_moved              | Base       | Section      |
+   |                                       |            | 5.16         |
    +---------------------------------------+------------+--------------+
    | security:key_updated                  | Base       | Section 6.1  |
    +---------------------------------------+------------+--------------+
@@ -368,7 +372,8 @@ Table of Contents
                 QUICDatagramDropped /
                 QUICStreamStateUpdated /
                 QUICFramesProcessed /
-                QUICDataMoved /
+                QUICStreamDataMoved /
+                QUICDatagramDataMoved /
                 RecoveryParametersSet /
                 RecoveryMetricsUpdated /
                 RecoveryCongestionStateUpdated /
@@ -1244,28 +1249,32 @@ Table of Contents
 
                  Figure 22: QUICFramesProcessed definition
 
-5.15.  data_moved
+5.15.  stream_data_moved
 
    Importance: Base
 
-   Used to indicate when data moves between the different layers (for
-   example passing from the application protocol (e.g., HTTP) to QUIC
-   stream buffers and vice versa) or between the application protocol
-   (e.g., HTTP) and the actual user application on top (for example a
-   browser engine).  This helps make clear the flow of data, how long
-   data remains in various buffers and the overheads introduced by
-   individual layers.
+   Used to indicate when QUIC stream data moves between the different
+   layers (for example passing from the application protocol (e.g.,
+   HTTP) to QUIC stream buffers and vice versa) or between the
+   application protocol (e.g., HTTP) and the actual user application on
+   top (for example a browser engine).  This helps make clear the flow
+   of data, how long data remains in various buffers and the overheads
+   introduced by individual layers.
 
    For example, this helps make clear whether received data on a QUIC
    stream is moved to the application protocol immediately (for example
    per received packet) or in larger batches (for example, all QUIC
    packets are processed first and afterwards the application layer
    reads from the streams with newly available data).  This in turn can
-   help identify bottlenecks or scheduling problems.
+   help identify bottlenecks, flow control issues or scheduling
+   problems.
+
+   This event is only for data in QUIC streams.  For data in QUIC
+   Datagram Frames, see Section 5.16.
 
    Definition:
 
-   QUICDataMoved = {
+   QUICStreamDataMoved = {
        ? stream_id: uint64
        ? offset: uint64
 
@@ -1284,7 +1293,50 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 23: QUICDataMoved definition
+                 Figure 23: QUICStreamDataMoved definition
+
+5.16.  datagram_data_moved
+
+   Importance: Base
+
+   Used to indicate when QUIC Datagram Frame data (see [RFC9221]) moves
+   between the different layers (for example passing from the
+   application protocol (e.g., WebTransport) to QUIC Datagram Frame
+   buffers and vice versa) or between the application protocol and the
+   actual user application on top (for example a gaming engine or media
+   playback software).  This helps make clear the flow of data, how long
+   data remains in various buffers and the overheads introduced by
+   individual layers.
+
+   For example, this helps make clear whether received data in a QUIC
+   Datagram Frame is moved to the application protocol immediately (for
+   example per received packet) or in larger batches (for example, all
+   QUIC packets are processed first and afterwards the application layer
+   reads all Datagrams at once).  This in turn can help identify
+   bottlenecks or scheduling problems.
+
+   This event is only for data in QUIC Datagram Frames.  For data in
+   QUIC streams, see Section 5.15.
+
+   Definition:
+
+   QUICDatagramDataMoved = {
+       ; byte length of the moved data
+       ? length: uint64
+       ? from: "user" /
+               "application" /
+               "transport" /
+               "network" /
+               text
+       ? to: "user" /
+             "application" /
+             "transport" /
+             "network" /
+             text
+       ? raw: RawInfo
+   }
+
+                Figure 24: QUICDatagramDataMoved definition
 
 6.  Security Events
 
@@ -1309,7 +1361,7 @@ Table of Contents
            "local_update"
    }
 
-                  Figure 24: SecurityKeyUpdated definition
+                  Figure 25: SecurityKeyUpdated definition
 
 6.2.  key_discarded
 
@@ -1331,7 +1383,7 @@ Table of Contents
            "local_update"
    }
 
-                 Figure 25: SecurityKeyDiscarded definition
+                 Figure 26: SecurityKeyDiscarded definition
 
 7.  Recovery events
 
@@ -1384,7 +1436,7 @@ Table of Contents
        ? persistent_congestion_threshold: uint16
    }
 
-                Figure 26: RecoveryParametersSet definition
+                Figure 27: RecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
@@ -1429,7 +1481,7 @@ Table of Contents
        ? pacing_rate: uint64
    }
 
-                Figure 27: RecoveryMetricsUpdated definition
+                Figure 28: RecoveryMetricsUpdated definition
 
    In order to make logging easier, implementations MAY log values even
    if they are the same as previously reported values (e.g., two
@@ -1468,7 +1520,7 @@ Table of Contents
            "ECN"
    }
 
-            Figure 28: RecoveryCongestionStateUpdated definition
+            Figure 29: RecoveryCongestionStateUpdated definition
 
    The "trigger" field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
@@ -1511,7 +1563,7 @@ Table of Contents
        ? delta: float32
    }
 
-               Figure 29: RecoveryLossTimerUpdated definition
+               Figure 30: RecoveryLossTimerUpdated definition
 
    TODO: how about CC algo's that use multiple timers?  How generic do
    these events need to be?  Just support QUIC-style recovery from the
@@ -1544,7 +1596,7 @@ Table of Contents
            "pto_expired"
    }
 
-                  Figure 30: RecoveryPacketLost definition
+                  Figure 31: RecoveryPacketLost definition
 
    For this event, the "trigger" field SHOULD be set (for example to one
    of the values below), as this helps tremendously in debugging.
@@ -1580,7 +1632,7 @@ Table of Contents
        frames: [+ $QuicFrame]
    }
 
-             Figure 31: RecoveryMarkedForRetransmit definition
+             Figure 32: RecoveryMarkedForRetransmit definition
 
 8.  QUIC data field definitions
 
@@ -1588,20 +1640,20 @@ Table of Contents
 
    QuicVersion = hexstring
 
-                     Figure 32: QuicVersion definition
+                     Figure 33: QuicVersion definition
 
 8.2.  ConnectionID
 
    ConnectionID = hexstring
 
-                     Figure 33: ConnectionID definition
+                     Figure 34: ConnectionID definition
 
 8.3.  Owner
 
    Owner = "local" /
            "remote"
 
-                        Figure 34: Owner definition
+                        Figure 35: Owner definition
 
 8.4.  IPAddress and IPVersion
 
@@ -1612,12 +1664,12 @@ Table of Contents
    IPAddress = text /
                hexstring
 
-                      Figure 35: IPAddress definition
+                      Figure 36: IPAddress definition
 
    IPVersion = "v4" /
                "v6"
 
-                      Figure 36: IPVersion definition
+                      Figure 37: IPVersion definition
 
 8.5.  PacketType
 
@@ -1630,7 +1682,7 @@ Table of Contents
                 "stateless_reset" /
                 "unknown"
 
-                      Figure 37: PacketType definition
+                      Figure 38: PacketType definition
 
 8.6.  PacketNumberSpace
 
@@ -1638,7 +1690,7 @@ Table of Contents
                        "handshake" /
                        "application_data"
 
-                  Figure 38: PacketNumberSpace definition
+                  Figure 39: PacketNumberSpace definition
 
 8.7.  PacketHeader
 
@@ -1671,7 +1723,7 @@ Table of Contents
        ? dcid: ConnectionID
    }
 
-                     Figure 39: PacketHeader definition
+                     Figure 40: PacketHeader definition
 
 8.8.  Token
 
@@ -1687,7 +1739,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                        Figure 40: Token definition
+                        Figure 41: Token definition
 
    The token carried in an Initial packet can either be a retry token
    from a Retry packet, or one originally provided by the server in a
@@ -1701,7 +1753,7 @@ Table of Contents
 
    StatelessResetToken = hexstring .size 16
 
-                Figure 41: Stateless Reset Token definition
+                Figure 42: Stateless Reset Token definition
 
    The stateless reset token is carried in stateless reset packets, in
    transport parameters and in NEW_CONNECTION_ID frames.
@@ -1717,7 +1769,7 @@ Table of Contents
              "server_1rtt_secret" /
              "client_1rtt_secret"
 
-                       Figure 42: KeyType definition
+                       Figure 43: KeyType definition
 
 8.11.  QUIC Frames
 
@@ -1730,7 +1782,7 @@ Table of Contents
        * text => any
    }
 
-                    Figure 43: QuicFrame plug definition
+                    Figure 44: QuicFrame plug definition
 
    The QUIC frame types defined in this document are as follows:
 
@@ -1759,7 +1811,7 @@ Table of Contents
 
    $QuicFrame /= QuicBaseFrames
 
-                    Figure 44: QuicBaseFrames definition
+                    Figure 45: QuicBaseFrames definition
 
 8.11.1.  PaddingFrame
 
@@ -1780,7 +1832,7 @@ Table of Contents
        payload_length: uint32
    }
 
-                     Figure 45: PaddingFrame definition
+                     Figure 46: PaddingFrame definition
 
 8.11.2.  PingFrame
 
@@ -1792,7 +1844,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                      Figure 46: PingFrame definition
+                      Figure 47: PingFrame definition
 
 8.11.3.  AckFrame
 
@@ -1823,7 +1875,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                       Figure 47: AckFrame definition
+                       Figure 48: AckFrame definition
 
    Note that the packet ranges in AckFrame.acked_ranges do not
    necessarily have to be ordered (e.g., [[5,9],[1,4]] is a valid
@@ -1850,7 +1902,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 48: ResetStreamFrame definition
+                   Figure 49: ResetStreamFrame definition
 
 8.11.5.  StopSendingFrame
 
@@ -1865,7 +1917,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 49: StopSendingFrame definition
+                   Figure 50: StopSendingFrame definition
 
 8.11.6.  CryptoFrame
 
@@ -1876,7 +1928,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                     Figure 50: CryptoFrame definition
+                     Figure 51: CryptoFrame definition
 
 8.11.7.  NewTokenFrame
 
@@ -1885,7 +1937,7 @@ Table of Contents
      token: Token
    }
 
-                    Figure 51: NewTokenFrame definition
+                    Figure 52: NewTokenFrame definition
 
 8.11.8.  StreamFrame
 
@@ -1905,7 +1957,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 52: StreamFrame definition
+                     Figure 53: StreamFrame definition
 
 8.11.9.  MaxDataFrame
 
@@ -1914,7 +1966,7 @@ Table of Contents
      maximum: uint64
    }
 
-                     Figure 53: MaxDataFrame definition
+                     Figure 54: MaxDataFrame definition
 
 8.11.10.  MaxStreamDataFrame
 
@@ -1924,7 +1976,7 @@ Table of Contents
      maximum: uint64
    }
 
-                  Figure 54: MaxStreamDataFrame definition
+                  Figure 55: MaxStreamDataFrame definition
 
 8.11.11.  MaxStreamsFrame
 
@@ -1934,7 +1986,7 @@ Table of Contents
      maximum: uint64
    }
 
-                   Figure 55: MaxStreamsFrame definition
+                   Figure 56: MaxStreamsFrame definition
 
 8.11.12.  DataBlockedFrame
 
@@ -1943,7 +1995,7 @@ Table of Contents
      limit: uint64
    }
 
-                   Figure 56: DataBlockedFrame definition
+                   Figure 57: DataBlockedFrame definition
 
 8.11.13.  StreamDataBlockedFrame
 
@@ -1953,7 +2005,7 @@ Table of Contents
      limit: uint64
    }
 
-                Figure 57: StreamDataBlockedFrame definition
+                Figure 58: StreamDataBlockedFrame definition
 
 8.11.14.  StreamsBlockedFrame
 
@@ -1963,7 +2015,7 @@ Table of Contents
      limit: uint64
    }
 
-                 Figure 58: StreamsBlockedFrame definition
+                 Figure 59: StreamsBlockedFrame definition
 
 8.11.15.  NewConnectionIDFrame
 
@@ -1979,7 +2031,7 @@ Table of Contents
      ? stateless_reset_token: StatelessResetToken
    }
 
-                 Figure 59: NewConnectionIDFrame definition
+                 Figure 60: NewConnectionIDFrame definition
 
 8.11.16.  RetireConnectionIDFrame
 
@@ -1988,7 +2040,7 @@ Table of Contents
      sequence_number: uint32
    }
 
-               Figure 60: RetireConnectionIDFrame definition
+               Figure 61: RetireConnectionIDFrame definition
 
 8.11.17.  PathChallengeFrame
 
@@ -1999,7 +2051,7 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 61: PathChallengeFrame definition
+                  Figure 62: PathChallengeFrame definition
 
 8.11.18.  PathResponseFrame
 
@@ -2010,7 +2062,7 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 62: PathResponseFrame definition
+                  Figure 63: PathResponseFrame definition
 
 8.11.19.  ConnectionCloseFrame
 
@@ -2036,7 +2088,7 @@ Table of Contents
                              text
    }
 
-                 Figure 63: ConnectionCloseFrame definition
+                 Figure 64: ConnectionCloseFrame definition
 
 8.11.20.  HandshakeDoneFrame
 
@@ -2044,7 +2096,7 @@ Table of Contents
      frame_type: "handshake_done";
    }
 
-                  Figure 64: HandshakeDoneFrame definition
+                  Figure 65: HandshakeDoneFrame definition
 
 8.11.21.  UnknownFrame
 
@@ -2057,7 +2109,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 65: UnknownFrame definition
+                     Figure 66: UnknownFrame definition
 
 8.11.22.  DatagramFrame
 
@@ -2069,7 +2121,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 66: DatagramFrame definition
+                    Figure 67: DatagramFrame definition
 
 8.11.23.  TransportError
 
@@ -2093,7 +2145,7 @@ Table of Contents
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
-                    Figure 67: TransportError definition
+                    Figure 68: TransportError definition
 
 8.11.24.  ApplicationError
 
@@ -2127,7 +2179,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 68: CryptoError definition
+                     Figure 69: CryptoError definition
 
 9.  Security and Privacy Considerations
 
