@@ -438,8 +438,7 @@ definitions for QUIC, HTTP/3 and QPACK can be found in {{QLOG-QUIC}} and
 Events are intended to be extended with custom fields, therefore they MAY
 contain other fields not defined in this document. Custom fields may be known or
 unknown to tools. Tools SHOULD allow for the presence of unknown event fields,
-but their semantics depend on the context of the log usage (e.g., for QUIC, the
-ODCID field is used), see {{QLOG-QUIC}}.
+but their semantics depend on the context of the log usage.
 
 An example of a qlog event with its component fields is shown in
 {{event-def}}.
