@@ -218,7 +218,6 @@ QlogFile = {
     ? qlog_format: text .default "JSON"
     ? title: text
     ? description: text
-    ? summary: Summary
     ? traces: [+ Trace /
                  TraceError]
 }
@@ -233,55 +232,10 @@ JSON serialization example:
     "qlog_format": "JSON",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
-    "summary": {
-        ...
-    },
     "traces": [...]
 }
 ~~~
 {: #qlog-file-ex title="QlogFile example"}
-
-## Summary
-
-In a real-life deployment with a large amount of generated logs, it can be useful
-to sort and filter logs based on some basic summarized or aggregated data (e.g.,
-log length, packet loss rate, log location, presence of error events, ...). The
-summary field (if present) SHOULD be on top of the qlog file, as this allows for
-the file to be processed in a streaming fashion (i.e., the implementation could
-just read up to and including the summary field and then only load the full logs
-that are deemed interesting by the user).
-
-As the summary field is highly deployment-specific, this document does not specify
-any default fields or their semantics. Some examples of potential entries are
-shown in {{summary}}.
-
-Definition:
-
-~~~ cddl
-Summary = {
-
-    ; summary can contain any type of custom information
-    ; text here doesn't mean the type text,
-    ; but the fact that keys/names in the objects are strings
-    * text => any
-}
-~~~
-{: #summary-def title="Summary definition"}
-
-
-JSON serialization example:
-
-~~~~~~~~
-{
-    "trace_count": 1,
-    "max_duration": 5006,
-    "max_outgoing_loss_rate": 0.013,
-    "total_event_count": 568,
-    "error_count": 2
-}
-~~~~~~~~
-{: #summary-ex title="Summary example"}
-
 
 ## traces
 
@@ -354,7 +308,6 @@ Definition:
 Trace = {
     ? title: text
     ? description: text
-    ? configuration: Configuration
     ? common_fields: CommonFields
     ? vantage_point: VantagePoint
     events: [* Event]
@@ -368,9 +321,6 @@ JSON serialization example:
 {
     "title": "Name of this particular trace (short)",
     "description": "Description for this trace (long)",
-    "configuration": {
-        "time_offset": 150
-    },
     "common_fields": {
         "ODCID": "abcde1234",
         "time_format": "absolute"
@@ -383,45 +333,6 @@ JSON serialization example:
 }
 ~~~~~~~~
 {: #trace-ex title="Trace example"}
-
-### Configuration
-
-A qlog file is usually not used in isolation but by
-means of various tools. Especially when aggregating various traces together or
-preparing traces for a demonstration, one might wish to persist certain tool-based
-settings inside the qlog file itself. For this, the configuration field is used.
-
-The configuration field can be viewed as a generic metadata field that tools can
-fill with their own fields, based on per-tool logic. It is best practice for tools
-to prefix each added field with their tool name to prevent collisions across
-tools. This document only defines two optional, standard, tool-independent
-configuration settings: "time_offset" and "original_uris".
-
-Definition:
-
-~~~ cddl
-Configuration = {
-
-    ; time_offset is in milliseconds
-    time_offset: float64
-    original_uris:[* text]
-    * text => any
-}
-~~~
-{: #configuration-def title="Configuration definition"}
-
-JSON serialization example:
-
-~~~~~~~~
-{
-    "time_offset": 150,
-    "original_uris": [
-        "https://example.org/trace1.qlog",
-        "https://example.org/trace2.qlog"
-    ]
-}
-~~~~~~~~
-{: #configuration-ex title="Configuration example"}
 
 
 #### time_offset
@@ -439,33 +350,6 @@ better track where certain data came from. It is a simple array of strings. It i
 an array instead of a single string, since a single qlog trace can be made up out
 of an aggregation of multiple component qlog traces as well. The default value is
 an empty array.
-
-
-#### custom fields
-Tools can add optional custom metadata to the "configuration" field to store state
-and make it easier to share specific data viewpoints and view configurations.
-
-Two examples from the [qvis toolset](https://qvis.edm.uhasselt.be) are shown in
-{{qvis-config}}.
-
-~~~
-{
-    "configuration" : {
-        "qvis" : {
-            "congestion_graph": {
-                "startX": 1000,
-                "endX": 2000,
-                "focusOnEventIndex": 124
-            }
-
-            "sequence_diagram" : {
-                "focusOnEventIndex": 555
-            }
-        }
-    }
-}
-~~~
-{: #qvis-config title="Custom configuration fields example"}
 
 ### vantage_point {#vantage-point}
 
@@ -568,6 +452,7 @@ Event = {
     ? time_format: TimeFormat
     ? protocol_type: ProtocolType
     ? group_id: GroupID
+    ? system_info: SystemInformation
 
     ; events can contain any amount of custom fields
     * text => any
@@ -891,6 +776,24 @@ instead of logging the "group_id" field with an identical value for each event
 instance, this field is typically logged once in "common_fields", see
 {{common-fields}}.
 
+### system_info
+
+The "system_info" field can be used to record system-specific details related to an
+event. This is useful, for instance, where an application splits work across
+CPUs, processes, or threads and events for a single trace occur on potentially
+different combinations thereof. Each field is optional to support deployment
+diversity.
+
+Definition:
+
+~~~ cddl
+SystemInformation = {
+  ? processor_id: uint32
+  ? process_id: uint32
+  ? thread_id: uint32
+}
+~~~
+
 ### common_fields {#common-fields}
 
 As discussed in the previous sections, information for a typical qlog event varies
@@ -1001,9 +904,6 @@ definition documents SHOULD follow to ensure a measure of consistency, making it
 easier for qlog implementers to extrapolate from one protocol to another.
 
 ## Event design guidelines
-
-TODO: pending QUIC working group discussion. This text reflects the initial (qlog
-draft 01 and 02) setup.
 
 There are several ways of defining qlog events. In practice, two main
 types of approach have been observed: a) those that map directly to concepts seen in the protocols
@@ -1238,8 +1138,7 @@ the name of the heading in lowercase (e.g., the "name" of the scenario event is
 Importance: Extra
 
 Used to specify which specific scenario is being tested at this particular
-instance. This could also be reflected in the top-level qlog's `summary` or
-`configuration` fields, but having a separate event allows easier aggregation of
+instance. This supports, for example, aggregation of
 several simulations into one trace (e.g., split by `group_id`).
 
 Definition:
@@ -1454,7 +1353,6 @@ Definition:
 TraceSeq = {
     ? title: text
     ? description: text
-    ? configuration: Configuration
     ? common_fields: CommonFields
     ? vantage_point: VantagePoint
 }
@@ -1469,7 +1367,6 @@ QlogFileSeq = {
     qlog_version: text
     ? title: text
     ? description: text
-    ? summary: Summary
     trace: TraceSeq
 }
 ~~~
@@ -1488,9 +1385,6 @@ JSON-SEQ serialization examples:
     "qlog_format": "JSON-SEQ",
     "title": "Name of JSON Text Sequence qlog file (short)",
     "description": "Description for this trace file (long)",
-    "summary": {
-        ...
-    },
     "trace": {
       "common_fields": {
         "protocol_type": ["QUIC","HTTP3"],
@@ -1892,6 +1786,8 @@ be carried in qlog data:
   nominally separate contexts. For example, QUIC Connection IDs can be used to
   identify and track users across geographical networks {{Section 9.5 of
   !RFC9000}}).
+
+* System-level information such as CPU, process, or thread identifiers.
 
 * Stored State which can be used to correlate individual connections or sessions
   over time. Examples include QUIC address validation and retry tokens, TLS

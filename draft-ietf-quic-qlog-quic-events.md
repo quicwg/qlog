@@ -58,6 +58,9 @@ This document describes the values of the qlog name ("category" + "event") and
 {{!QUIC-TRANSPORT=RFC9000}}, {{!QUIC-RECOVERY=RFC9002}}, and
 {{!QUIC-TLS=RFC9003}}) and some of its extensions (see {{!QUIC-DATAGRAM=RFC9221}}).
 
+This document also adds events and fields for {{!GREASEBIT=RFC9287}} (TODO:
+update this once #310 is merged).
+
 > Note to RFC editor: Please remove the follow paragraphs in this section before
 publication.
 
@@ -472,14 +475,6 @@ conceptual event as the connection_started event above from the client's
 perspective. Similarly, a state of "closing" or "draining" corresponds to the
 connection_closed event.
 
-## MIGRATION-related events
-e.g., path_updated
-
-TODO: read up on the draft how migration works and whether to best fit this here or in TRANSPORT
-TODO: integrate https://tools.ietf.org/html/draft-deconinck-quic-multipath-02
-
-For now, infer from other connectivity events and path_challenge/path_response frames
-
 ## mtu_updated {#connectivity-mtuupdated}
 Importance: Extra
 
@@ -629,6 +624,10 @@ QUICParametersSet = {
 
     ; RFC9221
     ? max_datagram_frame_size: uint64
+
+    ; RFC9287
+    ; true if present, absent or false if extension not negotiated
+    ? grease_quic_bit: bool
 }
 
 PreferredAddress = {
@@ -1020,18 +1019,41 @@ important, the packet_received event can be used instead.
 
 In some implementations, it can be difficult to log frames directly, even
 when using packet_sent and packet_received events. For these cases, this event
-also contains the direct packet_number field, which can be used to more explicitly
-link this event to the packet_sent/received events.
+also contains the packet_numbers field, which can be used to more explicitly
+link this event to the packet_sent/received events. The field is an array, which
+supports using a single "frames_processed" event for multiple frames received
+over multiple packets. To map between frames and packets, the position and order
+of entries in the "frames" and "packet_numbers" is used. If the optional "packet_numbers"
+field is used, each frame MUST have a corresponding packet number at the same
+index.
 
 Definition:
 
 ~~~ cddl
 QUICFramesProcessed = {
     frames: [* $QuicFrame]
-    ? packet_number: uint64
+    ? packet_numbers: [* uint64]
 }
 ~~~
 {: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
+
+For example, an instance of this event that represents four STREAM frames
+received over two packets would have the fields serialized as:
+
+~~~
+"frames":[
+  {"frame_type":"stream","stream_id":0,"offset":0,"length":500},
+  {"frame_type":"stream","stream_id":0,"offset":500,"length":200},
+  {"frame_type":"stream","stream_id":1,"offset":0,"length":300},
+  {"frame_type":"stream","stream_id":1,"offset":300,"length":50}
+  ],
+"packet_numbers":[
+  1,
+  1,
+  2,
+  2
+]
+~~~
 
 ## stream_data_moved {#quic-streamdatamoved}
 Importance: Base
@@ -1341,7 +1363,9 @@ TODO: read up on the loss detection logic in draft-27 onward and see if this suf
 ## packet_lost {#recovery-packetlost}
 Importance: Core
 
-This event is emitted when a packet is deemed lost by loss detection.
+This event is emitted when a packet is deemed lost by loss detection. It is
+RECOMMENDED to populate the optional "trigger" field in order to help
+disambiguate among the various possible causes of a loss declaration.
 
 Definition:
 
@@ -1358,15 +1382,11 @@ RecoveryPacketLost = {
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
-        ; draft-23 section 5.3.1, MAY
+        ; RFC 9002 Section 6.2.4 paragraph 6, MAY
         "pto_expired"
 }
 ~~~
 {: #recovery-packetlost-def title="RecoveryPacketLost definition"}
-
-For this event, the "trigger" field SHOULD be set (for example to one of the
-values below), as this helps tremendously in debugging.
-
 
 ## marked_for_retransmit {#recovery-markedforretransmit}
 Importance: Extra
@@ -1467,6 +1487,7 @@ PacketNumberSpace = "initial" /
 
 ~~~ cddl
 PacketHeader = {
+    ? quic_bit: bool .default true
     packet_type: PacketType
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
