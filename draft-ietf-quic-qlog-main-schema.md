@@ -905,9 +905,6 @@ easier for qlog implementers to extrapolate from one protocol to another.
 
 ## Event design guidelines
 
-TODO: pending QUIC working group discussion. This text reflects the initial (qlog
-draft 01 and 02) setup.
-
 There are several ways of defining qlog events. In practice, two main
 types of approach have been observed: a) those that map directly to concepts seen in the protocols
 (e.g., `packet_sent`) and b) those that act as aggregating events that combine
