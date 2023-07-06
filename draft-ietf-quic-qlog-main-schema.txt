@@ -71,7 +71,7 @@ Table of Contents
        3.2.2.  vantage_point
      3.3.  Field name semantics
        3.3.1.  Timestamps
-       3.3.2.  Category and Event Type
+       3.3.2.  Event Names
        3.3.3.  Data
        3.3.4.  protocol_type
        3.3.5.  Triggers
@@ -649,50 +649,32 @@ Table of Contents
    more separate traces (in this case, clock drift should also be taken
    into account).
 
-3.3.2.  Category and Event Type
+3.3.2.  Event Names
 
    Events differ mainly in the type of metadata associated with them.
-   To help identify a given event and how to interpret its metadata in
-   the "data" field (see Section 3.3.3), each event has an associated
-   "name" field.  This can be considered as a concatenation of two other
-   fields, namely event "category" and event "type".
+   The "name" field is an identifier that parsers can use to decide how
+   to interpret the event metadata contained in the "data" field (see
+   Section 3.3.3).
+
+   Event names indicate a category and type.  The "name" field MUST
+   contain a non-empty character sequence representing a category,
+   followed by a colon (':'), followed by a non-empty character sequence
+   representing a type.
 
    Category allows a higher-level grouping of events per specific event
    type.  For example for QUIC and HTTP/3, the different categories
    could be "quic", "http", "qpack", and "recovery".  Within these
-   categories, the event Type provides additional granularity.  For
-   example for QUIC and HTTP/3, within the "quic" Category, there would
+   categories, the event type provides additional granularity.  For
+   example for QUIC and HTTP/3, within the "quic" category, there would
    be "packet_sent" and "packet_received" events.
 
-   Logging category and type separately conceptually allows for fast and
-   high-level filtering based on category and the re-use of event types
-   across categories.  However, it also considerably inflates the log
-   size and this flexibility is not used extensively in practice at the
-   time of writing.
+   JSON serialization example:
 
-   As such, the default approach in qlog is to concatenate both field
-   values using the ":" character in the "name" field, as can be seen in
-   Figure 14.  As such, qlog category and type names MUST NOT include
-   this character.
-
-   JSON serialization using separate fields:
-   {
-       "category": "quic",
-       "type": "packet_sent"
-   }
-
-   JSON serialization using ":" concatenated field:
    {
        "name": "quic:packet_sent"
    }
 
-      Figure 14: Ways of logging category, type and name of an event.
-
-   Certain serializations CAN emit category and type as separate fields,
-   and qlog tools SHOULD be able to deal with both the concatenated
-   "name" field, and the separate "category" and "type" fields.  Text-
-   based serializations however are encouraged to employ the
-   concatenated "name" field for efficiency.
+      Figure 14: An event with category "quic" and type "packet_sent".
 
 3.3.3.  Data
 

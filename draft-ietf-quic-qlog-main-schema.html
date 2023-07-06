@@ -1204,7 +1204,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
                     <p id="section-toc.1-1.3.2.3.2.1.1"><a href="#section-3.3.1" class="auto internal xref">3.3.1</a>.  <a href="#name-timestamps" class="internal xref">Timestamps</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.2">
-                    <p id="section-toc.1-1.3.2.3.2.2.1"><a href="#section-3.3.2" class="auto internal xref">3.3.2</a>.  <a href="#name-category-and-event-type" class="internal xref">Category and Event Type</a></p>
+                    <p id="section-toc.1-1.3.2.3.2.2.1"><a href="#section-3.3.2" class="auto internal xref">3.3.2</a>.  <a href="#name-event-names" class="internal xref">Event Names</a></p>
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3.2.3">
                     <p id="section-toc.1-1.3.2.3.2.3.1"><a href="#section-3.3.3" class="auto internal xref">3.3.3</a>.  <a href="#name-data" class="internal xref">Data</a></p>
@@ -2014,49 +2014,34 @@ separate traces (in this case, clock drift should also be taken into account).<a
 </div>
 <div id="name-field">
 <section id="section-3.3.2">
-          <h4 id="name-category-and-event-type">
-<a href="#section-3.3.2" class="section-number selfRef">3.3.2. </a><a href="#name-category-and-event-type" class="section-name selfRef">Category and Event Type</a>
+          <h4 id="name-event-names">
+<a href="#section-3.3.2" class="section-number selfRef">3.3.2. </a><a href="#name-event-names" class="section-name selfRef">Event Names</a>
           </h4>
-<p id="section-3.3.2-1">Events differ mainly in the type of metadata associated with them. To help
-identify a given event and how to interpret its metadata in the "data" field (see
-<a href="#data-field" class="auto internal xref">Section 3.3.3</a>), each event has an associated "name" field. This can be considered
-as a concatenation of two other fields, namely event "category" and event "type".<a href="#section-3.3.2-1" class="pilcrow">¶</a></p>
-<p id="section-3.3.2-2">Category allows a higher-level grouping of events per specific event type. For
+<p id="section-3.3.2-1">Events differ mainly in the type of metadata associated with them. The "name"
+field is an identifier that parsers can use to decide how to interpret the event
+metadata contained in the "data" field (see <a href="#data-field" class="auto internal xref">Section 3.3.3</a>).<a href="#section-3.3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.3.2-2">Event names indicate a category and type. The "name" field <span class="bcp14">MUST</span> contain a
+non-empty character sequence representing a category, followed by a colon (':'),
+followed by a non-empty character sequence representing a type.<a href="#section-3.3.2-2" class="pilcrow">¶</a></p>
+<p id="section-3.3.2-3">Category allows a higher-level grouping of events per specific event type. For
 example for QUIC and HTTP/3, the different categories could be "quic", "http",
-"qpack", and "recovery". Within these categories, the event Type provides
+"qpack", and "recovery". Within these categories, the event type provides
 additional granularity. For example for QUIC and HTTP/3, within the "quic"
-Category, there would be "packet_sent" and "packet_received" events.<a href="#section-3.3.2-2" class="pilcrow">¶</a></p>
-<p id="section-3.3.2-3">Logging category and type separately conceptually allows for fast and high-level
-filtering based on category and the re-use of event types across categories.
-However, it also considerably inflates the log size and this flexibility is not
-used extensively in practice at the time of writing.<a href="#section-3.3.2-3" class="pilcrow">¶</a></p>
-<p id="section-3.3.2-4">As such, the default approach in qlog is to concatenate both field values using
-the ":" character in the "name" field, as can be seen in <a href="#name-ex" class="auto internal xref">Figure 14</a>. As
-such, qlog category and type names <span class="bcp14">MUST NOT</span> include this character.<a href="#section-3.3.2-4" class="pilcrow">¶</a></p>
-<span id="name-ways-of-logging-category-ty"></span><div id="name-ex">
+category, there would be "packet_sent" and "packet_received" events.<a href="#section-3.3.2-3" class="pilcrow">¶</a></p>
+<p id="section-3.3.2-4">JSON serialization example:<a href="#section-3.3.2-4" class="pilcrow">¶</a></p>
+<span id="name-an-event-with-category-quic"></span><div id="name-ex">
 <figure id="figure-14">
             <div class="alignLeft art-text artwork" id="section-3.3.2-5.1">
 <pre>
-JSON serialization using separate fields:
-{
-    "category": "quic",
-    "type": "packet_sent"
-}
-
-JSON serialization using ":" concatenated field:
 {
     "name": "quic:packet_sent"
 }
 </pre>
 </div>
 <figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
-<a href="#name-ways-of-logging-category-ty" class="selfRef">Ways of logging category, type and name of an event.</a>
+<a href="#name-an-event-with-category-quic" class="selfRef">An event with category "quic" and type "packet_sent".</a>
             </figcaption></figure>
 </div>
-<p id="section-3.3.2-6">Certain serializations CAN emit category and type as separate fields, and qlog
-tools <span class="bcp14">SHOULD</span> be able to deal with both the concatenated "name" field, and the
-separate "category" and "type" fields. Text-based serializations however are
-encouraged to employ the concatenated "name" field for efficiency.<a href="#section-3.3.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="data-field">
