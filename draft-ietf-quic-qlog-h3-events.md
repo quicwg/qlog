@@ -269,29 +269,25 @@ H3StreamType =  "request" /
 ## priority_updated {#h3-priorityupdated}
 Importance: Base
 
-Emitted when a stream or server push's priority is initialized or updated
-through mechanisms defined in {{!RFC9218}}. Specifically: an initial value is
-set by default, an initial value is set through an HTTP Field in a HEADERS or
-PUSH_PROMISE frame, or an updated value is set through an HTTP Field in a
-PRIORITY_UPDATE frame.
+Emitted when the priority of a request stream or push stream is initialized or
+updated through mechanisms defined in {{!RFC9218}}. For example, the priority
+can be updated through signals received from client and/or server (e.g., in
+HTTP/3 HEADERS or PRIORITY_UPDATE frames) or it can be changed or overridden due
+to local policies.
 
 Definition:
 
 ~~~ cddl
 H3PriorityUpdated = {
-    ; if the prioritized element is a stream
+    ; if the prioritized element is a request stream
     ? stream_id: uint64
 
-    ; if the prioritized element is a push operation
+    ; if the prioritized element is a push stream
     ? push_id: uint64
 
     ? old: H3Priority
     new: H3Priority
 }
-
-; The priority value in ASCII text, encoded using Structured Fields
-; Example: u=5, i
-H3Priority = text
 ~~~
 {: #h3-priorityupdated-def title="H3PriorityUpdated definition"}
 
@@ -527,14 +523,18 @@ The PRIORITY_UPDATE frame is defined in {{!RFC9218}}.
 H3PriorityUpdateFrame = {
     frame_type: "priority_update"
 
-    ; if the prioritized element is a stream
+    ; if the prioritized element is a request stream
     ? stream_id: uint64
 
-    ; if the prioritized element is a push operation
+    ; if the prioritized element is a push stream
     ? push_id: uint64
 
-    priority_field_value: text
+    priority_field_value: H3Priority
 }
+
+; The priority value in ASCII text, encoded using Structured Fields
+; Example: u=5, i
+H3Priority = text
 ~~~
 {: #h3priorityupdateframe-def title="h3priorityupdateframe definition"}
 
