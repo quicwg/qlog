@@ -134,6 +134,8 @@ in this specification.
 | h3:stream_type_set        | Base       | {{h3-streamtypeset}} |
 | h3:frame_created          | Core       | {{h3-framecreated}} |
 | h3:frame_parsed           | Core       | {{h3-frameparsed}} |
+| h3:datagram_created       | Base       | {{h3-datagramcreated}} |
+| h3:datagram_parsed        | Base       | {{h3-datagramparsed}} |
 | h3:push_resolved          | Extra      | {{h3-pushresolved}} |
 | qpack:state_updated         | Base       | {{qpack-stateupdated}} |
 | qpack:stream_state_updated  | Core       | {{qpack-streamstateupdate}} |
@@ -154,6 +156,8 @@ H3Events = H3ParametersSet /
            H3StreamTypeSet /
            H3FrameCreated /
            H3FrameParsed /
+           H3DatagramCreated /
+           H3DatagramParsed /
            H3PushResolved
 
 $ProtocolEventBody /= H3Events
@@ -161,10 +165,10 @@ $ProtocolEventBody /= H3Events
 {: #h3-events-def title="H3Events definition and ProtocolEventBody
 extension"}
 
-HTTP events are logged when a certain condition happens at the application layer,
-and there isn't always a one to one mapping between HTTP and QUIC events.
+HTTP events are logged when a certain condition happens at the application
+layer, and there isn't always a one to one mapping between HTTP and QUIC events.
 The exchange of data between the HTTP and QUIC layer is logged via the
-"data_moved" event in {{QLOG-QUIC}}.
+"stream_data_moved" and "datagram_data_moved" events in {{QLOG-QUIC}}.
 
 ## parameters_set {#h3-parametersset}
 Importance: Base
@@ -273,7 +277,7 @@ Importance: Core
 
 This event is emitted when the HTTP/3 framing actually happens. This does not
 necessarily coincide with HTTP/3 data getting passed to the QUIC layer. For
-that, see the "data_moved" event in {{QLOG-QUIC}}.
+that, see the "stream_data_moved" event in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -292,7 +296,7 @@ Importance: Core
 
 This event is emitted when the HTTP/3 frame is parsed. This is not
 necessarily the same as when the HTTP/3 data is actually received on the QUIC
-layer. For that, see the "data_moved" event in {{QLOG-QUIC}}.
+layer. For that, see the "stream_data_moved" event in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -309,7 +313,44 @@ H3FrameParsed = {
 HTTP/3 DATA frames can have arbitrarily large lengths to reduce frame header
 overhead. As such, DATA frames can span multiple QUIC packets. In this case, the
 frame_parsed event is emitted once for the frame header, and further streamed
-data is indicated using the data_moved event.
+data is indicated using the stream_data_moved event.
+
+## datagram_created {#h3-datagramcreated}
+Importance: Base
+
+This event is emitted when an HTTP/3 Datagram is created (see {{!RFC9297}}).
+This does not necessarily coincide with the HTTP/3 Datagram getting passed to
+the QUIC layer. For that, see the "datagram_data_moved" event in {{QLOG-QUIC}}.
+
+Definition:
+
+~~~ cddl
+H3DatagramCreated = {
+    quarter_stream_id: uint64
+    ? datagram: $H3Datagram
+    ? raw: RawInfo
+}
+~~~
+{: #h3-datagramcreated-def title="H3DatagramCreated definition"}
+
+## datagram_parsed {#h3-datagramparsed}
+Importance: Base
+
+This event is emitted when the HTTP/3 Datagram is parsed (see {{!RFC9297}}).
+This is not necessarily the same as when the HTTP/3 Datagram is actually
+received on the QUIC layer. For that, see the "datagram_data_moved" event in
+{{QLOG-QUIC}}.
+
+Definition:
+
+~~~ cddl
+H3DatagramParsed = {
+    quarter_stream_id: uint64
+    ? datagram: $H3Datagram
+    ? raw: RawInfo
+}
+~~~
+{: #h3-datagramparsed-def title="H3DatagramParsed definition"}
 
 ## push_resolved {#h3-pushresolved}
 Importance: Extra
@@ -372,12 +413,25 @@ H3BaseFrames = H3DataFrame /
                H3GoawayFrame /
                H3MaxPushIDFrame /
                H3ReservedFrame /
-               H3UnknownFrame /
-               H3DatagramFrame
+               H3UnknownFrame
 
 $H3Frame /= H3BaseFrames
 ~~~
 {: #h3baseframe-def title="H3BaseFrames definition"}
+
+## H3Datagram
+
+The generic `$H3Datagram` is defined here as a CDDL extension point (a "socket"
+or "plug"). It can be extended to support additional HTTP/3 datagram types. This
+document intentionally does not define any specific HTTP/3 Datagram types.
+
+~~~ cddl
+; The H3Datagram is any key-value map (e.g., JSON object)
+$H3Datagram /= {
+    * text => any
+}
+~~~
+{: #h3-datagram-def title="H3Datagram plug definition"}
 
 ### H3DataFrame
 
@@ -515,19 +569,6 @@ H3UnknownFrame = {
 }
 ~~~
 {: #h3unknownframe-def title="UnknownFrame definition"}
-
-## H3DatagramFrame Definition
-
-The HTTP/3 DATAGRAM frame is defined in {{Section 2 of !RFC9297}}.
-
-~~~ cddl
-H3DatagramFrame = {
-    frame_type: "datagram"
-    quarter_stream_id: uint64
-    ? raw: RawInfo
-}
-~~~
-{: #h3datagramframe-def title="h3datagramframe definition"}
 
 ### H3ApplicationError
 
