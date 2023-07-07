@@ -55,6 +55,19 @@ This document describes concrete qlog event definitions and their metadata for
 HTTP/3 and QPACK-related events. These events can then be embedded in the higher
 level schema defined in {{QLOG-MAIN}}.
 
+--- note_Note_to_Readers
+
+> Note to RFC editor: Please remove this section before publication.
+
+Feedback and discussion are welcome at
+[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog). Readers are
+advised to refer to the "editor's draft" at that URL for an up-to-date version
+of this document.
+
+Concrete examples of integrations of this schema in
+various programming languages can be found at
+[https://github.com/quiclog/qlog/](https://github.com/quiclog/qlog/).
+
 --- middle
 
 # Introduction
@@ -67,17 +80,6 @@ QPACK {{!QPACK=RFC9204}}, and some of their extensions (see
 It also describes events for {{!H3_PRIORITIZATION=RFC9218}} (TODO: change this
 once #310 is merged!).
 
-> Note to RFC editor: Please remove the follow paragraphs in this section before
-publication.
-
-Feedback and discussion are welcome at
-[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
-Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
-version of this document.
-
-Concrete examples of integrations of this schema in
-various programming languages can be found at
-[https://github.com/quiclog/qlog/](https://github.com/quiclog/qlog/).
 
 ## Notational Conventions
 

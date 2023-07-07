@@ -49,6 +49,19 @@ This document describes concrete qlog event definitions and their metadata for
 QUIC events. These events can then be embedded in the higher level schema defined
 in {{QLOG-MAIN}}.
 
+--- note_Note_to_Readers
+
+> Note to RFC editor: Please remove this section before publication.
+
+Feedback and discussion are welcome at
+[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog). Readers are
+advised to refer to the "editor's draft" at that URL for an up-to-date version
+of this document.
+
+Concrete examples of integrations of this schema in
+various programming languages can be found at
+[https://github.com/quiclog/qlog/](https://github.com/quiclog/qlog/).
+
 --- middle
 
 # Introduction
@@ -60,18 +73,6 @@ This document describes the values of the qlog name ("category" + "event") and
 
 This document also adds events and fields for {{!GREASEBIT=RFC9287}} (TODO:
 update this once #310 is merged).
-
-> Note to RFC editor: Please remove the follow paragraphs in this section before
-publication.
-
-Feedback and discussion are welcome at
-[https://github.com/quicwg/qlog](https://github.com/quicwg/qlog).
-Readers are advised to refer to the "editor's draft" at that URL for an up-to-date
-version of this document.
-
-Concrete examples of integrations of this schema in
-various programming languages can be found at
-[https://github.com/quiclog/qlog/](https://github.com/quiclog/qlog/).
 
 ## Notational Conventions
 
