@@ -1355,11 +1355,6 @@ RecoveryLossTimerUpdated = {
 ~~~
 {: #recovery-losstimerupdated-def title="RecoveryLossTimerUpdated definition"}
 
-TODO: how about CC algo's that use multiple timers? How generic do these events
-need to be? Just support QUIC-style recovery from the spec or broader?
-
-TODO: read up on the loss detection logic in draft-27 onward and see if this suffices
-
 ## packet_lost {#recovery-packetlost}
 Importance: Core
 
