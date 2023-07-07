@@ -74,19 +74,18 @@ various programming languages can be found at
 
 Endpoint logging is a useful strategy for capturing and understanding how
 applications using network protocols are behaving, particularly where protocols
-have an encrypted wire image that restricts observers ability to see what is
+have an encrypted wire image that restricts observers' ability to see what is
 happening.
 
 Many applications implement logging but the format tends to be custom rather than
-standardized. This has a effect on the tools and methods that are used to
+standardized. This has an effect on the tools and methods that are used to
 analyze the logs, for example to perform root cause analysis of an
 interoperability failure between distinct implementations. A lack of a common
 format impedes the development of common tooling that can be used by all parties
 that have access to logs.
 
 This document defines qlog, an extensible high-level schema and harness that
-provides a shareable, aggregatable and structured logging format intended to be
-more usable. This high-level schema is independent of protocol, with logging
+provides a shareable, aggregatable and structured logging format. This high-level schema is independent of protocol, with logging
 entries for specific protocols and use cases being defined in other documents
 (see for example {{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3 and
 QPACK-related event definitions).
@@ -1168,7 +1167,7 @@ SimulationMarker = {
 This document and other related qlog schema definitions are intentionally
 independent of serialization format. This means that implementers themselves can
 choose how to represent and serialize qlog data practically on disk or on the
-wire. Some examples of possible formats are JSON, CBOR, CSV, protocol buffers,
+wire. Some examples of possible formats are JSON, CBOR, CSV, protobuf,
 flatbuffers, etc.
 
 All these formats make certain tradeoffs between flexibility and efficiency, with
