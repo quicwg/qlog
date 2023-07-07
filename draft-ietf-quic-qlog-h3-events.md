@@ -62,7 +62,7 @@ level schema defined in {{QLOG-MAIN}}.
 This document describes the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the HTTP/3 protocol {{!HTTP3=RFC9114}},
 QPACK {{!QPACK=RFC9204}}, and some of their extensions (see
-{{!H3-DATAGRAM=RFC9297}}).
+{{!EXTENDED-CONNECT=RFC9220}} and {{!H3-DATAGRAM=RFC9297}}).
 
 It also describes events for {{!H3_PRIORITIZATION=RFC9218}} (TODO: change this
 once #310 is merged!).
@@ -211,6 +211,9 @@ H3Parameters = {
     ; RFC9204
     ? max_table_capacity: uint64
     ? blocked_streams_count: uint64
+
+    ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
+    ? extended_connect: uint16
 
     ; RFC9297 (SETTINGS_H3_DATAGRAM)
     ? h3_datagram: uint16
