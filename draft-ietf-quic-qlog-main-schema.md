@@ -533,7 +533,7 @@ each event has the same value for the "time_format" field). Each event MUST
 include a timestamp in the "time" field.
 
 Events in each individual trace SHOULD be logged in strictly ascending timestamp
-order (though not necessarily absolute value, for the "delta" format). Tools CAN
+order (though not necessarily absolute value, for the "delta" format). Tools MAY
 sort all events on the timestamp before processing them, though are not required
 to (as this could impose a significant processing overhead). This can be a problem
 especially for multi-threaded and/or streaming loggers, who could consider using a
@@ -932,7 +932,7 @@ creation, as well as listing basic internal metrics. Tool implementers SHOULD
 expect and add support for these events, though SHOULD NOT expect all Core events
 to be present in each qlog trace.
 
-The "Base" events add additional debugging options and CAN be present in qlog
+The "Base" events add additional debugging options and MAY be present in qlog
 files. Most of these can be implicitly inferred from data in Core events (if those
 contain all their properties), but for many it is better to log the events
 explicitly as well, making it clearer how the implementation behaves. These events
@@ -943,8 +943,8 @@ these events, if they do not handle them explicitly.
 
 The "Extra" events are considered mostly useful for low-level debugging of the
 implementation, rather than the protocol. They allow more fine-grained tracking of
-internal behavior. As such, they CAN be present in qlog files and tool
-implementers CAN add support for these, but they are not required to.
+internal behavior. As such, they MAY be present in qlog files and tool
+implementers MAY add support for these, but they are not required to.
 
 Note that in some cases, implementers might not want to log for example data
 content details in the "Core" events due to performance or privacy considerations.
