@@ -48,44 +48,16 @@ informative:
 
 --- abstract
 
-This document describes a high-level schema for a standardized logging format
-called qlog.  This format allows easy sharing of data and the creation of reusable
-visualization and debugging tools. The high-level schema in this document is
-intended to be protocol-agnostic. Separate documents specify how the format should
-be used for specific protocol data. The schema is also format-agnostic, and can be
-represented in for example JSON, csv or protobuf.
+This document defines qlog, an extensible high-level schema for a standardized
+logging format. It allows easy sharing of data, benefitting common debug and
+analysis methods and tooling. The high-level schema is independent of protocol;
+separate documents extend qlog for protocol-specific data. The schema is also
+independent of serialization format, allowing logs to be represented in many
+ways such as JSON, CSV, or protobuf.
 
---- middle
+--- note_Note_to_Readers
 
-# Introduction
-
-There is currently a lack of an easily usable, standardized endpoint logging
-format. Especially for the use case of debugging and evaluating modern Web
-protocols and their performance, it is often difficult to obtain structured logs
-that provide adequate information for tasks like problem root cause analysis.
-
-This document aims to provide a high-level schema and harness that describes the
-general layout of an easily usable, shareable, aggregatable and structured logging
-format. This high-level schema is protocol agnostic, with logging entries for
-specific protocols and use cases being defined in other documents (see for example
-{{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3 and QPACK-related event
-definitions).
-
-The goal of this high-level schema is to provide amenities and default
-characteristics that each logging file should contain (or should be able to
-contain), such that generic and reusable toolsets can be created that can deal
-with logs from a variety of different protocols and use cases.
-
-As such, this document contains concepts such as versioning, metadata inclusion,
-log aggregation, event grouping and log file size reduction techniques.
-
-The qlog schema can be serialized in many ways (e.g., JSON, CBOR, protobuf,
-etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
-{{!I-JSON=RFC7493}}, and its streamable derivative
-{{!JSON-Text-Sequences=RFC7464}}.
-
-> Note to RFC editor: Please remove the follow paragraphs in this section before
-publication.
+> Note to RFC editor: Please remove this section before publication.
 
 Feedback and discussion are welcome at
 [https://github.com/quicwg/qlog](https://github.com/quicwg/qlog). Readers are
@@ -95,6 +67,44 @@ of this document.
 Concrete examples of integrations of this schema in
 various programming languages can be found at
 [https://github.com/quiclog/qlog/](https://github.com/quiclog/qlog/).
+
+--- middle
+
+# Introduction
+
+Endpoint logging is a useful strategy for capturing and understanding how
+applications using network protocols are behaving, particularly where protocols
+have an encrypted wire image that restricts observers ability to see what is
+happening.
+
+Many applications implement logging but the format tends to be custom rather than
+standardized. This has a effect on the tools and methods that are used to
+analyze the logs, for example to perform root cause analysis of an
+interoperability failure between distinct implementations. A lack of a common
+format impedes the development of common tooling that can be used by all parties
+that have access to logs.
+
+This document defines qlog, an extensible high-level schema and harness that
+provides a shareable, aggregatable and structured logging format intended to be
+more usable. This high-level schema is independent of protocol, with logging
+entries for specific protocols and use cases being defined in other documents
+(see for example {{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3 and
+QPACK-related event definitions).
+
+The goal of this high-level schema is to provide amenities and default
+characteristics that each logging file should contain (or should be able to
+contain), such that generic and reusable toolsets can be created that can deal
+with logs from a variety of different protocols and use cases.
+
+As such, qlog provides versioning, metadata inclusion, log aggregation, event
+grouping and log file size reduction techniques.
+
+The qlog schema can be serialized in many ways (e.g., JSON, CBOR, protobuf,
+etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
+{{!I-JSON=RFC7493}}, and its streamable derivative
+{{!JSON-Text-Sequences=RFC7464}}.
+
+
 
 ## Notational Conventions {#data_types}
 
@@ -1156,10 +1166,10 @@ SimulationMarker = {
 # Serializing qlog {#concrete-formats}
 
 This document and other related qlog schema definitions are intentionally
-serialization-format agnostic. This means that implementers themselves can choose
-how to represent and serialize qlog data practically on disk or on the wire. Some
-examples of possible formats are JSON, CBOR, CSV, protocol buffers, flatbuffers,
-etc.
+independent of serialization format. This means that implementers themselves can
+choose how to represent and serialize qlog data practically on disk or on the
+wire. Some examples of possible formats are JSON, CBOR, CSV, protocol buffers,
+flatbuffers, etc.
 
 All these formats make certain tradeoffs between flexibility and efficiency, with
 textual formats like JSON typically being more flexible but also less efficient
