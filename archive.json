@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-07-06T01:05:28.803988+00:00",
+  "timestamp": "2023-07-09T01:08:18.697180+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -5533,7 +5533,7 @@
       "id": "I_kwDOCrLn6M48g4Le",
       "title": "support for DATAGRAMS in data_moved events",
       "url": "https://github.com/quicwg/qlog/issues/178",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -5542,8 +5542,8 @@
       "labels": [],
       "body": "Slightly related to #124\r\n\r\nhttps://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-3.3.15 defines the data_moved event. The stream_id field is optional. It isn't clear if the type of data I'm moving is stream data (and I don't have the stream ID) or if its datagram data (and I'll never have the stream ID).\r\n\r\nAn non-exhaustive list of options to address this are:\r\n\r\n1) leave it as is, and let tools assume that omitting the stream ID field implies datagram. (That breaks down for implementations that can't populate the stream ID for whatever reason)\r\n2) add a field to describe the type of data moved\r\n3) Be more clear that `data_moved` is only for stream data.Then possibly:\r\n  a) rename the event to `stream_data_moved`\r\n  b) add a new `datagram_data_moved` event\r\n\r\n",
       "createdAt": "2021-10-04T14:25:25Z",
-      "updatedAt": "2022-11-01T10:34:41Z",
-      "closedAt": null,
+      "updatedAt": "2023-07-06T14:54:38Z",
+      "closedAt": "2023-07-06T14:54:38Z",
       "comments": [
         {
           "author": "LPardue",
@@ -6993,9 +6993,17 @@
       "labels": [],
       "body": "There's been a tonne of breaking changes commited to the editor's copy. Before we cut the next draft version, we need to bump the qlog version too.",
       "createdAt": "2023-07-05T19:03:49Z",
-      "updatedAt": "2023-07-05T19:03:49Z",
+      "updatedAt": "2023-07-06T10:31:41Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I also need to remember to update the top sections of the h3 and quic docs to include refs to all the extension RFCs in proper prose.\r\n\r\nI also need to add changelogs.",
+          "createdAt": "2023-07-06T10:31:24Z",
+          "updatedAt": "2023-07-06T10:31:41Z"
+        }
+      ]
     },
     {
       "number": 318,
@@ -7026,6 +7034,38 @@
       "body": "We've had the following todo's for `loss_timer_updated` in the quic schema for a while, pulling them out into this issue\r\n\r\n1. TODO: how about CC algo's that use multiple timers? How generic do these events\r\nneed to be? Just support QUIC-style recovery from the spec or broader?\r\n\r\n2. TODO: read up on the loss detection logic in draft-27 onward and see if this suffices\r\n\r\n",
       "createdAt": "2023-07-05T23:14:01Z",
       "updatedAt": "2023-07-05T23:14:08Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 323,
+      "id": "I_kwDOCrLn6M5qw-Hg",
+      "title": "QUICDatagramsSent or UDPDatagramsSent",
+      "url": "https://github.com/quicwg/qlog/issues/323",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "We currently have several events that can be used to indicate how QUIC packets are sent in UDP datagrams (`quic:datagrams_sent`, `quic:datagrams_received` etc.).\r\n\r\nHowever, adding support for RFC9221 (Unreliable Datagram extension for QUIC), which adds the new DatagramFrame, causes some issues with the naming here.\r\n\r\nFor example, we also want a `datagram_data_moved` event in addition to the existing `(stream_)data_moved` event, but that would be ambiguous which \"datagram\" we're actually talking about (UDP datagrams or QUIC Datagram Frames). \r\n\r\nSince we've renamed the `transport` category to `quic` (before it was `transport:datagrams_*`), it makes sense to rename these events to `udp:datagrams_*` as well for consistency and clarity.\r\n",
+      "createdAt": "2023-07-06T09:59:38Z",
+      "updatedAt": "2023-07-06T09:59:38Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 324,
+      "id": "I_kwDOCrLn6M5qxSZA",
+      "title": "Trigger for H3PriorityUpdated",
+      "url": "https://github.com/quicwg/qlog/issues/324",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I am wondering if the new H3PriorityUpdated event (see #312) needs some specified `trigger` field values.\r\n\r\nConceptually, you can get the necessary context from other events surrounding this event (e.g., if you get a H3FrameParsed with a HEADERS containing a `priority` field preceding this, that's a clear indicator that's the trigger). However, there are cases where this is less clear (e.g., default initialization to a value different from the spec, local override due to configuration or other logic, merging of client and server-sent priorities for the same stream, ...)\r\n\r\nWe don't NEED to define any triggers here (`trigger` is always defined on event data, just not necessarily specced in qlog), but I'm wondering if some default values would be useful here @LPardue?\r\n\r\ne.g., \r\n```\r\n? trigger: \"client_directive\" / \"server_directive\" / \"local_override\" / \"local_default\" / \"merge\" / \"merge_override\"\r\n```",
+      "createdAt": "2023-07-06T10:51:06Z",
+      "updatedAt": "2023-07-06T10:51:06Z",
       "closedAt": null,
       "comments": []
     }
@@ -14977,24 +15017,26 @@
       "id": "PR_kwDOCrLn6M5UtWei",
       "title": "Add QUIC and HTTP/3 DATAGRAM frame definitions",
       "url": "https://github.com/quicwg/qlog/pull/310",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "As discussed at IETF 115 and 116, we will add support for most RFC-status QUIC and HTTP/3 extensions to the main documents.\r\n\r\nThis PR adds our intended support for RFCs 9221 and 9297. Note that this does NOT include full support for those entire documents. Specifically, we only add the QUIC and H3 DATAGRAM frames, not the full \"capsule protocol\", which was deemed out of scope for the core qlog documents. \r\n\r\nThese changes were originally part of a separate document at https://github.com/rmarx/draft-marx-quic-qlog-datagram, which is now deprecated. ",
       "createdAt": "2023-07-05T14:03:02Z",
-      "updatedAt": "2023-07-05T18:27:17Z",
+      "updatedAt": "2023-07-06T14:54:37Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "0269610bc5d379a8bad039192058a891cf92a3f6",
+      "baseRefOid": "43e552efafe7c0c962ecd38a26249b8adfc49bcb",
       "headRepository": "quicwg/qlog",
       "headRefName": "qlog-datagram-extension",
-      "headRefOid": "54487b1505877e1dba10c6012a3c4364f5833d8c",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "92825c5980e84a21cd786466afc47469092ff554",
+      "closedAt": "2023-07-06T14:54:36Z",
+      "mergedAt": "2023-07-06T14:54:36Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "e55ba43a6ecbbfe2d8bd483241fbf9c183740501"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -15145,6 +15187,19 @@
               "updatedAt": "2023-07-05T18:22:31Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5aZzVi",
+          "commit": {
+            "abbreviatedOid": "7463d9d"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM",
+          "createdAt": "2023-07-06T14:40:58Z",
+          "updatedAt": "2023-07-06T14:40:58Z",
+          "comments": []
         }
       ]
     },
@@ -15153,24 +15208,26 @@
       "id": "PR_kwDOCrLn6M5Utg_-",
       "title": "Add definitions for RFC9287 (QUIC GREASE Bit extension)",
       "url": "https://github.com/quicwg/qlog/pull/311",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Adds support for [RFC 9287](https://www.rfc-editor.org/rfc/rfc9287.html).\r\n\r\nThere were two possible approaches to the design:\r\n1. what I have done now (add it as a field in the `PacketHeader`)\r\n2. add it in a separate event like `spin_bit_updated`\r\n\r\nWhile 2. might seem the more consistent option, I think 1. actually makes more sense here. For the Spin bit, you will usually have a long streak of packets/events with the spin bit set to a certain value, so an event only when it updates makes sense.\r\n\r\nFor the GREASE bit, you can/should have unpredictable values on a per-packet basis, so this could lead to very verbose update events.",
       "createdAt": "2023-07-05T14:26:51Z",
-      "updatedAt": "2023-07-05T18:31:20Z",
+      "updatedAt": "2023-07-06T10:32:40Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "0269610bc5d379a8bad039192058a891cf92a3f6",
       "headRepository": "quicwg/qlog",
       "headRefName": "qlog-greasebit-extension",
-      "headRefOid": "b6a0acb3a942dddd100e51bd108119a9d345bec8",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "9d7a2c3bd88777221392dc0eae4543b313c23045",
+      "closedAt": "2023-07-06T10:32:40Z",
+      "mergedAt": "2023-07-06T10:32:40Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "0ff6c8ed961c9f6cb5082c303168e6b9b0609a65"
+      },
       "comments": [],
       "reviews": [
         {
@@ -15246,24 +15303,26 @@
       "id": "PR_kwDOCrLn6M5Ut3pl",
       "title": "Add definitions for RFC9218 (HTTP extensible prioritizations)",
       "url": "https://github.com/quicwg/qlog/pull/312",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "This adds support for the HTTP/3 part of [RFC9218](https://www.rfc-editor.org/rfc/rfc9218.html). Note that it doesn't add explicit support for communicating the priority field, since that's covered by the existing `H3HeadersFrame` and `H3HTTPField` definitions.\r\n\r\nBesides the new `PRIORITY_UPDATE` frame, this also includes a separate event `H3PriorityUpdated`. This event is not *strictly* necessary (you could deduce the necessary information from the defaults in the drafts, HEADERS and PRIORITY_UPDATE frame contents as well), but to be in-line with the general qlog approach and because it's useful when debugging priorities to have this information \"in 1 place\", I decided to add the event.\r\n\r\nThe proposed design for PRIORITY_UPDATE is somewhat far removed from the raw wire image in RFC9218, but I feel this approach is clearer to understand and also easier to extend to an event like `H3PriorityUpdated`. An alternative which is closer to the RFC text could be the following, but that's more difficult and less qlog-esque imo:\r\n\r\n```\r\nH3PriorityUpdateFrame = {\r\n    frame_type: \"priority_update\"\r\n    stream_type: \"request\" / \"push\"\r\n    prioritized_element_id: uint64\r\n    \r\n    priority_field_value: text\r\n}\r\n```\r\n\r\n",
       "createdAt": "2023-07-05T15:20:50Z",
-      "updatedAt": "2023-07-05T18:41:58Z",
+      "updatedAt": "2023-07-06T14:59:08Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "0269610bc5d379a8bad039192058a891cf92a3f6",
+      "baseRefOid": "e55ba43a6ecbbfe2d8bd483241fbf9c183740501",
       "headRepository": "quicwg/qlog",
       "headRefName": "qlog-prioritization-extension",
-      "headRefOid": "5220757f8a042ff984cbb6bd17ec253429a263b1",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "64e7c9e583430e6eface88d050815c0ffcbcce7f",
+      "closedAt": "2023-07-06T14:59:08Z",
+      "mergedAt": "2023-07-06T14:59:07Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "57e9af087f4e202e77b553c9f6c80a85a11426d7"
+      },
       "comments": [],
       "reviews": [
         {
@@ -15369,6 +15428,39 @@
               "updatedAt": "2023-07-05T18:41:57Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5aYJYd",
+          "commit": {
+            "abbreviatedOid": "5220757"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-07-06T10:54:11Z",
+          "updatedAt": "2023-07-06T10:54:12Z",
+          "comments": [
+            {
+              "originalPosition": 49,
+              "body": "This was updated in the last commit. Please check again @LPardue  :) ",
+              "createdAt": "2023-07-06T10:54:11Z",
+              "updatedAt": "2023-07-06T10:54:12Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5aZ0bZ",
+          "commit": {
+            "abbreviatedOid": "9879648"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM",
+          "createdAt": "2023-07-06T14:42:54Z",
+          "updatedAt": "2023-07-06T14:42:54Z",
+          "comments": []
         }
       ]
     },
@@ -15384,7 +15476,7 @@
       "labels": [],
       "body": "Closes #313",
       "createdAt": "2023-07-05T22:42:40Z",
-      "updatedAt": "2023-07-05T23:03:45Z",
+      "updatedAt": "2023-07-08T19:45:59Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "4b8d1f77989d708eb63359712af9671737b01380",
@@ -15395,138 +15487,523 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Gonna sit on this a little while we wait for the WG to consider it.",
+          "createdAt": "2023-07-06T14:46:08Z",
+          "updatedAt": "2023-07-06T14:46:08Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5aZ1Eo",
+          "commit": {
+            "abbreviatedOid": "eec4ba3"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-06T14:44:08Z",
+          "updatedAt": "2023-07-06T14:44:08Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5apS_o",
+          "commit": {
+            "abbreviatedOid": "eec4ba3"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-08T19:45:59Z",
+          "updatedAt": "2023-07-08T19:45:59Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 316,
       "id": "PR_kwDOCrLn6M5UwROm",
       "title": "Remove todo in event design guidelines",
       "url": "https://github.com/quicwg/qlog/pull/316",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "There guidelines are up for change until WGLC and beyond, no need to\ncall this out explicitly.\n",
       "createdAt": "2023-07-05T23:05:25Z",
-      "updatedAt": "2023-07-05T23:05:25Z",
+      "updatedAt": "2023-07-06T14:45:35Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "4b8d1f77989d708eb63359712af9671737b01380",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-guideline-todo",
       "headRefOid": "6918c1ce5de027caa93a7b9a28177972a498dbaf",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2023-07-06T14:45:31Z",
+      "mergedAt": "2023-07-06T14:45:31Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "5f5b7d19ff7b50f309a81e54ce64e602a9aab16c"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5aZ1T3",
+          "commit": {
+            "abbreviatedOid": "6918c1c"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-06T14:44:36Z",
+          "updatedAt": "2023-07-06T14:44:36Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 317,
       "id": "PR_kwDOCrLn6M5UwSgw",
       "title": "Remove QUIC migration-related events section temporarily",
       "url": "https://github.com/quicwg/qlog/pull/317",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "This section was a TODO placeholder in the text. We should use an issue\nto track this instead.\n",
       "createdAt": "2023-07-05T23:09:22Z",
-      "updatedAt": "2023-07-05T23:09:23Z",
+      "updatedAt": "2023-07-06T14:46:25Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "4b8d1f77989d708eb63359712af9671737b01380",
       "headRepository": "quicwg/qlog",
       "headRefName": "migration-events-todo",
       "headRefOid": "6cae102ad8d64a37f106b51a17c718b4f58dccb4",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2023-07-06T14:46:22Z",
+      "mergedAt": "2023-07-06T14:46:22Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "43e552efafe7c0c962ecd38a26249b8adfc49bcb"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5aZ2GG",
+          "commit": {
+            "abbreviatedOid": "6cae102"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-06T14:45:55Z",
+          "updatedAt": "2023-07-06T14:45:55Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 320,
       "id": "PR_kwDOCrLn6M5UwTlF",
       "title": "remove loss_timer_updated todos",
       "url": "https://github.com/quicwg/qlog/pull/320",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Tracked in #319 instead\n",
       "createdAt": "2023-07-05T23:15:25Z",
-      "updatedAt": "2023-07-05T23:15:26Z",
+      "updatedAt": "2023-07-07T14:14:20Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "4b8d1f77989d708eb63359712af9671737b01380",
       "headRepository": "quicwg/qlog",
       "headRefName": "loss-timer-todo",
       "headRefOid": "8da1b709c3d6457a632c3b54f48de6390e96f272",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2023-07-07T14:14:17Z",
+      "mergedAt": "2023-07-07T14:14:17Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "526c3fcf5afdb3b9cb26a237cf818dcc16b9fc18"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5aYJl2",
+          "commit": {
+            "abbreviatedOid": "8da1b70"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-06T10:54:46Z",
+          "updatedAt": "2023-07-06T10:54:46Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 321,
       "id": "PR_kwDOCrLn6M5Uwccc",
       "title": "Tidy up discussion about event names",
       "url": "https://github.com/quicwg/qlog/pull/321",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "This section had some hangover text from when an event contained\nseparate category and type fields. That's confusing.\n\nLets be clearer and more explicity about how we expect the name field to\nbe used. We should probably add additional language about what to do if\na parser encouners a name field *is not* valid. But that can be done as\nfollowup.\n",
       "createdAt": "2023-07-05T23:57:54Z",
-      "updatedAt": "2023-07-05T23:57:55Z",
+      "updatedAt": "2023-07-06T15:39:25Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "4b8d1f77989d708eb63359712af9671737b01380",
       "headRepository": "quicwg/qlog",
       "headRefName": "category-cleanup",
-      "headRefOid": "fc64abc12ce1274e7e065b1e1661cc6c27fca5a6",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "bde0021d9d2d208d0d116dffeb1cbcdfb91287be",
+      "closedAt": "2023-07-06T15:39:21Z",
+      "mergedAt": "2023-07-06T15:39:21Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "a78628385e0d23ca1776448b3f0ed07e34bdc1e9"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5aZ2-5",
+          "commit": {
+            "abbreviatedOid": "fc64abc"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "LGTM minus two nits",
+          "createdAt": "2023-07-06T14:47:40Z",
+          "updatedAt": "2023-07-06T14:49:52Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "```suggestion\r\nfollowed by a non-empty character sequence representing a type.\r\n```",
+              "createdAt": "2023-07-06T14:47:41Z",
+              "updatedAt": "2023-07-06T14:49:52Z"
+            },
+            {
+              "originalPosition": 21,
+              "body": "```suggestion\r\n\"qpack\", and \"recovery\". Within these categories, the event type provides\r\n```",
+              "createdAt": "2023-07-06T14:48:15Z",
+              "updatedAt": "2023-07-06T14:49:52Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 322,
       "id": "PR_kwDOCrLn6M5Uwc7I",
       "title": "Address remaining early secdir review comments",
       "url": "https://github.com/quicwg/qlog/pull/322",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Most of the non-security points from the secdir review have already been addressed. Apart from #321, these two changes remain\r\n\r\n- Clarify vantage_point requirements and usage\r\n- State event field requirements more normatively\r\n",
       "createdAt": "2023-07-06T00:00:41Z",
-      "updatedAt": "2023-07-06T00:00:42Z",
+      "updatedAt": "2023-07-06T15:29:15Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "4b8d1f77989d708eb63359712af9671737b01380",
       "headRepository": "quicwg/qlog",
       "headRefName": "secdir-review",
-      "headRefOid": "9bc84defe34836e7dcf2137a4d7d352634e6fa6b",
+      "headRefOid": "a04cfeadae5ec9cd38074131bbd60e891d0bca0f",
+      "closedAt": "2023-07-06T15:29:11Z",
+      "mergedAt": "2023-07-06T15:29:11Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "58ea210f69f4013ecc4841c9fa0b4abd78edeffb"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5aZ_Gv",
+          "commit": {
+            "abbreviatedOid": "9bc84de"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-06T15:03:35Z",
+          "updatedAt": "2023-07-06T15:03:46Z",
+          "comments": [
+            {
+              "originalPosition": 46,
+              "body": "```suggestion\r\nbut their semantics depend on the context of the log usage.\r\n```\r\n\r\nThe ODCID field is no longer used in QUIC qlog :) ",
+              "createdAt": "2023-07-06T15:03:35Z",
+              "updatedAt": "2023-07-06T15:03:46Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 325,
+      "id": "PR_kwDOCrLn6M5U0jUX",
+      "title": "Add extended CONNECT support",
+      "url": "https://github.com/quicwg/qlog/pull/325",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-07-06T15:06:49Z",
+      "updatedAt": "2023-07-07T14:14:05Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "57e9af087f4e202e77b553c9f6c80a85a11426d7",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "extended-connect",
+      "headRefOid": "c3e7ec14d001450077572c9e777b56c17fc692c6",
+      "closedAt": "2023-07-07T14:14:02Z",
+      "mergedAt": "2023-07-07T14:14:01Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "3e7a19b4a25e68d5dba0d63e88747c4fcf471190"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5aiiqc",
+          "commit": {
+            "abbreviatedOid": "c3e7ec1"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-07T14:08:56Z",
+          "updatedAt": "2023-07-07T14:08:56Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 326,
+      "id": "PR_kwDOCrLn6M5U67vB",
+      "title": "Editorialize main schema intro",
+      "url": "https://github.com/quicwg/qlog/pull/326",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-07-07T14:03:47Z",
+      "updatedAt": "2023-07-08T19:41:23Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "a78628385e0d23ca1776448b3f0ed07e34bdc1e9",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "editorialize-main-schema-intro",
+      "headRefOid": "77867b5abf7954c0ba156c492aba450b02ef65b4",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5ai2DF",
+          "commit": {
+            "abbreviatedOid": "c27698c"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2023-07-07T14:43:25Z",
+          "updatedAt": "2023-07-07T14:46:58Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "```suggestion\r\nhave an encrypted wire image that restricts observers' ability to see what is\r\n```",
+              "createdAt": "2023-07-07T14:43:25Z",
+              "updatedAt": "2023-07-07T14:46:58Z"
+            },
+            {
+              "originalPosition": 51,
+              "body": "```suggestion\r\nstandardized. This has an effect on the tools and methods that are used to\r\n```",
+              "createdAt": "2023-07-07T14:43:54Z",
+              "updatedAt": "2023-07-07T14:46:58Z"
+            },
+            {
+              "originalPosition": 59,
+              "body": "```suggestion\r\nprovides a shareable, aggregatable and structured logging format. This high-level schema is independent of protocol, with logging\r\n```\r\n\r\n\"more usable\" is vague... more usable than what? I propose just cutting this",
+              "createdAt": "2023-07-07T14:45:39Z",
+              "updatedAt": "2023-07-07T14:46:58Z"
+            },
+            {
+              "originalPosition": 104,
+              "body": "```suggestion\r\nwire. Some examples of possible formats are JSON, CBOR, CSV, protobuf,\r\nflatbuffers, etc.\r\n```\r\n\r\nConsistency with abstract",
+              "createdAt": "2023-07-07T14:46:47Z",
+              "updatedAt": "2023-07-07T14:46:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ai7xe",
+          "commit": {
+            "abbreviatedOid": "c27698c"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-07-07T14:57:09Z",
+          "updatedAt": "2023-07-07T14:57:09Z",
+          "comments": [
+            {
+              "originalPosition": 59,
+              "body": "me too!",
+              "createdAt": "2023-07-07T14:57:09Z",
+              "updatedAt": "2023-07-07T14:57:09Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5apS59",
+          "commit": {
+            "abbreviatedOid": "77867b5"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-08T19:40:47Z",
+          "updatedAt": "2023-07-08T19:41:22Z",
+          "comments": [
+            {
+              "originalPosition": 54,
+              "body": "```suggestion\r\nMany applications implement logging using a custom logging format.\r\nThis has an effect on the tools and methods that are used to\r\nanalyze the logs, for example to perform root cause analysis of an\r\ninteroperability failure between distinct implementations. A lack of a common\r\nformat impedes the development of common tooling that can be used by all parties\r\nthat have access to logs.\r\n```",
+              "createdAt": "2023-07-08T19:40:47Z",
+              "updatedAt": "2023-07-08T19:41:22Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 327,
+      "id": "PR_kwDOCrLn6M5U7BM1",
+      "title": "Consistently Move notes about github to own section",
+      "url": "https://github.com/quicwg/qlog/pull/327",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "- Editorialize main schema intro\n- Move note about github to own section\n",
+      "createdAt": "2023-07-07T14:19:51Z",
+      "updatedAt": "2023-07-08T19:37:39Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "4960429f1b0d258c72439557f2089e660e74a454",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "move-notes",
+      "headRefOid": "2c868e99e2b5ea3326f3968c29d72d5ccba909f7",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "oops, this was not supposed to include the editorial changes to main-schema, only quic and h3 docs. Removed the bad commit.",
+          "createdAt": "2023-07-07T15:02:35Z",
+          "updatedAt": "2023-07-07T15:02:35Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5ai4cn",
+          "commit": {
+            "abbreviatedOid": "8665fa4"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "The github-part here is fine, but the main schema intro editorializing could use some attention. Left notes on this text at https://github.com/quicwg/qlog/pull/326, so maybe best to close that PR, implement changes here? ",
+          "createdAt": "2023-07-07T14:49:06Z",
+          "updatedAt": "2023-07-07T14:49:06Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5apS2M",
+          "commit": {
+            "abbreviatedOid": "2c868e9"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-08T19:37:39Z",
+          "updatedAt": "2023-07-08T19:37:39Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 328,
+      "id": "PR_kwDOCrLn6M5U7CU0",
+      "title": "s/CAN/MAY",
+      "url": "https://github.com/quicwg/qlog/pull/328",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-07-07T14:23:19Z",
+      "updatedAt": "2023-07-07T14:57:55Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "526c3fcf5afdb3b9cb26a237cf818dcc16b9fc18",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "shitcan",
+      "headRefOid": "2c29f65043af634fe83882b33338c5c0c0efb045",
+      "closedAt": "2023-07-07T14:57:51Z",
+      "mergedAt": "2023-07-07T14:57:51Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "4960429f1b0d258c72439557f2089e660e74a454"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5aiyvQ",
+          "commit": {
+            "abbreviatedOid": "2c29f65"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-07-07T14:35:25Z",
+          "updatedAt": "2023-07-07T14:35:25Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
