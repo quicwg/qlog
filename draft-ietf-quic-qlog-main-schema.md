@@ -77,8 +77,8 @@ applications using network protocols are behaving, particularly where protocols
 have an encrypted wire image that restricts observers' ability to see what is
 happening.
 
-Many applications implement logging but the format tends to be custom rather than
-standardized. This has an effect on the tools and methods that are used to
+Many applications implement logging using a custom, non-standard logging format.
+This has an effect on the tools and methods that are used to
 analyze the logs, for example to perform root cause analysis of an
 interoperability failure between distinct implementations. A lack of a common
 format impedes the development of common tooling that can be used by all parties
