@@ -1853,6 +1853,14 @@ TODO: primarily the .well-known URI
 
 # Change Log
 
+## Since draft-ietf-quic-qlog-main-schema-05:
+
+* Updated qlog_version to 0.4 (due to breaking changes) (#314)
+* Renamed 'transport' category to 'quic' (#302)
+* Added 'system_info' field (#305)
+* Removed 'summary' and 'configuration' fields (#308)
+* Editorial and formatting changes (#298, #303, #304, #316, #320, #321, #322, #326, #328)
+
 ## Since draft-ietf-quic-qlog-main-schema-04:
 
 * Updated RawInfo definition and guidance (#243)

@@ -1065,6 +1065,15 @@ TBD
 
 # Change Log
 
+## Since draft-ietf-quic-qlog-h3-events-04:
+
+* Renamed 'http' category to 'h3' (#300)
+* H3HTTPField.value is now optional (#296)
+* Added definitions for RFC9297 (HTTP/3 Datagram extension) (#310)
+* Added definitions for RFC9218 (HTTP Extensible Prioritizations extension) (#312)
+* Added definitions for RFC9220 (Extended Connect extension) (#325)
+* Editorial and formatting changes (#298, #258, #299, #304, #327)
+
 ## Since draft-ietf-quic-qlog-h3-events-03:
 
 * Ensured consistent use of RawInfo to indicate raw wire bytes (#243)

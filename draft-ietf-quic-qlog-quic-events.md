@@ -2005,6 +2005,12 @@ TBD
 ## Since draft-ietf-qlog-quic-events-04:
 
 * Updated guidance on logging events across connections (#279)
+* Renamed 'transport' category to 'quic' (#302)
+* Added support for multiple packet numbers in 'quic:frames_processed' (#307)
+* Added definitions for RFC9287 (QUIC GREASE Bit extension) (#311)
+* Added definitions for RFC9221 (QUIC Datagram Frame extension) (#310)
+* (Temporarily) removed definitions for connection migration events (#317)
+* Editorial and formatting changes (#298, #299, #304, #306, #327)
 
 ## Since draft-ietf-qlog-quic-events-03:
 
