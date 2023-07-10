@@ -10,12 +10,12 @@
 <meta content="Marten Seemann" name="author">
 <meta content="Lucas Pardue" name="author">
 <meta content="
-       This document describes a high-level schema for a standardized logging format
-called qlog.  This format allows easy sharing of data and the creation of reusable
-visualization and debugging tools. The high-level schema in this document is
-intended to be protocol-agnostic. Separate documents specify how the format should
-be used for specific protocol data. The schema is also format-agnostic, and can be
-represented in for example JSON, csv or protobuf. 
+       This document defines qlog, an extensible high-level schema for a standardized
+logging format. It allows easy sharing of data, benefitting common debug and
+analysis methods and tooling. The high-level schema is independent of protocol;
+separate documents extend qlog for protocol-specific data. The schema is also
+independent of serialization format, allowing logs to be represented in many
+ways such as JSON, CSV, or protobuf. 
     " name="description">
 <meta content="xml2rfc 3.17.4" name="generator">
 <meta content="Internet-Draft" name="keyword">
@@ -1059,7 +1059,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 8 January 2024</td>
+<td class="center">Expires 11 January 2024</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1072,12 +1072,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-main-schema-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2023-07-07" class="published">7 July 2023</time>
+<time datetime="2023-07-10" class="published">10 July 2023</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2024-01-08">8 January 2024</time></dd>
+<dd class="expires"><time datetime="2024-01-11">11 January 2024</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1106,12 +1106,29 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <h1 id="title">Main logging schema for qlog</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document describes a high-level schema for a standardized logging format
-called qlog.  This format allows easy sharing of data and the creation of reusable
-visualization and debugging tools. The high-level schema in this document is
-intended to be protocol-agnostic. Separate documents specify how the format should
-be used for specific protocol data. The schema is also format-agnostic, and can be
-represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document defines qlog, an extensible high-level schema for a standardized
+logging format. It allows easy sharing of data, benefitting common debug and
+analysis methods and tooling. The high-level schema is independent of protocol;
+separate documents extend qlog for protocol-specific data. The schema is also
+independent of serialization format, allowing logs to be represented in many
+ways such as JSON, CSV, or protobuf.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<section class="note" id="section-note.1">
+      <h2 id="name-note-to-readers">
+<a href="#name-note-to-readers" class="section-name selfRef">Note to Readers</a>
+      </h2>
+<ul class="normal note ulEmpty">
+<li class="normal note ulEmpty" id="section-note.1-1.1">
+          <p id="section-note.1-1.1.1">Note to RFC editor: Please remove this section before publication.<a href="#section-note.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-note.1-2">Feedback and discussion are welcome at
+<a href="https://github.com/quicwg/qlog">https://github.com/quicwg/qlog</a>. Readers are
+advised to refer to the "editor's draft" at that URL for an up-to-date version
+of this document.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+<p id="section-note.1-3">Concrete examples of integrations of this schema in
+various programming languages can be found at
+<a href="https://github.com/quiclog/qlog/">https://github.com/quiclog/qlog/</a>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
 </section>
 <div id="status-of-memo">
 <section id="section-boilerplate.1">
@@ -1132,7 +1149,7 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 8 January 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 11 January 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1400,39 +1417,31 @@ represented in for example JSON, csv or protobuf.<a href="#section-abstract-1" c
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">There is currently a lack of an easily usable, standardized endpoint logging
-format. Especially for the use case of debugging and evaluating modern Web
-protocols and their performance, it is often difficult to obtain structured logs
-that provide adequate information for tasks like problem root cause analysis.<a href="#section-1-1" class="pilcrow">¶</a></p>
-<p id="section-1-2">This document aims to provide a high-level schema and harness that describes the
-general layout of an easily usable, shareable, aggregatable and structured logging
-format. This high-level schema is protocol agnostic, with logging entries for
-specific protocols and use cases being defined in other documents (see for example
-<span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> for QUIC and <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span> for HTTP/3 and QPACK-related event
-definitions).<a href="#section-1-2" class="pilcrow">¶</a></p>
-<p id="section-1-3">The goal of this high-level schema is to provide amenities and default
+<p id="section-1-1">Endpoint logging is a useful strategy for capturing and understanding how
+applications using network protocols are behaving, particularly where protocols
+have an encrypted wire image that restricts observers' ability to see what is
+happening.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">Many applications implement logging using a custom, non-standard logging format.
+This has an effect on the tools and methods that are used to
+analyze the logs, for example to perform root cause analysis of an
+interoperability failure between distinct implementations. A lack of a common
+format impedes the development of common tooling that can be used by all parties
+that have access to logs.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">This document defines qlog, an extensible high-level schema and harness that
+provides a shareable, aggregatable and structured logging format. This high-level schema is independent of protocol, with logging
+entries for specific protocols and use cases being defined in other documents
+(see for example <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> for QUIC and <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span> for HTTP/3 and
+QPACK-related event definitions).<a href="#section-1-3" class="pilcrow">¶</a></p>
+<p id="section-1-4">The goal of this high-level schema is to provide amenities and default
 characteristics that each logging file should contain (or should be able to
 contain), such that generic and reusable toolsets can be created that can deal
-with logs from a variety of different protocols and use cases.<a href="#section-1-3" class="pilcrow">¶</a></p>
-<p id="section-1-4">As such, this document contains concepts such as versioning, metadata inclusion,
-log aggregation, event grouping and log file size reduction techniques.<a href="#section-1-4" class="pilcrow">¶</a></p>
-<p id="section-1-5">The qlog schema can be serialized in many ways (e.g., JSON, CBOR, protobuf,
+with logs from a variety of different protocols and use cases.<a href="#section-1-4" class="pilcrow">¶</a></p>
+<p id="section-1-5">As such, qlog provides versioning, metadata inclusion, log aggregation, event
+grouping and log file size reduction techniques.<a href="#section-1-5" class="pilcrow">¶</a></p>
+<p id="section-1-6">The qlog schema can be serialized in many ways (e.g., JSON, CBOR, protobuf,
 etc). This document describes only how to employ <span>[<a href="#JSON" class="cite xref">JSON</a>]</span>, its subset
 <span>[<a href="#I-JSON" class="cite xref">I-JSON</a>]</span>, and its streamable derivative
-<span>[<a href="#JSON-Text-Sequences" class="cite xref">JSON-Text-Sequences</a>]</span>.<a href="#section-1-5" class="pilcrow">¶</a></p>
-<ul class="normal ulEmpty">
-<li class="normal ulEmpty" id="section-1-6.1">
-          <p id="section-1-6.1.1">Note to RFC editor: Please remove the follow paragraphs in this section before
-publication.<a href="#section-1-6.1.1" class="pilcrow">¶</a></p>
-</li>
-      </ul>
-<p id="section-1-7">Feedback and discussion are welcome at
-<a href="https://github.com/quicwg/qlog">https://github.com/quicwg/qlog</a>. Readers are
-advised to refer to the "editor's draft" at that URL for an up-to-date version
-of this document.<a href="#section-1-7" class="pilcrow">¶</a></p>
-<p id="section-1-8">Concrete examples of integrations of this schema in
-various programming languages can be found at
-<a href="https://github.com/quiclog/qlog/">https://github.com/quiclog/qlog/</a>.<a href="#section-1-8" class="pilcrow">¶</a></p>
+<span>[<a href="#JSON-Text-Sequences" class="cite xref">JSON-Text-Sequences</a>]</span>.<a href="#section-1-6" class="pilcrow">¶</a></p>
 <div id="data_types">
 <section id="section-1.1">
         <h3 id="name-notational-conventions">
@@ -2777,10 +2786,10 @@ SimulationMarker = {
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-serializing-qlog" class="section-name selfRef">Serializing qlog</a>
       </h2>
 <p id="section-6-1">This document and other related qlog schema definitions are intentionally
-serialization-format agnostic. This means that implementers themselves can choose
-how to represent and serialize qlog data practically on disk or on the wire. Some
-examples of possible formats are JSON, CBOR, CSV, protocol buffers, flatbuffers,
-etc.<a href="#section-6-1" class="pilcrow">¶</a></p>
+independent of serialization format. This means that implementers themselves can
+choose how to represent and serialize qlog data practically on disk or on the
+wire. Some examples of possible formats are JSON, CBOR, CSV, protobuf,
+flatbuffers, etc.<a href="#section-6-1" class="pilcrow">¶</a></p>
 <p id="section-6-2">All these formats make certain tradeoffs between flexibility and efficiency, with
 textual formats like JSON typically being more flexible but also less efficient
 than binary formats like protocol buffers. The format choice will depend on the
