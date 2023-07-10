@@ -75,11 +75,8 @@ various programming languages can be found at
 This document describes the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the HTTP/3 protocol {{!HTTP3=RFC9114}},
 QPACK {{!QPACK=RFC9204}}, and some of their extensions (see
-{{!EXTENDED-CONNECT=RFC9220}} and {{!H3-DATAGRAM=RFC9297}}).
-
-It also describes events for {{!H3_PRIORITIZATION=RFC9218}} (TODO: change this
-once #310 is merged!).
-
+{{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}} and
+{{!H3-DATAGRAM=RFC9297}}).
 
 ## Notational Conventions
 

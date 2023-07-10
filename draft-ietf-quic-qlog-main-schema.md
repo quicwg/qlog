@@ -85,10 +85,11 @@ format impedes the development of common tooling that can be used by all parties
 that have access to logs.
 
 This document defines qlog, an extensible high-level schema and harness that
-provides a shareable, aggregatable and structured logging format. This high-level schema is independent of protocol, with logging
-entries for specific protocols and use cases being defined in other documents
-(see for example {{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3 and
-QPACK-related event definitions).
+provides a shareable, aggregatable and structured logging format. This
+high-level schema is independent of protocol, with logging entries for specific
+protocols and use cases being defined in other documents (see for example
+{{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3 and QPACK-related event
+definitions).
 
 The goal of this high-level schema is to provide amenities and default
 characteristics that each logging file should contain (or should be able to
@@ -123,7 +124,8 @@ clarity:
 
 ~~~ cddl
 ; CDDL's uint is defined as being 64-bit in size
-; but for many protocol fields it is better to be restrictive and explicit
+; but for many protocol fields it is better to be restrictive
+; and explicit
 uint8 = uint .size 1
 uint16 = uint .size 2
 uint32 = uint .size 4
@@ -196,17 +198,7 @@ A qlog file should be able to contain several individual traces and logs from
 multiple vantage points that are in some way related. To that end, the top-level
 element in the qlog schema defines only a small set of "header" fields and an
 array of component traces. For this document, the required "qlog_version" field
-MUST have a value of "0.3".
-
-> Note on versioning:
-
-> There have been several previously broadly deployed qlog versions based on older
-drafts of this document (see draft-marx-qlog-main-schema). The old values for the
-"qlog_version" field were "draft-00", "draft-01" and "draft-02". When qlog was
-moved to the QUIC working group, it was decided to switch to a new versioning scheme
-which is independent of individual draft document numbers. However, the start
-value was selected to be 0.3, as conceptually 0.0, 0.1 and 0.2 can map to
-draft-00, draft-01 and draft-02.
+MUST have a value of "0.4".
 
 As qlog can be serialized in a variety of ways, the "qlog_format" field is used to
 indicate which serialization option was chosen. Its value MUST either be one of
@@ -237,7 +229,7 @@ JSON serialization example:
 
 ~~~
 {
-    "qlog_version": "0.3",
+    "qlog_version": "0.4",
     "qlog_format": "JSON",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
@@ -1375,7 +1367,7 @@ JSON-SEQ serialization examples:
 // For display purposes, Record Separators are rendered as <RS>
 
 <RS>{
-    "qlog_version": "0.3",
+    "qlog_version": "0.4",
     "qlog_format": "JSON-SEQ",
     "title": "Name of JSON Text Sequence qlog file (short)",
     "description": "Description for this trace file (long)",

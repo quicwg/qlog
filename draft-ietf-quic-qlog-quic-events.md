@@ -69,10 +69,8 @@ various programming languages can be found at
 This document describes the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the QUIC protocol (see
 {{!QUIC-TRANSPORT=RFC9000}}, {{!QUIC-RECOVERY=RFC9002}}, and
-{{!QUIC-TLS=RFC9003}}) and some of its extensions (see {{!QUIC-DATAGRAM=RFC9221}}).
-
-This document also adds events and fields for {{!GREASEBIT=RFC9287}} (TODO:
-update this once #310 is merged).
+{{!QUIC-TLS=RFC9003}}) and some of its extensions (see
+{{!QUIC-DATAGRAM=RFC9221}} and {{!GREASEBIT=RFC9287}}).
 
 ## Notational Conventions
 
@@ -746,7 +744,8 @@ QUICPacketReceived = {
     ? raw: RawInfo
     ? datagram_id: uint32
     ? trigger:
-        ; if packet was buffered because it couldn't be decrypted before
+        ; if packet was buffered because it couldn't be
+        ; decrypted before
         "keys_available"
 }
 ~~~
