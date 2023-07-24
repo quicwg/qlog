@@ -1690,36 +1690,6 @@ tagged with the "group_id" field with values "abcde" and "12345".
 ~~~~~~~~
 {: #qlogdir-example title="Environment variable examples for a QUIC implementation"}
 
-## Access logs via a well-known endpoint
-
-After generation, qlog implementers MAY make available generated logs and traces
-on an endpoint (typically the server) via the following .well-known URI:
-
-> .well-known/qlog/IDENTIFIER.extension
-
-The IDENTIFIER variable depends on the context and the protocol. For example for
-QUIC, the lowercase Original Destination Connection ID (ODCID) is recommended, as
-it can uniquely identify a connection. Additionally, the extension depends on the
-chosen format (see {{format-summary}}). For example, for a QUIC connection with
-ODCID "abcde", the endpoint for fetching its default JSON-formatted .qlog file
-would be:
-
-> .well-known/qlog/abcde.qlog
-
-Implementers SHOULD allow users to fetch logs for a given connection on a 2nd,
-separate connection. This helps prevent pollution of the logs by fetching them
-over the same connection that one wishes to observe through the log. Ideally, for
-the QUIC use case, the logs should also be approachable via an HTTP/2 or HTTP/1.1
-endpoint (i.e., on TCP port 443), to for example aid debugging in the case where
-QUIC/UDP is blocked on the network.
-
-qlog implementers SHOULD NOT enable this .well-known endpoint in typical
-production settings to prevent (malicious) users from downloading logs from other
-connections. Implementers are advised to disable this endpoint by default and
-require specific actions from the end users to enable it (and potentially qlog
-itself). Implementers MUST also take into account the general privacy and security
-guidelines discussed in {{privacy}} before exposing qlogs to outside actors.
-
 # Tooling requirements {#tooling}
 
 Tools ingestion qlog MUST indicate which qlog version(s), qlog format(s),
@@ -1847,7 +1817,7 @@ hesitant to include these fields for all but the most stringent use cases.
 
 # IANA Considerations
 
-TODO: primarily the .well-known URI
+There are no IANA considerations.
 
 --- back
 
