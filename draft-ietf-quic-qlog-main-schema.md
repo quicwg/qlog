@@ -213,9 +213,9 @@ A qlog Trace ({{trace}} can include Events. This document defines several
 generic events ({{generic-events-and-data-classes}}). Additional event
 definitions, e.g., protocol-specific events, can be defined in additional
 schema; see {{guidelines}}. The "additional_schema" field can be used to
-indicate the additional schema used for traces in a qlog file. It is RECOMMENDED
-that schema defined by the IETF are referenced by their case-insensitive
-document name e.g., "draft-ietf-quic-qlog-quic-events-03" or "rfcNNNN".
+indicate the additional schema used for traces in a qlog file. Each schema is
+named by a URI; see {{additional-schema-requirements}} for format and
+registration requirements.
 
 An example of the qlog file's top-level structure is shown in {{qlog-file-def}}.
 
@@ -241,8 +241,8 @@ JSON serialization example:
     "qlog_version": "0.4",
     "qlog_format": "JSON",
     "additional_schema": [
-      "draft-ietf-quic-qlog-quic-events-03",
-      "draft-ietf-quic-qlog-quic-h3-events-03"
+      "urn:ietf:params:qlog:quic-events-06",
+      "urn:ietf:params:qlog:h3-events-06"
     ],
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
@@ -892,15 +892,30 @@ fields are "time" and "data", who are divergent by nature.
 # Guidelines for event definition documents {#guidelines}
 
 This document only defines the main schema for the qlog format. This is intended
-to be used together with specific, per-protocol event definitions that specify the
-name (category + type) and data needed for each individual event. This is with the
-intent to allow the qlog main schema to be easily re-used for several protocols.
-Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3 and QPACK
-event definitions {{QLOG-H3}}.
+to be used together with additional schema, which can provide additional event
+definitions that can target specific protocols, protocol extensions, use cases,
+etc. Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3 and
+QPACK event definitions {{QLOG-H3}}.
+
+Events specify the name (category + type) and data needed for each individual
+event.
 
 This section defines some basic annotations and concepts the creators of event
 definition documents SHOULD follow to ensure a measure of consistency, making it
 easier for qlog implementers to extrapolate from one protocol to another.
+
+## Additional schema naming and registration requirements {#additional-schema-requirements}
+
+Each additional schema is named by a URI. That URI MUST be absolute; it
+precisely identifies the format and meaning of the schema. If the resource or
+document defines several schema, then the URI MUST identify the actual schema
+in use, e.g., using a fragment or query identifier (characters after a "#" or
+"?" in the URI). For extensions defined in RFCs, the URI used SHOULD be a URN
+starting with "urn:ietf:params:qlog:" followed by a registered, descriptive
+name.
+
+TODO: registration policy
+
 
 ## Event design guidelines
 
@@ -1830,7 +1845,16 @@ hesitant to include these fields for all but the most stringent use cases.
 
 # IANA Considerations
 
-There are no IANA considerations.
+IANA is requested to create the "Qlog Additional Schema" registry, which uses
+the registration policy documented in {{additional-schema-requirements}}.
+
+The fields in this registry are:
+
+- Additional Schema URI: The URI of the additional schema.
+- Description: A short description of the additional schema purpose.
+- Reference: A formal reference to the publicly available specification of the schema.
+- Change Controller: The entity that is responsible for the definition of the registration.
+- Contact: Contact details for the registrant.
 
 --- back
 

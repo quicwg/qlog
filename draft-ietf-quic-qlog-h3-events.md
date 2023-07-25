@@ -92,10 +92,14 @@ fields.
 
 # Overview
 
-This document describes how the HTTP/3 and QPACK can be expressed in qlog using
-the schema defined in {{QLOG-MAIN}}. HTTP/3 and QPACK events are defined with a
-category, a name (the concatenation of "category" and "event"), an "importance",
-an optional "trigger", and "data" fields.
+This document defines an additional schema that can be used with the schema
+defined in {{QLOG-MAIN}} at "qlog_version" of "0.4" to express events related to
+HTTP/3 and QPACK. The URI for this schema is
+"urn:ietf:params:qlog:h3-events-06".
+
+HTTP/3 and QPACK events are defined with a category, a name (the concatenation
+of "category" and "event"), an "importance", an optional "trigger", and "data"
+fields.
 
 Some data fields use complex datastructures. These are represented as enums or
 re-usable definitions, which are grouped together on the bottom of this document
@@ -1059,7 +1063,14 @@ document as well.
 
 # IANA Considerations
 
-TBD
+IANA is requested to register a new entry in the "Qlog Additional Schema"
+registry with the following fields:
+
+- Additional Schema URI: urn:ietf:params:qlog:h3-events-06
+- Description: qlog events for HTTP/3 and QPACK.
+- Reference: This document.
+- Change Controller: IETF.
+- Contact: QUIC WG.
 
 --- back
 
