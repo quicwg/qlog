@@ -173,7 +173,7 @@ this specification.
 | connectivity:connection_closed        | Base       | {{connectivity-connectionclosed}} |
 | connectivity:connection_id_updated    | Base       | {{connectivity-connectionidupdated}} |
 | connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
-| connectivity:connection_state_updated | Base       | {{cECNonnectivity-connectionstateupdated}} |
+| connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
 | connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
 | quic:version_information         | Core       | {{quic-versioninformation}} |
 | quic:alpn_information            | Core       | {{quic-alpninformation}} |
@@ -199,6 +199,7 @@ this specification.
 | recovery:loss_timer_updated           | Extra      | {{recovery-losstimerupdated}} |
 | recovery:packet_lost                  | Core       | {{recovery-packetlost}} |
 | recovery:marked_for_retransmit        | Extra      | {{recovery-markedforretransmit}} |
+| recovery:ecn_state_updated            | Extra      | {{recovery-ecnstateupdated}} |
 {: #quic-events title="QUIC Events"}
 
 QUIC events extend the `$ProtocolEventBody` extension point defined in
@@ -1424,6 +1425,31 @@ RecoveryMarkedForRetransmit = {
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
+
+## ecn_state_updated {#recovery-ecnstateupdated}
+Importance: Extra
+
+This event indicates a progression in the ECN state machine as described in section
+A.4 of RFC 9000.
+
+~~~ cddl
+ECNStateUpdated = {
+   ? old: ECNState
+    new: ECNState
+}
+
+ECNState =
+  ; ECN testing not yet started, ECN support not determined yet.
+  "unknown" /
+  ; ECN testing in progress
+  "testing" /
+  ; ECN testing failed
+  "failed" /
+  ; testing was successful, the endpoint now sends packets with ECT(0) marking
+  "capable"
+~~~
+{: #recovery-ecnstateupdated-def title="ECNStateUpdated definition"}
+
 
 # QUIC data field definitions
 
