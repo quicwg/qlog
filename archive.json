@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-07-27T00:49:03.808245+00:00",
+  "timestamp": "2023-08-13T00:43:22.150685+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -6151,7 +6151,7 @@
       ],
       "body": "Endpoints using ECN will perform validation of ECN, as described in https://datatracker.ietf.org/doc/html/rfc9000#section-13.4.2. There are a few different conditions that can lead to a failure of ECN validation, which in turns leads to disabling of ECN for that path. We should have an event that tells us _that_ ECN validation failed and _why_.",
       "createdAt": "2022-07-25T13:41:10Z",
-      "updatedAt": "2022-09-30T09:26:21Z",
+      "updatedAt": "2023-08-11T16:06:26Z",
       "closedAt": null,
       "comments": [
         {
@@ -6181,6 +6181,13 @@
           "body": "Another question is how ECN probing works. I haven't managed to come with a good algorithm yet (that's why quic-go isn't sending ECN marks). \r\nDo you start the handshake with ECN marks, run into a timeout, conclude that ECN is blackholed, and restart the handshake? Or do you occasionally send packets with ECN marks after handshake completion, and switch on ECN marking once you've received an ACK for such a probe packet? That would be very similar to the DPLPMTUD probing logic.",
           "createdAt": "2022-09-30T09:26:21Z",
           "updatedAt": "2022-09-30T09:26:21Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I managed to sync with @goelvidhi during the last IETF meeting. The ECN validation mechanism described in A.4 of RFC 9000 apparently is sound, and can be safely implemented with little modifications.\r\n\r\nGiven that ECN probing is a state machine, it would make sense to log it as such:\r\n```\r\necn_state_updated {\r\n   new ECNState\r\n   ? old ECNState\r\n}\r\n\r\nECNState = {\r\n    \"testing\" / \"unknown\" / \"failed\" / \"capable\"\r\n}\r\n```\r\n\r\nMaybe we should also add a state before \"testing\", as I think it's a valid implementation strategy to not bother with ECN during the handshake, and only apply ECN markings after completion of the handshake.\r\n\r\n---\r\n\r\nRegarding L4S / Prague, there will be more details needed on this event. Given that these are still draft / experimental RFCs, maybe we can punt this though?",
+          "createdAt": "2023-08-11T16:06:26Z",
+          "updatedAt": "2023-08-11T16:06:26Z"
         }
       ]
     },
@@ -12194,22 +12201,22 @@
     {
       "number": 263,
       "id": "PR_kwDOCrLn6M5GRk6u",
-      "title": "add an ECN field to packet_sent and packet_received events",
+      "title": "add ECN events",
       "url": "https://github.com/quicwg/qlog/pull/263",
       "state": "OPEN",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
-      "body": "Partial fix for #212. Doesn't add any ECN probing events for now.",
+      "body": "Fixes #212.",
       "createdAt": "2022-12-28T02:20:34Z",
-      "updatedAt": "2023-03-13T19:53:17Z",
+      "updatedAt": "2023-08-11T21:28:33Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "259419ac04780bce3183dc5f8f81f4be6376fd02",
+      "baseRefOid": "57a8c67bea1d35aa585fb7c2fadbd98faf3cfb39",
       "headRepository": "quicwg/qlog",
       "headRefName": "ecn",
-      "headRefOid": "d9ad2b48f671cbf87eb0d63665d26963b6e43f2f",
+      "headRefOid": "676a68018b5f42bc0641d1ef33a4be6c573a1f87",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -12242,6 +12249,13 @@
           "body": "We could also put it on both event types, and allow implementations that don\u2019t log datagram events to put it in the packet. Of course, this shifts some complexity to consumers of the qlog.",
           "createdAt": "2023-03-13T19:53:17Z",
           "updatedAt": "2023-03-13T19:53:17Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I added events for the ECN testing state machine from RFC 9000, A.4. This should now cover the (non-L4S) use case of ECN.\r\n\r\nWould appreciate a review of this PR.",
+          "createdAt": "2023-08-11T21:27:25Z",
+          "updatedAt": "2023-08-11T21:27:25Z"
         }
       ],
       "reviews": []
