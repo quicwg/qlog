@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-08-13T00:43:22.150685+00:00",
+  "timestamp": "2023-08-15T00:41:24.814835+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -6151,7 +6151,7 @@
       ],
       "body": "Endpoints using ECN will perform validation of ECN, as described in https://datatracker.ietf.org/doc/html/rfc9000#section-13.4.2. There are a few different conditions that can lead to a failure of ECN validation, which in turns leads to disabling of ECN for that path. We should have an event that tells us _that_ ECN validation failed and _why_.",
       "createdAt": "2022-07-25T13:41:10Z",
-      "updatedAt": "2023-08-11T16:06:26Z",
+      "updatedAt": "2023-08-14T09:11:43Z",
       "closedAt": null,
       "comments": [
         {
@@ -6188,6 +6188,13 @@
           "body": "I managed to sync with @goelvidhi during the last IETF meeting. The ECN validation mechanism described in A.4 of RFC 9000 apparently is sound, and can be safely implemented with little modifications.\r\n\r\nGiven that ECN probing is a state machine, it would make sense to log it as such:\r\n```\r\necn_state_updated {\r\n   new ECNState\r\n   ? old ECNState\r\n}\r\n\r\nECNState = {\r\n    \"testing\" / \"unknown\" / \"failed\" / \"capable\"\r\n}\r\n```\r\n\r\nMaybe we should also add a state before \"testing\", as I think it's a valid implementation strategy to not bother with ECN during the handshake, and only apply ECN markings after completion of the handshake.\r\n\r\n---\r\n\r\nRegarding L4S / Prague, there will be more details needed on this event. Given that these are still draft / experimental RFCs, maybe we can punt this though?",
           "createdAt": "2023-08-11T16:06:26Z",
           "updatedAt": "2023-08-11T16:06:26Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agree with punting details for L4S / Prague to later documents. But, as I mentioned on the PR, I would make the ECN field contents explicitly extensible already.",
+          "createdAt": "2023-08-14T09:11:43Z",
+          "updatedAt": "2023-08-14T09:11:43Z"
         }
       ]
     },
@@ -12210,7 +12217,7 @@
       "labels": [],
       "body": "Fixes #212.",
       "createdAt": "2022-12-28T02:20:34Z",
-      "updatedAt": "2023-08-11T21:28:33Z",
+      "updatedAt": "2023-08-14T09:09:39Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "57a8c67bea1d35aa585fb7c2fadbd98faf3cfb39",
@@ -12256,6 +12263,13 @@
           "body": "I added events for the ECN testing state machine from RFC 9000, A.4. This should now cover the (non-L4S) use case of ECN.\r\n\r\nWould appreciate a review of this PR.",
           "createdAt": "2023-08-11T21:27:25Z",
           "updatedAt": "2023-08-11T21:27:25Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This looks good to me overall, but I wonder if it would be better to make the ECN enum extensible as well (to allow for easy expansion into L4S in the future if needed):\r\n\r\ne.g., something like\r\n\r\n```\r\n$ECNfield /= {\r\n    * text => any\r\n}\r\n\r\nECN = \"Non-ECT\" / \"ECT(1)\" / \"ECT(0)\" / \"CE\"\r\n\r\n$ECNfield /= ECN\r\n```\r\n\r\nAdditionally, I wonder if we want some way to remove some chattiness here... I imagine that most values in DatagramsSent will be identical once the probing is done, and that you really only want to log when a CE is received in DatagramsReceived. Not sure if it's needed, but maybe some text to state that explicitly like \"no need to log with EVERY packet, only if values change from previously logged value\"? (though arguably you could say that's also observable through the reflected values in the ACKs...). ",
+          "createdAt": "2023-08-14T09:09:38Z",
+          "updatedAt": "2023-08-14T09:09:38Z"
         }
       ],
       "reviews": []
