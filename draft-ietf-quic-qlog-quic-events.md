@@ -1601,7 +1601,7 @@ KeyType = "server_initial_secret" /
 
 ## ECN
 ~~~ cddl
-ECN = "Non-ECT" / "ECT(1)" / "ECT(0)" / "CE"
+ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 ~~~
 {: #ecn-def title="ECN definition"}
 
