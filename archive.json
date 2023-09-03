@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-08-20T00:43:16.925921+00:00",
+  "timestamp": "2023-09-03T00:44:46.323325+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -12245,13 +12245,13 @@
       "labels": [],
       "body": "Fixes #212.",
       "createdAt": "2022-12-28T02:20:34Z",
-      "updatedAt": "2023-08-14T09:09:39Z",
+      "updatedAt": "2023-09-01T09:24:48Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "57a8c67bea1d35aa585fb7c2fadbd98faf3cfb39",
       "headRepository": "quicwg/qlog",
       "headRefName": "ecn",
-      "headRefOid": "676a68018b5f42bc0641d1ef33a4be6c573a1f87",
+      "headRefOid": "b74d01e9bdea1d7657a64eff96381aa847e0d582",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -12298,9 +12298,78 @@
           "body": "This looks good to me overall, but I wonder if it would be better to make the ECN enum extensible as well (to allow for easy expansion into L4S in the future if needed):\r\n\r\ne.g., something like\r\n\r\n```\r\n$ECNfield /= {\r\n    * text => any\r\n}\r\n\r\nECN = \"Non-ECT\" / \"ECT(1)\" / \"ECT(0)\" / \"CE\"\r\n\r\n$ECNfield /= ECN\r\n```\r\n\r\nAdditionally, I wonder if we want some way to remove some chattiness here... I imagine that most values in DatagramsSent will be identical once the probing is done, and that you really only want to log when a CE is received in DatagramsReceived. Not sure if it's needed, but maybe some text to state that explicitly like \"no need to log with EVERY packet, only if values change from previously logged value\"? (though arguably you could say that's also observable through the reflected values in the ACKs...). ",
           "createdAt": "2023-08-14T09:09:38Z",
           "updatedAt": "2023-08-14T09:09:38Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> This looks good to me overall, but I wonder if it would be better to make the ECN enum extensible as well (to allow for easy expansion into L4S in the future if needed):\r\n> \r\n> e.g., something like\r\n> \r\n> ```\r\n> $ECNfield /= {\r\n>     * text => any\r\n> }\r\n> \r\n> ECN = \"Non-ECT\" / \"ECT(1)\" / \"ECT(0)\" / \"CE\"\r\n> \r\n> $ECNfield /= ECN\r\n> ```\r\n\r\nI don't think that's needed. There are only 4 ECN values (2 bits) allowed by the IP header. L4S doesn't change that.\r\n\r\n\r\n\r\n> Additionally, I wonder if we want some way to remove some chattiness here... I imagine that most values in DatagramsSent will be identical once the probing is done, and that you really only want to log when a CE is received in DatagramsReceived. Not sure if it's needed, but maybe some text to state that explicitly like \"no need to log with EVERY packet, only if values change from previously logged value\"? (though arguably you could say that's also observable through the reflected values in the ACKs...).\r\n\r\nIt's not observable from the ACKs, the ACK only tells you what happened along the path. Not logging it on every packet sounds good though.",
+          "createdAt": "2023-09-01T03:57:00Z",
+          "updatedAt": "2023-09-01T03:57:00Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> It's not observable from the ACKs, the ACK only tells you what happened along the path.\r\n\r\nnot sure what you mean by this. The ACKs reflect the incoming ECN info to the sender, so looking at incoming ACKs shows you what happened from YOU -> THEM and looking at outgoing ACKs (the one's we're sending) should show what happened THEM -> US. Put differently: your outgoing ACKs should reflect what you saw in DatagramsReceived, no? (though, to be fair, maybe I'm misunderstanding how all of this works). ",
+          "createdAt": "2023-09-01T09:10:03Z",
+          "updatedAt": "2023-09-01T09:10:03Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> > It's not observable from the ACKs, the ACK only tells you what happened along the path.\r\n> \r\n> not sure what you mean by this. The ACKs reflect the incoming ECN info to the sender, so looking at incoming ACKs shows you what happened from YOU -> THEM and looking at outgoing ACKs (the one's we're sending) should show what happened THEM -> US. Put differently: your outgoing ACKs should reflect what you saw in DatagramsReceived, no? (though, to be fair, maybe I'm misunderstanding how all of this works).\r\n\r\nYou're right, for the receive side. For the send side this doesn't work though.",
+          "createdAt": "2023-09-01T09:18:42Z",
+          "updatedAt": "2023-09-01T09:18:42Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Ok, agreed then :) \r\nThough, as I said, for the send side the codepoints will (probably?) usually always be the same after detection/negotiation/testing (e.g., if capable, you always send ECT(0) from then on), so no need to keep logging after that. Hence the original comment above. ",
+          "createdAt": "2023-09-01T09:24:48Z",
+          "updatedAt": "2023-09-01T09:24:48Z"
         }
       ],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5fvG4F",
+          "commit": {
+            "abbreviatedOid": "676a680"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-09-01T04:21:46Z",
+          "updatedAt": "2023-09-01T04:21:46Z",
+          "comments": [
+            {
+              "originalPosition": 86,
+              "body": "See https://en.wikipedia.org/wiki/Explicit_Congestion_Notification#Operation_of_ECN_with_IP\r\n```suggestion\r\nECN = \"Not-ECT\" / \"ECT(1)\" / \"ECT(0)\" / \"CE\"\r\n```",
+              "createdAt": "2023-09-01T04:21:46Z",
+              "updatedAt": "2023-09-01T04:21:46Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5fvzA9",
+          "commit": {
+            "abbreviatedOid": "e127b22"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-09-01T06:55:38Z",
+          "updatedAt": "2023-09-01T06:55:38Z",
+          "comments": [
+            {
+              "originalPosition": 68,
+              "body": "This is backwards. Testing comes first, and after that comes unknown.\r\n```suggestion\r\n  ; ECN testing in progress\r\n  \"testing\" /\r\n  ; ECN state unknown, waiting for acknowledgements for testing packets\r\n  \"unknown\" /\r\n```",
+              "createdAt": "2023-09-01T06:55:38Z",
+              "updatedAt": "2023-09-01T06:55:38Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 264,
