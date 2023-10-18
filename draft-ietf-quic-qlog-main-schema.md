@@ -28,7 +28,7 @@ author:
     ins: M. Seemann
     name: Marten Seemann
     org: Protocol Labs
-    email: marten@protocol.ai
+    email: martenseemann@gmail.com
     role: editor
   - ins: L. Pardue
     name: Lucas Pardue
