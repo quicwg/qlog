@@ -252,7 +252,7 @@ that happen before the actual QUIC connection is established when viewed from
 the server's perspective. This includes version negotiation as well as retries.
 Servers MAY include such events in the connection trace but need to ensure those
 events are correctly associated with the correct connection, which can take
-extra effort or resource. For example, version negotiation events can be matched
+extra effort or resources. For example, version negotiation events can be matched
 to a connection by identifying a connection attempt by its four-tuple;
 similarly, retry events can be matched by their ODCID.
 
