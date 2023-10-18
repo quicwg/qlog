@@ -880,7 +880,8 @@ QUICDatagramsSent = {
     ? raw: [+ RawInfo]
 
     ; ECN bits in the IP header
-    ; if not set, defaults to Non-ECT
+    ; if not set, defaults the value used on the last
+    ; QUICDatagramsSent event
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
@@ -918,7 +919,8 @@ QUICDatagramsReceived = {
     ? raw: [+ RawInfo]
 
     ; ECN bits in the IP header
-    ; if not set, defaults to Non-ECT
+    ; if not set, defaults to the value on the last
+    ; QUICDatagramsReceived event
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
