@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 4 March 2024                                               Meta
+Expires: 20 April 2024                                              Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                        1 September 2023
+                                                         18 October 2023
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 4 March 2024.
+   This Internet-Draft will expire on 20 April 2024.
 
 Copyright Notice
 
@@ -109,7 +109,6 @@ Table of Contents
      7.4.  loss_timer_updated
      7.5.  packet_lost
      7.6.  marked_for_retransmit
-     7.7.  ecn_state_updated
    8.  QUIC data field definitions
      8.1.  QuicVersion
      8.2.  ConnectionID
@@ -121,33 +120,32 @@ Table of Contents
      8.8.  Token
      8.9.  Stateless Reset Token
      8.10. KeyType
-     8.11. ECN
-     8.12. QUIC Frames
-       8.12.1.  PaddingFrame
-       8.12.2.  PingFrame
-       8.12.3.  AckFrame
-       8.12.4.  ResetStreamFrame
-       8.12.5.  StopSendingFrame
-       8.12.6.  CryptoFrame
-       8.12.7.  NewTokenFrame
-       8.12.8.  StreamFrame
-       8.12.9.  MaxDataFrame
-       8.12.10. MaxStreamDataFrame
-       8.12.11. MaxStreamsFrame
-       8.12.12. DataBlockedFrame
-       8.12.13. StreamDataBlockedFrame
-       8.12.14. StreamsBlockedFrame
-       8.12.15. NewConnectionIDFrame
-       8.12.16. RetireConnectionIDFrame
-       8.12.17. PathChallengeFrame
-       8.12.18. PathResponseFrame
-       8.12.19. ConnectionCloseFrame
-       8.12.20. HandshakeDoneFrame
-       8.12.21. UnknownFrame
-       8.12.22. DatagramFrame
-       8.12.23. TransportError
-       8.12.24. ApplicationError
-       8.12.25. CryptoError
+     8.11. QUIC Frames
+       8.11.1.  PaddingFrame
+       8.11.2.  PingFrame
+       8.11.3.  AckFrame
+       8.11.4.  ResetStreamFrame
+       8.11.5.  StopSendingFrame
+       8.11.6.  CryptoFrame
+       8.11.7.  NewTokenFrame
+       8.11.8.  StreamFrame
+       8.11.9.  MaxDataFrame
+       8.11.10. MaxStreamDataFrame
+       8.11.11. MaxStreamsFrame
+       8.11.12. DataBlockedFrame
+       8.11.13. StreamDataBlockedFrame
+       8.11.14. StreamsBlockedFrame
+       8.11.15. NewConnectionIDFrame
+       8.11.16. RetireConnectionIDFrame
+       8.11.17. PathChallengeFrame
+       8.11.18. PathResponseFrame
+       8.11.19. ConnectionCloseFrame
+       8.11.20. HandshakeDoneFrame
+       8.11.21. UnknownFrame
+       8.11.22. DatagramFrame
+       8.11.23. TransportError
+       8.11.24. ApplicationError
+       8.11.25. CryptoError
    9.  Security and Privacy Considerations
    10. IANA Considerations
    11. Normative References
@@ -344,8 +342,6 @@ Table of Contents
    | recovery:packet_lost                  | Core       | Section 7.5  |
    +---------------------------------------+------------+--------------+
    | recovery:marked_for_retransmit        | Extra      | Section 7.6  |
-   +---------------------------------------+------------+--------------+
-   | recovery:ecn_state_updated            | Extra      | Section 7.7  |
    +---------------------------------------+------------+--------------+
 
                             Table 1: QUIC Events
@@ -891,7 +887,6 @@ Table of Contents
        ? raw: RawInfo
        ? datagram_id: uint32
        ? is_mtu_probe_packet: bool .default false
-
        ? trigger:
          ; draft-23 5.1.1
          "retransmit_reordered" /
@@ -937,7 +932,6 @@ Table of Contents
        ? supported_versions: [+ QuicVersion]
        ? raw: RawInfo
        ? datagram_id: uint32
-
        ? trigger:
            ; if packet was buffered because it couldn't be
            ; decrypted before
@@ -1083,11 +1077,6 @@ Table of Contents
        ; The RawInfo fields do not include the UDP headers,
        ; only the UDP payload
        ? raw: [+ RawInfo]
-
-       ; ECN bits in the IP header
-       ; if not set, defaults to Non-ECT
-       ? ecn: [+ ECN]
-
        ? datagram_ids: [+ uint32]
    }
 
@@ -1123,11 +1112,6 @@ Table of Contents
        ; The RawInfo fields do not include the UDP headers,
        ; only the UDP payload
        ? raw: [+ RawInfo]
-
-       ; ECN bits in the IP header
-       ; if not set, defaults to Non-ECT
-       ? ecn: [+ ECN]
-
        ? datagram_ids: [+ uint32]
    }
 
@@ -1658,50 +1642,26 @@ Table of Contents
 
              Figure 32: RecoveryMarkedForRetransmit definition
 
-7.7.  ecn_state_updated
-
-   Importance: Extra
-
-   This event indicates a progression in the ECN state machine as
-   described in section A.4 of RFC 9000.
-
-   ECNStateUpdated = {
-      ? old: ECNState
-       new: ECNState
-   }
-
-   ECNState =
-     ; ECN testing in progress
-     "testing" /
-     ; ECN state unknown, waiting for acknowledgements for testing packets
-     "unknown" /
-     ; ECN testing failed
-     "failed" /
-     ; testing was successful, the endpoint now sends packets with ECT(0) marking
-     "capable"
-
-                   Figure 33: ECNStateUpdated definition
-
 8.  QUIC data field definitions
 
 8.1.  QuicVersion
 
    QuicVersion = hexstring
 
-                     Figure 34: QuicVersion definition
+                     Figure 33: QuicVersion definition
 
 8.2.  ConnectionID
 
    ConnectionID = hexstring
 
-                     Figure 35: ConnectionID definition
+                     Figure 34: ConnectionID definition
 
 8.3.  Owner
 
    Owner = "local" /
            "remote"
 
-                        Figure 36: Owner definition
+                        Figure 35: Owner definition
 
 8.4.  IPAddress and IPVersion
 
@@ -1712,12 +1672,12 @@ Table of Contents
    IPAddress = text /
                hexstring
 
-                      Figure 37: IPAddress definition
+                      Figure 36: IPAddress definition
 
    IPVersion = "v4" /
                "v6"
 
-                      Figure 38: IPVersion definition
+                      Figure 37: IPVersion definition
 
 8.5.  PacketType
 
@@ -1730,7 +1690,7 @@ Table of Contents
                 "stateless_reset" /
                 "unknown"
 
-                      Figure 39: PacketType definition
+                      Figure 38: PacketType definition
 
 8.6.  PacketNumberSpace
 
@@ -1738,7 +1698,7 @@ Table of Contents
                        "handshake" /
                        "application_data"
 
-                  Figure 40: PacketNumberSpace definition
+                  Figure 39: PacketNumberSpace definition
 
 8.7.  PacketHeader
 
@@ -1772,7 +1732,7 @@ Table of Contents
        ? dcid: ConnectionID
    }
 
-                     Figure 41: PacketHeader definition
+                     Figure 40: PacketHeader definition
 
 8.8.  Token
 
@@ -1788,7 +1748,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                        Figure 42: Token definition
+                        Figure 41: Token definition
 
    The token carried in an Initial packet can either be a retry token
    from a Retry packet, or one originally provided by the server in a
@@ -1802,7 +1762,7 @@ Table of Contents
 
    StatelessResetToken = hexstring .size 16
 
-                Figure 43: Stateless Reset Token definition
+                Figure 42: Stateless Reset Token definition
 
    The stateless reset token is carried in stateless reset packets, in
    transport parameters and in NEW_CONNECTION_ID frames.
@@ -1818,17 +1778,9 @@ Table of Contents
              "server_1rtt_secret" /
              "client_1rtt_secret"
 
-                       Figure 44: KeyType definition
+                       Figure 43: KeyType definition
 
-8.11.  ECN
-
-   ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
-
-                         Figure 45: ECN definition
-
-   The ECN bits carried in the IP header.
-
-8.12.  QUIC Frames
+8.11.  QUIC Frames
 
    The generic $QuicFrame is defined here as a CDDL extension point (a
    "socket" or "plug").  It can be extended to support additional QUIC
@@ -1839,7 +1791,7 @@ Table of Contents
        * text => any
    }
 
-                    Figure 46: QuicFrame plug definition
+                    Figure 44: QuicFrame plug definition
 
    The QUIC frame types defined in this document are as follows:
 
@@ -1868,9 +1820,9 @@ Table of Contents
 
    $QuicFrame /= QuicBaseFrames
 
-                    Figure 47: QuicBaseFrames definition
+                    Figure 45: QuicBaseFrames definition
 
-8.12.1.  PaddingFrame
+8.11.1.  PaddingFrame
 
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
@@ -1889,9 +1841,9 @@ Table of Contents
        payload_length: uint32
    }
 
-                     Figure 48: PaddingFrame definition
+                     Figure 46: PaddingFrame definition
 
-8.12.2.  PingFrame
+8.11.2.  PingFrame
 
    PingFrame = {
        frame_type: "ping"
@@ -1901,9 +1853,9 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                      Figure 49: PingFrame definition
+                      Figure 47: PingFrame definition
 
-8.12.3.  AckFrame
+8.11.3.  AckFrame
 
    ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
    ; For two numbers:
@@ -1924,7 +1876,7 @@ Table of Contents
        ; ECN (explicit congestion notification) related fields
        ; (not always present)
        ? ect1: uint64
-       ? ect0: uint64
+       ? ect0:uint64
        ? ce: uint64
 
        ; total frame length, including frame header
@@ -1932,7 +1884,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                       Figure 50: AckFrame definition
+                       Figure 48: AckFrame definition
 
    Note that the packet ranges in AckFrame.acked_ranges do not
    necessarily have to be ordered (e.g., [[5,9],[1,4]] is a valid
@@ -1943,7 +1895,7 @@ Table of Contents
    that case, implementers SHOULD log [120] instead and tools MUST be
    able to deal with both notations.
 
-8.12.4.  ResetStreamFrame
+8.11.4.  ResetStreamFrame
 
    ResetStreamFrame = {
        frame_type: "reset_stream"
@@ -1959,9 +1911,9 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 51: ResetStreamFrame definition
+                   Figure 49: ResetStreamFrame definition
 
-8.12.5.  StopSendingFrame
+8.11.5.  StopSendingFrame
 
    StopSendingFrame = {
        frame_type: "stop_sending"
@@ -1974,9 +1926,9 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 52: StopSendingFrame definition
+                   Figure 50: StopSendingFrame definition
 
-8.12.6.  CryptoFrame
+8.11.6.  CryptoFrame
 
    CryptoFrame = {
        frame_type: "crypto"
@@ -1985,18 +1937,18 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                     Figure 53: CryptoFrame definition
+                     Figure 51: CryptoFrame definition
 
-8.12.7.  NewTokenFrame
+8.11.7.  NewTokenFrame
 
    NewTokenFrame = {
      frame_type: "new_token"
      token: Token
    }
 
-                    Figure 54: NewTokenFrame definition
+                    Figure 52: NewTokenFrame definition
 
-8.12.8.  StreamFrame
+8.11.8.  StreamFrame
 
    StreamFrame = {
        frame_type: "stream"
@@ -2014,18 +1966,18 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 55: StreamFrame definition
+                     Figure 53: StreamFrame definition
 
-8.12.9.  MaxDataFrame
+8.11.9.  MaxDataFrame
 
    MaxDataFrame = {
      frame_type: "max_data"
      maximum: uint64
    }
 
-                     Figure 56: MaxDataFrame definition
+                     Figure 54: MaxDataFrame definition
 
-8.12.10.  MaxStreamDataFrame
+8.11.10.  MaxStreamDataFrame
 
    MaxStreamDataFrame = {
      frame_type: "max_stream_data"
@@ -2033,9 +1985,9 @@ Table of Contents
      maximum: uint64
    }
 
-                  Figure 57: MaxStreamDataFrame definition
+                  Figure 55: MaxStreamDataFrame definition
 
-8.12.11.  MaxStreamsFrame
+8.11.11.  MaxStreamsFrame
 
    MaxStreamsFrame = {
      frame_type: "max_streams"
@@ -2043,18 +1995,18 @@ Table of Contents
      maximum: uint64
    }
 
-                   Figure 58: MaxStreamsFrame definition
+                   Figure 56: MaxStreamsFrame definition
 
-8.12.12.  DataBlockedFrame
+8.11.12.  DataBlockedFrame
 
    DataBlockedFrame = {
      frame_type: "data_blocked"
      limit: uint64
    }
 
-                   Figure 59: DataBlockedFrame definition
+                   Figure 57: DataBlockedFrame definition
 
-8.12.13.  StreamDataBlockedFrame
+8.11.13.  StreamDataBlockedFrame
 
    StreamDataBlockedFrame = {
      frame_type: "stream_data_blocked"
@@ -2062,9 +2014,9 @@ Table of Contents
      limit: uint64
    }
 
-                Figure 60: StreamDataBlockedFrame definition
+                Figure 58: StreamDataBlockedFrame definition
 
-8.12.14.  StreamsBlockedFrame
+8.11.14.  StreamsBlockedFrame
 
    StreamsBlockedFrame = {
      frame_type: "streams_blocked"
@@ -2072,9 +2024,9 @@ Table of Contents
      limit: uint64
    }
 
-                 Figure 61: StreamsBlockedFrame definition
+                 Figure 59: StreamsBlockedFrame definition
 
-8.12.15.  NewConnectionIDFrame
+8.11.15.  NewConnectionIDFrame
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
@@ -2088,18 +2040,18 @@ Table of Contents
      ? stateless_reset_token: StatelessResetToken
    }
 
-                 Figure 62: NewConnectionIDFrame definition
+                 Figure 60: NewConnectionIDFrame definition
 
-8.12.16.  RetireConnectionIDFrame
+8.11.16.  RetireConnectionIDFrame
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
      sequence_number: uint32
    }
 
-               Figure 63: RetireConnectionIDFrame definition
+               Figure 61: RetireConnectionIDFrame definition
 
-8.12.17.  PathChallengeFrame
+8.11.17.  PathChallengeFrame
 
    PathChallengeFrame = {
      frame_type: "path_challenge"
@@ -2108,9 +2060,9 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 64: PathChallengeFrame definition
+                  Figure 62: PathChallengeFrame definition
 
-8.12.18.  PathResponseFrame
+8.11.18.  PathResponseFrame
 
    PathResponseFrame = {
      frame_type: "path_response"
@@ -2119,9 +2071,9 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 65: PathResponseFrame definition
+                  Figure 63: PathResponseFrame definition
 
-8.12.19.  ConnectionCloseFrame
+8.11.19.  ConnectionCloseFrame
 
    The error_code_value field is the numerical value without VLIE
    encoding.  This is useful because some error types are spread out
@@ -2145,17 +2097,17 @@ Table of Contents
                              text
    }
 
-                 Figure 66: ConnectionCloseFrame definition
+                 Figure 64: ConnectionCloseFrame definition
 
-8.12.20.  HandshakeDoneFrame
+8.11.20.  HandshakeDoneFrame
 
    HandshakeDoneFrame = {
      frame_type: "handshake_done";
    }
 
-                  Figure 67: HandshakeDoneFrame definition
+                  Figure 65: HandshakeDoneFrame definition
 
-8.12.21.  UnknownFrame
+8.11.21.  UnknownFrame
 
    The frame_type_value field is the numerical value without VLIE
    encoding.
@@ -2166,9 +2118,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 68: UnknownFrame definition
+                     Figure 66: UnknownFrame definition
 
-8.12.22.  DatagramFrame
+8.11.22.  DatagramFrame
 
    The QUIC DATAGRAM frame is defined in Section 4 of [RFC9221].
 
@@ -2178,9 +2130,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 69: DatagramFrame definition
+                    Figure 67: DatagramFrame definition
 
-8.12.23.  TransportError
+8.11.23.  TransportError
 
    TransportError = "no_error" /
                     "internal_error" /
@@ -2202,9 +2154,9 @@ Table of Contents
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
-                    Figure 70: TransportError definition
+                    Figure 68: TransportError definition
 
-8.12.24.  ApplicationError
+8.11.24.  ApplicationError
 
    By definition, an application error is defined by the application-
    level protocol running on top of QUIC (e.g., HTTP/3).
@@ -2220,7 +2172,7 @@ Table of Contents
    $ApplicationError /= "new_error_name" /
                         "another_new_error_name"
 
-8.12.25.  CryptoError
+8.11.25.  CryptoError
 
    These errors are defined in the TLS document as "A TLS alert is
    turned into a QUIC connection error by converting the one-byte alert
@@ -2236,7 +2188,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 71: CryptoError definition
+                     Figure 69: CryptoError definition
 
 9.  Security and Privacy Considerations
 
@@ -2489,7 +2441,7 @@ Authors' Addresses
 
    Marten Seemann (editor)
    Protocol Labs
-   Email: marten@protocol.ai
+   Email: martenseemann@gmail.com
 
 
    Lucas Pardue (editor)
