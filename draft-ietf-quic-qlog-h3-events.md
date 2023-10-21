@@ -1063,9 +1063,21 @@ TBD
 
 --- back
 
+# Acknowledgements
+{:numbered="false"}
+
+Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.
+
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
+Yamamoto, and Christian Huitema for their feedback and suggestions.
+
 # Change Log
+{:numbered="false" removeinrfc="true"}
 
 ## Since draft-ietf-quic-qlog-h3-events-04:
+{:numbered="false"}
 
 * Renamed 'http' category to 'h3' (#300)
 * H3HTTPField.value is now optional (#296)
@@ -1075,6 +1087,7 @@ TBD
 * Editorial and formatting changes (#298, #258, #299, #304, #327)
 
 ## Since draft-ietf-quic-qlog-h3-events-03:
+{:numbered="false"}
 
 * Ensured consistent use of RawInfo to indicate raw wire bytes (#243)
 * Changed HTTPStreamTypeSet:raw_stream_type to stream_type_value (#54)
@@ -1082,6 +1095,7 @@ TBD
 * Renamed max_header_list_size to max_field_section_size (#282)
 
 ## Since draft-ietf-quic-qlog-h3-events-02:
+{:numbered="false"}
 
 * Renamed HTTPStreamType data to request (#222)
 * Added HTTPStreamType value unknown (#227)
@@ -1092,14 +1106,17 @@ TBD
 * Added overview Table of Contents
 
 ## Since draft-ietf-quic-qlog-h3-events-01:
+{:numbered="false"}
 
 * No changes - new draft to prevent expiration
 
 ## Since draft-ietf-quic-qlog-h3-events-00:
+{:numbered="false"}
 
 * Change the data definition language from TypeScript to CDDL (#143)
 
 ## Since draft-marx-qlog-event-definitions-quic-h3-02:
+{:numbered="false"}
 
 * These changes were done in preparation of the adoption of the drafts by the QUIC
   working group (#137)
@@ -1108,6 +1125,7 @@ TBD
   schema document.
 
 ## Since draft-marx-qlog-event-definitions-quic-h3-01:
+{:numbered="false"}
 
 Major changes:
 
@@ -1149,8 +1167,8 @@ Smaller changes:
   coalesced QUIC packets (#91)
 * Extended connection_state_updated with more fine-grained states (#49)
 
-
 ## Since draft-marx-qlog-event-definitions-quic-h3-00:
+{:numbered="false"}
 
 * Event and category names are now all lowercase
 * Added many new events and their definitions
@@ -1159,14 +1177,3 @@ Smaller changes:
 * Events are given an importance indicator (issue \#22)
 * Event names are more consistent and use past tense (issue \#21)
 * Triggers have been redefined as properties of the "data" field and updated for most events (issue \#23)
-
-# Acknowledgements
-{:numbered="false"}
-
-Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
-Universities.
-
-Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, and Christian Huitema for their feedback and suggestions.
-
