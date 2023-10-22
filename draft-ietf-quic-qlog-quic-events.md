@@ -1443,11 +1443,13 @@ ECNStateUpdated = {
 ECNState =
   ; ECN testing in progress
   "testing" /
-  ; ECN state unknown, waiting for acknowledgements for testing packets
+  ; ECN state unknown, waiting for acknowledgements
+  ; for testing packets
   "unknown" /
   ; ECN testing failed
   "failed" /
-  ; testing was successful, the endpoint now sends packets with ECT(0) marking
+  ; testing was successful, the endpoint now
+  ; sends packets with ECT(0) marking
   "capable"
 ~~~
 {: #recovery-ecnstateupdated-def title="ECNStateUpdated definition"}
