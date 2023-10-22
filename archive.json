@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-10-19T00:43:21.922935+00:00",
+  "timestamp": "2023-10-22T00:47:26.869459+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7121,9 +7121,17 @@
       "labels": [],
       "body": "I am wondering if the new H3PriorityUpdated event (see #312) needs some specified `trigger` field values.\r\n\r\nConceptually, you can get the necessary context from other events surrounding this event (e.g., if you get a H3FrameParsed with a HEADERS containing a `priority` field preceding this, that's a clear indicator that's the trigger). However, there are cases where this is less clear (e.g., default initialization to a value different from the spec, local override due to configuration or other logic, merging of client and server-sent priorities for the same stream, ...)\r\n\r\nWe don't NEED to define any triggers here (`trigger` is always defined on event data, just not necessarily specced in qlog), but I'm wondering if some default values would be useful here @LPardue?\r\n\r\ne.g., \r\n```\r\n? trigger: \"client_directive\" / \"server_directive\" / \"local_override\" / \"local_default\" / \"merge\" / \"merge_override\"\r\n```",
       "createdAt": "2023-07-06T10:51:06Z",
-      "updatedAt": "2023-07-06T10:51:06Z",
+      "updatedAt": "2023-10-21T17:59:21Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Personally, I don't think I'd have the ability to pass through enough context to my logging library to capture the trigger. But I think I need a bit more time to work on the implementation.",
+          "createdAt": "2023-10-21T17:59:21Z",
+          "updatedAt": "2023-10-21T17:59:21Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -12306,7 +12314,7 @@
       "labels": [],
       "body": "Fixes #212.",
       "createdAt": "2022-12-28T02:20:34Z",
-      "updatedAt": "2023-10-18T11:24:51Z",
+      "updatedAt": "2023-10-21T17:56:24Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "57a8c67bea1d35aa585fb7c2fadbd98faf3cfb39",
@@ -12434,6 +12442,32 @@
               "body": "This is backwards. Testing comes first, and after that comes unknown.\r\n```suggestion\r\n  ; ECN testing in progress\r\n  \"testing\" /\r\n  ; ECN state unknown, waiting for acknowledgements for testing packets\r\n  \"unknown\" /\r\n```",
               "createdAt": "2023-09-01T06:55:38Z",
               "updatedAt": "2023-09-01T06:55:38Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5kzzuk",
+          "commit": {
+            "abbreviatedOid": "c7cd9bb"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM modulo 2 nits",
+          "createdAt": "2023-10-21T17:24:16Z",
+          "updatedAt": "2023-10-21T17:56:24Z",
+          "comments": [
+            {
+              "originalPosition": 30,
+              "body": "```suggestion\r\n    ; if not set, defaults to the value used on the last\r\n```",
+              "createdAt": "2023-10-21T17:24:16Z",
+              "updatedAt": "2023-10-21T17:56:24Z"
+            },
+            {
+              "originalPosition": 58,
+              "body": "```suggestion\r\nA.4 of {{QUIC-TRANSPORT}}.\r\n```",
+              "createdAt": "2023-10-21T17:56:13Z",
+              "updatedAt": "2023-10-21T17:56:24Z"
             }
           ]
         }
@@ -16299,6 +16333,92 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 331,
+      "id": "PR_kwDOCrLn6M5dbbKh",
+      "title": "Reflow of main schema document first half",
+      "url": "https://github.com/quicwg/qlog/pull/331",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "The organic growth of the document has made, in my opinion, the flow\nof the document a bit janky.\n\nThis is especially so for JSON-SEQ. After reading the whole document\nthat frames things as qlog - there's a text buried down in the\nserialization that requires the reader to discard a lot of internalized\ncontext. It shouldn't be like that because QLogFile and QLogFileSeq are\nseparate things that share a tonne of qlog types.\n\nThis change focuses on sections 3-5. We draw our the primary themes that\nunderpin qlog by picking out the terms that we actually use. Instead of\nschema -> traces -> Field name semantics in one section, we move to\nQLogFile schema and related traces and Tace, QlogFileSeq and related TraceSeq,\nVantagePoint, Events, Raw packet info, and Common Events. Finishing up with\nguidelines for people to define their own events.\n",
+      "createdAt": "2023-10-21T00:30:44Z",
+      "updatedAt": "2023-10-21T00:36:19Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6a7a530aca515d97558eb3d688e7f8832dbc1d17",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "main-spec-reflow",
+      "headRefOid": "929eae95fdff822238b4dd56a709f10778beedcf",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "This is pretty hard to diff in git. See https://author-tools.ietf.org/api/iddiff?url_1=https://quicwg.github.io/qlog/draft-ietf-quic-qlog-main-schema.txt&url_2=https://quicwg.github.io/qlog/main-spec-reflow/draft-ietf-quic-qlog-main-schema.txt for soemthing easier",
+          "createdAt": "2023-10-21T00:36:18Z",
+          "updatedAt": "2023-10-21T00:36:18Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 332,
+      "id": "PR_kwDOCrLn6M5dc0FR",
+      "title": "Move changelog to end",
+      "url": "https://github.com/quicwg/qlog/pull/332",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "This section will be removed, so putting it as the first appendix\nmeans that there's a potential for more churn later on.\n\nThis change updates the changelog section metadata and moves it to the end.\n",
+      "createdAt": "2023-10-21T17:39:26Z",
+      "updatedAt": "2023-10-21T17:39:27Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6a7a530aca515d97558eb3d688e7f8832dbc1d17",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "move-changelogs",
+      "headRefOid": "191182a36a11ca43007ad33a26b70f28047c88bc",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 333,
+      "id": "PR_kwDOCrLn6M5dc08j",
+      "title": "Replace IANA TBD",
+      "url": "https://github.com/quicwg/qlog/pull/333",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-10-21T17:46:31Z",
+      "updatedAt": "2023-10-21T17:46:31Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6a7a530aca515d97558eb3d688e7f8832dbc1d17",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "iana-tbd-nono",
+      "headRefOid": "fbd10b84988ee474e05b85a411d7d983e3141422",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
