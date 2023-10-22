@@ -199,6 +199,7 @@ this specification.
 | recovery:loss_timer_updated           | Extra      | {{recovery-losstimerupdated}} |
 | recovery:packet_lost                  | Core       | {{recovery-packetlost}} |
 | recovery:marked_for_retransmit        | Extra      | {{recovery-markedforretransmit}} |
+| recovery:ecn_state_updated            | Extra      | {{recovery-ecnstateupdated}} |
 {: #quic-events title="QUIC Events"}
 
 QUIC events extend the `$ProtocolEventBody` extension point defined in
@@ -698,6 +699,7 @@ QUICPacketSent = {
     ? raw: RawInfo
     ? datagram_id: uint32
     ? is_mtu_probe_packet: bool .default false
+
     ? trigger:
       ; draft-23 5.1.1
       "retransmit_reordered" /
@@ -743,6 +745,7 @@ QUICPacketReceived = {
     ? supported_versions: [+ QuicVersion]
     ? raw: RawInfo
     ? datagram_id: uint32
+
     ? trigger:
         ; if packet was buffered because it couldn't be
         ; decrypted before
@@ -875,6 +878,12 @@ QUICDatagramsSent = {
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: [+ RawInfo]
+
+    ; ECN bits in the IP header
+    ; if not set, defaults to the value used on the last
+    ; QUICDatagramsSent event
+    ? ecn: [+ ECN]
+
     ? datagram_ids: [+ uint32]
 }
 ~~~
@@ -908,6 +917,12 @@ QUICDatagramsReceived = {
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: [+ RawInfo]
+
+    ; ECN bits in the IP header
+    ; if not set, defaults to the value on the last
+    ; QUICDatagramsReceived event
+    ? ecn: [+ ECN]
+
     ? datagram_ids: [+ uint32]
 }
 ~~~
@@ -1413,6 +1428,31 @@ RecoveryMarkedForRetransmit = {
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
 
+## ecn_state_updated {#recovery-ecnstateupdated}
+Importance: Extra
+
+This event indicates a progression in the ECN state machine as described in section
+A.4 of {{QUIC-TRANSPORT}}.
+
+~~~ cddl
+ECNStateUpdated = {
+   ? old: ECNState
+    new: ECNState
+}
+
+ECNState =
+  ; ECN testing in progress
+  "testing" /
+  ; ECN state unknown, waiting for acknowledgements for testing packets
+  "unknown" /
+  ; ECN testing failed
+  "failed" /
+  ; testing was successful, the endpoint now sends packets with ECT(0) marking
+  "capable"
+~~~
+{: #recovery-ecnstateupdated-def title="ECNStateUpdated definition"}
+
+
 # QUIC data field definitions
 
 ## QuicVersion
@@ -1561,6 +1601,14 @@ KeyType = "server_initial_secret" /
 ~~~
 {: #keytype-def title="KeyType definition"}
 
+## ECN
+~~~ cddl
+ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
+~~~
+{: #ecn-def title="ECN definition"}
+
+The ECN bits carried in the IP header.
+
 ## QUIC Frames
 
 The generic `$QuicFrame` is defined here as a CDDL extension point (a "socket"
@@ -1660,7 +1708,7 @@ AckFrame = {
     ; ECN (explicit congestion notification) related fields
     ; (not always present)
     ? ect1: uint64
-    ? ect0:uint64
+    ? ect0: uint64
     ? ce: uint64
 
     ; total frame length, including frame header
