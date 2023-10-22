@@ -880,7 +880,7 @@ QUICDatagramsSent = {
     ? raw: [+ RawInfo]
 
     ; ECN bits in the IP header
-    ; if not set, defaults the value used on the last
+    ; if not set, defaults to the value used on the last
     ; QUICDatagramsSent event
     ? ecn: [+ ECN]
 
@@ -1432,7 +1432,7 @@ RecoveryMarkedForRetransmit = {
 Importance: Extra
 
 This event indicates a progression in the ECN state machine as described in section
-A.4 of RFC 9000.
+A.4 of {{QUIC-TRANSPORT}}.
 
 ~~~ cddl
 ECNStateUpdated = {
