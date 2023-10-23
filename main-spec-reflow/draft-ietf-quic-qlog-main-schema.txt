@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 23 April 2024                                              Meta
+Expires: 25 April 2024                                              Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         21 October 2023
+                                                         23 October 2023
 
 
                       Main logging schema for qlog
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 23 April 2024.
+   This Internet-Draft will expire on 25 April 2024.
 
 Copyright Notice
 
@@ -107,7 +107,7 @@ Table of Contents
    9.  Event definition guidelines
      9.1.  Event design
      9.2.  Event importance indicators
-     9.3.  Custom fields
+     9.3.  Custom fields\
    10. Serializing qlog
      10.1.  qlog to JSON mapping
        10.1.1.  I-JSON
@@ -347,7 +347,7 @@ Table of Contents
    aggregate these three individual traces together into a single file,
    so it can be uniquely stored, transferred, and annotated.
 
-   The QlogFile "traces" field is an array the contains a list of
+   The QlogFile "traces" field is an array that contains a list of
    individual qlog traces.  When capturing a qlog at a vantage point, it
    is expected that the traces field contains a single entry.  Files can
    be aggregated, for example as part of a post-processing operation, by
@@ -379,7 +379,7 @@ Table of Contents
                          Figure 4: Trace definition
 
    The optional "title" and "description" fields provide additional
-   free-text information about the file.
+   free-text information about the trace.
 
    The optional "common_fields" field is described in Section 6.8.
 
@@ -503,7 +503,7 @@ Table of Contents
 
    TraceSeq is used with QlogFileSeq.  It is conceptually similar to a
    Trace, with the exception that qlog events are not contained within
-   it.
+   it, but rather appended after it in a QlogFileSeq.
 
    TraceSeq = {
        ? title: text
@@ -601,10 +601,10 @@ Table of Contents
 
    Each qlog event MAY contain the optional fields: "time_format"
    (Section 6.1), "protocol_type" (Section 6.4), "trigger"
-   (Section 6.5), and "group_id" Section 6.6.
+   (Section 6.5), and "group_id" (Section 6.6).
 
    Multiple events can appear in a Trace or TraceSeq and they might
-   contain field with identical values.  It is possible to optimize out
+   contain fields with identical values.  It is possible to optimize out
    this duplication using "common_fields" (Section 6.8).
 
    The specific values for each of these fields and their semantics are
@@ -1233,14 +1233,14 @@ Table of Contents
 
    This document defines the main schema for the qlog format together
    with some common events, which on their own do not provide much
-   logging utility.  It is explected that logging is extended with
+   logging utility.  It is expected that logging is extended with
    specific, per-protocol event definitions that specify the name
    (category + type) and data needed for each individual event.
    Examples include the QUIC event definitions [QLOG-QUIC] and HTTP/3
    and QPACK event definitions [QLOG-H3].
 
    This section defines some basic annotations and concepts that SHOULD
-   by event definition documents.  Doing so ensures a measure of
+   be used by event definition documents.  Doing so ensures a measure of
    consistency that makes it easier for qlog implementers to support a
    wide variety of protocols.
 
@@ -1261,12 +1261,13 @@ Table of Contents
    consistent across many packets are split into separate events (for
    example spin_bit_updated or connection_id_updated for QUIC).
 
-   Finally, logging additional state change events, if those state
-   changes can be directly inferred from data on the wire (for example
-   flow control limit changes) is typically avoided, if the
-   implementation is bug-free and spec-compliant.  Exceptions have been
-   made for common events that benefit from being easily identifiable or
-   individually logged (for example packets_acked).
+   Finally, when logging additional state change events, those state
+   changes can often be directly inferred from data on the wire (for
+   example flow control limit changes).  As such, if the implementation
+   is bug-free and spec-compliant, logging additional events is
+   typically avoided.  Exceptions have been made for common events that
+   benefit from being easily identifiable or individually logged (for
+   example packets_acked).
 
 9.2.  Event importance indicators
 
@@ -1300,10 +1301,11 @@ Table of Contents
    Core events (if those contain all their properties), but for many it
    is better to log the events explicitly as well, making it clearer how
    the implementation behaves.  These events are for example tied to
-   passing data around in buffers, to how internal state machines change
-   and help show when decisions are actually made based on received
-   data.  Tool implementers SHOULD at least add support for showing the
-   contents of these events, if they do not handle them explicitly.
+   passing data around in buffers, to how internal state machines
+   change, and used to help show when decisions are actually made based
+   on received data.  Tool implementers SHOULD at least add support for
+   showing the contents of these events, if they do not handle them
+   explicitly.
 
    The "Extra" events are considered mostly useful for low-level
    debugging of the implementation, rather than the protocol.  They
@@ -1324,7 +1326,7 @@ Table of Contents
    document should include explicit guidance on which to use in specific
    situations.
 
-9.3.  Custom fields
+9.3.  Custom fields\
 
    Event definition documents are free to define new category and event
    types, top-level fields (e.g., a per-event field indicating its
