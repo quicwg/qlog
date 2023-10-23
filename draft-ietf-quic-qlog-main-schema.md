@@ -221,7 +221,8 @@ omitted the default value of "JSON" applies.
 The optional "title" and "description" fields provide additional free-text
 information about the file.
 
-The optional "traces" field contains an array of qlog traces ({{trace}}), each of which contain metadata and an array of qlog events ({{events}}).
+The optional "traces" field contains an array of qlog traces ({{trace}}), each
+of which contain metadata and an array of qlog events ({{events}}).
 
 In order to make it easier to parse and identify qlog files and their
 serialization format, the "qlog_version" and "qlog_format" fields and their
@@ -255,7 +256,7 @@ client, on the server, and on a single point on their common network path. For
 analysis, it is useful to aggregate these three individual traces together into
 a single file, so it can be uniquely stored, transferred, and annotated.
 
-The QlogFile "traces" field is an array the contains a list of individual qlog
+The QlogFile "traces" field is an array that contains a list of individual qlog
 traces. When capturing a qlog at a vantage point, it is expected that the traces
 field contains a single entry. Files can be aggregated, for example as part of a
 post-processing operation, by copying the traces in component to files into the
@@ -285,7 +286,7 @@ Trace = {
 {: #trace-def title="Trace definition"}
 
 The optional "title" and "description" fields provide additional free-text
-information about the file.
+information about the trace.
 
 The optional "common_fields" field is described in {{common-fields}}.
 
@@ -370,7 +371,8 @@ The required "qlog_version" field MUST have the value "0.4".
 The optional "title" and "description" fields provide additional free-text
 information about the file.
 
-The optional "trace" field contains a singular trace metadata. All qlog events in the file are related to this trace.
+The optional "trace" field contains a singular trace metadata. All qlog events
+in the file are related to this trace.
 
 JSON-SEQ serialization example:
 
@@ -408,7 +410,9 @@ For further information about serialization, see {{format-json-seq}}.
 
 ## TraceSeq
 
-TraceSeq is used with QlogFileSeq. It is conceptually similar to a Trace, with the exception that qlog events are not contained within it.
+TraceSeq is used with QlogFileSeq. It is conceptually similar to a Trace, with
+the exception that qlog events are not contained within it, but rather appended
+after it in a QlogFileSeq.
 
 ~~~ cddl
 TraceSeq = {
@@ -508,9 +512,9 @@ Each qlog event MUST contain the mandatory fields: "time"
 
 Each qlog event MAY contain the optional fields: "time_format"
 ({{time-based-fields}}), "protocol_type" ({{protocol-type-field}}), "trigger"
-({{trigger-field}}), and "group_id" {{group-ids}}.
+({{trigger-field}}), and "group_id" ({{group-ids}}).
 
-Multiple events can appear in a Trace or TraceSeq and they might contain field
+Multiple events can appear in a Trace or TraceSeq and they might contain fields
 with identical values. It is possible to optimize out this duplication using
 "common_fields" ({{common-fields}}).
 
@@ -1124,35 +1128,36 @@ SimulationMarker = {
 
 This document defines the main schema for the qlog format together with some
 common events, which on their own do not provide much logging utility. It is
-explected that logging is extended with specific, per-protocol event definitions
+expected that logging is extended with specific, per-protocol event definitions
 that specify the name (category + type) and data needed for each individual
 event. Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3 and
 QPACK event definitions {{QLOG-H3}}.
 
-This section defines some basic annotations and concepts that SHOULD by event
-definition documents. Doing so ensures a measure of consistency that makes it
-easier for qlog implementers to support a wide variety of protocols.
+This section defines some basic annotations and concepts that SHOULD be used by
+event definition documents. Doing so ensures a measure of consistency that makes
+it easier for qlog implementers to support a wide variety of protocols.
 
 ## Event design
 
-There are several ways of defining qlog events. In practice, two main
-types of approach have been observed: a) those that map directly to concepts seen in the protocols
-(e.g., `packet_sent`) and b) those that act as aggregating events that combine
-data from several possible protocol behaviors or code paths into one (e.g.,
-`parameters_set`). The latter are typically used as a means to reduce the amount
-of unique event definitions, as reflecting each possible protocol event as a
-separate qlog entity would cause an explosion of event types.
+There are several ways of defining qlog events. In practice, two main types of
+approach have been observed: a) those that map directly to concepts seen in the
+protocols (e.g., `packet_sent`) and b) those that act as aggregating events that
+combine data from several possible protocol behaviors or code paths into one
+(e.g., `parameters_set`). The latter are typically used as a means to reduce the
+amount of unique event definitions, as reflecting each possible protocol event
+as a separate qlog entity would cause an explosion of event types.
 
 Additionally, logging duplicate data is typically prevented as much as possible.
 For example, packet header values that remain consistent across many packets are
 split into separate events (for example `spin_bit_updated` or
 `connection_id_updated` for QUIC).
 
-Finally, logging additional state change events, if
-those state changes can be directly inferred from data on the wire (for example
-flow control limit changes) is typically avoided, if the implementation is bug-free and spec-compliant.
-Exceptions have been made for common events that benefit from being easily
-identifiable or individually logged (for example `packets_acked`).
+Finally, when logging additional state change events, those state changes can
+often be directly inferred from data on the wire (for example flow control limit
+changes). As such, if the implementation is bug-free and spec-compliant, logging
+additional events is typically avoided. Exceptions have been made for common
+events that benefit from being easily identifiable or individually logged (for
+example `packets_acked`).
 
 ## Event importance indicators
 
@@ -1163,9 +1168,8 @@ logging of similar or overlapping data. For example the separate QUIC
 should be logged or used, and which event should take precedence if e.g., both are
 present and provide conflicting information.
 
-To aid in this decision making, each event SHOULD have an
-"importance indicator" with one of three values, in decreasing order of importance
-and expected usage:
+To aid in this decision making, each event SHOULD have an "importance indicator"
+with one of three values, in decreasing order of importance and expected usage:
 
 * Core
 * Base
@@ -1178,17 +1182,17 @@ expect and add support for these events, though SHOULD NOT expect all Core event
 to be present in each qlog trace.
 
 The "Base" events add additional debugging options and MAY be present in qlog
-files. Most of these can be implicitly inferred from data in Core events (if those
-contain all their properties), but for many it is better to log the events
-explicitly as well, making it clearer how the implementation behaves. These events
-are for example tied to passing data around in buffers, to how internal state
-machines change and help show when decisions are actually made based on received
-data. Tool implementers SHOULD at least add support for showing the contents of
-these events, if they do not handle them explicitly.
+files. Most of these can be implicitly inferred from data in Core events (if
+those contain all their properties), but for many it is better to log the events
+explicitly as well, making it clearer how the implementation behaves. These
+events are for example tied to passing data around in buffers, to how internal
+state machines change, and used to help show when decisions are actually made
+based on received data. Tool implementers SHOULD at least add support for
+showing the contents of these events, if they do not handle them explicitly.
 
 The "Extra" events are considered mostly useful for low-level debugging of the
-implementation, rather than the protocol. They allow more fine-grained tracking of
-internal behavior. As such, they MAY be present in qlog files and tool
+implementation, rather than the protocol. They allow more fine-grained tracking
+of internal behavior. As such, they MAY be present in qlog files and tool
 implementers MAY add support for these, but they are not required to.
 
 Note that in some cases, implementers might not want to log for example data
@@ -1202,7 +1206,7 @@ Finally, for event types whose data (partially) overlap with other event types'
 definitions, where necessary the event definition document should include explicit
 guidance on which to use in specific situations.
 
-## Custom fields
+## Custom fields\
 
 Event definition documents are free to define new category and event types,
 top-level fields (e.g., a per-event field indicating its privacy properties or
