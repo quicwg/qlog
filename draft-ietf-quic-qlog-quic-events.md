@@ -2049,10 +2049,21 @@ There are no IANA considerations.
 
 --- back
 
+# Acknowledgements
+{:numbered="false"}
+
+Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.
+
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
+Yamamoto, and Christian Huitema for their feedback and suggestions.
 
 # Change Log
+{:numbered="false" removeinrfc="true"}
 
 ## Since draft-ietf-qlog-quic-events-04:
+{:numbered="false"}
 
 * Updated guidance on logging events across connections (#279)
 * Renamed 'transport' category to 'quic' (#302)
@@ -2063,6 +2074,7 @@ There are no IANA considerations.
 * Editorial and formatting changes (#298, #299, #304, #306, #327)
 
 ## Since draft-ietf-qlog-quic-events-03:
+{:numbered="false"}
 
 * Ensured consistent use of RawInfo to indicate raw wire bytes (#243)
 * Renamed UnknownFrame:raw_frame_type to :frame_type_value (#54)
@@ -2072,6 +2084,7 @@ There are no IANA considerations.
 * Changed minimum_congestion_window to uint64 (#288)
 
 ## Since draft-ietf-qlog-quic-events-02:
+{:numbered="false"}
 
 * Renamed key_retired to key_discarded (#185)
 * Added fields and events for DPLPMTUD (#135)
@@ -2082,14 +2095,17 @@ There are no IANA considerations.
 * Added overview Table of Contents
 
 ## Since draft-ietf-qlog-quic-events-01:
+{:numbered="false"}
 
 * Added Stateless Reset Token type (#122)
 
 ## Since draft-ietf-qlog-quic-events-00:
+{:numbered="false"}
 
 * Change the data definition language from TypeScript to CDDL (#143)
 
 ## Since draft-marx-qlog-event-definitions-quic-h3-02:
+{:numbered="false"}
 
 * These changes were done in preparation of the adoption of the drafts by the QUIC
   working group (#137)
@@ -2099,6 +2115,7 @@ There are no IANA considerations.
 * Changed to/from value options of the `data_moved` event
 
 ## Since draft-marx-qlog-event-definitions-quic-h3-01:
+{:numbered="false"}
 
 Major changes:
 
@@ -2140,8 +2157,8 @@ Smaller changes:
   coalesced QUIC packets (#91)
 * Extended connection_state_updated with more fine-grained states (#49)
 
-
 ## Since draft-marx-qlog-event-definitions-quic-h3-00:
+{:numbered="false"}
 
 * Event and category names are now all lowercase
 * Added many new events and their definitions
@@ -2150,13 +2167,3 @@ Smaller changes:
 * Events are given an importance indicator (issue \#22)
 * Event names are more consistent and use past tense (issue \#21)
 * Triggers have been redefined as properties of the "data" field and updated for most events (issue \#23)
-
-# Acknowledgements
-{:numbered="false"}
-
-Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
-Universities.
-
-Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, and Christian Huitema for their feedback and suggestions.

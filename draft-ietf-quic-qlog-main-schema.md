@@ -1821,9 +1821,21 @@ There are no IANA considerations.
 
 --- back
 
+# Acknowledgements
+{:numbered="false"}
+
+Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.
+
+Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, and Jeremy Lainé for
+their feedback and suggestions.
+
 # Change Log
+{:numbered="false" removeinrfc="true"}
 
 ## Since draft-ietf-quic-qlog-main-schema-05:
+{:numbered="false"}
 
 * Updated qlog_version to 0.4 (due to breaking changes) (#314)
 * Renamed 'transport' category to 'quic' (#302)
@@ -1832,22 +1844,27 @@ There are no IANA considerations.
 * Editorial and formatting changes (#298, #303, #304, #316, #320, #321, #322, #326, #328)
 
 ## Since draft-ietf-quic-qlog-main-schema-04:
+{:numbered="false"}
 
 * Updated RawInfo definition and guidance (#243)
 
 ## Since draft-ietf-quic-qlog-main-schema-03:
+{:numbered="false"}
 
 * Added security and privacy considerations discussion (#252)
 
 ## Since draft-ietf-quic-qlog-main-schema-02:
+{:numbered="false"}
 
 * No changes - new draft to prevent expiration
 
 ## Since draft-ietf-quic-qlog-main-schema-01:
+{:numbered="false"}
 
 * Change the data definition language from TypeScript to CDDL (#143)
 
 ## Since draft-ietf-quic-qlog-main-schema-00:
+{:numbered="false"}
 
 * Changed the streaming serialization format from NDJSON to JSON Text Sequences
   (#172)
@@ -1855,6 +1872,7 @@ There are no IANA considerations.
 * Changed to semantic versioning
 
 ## Since draft-marx-qlog-main-schema-draft-02:
+{:numbered="false"}
 
 * These changes were done in preparation of the adoption of the drafts by the QUIC
   working group (#137)
@@ -1863,6 +1881,7 @@ There are no IANA considerations.
 * Made protocol_type an array instead of a string (#146)
 
 ## Since draft-marx-qlog-main-schema-01:
+{:numbered="false"}
 
 * Decoupled qlog from the JSON format and described a mapping instead (#89)
     * Data types are now specified in this document and proper definitions for
@@ -1880,21 +1899,10 @@ There are no IANA considerations.
   usage (#26,#33,#51)
 * Overall tightened up the text and added more examples
 
-
 ## Since draft-marx-qlog-main-schema-00:
+{:numbered="false"}
 
 * All field names are now lowercase (e.g., category instead of CATEGORY)
 * Triggers are now properties on the "data" field value, instead of separate field
   types (#23)
 * group_ids in common_fields is now just also group_id
-
-# Acknowledgements
-{:numbered="false"}
-
-Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
-Universities.
-
-Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, and Jeremy Lainé for
-their feedback and suggestions.
-
