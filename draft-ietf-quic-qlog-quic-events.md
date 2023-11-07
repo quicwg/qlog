@@ -2062,6 +2062,12 @@ Yamamoto, and Christian Huitema for their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-qlog-quic-events-05:
+{:numbered="false"}
+
+* SecurityKeyUpdated: the new key is no longer mandatory to log (#294)
+* Added ECN related events and metadata (#263)
+
 ## Since draft-ietf-qlog-quic-events-04:
 {:numbered="false"}
 

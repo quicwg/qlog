@@ -1831,6 +1831,12 @@ their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-main-schema-06:
+{:numbered="false"}
+
+* Editorial reworking of the document (#331, #332)
+* Updated IANA considerations section (#333)
+
 ## Since draft-ietf-quic-qlog-main-schema-05:
 {:numbered="false"}
 
