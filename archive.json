@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-10-24T00:43:22.172488+00:00",
+  "timestamp": "2023-11-07T00:44:42.003732+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -893,7 +893,7 @@
       "url": "https://github.com/quicwg/qlog/issues/32",
       "state": "CLOSED",
       "author": "dtikhonov",
-      "authorAssociation": "NONE",
+      "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "The fact that qlog is in JSON format is not mentioned until section 3.3.4 of the main logging schema draft.  This should be stated earlier: before any JSON examples are given.",
@@ -917,7 +917,7 @@
       "url": "https://github.com/quicwg/qlog/issues/33",
       "state": "CLOSED",
       "author": "dtikhonov",
-      "authorAssociation": "NONE",
+      "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Whether ODCID in the well-known URI is uppercase or lowercase should be specified.",
@@ -2976,7 +2976,7 @@
       "url": "https://github.com/quicwg/qlog/issues/110",
       "state": "CLOSED",
       "author": "dtikhonov",
-      "authorAssociation": "NONE",
+      "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "The \"push_allowed\" data element is `parameters_set` event is odd in that other data elements log actual settings values while \"push_allowed\" is derived from the value of `MAX_PUSH_ID` frame.\r\n\r\nIn addition, for pushing to be allowed, a second condition is necessary:  There must be enough unidirectional stream credit.  For example, if only three unidirectional streams are allowed, it effectively means that pushing is not possible, as those will be taken by the control and the two QPACK streams.",
@@ -2993,7 +2993,7 @@
         },
         {
           "author": "dtikhonov",
-          "authorAssociation": "NONE",
+          "authorAssociation": "MEMBER",
           "body": "Well, `MAX_PUSH_ID` is already logged, so we don't need (3).  (2) may be onerous to log because now the implementation needs to add checks in at least two places and log `push_allowed`...  Let the tool do it!\r\n\r\nThus, I vote for (1).",
           "createdAt": "2020-08-20T12:49:21Z",
           "updatedAt": "2020-08-20T12:49:21Z"
@@ -3014,7 +3014,7 @@
       "url": "https://github.com/quicwg/qlog/issues/111",
       "state": "CLOSED",
       "author": "dtikhonov",
-      "authorAssociation": "NONE",
+      "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "> Used to indicate when data moves between the HTTP/3 and the transport layer (e.g., passing from H3 to QUIC stream buffers and vice versa) or between HTTP/3 and the actual user application on top (e.g., a browser engine). This helps make clear the flow of data, how long data remains in various buffers and the overheads introduced by HTTP/3's framing layer.\r\n\r\nThe paragraph above describes three layers: transport, HTTP/3, and user application.\r\n\r\nThe definition allows for only two layers:\r\n\r\n```\r\n    from?:\"application\"|\"transport\",\r\n    to?:\"application\"|\"transport\",\r\n```\r\n\r\nIn addition, the definition of \"application\" is ambiguous: it could be the application protocol (HTTP/3) or the user application.",
@@ -3031,7 +3031,7 @@
         },
         {
           "author": "dtikhonov",
-          "authorAssociation": "NONE",
+          "authorAssociation": "MEMBER",
           "body": "I'd vote for (1), with the three layers being:\r\n1. transport (or QUIC);\r\n2. HTTP/3; and\r\n3. application.\r\n\r\nNote that the data may skip the HTTP/3 layer ([lsquic](https://github.com/litespeedtech/lsquic), for example, tries hard to avoid intermediate buffering) altogether, so the event should be able to describe that as well.",
           "createdAt": "2020-08-20T12:56:08Z",
           "updatedAt": "2020-08-20T12:56:08Z"
@@ -3045,7 +3045,7 @@
         },
         {
           "author": "dtikhonov",
-          "authorAssociation": "NONE",
+          "authorAssociation": "MEMBER",
           "body": "Here is how reading from an HTTP/3 stream works in lsquic (in the best-case scenario):\r\n\r\n1. The packet is decrypted and the decrypted payload is stored in a new memory object.  (This is data copy number 1.)\r\n2. The packet is parsed.  This creates _STREAM_ frame marker objects.\r\n3. If, as a result of a new marker, reading from a stream becomes possible, the user is notified via an \"on stream write\" event.  Note that *in the case of HTTP/3 stream, special magic happens internally*: the stream is fast-forwarded through the framing.  _DATA_ frames are processed and discarded.  You can peek at [how it's done in the `read_data_frames()` function](https://github.com/litespeedtech/lsquic/blob/v2.19.5/src/liblsquic/lsquic_stream.c#L1360L1363).\r\n4. The user then reads data from stream using one of two ways.\r\n   - **copy read**.  In this case, `lsquic_stream_read()` or `lsquic_stream_readv()` is called and data is copied into user-supplied buffer(s).  (This is data copy number 2.)\r\n   - **zero copy**.  User can call `lsquic_stream_readf()` with a callback.  This callback will then be given a pointer to the data from the  first copy (in Step 1).  See [line 1367](https://github.com/litespeedtech/lsquic/blob/v2.19.5/src/liblsquic/lsquic_stream.c#L1367) -- this is where this callback is called.  Here, the user can copy the data or process it directly.\r\n\r\nNote that there was no copy from transport layer into any intermediate layer.  So, no, stripping out frame headers does not mean that data must be copied.",
           "createdAt": "2020-08-20T14:20:34Z",
           "updatedAt": "2020-08-20T14:20:34Z"
@@ -3066,7 +3066,7 @@
       "url": "https://github.com/quicwg/qlog/issues/112",
       "state": "CLOSED",
       "author": "dtikhonov",
-      "authorAssociation": "NONE",
+      "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Each peer has two QPACK states: encoder and decoder.  `qpack`'s `state_updated` and `dynamic_table_updated` events do not make such differentiation, making the specification incomplete.  For example:\r\n\r\n> This event is emitted when one or more entries are added or evicted from QPACK's dynamic table.\r\n\r\nWhich dynamic table is meant: encoder or decoder?",
@@ -3090,7 +3090,7 @@
       "url": "https://github.com/quicwg/qlog/issues/113",
       "state": "CLOSED",
       "author": "dtikhonov",
-      "authorAssociation": "NONE",
+      "authorAssociation": "MEMBER",
       "assignees": [
         "lnicco"
       ],
@@ -3112,7 +3112,7 @@
         },
         {
           "author": "dtikhonov",
-          "authorAssociation": "NONE",
+          "authorAssociation": "MEMBER",
           "body": "You're right: \"inserted\" is used nine times in the draft, while \"added\" is used six times.  My claim that entries are only \"inserted,\" not \"added,\" may have been incorrect!",
           "createdAt": "2020-09-08T20:27:23Z",
           "updatedAt": "2020-09-08T20:27:23Z"
@@ -3140,7 +3140,7 @@
       "url": "https://github.com/quicwg/qlog/issues/114",
       "state": "CLOSED",
       "author": "dtikhonov",
-      "authorAssociation": "NONE",
+      "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "> This event is emitted when a QPACK instruction (both decoder and encoder) is sent.\r\n\r\nA QPACK instruction is:\r\n- written to the encoder (or decoder) stream, which is then\r\n- packetized, and\r\n- the packet (or packets!) is sent.\r\n\r\nWhich of the three events above is meant is not clear.",
@@ -3188,7 +3188,7 @@
         },
         {
           "author": "dtikhonov",
-          "authorAssociation": "NONE",
+          "authorAssociation": "MEMBER",
           "body": "> Similarly, the length of a QUIC STREAM frame is also just uint32, not 64.\r\n\r\nI looked at the latest version of the draft and stream IDs in the \"qpack\" section are all uint64...",
           "createdAt": "2020-08-20T13:09:47Z",
           "updatedAt": "2020-08-20T13:09:47Z"
@@ -3202,7 +3202,7 @@
         },
         {
           "author": "dtikhonov",
-          "authorAssociation": "NONE",
+          "authorAssociation": "MEMBER",
           "body": "Oh, I see where I went wrong! :-)\r\n\r\nThe updated \"qpack\" types in the draft look OK.",
           "createdAt": "2020-08-20T13:59:24Z",
           "updatedAt": "2020-08-20T13:59:24Z"
