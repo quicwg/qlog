@@ -1239,10 +1239,10 @@ QUICMigrationStateUpdated = {
     ? path_id: PathID
 
     ; the information for traffic going towards the remote receiver
-    ? path_remote: PathInfo
+    ? path_remote: PathEndpointInfo
 
     ; the information for traffic coming in at the local endpoint
-    ? path_local: PathInfo
+    ? path_local: PathEndpointInfo
 }
 
 ; Note that MigrationState does not describe a full state machine
