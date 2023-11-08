@@ -496,6 +496,7 @@ Event = {
     time: float64
     name: text
     data: $ProtocolEventBody
+    ? path: PathID
     ? time_format: TimeFormat
     ? protocol_type: ProtocolType
     ? group_id: GroupID
@@ -706,6 +707,36 @@ could be serialized as
 }
 ~~~~~~~~
 {: #data-ex title="Example of the 'data' field for a QUIC packet_sent event"}
+
+## Path {#path-field}
+
+A qlog event can be associated with a single network "path" (usually, but not
+always, identified by a 4-tuple of IP addresses and ports). In many cases, the
+path will be the same for all events in a given trace, and does not need to be
+logged explicitly with each event. In this case, the "path" field can be omitted
+(in which case the default value of "" is assumed) or reflected in
+"common_fields" instead (see {{common-fields}}).
+
+However, in some situations, such as during QUIC's Connection Migration or when
+using MultiPath features, it is useful to be able to split events across
+multiple (concurrent) paths.
+
+Definition:
+
+~~~ cddl
+PathID = text .default ""
+~~~
+{: #path-def title="PathID definition"}
+
+
+The "path" field is an identifier that is associated with a single network path.
+This document intentionally does not further define how to choose this
+identifier's value per-path or how to potentially log other parameters that can
+be associated with such a path. This is left for other documents. Implementers
+are free to encode path information directly into the PathID or to log
+associated info in a separate event. For example, QUIC has the "path_assigned"
+event to couple the PathID value to a specific path configuration, see
+{{QLOG-QUIC}}.
 
 ## ProtocolType {#protocol-type-field}
 
@@ -927,6 +958,7 @@ Definition:
 
 ~~~ cddl
 CommonFields = {
+    ? path: PathID
     ? time_format: TimeFormat
     ? reference_time: float64
     ? protocol_type: ProtocolType
