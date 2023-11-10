@@ -1695,13 +1695,18 @@ PingFrame = {
 ; For two numbers:
 ; the first number is "from": lowest packet number in interval
 ; the second number is "to": up to and including the highest
-; packet number in the interval
+; packet number in the interval.
 AckRange = [1*2 uint64]
 
 AckFrame = {
     frame_type: "ack"
 
-    ; in ms
+    ; the raw, unscaled delay as received in the frame
+    ? raw_ack_delay: uint64
+
+    ; the decoded delay, scaled by ack_delay_exponent
+    ; in ms (instead of us)
+    ; this is easier to reason about than the raw value
     ? ack_delay: float32
 
     ; e.g., looks like [[1,2],[4,5], [7], [10,22]] serialized
