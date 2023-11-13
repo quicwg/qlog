@@ -1268,14 +1268,15 @@ BigInt extensions), instead being limited to the range -(2<sup>53</sup>)+1 to
 
 To accommodate such environments in CDDL, {{Appendix E of CDDL}} recommends
 defining new CDDL types for int64 and uint64 that limit their values to the
-restricted 64-bit integer range. While this can be sensible and workable for
-most use cases, some protocols (e.g., QUIC, HTTP/3), might use the full uint64
-range and would therefore need a qlog serialization format to support it. In
-these situations, it should be allowed to also use the string-based
-representation of uint64 values alongside the numerical representation.
-Concretely, when using I-JSON, the following definition of uint64 should
-override the original and parsers should take into account that a uint64 field
-can be either a number or string.
+restricted 64-bit integer range. This can be problematic, as some protocols
+(e.g., QUIC, HTTP/3), might use the full int64/uint64 range and we therefore
+need a qlog serialization format to support it. One solution to this is to allow
+a string-based representation of 64-bit integers in addition to the numerical,
+but range-limited representation.
+
+As such, when using I-JSON in these situations, the following CDDL definition of
+uint64 should override the original and parsers should take into account that a
+uint64 field can either be a number or string.
 
 ~~~
 uint64 = text /
