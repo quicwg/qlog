@@ -1311,7 +1311,9 @@ default JSON, it does not require a document to be wrapped as a full object with
 This alternative record streaming approach cannot be accommodated by QlogFile
 ({{qlog-file-def}}). Instead, QlogFileSeq is defined in {{qlog-file-seq-def}},
 which notably includes only a single trace (TraceSeq) and omits an explicit
-"events" array. An example is provided in {{json-seq-ex}}.
+"events" array. An example is provided in {{json-seq-ex}}. The "group_id" field
+can still be used on a per-event basis to include events from conceptually
+different sources in a single JSON-SEQ qlog file.
 
 When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
 "JSON-SEQ". The file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
@@ -1323,9 +1325,6 @@ field names in a JSON-SEQ serialization MUST be lowercase.
 In order to serialize all other CDDL-based qlog event and data structure
 definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
 {{Appendix E of CDDL}} SHOULD be employed.
-
-Note that the "group_id" field can still be used on a per-event basis to include
-events from conceptually different sources in a single JSON-SEQ qlog file.
 
 When using JSON-SEQ serialization, the file extension/suffix SHOULD be
 ".sqlog" (for "streaming" qlog) and the Media Type (if any) SHOULD be
