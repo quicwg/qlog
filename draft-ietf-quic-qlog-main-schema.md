@@ -1402,11 +1402,14 @@ to be relatively verbose, leading to larger file sizes. Additionally, generalize
 JSON(-SEQ) (de)serialization performance is typically (slightly) lower than that
 of more optimized and predictable formats. Both aspects present challenges to
 large scale setups, though they may still be practical to deploy; see [ANRW-2020].
+JSON and JSON-SEQ compress very well using commonly-available algorithms such as
+GZIP or Brotli.
 
 During the development of qlog, a multitude of alternative formatting
 and optimization options were assessed and the results are [summarized on the qlog
 github
 repository](https://github.com/quiclog/internet-drafts/issues/30#issuecomment-617675097).
+
 
 Formal definition of additional qlog formats or encodings that use the
 optimization techniques described here, or any other optimization technique is
@@ -1422,15 +1425,6 @@ technique A and then compressed with technique B, the resulting file would have
 the extension ".qlog.A.B". This allows tooling reverse the applied optimizations
 to arrive at the expected qlog representation. This recommendation applies to
 both file extensions and media types.
-
-A survey of optimization options including expected gains and tradeoffs is
-presented in {{optimization-survey}}. Notably, compression options listed in
-{{compression}}, provide large wins for a low overall cost; tools that support
-compression are likely to see great improvements with respect to serialized data
-sizes in any format.
-
-Considerations for converting between serialized qlog data formats are presented
-in {{conversion}}.
 
 # Methods of access and generation
 
