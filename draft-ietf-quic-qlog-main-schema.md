@@ -1415,8 +1415,10 @@ Formal definition of additional qlog formats or encodings that use the
 optimization techniques described here, or any other optimization technique is
 left to future activity that can apply the following guidelines.
 
-It is important that tooling can correctly parse and process serialized qlog. It
-is RECOMMENDED that new formats also define suitable file extensions and media types. This provides a clear signal and avoids the need to provide out-of-band information or to rely on heuristic fallbacks; see {{tooling}}.
+In order to help tools correctly parse and process serialized qlog, it is
+RECOMMENDED that new formats also define suitable file extensions and media
+types. This provides a clear signal and avoids the need to provide out-of-band
+information or to rely on heuristic fallbacks; see {{tooling}}.
 
 There is no established standard for indicating optimized formats. Therefore, it
 is RECOMMENDED that applied optimizations are expressed in ascending order of
