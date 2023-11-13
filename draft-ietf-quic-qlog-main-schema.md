@@ -1232,7 +1232,7 @@ potential optimizations to these formats, such as reducing storage or processing
 overheads, are presented in {{optimizations}}.
 
 Serialization formats require appropriate deserializers/parsers. The
-"qlog_format" field ({{top-level}}) is used to indicate the chosen serialization
+"qlog_format" field ({{qlog-file-schema}}) is used to indicate the chosen serialization
 format. This field is a string, but can be made hierarchical by the use of the
 "." separator between entries. For example, a value of "JSON.optimizationA" can
 indicate that a default JSON format is being used, with an example "type A"
@@ -1240,7 +1240,7 @@ optimization; see also {{optimizations}}.
 
 ## qlog to JSON mapping {#format-json}
 
-As described in {{top-level}}, JSON is the default qlog serialization. When
+As described in {{qlog-file-schema}}, JSON is the default qlog serialization. When
 mapping qlog to normal JSON, QlogFile ({{qlog-file-def}}) is used and the
 "qlog_format" field MUST have the value "JSON". The file extension/suffix SHOULD
 be ".qlog". The Media Type, if any, SHOULD be "application/qlog+json" per
