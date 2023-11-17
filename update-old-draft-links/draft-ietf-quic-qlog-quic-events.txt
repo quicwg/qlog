@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 20 April 2024                                              Meta
+Expires: 20 May 2024                                                Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         18 October 2023
+                                                        17 November 2023
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 20 April 2024.
+   This Internet-Draft will expire on 20 May 2024.
 
 Copyright Notice
 
@@ -109,6 +109,7 @@ Table of Contents
      7.4.  loss_timer_updated
      7.5.  packet_lost
      7.6.  marked_for_retransmit
+     7.7.  ecn_state_updated
    8.  QUIC data field definitions
      8.1.  QuicVersion
      8.2.  ConnectionID
@@ -120,45 +121,47 @@ Table of Contents
      8.8.  Token
      8.9.  Stateless Reset Token
      8.10. KeyType
-     8.11. QUIC Frames
-       8.11.1.  PaddingFrame
-       8.11.2.  PingFrame
-       8.11.3.  AckFrame
-       8.11.4.  ResetStreamFrame
-       8.11.5.  StopSendingFrame
-       8.11.6.  CryptoFrame
-       8.11.7.  NewTokenFrame
-       8.11.8.  StreamFrame
-       8.11.9.  MaxDataFrame
-       8.11.10. MaxStreamDataFrame
-       8.11.11. MaxStreamsFrame
-       8.11.12. DataBlockedFrame
-       8.11.13. StreamDataBlockedFrame
-       8.11.14. StreamsBlockedFrame
-       8.11.15. NewConnectionIDFrame
-       8.11.16. RetireConnectionIDFrame
-       8.11.17. PathChallengeFrame
-       8.11.18. PathResponseFrame
-       8.11.19. ConnectionCloseFrame
-       8.11.20. HandshakeDoneFrame
-       8.11.21. UnknownFrame
-       8.11.22. DatagramFrame
-       8.11.23. TransportError
-       8.11.24. ApplicationError
-       8.11.25. CryptoError
+     8.11. ECN
+     8.12. QUIC Frames
+       8.12.1.  PaddingFrame
+       8.12.2.  PingFrame
+       8.12.3.  AckFrame
+       8.12.4.  ResetStreamFrame
+       8.12.5.  StopSendingFrame
+       8.12.6.  CryptoFrame
+       8.12.7.  NewTokenFrame
+       8.12.8.  StreamFrame
+       8.12.9.  MaxDataFrame
+       8.12.10. MaxStreamDataFrame
+       8.12.11. MaxStreamsFrame
+       8.12.12. DataBlockedFrame
+       8.12.13. StreamDataBlockedFrame
+       8.12.14. StreamsBlockedFrame
+       8.12.15. NewConnectionIDFrame
+       8.12.16. RetireConnectionIDFrame
+       8.12.17. PathChallengeFrame
+       8.12.18. PathResponseFrame
+       8.12.19. ConnectionCloseFrame
+       8.12.20. HandshakeDoneFrame
+       8.12.21. UnknownFrame
+       8.12.22. DatagramFrame
+       8.12.23. TransportError
+       8.12.24. ApplicationError
+       8.12.25. CryptoError
    9.  Security and Privacy Considerations
    10. IANA Considerations
    11. Normative References
-   Appendix A.  Change Log
-     A.1.  Since draft-ietf-qlog-quic-events-04:
-     A.2.  Since draft-ietf-qlog-quic-events-03:
-     A.3.  Since draft-ietf-qlog-quic-events-02:
-     A.4.  Since draft-ietf-qlog-quic-events-01:
-     A.5.  Since draft-ietf-qlog-quic-events-00:
-     A.6.  Since draft-marx-qlog-event-definitions-quic-h3-02:
-     A.7.  Since draft-marx-qlog-event-definitions-quic-h3-01:
-     A.8.  Since draft-marx-qlog-event-definitions-quic-h3-00:
    Acknowledgements
+   Change Log
+     Since draft-ietf-qlog-quic-events-05:
+     Since draft-ietf-qlog-quic-events-04:
+     Since draft-ietf-qlog-quic-events-03:
+     Since draft-ietf-qlog-quic-events-02:
+     Since draft-ietf-qlog-quic-events-01:
+     Since draft-ietf-qlog-quic-events-00:
+     Since draft-marx-qlog-event-definitions-quic-h3-02:
+     Since draft-marx-qlog-event-definitions-quic-h3-01:
+     Since draft-marx-qlog-event-definitions-quic-h3-00:
    Authors' Addresses
 
 1.  Introduction
@@ -342,6 +345,8 @@ Table of Contents
    | recovery:packet_lost                  | Core       | Section 7.5  |
    +---------------------------------------+------------+--------------+
    | recovery:marked_for_retransmit        | Extra      | Section 7.6  |
+   +---------------------------------------+------------+--------------+
+   | recovery:ecn_state_updated            | Extra      | Section 7.7  |
    +---------------------------------------+------------+--------------+
 
                             Table 1: QUIC Events
@@ -555,16 +560,16 @@ Table of Contents
        "attempted" /
        ; peer address validated by: client sent Handshake packet OR
        ; client used CONNID chosen by the server.
-       ; transport-draft-32, section-8.1
+       ; RFC 9000 Section 8.1
        "peer_validated" /
        "handshake_started" /
        ; 1 RTT can be sent, but handshake isn't done yet
        "early_write" /
        ; TLS handshake complete: Finished received and sent
-       ; tls-draft-32, section-4.1.1
+       ; RFC 9001 Section 4.1.1
        "handshake_complete" /
        ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
-       ; can be sent). tls-draft-32, section-4.1.2
+       ; can be sent). RFC 9001 Section 4.1.2
        "handshake_confirmed" /
        "closing" /
        ; connection_close sent/received
@@ -887,14 +892,15 @@ Table of Contents
        ? raw: RawInfo
        ? datagram_id: uint32
        ? is_mtu_probe_packet: bool .default false
+
        ? trigger:
-         ; draft-23 5.1.1
+         ; RFC 9002 Section 6.1.1
          "retransmit_reordered" /
-         ; draft-23 5.1.2
+         ; RFC 9002 Section 6.1.2
          "retransmit_timeout" /
-         ; draft-23 5.3.1
+         ; RFC 9002 Section 6.2.4
          "pto_probe" /
-         ; draft-19 6.2
+         ; RFC 9002 6.2.3
          "retransmit_crypto" /
          ; needed for some CCs to figure out bandwidth allocations
          ; when there are no normal sends
@@ -932,6 +938,7 @@ Table of Contents
        ? supported_versions: [+ QuicVersion]
        ? raw: RawInfo
        ? datagram_id: uint32
+
        ? trigger:
            ; if packet was buffered because it couldn't be
            ; decrypted before
@@ -1077,6 +1084,12 @@ Table of Contents
        ; The RawInfo fields do not include the UDP headers,
        ; only the UDP payload
        ? raw: [+ RawInfo]
+
+       ; ECN bits in the IP header
+       ; if not set, defaults to the value used on the last
+       ; QUICDatagramsSent event
+       ? ecn: [+ ECN]
+
        ? datagram_ids: [+ uint32]
    }
 
@@ -1112,6 +1125,12 @@ Table of Contents
        ; The RawInfo fields do not include the UDP headers,
        ; only the UDP payload
        ? raw: [+ RawInfo]
+
+       ; ECN bits in the IP header
+       ; if not set, defaults to the value on the last
+       ; QUICDatagramsReceived event
+       ? ecn: [+ ECN]
+
        ? datagram_ids: [+ uint32]
    }
 
@@ -1144,10 +1163,9 @@ Table of Contents
    Importance: Base
 
    This event is emitted whenever the internal state of a QUIC stream is
-   updated, as described in QUIC transport draft-23 section 3.  Most of
-   this can be inferred from several types of frames going over the
-   wire, but it's much easier to have explicit signals for these state
-   changes.
+   updated; see Section 3 of [QUIC-TRANSPORT].  Most of this can be
+   inferred from several types of frames going over the wire, but it's
+   much easier to have explicit signals for these state changes.
 
    Definition:
 
@@ -1166,19 +1184,19 @@ Table of Contents
    }
 
    StreamState =
-       ; bidirectional stream states, draft-23 3.4.
+       ; bidirectional stream states, RFC 9000 Section 3.4.
        "idle" /
        "open" /
        "half_closed_local" /
        "half_closed_remote" /
        "closed" /
-       ; sending-side stream states, draft-23 3.1.
+       ; sending-side stream states, RFC 9000 Section 3.1.
        "ready" /
        "send" /
        "data_sent" /
        "reset_sent" /
        "reset_received" /
-       ; receive-side stream states, draft-23 3.2.
+       ; receive-side stream states, RFC 9000 Section 3.2.
        "receive" /
        "size_known" /
        "data_read" /
@@ -1364,7 +1382,7 @@ Table of Contents
    SecurityKeyUpdated = {
        key_type: KeyType
        ? old: hexstring
-       new: hexstring
+       ? new: hexstring
 
        ; needed for 1RTT key updates
        ? generation: uint32
@@ -1422,7 +1440,7 @@ Table of Contents
 
    RecoveryParametersSet = {
 
-       ; Loss detection, see recovery draft-23, Appendix A.2
+       ; Loss detection, see RFC 9002 Appendix A.2
        ; in amount of packets
        ? reordering_threshold: uint16
 
@@ -1435,7 +1453,7 @@ Table of Contents
        ; in ms
        ? initial_rtt:float32
 
-       ; congestion control, Appendix B.1.
+       ; congestion control, see RFC 9002 Appendix B.2
        ; in bytes. Note that this could be updated after pmtud
        ? max_datagram_size: uint32
 
@@ -1472,7 +1490,7 @@ Table of Contents
 
    RecoveryMetricsUpdated = {
 
-       ; Loss detection, see recovery draft-23, Appendix A.3
+       ; Loss detection, see RFC 9002 Appendix A.3
        ; all following rtt fields are expressed in ms
        ? min_rtt: float32
        ? smoothed_rtt: float32
@@ -1480,7 +1498,7 @@ Table of Contents
        ? rtt_variance: float32
        ? pto_count: uint16
 
-       ; Congestion control, Appendix B.2.
+       ; Congestion control, see RFC 9002 Appendix B.2.
        ; in bytes
        ? congestion_window: uint64
        ? bytes_in_flight: uint64
@@ -1565,7 +1583,7 @@ Table of Contents
 
    RecoveryLossTimerUpdated = {
 
-       ; called "mode" in draft-23 A.9.
+       ; called "mode" in RFC 9002 A.9.
        ? timer_type: "ack" /
                      "pto"
        ? packet_number_space: PacketNumberSpace
@@ -1642,26 +1660,52 @@ Table of Contents
 
              Figure 32: RecoveryMarkedForRetransmit definition
 
+7.7.  ecn_state_updated
+
+   Importance: Extra
+
+   This event indicates a progression in the ECN state machine as
+   described in section A.4 of [QUIC-TRANSPORT].
+
+   ECNStateUpdated = {
+      ? old: ECNState
+       new: ECNState
+   }
+
+   ECNState =
+     ; ECN testing in progress
+     "testing" /
+     ; ECN state unknown, waiting for acknowledgements
+     ; for testing packets
+     "unknown" /
+     ; ECN testing failed
+     "failed" /
+     ; testing was successful, the endpoint now
+     ; sends packets with ECT(0) marking
+     "capable"
+
+                   Figure 33: ECNStateUpdated definition
+
 8.  QUIC data field definitions
 
 8.1.  QuicVersion
 
    QuicVersion = hexstring
 
-                     Figure 33: QuicVersion definition
+                     Figure 34: QuicVersion definition
 
 8.2.  ConnectionID
 
    ConnectionID = hexstring
 
-                     Figure 34: ConnectionID definition
+                     Figure 35: ConnectionID definition
 
 8.3.  Owner
 
    Owner = "local" /
            "remote"
 
-                        Figure 35: Owner definition
+                        Figure 36: Owner definition
 
 8.4.  IPAddress and IPVersion
 
@@ -1672,12 +1716,12 @@ Table of Contents
    IPAddress = text /
                hexstring
 
-                      Figure 36: IPAddress definition
+                      Figure 37: IPAddress definition
 
    IPVersion = "v4" /
                "v6"
 
-                      Figure 37: IPVersion definition
+                      Figure 38: IPVersion definition
 
 8.5.  PacketType
 
@@ -1690,7 +1734,7 @@ Table of Contents
                 "stateless_reset" /
                 "unknown"
 
-                      Figure 38: PacketType definition
+                      Figure 39: PacketType definition
 
 8.6.  PacketNumberSpace
 
@@ -1698,7 +1742,7 @@ Table of Contents
                        "handshake" /
                        "application_data"
 
-                  Figure 39: PacketNumberSpace definition
+                  Figure 40: PacketNumberSpace definition
 
 8.7.  PacketHeader
 
@@ -1732,7 +1776,7 @@ Table of Contents
        ? dcid: ConnectionID
    }
 
-                     Figure 40: PacketHeader definition
+                     Figure 41: PacketHeader definition
 
 8.8.  Token
 
@@ -1748,7 +1792,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                        Figure 41: Token definition
+                        Figure 42: Token definition
 
    The token carried in an Initial packet can either be a retry token
    from a Retry packet, or one originally provided by the server in a
@@ -1762,7 +1806,7 @@ Table of Contents
 
    StatelessResetToken = hexstring .size 16
 
-                Figure 42: Stateless Reset Token definition
+                Figure 43: Stateless Reset Token definition
 
    The stateless reset token is carried in stateless reset packets, in
    transport parameters and in NEW_CONNECTION_ID frames.
@@ -1778,9 +1822,17 @@ Table of Contents
              "server_1rtt_secret" /
              "client_1rtt_secret"
 
-                       Figure 43: KeyType definition
+                       Figure 44: KeyType definition
 
-8.11.  QUIC Frames
+8.11.  ECN
+
+   ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
+
+                         Figure 45: ECN definition
+
+   The ECN bits carried in the IP header.
+
+8.12.  QUIC Frames
 
    The generic $QuicFrame is defined here as a CDDL extension point (a
    "socket" or "plug").  It can be extended to support additional QUIC
@@ -1791,7 +1843,7 @@ Table of Contents
        * text => any
    }
 
-                    Figure 44: QuicFrame plug definition
+                    Figure 46: QuicFrame plug definition
 
    The QUIC frame types defined in this document are as follows:
 
@@ -1820,9 +1872,9 @@ Table of Contents
 
    $QuicFrame /= QuicBaseFrames
 
-                    Figure 45: QuicBaseFrames definition
+                    Figure 47: QuicBaseFrames definition
 
-8.11.1.  PaddingFrame
+8.12.1.  PaddingFrame
 
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
@@ -1841,9 +1893,9 @@ Table of Contents
        payload_length: uint32
    }
 
-                     Figure 46: PaddingFrame definition
+                     Figure 48: PaddingFrame definition
 
-8.11.2.  PingFrame
+8.12.2.  PingFrame
 
    PingFrame = {
        frame_type: "ping"
@@ -1853,9 +1905,9 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                      Figure 47: PingFrame definition
+                      Figure 49: PingFrame definition
 
-8.11.3.  AckFrame
+8.12.3.  AckFrame
 
    ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
    ; For two numbers:
@@ -1876,7 +1928,7 @@ Table of Contents
        ; ECN (explicit congestion notification) related fields
        ; (not always present)
        ? ect1: uint64
-       ? ect0:uint64
+       ? ect0: uint64
        ? ce: uint64
 
        ; total frame length, including frame header
@@ -1884,7 +1936,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                       Figure 48: AckFrame definition
+                       Figure 50: AckFrame definition
 
    Note that the packet ranges in AckFrame.acked_ranges do not
    necessarily have to be ordered (e.g., [[5,9],[1,4]] is a valid
@@ -1895,7 +1947,7 @@ Table of Contents
    that case, implementers SHOULD log [120] instead and tools MUST be
    able to deal with both notations.
 
-8.11.4.  ResetStreamFrame
+8.12.4.  ResetStreamFrame
 
    ResetStreamFrame = {
        frame_type: "reset_stream"
@@ -1911,9 +1963,9 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 49: ResetStreamFrame definition
+                   Figure 51: ResetStreamFrame definition
 
-8.11.5.  StopSendingFrame
+8.12.5.  StopSendingFrame
 
    StopSendingFrame = {
        frame_type: "stop_sending"
@@ -1926,9 +1978,9 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 50: StopSendingFrame definition
+                   Figure 52: StopSendingFrame definition
 
-8.11.6.  CryptoFrame
+8.12.6.  CryptoFrame
 
    CryptoFrame = {
        frame_type: "crypto"
@@ -1937,18 +1989,18 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                     Figure 51: CryptoFrame definition
+                     Figure 53: CryptoFrame definition
 
-8.11.7.  NewTokenFrame
+8.12.7.  NewTokenFrame
 
    NewTokenFrame = {
      frame_type: "new_token"
      token: Token
    }
 
-                    Figure 52: NewTokenFrame definition
+                    Figure 54: NewTokenFrame definition
 
-8.11.8.  StreamFrame
+8.12.8.  StreamFrame
 
    StreamFrame = {
        frame_type: "stream"
@@ -1966,18 +2018,18 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 53: StreamFrame definition
+                     Figure 55: StreamFrame definition
 
-8.11.9.  MaxDataFrame
+8.12.9.  MaxDataFrame
 
    MaxDataFrame = {
      frame_type: "max_data"
      maximum: uint64
    }
 
-                     Figure 54: MaxDataFrame definition
+                     Figure 56: MaxDataFrame definition
 
-8.11.10.  MaxStreamDataFrame
+8.12.10.  MaxStreamDataFrame
 
    MaxStreamDataFrame = {
      frame_type: "max_stream_data"
@@ -1985,9 +2037,9 @@ Table of Contents
      maximum: uint64
    }
 
-                  Figure 55: MaxStreamDataFrame definition
+                  Figure 57: MaxStreamDataFrame definition
 
-8.11.11.  MaxStreamsFrame
+8.12.11.  MaxStreamsFrame
 
    MaxStreamsFrame = {
      frame_type: "max_streams"
@@ -1995,18 +2047,18 @@ Table of Contents
      maximum: uint64
    }
 
-                   Figure 56: MaxStreamsFrame definition
+                   Figure 58: MaxStreamsFrame definition
 
-8.11.12.  DataBlockedFrame
+8.12.12.  DataBlockedFrame
 
    DataBlockedFrame = {
      frame_type: "data_blocked"
      limit: uint64
    }
 
-                   Figure 57: DataBlockedFrame definition
+                   Figure 59: DataBlockedFrame definition
 
-8.11.13.  StreamDataBlockedFrame
+8.12.13.  StreamDataBlockedFrame
 
    StreamDataBlockedFrame = {
      frame_type: "stream_data_blocked"
@@ -2014,9 +2066,9 @@ Table of Contents
      limit: uint64
    }
 
-                Figure 58: StreamDataBlockedFrame definition
+                Figure 60: StreamDataBlockedFrame definition
 
-8.11.14.  StreamsBlockedFrame
+8.12.14.  StreamsBlockedFrame
 
    StreamsBlockedFrame = {
      frame_type: "streams_blocked"
@@ -2024,9 +2076,9 @@ Table of Contents
      limit: uint64
    }
 
-                 Figure 59: StreamsBlockedFrame definition
+                 Figure 61: StreamsBlockedFrame definition
 
-8.11.15.  NewConnectionIDFrame
+8.12.15.  NewConnectionIDFrame
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
@@ -2040,18 +2092,18 @@ Table of Contents
      ? stateless_reset_token: StatelessResetToken
    }
 
-                 Figure 60: NewConnectionIDFrame definition
+                 Figure 62: NewConnectionIDFrame definition
 
-8.11.16.  RetireConnectionIDFrame
+8.12.16.  RetireConnectionIDFrame
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
      sequence_number: uint32
    }
 
-               Figure 61: RetireConnectionIDFrame definition
+               Figure 63: RetireConnectionIDFrame definition
 
-8.11.17.  PathChallengeFrame
+8.12.17.  PathChallengeFrame
 
    PathChallengeFrame = {
      frame_type: "path_challenge"
@@ -2060,9 +2112,9 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 62: PathChallengeFrame definition
+                  Figure 64: PathChallengeFrame definition
 
-8.11.18.  PathResponseFrame
+8.12.18.  PathResponseFrame
 
    PathResponseFrame = {
      frame_type: "path_response"
@@ -2071,9 +2123,9 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 63: PathResponseFrame definition
+                  Figure 65: PathResponseFrame definition
 
-8.11.19.  ConnectionCloseFrame
+8.12.19.  ConnectionCloseFrame
 
    The error_code_value field is the numerical value without VLIE
    encoding.  This is useful because some error types are spread out
@@ -2097,17 +2149,17 @@ Table of Contents
                              text
    }
 
-                 Figure 64: ConnectionCloseFrame definition
+                 Figure 66: ConnectionCloseFrame definition
 
-8.11.20.  HandshakeDoneFrame
+8.12.20.  HandshakeDoneFrame
 
    HandshakeDoneFrame = {
      frame_type: "handshake_done";
    }
 
-                  Figure 65: HandshakeDoneFrame definition
+                  Figure 67: HandshakeDoneFrame definition
 
-8.11.21.  UnknownFrame
+8.12.21.  UnknownFrame
 
    The frame_type_value field is the numerical value without VLIE
    encoding.
@@ -2118,9 +2170,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 66: UnknownFrame definition
+                     Figure 68: UnknownFrame definition
 
-8.11.22.  DatagramFrame
+8.12.22.  DatagramFrame
 
    The QUIC DATAGRAM frame is defined in Section 4 of [RFC9221].
 
@@ -2130,9 +2182,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 67: DatagramFrame definition
+                    Figure 69: DatagramFrame definition
 
-8.11.23.  TransportError
+8.12.23.  TransportError
 
    TransportError = "no_error" /
                     "internal_error" /
@@ -2154,9 +2206,9 @@ Table of Contents
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
-                    Figure 68: TransportError definition
+                    Figure 70: TransportError definition
 
-8.11.24.  ApplicationError
+8.12.24.  ApplicationError
 
    By definition, an application error is defined by the application-
    level protocol running on top of QUIC (e.g., HTTP/3).
@@ -2172,7 +2224,7 @@ Table of Contents
    $ApplicationError /= "new_error_name" /
                         "another_new_error_name"
 
-8.11.25.  CryptoError
+8.12.25.  CryptoError
 
    These errors are defined in the TLS document as "A TLS alert is
    turned into a QUIC connection error by converting the one-byte alert
@@ -2188,7 +2240,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 69: CryptoError definition
+                     Figure 71: CryptoError definition
 
 9.  Security and Privacy Considerations
 
@@ -2197,7 +2249,7 @@ Table of Contents
 
 10.  IANA Considerations
 
-   TBD
+   There are no IANA considerations.
 
 11.  Normative References
 
@@ -2215,9 +2267,9 @@ Table of Contents
    [QLOG-MAIN]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue, "Main
               logging schema for qlog", Work in Progress, Internet-
-              Draft, draft-ietf-quic-qlog-main-schema-06, 10 July 2023,
-              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema-06>.
+              Draft, draft-ietf-quic-qlog-main-schema-07, 23 October
+              2023, <https://datatracker.ietf.org/doc/html/draft-ietf-
+              quic-qlog-main-schema-07>.
 
    [QUIC-DATAGRAM]
               Pauly, T., Kinnear, E., and D. Schinazi, "An Unreliable
@@ -2255,9 +2307,28 @@ Table of Contents
               DOI 10.17487/RFC9221, March 2022,
               <https://www.rfc-editor.org/rfc/rfc9221>.
 
-Appendix A.  Change Log
+Acknowledgements
 
-A.1.  Since draft-ietf-qlog-quic-events-04:
+   Much of the initial work by Robin Marx was done at the Hasselt and KU
+   Leuven Universities.
+
+   Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
+   Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind,
+   Jeremy Lainé, Kazu Yamamoto, and Christian Huitema for their feedback
+   and suggestions.
+
+Change Log
+
+   This section is to be removed before publishing as an RFC.
+
+Since draft-ietf-qlog-quic-events-05:
+
+   *  SecurityKeyUpdated: the new key is no longer mandatory to log
+      (#294)
+
+   *  Added ECN related events and metadata (#263)
+
+Since draft-ietf-qlog-quic-events-04:
 
    *  Updated guidance on logging events across connections (#279)
 
@@ -2276,7 +2347,7 @@ A.1.  Since draft-ietf-qlog-quic-events-04:
 
    *  Editorial and formatting changes (#298, #299, #304, #306, #327)
 
-A.2.  Since draft-ietf-qlog-quic-events-03:
+Since draft-ietf-qlog-quic-events-03:
 
    *  Ensured consistent use of RawInfo to indicate raw wire bytes
       (#243)
@@ -2292,7 +2363,7 @@ A.2.  Since draft-ietf-qlog-quic-events-03:
 
    *  Changed minimum_congestion_window to uint64 (#288)
 
-A.3.  Since draft-ietf-qlog-quic-events-02:
+Since draft-ietf-qlog-quic-events-02:
 
    *  Renamed key_retired to key_discarded (#185)
 
@@ -2308,15 +2379,15 @@ A.3.  Since draft-ietf-qlog-quic-events-02:
 
    *  Added overview Table of Contents
 
-A.4.  Since draft-ietf-qlog-quic-events-01:
+Since draft-ietf-qlog-quic-events-01:
 
    *  Added Stateless Reset Token type (#122)
 
-A.5.  Since draft-ietf-qlog-quic-events-00:
+Since draft-ietf-qlog-quic-events-00:
 
    *  Change the data definition language from TypeScript to CDDL (#143)
 
-A.6.  Since draft-marx-qlog-event-definitions-quic-h3-02:
+Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  These changes were done in preparation of the adoption of the
       drafts by the QUIC working group (#137)
@@ -2328,7 +2399,7 @@ A.6.  Since draft-marx-qlog-event-definitions-quic-h3-02:
 
    *  Changed to/from value options of the data_moved event
 
-A.7.  Since draft-marx-qlog-event-definitions-quic-h3-01:
+Since draft-marx-qlog-event-definitions-quic-h3-01:
 
    Major changes:
 
@@ -2400,7 +2471,7 @@ A.7.  Since draft-marx-qlog-event-definitions-quic-h3-01:
    *  Extended connection_state_updated with more fine-grained states
       (#49)
 
-A.8.  Since draft-marx-qlog-event-definitions-quic-h3-00:
+Since draft-marx-qlog-event-definitions-quic-h3-00:
 
    *  Event and category names are now all lowercase
 
@@ -2416,16 +2487,6 @@ A.8.  Since draft-marx-qlog-event-definitions-quic-h3-00:
 
    *  Triggers have been redefined as properties of the "data" field and
       updated for most events (issue #23)
-
-Acknowledgements
-
-   Much of the initial work by Robin Marx was done at the Hasselt and KU
-   Leuven Universities.
-
-   Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
-   Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind,
-   Jeremy Lainé, Kazu Yamamoto, and Christian Huitema for their feedback
-   and suggestions.
 
 Authors' Addresses
 
