@@ -408,16 +408,16 @@ ConnectionState =
     "attempted" /
     ; peer address validated by: client sent Handshake packet OR
     ; client used CONNID chosen by the server.
-    ; transport-draft-32, section-8.1
+    ; RFC 9000 Section 8.1
     "peer_validated" /
     "handshake_started" /
     ; 1 RTT can be sent, but handshake isn't done yet
     "early_write" /
     ; TLS handshake complete: Finished received and sent
-    ; tls-draft-32, section-4.1.1
+    ; RFC 9001 Section 4.1.1
     "handshake_complete" /
     ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
-    ; can be sent). tls-draft-32, section-4.1.2
+    ; can be sent). RFC 9001 Section 4.1.2
     "handshake_confirmed" /
     "closing" /
     ; connection_close sent/received
@@ -701,13 +701,13 @@ QUICPacketSent = {
     ? is_mtu_probe_packet: bool .default false
 
     ? trigger:
-      ; draft-23 5.1.1
+      ; RFC 9002 Section 6.1.1
       "retransmit_reordered" /
-      ; draft-23 5.1.2
+      ; RFC 9002 Section 6.1.2
       "retransmit_timeout" /
-      ; draft-23 5.3.1
+      ; RFC 9002 Section 6.2.4
       "pto_probe" /
-      ; draft-19 6.2
+      ; RFC 9002 6.2.3
       "retransmit_crypto" /
       ; needed for some CCs to figure out bandwidth allocations
       ; when there are no normal sends
@@ -952,9 +952,9 @@ QUICDatagramDropped = {
 ## stream_state_updated {#quic-streamstateupdated}
 Importance: Base
 
-This event is emitted whenever the internal state of a QUIC stream is updated, as
-described in QUIC transport draft-23 section 3. Most of this can be inferred from
-several types of frames going over the wire, but it's much easier to have explicit
+This event is emitted whenever the internal state of a QUIC stream is updated;
+see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be inferred from several
+types of frames going over the wire, but it's much easier to have explicit
 signals for these state changes.
 
 Definition:
@@ -975,19 +975,19 @@ QUICStreamStateUpdated = {
 }
 
 StreamState =
-    ; bidirectional stream states, draft-23 3.4.
+    ; bidirectional stream states, RFC 9000 Section 3.4.
     "idle" /
     "open" /
     "half_closed_local" /
     "half_closed_remote" /
     "closed" /
-    ; sending-side stream states, draft-23 3.1.
+    ; sending-side stream states, RFC 9000 Section 3.1.
     "ready" /
     "send" /
     "data_sent" /
     "reset_sent" /
     "reset_received" /
-    ; receive-side stream states, draft-23 3.2.
+    ; receive-side stream states, RFC 9000 Section 3.2.
     "receive" /
     "size_known" /
     "data_read" /
@@ -1224,7 +1224,7 @@ Definition:
 ~~~ cddl
 RecoveryParametersSet = {
 
-    ; Loss detection, see recovery draft-23, Appendix A.2
+    ; Loss detection, see RFC 9002 Appendix A.2
     ; in amount of packets
     ? reordering_threshold: uint16
 
@@ -1237,7 +1237,7 @@ RecoveryParametersSet = {
     ; in ms
     ? initial_rtt:float32
 
-    ; congestion control, Appendix B.1.
+    ; congestion control, see RFC 9002 Appendix B.2
     ; in bytes. Note that this could be updated after pmtud
     ? max_datagram_size: uint32
 
@@ -1273,7 +1273,7 @@ Definition:
 ~~~ cddl
 RecoveryMetricsUpdated = {
 
-    ; Loss detection, see recovery draft-23, Appendix A.3
+    ; Loss detection, see RFC 9002 Appendix A.3
     ; all following rtt fields are expressed in ms
     ? min_rtt: float32
     ? smoothed_rtt: float32
@@ -1281,7 +1281,7 @@ RecoveryMetricsUpdated = {
     ? rtt_variance: float32
     ? pto_count: uint16
 
-    ; Congestion control, Appendix B.2.
+    ; Congestion control, see RFC 9002 Appendix B.2.
     ; in bytes
     ? congestion_window: uint64
     ? bytes_in_flight: uint64
@@ -1355,7 +1355,7 @@ Definition:
 ~~~ cddl
 RecoveryLossTimerUpdated = {
 
-    ; called "mode" in draft-23 A.9.
+    ; called "mode" in RFC 9002 A.9.
     ? timer_type: "ack" /
                   "pto"
     ? packet_number_space: PacketNumberSpace
