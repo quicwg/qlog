@@ -786,6 +786,7 @@ QUICPacketDropped = {
         "rejected" /
         "unsupported" /
         "invalid" /
+        "duplicate" /
         "connection_unknown" /
         "decryption_failure" /
         "general"
@@ -799,6 +800,7 @@ Some example situations for each of the trigger categories include:
 - rejected: limits reached, DDoS protection, unwilling to track more paths, duplicate packet
 - unsupported: unknown or unsupported version. See also {{handling-unknown-connections}}.
 - invalid: packet parsing or validation error
+- duplicate: duplicate packet
 - connection_unknown: packet does not relate to a known connection or Connection ID
 - decryption_failure: decryption key was unavailable, decryption failed
 - general: situations not clearly covered in the other categories
