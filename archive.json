@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-11-16T00:46:50.460723+00:00",
+  "timestamp": "2023-11-19T00:50:37.087484+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7242,6 +7242,24 @@
       "updatedAt": "2023-11-14T10:20:59Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 346,
+      "id": "I_kwDOCrLn6M53Ntt0",
+      "title": "connection_id_updated",
+      "url": "https://github.com/quicwg/qlog/issues/346",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "> when the endpoint receives a new connection id\r\nfrom the peer, it will see the dst_ fields are set. When the endpoint updates\r\nits own connection ID (e.g., NEW_CONNECTION_ID frame), it logs the src_ fields.\r\n\r\nI don't understand what the `dst_ fields` or `src_ fields` are. Is this stale text?",
+      "createdAt": "2023-11-17T23:36:18Z",
+      "updatedAt": "2023-11-17T23:36:23Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -9808,7 +9826,7 @@
       "labels": [],
       "body": "Add optional src and dst address for TransportPacketSent, TransportPacketReceived, TransportPacketDropped, TransportPacketBuffered\r\n\r\nFixes #57\r\n",
       "createdAt": "2022-07-18T05:49:15Z",
-      "updatedAt": "2022-09-16T13:44:23Z",
+      "updatedAt": "2023-11-17T21:22:01Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "3909bbb9cd3b958b23528f40c9f191851ec26b6d",
@@ -9833,6 +9851,13 @@
           "body": "As mentioned in #57, I would rather see this (and some of the other events we have that list IPs/ports, like `ConnectivityConnectionStarted`) updated to a generic `PathInfo` struct (or similar).\r\n\r\nThis does depend a bit on how we approach migration events (as they probably want to re-use this too). (also depends on multipath approach, but since it looks like we're not doing that, we can skip it).\r\n\r\nIn short: this is not yet ready for review/merge atm :) ",
           "createdAt": "2022-09-16T13:44:04Z",
           "updatedAt": "2022-09-16T13:44:23Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Overtaken by #336?",
+          "createdAt": "2023-11-17T21:22:00Z",
+          "updatedAt": "2023-11-17T21:22:00Z"
         }
       ],
       "reviews": []
@@ -16767,7 +16792,7 @@
       "labels": [],
       "body": "This PR adds basic support for associating paths (defined by IP + port + Connection ID) with individual qlog events. This is done through a textual per-event `path_id` which can be associated with the necessary metadata using the `path_assigned` event (to prevent the `path_id` itself having to contain encoded information/becoming too long).\r\n\r\nWhile using the new path association possibilities in combination with logged PATH_CHALLENGE/PATH_RESPONSE frames (and other info like preferred_address) is enough to implicitly track connection migration attempts, it can be useful to explicitly log migration progression as well. For this, the `migration_state_updated` event was also added.",
       "createdAt": "2023-11-08T10:28:05Z",
-      "updatedAt": "2023-11-10T08:22:26Z",
+      "updatedAt": "2023-11-17T21:14:17Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f058c608b3853f382cbe9fd809db96ff57386ac2",
@@ -16778,7 +16803,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "We have a few issues related to migration, which ones does this PR address? Asking because it would be good to close things we think will be fixed.",
+          "createdAt": "2023-11-17T21:12:22Z",
+          "updatedAt": "2023-11-17T21:12:22Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M5mxdD9",
@@ -16805,6 +16838,19 @@
               "updatedAt": "2023-11-10T08:22:26Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5nlugm",
+          "commit": {
+            "abbreviatedOid": "6b20a19"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": ":shipit: \r\n",
+          "createdAt": "2023-11-17T21:14:17Z",
+          "updatedAt": "2023-11-17T21:14:17Z",
+          "comments": []
         }
       ]
     },
@@ -16820,7 +16866,7 @@
       "labels": [],
       "body": "As requested by Damien Neil on the QUIC wg mailing list on November 9, this adds an option to log the raw ack_delay value seen in the AckFrame, as opposed to the scaled value (for which external \"global\" state is needed, that is not always present in all code paths).",
       "createdAt": "2023-11-10T08:39:35Z",
-      "updatedAt": "2023-11-10T09:12:06Z",
+      "updatedAt": "2023-11-17T21:05:28Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f058c608b3853f382cbe9fd809db96ff57386ac2",
@@ -16845,6 +16891,13 @@
           "body": "> for which external \"global\" state is needed, that is not always present in all code paths\r\n\r\nI don't think this is a reasonable ask. We discussed this a few months ago on the list, and the next QUIC RFC might need to add some clarifying text that ACK delay isn't used in the Initial and Handshake PN space. This is completely independent of qlog, and conflating those two would be bad design.\r\n\r\nIn the end, a QUIC stack will need to decode the value at some point, there's nothing it can do with an unscaled ACK delay. The _only_ advantage to introducing the unscaled_ack_delay is that a QUIC stack can apply the scaling after qlogging the frame. I don't think this strikes the right balance (as I've argued on list). Among all the qlog implementations around today, no other QUIC stack ran into this problem, so this seems like we're adding logging in order to work around an architectural problem in one particular single stack here. ",
           "createdAt": "2023-11-10T09:12:06Z",
           "updatedAt": "2023-11-10T09:12:06Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "FWIW Its easier to track feature requests as issues rather than PRs (I'm guilty of this too).\r\n\r\nPropose closing this with no action.",
+          "createdAt": "2023-11-17T21:05:27Z",
+          "updatedAt": "2023-11-17T21:05:27Z"
         }
       ],
       "reviews": [
@@ -16860,6 +16913,199 @@
           "createdAt": "2023-11-10T08:48:18Z",
           "updatedAt": "2023-11-10T08:48:18Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 343,
+      "id": "PR_kwDOCrLn6M5ft2rP",
+      "title": "add a packet_dropped trigger for duplicate packets",
+      "url": "https://github.com/quicwg/qlog/pull/343",
+      "state": "MERGED",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "See section 12.3 of RFC 9000:\r\n\r\n> A receiver MUST discard a newly unprotected packet unless it is certain that it has not processed another packet with the same packet number from the same packet number space. Duplicate suppression MUST happen after removing packet protection for the reasons described in Section 9.5 of [QUIC-TLS].",
+      "createdAt": "2023-11-17T07:47:11Z",
+      "updatedAt": "2023-11-18T05:27:48Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f058c608b3853f382cbe9fd809db96ff57386ac2",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "packet_dropped_duplicate",
+      "headRefOid": "9288d1d94b1f0847704d65d6a9e0e41b37663cd7",
+      "closedAt": "2023-11-18T05:27:48Z",
+      "mergedAt": "2023-11-18T05:27:48Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "df8bf3573c0dea1765a4beea0f09ae61cbd67608"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5nkPi4",
+          "commit": {
+            "abbreviatedOid": "9288d1d"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "LGTM",
+          "createdAt": "2023-11-17T17:36:57Z",
+          "updatedAt": "2023-11-17T17:36:57Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 344,
+      "id": "PR_kwDOCrLn6M5fzJfc",
+      "title": "Update references to old drafts to point to RFCs",
+      "url": "https://github.com/quicwg/qlog/pull/344",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Relates to https://github.com/quicwg/qlog/issues/174.\r\n\r\nNone of these seem controversal",
+      "createdAt": "2023-11-17T22:35:17Z",
+      "updatedAt": "2023-11-18T05:02:15Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f058c608b3853f382cbe9fd809db96ff57386ac2",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "update-old-draft-links",
+      "headRefOid": "6974c7a2cae0c3ba3ffb46fc05293ba058d01e9c",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5nmzw3",
+          "commit": {
+            "abbreviatedOid": "6974c7a"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "LGTM, but I haven't checked that all the chapter numbers are correct.",
+          "createdAt": "2023-11-18T05:02:15Z",
+          "updatedAt": "2023-11-18T05:02:15Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 345,
+      "id": "PR_kwDOCrLn6M5fzSkR",
+      "title": "h3: Replace \"this event\" with specific event names",
+      "url": "https://github.com/quicwg/qlog/pull/345",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "I've skipped changing QPACK events since we'll be deleting those anyway.\n",
+      "createdAt": "2023-11-17T23:24:14Z",
+      "updatedAt": "2023-11-18T04:04:27Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f058c608b3853f382cbe9fd809db96ff57386ac2",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "h3-less-this-event",
+      "headRefOid": "bb10e155ed8e52af24f1b49aa6418976a2fd121a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5nms76",
+          "commit": {
+            "abbreviatedOid": "bb10e15"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-11-18T04:04:27Z",
+          "updatedAt": "2023-11-18T04:04:27Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 347,
+      "id": "PR_kwDOCrLn6M5fzcXJ",
+      "title": "quic: replace \"this event\" for more specific names",
+      "url": "https://github.com/quicwg/qlog/pull/347",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Also add backticks around special nouns so they'll pop in the HTML.\n",
+      "createdAt": "2023-11-18T00:38:27Z",
+      "updatedAt": "2023-11-18T05:26:39Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f058c608b3853f382cbe9fd809db96ff57386ac2",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "quic-less-this-event",
+      "headRefOid": "33e429481f63fd536e293a62149a3b0c447236c1",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5nm09W",
+          "commit": {
+            "abbreviatedOid": "33e4294"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "Lots of changes here, thank you @LPardue! Please merge quickly to avoid merge conflicts.",
+          "createdAt": "2023-11-18T05:19:22Z",
+          "updatedAt": "2023-11-18T05:26:39Z",
+          "comments": [
+            {
+              "originalPosition": 718,
+              "body": "Sounds better?\r\n```suggestion\r\nThe `marked_for_retransmit` event indicates which data was marked for retransmission\r\n```",
+              "createdAt": "2023-11-18T05:19:22Z",
+              "updatedAt": "2023-11-18T05:26:19Z"
+            },
+            {
+              "originalPosition": 719,
+              "body": "Maybe better?\r\n```suggestion\r\nupon detection of packet loss (see `packet_lost`).\r\n```",
+              "createdAt": "2023-11-18T05:19:48Z",
+              "updatedAt": "2023-11-18T05:26:19Z"
+            },
+            {
+              "originalPosition": 152,
+              "body": "```suggestion\r\n: `connection_state_changed` with a new state of `attempted` is the same\r\n```",
+              "createdAt": "2023-11-18T05:24:29Z",
+              "updatedAt": "2023-11-18T05:26:19Z"
+            },
+            {
+              "originalPosition": 155,
+              "body": "```suggestion\r\n`connection_closed` event.\r\n```",
+              "createdAt": "2023-11-18T05:24:44Z",
+              "updatedAt": "2023-11-18T05:26:19Z"
+            },
+            {
+              "originalPosition": 138,
+              "body": "```suggestion\r\nstate transition. As such, users should not expect to see all these states\r\n```",
+              "createdAt": "2023-11-18T05:25:29Z",
+              "updatedAt": "2023-11-18T05:26:19Z"
+            }
+          ]
         }
       ]
     }
