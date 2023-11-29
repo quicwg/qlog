@@ -169,14 +169,15 @@ The exchange of data between the HTTP and QUIC layer is logged via the
 ## parameters_set {#h3-parametersset}
 Importance: Base
 
-This event contains HTTP/3 and QPACK-level settings, mostly those received from
-the HTTP/3 SETTINGS frame. All these parameters are typically set once and never
-change. However, they are typically set at different times during the connection,
-so there can be several instances of this event with different fields set.
+The `parameters_set` event contains HTTP/3 and QPACK-level settings, mostly
+those received from the HTTP/3 SETTINGS frame. All these parameters are
+typically set once and never change. However, they might be set at different
+times during the connection, therefore a qlog can have multiple instances of
+`parameters_set` with different fields set.
 
 The "owner" field reflects how Settings are exchanged on a connection. Sent
 settings have the value "local" and received settings have the value
-"received". A qlog can have multiple instances of this event.
+"received".
 
 As a reminder the CDDL unwrap operator (~), see {{?RFC8610}}), copies the fields
 from the referenced type (H3Parameters) into the target type directly, extending the
@@ -215,16 +216,17 @@ H3Parameters = {
 ~~~
 {: #h3-parametersset-def title="H3ParametersSet definition"}
 
-This event can contain any number of unspecified fields. This allows for
-representation of reserved settings (aka GREASE) or ad-hoc support for
-extension settings that do not have a related qlog schema definition.
+The `parameters_set` event can contain any number of unspecified fields. This
+allows for representation of reserved settings (aka GREASE) or ad-hoc support
+for extension settings that do not have a related qlog schema definition.
 
 ## parameters_restored {#h3-parametersrestored}
 Importance: Base
 
 When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
-server's SETTINGs from the previous connection. This event is used to indicate
-which HTTP/3 settings were restored and to which values when utilizing 0-RTT.
+server's SETTINGs from the previous connection. The `parameters_restored` event
+is used to indicate which HTTP/3 settings were restored and to which values when
+utilizing 0-RTT.
 
 Definition:
 
@@ -235,16 +237,24 @@ H3ParametersRestored = {
 ~~~
 {: #h3-parametersrestored-def title="H3ParametersRestored definition"}
 
-Similar to H3ParametersSet this event can contain any number of unspecified
-fields to allow for reserved or extension settings.
+The `parameters_restored` event can contain any number of unspecified fields. This
+allows for representation of reserved settings (aka GREASE) or ad-hoc support
+for extension settings that do not have a related qlog schema definition.
 
 ## stream_type_set {#h3-streamtypeset}
 Importance: Base
 
-Emitted when a stream's type becomes known. This is typically when a stream is
-opened and the stream's type indicator is sent or received.
+The `stream_type_set` event conveys when a HTTP/3 stream type becomes known; see
+{{Sections 6.1 and 6.2 of RFC9114}}.
 
-The stream_type_value field is the numerical value without VLIE encoding.
+Client bidirectional streams always have a stream_type value of "request".
+Server bidirectional streams have no defined use, although extensions could
+change that.
+
+Unidirectional streams in either direction begin with with a variable-length
+integer type. Where the type is not known, the stream_type value of "unknown"
+type can be used and the value captured in the stream_type_value field; a
+numerical value without variable-length integer encoding.
 
 Definition:
 
@@ -299,9 +309,9 @@ H3PriorityUpdated = {
 ## frame_created {#h3-framecreated}
 Importance: Core
 
-This event is emitted when the HTTP/3 framing actually happens. This does not
-necessarily coincide with HTTP/3 data getting passed to the QUIC layer. For
-that, see the "stream_data_moved" event in {{QLOG-QUIC}}.
+The `frame_created` event is emitted when the HTTP/3 framing actually happens.
+This does not necessarily coincide with HTTP/3 data getting passed to the QUIC
+layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -318,9 +328,9 @@ H3FrameCreated = {
 ## frame_parsed {#h3-frameparsed}
 Importance: Core
 
-This event is emitted when the HTTP/3 frame is parsed. This is not
+The `frame_parsed` event is emitted when the HTTP/3 frame is parsed. This is not
 necessarily the same as when the HTTP/3 data is actually received on the QUIC
-layer. For that, see the "stream_data_moved" event in {{QLOG-QUIC}}.
+layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -342,9 +352,10 @@ data is indicated using the stream_data_moved event.
 ## datagram_created {#h3-datagramcreated}
 Importance: Base
 
-This event is emitted when an HTTP/3 Datagram is created (see {{!RFC9297}}).
-This does not necessarily coincide with the HTTP/3 Datagram getting passed to
-the QUIC layer. For that, see the "datagram_data_moved" event in {{QLOG-QUIC}}.
+The `datagram_created` event is emitted when an HTTP/3 Datagram is created (see
+{{!RFC9297}}). This does not necessarily coincide with the HTTP/3 Datagram
+getting passed to the QUIC layer. For that, see the `datagram_data_moved` event
+in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -360,10 +371,10 @@ H3DatagramCreated = {
 ## datagram_parsed {#h3-datagramparsed}
 Importance: Base
 
-This event is emitted when the HTTP/3 Datagram is parsed (see {{!RFC9297}}).
-This is not necessarily the same as when the HTTP/3 Datagram is actually
-received on the QUIC layer. For that, see the "datagram_data_moved" event in
-{{QLOG-QUIC}}.
+The `datagram_parsed` event is emitted when the HTTP/3 Datagram is parsed (see
+{{!RFC9297}}). This is not necessarily the same as when the HTTP/3 Datagram is
+actually received on the QUIC layer. For that, see the `datagram_data_moved`
+event in {{QLOG-QUIC}}.
 
 Definition:
 
@@ -379,10 +390,10 @@ H3DatagramParsed = {
 ## push_resolved {#h3-pushresolved}
 Importance: Extra
 
-This event is emitted when a pushed resource is successfully claimed (used) or,
-conversely, abandoned (rejected) by the application on top of HTTP/3 (e.g., the
-web browser). This event is added to help debug problems with unexpected PUSH
-behaviour, which is commonplace with HTTP/2.
+The `push_resolved` event is emitted when a pushed resource ({{Section 4.6 of
+RFC9114}}) is successfully claimed (used) or, conversely, abandoned (rejected)
+by the application on top of HTTP/3 (e.g., the web browser). This event provides
+additional context that can is aid debugging issues related to server push.
 
 Definition:
 
@@ -606,7 +617,8 @@ H3ReservedFrame = {
 
 ### H3UnknownFrame
 
-The frame_type_value field is the numerical value without VLIE encoding.
+The frame_type_value field is the numerical value without variable-length
+integer encoding.
 
 ~~~ cddl
 H3UnknownFrame = {
