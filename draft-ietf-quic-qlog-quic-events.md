@@ -392,7 +392,7 @@ The `connection_state_updated` event is used to track progress through QUIC's
 complex handshake and connection close procedures. It is intended to provide
 exhaustive options to log each state individually, but also provides a more
 basic, simpler set for implementations less interested in tracking each smaller
-state transition. As such, users should not expect to see -all- these states
+state transition. As such, users should not expect to see all these states
 reflected in all qlogs and implementers should focus on support for the
 SimpleConnectionState set.
 
@@ -473,10 +473,10 @@ These states correspond to the following transitions for both client and server:
 
 Note:
 
-: `connection_state_changed`` with a new state of `attempted` is the same
+: `connection_state_changed` with a new state of `attempted` is the same
 conceptual event as the `connection_started`` event above from the client's
 perspective. Similarly, a state of `closing` or `draining` corresponds to the
-`connection_closed`` event.
+`connection_closed` event.
 
 ## mtu_updated {#connectivity-mtuupdated}
 Importance: Extra
@@ -1422,8 +1422,8 @@ RecoveryPacketLost = {
 ## marked_for_retransmit {#recovery-markedforretransmit}
 Importance: Extra
 
-The `marked_for_retransmit` event indicates which data was marked for retransmit
-upon detecting a packet loss (see `packet_lost`).
+The `marked_for_retransmit` event indicates which data was marked for retransmission
+upon detection of packet loss (see `packet_lost`).
 
 Similar to the reasoning for the `frames_processed` event,
 in order to keep the amount of different events low, this signal is grouped into
