@@ -1,5 +1,5 @@
 ---
-title: HTTP/3 and QPACK qlog event definitions
+title: HTTP/3 qlog event definitions
 docname: draft-ietf-quic-qlog-h3-events-latest
 category: std
 
@@ -52,7 +52,7 @@ informative:
 --- abstract
 
 This document describes concrete qlog event definitions and their metadata for
-HTTP/3 and QPACK-related events. These events can then be embedded in the higher
+HTTP/3-related events. These events can then be embedded in the higher
 level schema defined in {{QLOG-MAIN}}.
 
 --- note_Note_to_Readers
@@ -73,10 +73,9 @@ various programming languages can be found at
 # Introduction
 
 This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the HTTP/3 protocol {{RFC9114}},
-QPACK {{!QPACK=RFC9204}}, and some of their extensions (see
-{{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}} and
-{{!H3-DATAGRAM=RFC9297}}).
+"data" fields and their semantics for the HTTP/3 protocol {{RFC9114}} and some
+of extensions (see {{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}}
+and {{!H3-DATAGRAM=RFC9297}}).
 
 ## Notational Conventions
 
@@ -92,10 +91,10 @@ fields.
 
 # Overview
 
-This document describes how the HTTP/3 and QPACK can be expressed in qlog using
-the schema defined in {{QLOG-MAIN}}. HTTP/3 and QPACK events are defined with a
-category, a name (the concatenation of "category" and "event"), an "importance",
-an optional "trigger", and "data" fields.
+This document describes how HTTP/3 can be expressed in qlog using the schema
+defined in {{QLOG-MAIN}}. HTTP/3 events are defined with a category, a name (the
+concatenation of "category" and "event"), an "importance", an optional
+"trigger", and "data" fields.
 
 Some data fields use complex datastructures. These are represented as enums or
 re-usable definitions, which are grouped together on the bottom of this document
@@ -118,15 +117,15 @@ identifier, potentially suffixed by the vantagepoint type (For example,
 abcd1234_server.qlog would contain the server-side trace of the connection with
 GUID abcd1234).
 
-# HTTP/3 and QPACK Event Overview
+# HTTP/3 Event Overview
 
 This document defines events in two categories, written as lowercase to follow
-convention: h3 ({{h3-ev}}) and qpack ({{qpack-ev}}).
+convention: h3 ({{h3-ev}}).
 
 As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
 concatenation of category and type.
 
-{{h3-qpack-events}} summarizes the name value of each event type that is defined
+{{h3-events}} summarizes the name value of each event type that is defined
 in this specification.
 
 | Name value                  | Importance |  Definition |
@@ -140,14 +139,7 @@ in this specification.
 | h3:datagram_created       | Base       | {{h3-datagramcreated}} |
 | h3:datagram_parsed        | Base       | {{h3-datagramparsed}} |
 | h3:push_resolved          | Extra      | {{h3-pushresolved}} |
-| qpack:state_updated         | Base       | {{qpack-stateupdated}} |
-| qpack:stream_state_updated  | Core       | {{qpack-streamstateupdate}} |
-| qpack:dynamic_table_updated | Extra      | {{qpack-dynamictableupdate}} |
-| qpack:headers_encoded       | Base       | {{qpack-headersencoded}} |
-| qpack:headers_decoded       | Base       | {{qpack-headersdecoded}} |
-| qpack:instruction_created   | Base       | {{qpack-instructioncreated}} |
-| qpack:instruction_parsed    | Base       | {{qpack-instructionparsed}} |
-{: #h3-qpack-events title="HTTP/3 and QPACK Events"}
+{: #h3-events title="HTTP/3 Events"}
 
 # HTTP/3 Events {#h3-ev}
 
@@ -656,401 +648,6 @@ definition in the qlog QUIC definition, see {{QLOG-QUIC}}.
 ; e.g., QUIC's ConnectionClose Frame
 $ApplicationError /= H3ApplicationError
 ~~~
-
-# QPACK Events {#qpack-ev}
-
-QPACK events extend the `$ProtocolEventBody` extension point defined in
-{{QLOG-MAIN}}.
-
-~~~ cddl
-QPACKEvents = QPACKStateUpdate /
-              QPACKStreamStateUpdate /
-              QPACKDynamicTableUpdate /
-              QPACKHeadersEncoded /
-              QPACKHeadersDecoded /
-              QPACKInstructionCreated /
-              QPACKInstructionParsed
-
-$ProtocolEventBody /= QPACKEvents
-~~~
-{: #qpackevents-def title="QPACKEvents definition and ProtocolEventBody
-extension"}
-
-QPACK events mainly serve as an aid to debug low-level QPACK issues.The
-higher-level, plaintext header values SHOULD (also) be logged in the
-http.frame_created and http.frame_parsed event data (instead).
-
-QPACK does not have its own parameters_set event. This was merged with
-http.parameters_set for brevity, since qpack is a required extension for HTTP/3
-anyway. Other HTTP/3 extensions MAY also log their SETTINGS fields in
-http.parameters_set or MAY define their own events.
-
-## state_updated {#qpack-stateupdated}
-Importance: Base
-
-This event is emitted when one or more of the internal QPACK variables changes
-value. Note that some variables have two variations (one set locally, one
-requested by the remote peer). This is reflected in the "owner" field. As such,
-this field MUST be correct for all variables included a single event instance. If
-you need to log settings from two sides, you MUST emit two separate event
-instances.
-
-Definition:
-
-~~~ cddl
-QPACKStateUpdate = {
-    owner: Owner
-    ? dynamic_table_capacity: uint64
-
-    ; effective current size, sum of all the entries
-    ? dynamic_table_size: uint64
-    ? known_received_count: uint64
-    ? current_insert_count: uint64
-}
-~~~
-{: #qpack-stateupdate-def title="QPACKStateUpdate definition"}
-
-## stream_state_updated {#qpack-streamstateupdate}
-Importance: Core
-
-This event is emitted when a stream becomes blocked or unblocked by header
-decoding requests or QPACK instructions.
-
-This event is of "Core" importance, as it might have a large impact on
-HTTP/3's observed performance.
-
-Definition:
-
-~~~ cddl
-QPACKStreamStateUpdate = {
-    stream_id: uint64
-
-    ; streams are assumed to start "unblocked"
-    ; until they become "blocked"
-    state: QPACKStreamState
-}
-
-QPACKStreamState = "blocked" /
-                   "unblocked"
-~~~
-{: #qpack-streamstateupdate-def title="QPACKStreamStateUpdate definition"}
-
-## dynamic_table_updated {#qpack-dynamictableupdate}
-Importance: Extra
-
-This event is emitted when one or more entries are inserted or evicted from QPACK's dynamic table.
-
-Definition:
-
-~~~ cddl
-QPACKDynamicTableUpdate = {
-
-    ; local = the encoder's dynamic table
-    ; remote = the decoder's dynamic table
-    owner: Owner
-    update_type: QPACKDynamicTableUpdateType
-    entries: [+ QPACKDynamicTableEntry]
-}
-
-QPACKDynamicTableUpdateType = "inserted" /
-                              "evicted"
-
-QPACKDynamicTableEntry = {
-    index: uint64
-    ? name: text /
-            hexstring
-    ? value: text /
-             hexstring
-}
-~~~
-{: #qpack-dynamictableupdate-def title="QPACKDynamicTableUpdate definition"}
-
-## headers_encoded {#qpack-headersencoded}
-Importance: Base
-
-This event is emitted when an uncompressed header block is encoded successfully.
-
-This event has overlap with http.frame_created for the HeadersFrame type.
-When outputting both events, implementers MAY omit the "headers" field in this
-event.
-
-Definition:
-
-~~~ cddl
-QPACKHeadersEncoded = {
-    ? stream_id: uint64
-    ? headers: [+ H3HTTPField]
-    block_prefix: QPACKHeaderBlockPrefix
-    header_block: [+ QPACKHeaderBlockRepresentation]
-    ? raw: RawInfo
-}
-~~~
-{: #qpack-headersencoded-def title="QPACKHeadersEncoded definition"}
-
-## headers_decoded {#qpack-headersdecoded}
-Importance: Base
-
-This event is emitted when a compressed header block is decoded successfully.
-
-This event has overlap with http.frame_parsed for the HeadersFrame type.
-When outputting both events, implementers MAY omit the "headers" field in this
-event.
-
-Definition:
-
-~~~ cddl
-QPACKHeadersDecoded = {
-    ? stream_id: uint64
-    ? headers: [+ H3HTTPField]
-    block_prefix: QPACKHeaderBlockPrefix
-    header_block: [+ QPACKHeaderBlockRepresentation]
-    ? raw: RawInfo
-}
-~~~
-{: #qpack-headersdecoded-def title="QPACKHeadersDecoded definition"}
-
-## instruction_created {#qpack-instructioncreated}
-Importance: Base
-
-This event is emitted when a QPACK instruction (both decoder and encoder) is
-created and added to the encoder/decoder stream.
-
-Definition:
-
-~~~ cddl
-QPACKInstructionCreated = {
-
-    ; see definition in appendix
-    instruction: QPACKInstruction
-    ? raw: RawInfo
-}
-~~~
-{: #qpack-instructioncreated-def title="QPACKInstructionCreated definition"}
-
-Encoder/decoder semantics and stream_id's are implicit in either the
-instruction types or can be logged via other events (e.g., http.stream_type_set)
-
-## instruction_parsed {#qpack-instructionparsed}
-Importance: Base
-
-This event is emitted when a QPACK instruction (both decoder and encoder) is read
-from the encoder/decoder stream.
-
-Definition:
-
-~~~ cddl
-QPACKInstructionParsed = {
-
-    ; see QPACKInstruction definition in appendix
-    instruction: QPACKInstruction
-    ? raw: RawInfo
-}
-~~~
-{: #qpack-instructionparsed-def title="QPACKInstructionParsed definition"}
-
-Encoder/decoder semantics and stream_id's are implicit in either the
-instruction types or can be logged via other events (e.g., http.stream_type_set)
-
-# QPACK Data Field Definitions
-
-The following data field definitions can be used in QPACK events.
-
-## QPACKInstruction
-
-The instructions do not have explicit encoder/decoder types, since there is
-no overlap between the instructions of both types in neither name nor function.
-
-~~~ cddl
-QPACKInstruction = SetDynamicTableCapacityInstruction /
-                   InsertWithNameReferenceInstruction /
-                   InsertWithoutNameReferenceInstruction /
-                   DuplicateInstruction /
-                   SectionAcknowledgementInstruction /
-                   StreamCancellationInstruction /
-                   InsertCountIncrementInstruction
-~~~
-{: #qpackinstruction-def title="QPACKInstruction definition"}
-
-### SetDynamicTableCapacityInstruction
-
-~~~ cddl
-SetDynamicTableCapacityInstruction = {
-    instruction_type: "set_dynamic_table_capacity"
-    capacity: uint32
-}
-~~~
-{: #setdynamictablecapacityinstruction-def
-title="SetDynamicTableCapacityInstruction definition"}
-
-### InsertWithNameReferenceInstruction
-
-~~~ cddl
-InsertWithNameReferenceInstruction = {
-    instruction_type: "insert_with_name_reference"
-    table_type: QPACKTableType
-    name_index: uint32
-    huffman_encoded_value: bool
-    ? value_length: uint32
-    ? value: text
-}
-~~~
-{: #insertwithnamereferenceinstruction-def
-title="InsertWithNameReferenceInstruction definition"}
-
-### InsertWithoutNameReferenceInstruction
-
-~~~ cddl
-InsertWithoutNameReferenceInstruction = {
-    instruction_type: "insert_without_name_reference"
-    huffman_encoded_name: bool
-    ? name_length: uint32
-    ? name: text
-    huffman_encoded_value: bool
-    ? value_length: uint32
-    ? value: text
-}
-~~~
-{: #insertwithoutnamereferenceinstruction-def
-title="InsertWithoutNameReferenceInstruction definition"}
-
-### DuplicateInstruction
-
-~~~ cddl
-DuplicateInstruction = {
-    instruction_type: "duplicate"
-    index: uint32
-}
-~~~
-{: #duplicateinstruction-def
-title="DuplicateInstruction definition"}
-
-### SectionAcknowledgementInstruction
-
-~~~ cddl
-SectionAcknowledgementInstruction = {
-    instruction_type: "section_acknowledgement"
-    stream_id: uint64
-}
-~~~
-{: #sectionacknowledgementinstruction-def
-title="SectionAcknowledgementInstruction definition"}
-
-### StreamCancellationInstruction
-
-~~~ cddl
-StreamCancellationInstruction = {
-    instruction_type: "stream_cancellation"
-    stream_id: uint64
-}
-~~~
-{: #streamcancellationinstruction-def
-title="StreamCancellationInstruction definition"}
-
-### InsertCountIncrementInstruction
-
-~~~ cddl
-InsertCountIncrementInstruction = {
-    instruction_type: "insert_count_increment"
-    increment: uint32
-}
-~~~
-{: #insertcountincrementinstruction-def
-title="InsertCountIncrementInstruction definition"}
-
-## QPACKHeaderBlockRepresentation
-
-~~~ cddl
-QPACKHeaderBlockRepresentation = IndexedHeaderField /
-                                 LiteralHeaderFieldWithName /
-                                 LiteralHeaderFieldWithoutName
-~~~
-{: #qpackheaderblockrepresentation-def
-title="QPACKHeaderBlockRepresentation definition"}
-
-### IndexedHeaderField
-
-This is also used for "indexed header field with post-base index"
-
-~~~ cddl
-IndexedHeaderField = {
-    header_field_type: "indexed_header"
-
-    ; MUST be "dynamic" if is_post_base is true
-    table_type: QPACKTableType
-    index: uint32
-
-    ; to represent the "indexed header field with post-base index"
-    ; header field type
-    is_post_base: bool .default false
-}
-~~~
-{: #indexedheaderfield-def title="IndexedHeaderField definition"}
-
-### LiteralHeaderFieldWithName
-
-This is also used for "Literal header field with post-base name reference".
-
-~~~ cddl
-LiteralHeaderFieldWithName = {
-    header_field_type: "literal_with_name"
-
-    ; the 3rd "N" bit
-    preserve_literal: bool
-
-    ; MUST be "dynamic" if is_post_base is true
-    table_type: QPACKTableType
-    name_index: uint32
-    huffman_encoded_value: bool
-    ? value_length: uint32
-    ? value: text
-
-    ; to represent the "indexed header field with post-base index"
-    ; header field type
-    is_post_base: bool .default false
-}
-~~~
-{: #literalheaderfieldwithname-def
-title="LiteralHeaderFieldWithName definition"}
-
-### LiteralHeaderFieldWithoutName
-
-~~~ cddl
-LiteralHeaderFieldWithoutName = {
-    header_field_type: "literal_without_name"
-
-    ; the 3rd "N" bit
-    preserve_literal: bool
-    huffman_encoded_name: bool
-    ? name_length: uint32
-    ? name: text
-    huffman_encoded_value: bool
-    ? value_length: uint32
-    ? value: text
-}
-~~~
-{: #literalheaderfieldwithoutname-def
-title="LiteralHeaderFieldWithoutName definition"}
-
-
-## QPACKHeaderBlockPrefix
-
-~~~ cddl
-QPACKHeaderBlockPrefix = {
-    required_insert_count: uint32
-    sign_bit: bool
-    delta_base: uint32
-}
-~~~
-{: #qpackheaderblockprefix-def
-title="QPACKHeaderBlockPrefix definition"}
-
-## QPACKTableType
-
-~~~ cddl
-QPACKTableType = "static" /
-                 "dynamic"
-~~~
-{: #qpacktabletype-def title="QPACKTableType definition"}
 
 # Security and Privacy Considerations
 
