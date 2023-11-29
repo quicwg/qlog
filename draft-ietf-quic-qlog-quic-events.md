@@ -96,9 +96,9 @@ re-usable definitions, which are grouped together on the bottom of this document
 for clarity.
 
 When any event from this document is included in a qlog trace, the
-"protocol_type" qlog array field MUST contain an entry with the value "QUIC".
+`protocol_type` qlog array field MUST contain an entry with the value "QUIC".
 
-When the qlog "group_id" field is used, it is recommended to use QUIC's Original
+When the qlog `group_id` field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
 contacting the server), as this is the only value that does not change over the
 course of the connection and can be used to link more advanced QUIC packets (e.g.,
@@ -127,8 +127,8 @@ header_lengths can be calculated as:
 Note:
 
 : In some cases, the length fields are also explicitly reflected inside of packet
-headers. For example, the QUIC STREAM frame has a "length" field indicating its
-payload size. Similarly, the QUIC Long Header has a "length" field which is equal
+headers. For example, the QUIC STREAM frame has a `length` field indicating its
+payload size. Similarly, the QUIC Long Header has a `length` field which is equal
 to the payload length plus the packet number length. In these cases, those fields
 are intentionally preserved in the event definitions. Even though this can lead to
 duplicate data when the full RawInfo is logged, it allows a more direct mapping of
@@ -138,14 +138,14 @@ the QUIC specifications to qlog, making it easier for users to interpret.
 
 A single qlog event trace is typically associated with a single QUIC connection.
 However, for several types of events (for example, a {{quic-packetdropped}}
-event with trigger value of "connection_unknown"), it can be impossible to tie
+event with trigger value of `connection_unknown`), it can be impossible to tie
 them to a specific QUIC connection, especially on the server.
 
 There are various ways to handle these events, each making certain tradeoffs
 between file size overhead, flexibility, ease of use, or ease of
 implementation. Some options include:
 
-* Log them in a separate endpoint-wide trace (or use a special group_id value)
+* Log them in a separate endpoint-wide trace (or use a special `group_id` value)
   not associated with a single connection.
 * Log them in the most recently used trace.
 * Use additional heuristics for connection identification (for example use the
@@ -160,7 +160,7 @@ model this, QUIC event types are divided into general categories: connectivity
 ({{conn-ev}}), security ({{sec-ev}}), quic {{quic-ev}}, and recovery
 {{rec-ev}}.
 
-As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
+As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog `name` field is the
 concatenation of category and type.
 
 {{quic-events}} summarizes the name value of each event type that is defined in
@@ -271,10 +271,10 @@ IP and/or port information.
 ## connection_started {#connectivity-connectionstarted}
 Importance: Base
 
-Used for both attempting (client-perspective) and accepting (server-perspective)
-new connections. Note that this event has overlap with connection_state_updated
-and this is a separate event mainly because of all the additional data that should
-be logged.
+The `connection_started` event is used for both attempting (client-perspective)
+and accepting (server-perspective) new connections. Note that while there is
+overlap with the `connection_state_updated` event, this event is separate event
+in order to capture additional data that can be useful to log.
 
 Definition:
 
@@ -300,14 +300,14 @@ IP and/or port information.
 ## connection_closed {#connectivity-connectionclosed}
 Importance: Base
 
-Used for logging when a connection was closed, typically when an error or timeout
-occurred. Note that this event has overlap with
-connectivity:connection_state_updated, as well as the CONNECTION_CLOSE frame.
-However, in practice, when analyzing large deployments, it can be useful to have a
-single event representing a connection_closed event, which also includes an
-additional reason field to provide additional information. Additionally, it is
-useful to log closures due to timeouts, which are difficult to reflect using the
-other options.
+The `connection_closed` event is used for logging when a connection was closed,
+typically when an error or timeout occurred. Note that this event has overlap
+with the `connection_state_updated` event, as well as the CONNECTION_CLOSE
+frame. However, in practice, when analyzing large deployments, it can be useful
+to have a single event representing a `connection_closed` event, which also
+includes an additional reason field to provide more information. Furthermore, it
+is useful to log closures due to timeouts, which are difficult to reflect using
+the other options.
 
 In QUIC there are two main connection-closing error categories: connection and
 application errors. They have well-defined error codes and semantics. Next to
@@ -347,15 +347,15 @@ ConnectivityConnectionClosed = {
 ## connection_id_updated {#connectivity-connectionidupdated}
 Importance: Base
 
-This event is emitted when either party updates their current Connection ID. As
-this typically happens only sparingly over the course of a connection, this event
-allows loggers to be more efficient than logging the observed CID with each packet
-in the .header field of the "packet_sent" or "packet_received" events.
+The `connection_id_updated` event is emitted when either party updates their
+current Connection ID. As this typically happens only sparingly over the course
+of a connection, using this event is more efficient than logging the observed
+CID with each and every `packet_sent` or `packet_received` events.
 
-This is viewed from the perspective of the endpoint applying the new id. As such,
-when the endpoint receives a new connection id from the peer, it will see the
-dst_ fields are set. When the endpoint updates its own connection id
-(e.g., NEW_CONNECTION_ID frame), it logs the src_ fields.
+The `connection_id_updated` event is viewed from the perspective of the endpoint
+applying the new ID. As such, when the endpoint receives a new connection ID
+from the peer, it will see the dst_ fields are set. When the endpoint updates
+its own connection ID (e.g., NEW_CONNECTION_ID frame), it logs the src_ fields.
 
 Definition:
 
@@ -371,8 +371,10 @@ ConnectivityConnectionIDUpdated = {
 ## spin_bit_updated {#connectivity-spinbitupdated}
 Importance: Base
 
-To be emitted when the spin bit changes value. It SHOULD NOT be emitted if the
-spin bit is set without changing its value.
+The `spin_bit_updated` event conveys information about the QUIC latency spin
+bit; see {{Section 17.4 of QUIC-TRANSPORT}}. The event is emitted when the spin
+bit changes value, it SHOULD NOT be emitted if the spin bit is set without
+changing its value.
 
 Definition:
 
@@ -386,12 +388,13 @@ ConnectivitySpinBitUpdated = {
 ## connection_state_updated {#connectivity-connectionstateupdated}
 Importance: Base
 
-This event is used to track progress through QUIC's complex handshake and
-connection close procedures. It is intended to provide exhaustive options to log
-each state individually, but also provides a more basic, simpler set for
-implementations less interested in tracking each smaller state transition. As
-such, users should not expect to see -all- these states reflected in all qlogs and
-implementers should focus on support for the SimpleConnectionState set.
+The `connection_state_updated` event is used to track progress through QUIC's
+complex handshake and connection close procedures. It is intended to provide
+exhaustive options to log each state individually, but also provides a more
+basic, simpler set for implementations less interested in tracking each smaller
+state transition. As such, users should not expect to see all these states
+reflected in all qlogs and implementers should focus on support for the
+SimpleConnectionState set.
 
 Definition:
 
@@ -470,13 +473,16 @@ These states correspond to the following transitions for both client and server:
 
 Note:
 
-: connection_state_changed with a new state of "attempted" is the same
-conceptual event as the connection_started event above from the client's
-perspective. Similarly, a state of "closing" or "draining" corresponds to the
-connection_closed event.
+: `connection_state_changed` with a new state of `attempted` is the same
+conceptual event as the `connection_started`` event above from the client's
+perspective. Similarly, a state of `closing` or `draining` corresponds to the
+`connection_closed` event.
 
 ## mtu_updated {#connectivity-mtuupdated}
 Importance: Extra
+
+The `mtu_updated` event indicates that the estimated Path MTU was updated. This
+happens as part of the Path MTU discovery process.
 
 ~~~ cddl
 ConnectivityMTUUpdated = {
@@ -490,21 +496,21 @@ ConnectivityMTUUpdated = {
 ~~~
 {: #connectivity-mtuupdated-def title="ConnectivityMTUUpdated definition"}
 
-This event indicates that the estimated Path MTU was updated. This happens as
-part of the Path MTU discovery process.
-
-
 # QUIC events  {#quic-ev}
 
 ## version_information {#quic-versioninformation}
 Importance: Core
 
+The `version_information` event supports QUIC version negotiation; see {{Section
+6 of QUIC-TRANSPORT}}.
+
 QUIC endpoints each have their own list of of QUIC versions they support. The
 client uses the most likely version in their first initial. If the server does
 support that version, it replies with a version_negotiation packet, containing
-supported versions. From this, the client selects a version. This event aggregates
-all this information in a single event type. It also allows logging of supported
-versions at an endpoint without actual version negotiation needing to happen.
+supported versions. From this, the client selects a version. The
+`version_information` event aggregates all this information in a single event
+type. It also allows logging of supported versions at an endpoint without actual
+version negotiation needing to happen.
 
 Definition:
 
@@ -519,21 +525,24 @@ QUICVersionInformation = {
 
 Intended use:
 
-- When sending an initial, the client logs this event with client_versions and
-  chosen_version set
+- When sending an initial, the client logs this event with `client_versions` and
+  `chosen_version` set
 - Upon receiving a client initial with a supported version, the server logs this
-  event with server_versions and chosen_version set
+  event with `server_versions` and `chosen_version` set
 - Upon receiving a client initial with an unsupported version, the server logs
-  this event with server_versions set and client_versions to the
+  this event with `server_versions` set and `client_versions` to the
   single-element array containing the client's attempted version. The absence of
   chosen_version implies no overlap was found.
 - Upon receiving a version negotiation packet from the server, the client logs
-  this event with client_versions set and server_versions to the versions in
+  this event with `client_versions` set and `server_versions` to the versions in
   the version negotiation packet and chosen_version to the version it will use for
   the next initial packet
 
 ## alpn_information {#quic-alpninformation}
 Importance: Core
+
+The `alpn_information` event support application level protocol negotiation over
+the QUIC transport; see {{Section 7.4 of QUIC-TRANSPORT}}.
 
 QUIC implementations each have their own list of application level protocols and
 versions thereof they support. The client includes a list of their supported
@@ -555,30 +564,30 @@ QUICALPNInformation = {
 
 Intended use:
 
-- When sending an initial, the client logs this event with client_alpns set
-- When receiving an initial with a supported alpn, the server logs this event with
-  server_alpns set, client_alpns equalling the client-provided list, and
-  chosen_alpn to the value it will send back to the client.
+- When sending an initial, the client logs this event with `client_alpns` set
+- When receiving an initial with a supported alpn, the server logs this event
+  with `server_alpns` set, `client_alpns` equalling the client-provided list,
+  and chosen_alpn to the value it will send back to the client.
 - When receiving an initial with an alpn, the client logs this event with
-  chosen_alpn to the received value.
-- Alternatively, a client can choose to not log the first event, but wait for the
-  receipt of the server initial to log this event with both client_alpns and
-  chosen_alpn set.
+  `chosen_alpn` to the received value.
+- Alternatively, a client can choose to not log the first event, but wait for
+  the receipt of the server initial to log this event with both `client_alpns`
+  and `chosen_alpn` set.
 
 ## parameters_set {#quic-parametersset}
 Importance: Core
 
-This event groups settings from several different sources (transport parameters,
-TLS ciphers, etc.) into a single event. This is done to minimize the amount of
-events and to decouple conceptual setting impacts from their underlying mechanism
-for easier high-level reasoning.
+The `parameters_set` event groups settings from several different sources
+(transport parameters, TLS ciphers, etc.) into a single event. This is done to
+minimize the amount of events and to decouple conceptual setting impacts from
+their underlying mechanism for easier high-level reasoning.
 
 All these settings are typically set once and never change. However, they are
 typically set at different times during the connection, so there will typically be
 several instances of this event with different fields set.
 
 Note that some settings have two variations (one set locally, one requested by the
-remote peer). This is reflected in the "owner" field. As such, this field MUST be
+remote peer). This is reflected in the `owner` field. As such, this field MUST be
 correct for all settings included a single event instance. If you need to log
 settings from two sides, you MUST emit two separate event instances.
 
@@ -641,19 +650,19 @@ PreferredAddress = {
 ~~~
 {: #quic-parametersset-def title="QUICParametersSet definition"}
 
-Additionally, this event can contain any number of unspecified fields. This is to
-reflect setting of for example unknown (greased) transport parameters or employed
-(proprietary) extensions.
+Additionally, this event can contain any number of unspecified fields. This is
+to reflect setting of, for example, unknown (greased) transport parameters or
+custom extensions.
 
 ## parameters_restored {#quic-parametersrestored}
 Importance: Base
 
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
-transport parameters from the previous connection. This event is used to indicate
-which parameters were restored and to which values when utilizing 0-RTT. Note that
-not all transport parameters should be restored (many are even prohibited from
-being re-utilized). The ones listed here are the ones expected to be useful for
-correct 0-RTT usage.
+transport parameters from the previous connection. The `parameters_restored`
+event is used to indicate which parameters were restored and to which values
+when utilizing 0-RTT. Note that not all transport parameters should be restored
+(many are even prohibited from being re-utilized). The ones listed here are the
+ones expected to be useful for correct 0-RTT usage.
 
 Definition:
 
@@ -673,7 +682,7 @@ QUICParametersRestored = {
 ~~~
 {: #quic-parametersrestored-def title="QUICParametersRestored definition"}
 
-Note that, like parameters_set above, this event can contain any number of
+Note that, like the `parameters_set` event, this event can contain any number of
 unspecified fields to allow for additional/custom parameters.
 
 ## packet_sent {#quic-packetsent}
@@ -716,11 +725,11 @@ QUICPacketSent = {
 ~~~
 {: #quic-packetsent-def title="QUICPacketSent definition"}
 
-The encryption_level and packet_number_space are not logged explicitly:
-the header.packet_type specifies this by inference (assuming correct
+The `encryption_level`` and `packet_number_space`` are not logged explicitly:
+the `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
-For more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
+For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packet_received {#quic-packetreceived}
@@ -754,17 +763,17 @@ QUICPacketReceived = {
 ~~~
 {: #quic-packetreceived-def title="QUICPacketReceived definition"}
 
-The encryption_level and packet_number_space are not logged explicitly:
-the header.packet_type specifies this by inference (assuming correct
+The `encryption_level` and `packet_number_space` are not logged explicitly: the
+`header.packet_type` specifies this by inference (assuming correct
 implementation)
 
-For more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
+For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packet_dropped {#quic-packetdropped}
 Importance: Base
 
-This event indicates a QUIC-level packet was dropped.
+The `packet_dropped` event indicates a QUIC-level packet was dropped.
 
 The trigger field indicates a general reason category for dropping the packet,
 while the details field can contain additional implementation-specific
@@ -796,24 +805,24 @@ QUICPacketDropped = {
 
 Some example situations for each of the trigger categories include:
 
-- internal_error: not initialized, out of memory
-- rejected: limits reached, DDoS protection, unwilling to track more paths, duplicate packet
-- unsupported: unknown or unsupported version. See also {{handling-unknown-connections}}.
-- invalid: packet parsing or validation error
-- duplicate: duplicate packet
-- connection_unknown: packet does not relate to a known connection or Connection ID
-- decryption_failure: decryption key was unavailable, decryption failed
-- general: situations not clearly covered in the other categories
+- `internal_error`: not initialized, out of memory
+- `rejected`: limits reached, DDoS protection, unwilling to track more paths, duplicate packet
+- `unsupported`: unknown or unsupported version. See also {{handling-unknown-connections}}.
+- `invalid`: packet parsing or validation error
+- `duplicate`: duplicate packet
+- `connection_unknown`: packet does not relate to a known connection or Connection ID
+- `decryption_failure`: decryption key was unavailable, decryption failed
+- `general`: situations not clearly covered in the other categories
 
-For more details on "datagram_id", see {{quic-datagramssent}}.
+For more details on `datagram_id`, see {{quic-datagramssent}}.
 
 ## packet_buffered {#quic-packetbuffered}
 Importance: Base
 
-This event is emitted when a packet is buffered because it cannot be processed
-yet. Typically, this is because the packet cannot be parsed yet, and thus only
-the full packet contents can be logged when it was parsed in a packet_received
-event.
+The `packet_buffered` event is emitted when a packet is buffered because it
+cannot be processed yet. Typically, this is because the packet cannot be parsed
+yet, and thus only the full packet contents can be logged when it was parsed in
+a `packet_received` event.
 
 Definition:
 
@@ -836,18 +845,19 @@ QUICPacketBuffered = {
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
-For more details on "datagram_id", see {{quic-datagramssent}}. It is only needed
+For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packets_acked {#quic-packetsacked}
 Importance: Extra
 
-This event is emitted when a (group of) sent packet(s) is acknowledged by the
-remote peer _for the first time_. This information could also be deduced from the
-contents of received ACK frames. However, ACK frames require additional processing
-logic to determine when a given packet is acknowledged for the first time, as QUIC
-uses ACK ranges which can include repeated ACKs. Additionally, this event can be
-used by implementations that do not log frame contents.
+The `packets_acked` event is emitted when a (group of) sent packet(s) is
+acknowledged by the remote peer _for the first time_. This information could
+also be deduced from the contents of received ACK frames. However, ACK frames
+require additional processing logic to determine when a given packet is
+acknowledged for the first time, as QUIC uses ACK ranges which can include
+repeated ACKs. Additionally, this event can be used by implementations that do
+not log frame contents.
 
 Definition:
 
@@ -859,8 +869,8 @@ QUICPacketsAcked = {
 ~~~
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
 
-If packet_number_space is omitted, it assumes the default value of
-PacketNumberSpace.application_data, as this is by far the most prevalent packet
+If `packet_number_space` is omitted, it assumes the default value of
+`PacketNumberSpace.application_data`, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
 ## datagrams_sent {#quic-datagramssent}
@@ -894,7 +904,7 @@ QUICDatagramsSent = {
 Since QUIC implementations rarely control UDP logic directly, the raw data
 excludes UDP-level headers in all fields.
 
-The "datagram_id" is a qlog-specific concept to allow tracking of QUIC packet
+The `datagram_id` is a qlog-specific concept to allow tracking of QUIC packet
 coalescing inside UDP datagrams. Since QUIC generates many UDP datagrams, unique
 identifiers are required to be able to track them individually in qlog traces.
 However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
@@ -930,14 +940,15 @@ QUICDatagramsReceived = {
 ~~~
 {: #quic-datagramsreceived-def title="QUICDatagramsReceived definition"}
 
-For more details on "datagram_ids", see {{quic-datagramssent}}.
+For more details on `datagram_ids`, see {{quic-datagramssent}}.
 
 ## datagram_dropped {#quic-datagramdropped}
 Importance: Extra
 
 When a UDP-level datagram is dropped. This is typically done if it does not
 contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
-other reasons, packet_dropped ({{quic-packetdropped}}) should be used instead.
+other reasons, the `packet_dropped` event ({{quic-packetdropped}}) should be
+used instead.
 
 Definition:
 
@@ -954,10 +965,10 @@ QUICDatagramDropped = {
 ## stream_state_updated {#quic-streamstateupdated}
 Importance: Base
 
-This event is emitted whenever the internal state of a QUIC stream is updated;
-see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be inferred from several
-types of frames going over the wire, but it's much easier to have explicit
-signals for these state changes.
+The `stream_state_updated` event is emitted whenever the internal state of a
+QUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be
+inferred from several types of frames going over the wire, but it's much easier
+to have explicit signals for these state changes.
 
 Definition:
 
@@ -1003,46 +1014,48 @@ StreamState =
 {: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
 QUIC implementations SHOULD mainly log the simplified bidirectional
-(HTTP/2-alike) stream states (e.g., idle, open, closed) instead of the more
-fine-grained stream states (e.g., data_sent, reset_received). These latter ones are
+(HTTP/2-alike) stream states (e.g., `idle`, `open`, `closed`) instead of the more
+fine-grained stream states (e.g., `data_sent`, `reset_received`). These latter ones are
 mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
 equally.
 
 ## frames_processed {#quic-framesprocessed}
 Importance: Extra
 
-This event's main goal is to prevent a large proliferation of specific purpose
-events (e.g., packets_acknowledged, flow_control_updated, stream_data_received).
+The `frame_processed` event is intended to prevent a large proliferation of
+specific purpose events (e.g., `packets_acknowledged`, `flow_control_updated`,
+`stream_data_received`).
+
 Implementations have the opportunity to (selectively) log this type of
-signal without having to log packet-level details (e.g., in packet_received).
+signal without having to log packet-level details (e.g., in `packet_received`).
 Since for almost all cases, the effects of applying a frame to the internal state
 of an implementation can be inferred from that frame's contents, these events
-are aggregated into this single "frames_processed" event.
+are aggregated into this single `frames_processed` event.
 
-This event can be used to signal internal state change not resulting
-directly from the actual "parsing" of a frame (e.g., the frame could have been
-parsed, data put into a buffer, then later processed, then logged with this
-event).
+The `frame_processed` event can be used to signal internal state change not
+resulting directly from the actual `parsing` of a frame (e.g., the frame could
+have been parsed, data put into a buffer, then later processed, then logged with
+this event).
 
-Implementations logging "packet_received" and which include all of the
-packet's constituent frames therein, are not expected to emit this
-"frames_processed" event. Rather, implementations not wishing to log full packets
-or that wish to explicitly convey extra information about when frames are
-processed (if not directly tied to their reception) can use this event.
+The `packet_received` event can convey all constituent frames. It is not
+expected that the `frames_processed` event will also be used for a redundant
+purpose. Rather, implementations can use this event to avoid having to log full
+packets or to convey extra information about when frames are processed (for
+example, frame processing is deferred for any reason).
 
 Note that for some events, this approach will lose some information (e.g., for which
 encryption level are packets being acknowledged?). If this information is
-important, the packet_received event can be used instead.
+important, the `packet_received` event can be used instead.
 
-In some implementations, it can be difficult to log frames directly, even
-when using packet_sent and packet_received events. For these cases, this event
-also contains the packet_numbers field, which can be used to more explicitly
-link this event to the packet_sent/received events. The field is an array, which
-supports using a single "frames_processed" event for multiple frames received
-over multiple packets. To map between frames and packets, the position and order
-of entries in the "frames" and "packet_numbers" is used. If the optional "packet_numbers"
-field is used, each frame MUST have a corresponding packet number at the same
-index.
+In some implementations, it can be difficult to log frames directly, even when
+using `packet_sent` and `packet_received` events. For these cases, the
+`frames_processed` event also contains the `packet_numbers` field, which can be
+used to more explicitly link this event to the `packet_sent`/`received events`.
+The field is an array, which supports using a single `frames_processed` event
+for multiple frames received over multiple packets. To map between frames and
+packets, the position and order of entries in the `frames` and `packet_numbers`
+is used. If the optional `packet_numbers` field is used, each frame MUST have a
+corresponding packet number at the same index.
 
 Definition:
 
@@ -1054,8 +1067,8 @@ QUICFramesProcessed = {
 ~~~
 {: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
 
-For example, an instance of this event that represents four STREAM frames
-received over two packets would have the fields serialized as:
+For example, an instance of the `frames_processed` event that represents four
+STREAM frames received over two packets would have the fields serialized as:
 
 ~~~
 "frames":[
@@ -1075,22 +1088,25 @@ received over two packets would have the fields serialized as:
 ## stream_data_moved {#quic-streamdatamoved}
 Importance: Base
 
-Used to indicate when QUIC stream data moves between the different layers (for
-example passing from the application protocol (e.g., HTTP) to QUIC stream
-buffers and vice versa) or between the application protocol (e.g., HTTP) and the
-actual user application on top (for example a browser engine). This helps make
-clear the flow of data, how long data remains in various buffers and the
-overheads introduced by individual layers.
+The `stream_data_moved` event is used to indicate when QUIC stream data moves
+between the different layers. This helps make clear the flow of data, how long
+data remains in various buffers, and the overheads introduced by individual
+layers.
 
-For example, this helps make clear whether received data on a QUIC stream is
-moved to the application protocol immediately (for example per received packet)
-or in larger batches (for example, all QUIC packets are processed first and
-afterwards the application layer reads from the streams with newly available
-data). This in turn can help identify bottlenecks, flow control issues or
-scheduling problems.
+For example, it can be useful to understand when when data moves from an
+application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
+Similarly, when data moves from the application protocol layer into a
+user-facing application such as a web browser.
+
+The `stream_data_moved` event can provide insight into whether received data on
+a QUIC stream is moved to the application protocol immediately (for example per
+received packet) or in larger batches (for example, all QUIC packets are
+processed first and afterwards the application layer reads from the streams with
+newly available data). This can help identify bottlenecks, flow control issues,
+or scheduling problems.
 
 This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
-see {{quic-datagramdatamoved}}.
+see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
 
 Definition:
 
@@ -1120,22 +1136,24 @@ QUICStreamDataMoved = {
 ## datagram_data_moved {#quic-datagramdatamoved}
 Importance: Base
 
-Used to indicate when QUIC Datagram Frame data (see {{!RFC9221}}) moves between
-the different layers (for example passing from the application protocol (e.g.,
-WebTransport) to QUIC Datagram Frame buffers and vice versa) or between the
-application protocol and the actual user application on top (for example a
-gaming engine or media playback software). This helps make clear the flow of
-data, how long data remains in various buffers and the overheads introduced by
-individual layers.
+The `datagram_data_moved` event is used to indicate when QUIC Datagram Frame
+data (see {{!RFC9221}}) moves between the different layers. This helps make
+clear the flow of data, how long data remains in various buffers, and the
+overheads introduced by individual layers.
 
-For example, this helps make clear whether received data in a QUIC Datagram
-Frame is moved to the application protocol immediately (for example per received
-packet) or in larger batches (for example, all QUIC packets are processed first
-and afterwards the application layer reads all Datagrams at once). This in turn
-can help identify bottlenecks or scheduling problems.
+For example, passing from the application protocol (e.g., WebTransport) to QUIC
+Datagram Frame buffers and vice versa. Similarly, when data moves from the
+application protocol layer into a user-facing application such as a web browser.
+
+The `datagram_data_moved` event can provide insight into whether received data
+in a QUIC Datagram Frame is moved to the application protocol immediately (for
+example per received packet) or in larger batches (for example, all QUIC packets
+are processed first and afterwards the application layer reads all Datagrams at
+once). This can help identify bottlenecks, flow control issues, or scheduling
+problems.
 
 This event is only for data in QUIC Datagram Frames. For data in QUIC streams,
-see {{quic-streamdatamoved}}.
+see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
 
 Definition:
 
@@ -1216,10 +1234,10 @@ SHOULD make an effort to support and visualize even unknown data in these events
 ## parameters_set {#recovery-parametersset}
 Importance: Base
 
-This event groups initial parameters from both loss detection and congestion
-control into a single event. All these settings are typically set once and never
-change. Implementation that do, for some reason, change these parameters during
-execution, MAY emit the parameters_set event twice.
+The `parameters_set` event groups initial parameters from both loss detection
+and congestion control into a single event. All these settings are typically set
+once and never change. Implementation that do, for some reason, change these
+parameters during execution, MAY emit the `parameters_set` event twice.
 
 Definition:
 
@@ -1263,12 +1281,13 @@ different recovery approaches.
 ## metrics_updated {#recovery-metricsupdated}
 Importance: Core
 
-This event is emitted when one or more of the observable recovery metrics changes
-value. This event SHOULD group all possible metric updates that happen at or
-around the same time in a single event (e.g., if min_rtt and smoothed_rtt change
-at the same time, they should be bundled in a single metrics_updated entry, rather
-than split out into two). Consequently, a metrics_updated event is only guaranteed
-to contain at least one of the listed metrics.
+The `metrics_updated` event is emitted when one or more of the observable
+recovery metrics changes value. This event SHOULD group all possible metric
+updates that happen at or around the same time in a single event (e.g., if
+`min_rtt` and `smoothed_rtt` change at the same time, they should be bundled in
+a single `metrics_updated` entry, rather than split out into two). Consequently,
+a `metrics_updated` event is only guaranteed to contain at least one of the
+listed metrics.
 
 Definition:
 
@@ -1303,17 +1322,17 @@ RecoveryMetricsUpdated = {
 
 In order to make logging easier, implementations MAY log values even if they are the
 same as previously reported values (e.g., two subsequent RecoveryMetricsUpdated entries can
-both report the exact same value for min_rtt). However, applications SHOULD try to
+both report the exact same value for `min_rtt`). However, applications SHOULD try to
 log only actual updates to values.
 
-Additionally, this event can contain any number of unspecified fields to support
+Additionally, the `metrics_updated` event can contain any number of unspecified fields to support
 different recovery approaches.
 
 ## congestion_state_updated {#recovery-congestionstateupdated}
 Importance: Base
 
-This event signifies when the congestion controller enters a significant new state
-and changes its behaviour. This event's definition is kept generic to support
+The `congestion_state_updated` event signifies when the congestion controller enters a significant new state
+and changes its behaviour. The definition is kept generic to support
 different Congestion Control algorithms. For example, for the algorithm defined in
 the Recovery draft ("enhanced" New Reno), the following states are defined:
 
@@ -1335,22 +1354,22 @@ RecoveryCongestionStateUpdated = {
 ~~~
 {: #recovery-congestionstateupdated-def title="RecoveryCongestionStateUpdated definition"}
 
-The "trigger" field SHOULD be logged if there are multiple ways in which a state change
+The `trigger` field SHOULD be logged if there are multiple ways in which a state change
 can occur but MAY be omitted if a given state can only be due to a single event
 occurring (e.g., slow start is exited only when ssthresh is exceeded).
 
 ## loss_timer_updated {#recovery-losstimerupdated}
 Importance: Extra
 
-This event is emitted when a recovery loss timer changes state. The three main
-event types are:
+The `loss_timer_updated` event is emitted when a recovery loss timer changes
+state. The three main event types are:
 
 * set: the timer is set with a delta timeout for when it will trigger next
 * expired: when the timer effectively expires after the delta timeout
 * cancelled: when a timer is cancelled (e.g., all outstanding packets are
   acknowledged, start idle period)
 
-In order to indicate an active timer's timeout update, a new "set" event is used.
+In order to indicate an active timer's timeout update, a new `set` event is used.
 
 Definition:
 
@@ -1375,8 +1394,8 @@ RecoveryLossTimerUpdated = {
 ## packet_lost {#recovery-packetlost}
 Importance: Core
 
-This event is emitted when a packet is deemed lost by loss detection. It is
-RECOMMENDED to populate the optional "trigger" field in order to help
+The `packet_lost` event is emitted when a packet is deemed lost by loss detection. It is
+RECOMMENDED to populate the optional `trigger` field in order to help
 disambiguate among the various possible causes of a loss declaration.
 
 Definition:
@@ -1403,21 +1422,23 @@ RecoveryPacketLost = {
 ## marked_for_retransmit {#recovery-markedforretransmit}
 Importance: Extra
 
-This event indicates which data was marked for retransmit upon detecting a packet
-loss (see packet_lost). Similar to the reasoning for the "frames_processed" event,
+The `marked_for_retransmit` event indicates which data was marked for retransmission
+upon detection of packet loss (see `packet_lost`).
+
+Similar to the reasoning for the `frames_processed` event,
 in order to keep the amount of different events low, this signal is grouped into
 in a single event based on existing QUIC frame definitions for all types of
 retransmittable data.
 
 Implementations retransmitting full packets or frames directly can just log the
 constituent frames of the lost packet here (or do away with this event and use the
-contents of the packet_lost event instead). Conversely, implementations that have
+contents of the `packet_lost` event instead). Conversely, implementations that have
 more complex logic (e.g., marking ranges in a stream's data buffer as in-flight),
 or that do not track sent frames in full (e.g., only stream offset + length), can
 translate their internal behaviour into the appropriate frame instance here even
 if that frame was never or will never be put on the wire.
 
-Much of this data can be inferred if implementations log packet_sent events
+Much of this data can be inferred if implementations log `packet_sent` events
 (e.g., looking at overlapping stream data offsets and length, one can determine
 when data was retransmitted).
 
@@ -1433,7 +1454,7 @@ RecoveryMarkedForRetransmit = {
 ## ecn_state_updated {#recovery-ecnstateupdated}
 Importance: Extra
 
-This event indicates a progression in the ECN state machine as described in section
+The `ecn_state_updated` event indicates a progression in the ECN state machine as described in section
 A.4 of {{QUIC-TRANSPORT}}.
 
 ~~~ cddl
@@ -1579,7 +1600,7 @@ packet, or one originally provided by the server in a NEW_TOKEN frame used when
 resuming a connection (e.g., for address validation purposes). Retry and
 resumption tokens typically contain encoded metadata to check the token's
 validity when it is used, but this metadata and its format is implementation
-specific. For that, this event includes a general-purpose "details" field.
+specific. For that, `Token` includes a general-purpose `details` field.
 
 ## Stateless Reset Token
 
