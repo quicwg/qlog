@@ -495,7 +495,7 @@ An Event is defined in {{event-def}} as:
 Event = {
     time: float64
     name: text
-    data: $ProtocolEventBody
+    data: $ProtocolEventData
     ? time_format: TimeFormat
     ? protocol_type: ProtocolType
     ? group_id: GroupID
@@ -647,7 +647,7 @@ field value definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and
 {{QLOG-H3}}.
 
 This field is defined here as a CDDL extension point (a "socket" or
-"plug") named `$ProtocolEventBody`. Other documents MUST properly extend
+"plug") named `$ProtocolEventData`. Other documents MUST properly extend
 this extension point when defining new data field content options to
 enable automated validation of aggregated qlog schemas.
 
@@ -657,20 +657,20 @@ which is discussed in {{trigger-field}}.
 Definition:
 
 ~~~ cddl
-; The ProtocolEventBody is any key-value map (e.g., JSON object)
+; The ProtocolEventData is any key-value map (e.g., JSON object)
 ; only the optional trigger field is defined in this document
-$ProtocolEventBody /= {
+$ProtocolEventData /= {
     ? trigger: text
     * text => any
 }
 ; event documents are intended to extend this socket by using:
-; NewProtocolEvents = EventType1 /
-;                     EventType2 /
-;                     ... /
-;                     EventTypeN
-; $ProtocolEventBody /= NewProtocolEvents
+; NewProtocolEventData = EventType1 /
+;                        EventType2 /
+;                        ... /
+;                        EventTypeN
+; $ProtocolEventData /= NewProtocolEventData
 ~~~
-{: #protocoleventbody-def title="ProtocolEventBody definition"}
+{: #protocoleventdata-def title="ProtocolEventData definition"}
 
 One purely illustrative example for a QUIC "packet_sent" event is shown in
 {{data-ex}}:

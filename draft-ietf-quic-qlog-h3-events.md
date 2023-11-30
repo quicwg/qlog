@@ -143,22 +143,22 @@ in this specification.
 
 # HTTP/3 Events {#h3-ev}
 
-HTTP/3 events extend the `$ProtocolEventBody` extension point defined in {{QLOG-MAIN}}.
+HTTP/3 events extend the `$ProtocolEventData` extension point defined in {{QLOG-MAIN}}.
 
 ~~~ cddl
-H3Events = H3ParametersSet /
-           H3ParametersRestored /
-           H3StreamTypeSet /
-           H3PriorityUpdated /
-           H3FrameCreated /
-           H3FrameParsed /
-           H3DatagramCreated /
-           H3DatagramParsed /
-           H3PushResolved
+H3EventData = H3ParametersSet /
+              H3ParametersRestored /
+              H3StreamTypeSet /
+              H3PriorityUpdated /
+              H3FrameCreated /
+              H3FrameParsed /
+              H3DatagramCreated /
+              H3DatagramParsed /
+              H3PushResolved
 
-$ProtocolEventBody /= H3Events
+$ProtocolEventData /= H3EventData
 ~~~
-{: #h3-events-def title="H3Events definition and ProtocolEventBody
+{: #h3-events-def title="H3EventData definition and ProtocolEventData
 extension"}
 
 HTTP events are logged when a certain condition happens at the application
