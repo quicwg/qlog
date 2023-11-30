@@ -245,9 +245,9 @@ extension"}
 # Connectivity events {#conn-ev}
 
 ## server_listening {#connectivity-serverlistening}
-Importance: Extra
 
-Emitted when the server starts accepting connections.
+Emitted when the server starts accepting connections. It has Extra importance
+level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -269,12 +269,12 @@ Some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
 ## connection_started {#connectivity-connectionstarted}
-Importance: Base
 
 The `connection_started` event is used for both attempting (client-perspective)
 and accepting (server-perspective) new connections. Note that while there is
 overlap with the `connection_state_updated` event, this event is separate event
-in order to capture additional data that can be useful to log.
+in order to capture additional data that can be useful to log. It has Base
+importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -298,16 +298,17 @@ Some QUIC stacks do not handle sockets directly and are thus unable to log
 IP and/or port information.
 
 ## connection_closed {#connectivity-connectionclosed}
-Importance: Base
 
 The `connection_closed` event is used for logging when a connection was closed,
-typically when an error or timeout occurred. Note that this event has overlap
-with the `connection_state_updated` event, as well as the CONNECTION_CLOSE
-frame. However, in practice, when analyzing large deployments, it can be useful
-to have a single event representing a `connection_closed` event, which also
-includes an additional reason field to provide more information. Furthermore, it
-is useful to log closures due to timeouts, which are difficult to reflect using
-the other options.
+typically when an error or timeout occurred. It has Base importance level; see
+{{Section 9.2 of QLOG-MAIN}}.
+
+Note that this event has overlap with the `connection_state_updated` event, as
+well as the CONNECTION_CLOSE frame. However, in practice, when analyzing large
+deployments, it can be useful to have a single event representing a
+`connection_closed` event, which also includes an additional reason field to
+provide more information. Furthermore, it is useful to log closures due to
+timeouts, which are difficult to reflect using the other options.
 
 In QUIC there are two main connection-closing error categories: connection and
 application errors. They have well-defined error codes and semantics. Next to
@@ -345,12 +346,12 @@ ConnectivityConnectionClosed = {
 
 
 ## connection_id_updated {#connectivity-connectionidupdated}
-Importance: Base
 
 The `connection_id_updated` event is emitted when either party updates their
 current Connection ID. As this typically happens only sparingly over the course
 of a connection, using this event is more efficient than logging the observed
-CID with each and every `packet_sent` or `packet_received` events.
+CID with each and every `packet_sent` or `packet_received` events. It has Base
+importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 The `connection_id_updated` event is viewed from the perspective of the endpoint
 applying the new ID. As such, when the endpoint receives a new connection ID
@@ -369,12 +370,12 @@ ConnectivityConnectionIDUpdated = {
 {: #connectivity-connectionidupdated-def title="ConnectivityConnectionIDUpdated definition"}
 
 ## spin_bit_updated {#connectivity-spinbitupdated}
-Importance: Base
 
 The `spin_bit_updated` event conveys information about the QUIC latency spin
 bit; see {{Section 17.4 of QUIC-TRANSPORT}}. The event is emitted when the spin
 bit changes value, it SHOULD NOT be emitted if the spin bit is set without
-changing its value.
+changing its value. It has Base importance level; see {{Section 9.2 of
+QLOG-MAIN}}.
 
 Definition:
 
@@ -386,15 +387,16 @@ ConnectivitySpinBitUpdated = {
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
 
 ## connection_state_updated {#connectivity-connectionstateupdated}
-Importance: Base
 
 The `connection_state_updated` event is used to track progress through QUIC's
-complex handshake and connection close procedures. It is intended to provide
-exhaustive options to log each state individually, but also provides a more
-basic, simpler set for implementations less interested in tracking each smaller
-state transition. As such, users should not expect to see all these states
-reflected in all qlogs and implementers should focus on support for the
-SimpleConnectionState set.
+complex handshake and connection close procedures. It has Base importance
+level; see {{Section 9.2 of QLOG-MAIN}}.
+
+It is intended to provide exhaustive options to log each state individually, but
+also provides a more basic, simpler set for implementations less interested in
+tracking each smaller state transition. As such, users should not expect to see
+all these states reflected in all qlogs and implementers should focus on support
+for the SimpleConnectionState set.
 
 Definition:
 
@@ -479,10 +481,10 @@ perspective. Similarly, a state of `closing` or `draining` corresponds to the
 `connection_closed` event.
 
 ## mtu_updated {#connectivity-mtuupdated}
-Importance: Extra
 
 The `mtu_updated` event indicates that the estimated Path MTU was updated. This
-happens as part of the Path MTU discovery process.
+happens as part of the Path MTU discovery process. It has Extra importance
+level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 ConnectivityMTUUpdated = {
@@ -499,10 +501,10 @@ ConnectivityMTUUpdated = {
 # QUIC events  {#quic-ev}
 
 ## version_information {#quic-versioninformation}
-Importance: Core
 
 The `version_information` event supports QUIC version negotiation; see {{Section
-6 of QUIC-TRANSPORT}}.
+6 of QUIC-TRANSPORT}}. It has Core importance level; see {{Section 9.2 of
+QLOG-MAIN}}.
 
 QUIC endpoints each have their own list of of QUIC versions they support. The
 client uses the most likely version in their first initial. If the server does
@@ -539,10 +541,10 @@ Intended use:
   the next initial packet
 
 ## alpn_information {#quic-alpninformation}
-Importance: Core
 
 The `alpn_information` event support application level protocol negotiation over
-the QUIC transport; see {{Section 7.4 of QUIC-TRANSPORT}}.
+the QUIC transport; see {{Section 7.4 of QUIC-TRANSPORT}}. It has Core
+importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 QUIC implementations each have their own list of application level protocols and
 versions thereof they support. The client includes a list of their supported
@@ -575,12 +577,12 @@ Intended use:
   and `chosen_alpn` set.
 
 ## parameters_set {#quic-parametersset}
-Importance: Core
 
 The `parameters_set` event groups settings from several different sources
 (transport parameters, TLS ciphers, etc.) into a single event. This is done to
 minimize the amount of events and to decouple conceptual setting impacts from
-their underlying mechanism for easier high-level reasoning.
+their underlying mechanism for easier high-level reasoning. The event has Core
+importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 All these settings are typically set once and never change. However, they are
 typically set at different times during the connection, so there will typically be
@@ -655,14 +657,16 @@ to reflect setting of, for example, unknown (greased) transport parameters or
 custom extensions.
 
 ## parameters_restored {#quic-parametersrestored}
-Importance: Base
 
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
 transport parameters from the previous connection. The `parameters_restored`
 event is used to indicate which parameters were restored and to which values
-when utilizing 0-RTT. Note that not all transport parameters should be restored
-(many are even prohibited from being re-utilized). The ones listed here are the
-ones expected to be useful for correct 0-RTT usage.
+when utilizing 0-RTT. It has Base importance level; see {{Section 9.2 of
+QLOG-MAIN}}.
+
+Note that not all transport parameters should be restored (many are even
+prohibited from being re-utilized). The ones listed here are the ones expected
+to be useful for correct 0-RTT usage.
 
 Definition:
 
@@ -686,7 +690,9 @@ Note that, like the `parameters_set` event, this event can contain any number of
 unspecified fields to allow for additional/custom parameters.
 
 ## packet_sent {#quic-packetsent}
-Importance: Core
+
+The `packet_sent` event indicates a QUIC-level packet was sent. It has Core
+importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -725,7 +731,7 @@ QUICPacketSent = {
 ~~~
 {: #quic-packetsent-def title="QUICPacketSent definition"}
 
-The `encryption_level`` and `packet_number_space`` are not logged explicitly:
+The `encryption_level` and `packet_number_space` are not logged explicitly:
 the `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
@@ -733,7 +739,9 @@ For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packet_received {#quic-packetreceived}
-Importance: Core
+
+The `packet_received` event indicates a QUIC-level packet was received. It has
+Core importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -771,9 +779,9 @@ For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packet_dropped {#quic-packetdropped}
-Importance: Base
 
-The `packet_dropped` event indicates a QUIC-level packet was dropped.
+The `packet_dropped` event indicates a QUIC-level packet was dropped. It has
+Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 The trigger field indicates a general reason category for dropping the packet,
 while the details field can contain additional implementation-specific
@@ -817,12 +825,12 @@ Some example situations for each of the trigger categories include:
 For more details on `datagram_id`, see {{quic-datagramssent}}.
 
 ## packet_buffered {#quic-packetbuffered}
-Importance: Base
 
 The `packet_buffered` event is emitted when a packet is buffered because it
 cannot be processed yet. Typically, this is because the packet cannot be parsed
 yet, and thus only the full packet contents can be logged when it was parsed in
-a `packet_received` event.
+a `packet_received` event. The event has Base importance level; see {{Section
+9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -849,15 +857,16 @@ For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packets_acked {#quic-packetsacked}
-Importance: Extra
 
 The `packets_acked` event is emitted when a (group of) sent packet(s) is
-acknowledged by the remote peer _for the first time_. This information could
-also be deduced from the contents of received ACK frames. However, ACK frames
-require additional processing logic to determine when a given packet is
-acknowledged for the first time, as QUIC uses ACK ranges which can include
-repeated ACKs. Additionally, this event can be used by implementations that do
-not log frame contents.
+acknowledged by the remote peer _for the first time_. It has Extra importance
+level; see {{Section 9.2 of QLOG-MAIN}}.
+
+This information could also be deduced from the contents of received ACK frames.
+However, ACK frames require additional processing logic to determine when a
+given packet is acknowledged for the first time, as QUIC uses ACK ranges which
+can include repeated ACKs. Additionally, this event can be used by
+implementations that do not log frame contents.
 
 Definition:
 
@@ -874,10 +883,10 @@ If `packet_number_space` is omitted, it assumes the default value of
 number space a typical QUIC connection will use.
 
 ## datagrams_sent {#quic-datagramssent}
-Importance: Extra
 
 When one or more UDP-level datagrams are passed to the socket. This is useful
-for determining how QUIC packet buffers are drained to the OS.
+for determining how QUIC packet buffers are drained to the OS. The event has
+Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -912,11 +921,10 @@ Selecting identifier values is thus left to qlog implementations, which should
 consider how to generate unique values within the scope of their created traces.
 
 ## datagrams_received {#quic-datagramsreceived}
-Importance: Extra
 
 When one or more UDP-level datagrams are received from the socket. This is
-useful for determining how datagrams are passed to the user space stack from
-the OS.
+useful for determining how datagrams are passed to the user space stack from the
+OS. The event has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -943,12 +951,12 @@ QUICDatagramsReceived = {
 For more details on `datagram_ids`, see {{quic-datagramssent}}.
 
 ## datagram_dropped {#quic-datagramdropped}
-Importance: Extra
 
 When a UDP-level datagram is dropped. This is typically done if it does not
 contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
 other reasons, the `packet_dropped` event ({{quic-packetdropped}}) should be
-used instead.
+used instead. The event has Extra importance level; see {{Section 9.2 of
+QLOG-MAIN}}.
 
 Definition:
 
@@ -963,12 +971,12 @@ QUICDatagramDropped = {
 {: #quic-datagramdropped-def title="QUICDatagramDropped definition"}
 
 ## stream_state_updated {#quic-streamstateupdated}
-Importance: Base
 
 The `stream_state_updated` event is emitted whenever the internal state of a
 QUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be
 inferred from several types of frames going over the wire, but it's much easier
-to have explicit signals for these state changes.
+to have explicit signals for these state changes. The event has Base importance
+level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -1020,11 +1028,11 @@ mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
 equally.
 
 ## frames_processed {#quic-framesprocessed}
-Importance: Extra
 
 The `frame_processed` event is intended to prevent a large proliferation of
 specific purpose events (e.g., `packets_acknowledged`, `flow_control_updated`,
-`stream_data_received`).
+`stream_data_received`). It has Extra importance level; see {{Section 9.2 of
+QLOG-MAIN}}.
 
 Implementations have the opportunity to (selectively) log this type of
 signal without having to log packet-level details (e.g., in `packet_received`).
@@ -1086,12 +1094,11 @@ STREAM frames received over two packets would have the fields serialized as:
 ~~~
 
 ## stream_data_moved {#quic-streamdatamoved}
-Importance: Base
 
 The `stream_data_moved` event is used to indicate when QUIC stream data moves
 between the different layers. This helps make clear the flow of data, how long
 data remains in various buffers, and the overheads introduced by individual
-layers.
+layers. The event has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 For example, it can be useful to understand when when data moves from an
 application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
@@ -1134,12 +1141,12 @@ QUICStreamDataMoved = {
 
 
 ## datagram_data_moved {#quic-datagramdatamoved}
-Importance: Base
 
 The `datagram_data_moved` event is used to indicate when QUIC Datagram Frame
 data (see {{!RFC9221}}) moves between the different layers. This helps make
 clear the flow of data, how long data remains in various buffers, and the
-overheads introduced by individual layers.
+overheads introduced by individual layers. The event has Base importance level;
+see {{Section 9.2 of QLOG-MAIN}}.
 
 For example, passing from the application protocol (e.g., WebTransport) to QUIC
 Datagram Frame buffers and vice versa. Similarly, when data moves from the
@@ -1179,7 +1186,8 @@ QUICDatagramDataMoved = {
 # Security Events {#sec-ev}
 
 ## key_updated {#security-keyupdated}
-Importance: Base
+
+The `key_updated` event Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
@@ -1203,7 +1211,9 @@ SecurityKeyUpdated = {
 
 
 ## key_discarded {#security-keydiscarded}
-Importance: Base
+
+The `key_discarded` event has Base importance level; see {{Section 9.2 of
+QLOG-MAIN}}.
 
 Definition:
 
@@ -1232,12 +1242,14 @@ SHOULD make an effort to support and visualize even unknown data in these events
 (e.g., plot unknown congestion states by name on a timeline visualization).
 
 ## parameters_set {#recovery-parametersset}
-Importance: Base
 
 The `parameters_set` event groups initial parameters from both loss detection
-and congestion control into a single event. All these settings are typically set
-once and never change. Implementation that do, for some reason, change these
-parameters during execution, MAY emit the `parameters_set` event twice.
+and congestion control into a single event. It has Base importance level; see
+{{Section 9.2 of QLOG-MAIN}}.
+
+All these settings are typically set once and never change. Implementation that
+do, for some reason, change these parameters during execution, MAY emit the
+`parameters_set` event twice.
 
 Definition:
 
@@ -1279,15 +1291,16 @@ Additionally, this event can contain any number of unspecified fields to support
 different recovery approaches.
 
 ## metrics_updated {#recovery-metricsupdated}
-Importance: Core
 
 The `metrics_updated` event is emitted when one or more of the observable
-recovery metrics changes value. This event SHOULD group all possible metric
-updates that happen at or around the same time in a single event (e.g., if
-`min_rtt` and `smoothed_rtt` change at the same time, they should be bundled in
-a single `metrics_updated` entry, rather than split out into two). Consequently,
-a `metrics_updated` event is only guaranteed to contain at least one of the
-listed metrics.
+recovery metrics changes value. It has Core importance level; see {{Section
+9.2 of QLOG-MAIN}}.
+
+This event SHOULD group all possible metric updates that happen at or around the
+same time in a single event (e.g., if `min_rtt` and `smoothed_rtt` change at the
+same time, they should be bundled in a single `metrics_updated` entry, rather
+than split out into two). Consequently, a `metrics_updated` event is only
+guaranteed to contain at least one of the listed metrics.
 
 Definition:
 
@@ -1329,12 +1342,14 @@ Additionally, the `metrics_updated` event can contain any number of unspecified 
 different recovery approaches.
 
 ## congestion_state_updated {#recovery-congestionstateupdated}
-Importance: Base
 
-The `congestion_state_updated` event signifies when the congestion controller enters a significant new state
-and changes its behaviour. The definition is kept generic to support
-different Congestion Control algorithms. For example, for the algorithm defined in
-the Recovery draft ("enhanced" New Reno), the following states are defined:
+The `congestion_state_updated` event signifies when the congestion controller
+enters a significant new state and changes its behaviour. It has Base importance
+level; see {{Section 9.2 of QLOG-MAIN}}.
+
+The event is generic to support different Congestion Control algorithms. For
+example, for the algorithm defined in the Recovery draft ("enhanced" New Reno),
+the following states are defined:
 
 * slow_start
 * congestion_avoidance
@@ -1359,10 +1374,11 @@ can occur but MAY be omitted if a given state can only be due to a single event
 occurring (e.g., slow start is exited only when ssthresh is exceeded).
 
 ## loss_timer_updated {#recovery-losstimerupdated}
-Importance: Extra
 
 The `loss_timer_updated` event is emitted when a recovery loss timer changes
-state. The three main event types are:
+state. It has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
+
+The three main event types are:
 
 * set: the timer is set with a delta timeout for when it will trigger next
 * expired: when the timer effectively expires after the delta timeout
@@ -1392,10 +1408,11 @@ RecoveryLossTimerUpdated = {
 {: #recovery-losstimerupdated-def title="RecoveryLossTimerUpdated definition"}
 
 ## packet_lost {#recovery-packetlost}
-Importance: Core
 
-The `packet_lost` event is emitted when a packet is deemed lost by loss detection. It is
-RECOMMENDED to populate the optional `trigger` field in order to help
+The `packet_lost` event is emitted when a packet is deemed lost by loss
+detection. It has Core importance level; see {{Section 9.2 of QLOG-MAIN}}.
+
+It is RECOMMENDED to populate the optional `trigger` field in order to help
 disambiguate among the various possible causes of a loss declaration.
 
 Definition:
@@ -1420,10 +1437,10 @@ RecoveryPacketLost = {
 {: #recovery-packetlost-def title="RecoveryPacketLost definition"}
 
 ## marked_for_retransmit {#recovery-markedforretransmit}
-Importance: Extra
 
-The `marked_for_retransmit` event indicates which data was marked for retransmission
-upon detection of packet loss (see `packet_lost`).
+The `marked_for_retransmit` event indicates which data was marked for
+retransmission upon detection of packet loss (see `packet_lost`). It has Extra
+importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Similar to the reasoning for the `frames_processed` event,
 in order to keep the amount of different events low, this signal is grouped into
@@ -1452,10 +1469,10 @@ RecoveryMarkedForRetransmit = {
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
 
 ## ecn_state_updated {#recovery-ecnstateupdated}
-Importance: Extra
 
-The `ecn_state_updated` event indicates a progression in the ECN state machine as described in section
-A.4 of {{QUIC-TRANSPORT}}.
+The `ecn_state_updated` event indicates a progression in the ECN state machine
+as described in section A.4 of {{QUIC-TRANSPORT}}. It has Extra importance
+level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 ECNStateUpdated = {
