@@ -556,8 +556,6 @@ more succinct timestamps formats to allow reducing file size. The employed forma
 is indicated in the "time_format" field, which allows one of three values:
 "absolute", "delta" or "relative".
 
-Definition:
-
 ~~~ cddl
 TimeFormat = "absolute" /
              "delta" /
@@ -654,8 +652,6 @@ enable automated validation of aggregated qlog schemas.
 The only common field defined for the data field is the `trigger` field,
 which is discussed in {{trigger-field}}.
 
-Definition:
-
 ~~~ cddl
 ; The ProtocolEventBody is any key-value map (e.g., JSON object)
 ; only the optional trigger field is defined in this document
@@ -713,8 +709,6 @@ An event's "protocol_type" array field indicates to which protocols (or protocol
 "stacks") this event belongs. This allows a single qlog file to aggregate traces
 of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).
-
-Definition:
 
 ~~~ cddl
 ProtocolType = [+ text]
@@ -787,8 +781,6 @@ contains a string value. Implementations are free to use their preferred string
 serialization for this field, so long as it contains a unique value per logical
 group. Some examples can be seen in {{group-id-ex}}.
 
-Definition:
-
 ~~~ cddl
 GroupID = text
 ~~~
@@ -835,8 +827,6 @@ event. This is useful, for instance, where an application splits work across
 CPUs, processes, or threads and events for a single trace occur on potentially
 different combinations thereof. Each field is optional to support deployment
 diversity.
-
-Definition:
 
 ~~~ cddl
 SystemInformation = {
@@ -923,8 +913,6 @@ The list of default qlog fields that are typically logged in common_fields (as
 opposed to as individual fields per event instance) are shown in the listing
 below:
 
-Definition:
-
 ~~~ cddl
 CommonFields = {
     ? time_format: TimeFormat
@@ -952,8 +940,6 @@ take up considerable space, and can have a considerable privacy and security
 impact (see {{privacy}}). Where applicable, these fields are grouped in a
 separate, optional, field named "raw" of type RawInfo. The exact definition of
 entities, headers, trailers and payloads depend on the protocol used.
-
-Definition:
 
 ~~~ cddl
 RawInfo = {
@@ -1006,8 +992,6 @@ Importance: Core
 
 Used to log details of an internal error that might not get reflected on the wire.
 
-Definition:
-
 ~~~ cddl
 GenericError = {
     ? code: uint64
@@ -1021,8 +1005,6 @@ Importance: Base
 
 Used to log details of an internal warning that might not get reflected on the
 wire.
-
-Definition:
 
 ~~~ cddl
 GenericWarning = {
@@ -1038,8 +1020,6 @@ Importance: Extra
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages.
 
-Definition:
-
 ~~~ cddl
 GenericInfo = {
     message: text
@@ -1053,8 +1033,6 @@ Importance: Extra
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages.
 
-Definition:
-
 ~~~ cddl
 GenericDebug = {
     message: text
@@ -1067,8 +1045,6 @@ Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages.
-
-Definition:
 
 ~~~ cddl
 GenericVerbose = {
@@ -1097,8 +1073,6 @@ Used to specify which specific scenario is being tested at this particular
 instance. This supports, for example, aggregation of
 several simulations into one trace (e.g., split by `group_id`).
 
-Definition:
-
 ~~~ cddl
 SimulationScenario = {
     ? name: text
@@ -1113,8 +1087,6 @@ Importance: Extra
 Used to indicate when specific emulation conditions are triggered at set times
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
 triggered).
-
-Definition:
 
 ~~~ cddl
 SimulationMarker = {

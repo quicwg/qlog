@@ -249,8 +249,6 @@ Importance: Extra
 
 Emitted when the server starts accepting connections.
 
-Definition:
-
 ~~~ cddl
 ConnectivityServerListening = {
     ? ip_v4: IPAddress
@@ -275,8 +273,6 @@ The `connection_started` event is used for both attempting (client-perspective)
 and accepting (server-perspective) new connections. Note that while there is
 overlap with the `connection_state_updated` event, this event is separate event
 in order to capture additional data that can be useful to log.
-
-Definition:
 
 ~~~ cddl
 ConnectivityConnectionStarted = {
@@ -314,8 +310,6 @@ application errors. They have well-defined error codes and semantics. Next to
 these however, there can be internal errors that occur that may or may not get
 mapped to the official error codes in implementation-specific ways. As such,
 multiple error codes can be set on the same event to reflect this.
-
-Definition:
 
 ~~~ cddl
 ConnectivityConnectionClosed = {
@@ -357,8 +351,6 @@ applying the new ID. As such, when the endpoint receives a new connection ID
 from the peer, it will see the dst_ fields are set. When the endpoint updates
 its own connection ID (e.g., NEW_CONNECTION_ID frame), it logs the src_ fields.
 
-Definition:
-
 ~~~ cddl
 ConnectivityConnectionIDUpdated = {
     owner: Owner
@@ -375,8 +367,6 @@ The `spin_bit_updated` event conveys information about the QUIC latency spin
 bit; see {{Section 17.4 of QUIC-TRANSPORT}}. The event is emitted when the spin
 bit changes value, it SHOULD NOT be emitted if the spin bit is set without
 changing its value.
-
-Definition:
 
 ~~~ cddl
 ConnectivitySpinBitUpdated = {
@@ -395,8 +385,6 @@ basic, simpler set for implementations less interested in tracking each smaller
 state transition. As such, users should not expect to see all these states
 reflected in all qlogs and implementers should focus on support for the
 SimpleConnectionState set.
-
-Definition:
 
 ~~~ cddl
 ConnectivityConnectionStateUpdated = {
@@ -512,8 +500,6 @@ supported versions. From this, the client selects a version. The
 type. It also allows logging of supported versions at an endpoint without actual
 version negotiation needing to happen.
 
-Definition:
-
 ~~~ cddl
 QUICVersionInformation = {
     ? server_versions: [+ QuicVersion]
@@ -550,8 +536,6 @@ options in its first initial as part of the TLS Application Layer Protocol
 Negotiation (alpn) extension. If there are common option(s), the server chooses
 the most optimal one and communicates this back to the client. If not, the
 connection is closed.
-
-Definition:
 
 ~~~ cddl
 QUICALPNInformation = {
@@ -596,8 +580,6 @@ are stored up-front at the client and used for the initial connection startup.
 They are later updated with the server's reply. In these cases, utilize the
 separate `parameters_restored` event to indicate the initial values, and this
 event to indicate the updated values, as normal.
-
-Definition:
 
 ~~~ cddl
 QUICParametersSet = {
@@ -664,8 +646,6 @@ when utilizing 0-RTT. Note that not all transport parameters should be restored
 (many are even prohibited from being re-utilized). The ones listed here are the
 ones expected to be useful for correct 0-RTT usage.
 
-Definition:
-
 ~~~ cddl
 QUICParametersRestored = {
     ? disable_active_migration: bool
@@ -687,8 +667,6 @@ unspecified fields to allow for additional/custom parameters.
 
 ## packet_sent {#quic-packetsent}
 Importance: Core
-
-Definition:
 
 ~~~ cddl
 QUICPacketSent = {
@@ -735,8 +713,6 @@ when keeping track of packet coalescing.
 ## packet_received {#quic-packetreceived}
 Importance: Core
 
-Definition:
-
 ~~~ cddl
 QUICPacketReceived = {
     header: PacketHeader
@@ -778,8 +754,6 @@ The `packet_dropped` event indicates a QUIC-level packet was dropped.
 The trigger field indicates a general reason category for dropping the packet,
 while the details field can contain additional implementation-specific
 information.
-
-Definition:
 
 ~~~ cddl
 QUICPacketDropped = {
@@ -824,8 +798,6 @@ cannot be processed yet. Typically, this is because the packet cannot be parsed
 yet, and thus only the full packet contents can be logged when it was parsed in
 a `packet_received` event.
 
-Definition:
-
 ~~~ cddl
 QUICPacketBuffered = {
 
@@ -859,8 +831,6 @@ acknowledged for the first time, as QUIC uses ACK ranges which can include
 repeated ACKs. Additionally, this event can be used by implementations that do
 not log frame contents.
 
-Definition:
-
 ~~~ cddl
 QUICPacketsAcked = {
     ? packet_number_space: PacketNumberSpace
@@ -878,8 +848,6 @@ Importance: Extra
 
 When one or more UDP-level datagrams are passed to the socket. This is useful
 for determining how QUIC packet buffers are drained to the OS.
-
-Definition:
 
 ~~~ cddl
 QUICDatagramsSent = {
@@ -918,8 +886,6 @@ When one or more UDP-level datagrams are received from the socket. This is
 useful for determining how datagrams are passed to the user space stack from
 the OS.
 
-Definition:
-
 ~~~ cddl
 QUICDatagramsReceived = {
 
@@ -950,8 +916,6 @@ contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
 other reasons, the `packet_dropped` event ({{quic-packetdropped}}) should be
 used instead.
 
-Definition:
-
 ~~~ cddl
 QUICDatagramDropped = {
 
@@ -969,8 +933,6 @@ The `stream_state_updated` event is emitted whenever the internal state of a
 QUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be
 inferred from several types of frames going over the wire, but it's much easier
 to have explicit signals for these state changes.
-
-Definition:
 
 ~~~ cddl
 StreamType = "unidirectional" /
@@ -1057,8 +1019,6 @@ packets, the position and order of entries in the `frames` and `packet_numbers`
 is used. If the optional `packet_numbers` field is used, each frame MUST have a
 corresponding packet number at the same index.
 
-Definition:
-
 ~~~ cddl
 QUICFramesProcessed = {
     frames: [* $QuicFrame]
@@ -1108,8 +1068,6 @@ or scheduling problems.
 This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
 see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
 
-Definition:
-
 ~~~ cddl
 QUICStreamDataMoved = {
     ? stream_id: uint64
@@ -1155,8 +1113,6 @@ problems.
 This event is only for data in QUIC Datagram Frames. For data in QUIC streams,
 see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
 
-Definition:
-
 ~~~ cddl
 QUICDatagramDataMoved = {
     ; byte length of the moved data
@@ -1181,8 +1137,6 @@ QUICDatagramDataMoved = {
 ## key_updated {#security-keyupdated}
 Importance: Base
 
-Definition:
-
 ~~~ cddl
 SecurityKeyUpdated = {
     key_type: KeyType
@@ -1204,8 +1158,6 @@ SecurityKeyUpdated = {
 
 ## key_discarded {#security-keydiscarded}
 Importance: Base
-
-Definition:
 
 ~~~ cddl
 SecurityKeyDiscarded = {
@@ -1238,8 +1190,6 @@ The `parameters_set` event groups initial parameters from both loss detection
 and congestion control into a single event. All these settings are typically set
 once and never change. Implementation that do, for some reason, change these
 parameters during execution, MAY emit the `parameters_set` event twice.
-
-Definition:
 
 ~~~ cddl
 RecoveryParametersSet = {
@@ -1288,8 +1238,6 @@ updates that happen at or around the same time in a single event (e.g., if
 a single `metrics_updated` entry, rather than split out into two). Consequently,
 a `metrics_updated` event is only guaranteed to contain at least one of the
 listed metrics.
-
-Definition:
 
 ~~~ cddl
 RecoveryMetricsUpdated = {
@@ -1341,8 +1289,6 @@ the Recovery draft ("enhanced" New Reno), the following states are defined:
 * application_limited
 * recovery
 
-Definition:
-
 ~~~ cddl
 RecoveryCongestionStateUpdated = {
     ? old: text
@@ -1371,8 +1317,6 @@ state. The three main event types are:
 
 In order to indicate an active timer's timeout update, a new `set` event is used.
 
-Definition:
-
 ~~~ cddl
 RecoveryLossTimerUpdated = {
 
@@ -1397,8 +1341,6 @@ Importance: Core
 The `packet_lost` event is emitted when a packet is deemed lost by loss detection. It is
 RECOMMENDED to populate the optional `trigger` field in order to help
 disambiguate among the various possible causes of a loss declaration.
-
-Definition:
 
 ~~~ cddl
 RecoveryPacketLost = {
@@ -1441,8 +1383,6 @@ if that frame was never or will never be put on the wire.
 Much of this data can be inferred if implementations log `packet_sent` events
 (e.g., looking at overlapping stream data offsets and length, one can determine
 when data was retransmitted).
-
-Definition:
 
 ~~~ cddl
 RecoveryMarkedForRetransmit = {
