@@ -1187,7 +1187,7 @@ QUICDatagramDataMoved = {
 
 ## key_updated {#security-keyupdated}
 
-The `key_updated` event Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+The `key_updated` event has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 Definition:
 
