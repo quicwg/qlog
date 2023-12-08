@@ -167,13 +167,14 @@ The exchange of data between the HTTP and QUIC layer is logged via the
 "stream_data_moved" and "datagram_data_moved" events in {{QLOG-QUIC}}.
 
 ## parameters_set {#h3-parametersset}
-Importance: Base
 
 The `parameters_set` event contains HTTP/3 and QPACK-level settings, mostly
-those received from the HTTP/3 SETTINGS frame. All these parameters are
-typically set once and never change. However, they might be set at different
-times during the connection, therefore a qlog can have multiple instances of
-`parameters_set` with different fields set.
+those received from the HTTP/3 SETTINGS frame. It has Base importance level; see
+{{Section 9.2 of QLOG-MAIN}}.
+
+All these parameters are typically set once and never change. However, they
+might be set at different times during the connection, therefore a qlog can have
+multiple instances of `parameters_set` with different fields set.
 
 The "owner" field reflects how Settings are exchanged on a connection. Sent
 settings have the value "local" and received settings have the value
@@ -219,12 +220,11 @@ allows for representation of reserved settings (aka GREASE) or ad-hoc support
 for extension settings that do not have a related qlog schema definition.
 
 ## parameters_restored {#h3-parametersrestored}
-Importance: Base
 
 When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
 server's SETTINGs from the previous connection. The `parameters_restored` event
 is used to indicate which HTTP/3 settings were restored and to which values when
-utilizing 0-RTT.
+utilizing 0-RTT. It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 H3ParametersRestored = {
@@ -238,10 +238,10 @@ allows for representation of reserved settings (aka GREASE) or ad-hoc support
 for extension settings that do not have a related qlog schema definition.
 
 ## stream_type_set {#h3-streamtypeset}
-Importance: Base
 
 The `stream_type_set` event conveys when a HTTP/3 stream type becomes known; see
-{{Sections 6.1 and 6.2 of RFC9114}}.
+{{Sections 6.1 and 6.2 of RFC9114}}. It has Base importance level; see {{Section
+9.2 of QLOG-MAIN}}.
 
 Client bidirectional streams always have a stream_type value of "request".
 Server bidirectional streams have no defined use, although extensions could
@@ -276,13 +276,13 @@ H3StreamType =  "request" /
 {: #h3-streamtypeset-def title="H3StreamTypeSet definition"}
 
 ## priority_updated {#h3-priorityupdated}
-Importance: Base
 
 Emitted when the priority of a request stream or push stream is initialized or
 updated through mechanisms defined in {{!RFC9218}}. For example, the priority
 can be updated through signals received from client and/or server (e.g., in
 HTTP/3 HEADERS or PRIORITY_UPDATE frames) or it can be changed or overridden due
-to local policies.
+to local policies. The event has Base importance level; see {{Section 9.2 of
+QLOG-MAIN}}.
 
 ~~~ cddl
 H3PriorityUpdated = {
@@ -299,11 +299,12 @@ H3PriorityUpdated = {
 {: #h3-priorityupdated-def title="H3PriorityUpdated definition"}
 
 ## frame_created {#h3-framecreated}
-Importance: Core
 
 The `frame_created` event is emitted when the HTTP/3 framing actually happens.
-This does not necessarily coincide with HTTP/3 data getting passed to the QUIC
-layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
+It has Core importance level; see {{Section 9.2 of QLOG-MAIN}}.
+
+This event does not necessarily coincide with HTTP/3 data getting passed to the
+QUIC layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 
 ~~~ cddl
 H3FrameCreated = {
@@ -316,11 +317,13 @@ H3FrameCreated = {
 {: #h3-framecreated-def title="H3FrameCreated definition"}
 
 ## frame_parsed {#h3-frameparsed}
-Importance: Core
 
-The `frame_parsed` event is emitted when the HTTP/3 frame is parsed. This is not
-necessarily the same as when the HTTP/3 data is actually received on the QUIC
-layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
+The `frame_parsed` event is emitted when the HTTP/3 frame is parsed. It has Core
+importance level; see {{Section 9.2 of QLOG-MAIN}}.
+
+This event is not necessarily the same as when the HTTP/3 data is actually
+received on the QUIC layer. For that, see the `stream_data_moved` event in
+{{QLOG-QUIC}}.
 
 ~~~ cddl
 H3FrameParsed = {
@@ -338,12 +341,13 @@ frame_parsed event is emitted once for the frame header, and further streamed
 data is indicated using the stream_data_moved event.
 
 ## datagram_created {#h3-datagramcreated}
-Importance: Base
 
 The `datagram_created` event is emitted when an HTTP/3 Datagram is created (see
-{{!RFC9297}}). This does not necessarily coincide with the HTTP/3 Datagram
-getting passed to the QUIC layer. For that, see the `datagram_data_moved` event
-in {{QLOG-QUIC}}.
+{{!RFC9297}}). It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+
+This event does not necessarily coincide with the HTTP/3 Datagram getting passed
+to the QUIC layer. For that, see the `datagram_data_moved` event in
+{{QLOG-QUIC}}.
 
 ~~~ cddl
 H3DatagramCreated = {
@@ -355,12 +359,13 @@ H3DatagramCreated = {
 {: #h3-datagramcreated-def title="H3DatagramCreated definition"}
 
 ## datagram_parsed {#h3-datagramparsed}
-Importance: Base
 
 The `datagram_parsed` event is emitted when the HTTP/3 Datagram is parsed (see
-{{!RFC9297}}). This is not necessarily the same as when the HTTP/3 Datagram is
-actually received on the QUIC layer. For that, see the `datagram_data_moved`
-event in {{QLOG-QUIC}}.
+{{!RFC9297}}). It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+
+This event is not necessarily the same as when the HTTP/3 Datagram is actually
+received on the QUIC layer. For that, see the `datagram_data_moved` event in
+{{QLOG-QUIC}}.
 
 ~~~ cddl
 H3DatagramParsed = {
@@ -372,12 +377,12 @@ H3DatagramParsed = {
 {: #h3-datagramparsed-def title="H3DatagramParsed definition"}
 
 ## push_resolved {#h3-pushresolved}
-Importance: Extra
 
 The `push_resolved` event is emitted when a pushed resource ({{Section 4.6 of
 RFC9114}}) is successfully claimed (used) or, conversely, abandoned (rejected)
 by the application on top of HTTP/3 (e.g., the web browser). This event provides
-additional context that can is aid debugging issues related to server push.
+additional context that can is aid debugging issues related to server push. It
+has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 H3PushResolved = {

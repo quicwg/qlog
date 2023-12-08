@@ -988,9 +988,9 @@ name of the heading in lowercase (e.g., the "name" of the error event is
 "generic:error").
 
 ### error
-Importance: Core
 
-Used to log details of an internal error that might not get reflected on the wire.
+Used to log details of an internal error that might not get reflected on the
+wire. It has Core importance level; see {{importance}}.
 
 ~~~ cddl
 GenericError = {
@@ -1001,10 +1001,9 @@ GenericError = {
 {: #generic-error-def title="GenericError definition"}
 
 ### warning
-Importance: Base
 
 Used to log details of an internal warning that might not get reflected on the
-wire.
+wire. It has Base importance level; see {{importance}}.
 
 ~~~ cddl
 GenericWarning = {
@@ -1015,10 +1014,10 @@ GenericWarning = {
 {: #generic-warning-def title="GenericWarning definition"}
 
 ### info
-Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
 
 ~~~ cddl
 GenericInfo = {
@@ -1028,10 +1027,10 @@ GenericInfo = {
 {: #generic-info-def title="GenericInfo definition"}
 
 ### debug
-Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
 
 ~~~ cddl
 GenericDebug = {
@@ -1041,10 +1040,10 @@ GenericDebug = {
 {: #generic-debug-def title="GenericDebug definition"}
 
 ### verbose
-Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
 
 ~~~ cddl
 GenericVerbose = {
@@ -1067,11 +1066,11 @@ the name of the heading in lowercase (e.g., the "name" of the scenario event is
 "simulation:scenario").
 
 ### scenario
-Importance: Extra
 
 Used to specify which specific scenario is being tested at this particular
-instance. This supports, for example, aggregation of
-several simulations into one trace (e.g., split by `group_id`).
+instance. This supports, for example, aggregation of several simulations into
+one trace (e.g., split by `group_id`). It has Extra importance level; see
+{{importance}}.
 
 ~~~ cddl
 SimulationScenario = {
@@ -1082,11 +1081,10 @@ SimulationScenario = {
 {: #simulation-scenario-def title="SimulationScenario definition"}
 
 ### marker
-Importance: Extra
 
 Used to indicate when specific emulation conditions are triggered at set times
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered).
+triggered). It has Extra importance level; see {{importance}}.
 
 ~~~ cddl
 SimulationMarker = {
@@ -1131,7 +1129,7 @@ additional events is typically avoided. Exceptions have been made for common
 events that benefit from being easily identifiable or individually logged (for
 example `packets_acked`).
 
-## Event importance indicators
+## Event importance levels {#importance}
 
 Depending on how events are designed, it may be that several events allow the
 logging of similar or overlapping data. For example the separate QUIC
@@ -1140,20 +1138,22 @@ logging of similar or overlapping data. For example the separate QUIC
 should be logged or used, and which event should take precedence if e.g., both are
 present and provide conflicting information.
 
-To aid in this decision making, each event SHOULD have an "importance indicator"
-with one of three values, in decreasing order of importance and expected usage:
+To aid in this decision making, qlog defines three event importance levels, in
+decreasing order of importance and expected usage:
 
 * Core
 * Base
 * Extra
 
-The "Core" events are the events that SHOULD be present in all qlog files for a
+Events definitions SHOULD assign an importance level.
+
+Core-level events SHOULD be present in all qlog files for a
 given protocol. These are typically tied to basic packet and frame parsing and
 creation, as well as listing basic internal metrics. Tool implementers SHOULD
 expect and add support for these events, though SHOULD NOT expect all Core events
 to be present in each qlog trace.
 
-The "Base" events add additional debugging options and MAY be present in qlog
+Base-level events add additional debugging options and MAY be present in qlog
 files. Most of these can be implicitly inferred from data in Core events (if
 those contain all their properties), but for many it is better to log the events
 explicitly as well, making it clearer how the implementation behaves. These
@@ -1162,14 +1162,14 @@ state machines change, and used to help show when decisions are actually made
 based on received data. Tool implementers SHOULD at least add support for
 showing the contents of these events, if they do not handle them explicitly.
 
-The "Extra" events are considered mostly useful for low-level debugging of the
+Extra-level events are considered mostly useful for low-level debugging of the
 implementation, rather than the protocol. They allow more fine-grained tracking
 of internal behavior. As such, they MAY be present in qlog files and tool
 implementers MAY add support for these, but they are not required to.
 
 Note that in some cases, implementers might not want to log for example data
-content details in the "Core" events due to performance or privacy considerations.
-In this case, they SHOULD use (a subset of) relevant "Base" events instead to
+content details in Core-level events due to performance or privacy considerations.
+In this case, they SHOULD use (a subset of) relevant Base-level events instead to
 ensure usability of the qlog output. As an example, implementations that do not
 log QUIC `packet_received` events and thus also not which (if any) ACK frames the
 packet contains, SHOULD log `packets_acked` events instead.
