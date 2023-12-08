@@ -1517,7 +1517,7 @@ still provide adequate output for incomplete logs.
 Protocols such as TLS {{?RFC8446}} and QUIC {{?RFC9000}} provide varying degrees
 of secure protection for the wire image {{?RFC8546}}. There is inevitably
 tension between security and observability, when logging can reveal aspects of
-the wire image, that would ordinarily be protected. This tension equally applies
+the wire image that would ordinarily be protected. This tension equally applies
 to any privacy considerations that build on security properties, especially if
 data can be correlated across data sources.
 
@@ -1586,11 +1586,11 @@ It is recommended that access to stored qlogs is subject to access control and
 auditing.
 
 Access control techniques in end user client environments can be limited.
-End-users have the possibility of capturing their own logs and risking their own
-security and privacy in ways that could be surprising. Implementations should
+An end-user that might enable logging without understanding the implications of
+that choice on their privacy and security. Implementations should
 consider how to make enabling qlog conspicous, and resistant to automation or
 drive-by attacks. Examples include, requiring explicit actions to start a
-capture, and isolation or sandboxing of capture from other activities in the
+capture and isolation or sandboxing of capture from other activities in the
 same process or component.
 
 It is recommended that data retention policies are defined for the storage of
@@ -1602,11 +1602,12 @@ It is recommended that qlog files are encrypted in transit and at rest.
 
 Data minimization or anonymization techniques can be applied to qlog. While this
 can go some way to addressing security and privacy risks, implementers and
-operators are advised that the techniques might not provide a sufficient level
-of mitigation. Equally, minimization or anonymization can reduce the
-effectiveness of qlog data.
+operators are advised that removing or anonymizing data without sufficient care might
+not improve privacy or securrity.
+Minimization or anonymization might greatly reduce the usefulness
+of qlog data.
 
-Operator and implementors need to balance logging fields against the potential
+Operator and implementers need to balance the value of logged data against the potential
 risks inherent in their (involuntary) disclosure. This balance depends on the
 use case at hand (e.g., research datasets might have different requirements to
 live operational troubleshooting).
