@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 1 June 2024                                                Meta
+Expires: 10 June 2024                                               Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                        29 November 2023
+                                                         8 December 2023
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 1 June 2024.
+   This Internet-Draft will expire on 10 June 2024.
 
 Copyright Notice
 
@@ -397,8 +397,6 @@ Table of Contents
 
    Emitted when the server starts accepting connections.
 
-   Definition:
-
    ConnectivityServerListening = {
        ? ip_v4: IPAddress
        ? ip_v6: IPAddress
@@ -424,8 +422,6 @@ Table of Contents
    Note that while there is overlap with the connection_state_updated
    event, this event is separate event in order to capture additional
    data that can be useful to log.
-
-   Definition:
 
    ConnectivityConnectionStarted = {
        ? ip_version: IPVersion
@@ -465,8 +461,6 @@ Table of Contents
    errors that occur that may or may not get mapped to the official
    error codes in implementation-specific ways.  As such, multiple error
    codes can be set on the same event to reflect this.
-
-   Definition:
 
    ConnectivityConnectionClosed = {
 
@@ -509,8 +503,6 @@ Table of Contents
    When the endpoint updates its own connection ID (e.g.,
    NEW_CONNECTION_ID frame), it logs the src_ fields.
 
-   Definition:
-
    ConnectivityConnectionIDUpdated = {
        owner: Owner
        ? old: ConnectionID
@@ -527,8 +519,6 @@ Table of Contents
    spin bit; see Section 17.4 of [QUIC-TRANSPORT].  The event is emitted
    when the spin bit changes value, it SHOULD NOT be emitted if the spin
    bit is set without changing its value.
-
-   Definition:
 
    ConnectivitySpinBitUpdated = {
        state: bool
@@ -548,8 +538,6 @@ Table of Contents
    transition.  As such, users should not expect to see all these states
    reflected in all qlogs and implementers should focus on support for
    the SimpleConnectionState set.
-
-   Definition:
 
    ConnectivityConnectionStateUpdated = {
        ? old: ConnectionState /
@@ -689,8 +677,6 @@ Table of Contents
    allows logging of supported versions at an endpoint without actual
    version negotiation needing to happen.
 
-   Definition:
-
    QUICVersionInformation = {
        ? server_versions: [+ QuicVersion]
        ? client_versions: [+ QuicVersion]
@@ -734,8 +720,6 @@ Table of Contents
    there are common option(s), the server chooses the most optimal one
    and communicates this back to the client.  If not, the connection is
    closed.
-
-   Definition:
 
    QUICALPNInformation = {
        ? server_alpns: [* text]
@@ -789,8 +773,6 @@ Table of Contents
    In these cases, utilize the separate parameters_restored event to
    indicate the initial values, and this event to indicate the updated
    values, as normal.
-
-   Definition:
 
    QUICParametersSet = {
        ? owner: Owner
@@ -858,8 +840,6 @@ Table of Contents
    from being re-utilized).  The ones listed here are the ones expected
    to be useful for correct 0-RTT usage.
 
-   Definition:
-
    QUICParametersRestored = {
        ? disable_active_migration: bool
        ? max_idle_timeout: uint64
@@ -882,8 +862,6 @@ Table of Contents
 5.5.  packet_sent
 
    Importance: Core
-
-   Definition:
 
    QUICPacketSent = {
        header: PacketHeader
@@ -930,8 +908,6 @@ Table of Contents
 
    Importance: Core
 
-   Definition:
-
    QUICPacketReceived = {
        header: PacketHeader
        ? frames: [* $QuicFrame]
@@ -973,8 +949,6 @@ Table of Contents
    The trigger field indicates a general reason category for dropping
    the packet, while the details field can contain additional
    implementation-specific information.
-
-   Definition:
 
    QUICPacketDropped = {
 
@@ -1030,8 +1004,6 @@ Table of Contents
    packet cannot be parsed yet, and thus only the full packet contents
    can be logged when it was parsed in a packet_received event.
 
-   Definition:
-
    QUICPacketBuffered = {
 
        ; primarily packet_type and possible packet_number should be
@@ -1066,8 +1038,6 @@ Table of Contents
    this event can be used by implementations that do not log frame
    contents.
 
-   Definition:
-
    QUICPacketsAcked = {
        ? packet_number_space: PacketNumberSpace
        ? packet_numbers: [+ uint64]
@@ -1086,8 +1056,6 @@ Table of Contents
    When one or more UDP-level datagrams are passed to the socket.  This
    is useful for determining how QUIC packet buffers are drained to the
    OS.
-
-   Definition:
 
    QUICDatagramsSent = {
 
@@ -1128,8 +1096,6 @@ Table of Contents
    This is useful for determining how datagrams are passed to the user
    space stack from the OS.
 
-   Definition:
-
    QUICDatagramsReceived = {
 
        ; to support passing multiple at once
@@ -1160,8 +1126,6 @@ Table of Contents
    packet is dropped for other reasons, the packet_dropped event
    (Section 5.7) should be used instead.
 
-   Definition:
-
    QUICDatagramDropped = {
 
        ; The RawInfo fields do not include the UDP headers,
@@ -1180,8 +1144,6 @@ Table of Contents
    of this can be inferred from several types of frames going over the
    wire, but it's much easier to have explicit signals for these state
    changes.
-
-   Definition:
 
    StreamType = "unidirectional" /
                 "bidirectional"
@@ -1272,8 +1234,6 @@ Table of Contents
    used.  If the optional packet_numbers field is used, each frame MUST
    have a corresponding packet number at the same index.
 
-   Definition:
-
    QUICFramesProcessed = {
        frames: [* $QuicFrame]
        ? packet_numbers: [* uint64]
@@ -1324,8 +1284,6 @@ Table of Contents
    Datagram Frames, see the datagram_data_moved event defined in
    Section 5.16.
 
-   Definition:
-
    QUICStreamDataMoved = {
        ? stream_id: uint64
        ? offset: uint64
@@ -1373,8 +1331,6 @@ Table of Contents
    QUIC streams, see the stream_data_moved event defined in
    Section 5.15.
 
-   Definition:
-
    QUICDatagramDataMoved = {
        ; byte length of the moved data
        ? length: uint64
@@ -1399,8 +1355,6 @@ Table of Contents
 
    Importance: Base
 
-   Definition:
-
    SecurityKeyUpdated = {
        key_type: KeyType
        ? old: hexstring
@@ -1421,8 +1375,6 @@ Table of Contents
 6.2.  key_discarded
 
    Importance: Base
-
-   Definition:
 
    SecurityKeyDiscarded = {
        key_type: KeyType
@@ -1457,8 +1409,6 @@ Table of Contents
    settings are typically set once and never change.  Implementation
    that do, for some reason, change these parameters during execution,
    MAY emit the parameters_set event twice.
-
-   Definition:
 
    RecoveryParametersSet = {
 
@@ -1508,8 +1458,6 @@ Table of Contents
    rather than split out into two).  Consequently, a metrics_updated
    event is only guaranteed to contain at least one of the listed
    metrics.
-
-   Definition:
 
    RecoveryMetricsUpdated = {
 
@@ -1567,8 +1515,6 @@ Table of Contents
 
    *  recovery
 
-   Definition:
-
    RecoveryCongestionStateUpdated = {
        ? old: text
        new: text
@@ -1603,8 +1549,6 @@ Table of Contents
    In order to indicate an active timer's timeout update, a new set
    event is used.
 
-   Definition:
-
    RecoveryLossTimerUpdated = {
 
        ; called "mode" in RFC 9002 A.9.
@@ -1630,8 +1574,6 @@ Table of Contents
    detection.  It is RECOMMENDED to populate the optional trigger field
    in order to help disambiguate among the various possible causes of a
    loss declaration.
-
-   Definition:
 
    RecoveryPacketLost = {
 
@@ -1676,8 +1618,6 @@ Table of Contents
    Much of this data can be inferred if implementations log packet_sent
    events (e.g., looking at overlapping stream data offsets and length,
    one can determine when data was retransmitted).
-
-   Definition:
 
    RecoveryMarkedForRetransmit = {
        frames: [+ $QuicFrame]
