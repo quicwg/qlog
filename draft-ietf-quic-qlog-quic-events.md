@@ -86,7 +86,7 @@ fields.
 
 # Overview
 
-This document describes how the QUIC protocol is can be expressed in qlog using
+This document describes how the QUIC protocol can be expressed in qlog using
 the schema defined in {{QLOG-MAIN}}. QUIC protocol events are defined with a
 category, a name (the concatenation of "category" and "event"), an "importance",
 an optional "trigger", and "data" fields.
