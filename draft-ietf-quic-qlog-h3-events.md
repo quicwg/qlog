@@ -183,8 +183,6 @@ As a reminder the CDDL unwrap operator (~), see {{?RFC8610}}), copies the fields
 from the referenced type (H3Parameters) into the target type directly, extending the
 target with the unwrapped fields.
 
-Definition:
-
 ~~~ cddl
 H3ParametersSet = {
     ? owner: Owner
@@ -228,8 +226,6 @@ server's SETTINGs from the previous connection. The `parameters_restored` event
 is used to indicate which HTTP/3 settings were restored and to which values when
 utilizing 0-RTT.
 
-Definition:
-
 ~~~ cddl
 H3ParametersRestored = {
     ~H3Parameters
@@ -255,8 +251,6 @@ Unidirectional streams in either direction begin with with a variable-length
 integer type. Where the type is not known, the stream_type value of "unknown"
 type can be used and the value captured in the stream_type_value field; a
 numerical value without variable-length integer encoding.
-
-Definition:
 
 ~~~ cddl
 H3StreamTypeSet = {
@@ -290,8 +284,6 @@ can be updated through signals received from client and/or server (e.g., in
 HTTP/3 HEADERS or PRIORITY_UPDATE frames) or it can be changed or overridden due
 to local policies.
 
-Definition:
-
 ~~~ cddl
 H3PriorityUpdated = {
     ; if the prioritized element is a request stream
@@ -313,8 +305,6 @@ The `frame_created` event is emitted when the HTTP/3 framing actually happens.
 This does not necessarily coincide with HTTP/3 data getting passed to the QUIC
 layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 
-Definition:
-
 ~~~ cddl
 H3FrameCreated = {
     stream_id: uint64
@@ -331,8 +321,6 @@ Importance: Core
 The `frame_parsed` event is emitted when the HTTP/3 frame is parsed. This is not
 necessarily the same as when the HTTP/3 data is actually received on the QUIC
 layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
-
-Definition:
 
 ~~~ cddl
 H3FrameParsed = {
@@ -357,8 +345,6 @@ The `datagram_created` event is emitted when an HTTP/3 Datagram is created (see
 getting passed to the QUIC layer. For that, see the `datagram_data_moved` event
 in {{QLOG-QUIC}}.
 
-Definition:
-
 ~~~ cddl
 H3DatagramCreated = {
     quarter_stream_id: uint64
@@ -376,8 +362,6 @@ The `datagram_parsed` event is emitted when the HTTP/3 Datagram is parsed (see
 actually received on the QUIC layer. For that, see the `datagram_data_moved`
 event in {{QLOG-QUIC}}.
 
-Definition:
-
 ~~~ cddl
 H3DatagramParsed = {
     quarter_stream_id: uint64
@@ -394,8 +378,6 @@ The `push_resolved` event is emitted when a pushed resource ({{Section 4.6 of
 RFC9114}}) is successfully claimed (used) or, conversely, abandoned (rejected)
 by the application on top of HTTP/3 (e.g., the web browser). This event provides
 additional context that can is aid debugging issues related to server push.
-
-Definition:
 
 ~~~ cddl
 H3PushResolved = {
