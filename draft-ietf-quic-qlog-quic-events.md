@@ -496,8 +496,8 @@ QLOG-MAIN}}.
 
 QUIC endpoints each have their own list of QUIC versions they support. The
 client uses the most likely version in their first initial. If the server does
-not support that version, it replies with a version_negotiation packet,
-containing supported versions. From this, the client selects a version. The
+not support that version, it replies with a Version Negotiation packet, which
+contains its supported versions. From this, the client selects a version. The
 `version_information` event aggregates all this information in a single event
 type. It also allows logging of supported versions at an endpoint without actual
 version negotiation needing to happen.
