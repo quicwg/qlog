@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 10 June 2024                                               Meta
+Expires: 11 June 2024                                               Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         8 December 2023
+                                                         9 December 2023
 
 
                      HTTP/3 qlog event definitions
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 10 June 2024.
+   This Internet-Draft will expire on 11 June 2024.
 
 Copyright Notice
 
@@ -230,14 +230,14 @@ Table of Contents
 
 4.1.  parameters_set
 
-   Importance: Base
-
    The parameters_set event contains HTTP/3 and QPACK-level settings,
-   mostly those received from the HTTP/3 SETTINGS frame.  All these
-   parameters are typically set once and never change.  However, they
-   might be set at different times during the connection, therefore a
-   qlog can have multiple instances of parameters_set with different
-   fields set.
+   mostly those received from the HTTP/3 SETTINGS frame.  It has Base
+   importance level; see Section 9.2 of [QLOG-MAIN].
+
+   All these parameters are typically set once and never change.
+   However, they might be set at different times during the connection,
+   therefore a qlog can have multiple instances of parameters_set with
+   different fields set.
 
    The "owner" field reflects how Settings are exchanged on a
    connection.  Sent settings have the value "local" and received
@@ -246,8 +246,6 @@ Table of Contents
    As a reminder the CDDL unwrap operator (~), see [RFC8610]), copies
    the fields from the referenced type (H3Parameters) into the target
    type directly, extending the target with the unwrapped fields.
-
-   Definition:
 
    H3ParametersSet = {
        ? owner: Owner
@@ -286,14 +284,11 @@ Table of Contents
 
 4.2.  parameters_restored
 
-   Importance: Base
-
    When using QUIC 0-RTT, HTTP/3 clients are expected to remember and
    reuse the server's SETTINGs from the previous connection.  The
    parameters_restored event is used to indicate which HTTP/3 settings
-   were restored and to which values when utilizing 0-RTT.
-
-   Definition:
+   were restored and to which values when utilizing 0-RTT.  It has Base
+   importance level; see Section 9.2 of [QLOG-MAIN].
 
    H3ParametersRestored = {
        ~H3Parameters
@@ -308,10 +303,9 @@ Table of Contents
 
 4.3.  stream_type_set
 
-   Importance: Base
-
    The stream_type_set event conveys when a HTTP/3 stream type becomes
-   known; see Sections 6.1 and 6.2 of [HTTP/3].
+   known; see Sections 6.1 and 6.2 of [HTTP/3].  It has Base importance
+   level; see Section 9.2 of [QLOG-MAIN].
 
    Client bidirectional streams always have a stream_type value of
    "request".  Server bidirectional streams have no defined use,
@@ -322,8 +316,6 @@ Table of Contents
    stream_type value of "unknown" type can be used and the value
    captured in the stream_type_value field; a numerical value without
    variable-length integer encoding.
-
-   Definition:
 
    H3StreamTypeSet = {
        ? owner: Owner
@@ -349,15 +341,12 @@ Table of Contents
 
 4.4.  priority_updated
 
-   Importance: Base
-
    Emitted when the priority of a request stream or push stream is
    initialized or updated through mechanisms defined in [RFC9218].  For
    example, the priority can be updated through signals received from
    client and/or server (e.g., in HTTP/3 HEADERS or PRIORITY_UPDATE
    frames) or it can be changed or overridden due to local policies.
-
-   Definition:
+   The event has Base importance level; see Section 9.2 of [QLOG-MAIN].
 
    H3PriorityUpdated = {
        ; if the prioritized element is a request stream
@@ -374,14 +363,13 @@ Table of Contents
 
 4.5.  frame_created
 
-   Importance: Core
-
    The frame_created event is emitted when the HTTP/3 framing actually
-   happens.  This does not necessarily coincide with HTTP/3 data getting
+   happens.  It has Core importance level; see Section 9.2 of
+   [QLOG-MAIN].
+
+   This event does not necessarily coincide with HTTP/3 data getting
    passed to the QUIC layer.  For that, see the stream_data_moved event
    in [QLOG-QUIC].
-
-   Definition:
 
    H3FrameCreated = {
        stream_id: uint64
@@ -394,14 +382,12 @@ Table of Contents
 
 4.6.  frame_parsed
 
-   Importance: Core
-
    The frame_parsed event is emitted when the HTTP/3 frame is parsed.
-   This is not necessarily the same as when the HTTP/3 data is actually
-   received on the QUIC layer.  For that, see the stream_data_moved
-   event in [QLOG-QUIC].
+   It has Core importance level; see Section 9.2 of [QLOG-MAIN].
 
-   Definition:
+   This event is not necessarily the same as when the HTTP/3 data is
+   actually received on the QUIC layer.  For that, see the
+   stream_data_moved event in [QLOG-QUIC].
 
    H3FrameParsed = {
        stream_id: uint64
@@ -420,14 +406,13 @@ Table of Contents
 
 4.7.  datagram_created
 
-   Importance: Base
-
    The datagram_created event is emitted when an HTTP/3 Datagram is
-   created (see [RFC9297]).  This does not necessarily coincide with the
-   HTTP/3 Datagram getting passed to the QUIC layer.  For that, see the
-   datagram_data_moved event in [QLOG-QUIC].
+   created (see [RFC9297]).  It has Base importance level; see
+   Section 9.2 of [QLOG-MAIN].
 
-   Definition:
+   This event does not necessarily coincide with the HTTP/3 Datagram
+   getting passed to the QUIC layer.  For that, see the
+   datagram_data_moved event in [QLOG-QUIC].
 
    H3DatagramCreated = {
        quarter_stream_id: uint64
@@ -439,14 +424,13 @@ Table of Contents
 
 4.8.  datagram_parsed
 
-   Importance: Base
-
    The datagram_parsed event is emitted when the HTTP/3 Datagram is
-   parsed (see [RFC9297]).  This is not necessarily the same as when the
-   HTTP/3 Datagram is actually received on the QUIC layer.  For that,
-   see the datagram_data_moved event in [QLOG-QUIC].
+   parsed (see [RFC9297]).  It has Base importance level; see
+   Section 9.2 of [QLOG-MAIN].
 
-   Definition:
+   This event is not necessarily the same as when the HTTP/3 Datagram is
+   actually received on the QUIC layer.  For that, see the
+   datagram_data_moved event in [QLOG-QUIC].
 
    H3DatagramParsed = {
        quarter_stream_id: uint64
@@ -458,15 +442,12 @@ Table of Contents
 
 4.9.  push_resolved
 
-   Importance: Extra
-
    The push_resolved event is emitted when a pushed resource
    (Section 4.6 of [HTTP/3]) is successfully claimed (used) or,
    conversely, abandoned (rejected) by the application on top of HTTP/3
    (e.g., the web browser).  This event provides additional context that
-   can is aid debugging issues related to server push.
-
-   Definition:
+   can is aid debugging issues related to server push.  It has Extra
+   importance level; see Section 9.2 of [QLOG-MAIN].
 
    H3PushResolved = {
        ? push_id: uint64
