@@ -1322,6 +1322,17 @@ various programming languages can be found at
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
             <p id="section-toc.1-1.13.1"><a href="#section-13" class="auto internal xref">13</a>. <a href="#name-security-and-privacy-consid" class="internal xref">Security and privacy considerations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.1">
+                <p id="section-toc.1-1.13.2.1.1"><a href="#section-13.1" class="auto internal xref">13.1</a>.  <a href="#name-data-at-risk" class="internal xref">Data at risk</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.2">
+                <p id="section-toc.1-1.13.2.2.1"><a href="#section-13.2" class="auto internal xref">13.2</a>.  <a href="#name-operational-implications-an" class="internal xref">Operational implications and recommendations</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.3">
+                <p id="section-toc.1-1.13.2.3.1"><a href="#section-13.3" class="auto internal xref">13.3</a>.  <a href="#name-data-minimization-or-anonym" class="internal xref">Data minimization or anonymization</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14">
             <p id="section-toc.1-1.14.1"><a href="#section-14" class="auto internal xref">14</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
@@ -3157,102 +3168,138 @@ still provide adequate output for incomplete logs.<a href="#section-12-3" class=
 <p id="section-13-1">Protocols such as TLS <span>[<a href="#RFC8446" class="cite xref">RFC8446</a>]</span> and QUIC <span>[<a href="#RFC9000" class="cite xref">RFC9000</a>]</span> provide varying degrees
 of secure protection for the wire image <span>[<a href="#RFC8546" class="cite xref">RFC8546</a>]</span>. There is inevitably
 tension between security and observability, when logging can reveal aspects of
-the wire image, that would ordinarily be protected. This tension equally applies
+the wire image that would ordinarily be protected. This tension equally applies
 to any privacy considerations that build on security properties, especially if
 data can be correlated across data sources.<a href="#section-13-1" class="pilcrow">¶</a></p>
-<p id="section-13-2">qlog operators and implementers should be mindful of the security and privacy
+<p id="section-13-2">Any data that is determined to be necessary for a use case at hand could be
+logged or captured. As per <span>[<a href="#RFC6973" class="cite xref">RFC6973</a>]</span>, operators must be aware that such data
+will be at risk of compromise and this, in turn, risks the privacy of all
+entities that participate in logged internet protocol exchanges. Entities that
+would otherwise expect protocol features to maintain the privacy of their data,
+can unknowingly be subject to broader privacy risks. This circumvents their
+agency for responding to such risks.<a href="#section-13-2" class="pilcrow">¶</a></p>
+<div id="data-at-risk">
+<section id="section-13.1">
+        <h3 id="name-data-at-risk">
+<a href="#section-13.1" class="section-number selfRef">13.1. </a><a href="#name-data-at-risk" class="section-name selfRef">Data at risk</a>
+        </h3>
+<p id="section-13.1-1">qlog operators and implementers should be mindful of the security and privacy
 risks inherent in handling qlog data. This includes but is not limited to
 logging, storing, or using the data. Data might be considered as non-sensitive,
 potentially-sensitive, or sensitive; applying the considerations in this section
 may produce different risks depending on the nature of the data itself, or its
 handling. However, in many cases the largest risk factors arise from data that
-can be considered as potenially-sensitive or sensitive.<a href="#section-13-2" class="pilcrow">¶</a></p>
-<p id="section-13-3">The following is a non-exhaustive list of such fields and types of data that can
-be carried in qlog data:<a href="#section-13-3" class="pilcrow">¶</a></p>
+can be considered as potenially-sensitive or sensitive.<a href="#section-13.1-1" class="pilcrow">¶</a></p>
+<p id="section-13.1-2">The following is a non-exhaustive list of such fields and types of data that can
+be carried in qlog data:<a href="#section-13.1-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-13-4.1">
-          <p id="section-13-4.1.1">IP addresses and transport protocol port numbers, which can be used to
-uniquely identify individual connections, endpoints, and potentially users.<a href="#section-13-4.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-13.1-3.1">
+            <p id="section-13.1-3.1.1">IP addresses and transport protocol port numbers, which can be used to
+uniquely identify individual connections, endpoints, and potentially users.<a href="#section-13.1-3.1.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-13-4.2">
-          <p id="section-13-4.2.1">Session, Connection, or User identifiers which can be used to correlate
+          <li class="normal" id="section-13.1-3.2">
+            <p id="section-13.1-3.2.1">Session, Connection, or User identifiers which can be used to correlate
 nominally separate contexts. For example, QUIC Connection IDs can be used to
-identify and track users across geographical networks <span><a href="https://rfc-editor.org/rfc/rfc9000#section-9.5" class="relref">Section 9.5</a> of [<a href="#RFC9000" class="cite xref">RFC9000</a>]</span>).<a href="#section-13-4.2.1" class="pilcrow">¶</a></p>
+identify and track users across geographical networks <span><a href="https://rfc-editor.org/rfc/rfc9000#section-9.5" class="relref">Section 9.5</a> of [<a href="#RFC9000" class="cite xref">RFC9000</a>]</span>).<a href="#section-13.1-3.2.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-13-4.3">
-          <p id="section-13-4.3.1">System-level information such as CPU, process, or thread identifiers.<a href="#section-13-4.3.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-13.1-3.3">
+            <p id="section-13.1-3.3.1">System-level information such as CPU, process, or thread identifiers.<a href="#section-13.1-3.3.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-13-4.4">
-          <p id="section-13-4.4.1">Stored State which can be used to correlate individual connections or sessions
+          <li class="normal" id="section-13.1-3.4">
+            <p id="section-13.1-3.4.1">Stored State which can be used to correlate individual connections or sessions
 over time. Examples include QUIC address validation and retry tokens, TLS
-session tickets, and HTTP cookies.<a href="#section-13-4.4.1" class="pilcrow">¶</a></p>
+session tickets, and HTTP cookies.<a href="#section-13.1-3.4.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-13-4.5">
-          <p id="section-13-4.5.1">Decryption keys, passwords, and tokens which can be used with other data
+          <li class="normal" id="section-13.1-3.5">
+            <p id="section-13.1-3.5.1">Decryption keys, passwords, and tokens which can be used with other data
 sources (e.g., captures of encrypted packets) to correlate qlog data to a
 specific connection or user or leak additional information. Examples include
-TLS decryption keys and HTTP-level API access or authorization tokens.<a href="#section-13-4.5.1" class="pilcrow">¶</a></p>
+TLS decryption keys and HTTP-level API access or authorization tokens.<a href="#section-13.1-3.5.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-13-4.6">
-          <p id="section-13-4.6.1">Data that can be used to correlate qlogs to other data sources (e.g., captures
+          <li class="normal" id="section-13.1-3.6">
+            <p id="section-13.1-3.6.1">Data that can be used to correlate qlogs to other data sources (e.g., captures
 of encrypted packets). Examples include high-resolution event timestamps or
-inter-event timings, event counts, packet and frame sizes.<a href="#section-13-4.6.1" class="pilcrow">¶</a></p>
+inter-event timings, event counts, packet and frame sizes.<a href="#section-13.1-3.6.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-13-4.7">
-          <p id="section-13-4.7.1">Full or partial encrypted raw packet and frame payloads, which can be used
+          <li class="normal" id="section-13.1-3.7">
+            <p id="section-13.1-3.7.1">Full or partial encrypted raw packet and frame payloads, which can be used
 with other data sources (e.g., captures of encrypted packets) to correlate
-qlog data to a specific connection or session.<a href="#section-13-4.7.1" class="pilcrow">¶</a></p>
+qlog data to a specific connection or session.<a href="#section-13.1-3.7.1" class="pilcrow">¶</a></p>
 </li>
-        <li class="normal" id="section-13-4.8">
-          <p id="section-13-4.8.1">Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
+          <li class="normal" id="section-13.1-3.8">
+            <p id="section-13.1-3.8.1">Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
 values, HTTP response data, TLS SNI field values), which can contain directly
-sensitive information.<a href="#section-13-4.8.1" class="pilcrow">¶</a></p>
+sensitive information.<a href="#section-13.1-3.8.1" class="pilcrow">¶</a></p>
 </li>
-      </ul>
-<p id="section-13-5">The simplest and most extreme form of protection against abuse of this
-information is the complete deletion of a given field, which is equivalent to
-not logging the field(s) in question. While deletion completely protects the
-data in the deleted fields from the risk of compromise, it also reduces the
-utility of the dataset as a whole. As such, a balance should be found between
-logging these fields and the potential risks inherent in their (involuntary)
-disclosure. This balance depends on the use case at hand (e.g., research
-datasets might have different requirements to live operational troubleshooting).
-Capturing the minimal amount of data required for a specific purpose can help to
-minimize the risks associated with data usage. qlog implementations that provide
-fine-grained control over the inclusion of data fields, ideally on a
-per-use-case or per-connection basis, improve the ability to minimize data.<a href="#section-13-5" class="pilcrow">¶</a></p>
-<p id="section-13-6">Any data that is determined to be necessary for a use case at hand could be
-logged or captured. As per <span>[<a href="#RFC6973" class="cite xref">RFC6973</a>]</span>, operators must be aware that such data
-will be at risk of compromise. As such, measures should be taken to firstly
-reduce the risk of compromise and secondly reduce the risk of abuse of
-compromised data. While a full discussion of both aspects is out of scope for
-this document, the following paragraphs discuss high-level considerations that
-can be applied to qlog data.<a href="#section-13-6" class="pilcrow">¶</a></p>
-<p id="section-13-7">To reduce the risk of compromise, operators can take measures such as: limiting
-the length of time that data is stored, encrypting data in transit and at rest,
-limiting access rights to the data, and auditing data usage practices. qlog
-deployments that provide integrated options for automated or manual data
-deletion and (aggressive) aggregation, improve the ability to minimize the risk
-of compromise.<a href="#section-13-7" class="pilcrow">¶</a></p>
-<p id="section-13-8">To reduce the risk of data abuse after compromise, data can be anonymized,
-pseudonymized, otherwise permutated/replaced, truncated, (re-)encrypted, or
-aggregated. A partial discussion of applicable techniques (especially for IP
-address information) can be found in <span><a href="https://rfc-editor.org/rfc/rfc8932#appendix-B" class="relref">Appendix B</a> of [<a href="#DNS-PRIVACY" class="cite xref">DNS-PRIVACY</a>]</span>.
-Operators should, however, be aware that many of these techniques have been
-shown to be insufficient to safeguard user privacy and/or to protect user
-identity, especially if a qlog data set is large or easily correlated against
-other data sources.<a href="#section-13-8" class="pilcrow">¶</a></p>
-<p id="section-13-9">Finally, qlog operators should consider the interplay between their use case
+        </ul>
+</section>
+</div>
+<div id="operational-implications-and-recommendations">
+<section id="section-13.2">
+        <h3 id="name-operational-implications-an">
+<a href="#section-13.2" class="section-number selfRef">13.2. </a><a href="#name-operational-implications-an" class="section-name selfRef">Operational implications and recommendations</a>
+        </h3>
+<p id="section-13.2-1">Considerations for operational implications should focus on log capture and
+access. Logging of Internet protocols is equivalent to access to store or read
+plaintext communications, so security considerations apply similarly to qlog.<a href="#section-13.2-1" class="pilcrow">¶</a></p>
+<p id="section-13.2-2">It is recommended that the ability to enable qlog capture is subject to access
+control and auditing. Furthermore, access control policy should extend to the
+level of information that is allowed to be captured (e.g., capture of
+more-sensitive data requires higher privileges).<a href="#section-13.2-2" class="pilcrow">¶</a></p>
+<p id="section-13.2-3">It is recommended that access to stored qlogs is subject to access control and
+auditing.<a href="#section-13.2-3" class="pilcrow">¶</a></p>
+<p id="section-13.2-4">Access control techniques in end user client environments can be limited. An
+end-user that might enable logging without understanding the implications of
+that choice on their privacy and security. Implementations should consider how
+to make enabling qlog conspicous, and resistant to social engineering,
+automation, or drive-by attacks. Examples include, requiring explicit actions to
+start a capture, and isolation or sandboxing of capture from other activities in
+the same process or component.<a href="#section-13.2-4" class="pilcrow">¶</a></p>
+<p id="section-13.2-5">It is recommended that data retention policies are defined for the storage of
+qlog files.<a href="#section-13.2-5" class="pilcrow">¶</a></p>
+<p id="section-13.2-6">It is recommended that qlog files are encrypted in transit and at rest.<a href="#section-13.2-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="data-minimization-or-anonymization">
+<section id="section-13.3">
+        <h3 id="name-data-minimization-or-anonym">
+<a href="#section-13.3" class="section-number selfRef">13.3. </a><a href="#name-data-minimization-or-anonym" class="section-name selfRef">Data minimization or anonymization</a>
+        </h3>
+<p id="section-13.3-1">Data minimization or anonymization techniques can be applied to qlog. While this
+can go some way to addressing security and privacy risks, implementers and
+operators are advised that removing or anonymizing data without sufficient care might
+not improve privacy or securrity.
+Minimization or anonymization might greatly reduce the usefulness
+of qlog data.<a href="#section-13.3-1" class="pilcrow">¶</a></p>
+<p id="section-13.3-2">Operator and implementers need to balance the value of logged data against the potential
+risks inherent in their (involuntary) disclosure. This balance depends on the
+use case at hand (e.g., research datasets might have different requirements to
+live operational troubleshooting).<a href="#section-13.3-2" class="pilcrow">¶</a></p>
+<p id="section-13.3-3">The simplest and most extreme form of minimization or anonymization is the
+complete deletion of a given field, which is equivalent to not logging the
+field(s) in question. qlog implementations that provide fine-grained control
+over the inclusion of data fields, ideally on a per-use-case or per-connection
+basis, improve the ability to minimize data.<a href="#section-13.3-3" class="pilcrow">¶</a></p>
+<p id="section-13.3-4">Data can be anonymized, pseudonymized, otherwise permutated/replaced, truncated,
+(re-)encrypted, or aggregated. A partial discussion of applicable techniques
+(especially for IP address information) can be found in <span><a href="https://rfc-editor.org/rfc/rfc8932#appendix-B" class="relref">Appendix B</a> of [<a href="#DNS-PRIVACY" class="cite xref">DNS-PRIVACY</a>]</span>. Operators should, however, be aware that many of these
+techniques have been shown to be insufficient to safeguard user privacy and/or
+to protect user identity, especially if a qlog data set is large or easily
+correlated against other data sources.<a href="#section-13.3-4" class="pilcrow">¶</a></p>
+<p id="section-13.3-5">Finally, qlog operators should consider the interplay between their use case
 needs and end user rights or preferences. While active user participation (as
 indicated by <span>[<a href="#RFC6973" class="cite xref">RFC6973</a>]</span>) on a per-qlog basis is difficult, as logs are often
 captured out-of-band to the main user interaction and intent, general user
-expectations should be taken into account. qlog deployments that provide
-mechanisms to integrate the capture, storage and removal of qlogs with more
-general, often pre-existing, user preference and privacy control systems,
-improve the ability to protect data sensitive or confidential to the end user.
-In qlog, these data are typically (but not exclusively) contained in fields of
-the RawInfo type (see <a href="#raw-info" class="auto internal xref">Section 7</a>). qlog users should thus be particularly
-hesitant to include these fields for all but the most stringent use cases.<a href="#section-13-9" class="pilcrow">¶</a></p>
+expectations should be taken into account. qlog deployments should consider how
+to align capture, storage and removal of qlogs with more general, often
+pre-existing, user preference and privacy control systems. Operators should
+consider agressive approaches to deletion or aggregation.<a href="#section-13.3-5" class="pilcrow">¶</a></p>
+<p id="section-13.3-6">In qlog, data that is likely to be most sensitive is typically (but not
+exclusively) contained in fields of the RawInfo type (see <a href="#raw-info" class="auto internal xref">Section 7</a>). qlog
+users should thus be particularly hesitant to include these fields for all but
+the most stringent use cases.<a href="#section-13.3-6" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 <div id="iana-considerations">
@@ -3321,10 +3368,6 @@ hesitant to include these fields for all but the most stringent use cases.<a hre
         <dd>
 <span class="refAuthor">Bray, T., Ed.</span>, <span class="refTitle">"The JavaScript Object Notation (JSON) Data Interchange Format"</span>, <span class="seriesInfo">STD 90</span>, <span class="seriesInfo">RFC 8259</span>, <span class="seriesInfo">DOI 10.17487/RFC8259</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8259">https://www.rfc-editor.org/rfc/rfc8259</a>&gt;</span>. </dd>
 <dd class="break"></dd>
-<dt id="RFC8446">[RFC8446]</dt>
-        <dd>
-<span class="refAuthor">Rescorla, E.</span>, <span class="refTitle">"The Transport Layer Security (TLS) Protocol Version 1.3"</span>, <span class="seriesInfo">RFC 8446</span>, <span class="seriesInfo">DOI 10.17487/RFC8446</span>, <time datetime="2018-08" class="refDate">August 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8446">https://www.rfc-editor.org/rfc/rfc8446</a>&gt;</span>. </dd>
-<dd class="break"></dd>
 <dt id="RFC9000">[RFC9000]</dt>
       <dd>
 <span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="seriesInfo">RFC 9000</span>, <span class="seriesInfo">DOI 10.17487/RFC9000</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9000">https://www.rfc-editor.org/rfc/rfc9000</a>&gt;</span>. </dd>
@@ -3349,6 +3392,10 @@ hesitant to include these fields for all but the most stringent use cases.<a hre
 <dt id="QLOG-QUIC">[QLOG-QUIC]</dt>
         <dd>
 <span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"QUIC event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-quic-events-06</span>, <time datetime="2023-10-23" class="refDate">23 October 2023</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-06">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-06</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8446">[RFC8446]</dt>
+        <dd>
+<span class="refAuthor">Rescorla, E.</span>, <span class="refTitle">"The Transport Layer Security (TLS) Protocol Version 1.3"</span>, <span class="seriesInfo">RFC 8446</span>, <span class="seriesInfo">DOI 10.17487/RFC8446</span>, <time datetime="2018-08" class="refDate">August 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8446">https://www.rfc-editor.org/rfc/rfc8446</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8546">[RFC8546]</dt>
       <dd>
