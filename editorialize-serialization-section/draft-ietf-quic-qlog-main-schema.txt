@@ -106,7 +106,7 @@ Table of Contents
        8.2.2.  marker
    9.  Event definition guidelines
      9.1.  Event design
-     9.2.  Event importance indicators
+     9.2.  Event importance levels
      9.3.  Custom fields\
    10. Serializing qlog
      10.1.  qlog to JSON mapping
@@ -642,8 +642,6 @@ Table of Contents
    is indicated in the "time_format" field, which allows one of three
    values: "absolute", "delta" or "relative".
 
-   Definition:
-
    TimeFormat = "absolute" /
                 "delta" /
                 "relative"
@@ -747,8 +745,6 @@ Table of Contents
    The only common field defined for the data field is the trigger
    field, which is discussed in Section 6.5.
 
-   Definition:
-
    ; The ProtocolEventBody is any key-value map (e.g., JSON object)
    ; only the optional trigger field is defined in this document
    $ProtocolEventBody /= {
@@ -804,8 +800,6 @@ Table of Contents
    (or protocol "stacks") this event belongs.  This allows a single qlog
    file to aggregate traces of different protocols (e.g., a web server
    offering both TCP+HTTP/2 and QUIC+HTTP/3 connections).
-
-   Definition:
 
    ProtocolType = [+ text]
 
@@ -881,8 +875,6 @@ Table of Contents
    it contains a unique value per logical group.  Some examples can be
    seen in Figure 23.
 
-   Definition:
-
    GroupID = text
 
                        Figure 22: GroupID definition
@@ -928,8 +920,6 @@ Table of Contents
    application splits work across CPUs, processes, or threads and events
    for a single trace occur on potentially different combinations
    thereof.  Each field is optional to support deployment diversity.
-
-   Definition:
 
    SystemInformation = {
      ? processor_id: uint32
@@ -1015,8 +1005,6 @@ Table of Contents
    common_fields (as opposed to as individual fields per event instance)
    are shown in the listing below:
 
-   Definition:
-
    CommonFields = {
        ? time_format: TimeFormat
        ? reference_time: float64
@@ -1046,8 +1034,6 @@ Table of Contents
    grouped in a separate, optional, field named "raw" of type RawInfo.
    The exact definition of entities, headers, trailers and payloads
    depend on the protocol used.
-
-   Definition:
 
    RawInfo = {
 
@@ -1099,12 +1085,8 @@ Table of Contents
 
 8.1.1.  error
 
-   Importance: Core
-
    Used to log details of an internal error that might not get reflected
-   on the wire.
-
-   Definition:
+   on the wire.  It has Core importance level; see Section 9.2.
 
    GenericError = {
        ? code: uint64
@@ -1115,12 +1097,9 @@ Table of Contents
 
 8.1.2.  warning
 
-   Importance: Base
-
    Used to log details of an internal warning that might not get
-   reflected on the wire.
-
-   Definition:
+   reflected on the wire.  It has Base importance level; see
+   Section 9.2.
 
    GenericWarning = {
        ? code: uint64
@@ -1131,13 +1110,9 @@ Table of Contents
 
 8.1.3.  info
 
-   Importance: Extra
-
    Used mainly for implementations that want to use qlog as their one
    and only logging format but still want to support unstructured string
-   messages.
-
-   Definition:
+   messages.  The event has Extra importance level; see Section 9.2.
 
    GenericInfo = {
        message: text
@@ -1147,13 +1122,9 @@ Table of Contents
 
 8.1.4.  debug
 
-   Importance: Extra
-
    Used mainly for implementations that want to use qlog as their one
    and only logging format but still want to support unstructured string
-   messages.
-
-   Definition:
+   messages.  The event has Extra importance level; see Section 9.2.
 
    GenericDebug = {
        message: text
@@ -1163,13 +1134,9 @@ Table of Contents
 
 8.1.5.  verbose
 
-   Importance: Extra
-
    Used mainly for implementations that want to use qlog as their one
    and only logging format but still want to support unstructured string
-   messages.
-
-   Definition:
+   messages.  The event has Extra importance level; see Section 9.2.
 
    GenericVerbose = {
        message: text
@@ -1193,13 +1160,10 @@ Table of Contents
 
 8.2.1.  scenario
 
-   Importance: Extra
-
    Used to specify which specific scenario is being tested at this
    particular instance.  This supports, for example, aggregation of
-   several simulations into one trace (e.g., split by group_id).
-
-   Definition:
+   several simulations into one trace (e.g., split by group_id).  It has
+   Extra importance level; see Section 9.2.
 
    SimulationScenario = {
        ? name: text
@@ -1210,13 +1174,10 @@ Table of Contents
 
 8.2.2.  marker
 
-   Importance: Extra
-
    Used to indicate when specific emulation conditions are triggered at
    set times (e.g., at 3 seconds in 2% packet loss is introduced, at 10s
-   a NAT rebind is triggered).
-
-   Definition:
+   a NAT rebind is triggered).  It has Extra importance level; see
+   Section 9.2.
 
    SimulationMarker = {
        ? type: text
@@ -1265,7 +1226,7 @@ Table of Contents
    benefit from being easily identifiable or individually logged (for
    example packets_acked).
 
-9.2.  Event importance indicators
+9.2.  Event importance levels
 
    Depending on how events are designed, it may be that several events
    allow the logging of similar or overlapping data.  For example the
@@ -1275,9 +1236,8 @@ Table of Contents
    precedence if e.g., both are present and provide conflicting
    information.
 
-   To aid in this decision making, each event SHOULD have an "importance
-   indicator" with one of three values, in decreasing order of
-   importance and expected usage:
+   To aid in this decision making, qlog defines three event importance
+   levels, in decreasing order of importance and expected usage:
 
    *  Core
 
@@ -1285,14 +1245,15 @@ Table of Contents
 
    *  Extra
 
-   The "Core" events are the events that SHOULD be present in all qlog
-   files for a given protocol.  These are typically tied to basic packet
-   and frame parsing and creation, as well as listing basic internal
-   metrics.  Tool implementers SHOULD expect and add support for these
-   events, though SHOULD NOT expect all Core events to be present in
-   each qlog trace.
+   Events definitions SHOULD assign an importance level.
 
-   The "Base" events add additional debugging options and MAY be present
+   Core-level events SHOULD be present in all qlog files for a given
+   protocol.  These are typically tied to basic packet and frame parsing
+   and creation, as well as listing basic internal metrics.  Tool
+   implementers SHOULD expect and add support for these events, though
+   SHOULD NOT expect all Core events to be present in each qlog trace.
+
+   Base-level events add additional debugging options and MAY be present
    in qlog files.  Most of these can be implicitly inferred from data in
    Core events (if those contain all their properties), but for many it
    is better to log the events explicitly as well, making it clearer how
@@ -1303,17 +1264,17 @@ Table of Contents
    showing the contents of these events, if they do not handle them
    explicitly.
 
-   The "Extra" events are considered mostly useful for low-level
+   Extra-level events are considered mostly useful for low-level
    debugging of the implementation, rather than the protocol.  They
    allow more fine-grained tracking of internal behavior.  As such, they
    MAY be present in qlog files and tool implementers MAY add support
    for these, but they are not required to.
 
    Note that in some cases, implementers might not want to log for
-   example data content details in the "Core" events due to performance
+   example data content details in Core-level events due to performance
    or privacy considerations.  In this case, they SHOULD use (a subset
-   of) relevant "Base" events instead to ensure usability of the qlog
-   output.  As an example, implementations that do not log QUIC
+   of) relevant Base-level events instead to ensure usability of the
+   qlog output.  As an example, implementations that do not log QUIC
    packet_received events and thus also not which (if any) ACK frames
    the packet contains, SHOULD log packets_acked events instead.
 

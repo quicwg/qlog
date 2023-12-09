@@ -1275,7 +1275,7 @@ various programming languages can be found at
                 <p id="section-toc.1-1.9.2.1.1"><a href="#section-9.1" class="auto internal xref">9.1</a>.  <a href="#name-event-design" class="internal xref">Event design</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.2">
-                <p id="section-toc.1-1.9.2.2.1"><a href="#section-9.2" class="auto internal xref">9.2</a>.  <a href="#name-event-importance-indicators" class="internal xref">Event importance indicators</a></p>
+                <p id="section-toc.1-1.9.2.2.1"><a href="#section-9.2" class="auto internal xref">9.2</a>.  <a href="#name-event-importance-levels" class="internal xref">Event importance levels</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.3">
                 <p id="section-toc.1-1.9.2.3.1"><a href="#section-9.3" class="auto internal xref">9.3</a>.  <a href="#name-custom-fields" class="internal xref">Custom fields\</a></p>
@@ -1995,10 +1995,9 @@ midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports tw
 more succinct timestamps formats to allow reducing file size. The employed format
 is indicated in the "time_format" field, which allows one of three values:
 "absolute", "delta" or "relative".<a href="#section-6.1-1" class="pilcrow">¶</a></p>
-<p id="section-6.1-2">Definition:<a href="#section-6.1-2" class="pilcrow">¶</a></p>
 <span id="name-timeformat-definition"></span><div id="time-format-def">
 <figure id="figure-15">
-          <div class="lang-cddl sourcecode" id="section-6.1-3.1">
+          <div class="lang-cddl sourcecode" id="section-6.1-2.1">
 <pre>
 TimeFormat = "absolute" /
              "delta" /
@@ -2010,31 +2009,31 @@ TimeFormat = "absolute" /
           </figcaption></figure>
 </div>
 <ul class="normal">
-<li class="normal" id="section-6.1-4.1">
-            <p id="section-6.1-4.1.1">Absolute: Include the full absolute timestamp with each event. This approach
+<li class="normal" id="section-6.1-3.1">
+            <p id="section-6.1-3.1.1">Absolute: Include the full absolute timestamp with each event. This approach
 uses the largest amount of characters. This is also the default value of the
-"time_format" field.<a href="#section-6.1-4.1.1" class="pilcrow">¶</a></p>
+"time_format" field.<a href="#section-6.1-3.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-6.1-4.2">
-            <p id="section-6.1-4.2.1">Delta: Delta-encode each time value on the previously logged value. The first
+          <li class="normal" id="section-6.1-3.2">
+            <p id="section-6.1-3.2.1">Delta: Delta-encode each time value on the previously logged value. The first
 event in a trace typically logs the full absolute timestamp. This approach uses
-the least amount of characters.<a href="#section-6.1-4.2.1" class="pilcrow">¶</a></p>
+the least amount of characters.<a href="#section-6.1-3.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-6.1-4.3">
-            <p id="section-6.1-4.3.1">Relative: Specify a full "reference_time" timestamp (typically this is done
+          <li class="normal" id="section-6.1-3.3">
+            <p id="section-6.1-3.3.1">Relative: Specify a full "reference_time" timestamp (typically this is done
 up-front in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 6.8</a>) and include only
 relatively-encoded values based on this reference_time with each event. The
 "reference_time" value is typically the first absolute timestamp. This approach
-uses a medium amount of characters.<a href="#section-6.1-4.3.1" class="pilcrow">¶</a></p>
+uses a medium amount of characters.<a href="#section-6.1-3.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-6.1-5">The first option is good for stateless loggers, the second and third for stateful
+<p id="section-6.1-4">The first option is good for stateless loggers, the second and third for stateful
 loggers. The third option is generally preferred, since it produces smaller files
 while being easier to reason about. An example for each option can be seen in
-<a href="#time-format-ex" class="auto internal xref">Figure 16</a>.<a href="#section-6.1-5" class="pilcrow">¶</a></p>
+<a href="#time-format-ex" class="auto internal xref">Figure 16</a>.<a href="#section-6.1-4" class="pilcrow">¶</a></p>
 <span id="name-three-different-approaches-"></span><div id="time-format-ex">
 <figure id="figure-16">
-          <div class="alignLeft art-text artwork" id="section-6.1-6.1">
+          <div class="alignLeft art-text artwork" id="section-6.1-5.1">
 <pre>
 The absolute approach will use:
 1500, 1505, 1522, 1588
@@ -2051,22 +2050,22 @@ The relative approach will:
 <a href="#name-three-different-approaches-" class="selfRef">Three different approaches for logging timestamps</a>
           </figcaption></figure>
 </div>
-<p id="section-6.1-7">One of these options is typically chosen for the entire trace (put differently:
+<p id="section-6.1-6">One of these options is typically chosen for the entire trace (put differently:
 each event has the same value for the "time_format" field). Each event <span class="bcp14">MUST</span>
-include a timestamp in the "time" field.<a href="#section-6.1-7" class="pilcrow">¶</a></p>
-<p id="section-6.1-8">Events in each individual trace <span class="bcp14">SHOULD</span> be logged in strictly ascending timestamp
+include a timestamp in the "time" field.<a href="#section-6.1-6" class="pilcrow">¶</a></p>
+<p id="section-6.1-7">Events in each individual trace <span class="bcp14">SHOULD</span> be logged in strictly ascending timestamp
 order (though not necessarily absolute value, for the "delta" format). Tools <span class="bcp14">MAY</span>
 sort all events on the timestamp before processing them, though are not required
 to (as this could impose a significant processing overhead). This can be a problem
 especially for multi-threaded and/or streaming loggers, who could consider using a
 separate post-processor to order qlog events in time if a tool do not provide this
-feature.<a href="#section-6.1-8" class="pilcrow">¶</a></p>
-<p id="section-6.1-9">Timestamps do not have to use the UNIX epoch timestamp as their reference. For
+feature.<a href="#section-6.1-7" class="pilcrow">¶</a></p>
+<p id="section-6.1-8">Timestamps do not have to use the UNIX epoch timestamp as their reference. For
 example for privacy considerations, any initial reference timestamps (for example
 "endpoint uptime in ms" or "time since connection start in ms") can be chosen.
 Tools <span class="bcp14">SHOULD NOT</span> assume the ability to derive the absolute Unix timestamp from
 qlog traces, nor allow on them to relatively order events across two or more
-separate traces (in this case, clock drift should also be taken into account).<a href="#section-6.1-9" class="pilcrow">¶</a></p>
+separate traces (in this case, clock drift should also be taken into account).<a href="#section-6.1-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="name-field">
@@ -2116,10 +2115,9 @@ this extension point when defining new data field content options to
 enable automated validation of aggregated qlog schemas.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
 <p id="section-6.3-3">The only common field defined for the data field is the <code>trigger</code> field,
 which is discussed in <a href="#trigger-field" class="auto internal xref">Section 6.5</a>.<a href="#section-6.3-3" class="pilcrow">¶</a></p>
-<p id="section-6.3-4">Definition:<a href="#section-6.3-4" class="pilcrow">¶</a></p>
 <span id="name-protocoleventbody-definitio"></span><div id="protocoleventbody-def">
 <figure id="figure-18">
-          <div class="lang-cddl sourcecode" id="section-6.3-5.1">
+          <div class="lang-cddl sourcecode" id="section-6.3-4.1">
 <pre>
 ; The ProtocolEventBody is any key-value map (e.g., JSON object)
 ; only the optional trigger field is defined in this document
@@ -2139,11 +2137,11 @@ $ProtocolEventBody /= {
 <a href="#name-protocoleventbody-definitio" class="selfRef">ProtocolEventBody definition</a>
           </figcaption></figure>
 </div>
-<p id="section-6.3-6">One purely illustrative example for a QUIC "packet_sent" event is shown in
-<a href="#data-ex" class="auto internal xref">Figure 19</a>:<a href="#section-6.3-6" class="pilcrow">¶</a></p>
+<p id="section-6.3-5">One purely illustrative example for a QUIC "packet_sent" event is shown in
+<a href="#data-ex" class="auto internal xref">Figure 19</a>:<a href="#section-6.3-5" class="pilcrow">¶</a></p>
 <span id="name-example-of-the-data-field-f"></span><div id="data-ex">
 <figure id="figure-19">
-          <div class="alignLeft art-text artwork" id="section-6.3-7.1">
+          <div class="alignLeft art-text artwork" id="section-6.3-6.1">
 <pre>
 TransportPacketSent = {
     ? packet_size: uint16
@@ -2190,10 +2188,9 @@ could be serialized as
 "stacks") this event belongs. This allows a single qlog file to aggregate traces
 of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).<a href="#section-6.4-1" class="pilcrow">¶</a></p>
-<p id="section-6.4-2">Definition:<a href="#section-6.4-2" class="pilcrow">¶</a></p>
 <span id="name-protocoltype-definition"></span><div id="protocol-type-def">
 <figure id="figure-20">
-          <div class="lang-cddl sourcecode" id="section-6.4-3.1">
+          <div class="lang-cddl sourcecode" id="section-6.4-2.1">
 <pre>
 ProtocolType = [+ text]
 </pre>
@@ -2202,10 +2199,10 @@ ProtocolType = [+ text]
 <a href="#name-protocoltype-definition" class="selfRef">ProtocolType definition</a>
           </figcaption></figure>
 </div>
-<p id="section-6.4-4">For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
-entry values, see <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span>.<a href="#section-6.4-4" class="pilcrow">¶</a></p>
-<p id="section-6.4-5">Typically however, all events in a single trace are of the same few protocols, and
-this array field is logged once in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 6.8</a>.<a href="#section-6.4-5" class="pilcrow">¶</a></p>
+<p id="section-6.4-3">For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
+entry values, see <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span>.<a href="#section-6.4-3" class="pilcrow">¶</a></p>
+<p id="section-6.4-4">Typically however, all events in a single trace are of the same few protocols, and
+this array field is logged once in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 6.8</a>.<a href="#section-6.4-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="trigger-field">
@@ -2276,10 +2273,9 @@ cross-context setups, qlog instead defines the common "group_id" field, which
 contains a string value. Implementations are free to use their preferred string
 serialization for this field, so long as it contains a unique value per logical
 group. Some examples can be seen in <a href="#group-id-ex" class="auto internal xref">Figure 23</a>.<a href="#section-6.6-3" class="pilcrow">¶</a></p>
-<p id="section-6.6-4">Definition:<a href="#section-6.6-4" class="pilcrow">¶</a></p>
 <span id="name-groupid-definition"></span><div id="group-id-def">
 <figure id="figure-22">
-          <div class="lang-cddl sourcecode" id="section-6.6-5.1">
+          <div class="lang-cddl sourcecode" id="section-6.6-4.1">
 <pre>
 GroupID = text
 </pre>
@@ -2288,11 +2284,11 @@ GroupID = text
 <a href="#name-groupid-definition" class="selfRef">GroupID definition</a>
           </figcaption></figure>
 </div>
-<p id="section-6.6-6">JSON serialization example for events grouped by four tuples
-and QUIC connection IDs:<a href="#section-6.6-6" class="pilcrow">¶</a></p>
+<p id="section-6.6-5">JSON serialization example for events grouped by four tuples
+and QUIC connection IDs:<a href="#section-6.6-5" class="pilcrow">¶</a></p>
 <span id="name-groupid-example"></span><div id="group-id-ex">
 <figure id="figure-23">
-          <div class="alignLeft art-text artwork" id="section-6.6-7.1">
+          <div class="alignLeft art-text artwork" id="section-6.6-6.1">
 <pre>
 "events": [
     {
@@ -2317,14 +2313,14 @@ and QUIC connection IDs:<a href="#section-6.6-6" class="pilcrow">¶</a></p>
 <a href="#name-groupid-example" class="selfRef">GroupID example</a>
           </figcaption></figure>
 </div>
-<p id="section-6.6-8">Note that in some contexts (for example a Multipath transport protocol) it might
+<p id="section-6.6-7">Note that in some contexts (for example a Multipath transport protocol) it might
 make sense to add additional contextual per-event fields (for example "path_id"),
-rather than use the group_id field for that purpose.<a href="#section-6.6-8" class="pilcrow">¶</a></p>
-<p id="section-6.6-9">Note also that, typically, a single trace only contains events belonging to a
+rather than use the group_id field for that purpose.<a href="#section-6.6-7" class="pilcrow">¶</a></p>
+<p id="section-6.6-8">Note also that, typically, a single trace only contains events belonging to a
 single logical group (for example, an individual QUIC connection). As such,
 instead of logging the "group_id" field with an identical value for each event
 instance, this field is typically logged once in "common_fields", see
-<a href="#common-fields" class="auto internal xref">Section 6.8</a>.<a href="#section-6.6-9" class="pilcrow">¶</a></p>
+<a href="#common-fields" class="auto internal xref">Section 6.8</a>.<a href="#section-6.6-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="systeminformation">
@@ -2337,15 +2333,14 @@ event. This is useful, for instance, where an application splits work across
 CPUs, processes, or threads and events for a single trace occur on potentially
 different combinations thereof. Each field is optional to support deployment
 diversity.<a href="#section-6.7-1" class="pilcrow">¶</a></p>
-<p id="section-6.7-2">Definition:<a href="#section-6.7-2" class="pilcrow">¶</a></p>
-<div class="lang-cddl sourcecode" id="section-6.7-3">
+<div class="lang-cddl sourcecode" id="section-6.7-2">
 <pre>
 SystemInformation = {
   ? processor_id: uint32
   ? process_id: uint32
   ? thread_id: uint32
 }
-</pre><a href="#section-6.7-3" class="pilcrow">¶</a>
+</pre><a href="#section-6.7-2" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
@@ -2431,10 +2426,9 @@ error).<a href="#section-6.8-4" class="pilcrow">¶</a></p>
 <p id="section-6.8-5">The list of default qlog fields that are typically logged in common_fields (as
 opposed to as individual fields per event instance) are shown in the listing
 below:<a href="#section-6.8-5" class="pilcrow">¶</a></p>
-<p id="section-6.8-6">Definition:<a href="#section-6.8-6" class="pilcrow">¶</a></p>
 <span id="name-commonfields-definition"></span><div id="common-fields-def">
 <figure id="figure-25">
-          <div class="lang-cddl sourcecode" id="section-6.8-7.1">
+          <div class="lang-cddl sourcecode" id="section-6.8-6.1">
 <pre>
 CommonFields = {
     ? time_format: TimeFormat
@@ -2449,11 +2443,11 @@ CommonFields = {
 <a href="#name-commonfields-definition" class="selfRef">CommonFields definition</a>
           </figcaption></figure>
 </div>
-<p id="section-6.8-8">Tools <span class="bcp14">MUST</span> be able to deal with these fields being defined either on each event
+<p id="section-6.8-7">Tools <span class="bcp14">MUST</span> be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
 trace has a different value for a given field, this field <span class="bcp14">MUST NOT</span> be added to
 common_fields but instead defined on each event individually. Good example of such
-fields are "time" and "data", who are divergent by nature.<a href="#section-6.8-8" class="pilcrow">¶</a></p>
+fields are "time" and "data", who are divergent by nature.<a href="#section-6.8-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2471,10 +2465,9 @@ take up considerable space, and can have a considerable privacy and security
 impact (see <a href="#privacy" class="auto internal xref">Section 13</a>). Where applicable, these fields are grouped in a
 separate, optional, field named "raw" of type RawInfo. The exact definition of
 entities, headers, trailers and payloads depend on the protocol used.<a href="#section-7-1" class="pilcrow">¶</a></p>
-<p id="section-7-2">Definition:<a href="#section-7-2" class="pilcrow">¶</a></p>
 <span id="name-rawinfo-definition"></span><div id="raw-info-def">
 <figure id="figure-26">
-        <div class="lang-cddl sourcecode" id="section-7-3.1">
+        <div class="lang-cddl sourcecode" id="section-7-2.1">
 <pre>
 RawInfo = {
 
@@ -2496,14 +2489,14 @@ RawInfo = {
 <a href="#name-rawinfo-definition" class="selfRef">RawInfo definition</a>
         </figcaption></figure>
 </div>
-<p id="section-7-4">The RawInfo:data field can be truncated for privacy or security purposes, see
+<p id="section-7-3">The RawInfo:data field can be truncated for privacy or security purposes, see
 <a href="#truncated-values" class="auto internal xref">Section 10.3</a>. In this case, the length and payload_length fields should
-still indicate the non-truncated lengths when used for debugging purposes.<a href="#section-7-4" class="pilcrow">¶</a></p>
-<p id="section-7-5">This document does not specify explicit header_length or trailer_length fields.
+still indicate the non-truncated lengths when used for debugging purposes.<a href="#section-7-3" class="pilcrow">¶</a></p>
+<p id="section-7-4">This document does not specify explicit header_length or trailer_length fields.
 In protocols without trailers, header_length can be calculated by subtracting
 the payload_length from the length. In protocols with trailers (e.g., QUIC's
 AEAD tag), event definition documents <span class="bcp14">SHOULD</span> define how to support header_length
-calculation.<a href="#section-7-5" class="pilcrow">¶</a></p>
+calculation.<a href="#section-7-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="common-events-and-data-classes">
@@ -2532,12 +2525,11 @@ name of the heading in lowercase (e.g., the "name" of the error event is
           <h4 id="name-error">
 <a href="#section-8.1.1" class="section-number selfRef">8.1.1. </a><a href="#name-error" class="section-name selfRef">error</a>
           </h4>
-<p id="section-8.1.1-1">Importance: Core<a href="#section-8.1.1-1" class="pilcrow">¶</a></p>
-<p id="section-8.1.1-2">Used to log details of an internal error that might not get reflected on the wire.<a href="#section-8.1.1-2" class="pilcrow">¶</a></p>
-<p id="section-8.1.1-3">Definition:<a href="#section-8.1.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.1.1-1">Used to log details of an internal error that might not get reflected on the
+wire. It has Core importance level; see <a href="#importance" class="auto internal xref">Section 9.2</a>.<a href="#section-8.1.1-1" class="pilcrow">¶</a></p>
 <span id="name-genericerror-definition"></span><div id="generic-error-def">
 <figure id="figure-27">
-            <div class="lang-cddl sourcecode" id="section-8.1.1-4.1">
+            <div class="lang-cddl sourcecode" id="section-8.1.1-2.1">
 <pre>
 GenericError = {
     ? code: uint64
@@ -2556,13 +2548,11 @@ GenericError = {
           <h4 id="name-warning">
 <a href="#section-8.1.2" class="section-number selfRef">8.1.2. </a><a href="#name-warning" class="section-name selfRef">warning</a>
           </h4>
-<p id="section-8.1.2-1">Importance: Base<a href="#section-8.1.2-1" class="pilcrow">¶</a></p>
-<p id="section-8.1.2-2">Used to log details of an internal warning that might not get reflected on the
-wire.<a href="#section-8.1.2-2" class="pilcrow">¶</a></p>
-<p id="section-8.1.2-3">Definition:<a href="#section-8.1.2-3" class="pilcrow">¶</a></p>
+<p id="section-8.1.2-1">Used to log details of an internal warning that might not get reflected on the
+wire. It has Base importance level; see <a href="#importance" class="auto internal xref">Section 9.2</a>.<a href="#section-8.1.2-1" class="pilcrow">¶</a></p>
 <span id="name-genericwarning-definition"></span><div id="generic-warning-def">
 <figure id="figure-28">
-            <div class="lang-cddl sourcecode" id="section-8.1.2-4.1">
+            <div class="lang-cddl sourcecode" id="section-8.1.2-2.1">
 <pre>
 GenericWarning = {
     ? code: uint64
@@ -2581,13 +2571,12 @@ GenericWarning = {
           <h4 id="name-info">
 <a href="#section-8.1.3" class="section-number selfRef">8.1.3. </a><a href="#name-info" class="section-name selfRef">info</a>
           </h4>
-<p id="section-8.1.3-1">Importance: Extra<a href="#section-8.1.3-1" class="pilcrow">¶</a></p>
-<p id="section-8.1.3-2">Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.<a href="#section-8.1.3-2" class="pilcrow">¶</a></p>
-<p id="section-8.1.3-3">Definition:<a href="#section-8.1.3-3" class="pilcrow">¶</a></p>
+<p id="section-8.1.3-1">Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see <a href="#importance" class="auto internal xref">Section 9.2</a>.<a href="#section-8.1.3-1" class="pilcrow">¶</a></p>
 <span id="name-genericinfo-definition"></span><div id="generic-info-def">
 <figure id="figure-29">
-            <div class="lang-cddl sourcecode" id="section-8.1.3-4.1">
+            <div class="lang-cddl sourcecode" id="section-8.1.3-2.1">
 <pre>
 GenericInfo = {
     message: text
@@ -2605,13 +2594,12 @@ GenericInfo = {
           <h4 id="name-debug">
 <a href="#section-8.1.4" class="section-number selfRef">8.1.4. </a><a href="#name-debug" class="section-name selfRef">debug</a>
           </h4>
-<p id="section-8.1.4-1">Importance: Extra<a href="#section-8.1.4-1" class="pilcrow">¶</a></p>
-<p id="section-8.1.4-2">Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.<a href="#section-8.1.4-2" class="pilcrow">¶</a></p>
-<p id="section-8.1.4-3">Definition:<a href="#section-8.1.4-3" class="pilcrow">¶</a></p>
+<p id="section-8.1.4-1">Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see <a href="#importance" class="auto internal xref">Section 9.2</a>.<a href="#section-8.1.4-1" class="pilcrow">¶</a></p>
 <span id="name-genericdebug-definition"></span><div id="generic-debug-def">
 <figure id="figure-30">
-            <div class="lang-cddl sourcecode" id="section-8.1.4-4.1">
+            <div class="lang-cddl sourcecode" id="section-8.1.4-2.1">
 <pre>
 GenericDebug = {
     message: text
@@ -2629,13 +2617,12 @@ GenericDebug = {
           <h4 id="name-verbose">
 <a href="#section-8.1.5" class="section-number selfRef">8.1.5. </a><a href="#name-verbose" class="section-name selfRef">verbose</a>
           </h4>
-<p id="section-8.1.5-1">Importance: Extra<a href="#section-8.1.5-1" class="pilcrow">¶</a></p>
-<p id="section-8.1.5-2">Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.<a href="#section-8.1.5-2" class="pilcrow">¶</a></p>
-<p id="section-8.1.5-3">Definition:<a href="#section-8.1.5-3" class="pilcrow">¶</a></p>
+<p id="section-8.1.5-1">Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see <a href="#importance" class="auto internal xref">Section 9.2</a>.<a href="#section-8.1.5-1" class="pilcrow">¶</a></p>
 <span id="name-genericverbose-definition"></span><div id="generic-verbose-def">
 <figure id="figure-31">
-            <div class="lang-cddl sourcecode" id="section-8.1.5-4.1">
+            <div class="lang-cddl sourcecode" id="section-8.1.5-2.1">
 <pre>
 GenericVerbose = {
     message: text
@@ -2669,14 +2656,13 @@ the name of the heading in lowercase (e.g., the "name" of the scenario event is
           <h4 id="name-scenario">
 <a href="#section-8.2.1" class="section-number selfRef">8.2.1. </a><a href="#name-scenario" class="section-name selfRef">scenario</a>
           </h4>
-<p id="section-8.2.1-1">Importance: Extra<a href="#section-8.2.1-1" class="pilcrow">¶</a></p>
-<p id="section-8.2.1-2">Used to specify which specific scenario is being tested at this particular
-instance. This supports, for example, aggregation of
-several simulations into one trace (e.g., split by <code>group_id</code>).<a href="#section-8.2.1-2" class="pilcrow">¶</a></p>
-<p id="section-8.2.1-3">Definition:<a href="#section-8.2.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.2.1-1">Used to specify which specific scenario is being tested at this particular
+instance. This supports, for example, aggregation of several simulations into
+one trace (e.g., split by <code>group_id</code>). It has Extra importance level; see
+<a href="#importance" class="auto internal xref">Section 9.2</a>.<a href="#section-8.2.1-1" class="pilcrow">¶</a></p>
 <span id="name-simulationscenario-definiti"></span><div id="simulation-scenario-def">
 <figure id="figure-32">
-            <div class="lang-cddl sourcecode" id="section-8.2.1-4.1">
+            <div class="lang-cddl sourcecode" id="section-8.2.1-2.1">
 <pre>
 SimulationScenario = {
     ? name: text
@@ -2695,14 +2681,12 @@ SimulationScenario = {
           <h4 id="name-marker">
 <a href="#section-8.2.2" class="section-number selfRef">8.2.2. </a><a href="#name-marker" class="section-name selfRef">marker</a>
           </h4>
-<p id="section-8.2.2-1">Importance: Extra<a href="#section-8.2.2-1" class="pilcrow">¶</a></p>
-<p id="section-8.2.2-2">Used to indicate when specific emulation conditions are triggered at set times
+<p id="section-8.2.2-1">Used to indicate when specific emulation conditions are triggered at set times
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered).<a href="#section-8.2.2-2" class="pilcrow">¶</a></p>
-<p id="section-8.2.2-3">Definition:<a href="#section-8.2.2-3" class="pilcrow">¶</a></p>
+triggered). It has Extra importance level; see <a href="#importance" class="auto internal xref">Section 9.2</a>.<a href="#section-8.2.2-1" class="pilcrow">¶</a></p>
 <span id="name-simulationmarker-definition"></span><div id="simulation-marker-def">
 <figure id="figure-33">
-            <div class="lang-cddl sourcecode" id="section-8.2.2-4.1">
+            <div class="lang-cddl sourcecode" id="section-8.2.2-2.1">
 <pre>
 SimulationMarker = {
     ? type: text
@@ -2758,10 +2742,10 @@ events that benefit from being easily identifiable or individually logged (for
 example <code>packets_acked</code>).<a href="#section-9.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="event-importance-indicators">
+<div id="importance">
 <section id="section-9.2">
-        <h3 id="name-event-importance-indicators">
-<a href="#section-9.2" class="section-number selfRef">9.2. </a><a href="#name-event-importance-indicators" class="section-name selfRef">Event importance indicators</a>
+        <h3 id="name-event-importance-levels">
+<a href="#section-9.2" class="section-number selfRef">9.2. </a><a href="#name-event-importance-levels" class="section-name selfRef">Event importance levels</a>
         </h3>
 <p id="section-9.2-1">Depending on how events are designed, it may be that several events allow the
 logging of similar or overlapping data. For example the separate QUIC
@@ -2769,8 +2753,8 @@ logging of similar or overlapping data. For example the separate QUIC
 <code>connection_state_updated</code>. In these cases, it is not always clear which event
 should be logged or used, and which event should take precedence if e.g., both are
 present and provide conflicting information.<a href="#section-9.2-1" class="pilcrow">¶</a></p>
-<p id="section-9.2-2">To aid in this decision making, each event <span class="bcp14">SHOULD</span> have an "importance indicator"
-with one of three values, in decreasing order of importance and expected usage:<a href="#section-9.2-2" class="pilcrow">¶</a></p>
+<p id="section-9.2-2">To aid in this decision making, qlog defines three event importance levels, in
+decreasing order of importance and expected usage:<a href="#section-9.2-2" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-9.2-3.1">
             <p id="section-9.2-3.1.1">Core<a href="#section-9.2-3.1.1" class="pilcrow">¶</a></p>
@@ -2782,32 +2766,33 @@ with one of three values, in decreasing order of importance and expected usage:<
             <p id="section-9.2-3.3.1">Extra<a href="#section-9.2-3.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-9.2-4">The "Core" events are the events that <span class="bcp14">SHOULD</span> be present in all qlog files for a
+<p id="section-9.2-4">Events definitions <span class="bcp14">SHOULD</span> assign an importance level.<a href="#section-9.2-4" class="pilcrow">¶</a></p>
+<p id="section-9.2-5">Core-level events <span class="bcp14">SHOULD</span> be present in all qlog files for a
 given protocol. These are typically tied to basic packet and frame parsing and
 creation, as well as listing basic internal metrics. Tool implementers <span class="bcp14">SHOULD</span>
 expect and add support for these events, though <span class="bcp14">SHOULD NOT</span> expect all Core events
-to be present in each qlog trace.<a href="#section-9.2-4" class="pilcrow">¶</a></p>
-<p id="section-9.2-5">The "Base" events add additional debugging options and <span class="bcp14">MAY</span> be present in qlog
+to be present in each qlog trace.<a href="#section-9.2-5" class="pilcrow">¶</a></p>
+<p id="section-9.2-6">Base-level events add additional debugging options and <span class="bcp14">MAY</span> be present in qlog
 files. Most of these can be implicitly inferred from data in Core events (if
 those contain all their properties), but for many it is better to log the events
 explicitly as well, making it clearer how the implementation behaves. These
 events are for example tied to passing data around in buffers, to how internal
 state machines change, and used to help show when decisions are actually made
 based on received data. Tool implementers <span class="bcp14">SHOULD</span> at least add support for
-showing the contents of these events, if they do not handle them explicitly.<a href="#section-9.2-5" class="pilcrow">¶</a></p>
-<p id="section-9.2-6">The "Extra" events are considered mostly useful for low-level debugging of the
+showing the contents of these events, if they do not handle them explicitly.<a href="#section-9.2-6" class="pilcrow">¶</a></p>
+<p id="section-9.2-7">Extra-level events are considered mostly useful for low-level debugging of the
 implementation, rather than the protocol. They allow more fine-grained tracking
 of internal behavior. As such, they <span class="bcp14">MAY</span> be present in qlog files and tool
-implementers <span class="bcp14">MAY</span> add support for these, but they are not required to.<a href="#section-9.2-6" class="pilcrow">¶</a></p>
-<p id="section-9.2-7">Note that in some cases, implementers might not want to log for example data
-content details in the "Core" events due to performance or privacy considerations.
-In this case, they <span class="bcp14">SHOULD</span> use (a subset of) relevant "Base" events instead to
+implementers <span class="bcp14">MAY</span> add support for these, but they are not required to.<a href="#section-9.2-7" class="pilcrow">¶</a></p>
+<p id="section-9.2-8">Note that in some cases, implementers might not want to log for example data
+content details in Core-level events due to performance or privacy considerations.
+In this case, they <span class="bcp14">SHOULD</span> use (a subset of) relevant Base-level events instead to
 ensure usability of the qlog output. As an example, implementations that do not
 log QUIC <code>packet_received</code> events and thus also not which (if any) ACK frames the
-packet contains, <span class="bcp14">SHOULD</span> log <code>packets_acked</code> events instead.<a href="#section-9.2-7" class="pilcrow">¶</a></p>
-<p id="section-9.2-8">Finally, for event types whose data (partially) overlap with other event types'
+packet contains, <span class="bcp14">SHOULD</span> log <code>packets_acked</code> events instead.<a href="#section-9.2-8" class="pilcrow">¶</a></p>
+<p id="section-9.2-9">Finally, for event types whose data (partially) overlap with other event types'
 definitions, where necessary the event definition document should include explicit
-guidance on which to use in specific situations.<a href="#section-9.2-8" class="pilcrow">¶</a></p>
+guidance on which to use in specific situations.<a href="#section-9.2-9" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="custom-fields">
@@ -2925,7 +2910,9 @@ non-streamable format. A qlog serializer could work around this by opening a
 file, writing the required opening data, streaming qlog events by appending
 them, and then finalizing the log by appending appropriate closing tags e.g.,
 "]}]}". However, failure to append closing tags, could lead to problems because
-most JSON parsers will fail if a document is malformed. Some streaming JSON parsers are able to handle missing closing tags, however they are not widely deployed in popular environments (e.g., Web browsers)<a href="#section-10.2-1" class="pilcrow">¶</a></p>
+most JSON parsers will fail if a document is malformed. Some streaming JSON
+parsers are able to handle missing closing tags, however they are not widely
+deployed in popular environments (e.g., Web browsers)<a href="#section-10.2-1" class="pilcrow">¶</a></p>
 <p id="section-10.2-2">To overcome the issues related to JSON streaming, a qlog mapping to a streamable
 JSON format called JSON Text Sequences (JSON-SEQ) (<span>[<a href="#RFC7464" class="cite xref">RFC7464</a>]</span>) is provided.<a href="#section-10.2-2" class="pilcrow">¶</a></p>
 <p id="section-10.2-3">JSON Text Sequences are very similar to JSON, except that objects are
