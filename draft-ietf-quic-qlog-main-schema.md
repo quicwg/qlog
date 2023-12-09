@@ -1576,7 +1576,8 @@ be carried in qlog data:
 ## Operational implications and recommendations
 
 Considerations for operational implications should focus on log capture and
-access.
+access. Logging of Internet protocols is equivalent to access to store or read
+plaintext communications, so security considerations apply similarly to qlog.
 
 It is recommended that the ability to enable qlog capture is subject to access
 control and auditing. Furthermore, access control policy should extend to the
