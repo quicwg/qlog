@@ -1575,7 +1575,8 @@ be carried in qlog data:
 
 ## Operational implications and recommendations
 
-Operational implications qlog should focus on log capture and access.
+Considerations for operational implications should focus on log capture and
+access.
 
 It is recommended that the ability to enable qlog capture is subject to access
 control and auditing. Furthermore, access control policy should extend to the
