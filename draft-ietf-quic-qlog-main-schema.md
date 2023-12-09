@@ -1291,7 +1291,9 @@ non-streamable format. A qlog serializer could work around this by opening a
 file, writing the required opening data, streaming qlog events by appending
 them, and then finalizing the log by appending appropriate closing tags e.g.,
 "]}]}". However, failure to append closing tags, could lead to problems because
-most JSON parsers will fail if a document is malformed. Some streaming JSON parsers are able to handle missing closing tags, however they are not widely deployed in popular environments (e.g., Web browsers)
+most JSON parsers will fail if a document is malformed. Some streaming JSON
+parsers are able to handle missing closing tags, however they are not widely
+deployed in popular environments (e.g., Web browsers)
 
 To overcome the issues related to JSON streaming, a qlog mapping to a streamable
 JSON format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}) is provided.
