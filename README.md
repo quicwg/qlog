@@ -19,7 +19,7 @@ Three documents are currently defined:
 * [Working Group Draft](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events)
 * [Compare Editor's Copy to Working Group Draft](https://quicwg.github.io/qlog/#go.draft-ietf-quic-qlog-quic-events.diff)
 
-## HTTP/3 and QPACK event definitions for qlog
+## HTTP/3 event definitions for qlog
 
 * [Editor's Copy](https://quicwg.github.io/qlog/#go.draft-ietf-quic-qlog-h3-events.html)
 * [Working Group Draft](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events)
