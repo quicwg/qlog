@@ -139,11 +139,15 @@ clarity:
 ~~~ cddl
 ; CDDL's uint is defined as being 64-bit in size
 ; but for many protocol fields it is better to be restrictive
-; and explicit
+; and explicit. Some environments cannot support representation
+; of the full range of allowed 64-bit values, so text is also
+; defined; see Section 10.1.1.
+
 uint8 = uint .size 1
 uint16 = uint .size 2
 uint32 = uint .size 4
-uint64 = uint .size 8
+uint64 = uint .size 8 /
+         text
 
 ; an even-length lowercase string of hexadecimally encoded bytes
 ; examples: 82dc, 027339, 4cdbfd9bf0
@@ -1270,19 +1274,9 @@ To accommodate such environments in CDDL, {{Appendix E of CDDL}} recommends
 defining new CDDL types for int64 and uint64 that limit their values to the
 restricted 64-bit integer range. This can be problematic, as some protocols
 (e.g., QUIC, HTTP/3), might use the full int64/uint64 range and we therefore
-need a qlog serialization format to support it. One solution to this is to allow
+need a qlog serialization format to support it. One solution to this is to support
 a string-based representation of 64-bit integers in addition to the numerical,
 but range-limited representation.
-
-As such, when using I-JSON in these situations, the following CDDL definition of
-uint64 should override the original and parsers should take into account that a
-uint64 field can either be a number or string.
-
-~~~
-uint64 = text /
-         uint .size 8
-~~~
-{: #cddl-ijson-uint64-def title="Custom uint64 definition for I-JSON"}
 
 ## qlog to JSON Text Sequences mapping {#format-json-seq}
 
