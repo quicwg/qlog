@@ -166,6 +166,16 @@ layer, and there isn't always a one to one mapping between HTTP and QUIC events.
 The exchange of data between the HTTP and QUIC layer is logged via the
 "stream_data_moved" and "datagram_data_moved" events in {{QLOG-QUIC}}.
 
+HTTP/3 frames are transmitted on QUIC streams, which allows them to span
+multiple QUIC packets. Some implementations might send a single large frame,
+rather than a sequence of smaller frames, in order to amortize frame header
+overhead. HTTP/3 frame headers are represented by the frame_created
+({{h3-framecreated}}) and frame_parsed ({{h3-frameparsed}}) events. Subsequent
+frame payload data transfer is indicated by stream_data_moved events.
+Furthermore, stream_data_moved events can appear before frame_parsed events
+because implementations need to read data from a stream in order to parse the
+frame header.
+
 ## parameters_set {#h3-parametersset}
 
 The `parameters_set` event contains HTTP/3 and QPACK-level settings, mostly
@@ -335,10 +345,6 @@ H3FrameParsed = {
 ~~~
 {: #h3-frameparsed-def title="H3FrameParsed definition"}
 
-HTTP/3 DATA frames can have arbitrarily large lengths to reduce frame header
-overhead. As such, DATA frames can span multiple QUIC packets. In this case, the
-frame_parsed event is emitted once for the frame header, and further streamed
-data is indicated using the stream_data_moved event.
 
 ## datagram_created {#h3-datagramcreated}
 
