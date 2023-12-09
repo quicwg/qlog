@@ -1587,13 +1587,13 @@ more-sensitive data requires higher privileges).
 It is recommended that access to stored qlogs is subject to access control and
 auditing.
 
-Access control techniques in end user client environments can be limited.
-An end-user that might enable logging without understanding the implications of
-that choice on their privacy and security. Implementations should
-consider how to make enabling qlog conspicous, and resistant to automation or
-drive-by attacks. Examples include, requiring explicit actions to start a
-capture and isolation or sandboxing of capture from other activities in the
-same process or component.
+Access control techniques in end user client environments can be limited. An
+end-user that might enable logging without understanding the implications of
+that choice on their privacy and security. Implementations should consider how
+to make enabling qlog conspicous, and resistant to social engineering,
+automation, or drive-by attacks. Examples include, requiring explicit actions to
+start a capture, and isolation or sandboxing of capture from other activities in
+the same process or component.
 
 It is recommended that data retention policies are defined for the storage of
 qlog files.
