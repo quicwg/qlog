@@ -1214,7 +1214,7 @@ protocol buffers, flatbuffers, etc.
 
 Serialization formats make certain tradeoffs between usability, flexibility,
 interoperability, and efficiency. Implementations should take these into
-consideration when choosing a format. For instance, a textual formats like JSON
+consideration when choosing a format. For instance, a textual format like JSON
 can be more flexible than a binary format but more verbose, typically making it
 less efficient than a binary format. A plaintext readable (yet relatively large)
 format like JSON is potentially more usable for users operating on the logs
@@ -1296,7 +1296,7 @@ most JSON parsers will fail if a document is malformed. Some streaming JSON pars
 To overcome the issues related to JSON streaming, a qlog mapping to a streamable
 JSON format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}) is provided.
 
-JSON Text Sequences are very similar to JSON, except that JSON objects are
+JSON Text Sequences are very similar to JSON, except that objects are
 serialized as individual records, each prefixed by an ASCII Record Separator
 (\<RS\>, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Note
 that each record can also contain any amount of newlines in its body, as long as
@@ -1326,9 +1326,6 @@ In order to serialize all other CDDL-based qlog event and data structure
 definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
 {{Appendix E of CDDL}} SHOULD be employed.
 
-When using JSON-SEQ serialization, the file extension/suffix SHOULD be
-".sqlog" (for "streaming" qlog) and the Media Type (if any) SHOULD be
-"application/qlog+json-seq" per {{!RFC8091}}.
 
 ### Supporting JSON Text Sequences in tooling
 
