@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2023-12-07T00:47:08.072279+00:00",
+  "timestamp": "2023-12-10T00:51:03.687645+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3744,7 +3744,7 @@
       ],
       "body": "msquic has separate events that indicate if the sender was blocked/delayed/idle and due to which cause (e.g., pacing, flow control limited, cwnd limited, etc.).\r\n\r\nThis is quite useful for debugging. While some of this can be deduced from looking at other existing qlog events, adding some more explicit events for this could be interesting. \r\n\r\n@nibanks: maybe you could give some pointers/links to where these events are defined for msquic for reference? \r\n\r\ncc @lpardue",
       "createdAt": "2021-01-20T16:56:04Z",
-      "updatedAt": "2022-09-29T14:44:48Z",
+      "updatedAt": "2023-12-09T21:12:31Z",
       "closedAt": null,
       "comments": [
         {
@@ -3795,6 +3795,13 @@
           "body": "There's no QUIC message to tell your peer you can't send it data due to pacing or amplification prevention. So to do that in qlog here, we'd have to invent some new category of event and explain to people what it means and how to use it (produce and consume). \r\n\r\nYes it could be interesting but I lean on punting it to be done when there's a good case about why it needs to be defined in an interoperable way in qlog.",
           "createdAt": "2022-09-29T14:44:47Z",
           "updatedAt": "2022-09-29T14:44:47Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I still think we can live without standardizing this today. It seems a generic \"application data\" category of event can be defined that would work for e.g. both HTTP/2 and HTTP/3 sending on a stream could be blocked due to stream flow control or the transport congestion control. That's simple enough to write in a new spec.",
+          "createdAt": "2023-12-09T21:12:29Z",
+          "updatedAt": "2023-12-09T21:12:29Z"
         }
       ]
     },
@@ -4473,7 +4480,7 @@
       "id": "MDU6SXNzdWU4NDkyNjQ4ODk=",
       "title": "Make protocol_type more well defined",
       "url": "https://github.com/quicwg/qlog/issues/146",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -4485,8 +4492,8 @@
       ],
       "body": "Currently, `protocol_type` is a single string which typically has the value \"QUIC_HTTP3\". \r\n\r\nHowever, this doesn't particularly scale to aggregated logs down the line (e.g., in #139 we can have a plethora of different protocols represented), and it isn't clear how to define new strings for new protocol types (e.g., is it TCP_HTTP2 or TCP_TLS_HTTP2 and in that case, why isn't it QUIC_TLS_HTTP3? etc.)\r\n\r\nOne direct solution might be to make the field an array of individual values (i.e., `protocol_type = [\"QUIC\", \"HTTP3\"]`), but that potentially adds additional overhead if the field is logged for each event individually. \r\n\r\nAnother option would be to prefix event names with the protocol (e.g., `transport:packet_sent` becomes `quic:transport:packet_sent`) but that reduces the future potential to re-use events across protocols (not a big deal for QUIC vs TCP probably, but higher level logic events (say, `recovery:metrics_updated`) could suffer). \r\n\r\nThis is somewhat tied to #85, as some events will be implicitly tied to a particular protocol anyway. ",
       "createdAt": "2021-04-02T14:55:11Z",
-      "updatedAt": "2023-01-17T18:35:54Z",
-      "closedAt": null,
+      "updatedAt": "2023-12-09T21:19:31Z",
+      "closedAt": "2023-12-09T21:19:31Z",
       "comments": [
         {
           "author": "nibanks",
@@ -4515,6 +4522,13 @@
           "body": "We changed the spec so now `protocol_type` is an array.\r\n\r\n```\r\n? protocol_type: ProtocolType\r\n```\r\n\r\nand \r\n\r\n```\r\nProtocolType = [+ text]\r\n```\r\n\r\nWe also currently prefix category to event names.\r\n\r\nI'd say the OP issue was resolved and we should close this. \r\n\r\nWhether we should keep `protocol_type` at all is a different question, and we should open a new issue ",
           "createdAt": "2023-01-17T18:35:54Z",
           "updatedAt": "2023-01-17T18:35:54Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Closing this as done per my previous comment.",
+          "createdAt": "2023-12-09T21:19:31Z",
+          "updatedAt": "2023-12-09T21:19:31Z"
         }
       ]
     },
@@ -5460,7 +5474,7 @@
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
-        "lnicco"
+        "rmarx"
       ],
       "labels": [
         "editorial",
@@ -5470,7 +5484,7 @@
       ],
       "body": "since qlog started early on in the quic/H3 design process, we have some leftovers from early drafts in the docs.\r\n\r\nWe've updated most things over time as they were changed, but some aspects (e.g., most of the quic recovery events mention draft-23/27, `stream_state_updated` mentions draft-23, `packet_sent` triggers refer draft-23/19, etc.)\r\n\r\nWe need to go through each event and match it to terminology used in the final versions of the documents. \r\nFor most things, this would just require removing mentions of old drafts, but in some cases this might require further changes. \r\n\r\nFinally, many events in the quic/H3 docs incorrectly use the pre-draft-02 way of logging raw information (e.g., as bytes fields directly), instead of properly using the new `raw:RawInfo` type. This should be updated.\r\n\r\nSubsumes #46. ",
       "createdAt": "2021-08-18T09:57:41Z",
-      "updatedAt": "2023-11-30T01:07:19Z",
+      "updatedAt": "2023-12-08T15:42:34Z",
       "closedAt": null,
       "comments": [
         {
@@ -5507,6 +5521,20 @@
           "body": "Is there any more work remaining here? If so, recommend creating new more-specific tickets. Either way time to close this monolith.",
           "createdAt": "2023-11-30T01:07:18Z",
           "updatedAt": "2023-11-30T01:07:18Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Yes, there's definitely more work remaining here, e.g., references to old drafts in https://www.ietf.org/archive/id/draft-ietf-quic-qlog-quic-events-06.html#section-4.6 and https://www.ietf.org/archive/id/draft-ietf-quic-qlog-quic-events-06.html#section-5.5. \r\n\r\nFiguring out what's what and creating separate tickets is probably more work than just going through the doc and fixing stuff though... I'd rather do the latter ;) ",
+          "createdAt": "2023-12-08T15:27:33Z",
+          "updatedAt": "2023-12-08T15:27:33Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I already fixed that in the editors copy.\r\n\r\nThis is my point, the general job of editing a document doesn't need a ticket. If there's easy things to fix we just do them. If there's bigger things, an issue to have the discussion makes sense. This ticket is no longer specific and actionable.",
+          "createdAt": "2023-12-08T15:42:32Z",
+          "updatedAt": "2023-12-08T15:42:32Z"
         }
       ]
     },
@@ -5924,16 +5952,24 @@
       ],
       "body": "The new CDDL approach uses a CDDL extension point to be more strict about which values are allowed in the `Event:data` field. \r\n\r\nCurrently, it's defined as:\r\n\r\n```\r\n; The ProtocolEventBody is any key-value map (e.g., JSON object)\r\n; only the optional trigger field is defined in this document\r\n$ProtocolEventBody /= {\r\n    ? trigger: text\r\n    * text => any\r\n}\r\n; event documents are intended to extend this socket by using:\r\n; NewProtocolSpecificEvents = EventType1 / EventType2 / ... / EventTypeN\r\n; $ProtocolEventBody /= NewProtocolSpecificEvents\r\n```\r\n\r\nHowever, this effectively still allows just about any JSON object as ProtocolEventBody, as we're just extending the $ProtocolEventBody.\r\n\r\nIf we want to be (slightly) more strict, we could do something like this:\r\n```\r\n; main doc\r\nProtocolEventBodyPrototype = {\r\n    ? trigger: text\r\n    * text => any\r\n}\r\n\r\nProtocolEventBody = ProtocolEventBodyPrototype / $ProtocolEventBodies\r\n\r\n; event docs\r\nNewProtocolSpecificEvents = EventType1 / EventType2 / ... / EventTypeN\r\n$ProtocolEventBodies /= NewProtocolSpecificEvents\r\n```\r\n\r\nAlternatively, we can just NOT allow the general form (the `ProtocolEventBodyPrototype`) and just include that as an example and require event bodies to provide at least 1 defined event. ",
       "createdAt": "2022-02-19T17:03:09Z",
-      "updatedAt": "2022-02-19T17:03:22Z",
+      "updatedAt": "2023-12-09T21:25:08Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I don't see any problem with the current level of extensibility. What benefit(s) would being more restrictive bring?",
+          "createdAt": "2023-12-09T21:25:07Z",
+          "updatedAt": "2023-12-09T21:25:07Z"
+        }
+      ]
     },
     {
       "number": 196,
       "id": "I_kwDOCrLn6M5FZSGN",
       "title": "Should custom CDDL types be defned externally?",
       "url": "https://github.com/quicwg/qlog/issues/196",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -5942,8 +5978,8 @@
       ],
       "body": "In https://www.ietf.org/archive/id/draft-ietf-quic-qlog-main-schema-02.html#section-1.1.1 you define `uint8`, `uint16`, `uint32`, `uint64` and `hexstring`types.\r\n\r\nHave you considered if these types should be defined in their own document? This seems like something where direction from the CBOR WG would be good. ",
       "createdAt": "2022-03-09T17:49:02Z",
-      "updatedAt": "2023-11-08T10:17:20Z",
-      "closedAt": null,
+      "updatedAt": "2023-12-09T21:27:09Z",
+      "closedAt": "2023-12-09T21:27:09Z",
       "comments": [
         {
           "author": "rmarx",
@@ -5958,6 +5994,13 @@
           "body": "Yes agreed. Let's try and lock this down so we don't have to revisit it later when it might be more awkward and become a blocker to finishing.",
           "createdAt": "2022-03-10T09:15:16Z",
           "updatedAt": "2022-03-10T09:15:16Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I don't want to do this, so I'm closing the issue.",
+          "createdAt": "2023-12-09T21:27:09Z",
+          "updatedAt": "2023-12-09T21:27:09Z"
         }
       ]
     },
@@ -6032,7 +6075,7 @@
       "id": "I_kwDOCrLn6M5GAuJ1",
       "title": "Take a long hard look at QPACK events",
       "url": "https://github.com/quicwg/qlog/issues/199",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -6041,8 +6084,8 @@
       "labels": [],
       "body": "At the moment, the QPACK events very closely mimic the QPACK instructions as defined in the draft (Or at least, they should... the current definitions are somewhat outdated wrt the final QPACK draft, mostly in terms of naming).\r\n\r\nHowever, to my knowledge, not a single QPACK implementation has actually implemented qlog output. Additionally, the QPACK instructions are likely not the easiest to understand or use for debugging outside of the key QPACK implementers. Put differently: higher-level events (e.g., indicating when things were HOL blocked on QPACK, when `SETTINGS_QPACK_BLOCKED_STREAMS` or `SETTINGS_QPACK_MAX_TABLE_CAPACITY` are reached, when errors occur, when a header is added/removed to the dynamic table, etc.) might be more interesting overall. \r\n\r\nThis would however require someone with considerable QPACK experience to come in an help define these events, preferably in tandem with a QPACK/H3 implementation also outputting qlog events for this. CC @afrind ",
       "createdAt": "2022-03-20T15:53:06Z",
-      "updatedAt": "2023-03-27T02:34:50Z",
-      "closedAt": null,
+      "updatedAt": "2023-12-09T21:01:19Z",
+      "closedAt": "2023-12-09T21:01:18Z",
       "comments": [
         {
           "author": "afrind",
@@ -6064,6 +6107,13 @@
           "body": "Dumb question 1 - can these events be generalised to cover HPACK and QPACK? I think the blocking bits probably mean no but figured I'd ask.\r\n\r\nDumb question 2 - what does `Num QPACK Stream Errors` mean? Isn't a single error a terminal problem for the connection, or can there be more than one?",
           "createdAt": "2023-03-27T02:34:49Z",
           "updatedAt": "2023-03-27T02:34:49Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "We looked hard and decided to remove them and let someone else do the work in a separate draft. Closing this now.",
+          "createdAt": "2023-12-09T21:01:18Z",
+          "updatedAt": "2023-12-09T21:01:18Z"
         }
       ]
     },
@@ -6530,9 +6580,17 @@
       "labels": [],
       "body": "As noted in https://github.com/quicwg/qlog/pull/138#issuecomment-801995115, version mismatch problems causing a connection close are logged in 3 ways currently:\r\n\r\n1. with a `version_mismatch` trigger value in `connection_closed`\r\n2. by logging the on the wire versions in `packet_sent` and `packet_received` `.supported_versions`\r\n3. by emitting a separate `version_information` event grouping both external and internal (see below)\r\n\r\n```\r\nTransportVersionInformation = {\r\n    ? server_versions: [+ QuicVersion]\r\n    ? client_versions: [+ QuicVersion]\r\n    ? chosen_version: QuicVersion\r\n}\r\n```\r\n\r\nThis feels clunky, but probably gets the job done, with 1 proposed change:\r\nCurrently QuicVersion is defined as `: hexstring` and I would define it as `: hexstring / \"none\"` to support the mismatch case explicitly in that event as well (currently you'd omit the `chosen_version` field to signal the same). \r\n\r\nAnother change we could do is to add `? supported_versions: [+ QuicVersion]` to the `server_listening` event to make it more explicit which versions a server supports at startup (currently no real way to indicate that). Not sure this is crucial though.\r\n\r\n-------------------\r\n\r\nOne of the main points however is that I'm not sure this:\r\n\r\n1. allows logging of all the possible flows with the [VersionNegotiation extension ](https://www.ietf.org/archive/id/draft-ietf-quic-version-negotiation-10.html). Maybe someone who's implemented that logic can give some insight? CC @huitema\r\n \r\n2. should even be an issue for the qlog documents (as we're [leaning towards](https://github.com/quicwg/qlog/issues/124#issuecomment-1240048715) having separate qlog documents for separate QUIC features/extensions). CC @LPardue \r\n\r\n\r\n\r\n",
       "createdAt": "2022-09-28T13:25:39Z",
-      "updatedAt": "2022-09-28T13:25:39Z",
+      "updatedAt": "2023-12-09T23:30:28Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "We closed the PR that was linked to this (https://github.com/quicwg/qlog/pull/138) so can we just close the issue? ",
+          "createdAt": "2023-12-09T23:30:27Z",
+          "updatedAt": "2023-12-09T23:30:27Z"
+        }
+      ]
     },
     {
       "number": 242,
@@ -6615,7 +6673,7 @@
       "id": "I_kwDOCrLn6M5VTmnF",
       "title": "Security and Privacy: general structure and content",
       "url": "https://github.com/quicwg/qlog/issues/259",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -6626,8 +6684,8 @@
       ],
       "body": "The version of the [Security and Privacy Considerations in main-schema-draft-04](https://www.ietf.org/archive/id/draft-ietf-quic-qlog-main-schema-04.html#name-security-and-privacy-consid) was intended to be a first proposal that can be iterated upon.\r\n\r\nIn particular, @martinthomson has already [proposed an alternative approach](https://github.com/quicwg/qlog/pull/252#pullrequestreview-1152379427):\r\n\r\n> This is a lot of text. I like the enumeration of the types of risk, but I fear that the extrapolation from there is both incomplete and a little long-winded.\r\n>\r\n> The focus on anonymization is not one that I would emphasize. I know that [Christian has toyed with the concept](https://huitema.wordpress.com/2020/07/21/scrubbing-quic-logs-for-privacy/), but that was idle speculation, not anything rigorous.\r\n> \r\n> In the end, this text should be very clear that qlog files present a privacy risk to those participating in the connection. They should therefore be treated accordingly. Any notion that these files might be sanitized in a way that might remove that risk should be changed to focus more on defense in depth. That is, look at access control and retention limits as primary means of protection, not anonymization.\r\n> \r\n> I would instead structure this roughly as follows:\r\n> \r\n> - A brief introductory piece.\r\n> - An articulation of the types of privacy risk that might be presented by capture, storage, and use of qlog data. This part is fairly lengthy and could probably be a subsection.\r\n> - A description of the operational implications and potential actions that might be taken first from a security standpoint, then for privacy remediation. qlog files that are records of interactions with peers are data that those peers (or users) potentially have rights over (I like this point, so make it prominently, but do not refer to laws; do not refer to the GDPR especially).\r\n> 1. Access controls required to enable qlog or to expand the information that is captured.\r\n> 2. Access controls required to access stored qlog files.\r\n> 3. Limits to retention of qlog files.\r\n> 4. Finally, observe that limiting what is captured or anonymization might be possible, but that this could either be insufficient from a privacy perspective, reduce the usefulness of the data, or (highly likely) both.\r\n> \r\n> It's easy to focus on the point about not being able to link qlog data with people. But it's safer to treat that as an open research problem than invite implementations and deployments to indulge in amateur research on the topic.\r\n\r\nThis issue serves to collect further thoughts and comments from the WG post IETF-115. It is a continuation of #142. \r\n\r\n_Note that we are explicitly trying to keep this part of the qlog documents quite concise. A deeper investigation on how to properly handle sensitive data in logs is a more general topic that we hope to tackle in the IETF in the near future. These initial qlog docs should provide just enough guidance to make users aware of the risk and to recommend best practices._ \r\n",
       "createdAt": "2022-11-01T10:24:04Z",
-      "updatedAt": "2023-11-08T10:15:48Z",
-      "closedAt": null,
+      "updatedAt": "2023-12-09T20:58:35Z",
+      "closedAt": "2023-12-09T20:58:35Z",
       "comments": []
     },
     {
@@ -7180,7 +7238,7 @@
       "id": "I_kwDOCrLn6M52s1RU",
       "title": "Remove QPACK events from H3 & QPACK schema",
       "url": "https://github.com/quicwg/qlog/issues/338",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -7189,9 +7247,17 @@
       ],
       "body": "We've heard some feedback that the QPACK events are too low-level to be useful\r\nand that higher-level QPACK events would be preferred. However, in the absence of\r\na proposal for higher-level QPACK events we are stuck with what is currently\r\ndefined ... and nobody seems to be using these.\r\n\r\nThe proposal is to remove QPACK events, see PR #335. This was discussed at IETF 118 and the sense of the room seemed to support it. Lets take it to the list to confirm.",
       "createdAt": "2023-11-13T20:52:13Z",
-      "updatedAt": "2023-11-13T20:52:13Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2023-12-09T23:07:44Z",
+      "closedAt": "2023-12-09T23:07:44Z",
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Closed as done.",
+          "createdAt": "2023-12-09T23:07:44Z",
+          "updatedAt": "2023-12-09T23:07:44Z"
+        }
+      ]
     },
     {
       "number": 339,
@@ -7202,12 +7268,22 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "editorial"
+      ],
       "body": "#289 does an editorial refactor, which hightlights that I-JSON doesn't really belong as a subsection of JSON serialization. In his review, Robin states:\r\n\r\n> Since we removed truncation from this, it's a bit weird to have just a single subsection under JSON. It's also weird we don't explicitly say anything about \"qlog_format\"/file extension/MIME type when employing I-JSON (it's still just \"JSON\", but that should be explicitly spelled out imo).\r\n\r\n> It makes more sense to promote I-JSON to a `##` here, so we have 3 sections for the 3 formats (this is also how they're introduced atm).\r\n\r\n_Originally posted by @rmarx in https://github.com/quicwg/qlog/pull/289#discussion_r1120305282_\r\n            ",
       "createdAt": "2023-11-13T22:48:47Z",
-      "updatedAt": "2023-11-13T22:49:13Z",
+      "updatedAt": "2023-12-09T23:07:13Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I tried to propose some text here but failed at the first attempt.\r\n\r\nAs far as I can tell, there are no standard means to communicate that I-JSON is being used explicitly (i.e. no media type or extension). So a parse can't use any signal to know when to override the definition of uint64. In #359, I propose we just make uint64 itself a number or a string. \r\n\r\nSo I wonder if we should rename this section to \"JSON interoperability\" and mention that serializers make want to apply the I-JSON subset in either of qlog's JSON or JSON-SEQ formats. And also keep the explanation why we need a bigger number range.",
+          "createdAt": "2023-12-09T22:33:58Z",
+          "updatedAt": "2023-12-09T22:33:58Z"
+        }
+      ]
     },
     {
       "number": 340,
@@ -7218,12 +7294,22 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "editorial"
+      ],
       "body": "From PR #289:\r\n\r\n> I've called this \"field names\" consistently throughout the qlog documents. However, double-checking this with the JSON RFC at https://www.rfc-editor.org/rfc/rfc8259#section-4, they use \"member names\" or \"object member names\" instead. \r\n\r\n>I'm not sure that makes things any clearer for readers unfamiliar with JSON terminology, and changing things would be a big overall update across the docs, but potentially worth it for consistency? Either way, would require a new issue/PR.\r\n\r\n_Originally posted by @rmarx in https://github.com/quicwg/qlog/pull/289#discussion_r1120277151_\r\n            ",
       "createdAt": "2023-11-13T22:53:42Z",
-      "updatedAt": "2023-11-13T22:53:42Z",
+      "updatedAt": "2023-12-09T23:07:01Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I like the term qlog field names, especially as we want the qlog schema to be serialization format independent. Therefore I don't think we need to use JSON terminology. I made #362 as a way to make the sentences a bit cripser - but I could equally live without it.",
+          "createdAt": "2023-12-09T23:06:59Z",
+          "updatedAt": "2023-12-09T23:06:59Z"
+        }
+      ]
     },
     {
       "number": 341,
@@ -7288,7 +7374,7 @@
       "id": "I_kwDOCrLn6M54QkO9",
       "title": "Event importance is not prose important",
       "url": "https://github.com/quicwg/qlog/issues/348",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -7299,8 +7385,8 @@
       ],
       "body": "Each event definition lives in a section and states it's importance as the first line of the section. IIRC we agreed on this as an editorial style but I'm growing to dislike it.",
       "createdAt": "2023-11-29T23:31:04Z",
-      "updatedAt": "2023-11-29T23:31:04Z",
-      "closedAt": null,
+      "updatedAt": "2023-12-08T15:21:17Z",
+      "closedAt": "2023-12-08T15:21:17Z",
       "comments": []
     },
     {
@@ -7308,7 +7394,7 @@
       "id": "I_kwDOCrLn6M54Qmht",
       "title": "\"Definition:\"  in prose is redundant",
       "url": "https://github.com/quicwg/qlog/issues/349",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -7319,7 +7405,72 @@
       ],
       "body": "Each event definition figure is prefixed with text that says `Definition:`. This is redunant and we can improve readability by removing them.",
       "createdAt": "2023-11-29T23:42:37Z",
-      "updatedAt": "2023-11-29T23:42:47Z",
+      "updatedAt": "2023-12-08T15:13:49Z",
+      "closedAt": "2023-12-08T15:13:49Z",
+      "comments": []
+    },
+    {
+      "number": 355,
+      "id": "I_kwDOCrLn6M55KxlL",
+      "title": "Security use cases",
+      "url": "https://github.com/quicwg/qlog/issues/355",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "              This first sentence is not precise about whether it refers to the logging use case or the use case of the logged exchange.\r\n\r\n_Originally posted by @martinthomson in https://github.com/quicwg/qlog/pull/353#discussion_r1410158849_\r\n            ",
+      "createdAt": "2023-12-08T15:31:00Z",
+      "updatedAt": "2023-12-08T15:37:09Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "also see https://github.com/quicwg/qlog/pull/353/files#r1410163988 where the text says\r\n\r\n> Operator and implementers need to balance the value of logged data against the potential\r\nrisks inherent in their (involuntary) disclosure. This balance depends on the\r\nuse case at hand (e.g., research datasets might have different requirements to\r\nlive operational troubleshooting).\r\n\r\nand Martin comments \r\n\r\n> It seems like the difference in these examples is WHO has access to the data and the level to which the different entities might be trusted, so maybe this isn't so much about use cases.",
+          "createdAt": "2023-12-08T15:32:59Z",
+          "updatedAt": "2023-12-08T15:34:48Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "It could be I'm conflating the things sure, but from my perspective, research datasets from e.g., active measurements, are obtained for a very different \"use case\" than generic operational logs. \r\n\r\nSimilarly, for the research \"use case\" you need more in-depth data (e.g., to do in-depth debugging) than for the operational \"use case\". \r\n\r\nSo I can see where the comment is coming from, but I'm not sure I agree it's mainly about WHO has access to the data, decoupled from the use case...\r\n\r\n",
+          "createdAt": "2023-12-08T15:37:07Z",
+          "updatedAt": "2023-12-08T15:37:07Z"
+        }
+      ]
+    },
+    {
+      "number": 357,
+      "id": "I_kwDOCrLn6M55PO8Q",
+      "title": "Standardization formats intentions vs recommendations",
+      "url": "https://github.com/quicwg/qlog/issues/357",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "              Not sure I'm the biggest fan of referring explicitly to the other 2 docs here, since this MAIN doc is supposed to be generic (except maybe for some examples).\r\n\r\n_Originally posted by @rmarx in https://github.com/quicwg/qlog/pull/289#discussion_r1420675552_\r\n\r\nSee my followup comments on that PR. It is useful to provide explicit statements but perhaps we want to extract the mention of QUIC and H3 event schema serialization intentions into their own documents. We can recommend in the base schema that each extension state if it is generic or make some format-specific optimization.\r\n            ",
+      "createdAt": "2023-12-09T20:12:07Z",
+      "updatedAt": "2023-12-09T20:12:07Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 358,
+      "id": "I_kwDOCrLn6M55PSHD",
+      "title": "Edit down the security section",
+      "url": "https://github.com/quicwg/qlog/issues/358",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "We've had comments it's long. Let's look for opportunities to shave text.",
+      "createdAt": "2023-12-09T20:57:05Z",
+      "updatedAt": "2023-12-09T20:57:05Z",
       "closedAt": null,
       "comments": []
     }
@@ -14086,24 +14237,26 @@
       "id": "PR_kwDOCrLn6M5HoODp",
       "title": "editorialize serialization section",
       "url": "https://github.com/quicwg/qlog/pull/289",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "- Judicious editorial change to section 6\n- move truncation section below json-seq\n- Split optimization to guidelines and survey/speculation\n- move conversion considerations to appendix\n- fixup: promote truncation a level\n",
       "createdAt": "2023-01-18T14:00:11Z",
-      "updatedAt": "2023-11-13T23:19:23Z",
+      "updatedAt": "2023-12-09T20:26:42Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "f058c608b3853f382cbe9fd809db96ff57386ac2",
+      "baseRefOid": "67552f1d7022556a75abd545adf1c26004e0ed21",
       "headRepository": "quicwg/qlog",
       "headRefName": "editorialize-serialization-section",
-      "headRefOid": "71ab6024a35759529ff9937f10093a43acf2ed44",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "c903b6a391dcc7b2992f43d8f56fd6a5c1a96011",
+      "closedAt": "2023-12-09T20:26:35Z",
+      "mergedAt": "2023-12-09T20:26:35Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "9713e68e43e7eaba785c5c3f321be278bdc18f1d"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -14371,6 +14524,70 @@
               "body": "fixed!",
               "createdAt": "2023-11-13T23:19:23Z",
               "updatedAt": "2023-11-13T23:19:23Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5pqK8j",
+          "commit": {
+            "abbreviatedOid": "71ab602"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "Also needs a pass to reduce line length/add wrapping at a few locations, but other than that and the nits I had, this look good to go. ",
+          "createdAt": "2023-12-08T15:41:30Z",
+          "updatedAt": "2023-12-08T16:05:53Z",
+          "comments": [
+            {
+              "originalPosition": 66,
+              "body": "Not sure I'm the biggest fan of referring explicitly to the other 2 docs here, since this MAIN doc is supposed to be generic (except maybe for some examples).",
+              "createdAt": "2023-12-08T15:41:30Z",
+              "updatedAt": "2023-12-08T16:05:53Z"
+            },
+            {
+              "originalPosition": 73,
+              "body": "```suggestion\r\nconsideration when choosing a format. For instance, a textual format like JSON\r\n```",
+              "createdAt": "2023-12-08T15:42:08Z",
+              "updatedAt": "2023-12-08T16:05:53Z"
+            },
+            {
+              "originalPosition": 120,
+              "body": "Now tracked in https://github.com/quicwg/qlog/issues/340",
+              "createdAt": "2023-12-08T15:44:04Z",
+              "updatedAt": "2023-12-08T16:05:53Z"
+            },
+            {
+              "originalPosition": 193,
+              "body": "```suggestion\r\nJSON Text Sequences are very similar to JSON, except that objects are\r\n```",
+              "createdAt": "2023-12-08T15:48:14Z",
+              "updatedAt": "2023-12-08T16:05:53Z"
+            },
+            {
+              "originalPosition": 225,
+              "body": "```suggestion\r\n```\r\n\r\n(duplicates of 2 paragraphs up)",
+              "createdAt": "2023-12-08T16:03:05Z",
+              "updatedAt": "2023-12-08T16:05:53Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5pur4X",
+          "commit": {
+            "abbreviatedOid": "71ab602"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-12-09T20:12:29Z",
+          "updatedAt": "2023-12-09T20:13:02Z",
+          "comments": [
+            {
+              "originalPosition": 66,
+              "body": "Right but it's too wooly to say \"other related schema\" - all extensions of qlog are related to the main schema. So the question becomes are we levying recommendations on additional schema to be generic, or can they make optimization for serialization formats? The latter seems reasonable to me, it's part of tradeoff that we mention in this spec.\r\n\r\n We have two examples that are generic but don't think we can extapolate from that. This might lean towards having a serialization section in each of the documents so that they state if they are generic or specific. I created #357 to track that.",
+              "createdAt": "2023-12-09T20:12:30Z",
+              "updatedAt": "2023-12-09T20:13:02Z"
             }
           ]
         }
@@ -17184,7 +17401,7 @@
       "id": "PR_kwDOCrLn6M5guhhf",
       "title": "State that importance is a level and integrate into prose",
       "url": "https://github.com/quicwg/qlog/pull/350",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -17193,43 +17410,68 @@
       ],
       "body": "This is an editorial change that tweaks importance from being an indicator\ninto a level, which makes it a bit easier to talk about in the prose.\nEach event definition is then updated to refer to level intro text.\n\nCloses #348\n",
       "createdAt": "2023-11-30T00:36:46Z",
-      "updatedAt": "2023-11-30T00:36:56Z",
+      "updatedAt": "2023-12-08T15:21:20Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6f2d7220edc0ce316c7f1b0afdf3ae058ffcbaa2",
       "headRepository": "quicwg/qlog",
       "headRefName": "move-importance",
-      "headRefOid": "9fdba28e08d2c47cc2969863b2fda5516e240d92",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "26780d72e64d5eb06336449f57a1cf583a0f21f1",
+      "closedAt": "2023-12-08T15:21:16Z",
+      "mergedAt": "2023-12-08T15:21:15Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "c64198fd428bc41fad45ed03a781b4a8a1ff2d0b"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5pp8l2",
+          "commit": {
+            "abbreviatedOid": "9fdba28"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-12-08T15:16:27Z",
+          "updatedAt": "2023-12-08T15:16:27Z",
+          "comments": [
+            {
+              "originalPosition": 370,
+              "body": "```suggestion\r\nThe `key_updated` event has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.\r\n```",
+              "createdAt": "2023-12-08T15:16:27Z",
+              "updatedAt": "2023-12-08T15:16:28Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 351,
       "id": "PR_kwDOCrLn6M5gui4p",
       "title": "Remove redundant definition:",
       "url": "https://github.com/quicwg/qlog/pull/351",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Closes #349\n",
       "createdAt": "2023-11-30T00:44:46Z",
-      "updatedAt": "2023-11-30T00:44:46Z",
+      "updatedAt": "2023-12-08T15:13:52Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6f2d7220edc0ce316c7f1b0afdf3ae058ffcbaa2",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-redundant-definition-prefix",
       "headRefOid": "63893a6844bff65efdbebec39aa6d5a7c7c5cbda",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2023-12-08T15:13:48Z",
+      "mergedAt": "2023-12-08T15:13:48Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "557566bc34712f8fa18ed38cbb2c633ae42b4eb4"
+      },
       "comments": [],
       "reviews": []
     },
@@ -17245,7 +17487,7 @@
       "labels": [],
       "body": "As discussed on #131, there's a slight mismatch of terminology\nbetween the main $ProtocolEventBody and the extensions QUICEvents\nand H3Events.\n\nThis change implements the proposal to align the terms.\n\nClose #131\n",
       "createdAt": "2023-11-30T01:01:52Z",
-      "updatedAt": "2023-11-30T01:03:57Z",
+      "updatedAt": "2023-12-08T15:30:25Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "6f2d7220edc0ce316c7f1b0afdf3ae058ffcbaa2",
@@ -17257,31 +17499,47 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5pqEjF",
+          "commit": {
+            "abbreviatedOid": "a289893"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-12-08T15:30:25Z",
+          "updatedAt": "2023-12-08T15:30:25Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 353,
       "id": "PR_kwDOCrLn6M5gu7_s",
       "title": "Restructure and reflow security section",
       "url": "https://github.com/quicwg/qlog/pull/353",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "This is an attempt to implement some of Martin Thomson's proposed changes.\r\n\r\nIt promotes some of the discussion into a general brief intro. Then\r\nspeaks concretely about the data the qlog can put at risk. Then it\r\npresents access control considerations, followed by data minimization.\r\n\r\nPer Martin's suggestion, data minimization for addressing risks is\r\nplayed down a little. I ended up changing this text the most but tried\r\nto shift, incorporate, or dedupe as much as I could and avoid deletion.\r\n\r\nCloses #259\r\n",
       "createdAt": "2023-11-30T03:05:56Z",
-      "updatedAt": "2023-11-30T05:18:17Z",
+      "updatedAt": "2023-12-09T20:58:41Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "6f2d7220edc0ce316c7f1b0afdf3ae058ffcbaa2",
+      "baseRefOid": "9713e68e43e7eaba785c5c3f321be278bdc18f1d",
       "headRepository": "quicwg/qlog",
       "headRefName": "sec-n-priv-mt",
-      "headRefOid": "9a54c71a59cb06cb1f809abe2fd086cb4ecd7c21",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "b55c82457945d27f87eacebfc0701408c2842e7c",
+      "closedAt": "2023-12-09T20:58:34Z",
+      "mergedAt": "2023-12-09T20:58:34Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "bd070df2475d916f1b507a9eee1982e9749fb1c3"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -17296,6 +17554,13 @@
           "body": "Oh, I forgot to add one more point.  I've said this before, but I will again.\r\n\r\nThis is very long.  I would encourage you to find ways to have this section include fewer words, not more.",
           "createdAt": "2023-11-30T05:18:16Z",
           "updatedAt": "2023-11-30T05:18:16Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "In the interest of momentum, I'll punting the cutting down of text to https://github.com/quicwg/qlog/issues/358",
+          "createdAt": "2023-12-09T20:58:03Z",
+          "updatedAt": "2023-12-09T20:58:03Z"
         }
       ],
       "reviews": [
@@ -17378,8 +17643,327 @@
               "updatedAt": "2023-11-30T05:17:25Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5pqB1o",
+          "commit": {
+            "abbreviatedOid": "9a54c71"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-12-08T15:25:41Z",
+          "updatedAt": "2023-12-08T15:29:50Z",
+          "comments": [
+            {
+              "originalPosition": 71,
+              "body": "Yes, I'll update the text to reflect that.",
+              "createdAt": "2023-12-08T15:25:41Z",
+              "updatedAt": "2023-12-08T15:29:50Z"
+            },
+            {
+              "originalPosition": 80,
+              "body": "yep that was my implication but I'll add that",
+              "createdAt": "2023-12-08T15:26:51Z",
+              "updatedAt": "2023-12-08T15:29:50Z"
+            },
+            {
+              "originalPosition": 13,
+              "body": "I agree. I'm going to track this in a separate ticket (along with your other mention of use-cases). See #355 ",
+              "createdAt": "2023-12-08T15:29:37Z",
+              "updatedAt": "2023-12-08T15:33:27Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5pqFVu",
+          "commit": {
+            "abbreviatedOid": "e9d31ce"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-12-08T15:32:09Z",
+          "updatedAt": "2023-12-08T15:32:10Z",
+          "comments": [
+            {
+              "originalPosition": 100,
+              "body": "I'm lumping this under #355 ",
+              "createdAt": "2023-12-08T15:32:09Z",
+              "updatedAt": "2023-12-08T15:32:10Z"
+            }
+          ]
         }
       ]
+    },
+    {
+      "number": 354,
+      "id": "PR_kwDOCrLn6M5hiNpn",
+      "title": "fix(quic-events): replace typo \"is can be\" with \"can be\"",
+      "url": "https://github.com/quicwg/qlog/pull/354",
+      "state": "MERGED",
+      "author": "mxinden",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2023-12-08T15:24:23Z",
+      "updatedAt": "2023-12-08T15:38:22Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c64198fd428bc41fad45ed03a781b4a8a1ff2d0b",
+      "headRepository": "mxinden/qlog",
+      "headRefName": "patch-1",
+      "headRefOid": "a80ea2cf7ffcb808f12f51ed479017c9fa5d1bfb",
+      "closedAt": "2023-12-08T15:38:22Z",
+      "mergedAt": "2023-12-08T15:38:22Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "a375f821019c1c0e37ab50ecf6b3189ca59d74c8"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5pqB8D",
+          "commit": {
+            "abbreviatedOid": "a80ea2c"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-12-08T15:25:56Z",
+          "updatedAt": "2023-12-08T15:25:56Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5pqJJH",
+          "commit": {
+            "abbreviatedOid": "a80ea2c"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-12-08T15:38:10Z",
+          "updatedAt": "2023-12-08T15:38:10Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 356,
+      "id": "PR_kwDOCrLn6M5hlX2O",
+      "title": "fix(quic-events): typo version_negotiation on *un*-supported version",
+      "url": "https://github.com/quicwg/qlog/pull/356",
+      "state": "MERGED",
+      "author": "mxinden",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "The server sends a version_negotiation packet when it does *not* support the client version.\r\n\r\nAlso remove duplicate \"of\".",
+      "createdAt": "2023-12-09T10:34:17Z",
+      "updatedAt": "2023-12-09T10:52:12Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "a375f821019c1c0e37ab50ecf6b3189ca59d74c8",
+      "headRepository": "mxinden/qlog",
+      "headRefName": "version-not",
+      "headRefOid": "234d3ebd239c95a3e73b807619f2a73fd3ba42b4",
+      "closedAt": "2023-12-09T10:52:12Z",
+      "mergedAt": "2023-12-09T10:52:12Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "67552f1d7022556a75abd545adf1c26004e0ed21"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5puAlx",
+          "commit": {
+            "abbreviatedOid": "6ff33ed"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Thank you!",
+          "createdAt": "2023-12-09T10:40:51Z",
+          "updatedAt": "2023-12-09T10:40:58Z",
+          "comments": [
+            {
+              "originalPosition": 10,
+              "body": "Not introduced in this PR, but taking the opportunity to fix another nit: The packet is called Version Negotiation packet, according to RFC 8999.\r\n\r\n```suggestion\r\nnot support that version, it replies with a Version Negotiation packet, which\r\ncontains its supported versions. From this, the client selects a version. The\r\n```",
+              "createdAt": "2023-12-09T10:40:51Z",
+              "updatedAt": "2023-12-09T10:40:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5puAqU",
+          "commit": {
+            "abbreviatedOid": "6ff33ed"
+          },
+          "author": "mxinden",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2023-12-09T10:43:29Z",
+          "updatedAt": "2023-12-09T10:43:29Z",
+          "comments": [
+            {
+              "originalPosition": 10,
+              "body": "Thanks. Today I learned that RFC 9000 is not the first QUIC related RFC.",
+              "createdAt": "2023-12-09T10:43:29Z",
+              "updatedAt": "2023-12-09T10:43:29Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5puBHk",
+          "commit": {
+            "abbreviatedOid": "234d3eb"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2023-12-09T10:52:02Z",
+          "updatedAt": "2023-12-09T10:52:02Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 359,
+      "id": "PR_kwDOCrLn6M5hmXsY",
+      "title": "Define uint64 duality once",
+      "url": "https://github.com/quicwg/qlog/pull/359",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #229\n",
+      "createdAt": "2023-12-09T22:00:39Z",
+      "updatedAt": "2023-12-09T22:00:40Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bd070df2475d916f1b507a9eee1982e9749fb1c3",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "uint64-can-be-string",
+      "headRefOid": "cf78fde3b16665af07ff8043b8956a18a8544a15",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 360,
+      "id": "PR_kwDOCrLn6M5hmerZ",
+      "title": "Reframe JSON interop concerns seperately of I-JSON",
+      "url": "https://github.com/quicwg/qlog/pull/360",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Since we added JSON-SEQ, it's been hard to square the circle about\nwhere I-JSON fits in the document structure. I think that's because\nactually the discussion should be framed in the context of interop\nissues related to JSON messages. Our 64-bit values pose a problem\nand the way CDDL suggest to solve that doesn't work - so we lay it\nall out here.\n\nThere is obvious overlap here with PR #359. Whichever lands first\n(if they even do) will cause some conflict that is easy to fixup.\n\nCloses #339\n",
+      "createdAt": "2023-12-09T22:52:40Z",
+      "updatedAt": "2023-12-09T22:52:41Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bd070df2475d916f1b507a9eee1982e9749fb1c3",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "reframe-ijson",
+      "headRefOid": "bd7b77ac02d590780ea10192575bc05d2149d145",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 361,
+      "id": "PR_kwDOCrLn6M5hme84",
+      "title": "Remove text about optimization/filename chaining",
+      "url": "https://github.com/quicwg/qlog/pull/361",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #341\n",
+      "createdAt": "2023-12-09T22:58:46Z",
+      "updatedAt": "2023-12-09T22:58:47Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bd070df2475d916f1b507a9eee1982e9749fb1c3",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "remove-chaining",
+      "headRefOid": "c6bd2832233a2a877cd07917aa7321f417fe7bf8",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 362,
+      "id": "PR_kwDOCrLn6M5hmfPo",
+      "title": "Rephrase qlog field serialization rules",
+      "url": "https://github.com/quicwg/qlog/pull/362",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "This avoids any ambiguity about what we are talking about, avoiding\nthe need to import JSON terms.\n\nCloses #340\n",
+      "createdAt": "2023-12-09T23:05:15Z",
+      "updatedAt": "2023-12-09T23:05:16Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bd070df2475d916f1b507a9eee1982e9749fb1c3",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "be-clear-about-field-names",
+      "headRefOid": "2e5186b8b6d6b300ce7a5a532b4636a193096450",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 363,
+      "id": "PR_kwDOCrLn6M5hmgJx",
+      "title": "Move commentary on HTTP/3 frame and QUIC packetization",
+      "url": "https://github.com/quicwg/qlog/pull/363",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #280\n",
+      "createdAt": "2023-12-09T23:27:51Z",
+      "updatedAt": "2023-12-09T23:27:51Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "98d720cd6519002775c224e94e03a2d0c9fbb431",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "h3-frames-r-big",
+      "headRefOid": "2bbbd9145a22f867e20b38c5e051bad82dca8381",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
