@@ -202,44 +202,44 @@ this specification.
 | recovery:ecn_state_updated            | Extra      | {{recovery-ecnstateupdated}} |
 {: #quic-events title="QUIC Events"}
 
-QUIC events extend the `$ProtocolEventBody` extension point defined in
+QUIC events extend the `$ProtocolEventData` extension point defined in
 {{QLOG-MAIN}}.
 
 ~~~ cddl
-QuicEvents = ConnectivityServerListening /
-             ConnectivityConnectionStarted /
-             ConnectivityConnectionClosed /
-             ConnectivityConnectionIDUpdated /
-             ConnectivitySpinBitUpdated /
-             ConnectivityConnectionStateUpdated /
-             ConnectivityMTUUpdated /
-             SecurityKeyUpdated /
-             SecurityKeyDiscarded /
-             QUICVersionInformation /
-             QUICALPNInformation /
-             QUICParametersSet /
-             QUICParametersRestored /
-             QUICPacketSent /
-             QUICPacketReceived /
-             QUICPacketDropped /
-             QUICPacketBuffered /
-             QUICPacketsAcked /
-             QUICDatagramsSent /
-             QUICDatagramsReceived /
-             QUICDatagramDropped /
-             QUICStreamStateUpdated /
-             QUICFramesProcessed /
-             QUICStreamDataMoved /
-             QUICDatagramDataMoved /
-             RecoveryParametersSet /
-             RecoveryMetricsUpdated /
-             RecoveryCongestionStateUpdated /
-             RecoveryLossTimerUpdated /
-             RecoveryPacketLost
+QuicEventData = ConnectivityServerListening /
+                ConnectivityConnectionStarted /
+                ConnectivityConnectionClosed /
+                ConnectivityConnectionIDUpdated /
+                ConnectivitySpinBitUpdated /
+                ConnectivityConnectionStateUpdated /
+                ConnectivityMTUUpdated /
+                SecurityKeyUpdated /
+                SecurityKeyDiscarded /
+                QUICVersionInformation /
+                QUICALPNInformation /
+                QUICParametersSet /
+                QUICParametersRestored /
+                QUICPacketSent /
+                QUICPacketReceived /
+                QUICPacketDropped /
+                QUICPacketBuffered /
+                QUICPacketsAcked /
+                QUICDatagramsSent /
+                QUICDatagramsReceived /
+                QUICDatagramDropped /
+                QUICStreamStateUpdated /
+                QUICFramesProcessed /
+                QUICStreamDataMoved /
+                QUICDatagramDataMoved /
+                RecoveryParametersSet /
+                RecoveryMetricsUpdated /
+                RecoveryCongestionStateUpdated /
+                RecoveryLossTimerUpdated /
+                RecoveryPacketLost
 
-$ProtocolEventBody /= QuicEvents
+$ProtocolEventData /= QuicEventData
 ~~~
-{: #quicevents-def title="QuicEvents definition and ProtocolEventBody
+{: #quicevent-data-def title="QuicEventData definition and ProtocolEventData
 extension"}
 
 # Connectivity events {#conn-ev}
