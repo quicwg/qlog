@@ -1232,11 +1232,8 @@ potential optimizations to these formats, such as reducing storage or processing
 overheads, are presented in {{optimizations}}.
 
 Serialization formats require appropriate deserializers/parsers. The
-"qlog_format" field ({{qlog-file-schema}}) is used to indicate the chosen serialization
-format. This field is a string, but can be made hierarchical by the use of the
-"." separator between entries. For example, a value of "JSON.optimizationA" can
-indicate that a default JSON format is being used, with an example "type A"
-optimization; see also {{optimizations}}.
+"qlog_format" field ({{qlog-file-schema}}) is used to indicate the chosen
+serialization format.
 
 ## qlog to JSON mapping {#format-json}
 
@@ -1409,7 +1406,6 @@ and optimization options were assessed and the results are [summarized on the ql
 github
 repository](https://github.com/quiclog/internet-drafts/issues/30#issuecomment-617675097).
 
-
 Formal definition of additional qlog formats or encodings that use the
 optimization techniques described here, or any other optimization technique is
 left to future activity that can apply the following guidelines.
@@ -1418,14 +1414,6 @@ In order to help tools correctly parse and process serialized qlog, it is
 RECOMMENDED that new formats also define suitable file extensions and media
 types. This provides a clear signal and avoids the need to provide out-of-band
 information or to rely on heuristic fallbacks; see {{tooling}}.
-
-There is no established standard for indicating optimized formats. Therefore, it
-is RECOMMENDED that applied optimizations are expressed in ascending order of
-application. For example, if a qlog file using JSON is first optimized with
-technique A and then compressed with technique B, the resulting file would have
-the extension ".qlog.A.B". This allows tooling reverse the applied optimizations
-to arrive at the expected qlog representation. This recommendation applies to
-both file extensions and media types.
 
 # Methods of access and generation
 
