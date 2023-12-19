@@ -1498,14 +1498,14 @@ security and privacy, especially if data can be correlated across data sources.
 
 Depending on the observability use case any data could be logged or captured. As
 per {{?RFC6973}}, operators must be aware that such data could be compromised,
-risking the privacy of all participants. Entities that expecti internet protocol
+risking the privacy of all participants. Entities that expect protocol
 features to ensure data privacy might unknowingly be subject to broader privacy
 risks, undermining their ability to assess or respond effectively.
 
 ## Data at risk
 
 qlog operators and implementers need to consider security and privacy risks when
-handling qlog data, including logging, storage, usage and more. Data can be
+handling qlog data, including logging, storage, usage, and more. Data can be
 categorized as non-sensitive, potentially-sensitive, or sensitive. The
 considerations presented in this section may pose varying risks depending on the
 the data itself or its handling. Generally, the largest risk factors arise from
@@ -1523,10 +1523,10 @@ sources (e.g., captures of encrypted packets):
 
 * System-level information e.g., CPU, process, or thread identifiers.
 
-* Stored State e.g, QUIC address validation and retry tokens, TLS session
+* Stored State e.g., QUIC address validation and retry tokens, TLS session
   tickets, and HTTP cookies.
 
-* TLS decryption keys, passwords, HTTP-level API access or authorization tokens.
+* TLS decryption keys, passwords, and HTTP-level API access or authorization tokens.
 
 * High-resolution event timestamps or inter-event timings, event counts, packet
   sizes, and frame sizes.
@@ -1538,9 +1538,9 @@ sources (e.g., captures of encrypted packets):
 
 ## Operational implications and recommendations
 
-Operational considerations should focus on capture and access. Logging of
-Internet protocols using qlog is equivalent the ability to store or read plaintext
-communications, so all security considerations of plaintext apply.
+Operational considerations should focus on authorizing capture and access to logs. Logging of
+Internet protocols using qlog can be equivalent the ability to store or read plaintext
+communications. Without a more detailed analysis, all of the security considerations of plaintext access apply.
 
 It is recommended that qlog capture is subject to access control and auditing,
 extending to granularity over the level of information that is allowed to be
@@ -1566,7 +1566,7 @@ It is recommended that qlog files are encrypted in transit and at rest.
 
 Applying data minimization or anonymization techniques to qlog might help
 address some security and privacy risks. However, removing or anonymizing data
-without sufficient care may not necessarily enhance privacy or security and
+without sufficient care might not enhance privacy or security and
 could diminish the utility of qlog data.
 
 Operators and implementers should balance the value of logged data with the
@@ -1581,7 +1581,7 @@ control for this on a per-use-case or per-connection basis.
 Data can undergo anonymization, pseudonymization, permutation, truncation,
 re-encryption, or aggregation; see {{Appendix B of !DNS-PRIVACY=RFC8932}} for
 techniques, especially regarding IP addresses. However, operators should be
-cautious because many of these have been shown to be insufficient to safeguard
+cautious because many anonymization methods have been shown to be insufficient to safeguard
 user privacy or identity, particularly with large or easily correlated data sets.
 
 Operators should consider end user rights and preferences. Active user participation (as
