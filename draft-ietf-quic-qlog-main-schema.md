@@ -1244,8 +1244,8 @@ be ".qlog". The Media Type, if any, SHOULD be "application/qlog+json" per
 {{!RFC6839}}.
 
 In accordance with {{Section 8.1 of !RFC8259}}, JSON files are required to use
-UTF-8 both for the file itself and the string values it contains. In addition, all qlog
-field names in a JSON serialization MUST be lowercase.
+UTF-8 both for the file itself and the string values it contains. In addition,
+all qlog field names MUST be lowercase when serialized to JSON.
 
 In order to serialize CDDL-based qlog event and data structure
 definitions to JSON, the official CDDL-to-JSON mapping defined in
@@ -1318,8 +1318,8 @@ When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
 "JSON-SEQ". The file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
 The Media Type, if any, SHOULD be "application/qlog+json-seq" per {{!RFC8091}}.
 
-While not specifically required by the JSON-SEQ specification, all qlog
-field names in a JSON-SEQ serialization MUST be lowercase.
+While not specifically required by the JSON-SEQ specification, all qlog field
+names MUST be lowercase when serialized to JSON-SEQ.
 
 In order to serialize all other CDDL-based qlog event and data structure
 definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
