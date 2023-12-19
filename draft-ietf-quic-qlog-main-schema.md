@@ -1563,7 +1563,6 @@ It is recommended that qlog files are encrypted in transit and at rest.
 
 ## Data minimization or anonymization
 
-
 Applying data minimization or anonymization techniques to qlog might help
 address some security and privacy risks. However, removing or anonymizing data
 without sufficient care might not enhance privacy or security and
