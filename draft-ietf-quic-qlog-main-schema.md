@@ -102,8 +102,7 @@ This document defines qlog, an extensible high-level schema and harness that
 provides a shareable, aggregatable and structured logging format. This
 high-level schema is independent of protocol, with logging entries for specific
 protocols and use cases being defined in other documents (see for example
-{{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3 and QPACK-related event
-definitions).
+{{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3-related event definitions).
 
 The goal of this high-level schema is to provide amenities and default
 characteristics that each logging file should contain (or should be able to
@@ -534,8 +533,7 @@ with identical values. It is possible to optimize out this duplication using
 
 The specific values for each of these fields and their semantics are defined in
 separate documents, depending on protocol or use case. For example: event
-definitions for QUIC, HTTP/3 and QPACK can be found in {{QLOG-QUIC}} and
-{{QLOG-H3}}.
+definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
 
 Events are intended to be extended with custom fields, therefore they MAY
 contain other fields not defined in this document. Custom fields may be known or
@@ -637,7 +635,7 @@ non-empty character sequence representing a category, followed by a colon (':'),
 followed by a non-empty character sequence representing a type.
 
 Category allows a higher-level grouping of events per specific event type. For
-example for QUIC and HTTP/3, the different categories could be "quic", "http",
+example for QUIC and HTTP/3, the different categories could be "quic", "h3",
 "qpack", and "recovery". Within these categories, the event type provides
 additional granularity. For example for QUIC and HTTP/3, within the "quic"
 category, there would be "packet_sent" and "packet_received" events.
@@ -1114,8 +1112,8 @@ This document defines the main schema for the qlog format together with some
 common events, which on their own do not provide much logging utility. It is
 expected that logging is extended with specific, per-protocol event definitions
 that specify the name (category + type) and data needed for each individual
-event. Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3 and
-QPACK event definitions {{QLOG-H3}}.
+event. Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3
+event definitions {{QLOG-H3}}.
 
 This section defines some basic annotations and concepts that SHOULD be used by
 event definition documents. Doing so ensures a measure of consistency that makes
