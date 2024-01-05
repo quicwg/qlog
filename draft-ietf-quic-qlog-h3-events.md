@@ -672,6 +672,13 @@ Yamamoto, and Christian Huitema for their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+
+## Since draft-ietf-quic-qlog-h3-events-05:
+{:numbered="false"}
+
+* Removed all qpack event definitions (#335)
+* Various editorial changes
+
 ## Since draft-ietf-quic-qlog-h3-events-04:
 {:numbered="false"}
 
