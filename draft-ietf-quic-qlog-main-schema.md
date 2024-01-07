@@ -33,7 +33,7 @@ author:
   - ins: L. Pardue
     name: Lucas Pardue
     org: Cloudflare
-    email: lucaspardue.24.7@gmail.com
+    email: lucas@lucaspardue.com
     role: editor
 
 normative:
