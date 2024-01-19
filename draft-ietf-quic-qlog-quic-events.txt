@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 10 July 2024                                               Meta
+Expires: 22 July 2024                                               Meta
                                                          M. Seemann, Ed.
                                                            Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                          7 January 2024
+                                                         19 January 2024
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 10 July 2024.
+   This Internet-Draft will expire on 22 July 2024.
 
 Copyright Notice
 
@@ -644,8 +644,8 @@ Table of Contents
    has Extra importance level; see Section 9.2 of [QLOG-MAIN].
 
    ConnectivityMTUUpdated = {
-     ? old: uint16
-     new: uint16
+     ? old: uint32
+     new: uint32
 
      ; at some point, MTU discovery stops, as a "good enough"
      ; packet size has been found
@@ -691,13 +691,15 @@ Table of Contents
       server logs this event with server_versions set and
       client_versions to the single-element array containing the
       client's attempted version.  The absence of chosen_version implies
-      no overlap was found.
+      no overlap was found
 
    *  Upon receiving a version negotiation packet from the server, the
       client logs this event with client_versions set and
       server_versions to the versions in the version negotiation packet
       and chosen_version to the version it will use for the next initial
-      packet
+      packet.  If the client receives a set of server_versions with no
+      viable overlap with its own supported versions, this event should
+      be logged without the chosen_version set
 
 5.2.  alpn_information
 
@@ -1194,16 +1196,16 @@ Table of Contents
    this single frames_processed event.
 
    The frame_processed event can be used to signal internal state change
-   not resulting directly from the actual parsing of a frame (e.g., the
-   frame could have been parsed, data put into a buffer, then later
+   not resulting directly from the actual "parsing" of a frame (e.g.,
+   the frame could have been parsed, data put into a buffer, then later
    processed, then logged with this event).
 
    The packet_received event can convey all constituent frames.  It is
    not expected that the frames_processed event will also be used for a
    redundant purpose.  Rather, implementations can use this event to
    avoid having to log full packets or to convey extra information about
-   when frames are processed (for example, frame processing is deferred
-   for any reason).
+   when frames are processed (for example, if frame processing is
+   deferred for any reason).
 
    Note that for some events, this approach will lose some information
    (e.g., for which encryption level are packets being acknowledged?).
@@ -1395,7 +1397,7 @@ Table of Contents
 
    All these settings are typically set once and never change.
    Implementation that do, for some reason, change these parameters
-   during execution, MAY emit the parameters_set event twice.
+   during execution, MAY emit the parameters_set event more than once.
 
    RecoveryParametersSet = {
 
@@ -1904,7 +1906,7 @@ Table of Contents
        frame_type: "reset_stream"
        stream_id: uint64
        error_code: $ApplicationError /
-                   uint32
+                   uint64
 
        ; in bytes
        final_size: uint64
@@ -1922,7 +1924,7 @@ Table of Contents
        frame_type: "stop_sending"
        stream_id: uint64
        error_code: $ApplicationError /
-                   uint32
+                   uint64
 
        ; total frame length, including frame header
        ? length: uint32
@@ -1938,6 +1940,7 @@ Table of Contents
        offset: uint64
        length: uint64
        ? payload_length: uint32
+       ? raw: RawInfo
    }
 
                      Figure 53: CryptoFrame definition
@@ -2090,7 +2093,7 @@ Table of Contents
        ? error_space: ErrorSpace
        ? error_code: TransportError /
                      $ApplicationError /
-                     uint32
+                     uint64
        ? error_code_value: uint64
        ? reason: text
 
