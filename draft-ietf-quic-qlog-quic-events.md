@@ -476,8 +476,8 @@ level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 ConnectivityMTUUpdated = {
-  ? old: uint16
-  new: uint16
+  ? old: uint32
+  new: uint32
 
   ; at some point, MTU discovery stops, as a "good enough"
   ; packet size has been found
@@ -520,11 +520,13 @@ Intended use:
 - Upon receiving a client initial with an unsupported version, the server logs
   this event with `server_versions` set and `client_versions` to the
   single-element array containing the client's attempted version. The absence of
-  chosen_version implies no overlap was found.
+  chosen_version implies no overlap was found
 - Upon receiving a version negotiation packet from the server, the client logs
   this event with `client_versions` set and `server_versions` to the versions in
-  the version negotiation packet and chosen_version to the version it will use for
-  the next initial packet
+  the version negotiation packet and chosen_version to the version it will use
+  for the next initial packet. If the client receives a set of `server_versions`
+  with no viable overlap with its own supported versions, this event should be
+  logged without the `chosen_version` set
 
 ## alpn_information {#quic-alpninformation}
 
@@ -1003,7 +1005,7 @@ of an implementation can be inferred from that frame's contents, these events
 are aggregated into this single `frames_processed` event.
 
 The `frame_processed` event can be used to signal internal state change not
-resulting directly from the actual `parsing` of a frame (e.g., the frame could
+resulting directly from the actual "parsing" of a frame (e.g., the frame could
 have been parsed, data put into a buffer, then later processed, then logged with
 this event).
 
@@ -1011,7 +1013,7 @@ The `packet_received` event can convey all constituent frames. It is not
 expected that the `frames_processed` event will also be used for a redundant
 purpose. Rather, implementations can use this event to avoid having to log full
 packets or to convey extra information about when frames are processed (for
-example, frame processing is deferred for any reason).
+example, if frame processing is deferred for any reason).
 
 Note that for some events, this approach will lose some information (e.g., for which
 encryption level are packets being acknowledged?). If this information is
@@ -1201,7 +1203,7 @@ and congestion control into a single event. It has Base importance level; see
 
 All these settings are typically set once and never change. Implementation that
 do, for some reason, change these parameters during execution, MAY emit the
-`parameters_set` event twice.
+`parameters_set` event more than once.
 
 ~~~ cddl
 RecoveryParametersSet = {
@@ -1713,7 +1715,7 @@ ResetStreamFrame = {
     frame_type: "reset_stream"
     stream_id: uint64
     error_code: $ApplicationError /
-                uint32
+                uint64
 
     ; in bytes
     final_size: uint64
@@ -1732,7 +1734,7 @@ StopSendingFrame = {
     frame_type: "stop_sending"
     stream_id: uint64
     error_code: $ApplicationError /
-                uint32
+                uint64
 
     ; total frame length, including frame header
     ? length: uint32
@@ -1749,6 +1751,7 @@ CryptoFrame = {
     offset: uint64
     length: uint64
     ? payload_length: uint32
+    ? raw: RawInfo
 }
 ~~~
 {: #cryptoframe-def title="CryptoFrame definition"}
@@ -1914,7 +1917,7 @@ ConnectionCloseFrame = {
     ? error_space: ErrorSpace
     ? error_code: TransportError /
                   $ApplicationError /
-                  uint32
+                  uint64
     ? error_code_value: uint64
     ? reason: text
 

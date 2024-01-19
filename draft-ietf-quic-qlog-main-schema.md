@@ -1190,7 +1190,7 @@ Finally, for event types whose data (partially) overlap with other event types'
 definitions, where necessary the event definition document should include explicit
 guidance on which to use in specific situations.
 
-## Custom fields\
+## Custom fields
 
 Event definition documents are free to define new category and event types,
 top-level fields (e.g., a per-event field indicating its privacy properties or
