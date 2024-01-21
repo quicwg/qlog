@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-01-18T00:47:26.234575+00:00",
+  "timestamp": "2024-01-21T00:52:30.547579+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7473,6 +7473,361 @@
       "updatedAt": "2023-12-09T20:57:05Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 366,
+      "id": "I_kwDOCrLn6M58lt7T",
+      "title": "Improve connectivity:connection_closed",
+      "url": "https://github.com/quicwg/qlog/issues/366",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_closed:\r\n\r\n  This is missing the frame type field in the QUIC CONNECTION_CLOSE\r\n  frame which is rather useful information.\r\n\r\n  connection_code can be a string or a uint32, but QUIC uses a variable\r\n  length integer here and thus this can be up to 62 bits. Same for the\r\n  application_code.\r\n\r\n  It is up to the decoder to infer by presence of connection_code or\r\n  application_code to infer whether this was an application or transport\r\n  CONNECTION_CLOSE. But this requires it to log such a value. It would\r\n  be nice if this can be communicated without necessarily knowing the\r\n  actual value. Consider either adding a field to distinguish between\r\n  transport and app errors or replacing the \"error\" field of \"trigger\"\r\n  with \"app_error\" and \"transport_error\".",
+      "createdAt": "2024-01-19T10:55:33Z",
+      "updatedAt": "2024-01-19T10:55:33Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 367,
+      "id": "I_kwDOCrLn6M58luqK",
+      "title": "Improve connectivity:connection_id_updated",
+      "url": "https://github.com/quicwg/qlog/issues/367",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_id_updated:\r\n\r\n  It would be nice to be able to optionally log CID-associated sequence\r\n  numbers and the type of CID source (ODCID, Initial CID,\r\n  preferred_address transport parameter, NCID frame, etc.)",
+      "createdAt": "2024-01-19T10:57:01Z",
+      "updatedAt": "2024-01-19T10:57:01Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 368,
+      "id": "I_kwDOCrLn6M58lxw5",
+      "title": "Improve quic:alpn_information",
+      "url": "https://github.com/quicwg/qlog/issues/368",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "LPardue"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:alpn_information:\r\n\r\n  RFC 7301 states that ALPN protocol strings are byte strings, not text.\r\n  How should ALPN protocol strings which are not valid UTF-8 or not\r\n  valid text be logged?",
+      "createdAt": "2024-01-19T11:02:20Z",
+      "updatedAt": "2024-01-19T11:02:20Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 369,
+      "id": "I_kwDOCrLn6M58ly6Z",
+      "title": "Improve quic:parameters_set",
+      "url": "https://github.com/quicwg/qlog/issues/369",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:parameters_set:\r\n\r\n  As things stand, there is no facility for logging the reception of unknown\r\n  transport parameters by an endpoint. Since transport parameters are used to\r\n  negotiate extensions to QUIC, having logged data about the presence of\r\n  transport parameters sent by a peer but not understood, and the consequential\r\n  ability to get information about the prevalence of any given unsupported\r\n  transport parameter in incoming traffic, seems like it would be quite useful.\r\n\r\n  I think this event needs more clarify in terms of the distinction between\r\n  attempting to negotiate a feature and it being enabled. It should be possible\r\n  to log the feature set a local or remote endpoint is requesting and it\r\n  should be possible to log the actually negotiated feature set. Possibly\r\n  this can be resolved via simple clarification. If a client connects to\r\n  a server, does it start by emitting parameters_set (owner=local) with (e.g.)\r\n  max_datagram_frame_size set, and then when the server responds without\r\n  it, emit parameters_set (owner=remote) without it? I guess this allows\r\n  the necessary information to be inferred.\r\n\r\n  If the absence of a field indicates it was not negotiated after receiving\r\n  transport parameters from a server, this creates a problem if this event has\r\n  to be used to log other parameters determined at different times (which seems\r\n  plausible for `tls_cipher`, `early_data_enabled`, etc.), as then logging\r\n  those parameters could be misinterpreted as a sign that the transport\r\n  parameters have been received and a feature has not been negotiated.\r\n  Either the cause of a parameters_set event should be clarified (maybe a trigger\r\n  field) or possibly this should be split into different event types.\r\n\r\n  I think it would be valuable to have the ability to log information\r\n  such as spin bit policy (e.g. enabled, disabled due to random chance,\r\n  disabled administratively), independent of the actual spin_bit_updated\r\n  event).",
+      "createdAt": "2024-01-19T11:04:16Z",
+      "updatedAt": "2024-01-19T11:04:16Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 370,
+      "id": "I_kwDOCrLn6M58lzqM",
+      "title": "Add clarification for is_coalesced to packet_sent and packet_received",
+      "url": "https://github.com/quicwg/qlog/issues/370",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:packet_sent:\r\n\r\n  The meaning of `is_coalesced` should be clarified. I assume this is\r\n  set to true unless a packet is both the first and last packet in a\r\n  datagram. However that is not necessarily obvious when a packet is\r\n  being generated; another option is to define this as being true for\r\n  every packet but the first packet in a datagram.\r\n\r\nquic:packet_received:\r\n\r\n  See comment on is_coalesced above",
+      "createdAt": "2024-01-19T11:05:38Z",
+      "updatedAt": "2024-01-19T11:05:41Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 371,
+      "id": "I_kwDOCrLn6M58l0cM",
+      "title": "Add trigger for specific packet_dropped situation",
+      "url": "https://github.com/quicwg/qlog/issues/371",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:packet_dropped:\r\n\r\n  What is the intended trigger category here when an EL is discarded and\r\n  buffered packets are discarded as a consequence? `decryption_failure`\r\n  could match but feels subtly different, as I guess that covers the\r\n  case where a packet is received after an EL is discarded. IMO it would\r\n  be better to have a different trigger category for this, and add\r\n  language clarifying this case.",
+      "createdAt": "2024-01-19T11:07:10Z",
+      "updatedAt": "2024-01-19T19:42:01Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Here, I might be suffering from \"my brain is slow because it's friday\"-syndrome, but I'm not sure what you mean by \"EL\" here. Care to explain?\r\n\r\nIn general, there are many more `packet_dropped` reasons than we chose to list here, since an exhaustive list would be too much. We have the `general` category for this, AND because triggers are generally loosely defined, implementations can choose their own custom values as well. Though, we can of course have the discussion if this specific situation is common enough to warrant its own trigger value in the spec. ",
+          "createdAt": "2024-01-19T11:08:49Z",
+          "updatedAt": "2024-01-19T11:08:49Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": ">Here, I might be suffering from \"my brain is slow because it's friday\"-syndrome, but I'm not sure what you mean by \"EL\" here. Care to explain?\r\n\r\nEncryption level\r\n\r\nIf custom values are OK I've no objection, though it does seem to me to undermine the point of a standard enum a little.\r\n\r\nActually, there is a broader point of discussion here &mdash; the interoperability objectives of QLOG seem slightly fuzzy to me, since there is seemingly a lot of expectation of implementations doing custom things like this, and it seems like it will cause problems for tools. Maybe in practice it will not be a problem and tools will just battle-harden themselves by testing with lots of QLOG output from lots of different implementations. It does undermine the point of a standard a little bit &mdash; but maybe QLOG is something that needs to inherently occupy a midpoint between a completely strict standard and a state of total flexibility out of practical realities. (See also the comments on the congestion control algorithm name field, feels like we are touching on the same thing there.) That's something I could definitely see.",
+          "createdAt": "2024-01-19T19:16:40Z",
+          "updatedAt": "2024-01-19T19:16:40Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Right, now it all makes more sense :) And it's a fair point that the current categories don't quite cover this properly... \r\n\r\nI don't have a strong preference for any of these options (though nr. 3 seems a bit better maybe?):\r\n1. Do nothing\r\n2. Add new category for this\r\n3. Add this as an \"example\" for the `decryption_failure` trigger in the text\r\n\r\nFor the broader point, I think you hit the nail right on the head. It's been a tough line to walk between a fully \"interoperable\" and consistent specification, and the implementation realities and requirements of individual stacks. I think the general approach has been to provide a stable \"framework\" as much as possible, that allows for the creation of tools that don't have to be too flexible and that mainly need to deal with some variability in terms of field/trigger values, which is usually not too difficult to manage (e.g., qvis will just display the string it reads, without much interpretation if it doesn't expect the value). If we would try to nail down everything, we'd have a mix of pcaps and a whole second layer of semantics on top (and documents at least 4 times as long probably). \r\n\r\nThat said, of course, if situations are common enough and information is often critical in common debugging scenarios, we do try to put them into the spec explicitly :)",
+          "createdAt": "2024-01-19T19:42:00Z",
+          "updatedAt": "2024-01-19T19:42:00Z"
+        }
+      ]
+    },
+    {
+      "number": 372,
+      "id": "I_kwDOCrLn6M58l2dv",
+      "title": "Clarify value of packets_acked:packet_number_space",
+      "url": "https://github.com/quicwg/qlog/issues/372",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:packet_acked:\r\n\r\n  `PacketNumberSpace.application_data`, as this is by far the most prevalent packet\r\n  number space a typical QUIC connection will use.\r\n\r\n  Editorial note: The usage of the . notation\r\n  `PacketNumberSpace.application_data` seems slightly novel here. Just\r\n  write \"application_data\"?",
+      "createdAt": "2024-01-19T11:10:43Z",
+      "updatedAt": "2024-01-19T16:20:20Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "The goal here is not to have the string \"PacketNumberSpace.application_data\" literally as the value, but rather the value of that CDDL definition in the `PacketNumberSpace` struct definition lower in the document:\r\n\r\n```\r\n~~~ cddl\r\nPacketNumberSpace = \"initial\" /\r\n                    \"handshake\" /\r\n                    \"application_data\"\r\n~~~\r\n{: #packetnumberspace-def title=\"PacketNumberSpace definition\"}\r\n```\r\n\r\nSo the intended value is just \"application_data\", but I didn't want to have a \"hardcoded duplicate\" of that string in 2 separate locations in the doc (though maybe that's not a real concern and we can just change this to the correct string? or just word it better to make clearer that the value of the struct should be used?)\r\n\r\n",
+          "createdAt": "2024-01-19T11:12:53Z",
+          "updatedAt": "2024-01-19T11:12:53Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "Yep, I understood that. I just found the use of the CDDL notation a bit surprising here.",
+          "createdAt": "2024-01-19T16:20:19Z",
+          "updatedAt": "2024-01-19T16:20:19Z"
+        }
+      ]
+    },
+    {
+      "number": 373,
+      "id": "I_kwDOCrLn6M58l4BB",
+      "title": "Improve connectivity:connection_id_updated",
+      "url": "https://github.com/quicwg/qlog/issues/373",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_id_updated\r\n\r\n  It would be nice to be able to optionally log CID-associated sequence\r\n  numbers and the type of CID source (ODCID, Initial CID,\r\n  preferred_address transport parameter, NCID frame, etc.)",
+      "createdAt": "2024-01-19T11:13:39Z",
+      "updatedAt": "2024-01-19T19:12:21Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, the intent is that this type of information can/should be inferred from other events surrounding the `connection_id_updated` event (e.g., receipt of NCID frames, receipt of an initial from the client, etc.)\r\n\r\nWhile conceptually we can add the fields you want to this event as well, we'd be getting deeper into \"everything can be logged in multiple ways\" territory (of which we already have too many imo), so I'm personally not the biggest fan.\r\n\r\nThat said, there's of course an argument that this would be useful for implementations not logging the full set of other events (though I'm not sure how much we want to pander specifically to this use case, as it would need adding other fields to other events as well). ",
+          "createdAt": "2024-01-19T11:17:26Z",
+          "updatedAt": "2024-01-19T11:17:26Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "Hmm... so basically you're saying the preferred approach is to note connection IDs from logged NCID frames, etc., then correlate that to connection_id_updated.\r\n\r\nI think that's entirely valid, so I'm somewhat retracting this suggestion &mdash; no need to add redundancy here &mdash; unless other people think it's valuable.",
+          "createdAt": "2024-01-19T19:12:20Z",
+          "updatedAt": "2024-01-19T19:12:20Z"
+        }
+      ]
+    },
+    {
+      "number": 374,
+      "id": "I_kwDOCrLn6M58l7P9",
+      "title": "Improve quic:stream_state_updated",
+      "url": "https://github.com/quicwg/qlog/issues/374",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "LPardue"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:stream_state_updated:\r\n\r\n  I think this needs to be clarified a little that an event logged here with both\r\n  a `stream_id` field and a `stream_side` field is expressing a state for that\r\n  component of the stream and from the perspective of the specified vantage point\r\n  (also, what about the network vantage point?); whereas an event logged here\r\n  with a `stream_id` field but no `stream_side` field is expressing a state for\r\n  both stream components as a whole.\r\n\r\n  If my interpretation here is correct, I think it would also help to note that\r\n  the valid values of StreamState depend on the value *and* presence of\r\n  stream_side.",
+      "createdAt": "2024-01-19T11:19:58Z",
+      "updatedAt": "2024-01-19T11:23:24Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Specifically for the \"network vantage point\" aspect of the question: the intent was that a network observer would use \"sending\" vs \"receiving\" depending on which party opened the stream, but that indeed falls down when using bidi streams... \r\n\r\nI think there is some overlap here with the stream_state values and their implied-ness for either one or both sides, but I think @LPardue has a better grasp on this than me. \r\n",
+          "createdAt": "2024-01-19T11:23:23Z",
+          "updatedAt": "2024-01-19T11:23:23Z"
+        }
+      ]
+    },
+    {
+      "number": 375,
+      "id": "I_kwDOCrLn6M58l-nN",
+      "title": "Improve quic:stream_data_moved",
+      "url": "https://github.com/quicwg/qlog/issues/375",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx",
+        "LPardue"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:stream_data_moved:\r\n\r\n  A brief explanation of each from/to value here and the intended meaning would\r\n  be a big improvement. Also clarify that raw here refers to the referenced\r\n  stream application data (and does not include frame headers etc.).\r\n\r\n  Consider having a way to report when the end-of-stream (FIN) condition is\r\n  reported to an application. One option here is to have an optional \"fin\" field\r\n  here.\r\n\r\n  There does not appear to be any way to communicate when a stream reset event is\r\n  delivered to an application in an equivalent way, which would be useful.\r\n\r\nquic:datagram_data_moved:\r\n\r\n  As with stream_data_moved, clarify meaning of the from/to fields here.",
+      "createdAt": "2024-01-19T11:26:23Z",
+      "updatedAt": "2024-01-19T11:28:16Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "While I can do the first part here (explain the from/to intents), I think @LPardue is more qualified to help with how we best indicate other signals have been delivered from transport to application.\r\n\r\nI know that has a long history of discussion in general, and I personally don't think this should be part of the `data_moved` event (i.e., would need a new event in my opinion)",
+          "createdAt": "2024-01-19T11:27:46Z",
+          "updatedAt": "2024-01-19T11:27:46Z"
+        }
+      ]
+    },
+    {
+      "number": 376,
+      "id": "I_kwDOCrLn6M58l__5",
+      "title": "Clarify security: key events",
+      "url": "https://github.com/quicwg/qlog/issues/376",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "marten-seemann"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nsecurity:key_updated:\r\n\r\n  Clarify use of the generation field here, which is introducing a new concept\r\n  not directly touched on by the QUIC RFCs, which just deal in the Key Phase bit.\r\n  Provide examples for the first few generation numbers (for example, presumably\r\n  the first 1-RTT EL key has a generation of 0). Also clarify how this interacts\r\n  with the temporal behaviour of the key update process (since old keys are\r\n  retained to handle reordered packets). Presumably once a new key exists, it is\r\n  logged with a new generation number and the old key is eventually given a\r\n  key_discarded event with the old generation number. But this should be\r\n  clarified.\r\n\r\nsecurity:key_discarded:\r\n\r\n  As above.",
+      "createdAt": "2024-01-19T11:29:29Z",
+      "updatedAt": "2024-01-19T11:29:30Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 377,
+      "id": "I_kwDOCrLn6M58mA3t",
+      "title": "Add congestion control name to recovery:parameters_set",
+      "url": "https://github.com/quicwg/qlog/issues/377",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nrecovery:parameters_set:\r\n\r\n  A minor point, but I suppose it may be useful to have a field for a name of a\r\n  congestion control algorithm here, defined as \"newreno\" / text (with \"newreno\"\r\n  being the algorithm specified in RFC 9002).\r\n",
+      "createdAt": "2024-01-19T11:31:21Z",
+      "updatedAt": "2024-01-19T16:24:44Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "This is a hard one. Of the QUIC implementations that implement NewReno, most of them tweak the algorithm described in RFC 9002 at least a little bit. So if you actually want to know what the congestion control algorithm is, you'll have to look at the NewReno as implemented in version x.y of that QUIC stack.",
+          "createdAt": "2024-01-19T14:09:59Z",
+          "updatedAt": "2024-01-19T14:09:59Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Yeah in principle this sounds nice. But I don't think there is much robust interop opportunity around such a string. Marten highlighted one reason with version, other factors include other parameters of the software or environment. \r\n\r\nI could theorise how I could use this myself to assess e.g. experiments. But then I can just do that in custom fields that I would consume myself.",
+          "createdAt": "2024-01-19T14:34:44Z",
+          "updatedAt": "2024-01-19T14:34:44Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I do feel there is value in this even if you just get a general \"algorithm family\" out of it. \r\n\r\nSay you're a new user of the library or a researcher and you -think- you've configured stuff to use Algorithm B instead of A, this is an easy way to check if that actually works correctly (or conversely to get an idea of what type of thing it's doing by default in the first place without digging through the code). \r\n\r\nI do agree it shouldn't go beyond \"newreno\" or \"bbrv1\" or something like that, and I'm not even sure we need to specify any values in the qlog docs, just the field name.",
+          "createdAt": "2024-01-19T15:35:38Z",
+          "updatedAt": "2024-01-19T15:35:38Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I dont buy that use case much. If you can actually configure an instance, then you should have confidence you know what you're doing, otherwise a lot of bets are off and I don't think logging helps. But if they want that capability, sticking the config in the trace description seems fine to me.\r\n\r\nAlgorithm names on their aren't useful IMO - especially if theres no standard for them.\r\n\r\nquiche supports different algorithms and hyststart++ as different composable config. \r\n\r\nThis event already supports articulating various stuff that could be relevant but not standard if someone really wants it inside the event\r\n\r\n> this event can contain any number of unspecified fields to support different recovery approaches.",
+          "createdAt": "2024-01-19T16:13:20Z",
+          "updatedAt": "2024-01-19T16:13:20Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "Yeah, my intention here is definitely not any kind of \"interop\". But it is useful information to know the broad class of family being used IMO.\r\n\r\nI don't think the \"people should know what they're doing\" argument holds water &mdash; people may be switching between different algorithms frequently for experimental purposes and thus have a large collection of QLOG traces using different algorithms.\r\n\r\nIt's not essential since people can add custom fields. But if many different implementations are going to log this, it's certainly more convenient if they use the same field name.",
+          "createdAt": "2024-01-19T16:18:38Z",
+          "updatedAt": "2024-01-19T16:18:38Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "We need a higher bar than it might be common and helpful. Standardising a field requires explaining what's its purpose is and how it should be used.\r\n\r\n If I want to experiment with congestion control I will likely be playing with several parameters. A high level family name cant articulate that. Instead, I might want to write my own structured format for all the knobs that I can control. In which case the standard field would be redundant.",
+          "createdAt": "2024-01-19T16:24:43Z",
+          "updatedAt": "2024-01-19T16:24:43Z"
+        }
+      ]
+    },
+    {
+      "number": 378,
+      "id": "I_kwDOCrLn6M58mGt0",
+      "title": "Clarify use of StreamFrame",
+      "url": "https://github.com/quicwg/qlog/issues/378",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "As reported by @hlandau on the mailing list:\r\n\r\nStreamFrame:\r\n\r\n  This format has ambiguity as to whether explicit length and/or offset\r\n  fields were used. It is potentially useful to know this, or the\r\n  numeric value of the stream type field.\r\n\r\n  Being able to know the header length for overhead calculation would\r\n  also be valuable IMO.\r\n\r\n  It may be worth explicitly clarifying that it is not possible to use\r\n  this object to log information about a stream frame without logging\r\n  the value of the FIN bit, as the presence or absence of this bit is\r\n  inferred from presence or absence of the FIN field.",
+      "createdAt": "2024-01-19T11:43:01Z",
+      "updatedAt": "2024-01-19T16:22:19Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, for the two top things, there the intent is to use the `raw` field if that type of depth is needed (up until now, nobody has asked for this, so we assumed this was sufficient, and I'm still of that opinion ;))\r\n\r\nFor the bottom one, I agree, but I don't quite see how this is an issue in practice? ",
+          "createdAt": "2024-01-19T11:44:25Z",
+          "updatedAt": "2024-01-19T11:44:25Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": ">For the bottom one, I agree, but I don't quite see how this is an issue in practice?\r\n\r\nNot really an issue &mdash; just thought it worth pointing out. If there is an explicit decision that this isn't an issue, that's fine, but it could also easily have been accident, so just thought I'd point it out.",
+          "createdAt": "2024-01-19T16:22:08Z",
+          "updatedAt": "2024-01-19T16:22:19Z"
+        }
+      ]
     }
   ],
   "pulls": [
