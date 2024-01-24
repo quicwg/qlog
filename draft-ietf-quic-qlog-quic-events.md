@@ -27,7 +27,6 @@ author:
   -
     ins: M. Seemann
     name: Marten Seemann
-    org: Protocol Labs
     email: martenseemann@gmail.com
     role: editor
   - ins: L. Pardue
