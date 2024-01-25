@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-01-23T00:49:42.996668+00:00",
+  "timestamp": "2024-01-25T00:49:24.358969+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7486,16 +7486,24 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_closed:\r\n\r\n  This is missing the frame type field in the QUIC CONNECTION_CLOSE\r\n  frame which is rather useful information.\r\n\r\n  connection_code can be a string or a uint32, but QUIC uses a variable\r\n  length integer here and thus this can be up to 62 bits. Same for the\r\n  application_code.\r\n\r\n  It is up to the decoder to infer by presence of connection_code or\r\n  application_code to infer whether this was an application or transport\r\n  CONNECTION_CLOSE. But this requires it to log such a value. It would\r\n  be nice if this can be communicated without necessarily knowing the\r\n  actual value. Consider either adding a field to distinguish between\r\n  transport and app errors or replacing the \"error\" field of \"trigger\"\r\n  with \"app_error\" and \"transport_error\".",
       "createdAt": "2024-01-19T10:55:33Z",
-      "updatedAt": "2024-01-19T10:55:33Z",
+      "updatedAt": "2024-01-24T00:30:25Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "As suggested, it think it makes sense to udate this even to more closely resemble the CONNECTION_CLOSE frame structure e.g. have error_code and error_space fields\r\n",
+          "createdAt": "2024-01-24T00:30:24Z",
+          "updatedAt": "2024-01-24T00:30:24Z"
+        }
+      ]
     },
     {
       "number": 367,
       "id": "I_kwDOCrLn6M58luqK",
       "title": "Improve connectivity:connection_id_updated",
       "url": "https://github.com/quicwg/qlog/issues/367",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -7504,9 +7512,17 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_id_updated:\r\n\r\n  It would be nice to be able to optionally log CID-associated sequence\r\n  numbers and the type of CID source (ODCID, Initial CID,\r\n  preferred_address transport parameter, NCID frame, etc.)",
       "createdAt": "2024-01-19T10:57:01Z",
-      "updatedAt": "2024-01-19T10:57:01Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2024-01-24T01:26:03Z",
+      "closedAt": "2024-01-24T01:26:02Z",
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Dupe of #373 that has discussion, so closing.",
+          "createdAt": "2024-01-24T01:26:02Z",
+          "updatedAt": "2024-01-24T01:26:02Z"
+        }
+      ]
     },
     {
       "number": 368,
@@ -7522,9 +7538,38 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:alpn_information:\r\n\r\n  RFC 7301 states that ALPN protocol strings are byte strings, not text.\r\n  How should ALPN protocol strings which are not valid UTF-8 or not\r\n  valid text be logged?",
       "createdAt": "2024-01-19T11:02:20Z",
-      "updatedAt": "2024-01-19T11:02:20Z",
+      "updatedAt": "2024-01-24T09:51:05Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "This issue is correct. Implementations that treat ALPN IDs as if they were strings can hit issues. Although qlog is not in the hot path, assuming  sequence is safe to encode is not robust (especially as it is uncontrolled data).\r\n\r\nMy inclination would be to define a ALPN ID type for qlog. That could carry the raw bytes encoded as `hexstring` and/or the \"friendly\" representation if its safe. e.g.\r\n\r\n```\r\nALPNIdentifier = {\r\n  ? bytes: hexstring\r\n  ? string: string\r\n}\r\n```\r\nThe reason being that most people would recognise `h3` on sight, but scratch their heads about what `0x68 0x33` is.\r\n\r\nFurthermore, while looking at [the section](https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-alpn_information), I think we should actually cite the ALPN RFC and tighten up the text at the same time.",
+          "createdAt": "2024-01-24T00:19:30Z",
+          "updatedAt": "2024-01-24T00:21:00Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "Personally I would just go with the hex encoding. Providing the ability to use either seems overkill. Not being able to eyeball a qlog file to read the ALPN might be annoying, but that will be the case anyway if an implementation does the robust thing and only serialises the hex encoding.",
+          "createdAt": "2024-01-24T07:23:18Z",
+          "updatedAt": "2024-01-24T07:23:18Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Not being able to quickly read the \"h3\" ALPN from a qlog seems like a non-starter to me. I don't want to remember (or rather, look up 1000 times) what that is in hex.",
+          "createdAt": "2024-01-24T07:57:44Z",
+          "updatedAt": "2024-01-24T07:57:44Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Agree with Marten here.\r\n\r\nHTTP headers might actually suffer the same issues now I think about it. ",
+          "createdAt": "2024-01-24T09:50:39Z",
+          "updatedAt": "2024-01-24T09:51:05Z"
+        }
+      ]
     },
     {
       "number": 369,
@@ -7538,9 +7583,24 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:parameters_set:\r\n\r\n  As things stand, there is no facility for logging the reception of unknown\r\n  transport parameters by an endpoint. Since transport parameters are used to\r\n  negotiate extensions to QUIC, having logged data about the presence of\r\n  transport parameters sent by a peer but not understood, and the consequential\r\n  ability to get information about the prevalence of any given unsupported\r\n  transport parameter in incoming traffic, seems like it would be quite useful.\r\n\r\n  I think this event needs more clarify in terms of the distinction between\r\n  attempting to negotiate a feature and it being enabled. It should be possible\r\n  to log the feature set a local or remote endpoint is requesting and it\r\n  should be possible to log the actually negotiated feature set. Possibly\r\n  this can be resolved via simple clarification. If a client connects to\r\n  a server, does it start by emitting parameters_set (owner=local) with (e.g.)\r\n  max_datagram_frame_size set, and then when the server responds without\r\n  it, emit parameters_set (owner=remote) without it? I guess this allows\r\n  the necessary information to be inferred.\r\n\r\n  If the absence of a field indicates it was not negotiated after receiving\r\n  transport parameters from a server, this creates a problem if this event has\r\n  to be used to log other parameters determined at different times (which seems\r\n  plausible for `tls_cipher`, `early_data_enabled`, etc.), as then logging\r\n  those parameters could be misinterpreted as a sign that the transport\r\n  parameters have been received and a feature has not been negotiated.\r\n  Either the cause of a parameters_set event should be clarified (maybe a trigger\r\n  field) or possibly this should be split into different event types.\r\n\r\n  I think it would be valuable to have the ability to log information\r\n  such as spin bit policy (e.g. enabled, disabled due to random chance,\r\n  disabled administratively), independent of the actual spin_bit_updated\r\n  event).",
       "createdAt": "2024-01-19T11:04:16Z",
-      "updatedAt": "2024-01-19T11:04:16Z",
+      "updatedAt": "2024-01-24T07:26:22Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "This is a bunch of different issues that need to be split out. \r\n\r\nSupporting unknown TPs is already tracked via https://github.com/quicwg/qlog/issues/176 - we should fix that.\r\n\r\nRegarding \"negotiation\"  each TP will do things differently. For example, some TPs like initial flow control are a statement of what an endpoint is willing to receive. Other fields, like idle timeout, are a declaration that then goes on to decide the connection's idle timeout via combination of both TPs.\r\n\r\nThe datagram example is a good one. If a server doesn't send a max_datagram_frame_size TP or it sends a value of 0, the client can't send them. If its a problem, the client would close the connection. If its not a problem, the client won't close the connection. But that's a facet of the application that uses QUIC. I'm not really sure there is anything we can standardise easily here. Even more so once we allow for logging of arbitrary unknown TPs.\r\n\r\nKeeping things as a matter of what locally set, vs remotely received helps alleviate the trigger question IMO.\r\n\r\nRegarding spin bit policy, that's a separate issue. Personally I'm not interested in spending effort on that but if others want to propose text that fine.",
+          "createdAt": "2024-01-24T01:09:35Z",
+          "updatedAt": "2024-01-24T01:09:35Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "I think our understanding of the issues is in agreement. I do think some work is needed here and that the \"owner\" field isn't enough.",
+          "createdAt": "2024-01-24T07:26:21Z",
+          "updatedAt": "2024-01-24T07:26:21Z"
+        }
+      ]
     },
     {
       "number": 370,
@@ -7572,7 +7632,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:packet_dropped:\r\n\r\n  What is the intended trigger category here when an EL is discarded and\r\n  buffered packets are discarded as a consequence? `decryption_failure`\r\n  could match but feels subtly different, as I guess that covers the\r\n  case where a packet is received after an EL is discarded. IMO it would\r\n  be better to have a different trigger category for this, and add\r\n  language clarifying this case.",
       "createdAt": "2024-01-19T11:07:10Z",
-      "updatedAt": "2024-01-19T19:42:01Z",
+      "updatedAt": "2024-01-24T04:38:26Z",
       "closedAt": null,
       "comments": [
         {
@@ -7595,6 +7655,27 @@
           "body": "Right, now it all makes more sense :) And it's a fair point that the current categories don't quite cover this properly... \r\n\r\nI don't have a strong preference for any of these options (though nr. 3 seems a bit better maybe?):\r\n1. Do nothing\r\n2. Add new category for this\r\n3. Add this as an \"example\" for the `decryption_failure` trigger in the text\r\n\r\nFor the broader point, I think you hit the nail right on the head. It's been a tough line to walk between a fully \"interoperable\" and consistent specification, and the implementation realities and requirements of individual stacks. I think the general approach has been to provide a stable \"framework\" as much as possible, that allows for the creation of tools that don't have to be too flexible and that mainly need to deal with some variability in terms of field/trigger values, which is usually not too difficult to manage (e.g., qvis will just display the string it reads, without much interpretation if it doesn't expect the value). If we would try to nail down everything, we'd have a mix of pcaps and a whole second layer of semantics on top (and documents at least 4 times as long probably). \r\n\r\nThat said, of course, if situations are common enough and information is often critical in common debugging scenarios, we do try to put them into the spec explicitly :)",
           "createdAt": "2024-01-19T19:42:00Z",
           "updatedAt": "2024-01-19T19:42:00Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I think option 3 is the correct one, it would be just a few words",
+          "createdAt": "2024-01-24T01:16:42Z",
+          "updatedAt": "2024-01-24T01:16:42Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think it's useful to be able to tell these two cases apart. Keys being unavailable happens regularly during the handshake, whereas decryption failures shouldn't happen unless there are transmission errors or an active attack.\r\n\r\nfwiw, quic-go already uses `key_unavailable` here.",
+          "createdAt": "2024-01-24T04:09:56Z",
+          "updatedAt": "2024-01-24T04:09:56Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I can live with a other type",
+          "createdAt": "2024-01-24T04:38:24Z",
+          "updatedAt": "2024-01-24T04:38:24Z"
         }
       ]
     },
@@ -7612,7 +7693,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:packet_acked:\r\n\r\n  `PacketNumberSpace.application_data`, as this is by far the most prevalent packet\r\n  number space a typical QUIC connection will use.\r\n\r\n  Editorial note: The usage of the . notation\r\n  `PacketNumberSpace.application_data` seems slightly novel here. Just\r\n  write \"application_data\"?",
       "createdAt": "2024-01-19T11:10:43Z",
-      "updatedAt": "2024-01-19T16:20:20Z",
+      "updatedAt": "2024-01-24T01:24:36Z",
       "closedAt": null,
       "comments": [
         {
@@ -7628,6 +7709,13 @@
           "body": "Yep, I understood that. I just found the use of the CDDL notation a bit surprising here.",
           "createdAt": "2024-01-19T16:20:19Z",
           "updatedAt": "2024-01-19T16:20:19Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I agree with @hlandau here. This seems unique and surprising.\r\n\r\nThere's several cases in the drafts of fields that have similar crafted types and we just name those types directly when we need to. Lets just use `application_data` here, it's less confusing. ",
+          "createdAt": "2024-01-24T01:24:35Z",
+          "updatedAt": "2024-01-24T01:24:35Z"
         }
       ]
     },
@@ -7749,7 +7837,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nrecovery:parameters_set:\r\n\r\n  A minor point, but I suppose it may be useful to have a field for a name of a\r\n  congestion control algorithm here, defined as \"newreno\" / text (with \"newreno\"\r\n  being the algorithm specified in RFC 9002).\r\n",
       "createdAt": "2024-01-19T11:31:21Z",
-      "updatedAt": "2024-01-19T16:24:44Z",
+      "updatedAt": "2024-01-24T07:28:41Z",
       "closedAt": null,
       "comments": [
         {
@@ -7793,6 +7881,13 @@
           "body": "We need a higher bar than it might be common and helpful. Standardising a field requires explaining what's its purpose is and how it should be used.\r\n\r\n If I want to experiment with congestion control I will likely be playing with several parameters. A high level family name cant articulate that. Instead, I might want to write my own structured format for all the knobs that I can control. In which case the standard field would be redundant.",
           "createdAt": "2024-01-19T16:24:43Z",
           "updatedAt": "2024-01-19T16:24:43Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "After reflecting on the \"philosophy of qlog\" in these two comments: https://github.com/quicwg/qlog/issues/371#issuecomment-1900972178\r\n\r\nI think I now agree and that we don't need to do this.\r\n",
+          "createdAt": "2024-01-24T07:28:40Z",
+          "updatedAt": "2024-01-24T07:28:40Z"
         }
       ]
     },
@@ -18661,6 +18756,74 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 380,
+      "id": "PR_kwDOCrLn6M5k6CTq",
+      "title": "update Marten's org",
+      "url": "https://github.com/quicwg/qlog/pull/380",
+      "state": "MERGED",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2024-01-24T04:32:39Z",
+      "updatedAt": "2024-01-24T04:39:41Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "21a3de1ec3dbcef1c636d91d841fa597f683c8f9",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "update-martens-org",
+      "headRefOid": "3177e4535af65a537d82852d0dfe600938d2aa05",
+      "closedAt": "2024-01-24T04:39:41Z",
+      "mergedAt": "2024-01-24T04:39:41Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "080c3c5b0e308b746a33e644c3db45f90183d216"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5tslEb",
+          "commit": {
+            "abbreviatedOid": "3177e45"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-01-24T04:37:34Z",
+          "updatedAt": "2024-01-24T04:37:34Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 381,
+      "id": "PR_kwDOCrLn6M5k6EVJ",
+      "title": "add a packet_dropped trigger for unavailable decryption keys",
+      "url": "https://github.com/quicwg/qlog/pull/381",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #371.",
+      "createdAt": "2024-01-24T04:44:44Z",
+      "updatedAt": "2024-01-24T04:44:45Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "080c3c5b0e308b746a33e644c3db45f90183d216",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "packet-drop-key-unavailable",
+      "headRefOid": "e33d8656ec62a082da3ab44c479968ab8743df82",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
