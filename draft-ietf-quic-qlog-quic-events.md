@@ -781,6 +781,7 @@ QUICPacketDropped = {
         "duplicate" /
         "connection_unknown" /
         "decryption_failure" /
+        "key_unavailable" /
         "general"
 }
 ~~~
@@ -794,7 +795,8 @@ Some example situations for each of the trigger categories include:
 - `invalid`: packet parsing or validation error
 - `duplicate`: duplicate packet
 - `connection_unknown`: packet does not relate to a known connection or Connection ID
-- `decryption_failure`: decryption key was unavailable, decryption failed
+- `decryption_failure`: decryption failed
+- `key_unavailable`: decryption key was unavailable
 - `general`: situations not clearly covered in the other categories
 
 For more details on `datagram_id`, see {{quic-datagramssent}}.
