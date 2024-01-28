@@ -311,6 +311,12 @@ these however, there can be internal errors that occur that may or may not get
 mapped to the official error codes in implementation-specific ways. As such,
 multiple error codes can be set on the same event to reflect this.
 
+When the connection is closed due a connection-level error, the
+`trigger_frame_type` field can be used to log the frame that triggered the
+error. For known frame types, the appropriate string value is used. For unknown
+frame types, the numerical value without variable-length integer encoding is
+used.
+
 ~~~ cddl
 ConnectivityConnectionClosed = {
 
@@ -333,6 +339,10 @@ ConnectivityConnectionClosed = {
         "version_mismatch" /
         ; for example HTTP/3's GOAWAY frame
         "application"
+
+    ; when connection_code is set
+    ? trigger_frame_type: uint64 /
+                          text
 }
 ~~~
 {: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
