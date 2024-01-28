@@ -521,6 +521,10 @@ H3CancelPushFrame = {
 
 ### H3SettingsFrame
 
+Where an individual setting is not known, the name value of "unknown"
+can be used and the value captured in the type_value field; a
+numerical value without variable-length integer encoding.
+
 ~~~ cddl
 H3SettingsFrame = {
     frame_type: "settings"
@@ -528,9 +532,20 @@ H3SettingsFrame = {
 }
 
 H3Setting = {
-    name: text
+    ? name: H3SettingsName
+
+    ; only when name === "unknown"
+    ? type_value: uint64
     value: uint64
 }
+
+H3SettingsName = "settings_qpack_max_table_capacity" /
+                   "settings_max_field_section_size" /
+                   "settings_qpack_blocked_streams" /
+                   "settings_enable_connect_protocol" /
+                   "settings_h3_datagram" /
+                   "reserved" /
+                   "unknown"
 ~~~
 {: #h3settingsframe-def title="H3SettingsFrame definition"}
 
