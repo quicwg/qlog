@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 30 July 2024                                               Meta
+Expires: 1 August 2024                                              Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         27 January 2024
+                                                         29 January 2024
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 30 July 2024.
+   This Internet-Draft will expire on 1 August 2024.
 
 Copyright Notice
 
@@ -2083,9 +2083,15 @@ Table of Contents
 
 8.12.19.  ConnectionCloseFrame
 
-   The error_code_value field is the numerical value without VLIE
-   encoding.  This is useful because some error types are spread out
-   over a range of codes (e.g., QUIC's crypto_error).
+   The error_code_value field is the numerical value without variable-
+   length integer encoding.  This is useful because some error types are
+   spread out over a range of codes (e.g., QUIC's crypto_error).
+
+   When the connection is closed due a connection-level error, the
+   trigger_frame_type field can be used to log the frame that triggered
+   the error.  For known frame types, the appropriate string value is
+   used.  For unknown frame types, the numerical value without variable-
+   length integer encoding is used.
 
    ErrorSpace = "transport" /
                 "application"
@@ -2099,8 +2105,7 @@ Table of Contents
        ? error_code_value: uint64
        ? reason: text
 
-       ; For known frame types, the appropriate "frame_type" string
-       ; For unknown frame types, the hex encoded frame identifier value
+       ; when error_space === "transport"
        ? trigger_frame_type: uint64 /
                              text
    }
