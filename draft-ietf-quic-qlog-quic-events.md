@@ -547,8 +547,8 @@ QUICALPNInformation = {
 }
 
 ALPNIdentifier = {
-  ? bytes: hexstring
-  ? string: text
+  ? byte_value: hexstring
+  ? string_value: text
 }
 ~~~
 {: #quic-alpninformation-def title="QUICALPNInformation definition"}
