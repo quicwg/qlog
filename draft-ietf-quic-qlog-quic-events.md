@@ -537,7 +537,7 @@ QLOG-MAIN}}.
 QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.
 
 ALPN identifiers are byte sequences, that may be possible to present as UTF-8.
-The `ALPNIDentifier`` type supports either format.
+The `ALPNIdentifier`` type supports either format.
 
 ~~~ cddl
 QUICALPNInformation = {
