@@ -1905,9 +1905,15 @@ PathResponseFrame = {
 
 ### ConnectionCloseFrame
 
-The error_code_value field is the numerical value without VLIE encoding. This is
-useful because some error types are spread out over a range of codes (e.g.,
-QUIC's crypto_error).
+The error_code_value field is the numerical value without variable-length
+integer encoding. This is useful because some error types are spread out over a
+range of codes (e.g., QUIC's crypto_error).
+
+When the connection is closed due a connection-level error, the
+`trigger_frame_type` field can be used to log the frame that triggered the
+error. For known frame types, the appropriate string value is used. For unknown
+frame types, the numerical value without variable-length integer encoding is
+used.
 
 ~~~ cddl
 ErrorSpace = "transport" /
@@ -1922,8 +1928,7 @@ ConnectionCloseFrame = {
     ? error_code_value: uint64
     ? reason: text
 
-    ; For known frame types, the appropriate "frame_type" string
-    ; For unknown frame types, the hex encoded frame identifier value
+    ; when error_space === "transport"
     ? trigger_frame_type: uint64 /
                           text
 }
