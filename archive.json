@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-01-28T00:47:08.817672+00:00",
+  "timestamp": "2024-01-30T00:43:46.311910+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7486,7 +7486,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_closed:\r\n\r\n  This is missing the frame type field in the QUIC CONNECTION_CLOSE\r\n  frame which is rather useful information.\r\n\r\n  connection_code can be a string or a uint32, but QUIC uses a variable\r\n  length integer here and thus this can be up to 62 bits. Same for the\r\n  application_code.\r\n\r\n  It is up to the decoder to infer by presence of connection_code or\r\n  application_code to infer whether this was an application or transport\r\n  CONNECTION_CLOSE. But this requires it to log such a value. It would\r\n  be nice if this can be communicated without necessarily knowing the\r\n  actual value. Consider either adding a field to distinguish between\r\n  transport and app errors or replacing the \"error\" field of \"trigger\"\r\n  with \"app_error\" and \"transport_error\".",
       "createdAt": "2024-01-19T10:55:33Z",
-      "updatedAt": "2024-01-24T00:30:25Z",
+      "updatedAt": "2024-01-28T19:30:38Z",
       "closedAt": null,
       "comments": [
         {
@@ -7495,6 +7495,13 @@
           "body": "As suggested, it think it makes sense to udate this even to more closely resemble the CONNECTION_CLOSE frame structure e.g. have error_code and error_space fields\r\n",
           "createdAt": "2024-01-24T00:30:24Z",
           "updatedAt": "2024-01-24T00:30:24Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I created #384 to address the frame type trigger field.\r\n\r\nOn re-reading the issue I realised I misinterpreted the request about not knowing an error code. If an endpoint doesn't know the specific error code, the trigger field allows to articulate transport or app errors via the existing values. So I don't think a change here is an improvement.",
+          "createdAt": "2024-01-28T19:29:48Z",
+          "updatedAt": "2024-01-28T19:30:38Z"
         }
       ]
     },
@@ -7793,7 +7800,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:stream_data_moved:\r\n\r\n  A brief explanation of each from/to value here and the intended meaning would\r\n  be a big improvement. Also clarify that raw here refers to the referenced\r\n  stream application data (and does not include frame headers etc.).\r\n\r\n  Consider having a way to report when the end-of-stream (FIN) condition is\r\n  reported to an application. One option here is to have an optional \"fin\" field\r\n  here.\r\n\r\n  There does not appear to be any way to communicate when a stream reset event is\r\n  delivered to an application in an equivalent way, which would be useful.\r\n\r\nquic:datagram_data_moved:\r\n\r\n  As with stream_data_moved, clarify meaning of the from/to fields here.",
       "createdAt": "2024-01-19T11:26:23Z",
-      "updatedAt": "2024-01-19T11:28:16Z",
+      "updatedAt": "2024-01-28T20:08:52Z",
       "closedAt": null,
       "comments": [
         {
@@ -7802,6 +7809,13 @@
           "body": "While I can do the first part here (explain the from/to intents), I think @LPardue is more qualified to help with how we best indicate other signals have been delivered from transport to application.\r\n\r\nI know that has a long history of discussion in general, and I personally don't think this should be part of the `data_moved` event (i.e., would need a new event in my opinion)",
           "createdAt": "2024-01-19T11:27:46Z",
           "updatedAt": "2024-01-19T11:27:46Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "There's already a lot of text in these sections, personally I don't think explaining each field is going to be much more help. \r\n\r\nRe: `raw` raking it clear it is stream data not frames is a couple of words and worth it. \r\n\r\nI can see some value in the ability to indicate when an app requests a stop_sending or a reset_stream or when either is passed up to an app. I think that's a new event though.\r\n\r\nFor stream fin, I could argue a few ways. I think a `? fin: bool` field on stream_data_moved is probably the best tradeoff.",
+          "createdAt": "2024-01-28T20:08:18Z",
+          "updatedAt": "2024-01-28T20:08:52Z"
         }
       ]
     },
@@ -18862,6 +18876,270 @@
           "createdAt": "2024-01-27T01:44:52Z",
           "updatedAt": "2024-01-27T01:44:52Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 383,
+      "id": "PR_kwDOCrLn6M5lQz_9",
+      "title": "Convert H3 setting param types to a real type",
+      "url": "https://github.com/quicwg/qlog/pull/383",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #382\r\n",
+      "createdAt": "2024-01-28T18:51:26Z",
+      "updatedAt": "2024-01-29T13:06:32Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "391958c3917b29147b303457cee9a9e6c1cafeae",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "h3-settings",
+      "headRefOid": "e372a1acc9a6e083a104454c7d34b326f13f8a3a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5uKtoc",
+          "commit": {
+            "abbreviatedOid": "e372a1a"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-01-29T10:11:55Z",
+          "updatedAt": "2024-01-29T10:12:01Z",
+          "comments": [
+            {
+              "originalPosition": 19,
+              "body": "Nit: Not sure I like `type_` here... it isn't called that in 9114 (there it's more `identifier`) and to align with `name` above and other similar fields, I'd go with `name_value` maybe? ",
+              "createdAt": "2024-01-29T10:11:55Z",
+              "updatedAt": "2024-01-29T10:12:01Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5uL-dC",
+          "commit": {
+            "abbreviatedOid": "e372a1a"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-01-29T13:06:31Z",
+          "updatedAt": "2024-01-29T13:06:32Z",
+          "comments": [
+            {
+              "originalPosition": 19,
+              "body": "`name` or `identifier` seems fine to me. I was checking the IANA table which uses slightly different terms and it threw me off",
+              "createdAt": "2024-01-29T13:06:32Z",
+              "updatedAt": "2024-01-29T13:06:32Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 384,
+      "id": "PR_kwDOCrLn6M5lQ135",
+      "title": "Tweak trigger_frame_type field and add it to connection_closed",
+      "url": "https://github.com/quicwg/qlog/pull/384",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Tweaks the language related to the ConnectionCloseFrame trigger_frame_type\r\nand adds it to connection_closed event.\r\n\r\nCloses #366",
+      "createdAt": "2024-01-28T19:17:39Z",
+      "updatedAt": "2024-01-29T15:54:17Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "28a34e234e0414aba447a106a1558d2cbce4c666",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "connection_closed-frame-trigger",
+      "headRefOid": "67e91a8b8d6424b65a8cc3723e44eb290da32960",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "While I like the general prose editorial work, I'm personally not too convinced that we need the `trigger_frame_type` on the `connectivity` event. As stated elsewhere, you rarely get all combined information from a single qlog event, and you often need to look at surrounding events for more low-level info (in this case: a field specifically on the CONNECTION_CLOSE frame). \r\n\r\nWhile I'm not terribly opposed to it, I'd still like to not add to the `connectivity` event, but do keep the editorial work with the CONNECTION_CLOSE frame (and maybe just reference that for the `connectivity` event?)",
+          "createdAt": "2024-01-29T09:58:58Z",
+          "updatedAt": "2024-01-29T09:58:58Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> While I'm not terribly opposed to it, I'd still like to not add to the `connectivity` event, but do keep the editorial work with the CONNECTION_CLOSE frame (and maybe just reference that for the `connectivity` event?)\r\n\r\nMakes sense, I spun it off to its own PR https://github.com/quicwg/qlog/pull/386. \r\n\r\nIf we want to do a cross reference from connection_closed, then lets do that separate",
+          "createdAt": "2024-01-29T15:30:45Z",
+          "updatedAt": "2024-01-29T15:32:19Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 385,
+      "id": "PR_kwDOCrLn6M5lQ4We",
+      "title": "Create ALPNIdentifier type to allow bytes or string presentation",
+      "url": "https://github.com/quicwg/qlog/pull/385",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "ALPN IDs aren't guaranteed to be safe text, so allow logging the byte\r\nsequence. However, don't force endpoint to do that if their willing\r\nto do some safety checking or safe encoding.\r\n\r\nCloses #368\r\n",
+      "createdAt": "2024-01-28T19:53:23Z",
+      "updatedAt": "2024-01-29T14:02:25Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "391958c3917b29147b303457cee9a9e6c1cafeae",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "alpn-hex",
+      "headRefOid": "1d4bb45e8fece62d6ff24a85d112fb9564edae65",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5uKuxp",
+          "commit": {
+            "abbreviatedOid": "c22705e"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2024-01-29T10:13:57Z",
+          "updatedAt": "2024-01-29T10:18:12Z",
+          "comments": [
+            {
+              "originalPosition": 21,
+              "body": "```suggestion\r\nThe `ALPNIdentifier`` type supports either format.\r\n```",
+              "createdAt": "2024-01-29T10:13:57Z",
+              "updatedAt": "2024-01-29T10:18:12Z"
+            },
+            {
+              "originalPosition": 35,
+              "body": "```suggestion\r\n  ? byte_value: hexstring\r\n  ? string_value: text\r\n```\r\n\r\nNot the biggest fan of having \"string\" or \"bytes\" directly, as these are sometimes reserved keywords in programming languages.",
+              "createdAt": "2024-01-29T10:16:28Z",
+              "updatedAt": "2024-01-29T10:18:12Z"
+            },
+            {
+              "originalPosition": 21,
+              "body": "```suggestion\r\nThe `ALPNIDentifier`` type supports either format. Implementations SHOULD log at least one format, but MAY log both or none.\r\n```",
+              "createdAt": "2024-01-29T10:17:22Z",
+              "updatedAt": "2024-01-29T10:18:12Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5uMa_3",
+          "commit": {
+            "abbreviatedOid": "1d4bb45"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-01-29T14:02:25Z",
+          "updatedAt": "2024-01-29T14:02:25Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 386,
+      "id": "PR_kwDOCrLn6M5lVxRF",
+      "title": "Improve text in ConnectionCloseFrame",
+      "url": "https://github.com/quicwg/qlog/pull/386",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "Spun off from https://github.com/quicwg/qlog/pull/384",
+      "createdAt": "2024-01-29T15:29:56Z",
+      "updatedAt": "2024-01-29T15:53:22Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "391958c3917b29147b303457cee9a9e6c1cafeae",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "connection_closed-editorial",
+      "headRefOid": "7654ae11e7d26b588d5820cb5a0b62e6305805ab",
+      "closedAt": "2024-01-29T15:52:33Z",
+      "mergedAt": "2024-01-29T15:52:33Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "28a34e234e0414aba447a106a1558d2cbce4c666"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5uNQpC",
+          "commit": {
+            "abbreviatedOid": "7654ae1"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-01-29T15:32:31Z",
+          "updatedAt": "2024-01-29T15:34:14Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "if?",
+              "createdAt": "2024-01-29T15:32:31Z",
+              "updatedAt": "2024-01-29T15:34:14Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5uNUjN",
+          "commit": {
+            "abbreviatedOid": "7654ae1"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-01-29T15:39:18Z",
+          "updatedAt": "2024-01-29T15:39:18Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5uNdav",
+          "commit": {
+            "abbreviatedOid": "7654ae1"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-01-29T15:53:22Z",
+          "updatedAt": "2024-01-29T15:53:22Z",
+          "comments": [
+            {
+              "originalPosition": 25,
+              "body": "Oh I missed this, sorry. \r\n\r\nWe seem to use of mix of \"if\" and \"when\" throught the docs. We should do a consistency pass as followup.",
+              "createdAt": "2024-01-29T15:53:22Z",
+              "updatedAt": "2024-01-29T15:53:22Z"
+            }
+          ]
         }
       ]
     }
