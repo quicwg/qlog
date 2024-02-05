@@ -1223,10 +1223,10 @@ with general-purpose qlog tools.
 Considering these tradeoffs, JSON-based serialization formats provide features
 that make them a good starting point for qlog flexibility and interoperability.
 For these reasons, JSON is a recommended default and expanded considerations are
-given to how to map qlog to JSON ({{format-json}}, its subset
-I-JSON {{format-ijson}}, and its streaming counterpart JSON Text Sequences ({{format-json-seq}}. Furthermore,
-potential optimizations to these formats, such as reducing storage or processing
-overheads, are presented in {{optimizations}}.
+given to how to map qlog to JSON ({{format-json}}, and its streaming counterpart
+JSON Text Sequences ({{format-json-seq}}. {{json-interop}} presents
+interoperability considerations for both formats, and {{optimizations}} presents
+potential optimizations.
 
 Serialization formats require appropriate deserializers/parsers. The
 "qlog_format" field ({{qlog-file-schema}}) is used to indicate the chosen
@@ -1247,36 +1247,6 @@ all qlog field names MUST be lowercase when serialized to JSON.
 In order to serialize CDDL-based qlog event and data structure
 definitions to JSON, the official CDDL-to-JSON mapping defined in
 {{Appendix E of CDDL}} SHOULD be employed.
-
-### I-JSON {#format-ijson}
-
-Not all popular JSON parsers support the full JSON format, especially those
-integrated within a JavaScript environment (e.g., Web browsers, NodeJS). For use
-cases that involve these environments, it can be beneficial to use the JSON
-subset dubbed I-JSON (or Internet-JSON); see {{!I-JSON=RFC7493}}.
-
-One of the key limitations of JavaScript, and thus I-JSON, is that it cannot
-represent full 64-bit integers in standard operating mode (i.e., without using
-BigInt extensions), instead being limited to the range -(2<sup>53</sup>)+1 to
-(2<sup>53</sup>)-1.
-
-To accommodate such environments in CDDL, {{Appendix E of CDDL}} recommends
-defining new CDDL types for int64 and uint64 that limit their values to the
-restricted 64-bit integer range. This can be problematic, as some protocols
-(e.g., QUIC, HTTP/3), might use the full int64/uint64 range and we therefore
-need a qlog serialization format to support it. One solution to this is to allow
-a string-based representation of 64-bit integers in addition to the numerical,
-but range-limited representation.
-
-As such, when using I-JSON in these situations, the following CDDL definition of
-uint64 should override the original and parsers should take into account that a
-uint64 field can either be a number or string.
-
-~~~
-uint64 = text /
-         uint .size 8
-~~~
-{: #cddl-ijson-uint64-def title="Custom uint64 definition for I-JSON"}
 
 ## qlog to JSON Text Sequences mapping {#format-json-seq}
 
@@ -1331,6 +1301,33 @@ libraries exist in most programming languages that can be used and the format is
 easy enough to parse with existing implementations (i.e., by splitting the file
 into its component records and feeding them to a normal JSON parser individually,
 as each record by itself is a valid JSON object).
+
+## JSON Interoperability {#json-interop}
+
+Some JSON parsers have issues with the full JSON format, especially those
+integrated within a JavaScript environment (e.g., Web browsers, NodeJS). I-JSON
+(Internet-JSON) is a subset of JSON for such environments; see
+{{!I-JSON=RFC7493}}. One of the key limitations of JavaScript, and thus I-JSON,
+is that it cannot represent full 64-bit integers in standard operating mode
+(i.e., without using BigInt extensions), instead being limited to the range
+-(2<sup>53</sup>)+1 to (2<sup>53</sup>)-1.
+
+To accommodate such constraints in CDDL, {{Appendix E of CDDL}} recommends
+defining new CDDL types for int64 and uint64 that limit their values to the
+restricted 64-bit integer range. However, some of the protocols that qlog is
+intended to support (e.g., QUIC, HTTP/3), can use the full range of uint64
+values. To support this, qlog defines a uint64 type that allows a string- or
+numeric-based representation.
+
+As such, when using I-JSON in these situations, the following CDDL definition of
+uint64 should override the original and parsers should take into account that a
+uint64 field can either be a number or string.
+
+~~~
+uint64 = text /
+         uint .size 8
+~~~
+{: #cddl-ijson-uint64-def title="Custom uint64 definition for I-JSON"}
 
 ## Truncated values {#truncated-values}
 
