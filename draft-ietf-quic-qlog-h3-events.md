@@ -561,7 +561,7 @@ H3CancelPushFrame = {
 The `name_bytes` field supports logging the raw value of a setting identifier,
 to support logging unknown settings.
 Where an individual setting is not known, the name value of "unknown"
-can be used and the value captured in the type_value field; a
+can be used and the value captured in the raw_type field; a
 numerical value without variable-length integer encoding.
 
 ~~~ cddl
