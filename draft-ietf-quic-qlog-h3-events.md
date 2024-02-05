@@ -576,7 +576,7 @@ H3Setting = {
     ? name: H3SettingsName
 
     ; only when name === "unknown"
-    ? type_value: uint64
+    ? raw_type: uint64
     value: uint64
 }
 
