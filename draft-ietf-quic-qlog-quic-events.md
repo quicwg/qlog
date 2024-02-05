@@ -529,22 +529,27 @@ Intended use:
 
 ## alpn_information {#quic-alpninformation}
 
-The `alpn_information` event support application level protocol negotiation over
-the QUIC transport; see {{Section 7.4 of QUIC-TRANSPORT}}. It has Core
-importance level; see {{Section 9.2 of QLOG-MAIN}}.
+The `alpn_information` event supports Application-Layer Protocol Negotiation
+(ALPN) over the QUIC transport; see {{?RFC7301}} and {{Section 7.4 of
+QUIC-TRANSPORT}}. It has Core importance level; see {{Section 9.2 of
+QLOG-MAIN}}.
 
-QUIC implementations each have their own list of application level protocols and
-versions thereof they support. The client includes a list of their supported
-options in its first initial as part of the TLS Application Layer Protocol
-Negotiation (alpn) extension. If there are common option(s), the server chooses
-the most optimal one and communicates this back to the client. If not, the
-connection is closed.
+QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.
+
+ALPN identifiers are byte sequences, that may be possible to present as UTF-8.
+The `ALPNIdentifier`` type supports either format. Implementations SHOULD log at
+least one format, but MAY log both or none.
 
 ~~~ cddl
 QUICALPNInformation = {
-    ? server_alpns: [* text]
-    ? client_alpns: [* text]
-    ? chosen_alpn: text
+    ? server_alpns: [* ALPNIdentifier]
+    ? client_alpns: [* ALPNIdentifier]
+    ? chosen_alpn: ALPNIdentifier
+}
+
+ALPNIdentifier = {
+  ? byte_value: hexstring
+  ? string_value: text
 }
 ~~~
 {: #quic-alpninformation-def title="QUICALPNInformation definition"}
