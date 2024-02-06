@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-02-04T00:48:05.025956+00:00",
+  "timestamp": "2024-02-06T00:43:11.726644+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7264,7 +7264,7 @@
       "id": "I_kwDOCrLn6M52tZyf",
       "title": "I-JSON things",
       "url": "https://github.com/quicwg/qlog/issues/339",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -7273,8 +7273,8 @@
       ],
       "body": "#289 does an editorial refactor, which hightlights that I-JSON doesn't really belong as a subsection of JSON serialization. In his review, Robin states:\r\n\r\n> Since we removed truncation from this, it's a bit weird to have just a single subsection under JSON. It's also weird we don't explicitly say anything about \"qlog_format\"/file extension/MIME type when employing I-JSON (it's still just \"JSON\", but that should be explicitly spelled out imo).\r\n\r\n> It makes more sense to promote I-JSON to a `##` here, so we have 3 sections for the 3 formats (this is also how they're introduced atm).\r\n\r\n_Originally posted by @rmarx in https://github.com/quicwg/qlog/pull/289#discussion_r1120305282_\r\n            ",
       "createdAt": "2023-11-13T22:48:47Z",
-      "updatedAt": "2023-12-09T23:07:13Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-05T11:47:23Z",
+      "closedAt": "2024-02-05T11:47:22Z",
       "comments": [
         {
           "author": "LPardue",
@@ -7536,7 +7536,7 @@
       "id": "I_kwDOCrLn6M58lxw5",
       "title": "Improve quic:alpn_information",
       "url": "https://github.com/quicwg/qlog/issues/368",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -7545,8 +7545,8 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:alpn_information:\r\n\r\n  RFC 7301 states that ALPN protocol strings are byte strings, not text.\r\n  How should ALPN protocol strings which are not valid UTF-8 or not\r\n  valid text be logged?",
       "createdAt": "2024-01-19T11:02:20Z",
-      "updatedAt": "2024-01-24T09:51:05Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-05T09:53:33Z",
+      "closedAt": "2024-02-05T09:53:33Z",
       "comments": [
         {
           "author": "LPardue",
@@ -7800,7 +7800,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:stream_data_moved:\r\n\r\n  A brief explanation of each from/to value here and the intended meaning would\r\n  be a big improvement. Also clarify that raw here refers to the referenced\r\n  stream application data (and does not include frame headers etc.).\r\n\r\n  Consider having a way to report when the end-of-stream (FIN) condition is\r\n  reported to an application. One option here is to have an optional \"fin\" field\r\n  here.\r\n\r\n  There does not appear to be any way to communicate when a stream reset event is\r\n  delivered to an application in an equivalent way, which would be useful.\r\n\r\nquic:datagram_data_moved:\r\n\r\n  As with stream_data_moved, clarify meaning of the from/to fields here.",
       "createdAt": "2024-01-19T11:26:23Z",
-      "updatedAt": "2024-01-28T20:08:52Z",
+      "updatedAt": "2024-02-05T09:48:21Z",
       "closedAt": null,
       "comments": [
         {
@@ -7816,6 +7816,13 @@
           "body": "There's already a lot of text in these sections, personally I don't think explaining each field is going to be much more help. \r\n\r\nRe: `raw` raking it clear it is stream data not frames is a couple of words and worth it. \r\n\r\nI can see some value in the ability to indicate when an app requests a stop_sending or a reset_stream or when either is passed up to an app. I think that's a new event though.\r\n\r\nFor stream fin, I could argue a few ways. I think a `? fin: bool` field on stream_data_moved is probably the best tradeoff.",
           "createdAt": "2024-01-28T20:08:18Z",
           "updatedAt": "2024-01-28T20:08:52Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed in editors meeting.\r\nRobin: not the biggest fan of adding `fin` + some additional fields for stop_sending and reset_stream, but option.\r\nMarten and Lucas: similar APIs in implementation: fin is possibly separate from the others (which are passed as errors). Errors often don't get communicated directly when happen, but only when application tries to read. So it does make sense to have it in `stream_data_moved` maybe. \r\nLucas: will propose a PR to add these signals to `stream_data_moved`\r\n\r\n\r\n",
+          "createdAt": "2024-02-05T09:48:20Z",
+          "updatedAt": "2024-02-05T09:48:20Z"
         }
       ]
     },
@@ -7833,16 +7840,24 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nsecurity:key_updated:\r\n\r\n  Clarify use of the generation field here, which is introducing a new concept\r\n  not directly touched on by the QUIC RFCs, which just deal in the Key Phase bit.\r\n  Provide examples for the first few generation numbers (for example, presumably\r\n  the first 1-RTT EL key has a generation of 0). Also clarify how this interacts\r\n  with the temporal behaviour of the key update process (since old keys are\r\n  retained to handle reordered packets). Presumably once a new key exists, it is\r\n  logged with a new generation number and the old key is eventually given a\r\n  key_discarded event with the old generation number. But this should be\r\n  clarified.\r\n\r\nsecurity:key_discarded:\r\n\r\n  As above.",
       "createdAt": "2024-01-19T11:29:29Z",
-      "updatedAt": "2024-01-19T11:29:30Z",
+      "updatedAt": "2024-02-05T09:38:35Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed during editors meeting. \r\nMarten agrees this is an issue and will propose a PR (maybe just renaming `generation` to `key_phase`?)",
+          "createdAt": "2024-02-05T09:38:34Z",
+          "updatedAt": "2024-02-05T09:38:34Z"
+        }
+      ]
     },
     {
       "number": 377,
       "id": "I_kwDOCrLn6M58mA3t",
       "title": "Add congestion control name to recovery:parameters_set",
       "url": "https://github.com/quicwg/qlog/issues/377",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -7851,8 +7866,8 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nrecovery:parameters_set:\r\n\r\n  A minor point, but I suppose it may be useful to have a field for a name of a\r\n  congestion control algorithm here, defined as \"newreno\" / text (with \"newreno\"\r\n  being the algorithm specified in RFC 9002).\r\n",
       "createdAt": "2024-01-19T11:31:21Z",
-      "updatedAt": "2024-01-24T07:28:41Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-05T09:36:59Z",
+      "closedAt": "2024-02-05T09:36:59Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -7902,6 +7917,13 @@
           "body": "After reflecting on the \"philosophy of qlog\" in these two comments: https://github.com/quicwg/qlog/issues/371#issuecomment-1900972178\r\n\r\nI think I now agree and that we don't need to do this.\r\n",
           "createdAt": "2024-01-24T07:28:40Z",
           "updatedAt": "2024-01-24T07:28:40Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed during editors meeting.\r\nClosing without action; proposed solution is to use custom per-implementation fields if needed (since no 2 Reno implementations are even alike and we don't want full parameters for every possible config)",
+          "createdAt": "2024-02-05T09:36:59Z",
+          "updatedAt": "2024-02-05T09:36:59Z"
         }
       ]
     },
@@ -7910,7 +7932,7 @@
       "id": "I_kwDOCrLn6M58mGt0",
       "title": "Clarify use of StreamFrame",
       "url": "https://github.com/quicwg/qlog/issues/378",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -7919,8 +7941,8 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nStreamFrame:\r\n\r\n  This format has ambiguity as to whether explicit length and/or offset\r\n  fields were used. It is potentially useful to know this, or the\r\n  numeric value of the stream type field.\r\n\r\n  Being able to know the header length for overhead calculation would\r\n  also be valuable IMO.\r\n\r\n  It may be worth explicitly clarifying that it is not possible to use\r\n  this object to log information about a stream frame without logging\r\n  the value of the FIN bit, as the presence or absence of this bit is\r\n  inferred from presence or absence of the FIN field.",
       "createdAt": "2024-01-19T11:43:01Z",
-      "updatedAt": "2024-01-19T16:22:19Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-05T09:35:30Z",
+      "closedAt": "2024-02-05T09:35:29Z",
       "comments": [
         {
           "author": "rmarx",
@@ -7935,6 +7957,13 @@
           "body": ">For the bottom one, I agree, but I don't quite see how this is an issue in practice?\r\n\r\nNot really an issue &mdash; just thought it worth pointing out. If there is an explicit decision that this isn't an issue, that's fine, but it could also easily have been accident, so just thought I'd point it out.",
           "createdAt": "2024-01-19T16:22:08Z",
           "updatedAt": "2024-01-19T16:22:19Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed during editors meeting. Seems to not be (much of) an issue in practice, so decided to close without action.",
+          "createdAt": "2024-02-05T09:35:29Z",
+          "updatedAt": "2024-02-05T09:35:29Z"
         }
       ]
     },
@@ -7946,11 +7975,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "rmarx"
+      ],
       "labels": [],
       "body": "In H3 [parameters_set](https://quicwg.org/qlog/draft-ietf-quic-qlog-h3-events.html#name-parameters_set) , we have a\r\n\r\n```\r\n; additional settings for grease and extensions\r\n    * text => uint64\r\n```\r\n\r\nif I grok CDDL correctly, this allows us to have any number of pairs that would serialize like \r\n\r\n```\r\n\"my_sekret_extension\": 123,\r\n\"9999\": 0\r\n```\r\n\r\nIt got me thinking a bit. This isn't explained super clearly and people might overlook it. Maybe there's more use for this in some other types. Leading to, maybe we should define this as a generic tuple type in the base spec along with some text, then we can reuse it across various events?",
       "createdAt": "2024-01-22T23:23:47Z",
-      "updatedAt": "2024-01-30T11:46:52Z",
+      "updatedAt": "2024-02-05T09:34:38Z",
       "closedAt": null,
       "comments": [
         {
@@ -7966,6 +7997,13 @@
           "body": "I don't think that works for my needs from a composition perspective. I want to extend `$ProtocolEventBody` so that the extension is specific to a single type, not extend the entire event.",
           "createdAt": "2024-01-30T11:46:51Z",
           "updatedAt": "2024-01-30T11:46:51Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed in meeting.\r\nLucas: main intent is to formally allow any event to be extensible (instead of having to copy-paste all event parameters to a new event name). Currently possible in code of course, but not in proper CDDL schema. \r\nRobin: probably not possible without making everything a socket, but need to double check with CDDL defs. ",
+          "createdAt": "2024-02-05T09:34:35Z",
+          "updatedAt": "2024-02-05T09:34:35Z"
         }
       ]
     },
@@ -7981,7 +8019,7 @@
       "labels": [],
       "body": "https://quicwg.org/qlog/draft-ietf-quic-qlog-h3-events.html#section-5.3.4\r\n\r\n```\r\nH3Setting = {\r\n    name: text\r\n    value: uint64\r\n}\r\n```\r\n\r\nLooking at IANA https://www.iana.org/assignments/http3-parameters/http3-parameters.xhtml, I think qlog nudges implementations to log the setting name. When an implementation receives an unknown setting (not a greased one) it won't know the name. It could log the setting type value code in the name field, but that is not specified. This makes things annoying for parsers since they need to do some thinking. \r\n\r\nOne suggestion is to add another field like `type` that could contain the numerical type value. It would be duplicative to have both, so that might require making `type` and `name` optional.",
       "createdAt": "2024-01-25T02:10:19Z",
-      "updatedAt": "2024-01-25T02:15:13Z",
+      "updatedAt": "2024-02-05T18:48:12Z",
       "closedAt": null,
       "comments": [
         {
@@ -7990,6 +8028,27 @@
           "body": "Also we might want to state that the name should be the name IANA use, possiblyeven define a explicit names in addition to free form string.",
           "createdAt": "2024-01-25T02:15:12Z",
           "updatedAt": "2024-01-25T02:15:12Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed during meeting. \r\nAgree to add this option, similar to how we changed ALPN in #385 ",
+          "createdAt": "2024-02-05T09:17:58Z",
+          "updatedAt": "2024-02-05T09:17:58Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Another thing I'm wondering is if we should clarify what the `name` field is exactly.\r\n\r\ni.e., I've previously logged this myself as `QPACK_MAX_TABLE_CAPACITY` but the IANA name is prefixed with `SETTINGS_`, so `SETTINGS_QPACK_MAX_TABLE_CAPACITY` instead. \r\n\r\nYou could argue this should be obvious, but e.g., in RFC9204, they use the unprefixed version (see https://www.rfc-editor.org/rfc/rfc9204.html#section-8.1) with a note `For formatting reasons, the setting names here are abbreviated by removing the 'SETTINGS_' prefix.`... could be quite confusing for novice implementers, so maybe 1 example or clear statement that the name is the IANA registered name would be good. ",
+          "createdAt": "2024-02-05T14:55:23Z",
+          "updatedAt": "2024-02-05T15:00:03Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Agree 100%, I'll add some text",
+          "createdAt": "2024-02-05T18:48:11Z",
+          "updatedAt": "2024-02-05T18:48:11Z"
         }
       ]
     },
@@ -8001,13 +8060,23 @@
       "state": "OPEN",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "rmarx"
+      ],
       "labels": [],
       "body": "This would be interesting for Version Negotiation, Retry, CONNECTION_CLOSE etc. sent by a server.",
       "createdAt": "2024-02-02T10:23:57Z",
-      "updatedAt": "2024-02-02T10:23:57Z",
+      "updatedAt": "2024-02-05T09:25:04Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed during meeting.\r\nRobin: not a big fan of this; use `datagrams_*` instead or `group_id`/`path_id` or custom field or separate trace\r\nLucas: not super-strong opinion there \r\nMarten: imo server log sending out retries should log everything in a single event, not spilt out\r\nRobin: will think about it some more; get back to you\r\n\r\nsee also #211 ",
+          "createdAt": "2024-02-05T09:14:25Z",
+          "updatedAt": "2024-02-05T09:25:04Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -8817,7 +8886,7 @@
       "labels": [],
       "body": "Fixes #122.\r\n\r\nThis PR contains 2 fixes:\r\n\r\n- stateless reset tokens are not tokens\r\n- `PacketHeader` already contains a `Token`, so we don't need another field on the `packet_sent` and `packet_received` event",
       "createdAt": "2020-11-06T07:36:26Z",
-      "updatedAt": "2020-11-09T11:23:59Z",
+      "updatedAt": "2024-02-05T09:26:18Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "draft02",
       "baseRefOid": "197532463830d19b3e5b854f692951fc9a30ce9a",
@@ -8828,7 +8897,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Conclusion: remove retry_token from packet_sent and packet_received, allow using the token field on the header for Retry packets.",
+          "createdAt": "2024-02-05T09:26:16Z",
+          "updatedAt": "2024-02-05T09:26:16Z"
+        }
+      ],
       "reviews": [
         {
           "id": "MDE3OlB1bGxSZXF1ZXN0UmV2aWV3NTI2MTU3MzQ2",
@@ -18384,7 +18461,7 @@
       "labels": [],
       "body": "Closes #229\n",
       "createdAt": "2023-12-09T22:00:39Z",
-      "updatedAt": "2023-12-10T04:25:38Z",
+      "updatedAt": "2024-02-05T10:00:44Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "bd070df2475d916f1b507a9eee1982e9749fb1c3",
@@ -18402,6 +18479,13 @@
           "body": "That's fair. But that's effectively what we've already been saying all along - it was just buried in a section about I-JSON. We have an interop issue if people miss this section. E.g. with no way to signal I-JSON, if I pass you a JSON qlog file with a large GREASE value encoded with a string and you try to parse it as a uint64 ... \ud83d\udca5. A quiet fail is also bad, being unable to represent data values (or to parse them) is a way to hide data within a connection that might be expected to be observable.\r\n\r\nThings are leaky. CDDL explains that in https://www.rfc-editor.org/rfc/rfc8610#appendix-E. Maybe there's some other way to explain that in the docs and I'm open to it but I don't have much inspiration.",
           "createdAt": "2023-12-10T04:25:37Z",
           "updatedAt": "2023-12-10T04:25:37Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed during editors meeting. \r\nLucas will update this with new opinion about how we should handle uint64 in combo with CDDL. ",
+          "createdAt": "2024-02-05T10:00:43Z",
+          "updatedAt": "2024-02-05T10:00:43Z"
         }
       ],
       "reviews": [
@@ -18425,26 +18509,50 @@
       "id": "PR_kwDOCrLn6M5hmerZ",
       "title": "Reframe JSON interop concerns seperately of I-JSON",
       "url": "https://github.com/quicwg/qlog/pull/360",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Since we added JSON-SEQ, it's been hard to square the circle about\nwhere I-JSON fits in the document structure. I think that's because\nactually the discussion should be framed in the context of interop\nissues related to JSON messages. Our 64-bit values pose a problem\nand the way CDDL suggest to solve that doesn't work - so we lay it\nall out here.\n\nThere is obvious overlap here with PR #359. Whichever lands first\n(if they even do) will cause some conflict that is easy to fixup.\n\nCloses #339\n",
       "createdAt": "2023-12-09T22:52:40Z",
-      "updatedAt": "2023-12-09T22:52:41Z",
+      "updatedAt": "2024-02-05T11:47:25Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "bd070df2475d916f1b507a9eee1982e9749fb1c3",
       "headRepository": "quicwg/qlog",
       "headRefName": "reframe-ijson",
       "headRefOid": "bd7b77ac02d590780ea10192575bc05d2149d145",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "closedAt": "2024-02-05T11:47:22Z",
+      "mergedAt": "2024-02-05T11:47:22Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "724f324d9cf756d06a742d00611b995929085096"
+      },
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "This change looks big but its mostly just promoting the `I-JSON` section from 10.1.1 to a broader `JSON Interoperabiltiy` section 10.3",
+          "createdAt": "2024-02-05T11:10:48Z",
+          "updatedAt": "2024-02-05T11:10:48Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5vA2UE",
+          "commit": {
+            "abbreviatedOid": "bd7b77a"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-02-05T11:34:13Z",
+          "updatedAt": "2024-02-05T11:34:13Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 361,
@@ -18922,13 +19030,13 @@
       "labels": [],
       "body": "Closes #382\r\n",
       "createdAt": "2024-01-28T18:51:26Z",
-      "updatedAt": "2024-01-29T13:06:32Z",
+      "updatedAt": "2024-02-05T09:36:54Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "391958c3917b29147b303457cee9a9e6c1cafeae",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-settings",
-      "headRefOid": "e372a1acc9a6e083a104454c7d34b326f13f8a3a",
+      "headRefOid": "26d2e9499b9490f9cc231e75f383a891e7f7236d",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -19023,24 +19131,26 @@
       "id": "PR_kwDOCrLn6M5lQ4We",
       "title": "Create ALPNIdentifier type to allow bytes or string presentation",
       "url": "https://github.com/quicwg/qlog/pull/385",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "ALPN IDs aren't guaranteed to be safe text, so allow logging the byte\r\nsequence. However, don't force endpoint to do that if their willing\r\nto do some safety checking or safe encoding.\r\n\r\nCloses #368\r\n",
       "createdAt": "2024-01-28T19:53:23Z",
-      "updatedAt": "2024-01-29T14:02:25Z",
+      "updatedAt": "2024-02-05T09:53:35Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "391958c3917b29147b303457cee9a9e6c1cafeae",
       "headRepository": "quicwg/qlog",
       "headRefName": "alpn-hex",
       "headRefOid": "1d4bb45e8fece62d6ff24a85d112fb9564edae65",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-02-05T09:53:32Z",
+      "mergedAt": "2024-02-05T09:53:32Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "78652accdd424309e8c7d180f0c5b585b6a7de00"
+      },
       "comments": [],
       "reviews": [
         {
@@ -19086,6 +19196,19 @@
           "body": "",
           "createdAt": "2024-01-29T14:02:25Z",
           "updatedAt": "2024-01-29T14:02:25Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5vAFUL",
+          "commit": {
+            "abbreviatedOid": "1d4bb45"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-02-05T09:50:19Z",
+          "updatedAt": "2024-02-05T09:50:19Z",
           "comments": []
         }
       ]
@@ -19169,6 +19292,65 @@
               "body": "Oh I missed this, sorry. \r\n\r\nWe seem to use of mix of \"if\" and \"when\" throught the docs. We should do a consistency pass as followup.",
               "createdAt": "2024-01-29T15:53:22Z",
               "updatedAt": "2024-01-29T15:53:22Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 388,
+      "id": "PR_kwDOCrLn6M5mBMRY",
+      "title": "Explain 64-bit I-JSON issues but don't embed that in CDDL",
+      "url": "https://github.com/quicwg/qlog/pull/388",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Alternative to #359.\r\n\r\nI-JSON can mess with big numbers and we can't constrain the range.\r\nWe don't want to mandate bigint support on anyone. We don't want\r\nto make non-JSON serializers/parsers have to worry about stringified\r\nnumbers - so modifying the CDDL directly seems off.\r\n\r\nThere's lots of ways that implementations can internally handle values,\r\nwe don't care much about that here. For interop, settle on allow JSON parsers\r\nto write uint64 as strings if they want to. Make it clear that parsers\r\nshould expect that, unless they have some non-standard way of knowing.\r\n\r\nFixes #229\r\n",
+      "createdAt": "2024-02-05T12:44:51Z",
+      "updatedAt": "2024-02-05T14:49:25Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "724f324d9cf756d06a742d00611b995929085096",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "remove-uint64-cddl-duality",
+      "headRefOid": "57f8ac01edf0ee1080d116c5b47346da08072a75",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5vCvck",
+          "commit": {
+            "abbreviatedOid": "57f8ac0"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "I can live with the high-level approach here, but think the prose needs a bit of work to be clearer about the intent (see suggestions). ",
+          "createdAt": "2024-02-05T14:46:10Z",
+          "updatedAt": "2024-02-05T14:49:25Z",
+          "comments": [
+            {
+              "originalPosition": 27,
+              "body": "```suggestion\r\nuint64 values using JSON strings. qlog parsers, therefore, SHOULD support\r\n```\r\n\r\nNot entirely sure that covers the entire load, but `JSON parsers` is also not quite correct I'd say :) ",
+              "createdAt": "2024-02-05T14:46:10Z",
+              "updatedAt": "2024-02-05T14:49:41Z"
+            },
+            {
+              "originalPosition": 29,
+              "body": "```suggestion\r\ninformation indicating that neither the serializer nor parser are constrained by\r\n```",
+              "createdAt": "2024-02-05T14:47:56Z",
+              "updatedAt": "2024-02-05T14:49:25Z"
+            },
+            {
+              "originalPosition": 28,
+              "body": "```suggestion\r\nparsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band\r\n```",
+              "createdAt": "2024-02-05T14:48:40Z",
+              "updatedAt": "2024-02-05T14:49:25Z"
             }
           ]
         }
