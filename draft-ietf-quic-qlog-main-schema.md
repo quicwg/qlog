@@ -1319,9 +1319,9 @@ intended to support (e.g., QUIC, HTTP/3), can use the full range of uint64
 values.
 
 As such, to support situations where I-JSON is in use, seralizers MAY encode
-uint64 values using JSON strings. JSON parsers, therefore, SHOULD support
-parsing of strings or numbers into uint64 unless there is out-of-band
-information indicating that neither the serializer or parser are constrained by
+uint64 values using JSON strings. qlog parsers, therefore, SHOULD support
+parsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band
+information indicating that neither the serializer nor parser are constrained by
 I-JSON.
 
 ## Truncated values {#truncated-values}
