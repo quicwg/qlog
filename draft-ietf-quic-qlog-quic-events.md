@@ -686,9 +686,6 @@ QUICPacketSent = {
     ? frames: [* $QuicFrame]
     ? is_coalesced: bool .default false
 
-    ; only if header.packet_type === "retry"
-    ? retry_token: Token
-
     ; only if header.packet_type === "stateless_reset"
     ; is always 128 bits in length.
     ? stateless_reset_token: StatelessResetToken
@@ -732,9 +729,6 @@ QUICPacketReceived = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
     ? is_coalesced: bool .default false
-
-    ; only if header.packet_type === "retry"
-    ? retry_token: Token
 
     ; only if header.packet_type === "stateless_reset"
     ; Is always 128 bits in length.
@@ -1524,7 +1518,7 @@ PacketHeader = {
     ; if present
     ? flags: uint8
 
-    ; only if packet_type === "initial"
+    ; only if packet_type === "initial" || "retry"
     ? token: Token
 
     ; only if packet_type === "initial" || "handshake" || "0RTT"
