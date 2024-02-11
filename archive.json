@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-02-08T00:43:09.413705+00:00",
+  "timestamp": "2024-02-11T00:48:12.039620+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7831,7 +7831,7 @@
       "id": "I_kwDOCrLn6M58l__5",
       "title": "Clarify security: key events",
       "url": "https://github.com/quicwg/qlog/issues/376",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -7840,8 +7840,8 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nsecurity:key_updated:\r\n\r\n  Clarify use of the generation field here, which is introducing a new concept\r\n  not directly touched on by the QUIC RFCs, which just deal in the Key Phase bit.\r\n  Provide examples for the first few generation numbers (for example, presumably\r\n  the first 1-RTT EL key has a generation of 0). Also clarify how this interacts\r\n  with the temporal behaviour of the key update process (since old keys are\r\n  retained to handle reordered packets). Presumably once a new key exists, it is\r\n  logged with a new generation number and the old key is eventually given a\r\n  key_discarded event with the old generation number. But this should be\r\n  clarified.\r\n\r\nsecurity:key_discarded:\r\n\r\n  As above.",
       "createdAt": "2024-01-19T11:29:29Z",
-      "updatedAt": "2024-02-05T09:38:35Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-08T02:03:58Z",
+      "closedAt": "2024-02-08T02:03:58Z",
       "comments": [
         {
           "author": "rmarx",
@@ -19411,24 +19411,26 @@
       "id": "PR_kwDOCrLn6M5mODcR",
       "title": "key_updated / key_discarded: rename generation to key_phase",
       "url": "https://github.com/quicwg/qlog/pull/390",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #376. Also changing the type to uint64, since I don't see why the number of key updates would be limited to MaxUint32.",
       "createdAt": "2024-02-07T05:34:26Z",
-      "updatedAt": "2024-02-07T10:38:08Z",
+      "updatedAt": "2024-02-08T02:03:58Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "724f324d9cf756d06a742d00611b995929085096",
       "headRepository": "quicwg/qlog",
       "headRefName": "key-phases",
       "headRefOid": "e421812eaae9ab48c6452a8653896039e1797e61",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-02-08T02:03:57Z",
+      "mergedAt": "2024-02-08T02:03:57Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "dd8882eb422692b671cff724fae1a7711579a548"
+      },
       "comments": [
         {
           "author": "hlandau",
@@ -19436,6 +19438,13 @@
           "body": "Looks good to me.\r\n\r\nMy understanding of how these events will be used is something like (for a client):\r\n\r\n```\r\nt=0: Initial EL provisioned; key_updated(client_initial_secret, new=...)\r\nt=0: Initial EL provisioned; key_updated(server_initial_secret, new=...)\r\n\r\n...\r\n\r\nt=a: Handshake EL provisioned; key_updated(client_handshake_secret, new=...)\r\nt=a; Handshake EL provisioned; key_updated(server_handshake_secret, new=...)\r\n\r\n...\r\n\r\nt=b; Initial EL dropped; key_discarded(client_initial_secret)\r\nt=b; Initial EL dropped; key_discarded(server_initial_secret)\r\n\r\n...\r\n\r\nt=c; 1-RTT EL provisioned, key_updated(client_1rtt_secret, generation=0, new=...)\r\nt=c; 1-RTT EL provisioned; key_updated(server_1rtt_secret, generation=0, new=...)\r\n\r\n...\r\n\r\nt=d; Handshake EL dropped; key_discarded(client_handshake_secret)\r\nt=d; Handshake EL dropped; key_discarded(server_handshake_secret)\r\n\r\n...\r\nKey update:\r\n\r\nt=m; Key update; key_updated(client_1rtt_secret, generation=1, old=..., new=...)\r\nt=m; Key update; key_updated(server_1rtt_secret, generation=1, old=..., new=...)\r\n(previous keys are kept around for a while to handle in-flight packets)\r\n\r\nt=n; Key update completed; key_discarded(client_1rtt_secret, generation=0)\r\nt=n; Key update completed; key_discarded(server_1rtt_secret, generation=0)\r\n```\r\n\r\nThis works and gives good understanding to a qlog consumer of when a set of keys is available and handles time periods where multiple keys are available well. LGTM.",
           "createdAt": "2024-02-07T10:38:06Z",
           "updatedAt": "2024-02-07T10:38:06Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "The important part here is that the key phase keeps increasing:\r\n```\r\nKey update:\r\n\r\nt=m; Key update; key_updated(client_1rtt_secret, key_phase=1, old=..., new=...)\r\nt=m; Key update; key_updated(server_1rtt_secret, key_phase=1, old=..., new=...)\r\n\r\nt=m; Key update; key_updated(client_1rtt_secret, key_phase=2, old=..., new=...)\r\nt=m; Key update; key_updated(server_1rtt_secret, key_phase=2, old=..., new=...)\r\n\r\nt=m; Key update; key_updated(client_1rtt_secret, key_phase=3, old=..., new=...)\r\nt=m; Key update; key_updated(server_1rtt_secret, key_phase=3, old=..., new=...)",
+          "createdAt": "2024-02-08T02:03:08Z",
+          "updatedAt": "2024-02-08T02:03:08Z"
         }
       ],
       "reviews": [
