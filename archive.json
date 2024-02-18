@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-02-15T00:43:47.653149+00:00",
+  "timestamp": "2024-02-18T00:47:14.542657+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -8075,6 +8075,51 @@
           "body": "Discussed during meeting.\r\nRobin: not a big fan of this; use `datagrams_*` instead or `group_id`/`path_id` or custom field or separate trace\r\nLucas: not super-strong opinion there \r\nMarten: imo server log sending out retries should log everything in a single event, not spilt out\r\nRobin: will think about it some more; get back to you\r\n\r\nsee also #211 ",
           "createdAt": "2024-02-05T09:14:25Z",
           "updatedAt": "2024-02-05T09:25:04Z"
+        }
+      ]
+    },
+    {
+      "number": 391,
+      "id": "I_kwDOCrLn6M5_Y-Le",
+      "title": "`ConnectionClose` storing a uint64 error_code and a uint64 error_code_value seems redundant",
+      "url": "https://github.com/quicwg/qlog/issues/391",
+      "state": "OPEN",
+      "author": "evanrittenhouse",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "As the title states, I don't quite see a reason for [`ConnectionClose`](https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-connectioncloseframe) to have both `error_code` and `error_code_value` store uint64s. It seems like it may be clearer if either:\r\n1. `error_code` is some non-uint64 value\r\n2. `error_code` is a uint64, but `error_code_value` drops out of the event.",
+      "createdAt": "2024-02-15T19:16:42Z",
+      "updatedAt": "2024-02-15T20:03:39Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "So the current definition is \r\n\r\n```\r\nErrorSpace = \"transport\" /\r\n             \"application\"\r\n\r\nConnectionCloseFrame = {\r\n    frame_type: \"connection_close\"\r\n    ? error_space: ErrorSpace\r\n    ? error_code: TransportError /\r\n                  $ApplicationError /\r\n                  uint64\r\n    ? error_code_value: uint64\r\n    ? reason: text\r\n\r\n    ; when error_space === \"transport\"\r\n    ? trigger_frame_type: uint64 /\r\n                          text\r\n}\r\n```\r\n\r\nTransportError and ApplicationError are \"strongly typed\" strings. An endpoint that receives an unknown code should be able to log the raw number as a uint64. The big question is why do `error_code` and `error_code_value` both allow that? I think we should just pick one way.",
+          "createdAt": "2024-02-15T19:21:08Z",
+          "updatedAt": "2024-02-15T19:21:08Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, IIRC, the original intent here was to log all necessary details for the `CRYPTO_ERROR` error space (as also indicated in the prose preceeding the CDDL in the doc: \"The error_code_value field is the numerical value without variable-length integer encoding. This is useful because some error types are spread out over a range of codes (e.g., QUIC's crypto_error).\")\r\n\r\nWhy? Because in [RFC9000, CRYPTO_ERROR is a range of errors](https://www.rfc-editor.org/rfc/rfc9000.html#section-20.1):\r\n\r\n```\r\nCRYPTO_ERROR (0x0100-0x01ff):\r\nThe cryptographic handshake failed. A range of 256 values is reserved for carrying error codes specific to the cryptographic handshake that is used. Codes for errors occurring when TLS is used for the cryptographic handshake are described in [Section 4.8](https://www.rfc-editor.org/rfc/rfc9001#section-4.8) of [[QUIC-TLS](https://www.rfc-editor.org/rfc/rfc9000.html#QUIC-TLS)].\r\n```\r\n\r\nAs such, originally in qlog, you'd for example have `error_code: \"crypto_error\"` and `error_code_value: 0x0111` so you can have both the high-level error_code string AND the specific value of the 256 range.\r\n\r\nHOWEVER I changed this down the line to have[ the separate `CryptoError` struct](https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-8.12.25) as part of TransportError that says this:\r\n\r\n```\r\n; all strings from \"crypto_error_0x100\" to \"crypto_error_0x1ff\"\r\nCryptoError = text .regexp \"crypto_error_0x1[0-9a-f][0-9a-f]\"\r\n```\r\n\r\nAnd I probably just forgot to remove `error_code_value`. \r\nSo, if we agree that the latter approach is a good one, we can indeed leave out `error_code_value` :) \r\n\r\nHowever, I do remember this having some weirdness with proper CDDL (i.e., can't merge both an enum (TransportError) and a separate type like CryptoError, which is why it's indicated purely as prose in the current docs). \r\n\r\nSo I think the final solution depends on how strictly we want to adhere to CDDL :) \r\n\r\n\r\n\r\n\r\n\r\n",
+          "createdAt": "2024-02-15T19:42:05Z",
+          "updatedAt": "2024-02-15T19:43:13Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "can we do this (and update the prose accordingly)?\r\n\r\n```\r\nConnectionCloseFrame = {\r\n    frame_type: \"connection_close\"\r\n    ? error_space: ErrorSpace\r\n    ? error_code: TransportError /\r\n                  CryptoError /\r\n                  $ApplicationError /\r\n                  uint64\r\n    ? reason: text\r\n\r\n    ; when error_space === \"transport\"\r\n    ? trigger_frame_type: uint64 /\r\n                          text\r\n}\r\n```",
+          "createdAt": "2024-02-15T19:59:15Z",
+          "updatedAt": "2024-02-15T19:59:15Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Without running the CDDL validator, I'm guessing yes :) That would be the most practical solution I think! ",
+          "createdAt": "2024-02-15T20:03:37Z",
+          "updatedAt": "2024-02-15T20:03:37Z"
         }
       ]
     }
