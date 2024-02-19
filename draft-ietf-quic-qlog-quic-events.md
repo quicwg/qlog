@@ -851,7 +851,7 @@ QUICPacketsAcked = {
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
 
 If `packet_number_space` is omitted, it assumes the default value of
-`PacketNumberSpace.application_data`, as this is by far the most prevalent packet
+`application_data`, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
 ## datagrams_sent {#quic-datagramssent}
