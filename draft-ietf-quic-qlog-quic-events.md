@@ -68,7 +68,7 @@ various programming languages can be found at
 This document describes the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the QUIC protocol (see
 {{!QUIC-TRANSPORT=RFC9000}}, {{!QUIC-RECOVERY=RFC9002}}, and
-{{!QUIC-TLS=RFC9003}}) and some of its extensions (see
+{{!QUIC-TLS=RFC9001}}) and some of its extensions (see
 {{!QUIC-DATAGRAM=RFC9221}} and {{!GREASEBIT=RFC9287}}).
 
 ## Notational Conventions
@@ -1166,7 +1166,7 @@ SecurityKeyUpdated = {
 {: #security-keyupdated-def title="SecurityKeyUpdated definition"}
 
 Note that the key_phase is the full value of the key phase (as indicated by
-@M and @N in Figure 9 of {{!QUIC-TLS=RFC9001}}). The key phase bit used on
+@M and @N in Figure 9 of {{QUIC-TLS}}). The key phase bit used on
 the packet header is the least significant bit of the key phase.
 
 ## key_discarded {#security-keydiscarded}
