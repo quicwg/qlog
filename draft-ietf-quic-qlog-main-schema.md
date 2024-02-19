@@ -1304,7 +1304,7 @@ as each record by itself is a valid JSON object).
 
 ## JSON Interoperability {#json-interop}
 
-Some JSON parsers have issues with the full JSON format, especially those
+Some JSON implementations have issues with the full JSON format, especially those
 integrated within a JavaScript environment (e.g., Web browsers, NodeJS). I-JSON
 (Internet-JSON) is a subset of JSON for such environments; see
 {{!I-JSON=RFC7493}}. One of the key limitations of JavaScript, and thus I-JSON,
@@ -1316,18 +1316,13 @@ To accommodate such constraints in CDDL, {{Appendix E of CDDL}} recommends
 defining new CDDL types for int64 and uint64 that limit their values to the
 restricted 64-bit integer range. However, some of the protocols that qlog is
 intended to support (e.g., QUIC, HTTP/3), can use the full range of uint64
-values. To support this, qlog defines a uint64 type that allows a string- or
-numeric-based representation.
+values.
 
-As such, when using I-JSON in these situations, the following CDDL definition of
-uint64 should override the original and parsers should take into account that a
-uint64 field can either be a number or string.
-
-~~~
-uint64 = text /
-         uint .size 8
-~~~
-{: #cddl-ijson-uint64-def title="Custom uint64 definition for I-JSON"}
+As such, to support situations where I-JSON is in use, seralizers MAY encode
+uint64 values using JSON strings. qlog parsers, therefore, SHOULD support
+parsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band
+information indicating that neither the serializer nor parser are constrained by
+I-JSON.
 
 ## Truncated values {#truncated-values}
 
