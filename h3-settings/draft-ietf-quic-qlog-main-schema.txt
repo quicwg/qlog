@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 8 August 2024                                              Meta
+Expires: 22 August 2024                                             Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         5 February 2024
+                                                        19 February 2024
 
 
                       Main logging schema for qlog
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 8 August 2024.
+   This Internet-Draft will expire on 22 August 2024.
 
 Copyright Notice
 
@@ -110,11 +110,11 @@ Table of Contents
      9.3.  Custom fields
    10. Serializing qlog
      10.1.  qlog to JSON mapping
-       10.1.1.  I-JSON
      10.2.  qlog to JSON Text Sequences mapping
        10.2.1.  Supporting JSON Text Sequences in tooling
-     10.3.  Truncated values
-     10.4.  Optimization of serialized data
+     10.3.  JSON Interoperability
+     10.4.  Truncated values
+     10.5.  Optimization of serialized data
    11. Methods of access and generation
      11.1.  Set file output destination via an environment variable
    12. Tooling requirements
@@ -1056,7 +1056,7 @@ Table of Contents
                        Figure 26: RawInfo definition
 
    The RawInfo:data field can be truncated for privacy or security
-   purposes, see Section 10.3.  In this case, the length and
+   purposes, see Section 10.4.  In this case, the length and
    payload_length fields should still indicate the non-truncated lengths
    when used for debugging purposes.
 
@@ -1323,11 +1323,9 @@ Table of Contents
    features that make them a good starting point for qlog flexibility
    and interoperability.  For these reasons, JSON is a recommended
    default and expanded considerations are given to how to map qlog to
-   JSON (Section 10.1, its subset I-JSON Section 10.1.1, and its
-   streaming counterpart JSON Text Sequences (Section 10.2.
-   Furthermore, potential optimizations to these formats, such as
-   reducing storage or processing overheads, are presented in
-   Section 10.4.
+   JSON (Section 10.1, and its streaming counterpart JSON Text Sequences
+   (Section 10.2.  Section 10.3 presents interoperability considerations
+   for both formats, and Section 10.5 presents potential optimizations.
 
    Serialization formats require appropriate deserializers/parsers.  The
    "qlog_format" field (Section 3) is used to indicate the chosen
@@ -1349,38 +1347,6 @@ Table of Contents
    In order to serialize CDDL-based qlog event and data structure
    definitions to JSON, the official CDDL-to-JSON mapping defined in
    Appendix E of [CDDL] SHOULD be employed.
-
-10.1.1.  I-JSON
-
-   Not all popular JSON parsers support the full JSON format, especially
-   those integrated within a JavaScript environment (e.g., Web browsers,
-   NodeJS).  For use cases that involve these environments, it can be
-   beneficial to use the JSON subset dubbed I-JSON (or Internet-JSON);
-   see [I-JSON].
-
-   One of the key limitations of JavaScript, and thus I-JSON, is that it
-   cannot represent full 64-bit integers in standard operating mode
-   (i.e., without using BigInt extensions), instead being limited to the
-   range -(2^53)+1 to (2^53)-1.
-
-   To accommodate such environments in CDDL, Appendix E of [CDDL]
-   recommends defining new CDDL types for int64 and uint64 that limit
-   their values to the restricted 64-bit integer range.  This can be
-   problematic, as some protocols (e.g., QUIC, HTTP/3), might use the
-   full int64/uint64 range and we therefore need a qlog serialization
-   format to support it.  One solution to this is to allow a string-
-   based representation of 64-bit integers in addition to the numerical,
-   but range-limited representation.
-
-   As such, when using I-JSON in these situations, the following CDDL
-   definition of uint64 should override the original and parsers should
-   take into account that a uint64 field can either be a number or
-   string.
-
-   uint64 = text /
-            uint .size 8
-
-               Figure 34: Custom uint64 definition for I-JSON
 
 10.2.  qlog to JSON Text Sequences mapping
 
@@ -1442,7 +1408,36 @@ Table of Contents
    records and feeding them to a normal JSON parser individually, as
    each record by itself is a valid JSON object).
 
-10.3.  Truncated values
+10.3.  JSON Interoperability
+
+   Some JSON parsers have issues with the full JSON format, especially
+   those integrated within a JavaScript environment (e.g., Web browsers,
+   NodeJS).  I-JSON (Internet-JSON) is a subset of JSON for such
+   environments; see [I-JSON].  One of the key limitations of
+   JavaScript, and thus I-JSON, is that it cannot represent full 64-bit
+   integers in standard operating mode (i.e., without using BigInt
+   extensions), instead being limited to the range -(2^53)+1 to (2^53)-
+   1.
+
+   To accommodate such constraints in CDDL, Appendix E of [CDDL]
+   recommends defining new CDDL types for int64 and uint64 that limit
+   their values to the restricted 64-bit integer range.  However, some
+   of the protocols that qlog is intended to support (e.g., QUIC,
+   HTTP/3), can use the full range of uint64 values.  To support this,
+   qlog defines a uint64 type that allows a string- or numeric-based
+   representation.
+
+   As such, when using I-JSON in these situations, the following CDDL
+   definition of uint64 should override the original and parsers should
+   take into account that a uint64 field can either be a number or
+   string.
+
+   uint64 = text /
+            uint .size 8
+
+               Figure 34: Custom uint64 definition for I-JSON
+
+10.4.  Truncated values
 
    For some use cases (e.g., limiting file size, privacy), it can be
    necessary not to log a full raw blob (using the hexstring type) but
@@ -1495,7 +1490,7 @@ Table of Contents
 
           Figure 35: Example for serializing truncated hexstrings
 
-10.4.  Optimization of serialized data
+10.5.  Optimization of serialized data
 
    Both the JSON and JSON-SEQ formatting options described above are
    serviceable in general small to medium scale (debugging) setups.
