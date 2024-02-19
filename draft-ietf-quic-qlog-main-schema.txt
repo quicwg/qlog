@@ -1410,10 +1410,10 @@ Table of Contents
 
 10.3.  JSON Interoperability
 
-   Some JSON parsers have issues with the full JSON format, especially
-   those integrated within a JavaScript environment (e.g., Web browsers,
-   NodeJS).  I-JSON (Internet-JSON) is a subset of JSON for such
-   environments; see [I-JSON].  One of the key limitations of
+   Some JSON implementations have issues with the full JSON format,
+   especially those integrated within a JavaScript environment (e.g.,
+   Web browsers, NodeJS).  I-JSON (Internet-JSON) is a subset of JSON
+   for such environments; see [I-JSON].  One of the key limitations of
    JavaScript, and thus I-JSON, is that it cannot represent full 64-bit
    integers in standard operating mode (i.e., without using BigInt
    extensions), instead being limited to the range -(2^53)+1 to (2^53)-
@@ -1423,19 +1423,13 @@ Table of Contents
    recommends defining new CDDL types for int64 and uint64 that limit
    their values to the restricted 64-bit integer range.  However, some
    of the protocols that qlog is intended to support (e.g., QUIC,
-   HTTP/3), can use the full range of uint64 values.  To support this,
-   qlog defines a uint64 type that allows a string- or numeric-based
-   representation.
+   HTTP/3), can use the full range of uint64 values.
 
-   As such, when using I-JSON in these situations, the following CDDL
-   definition of uint64 should override the original and parsers should
-   take into account that a uint64 field can either be a number or
-   string.
-
-   uint64 = text /
-            uint .size 8
-
-               Figure 34: Custom uint64 definition for I-JSON
+   As such, to support situations where I-JSON is in use, seralizers MAY
+   encode uint64 values using JSON strings. qlog parsers, therefore,
+   SHOULD support parsing of uint64 values from JSON strings or JSON
+   numbers unless there is out-of-band information indicating that
+   neither the serializer nor parser are constrained by I-JSON.
 
 10.4.  Truncated values
 
@@ -1458,7 +1452,7 @@ Table of Contents
    tools MUST be able to deal with this situation and derive the length
    of the field from the raw value if no separate length-indicating
    field is present.  The main possible permutations are shown by
-   example in Figure 35.
+   example in Figure 34.
 
    // both the content's value and its length are present
    // (length is redundant)
@@ -1488,7 +1482,7 @@ Table of Contents
        "content": "051428"
    }
 
-          Figure 35: Example for serializing truncated hexstrings
+          Figure 34: Example for serializing truncated hexstrings
 
 10.5.  Optimization of serialized data
 
@@ -1552,7 +1546,7 @@ Table of Contents
    example, for QUIC, it is recommended to use the Original Destination
    Connection ID (ODCID), followed by the vantage point type of the
    logging endpoint.  Examples of all options for QUIC are shown in
-   Figure 36.
+   Figure 35.
 
    Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
 
@@ -1579,7 +1573,7 @@ Table of Contents
    this would result in event instances in the qlog file being
    tagged with the "group_id" field with values "abcde" and "12345".
 
-     Figure 36: Environment variable examples for a QUIC implementation
+     Figure 35: Environment variable examples for a QUIC implementation
 
 12.  Tooling requirements
 
