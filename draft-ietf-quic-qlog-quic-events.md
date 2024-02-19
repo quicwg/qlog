@@ -1907,9 +1907,8 @@ PathResponseFrame = {
 
 ### ConnectionCloseFrame
 
-The error_code_value field is the numerical value without variable-length
-integer encoding. This is useful because some error types are spread out over a
-range of codes (e.g., QUIC's crypto_error).
+An endpoint that receives unknown error codes can record it in the error_code
+field using the numerical value without variable-length integer encoding.
 
 When the connection is closed due a connection-level error, the
 `trigger_frame_type` field can be used to log the frame that triggered the
@@ -1925,9 +1924,9 @@ ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
     ? error_code: TransportError /
+                  CryptoError /
                   $ApplicationError /
                   uint64
-    ? error_code_value: uint64
     ? reason: text
 
     ; when error_space === "transport"
