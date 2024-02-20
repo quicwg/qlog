@@ -1540,9 +1540,10 @@ Operational considerations should focus on authorizing capture and access to log
 Internet protocols using qlog can be equivalent to the ability to store or read plaintext
 communications. Without a more detailed analysis, all of the security considerations of plaintext access apply.
 
-It is recommended that qlog capture is subject to access control and auditing,
-extending to granularity over the level of information that is allowed to be
-captured (e.g., capture of more-sensitive data requires higher privileges).
+It is recommended that qlog capture is subject to access control and auditing.
+These controls should support granular levels of information capture based on
+role and permissions (e.g., capture of more-sensitive data requires higher
+privileges).
 
 It is recommended that access to stored qlogs is subject to access control and
 auditing.
