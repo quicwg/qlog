@@ -1505,11 +1505,9 @@ risks, undermining their ability to assess or respond effectively.
 ## Data at risk
 
 qlog operators and implementers need to consider security and privacy risks when
-handling qlog data, including logging, storage, usage, and more. Data can be
-categorized as non-sensitive, potentially-sensitive, or sensitive. The
+handling qlog data, including logging, storage, usage, and more. The
 considerations presented in this section may pose varying risks depending on the
-the data itself or its handling. Generally, the largest risk factors arise from
-data considered as potenially-sensitive or sensitive.
+the data itself or its handling.
 
 The following is a non-exhaustive list of example data types that could contain
 sensitive information that might allow identification or correlation of
