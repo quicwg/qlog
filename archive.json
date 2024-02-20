@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-02-18T00:47:14.542657+00:00",
+  "timestamp": "2024-02-20T00:42:40.706085+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -1214,7 +1214,7 @@
       "id": "MDU6SXNzdWU1NTI3ODM1MDc=",
       "title": "Revise design of dual-endpoint events",
       "url": "https://github.com/quicwg/qlog/issues/44",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -1224,8 +1224,8 @@
       ],
       "body": "Currently, we have some events that are used both for indicating changes in the local as well as the remote endpoint. An example is parameters_set, which logs both connection params we set locally, as the ones we get from the other side. parameters_set uses an \"owner\" field to disambiguate between these two cases. \r\n\r\nHowever, other events with similar purpose, like connection_id_updated, use another approach (src_ vs dst_ prefixes). We should decide on a singular consistent approach (currently leaning towards \"owner\" field myself, as it is the most flexible)",
       "createdAt": "2020-01-21T10:25:48Z",
-      "updatedAt": "2022-09-07T23:31:49Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T08:55:06Z",
+      "closedAt": "2024-02-19T08:55:06Z",
       "comments": [
         {
           "author": "LPardue",
@@ -1233,6 +1233,13 @@
           "body": "Is this still relevant?",
           "createdAt": "2022-09-07T23:31:49Z",
           "updatedAt": "2022-09-07T23:31:49Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Given that there have been no further complaints/remarks on this and imo the split approach is clear enough, closing without action for now. ",
+          "createdAt": "2024-02-19T08:55:06Z",
+          "updatedAt": "2024-02-19T08:55:06Z"
         }
       ]
     },
@@ -1534,11 +1541,12 @@
       "assignees": [],
       "labels": [
         "design",
+        "editorial",
         "future-versions"
       ],
       "body": "At the moment, it's not entirely clear how qlog is \"supposed to be used\".\r\n\r\nFor example, it's not clear to implementers why some fields (e.g., quic version) are duplicated across `connection_started` and also the PacketHeader.\r\n\r\nWe should provide some examples of what things look like if you implement \"all of qlog\" and what should happen if you only implement the Core events (i.e., some fields in the Core events can be skipped if you're using the Base or Extra events instead). This is also important info for tool implementers. \r\n\r\nThis also depends on the use case: tracing while debugging vs production-level logging. ",
       "createdAt": "2020-02-18T14:05:55Z",
-      "updatedAt": "2022-09-07T23:40:53Z",
+      "updatedAt": "2024-02-19T03:50:51Z",
       "closedAt": null,
       "comments": [
         {
@@ -1561,6 +1569,13 @@
           "body": "Sounds like we want to focus on transport-related events in qlog and tell people that logging what your implementation_does_ with those can aid analysis or debug. This is an implementation choice. And general-purpose tooling is unlikely to support implementation-specific needs or data. I'd think most people could live with that because it is logical.\r\n\r\nWhat else might we want to say? \r\n\r\nIn future, if people are always logging some application-specific field and want to ask their tool vendor to support it. That's probaby a good time for them to engage in the community.",
           "createdAt": "2022-09-07T23:40:53Z",
           "updatedAt": "2022-09-07T23:40:53Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Marking this as editorial since I don't think there's anything we can do apart from reiterate that qlog doesn't cover everything and that it extensible enough to support individual needs.\r\n\r\nRequests for adding design changes to these drafts can be raised as new issues (albeit at this stage likely to be declined unless there is sufficient evidence that it is needed).",
+          "createdAt": "2024-02-19T03:50:45Z",
+          "updatedAt": "2024-02-19T03:50:45Z"
         }
       ]
     },
@@ -1734,7 +1749,7 @@
       "id": "MDU6SXNzdWU1NzEyNTQ1NDg=",
       "title": "Consider splitting up parameters_set",
       "url": "https://github.com/quicwg/qlog/issues/58",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -1745,8 +1760,8 @@
       ],
       "body": "Currently, the parameters related events aggregate all sorts of parameters, doesn't matter where they come from. Good example is transport:parameters_set, which contains mostly data that's transported via TLS (Transport params, alpn), but also some other fields (like QUIC version). \r\n\r\nSome people (@huitema, @marten-seemann) have advocated splitting up this event into others. I personally don't see the benefit of that, so this issue is to track outside arguments and proposed solutions.",
       "createdAt": "2020-02-26T11:09:41Z",
-      "updatedAt": "2021-08-18T09:44:47Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T08:57:26Z",
+      "closedAt": "2024-02-19T08:57:25Z",
       "comments": [
         {
           "author": "LPardue",
@@ -1754,6 +1769,13 @@
           "body": "One problem with the current design is that it couples QUIC's transport parameters with the handshake. Some of that data is provided by TLS to QUIC, but other things like ALPN are not used by the QUIC transport. \r\n\r\nA more natural model could be a series of handshake events, as suggested by others.",
           "createdAt": "2020-02-26T11:47:53Z",
           "updatedAt": "2020-02-26T11:47:53Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "4 years in, I think the combined `parameters_set` approach is pretty fixed and works well enough in practice (and I still don't see much concrete value splitting up), so closing without action. ",
+          "createdAt": "2024-02-19T08:57:25Z",
+          "updatedAt": "2024-02-19T08:57:25Z"
         }
       ]
     },
@@ -2229,7 +2251,7 @@
       "id": "MDU6SXNzdWU2MDM2ODIzNzM=",
       "title": "split up events",
       "url": "https://github.com/quicwg/qlog/issues/85",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -2242,8 +2264,8 @@
       ],
       "body": "This is a high-level observation based on my experience of 1. adding qlog support for quic-go and 2. writing some tooling to sift through a pile of logs.\r\n\r\nWhen adding qlog support for quic-go, I already found it confusing that qlog bundles things that have little to do with each other into the same event. Examples for these are:\r\n* The values in `parameters_set` event in `transport` that are not part of the QUIC transport parameters.\r\n* The `pto_count` in `metrics_updated`.\r\n* The `connection_state_updated` event. This is the worst in this list.\r\n\r\nIn my implementation, I worked around this by exposing an API that exposes different functions, which then would encode the same qlog event (with the respective fields set). For example, I have a `qlog.UpdatedPTOCount()` and a `qlog.UpdatedMetrics()`, which both emit a `metrics_updated` event.\r\n\r\nWriting my own qlog parser, I'm now encountering the same problem again. For example, one interesting thing to monitor on a production system would be the reason why a connection was closed (to see if there are any PROTOCOL_VIOLATIONS, for example). It would make filtering much easier if there was a `connection_closed` event, instead of having to look at optional fields in all the `connection_state_updated` events emitted over the lifetime of the connection. A similar argument applies to the PTO count (Connections that experience a lot of PTO events might be interesting to look at. Connections that collect many RTT samples are not).\r\n\r\nFrom my discussions with @rmarx (and I hope that I'm paraphrasing him correctly here), the main argument for having fewer events was that it makes things easier to implement. I hope that I laid out my argument here that the opposite is the case.",
       "createdAt": "2020-04-21T03:43:01Z",
-      "updatedAt": "2021-08-18T10:06:23Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T09:06:05Z",
+      "closedAt": "2024-02-19T09:06:05Z",
       "comments": [
         {
           "author": "rmarx",
@@ -2300,6 +2322,13 @@
           "body": "Linking this to #107 for future reference, since that also contains a piece of this puzzle. ",
           "createdAt": "2021-04-23T07:58:18Z",
           "updatedAt": "2021-04-23T07:58:18Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So this discussion was important at a time, but since the \"middle road\" detailed above hasn't received much more input. This was also related to a bunch of other issues that have since been closed (including #58 today) and resolved with adding additional events (e.g., `packets_acked` in #107). \r\n\r\nI still understand the general feedback, but it seems that the major issues have been resolved and splitting things up further would take a lot more design work + re-implementation in a lot of stacks, so I'm closing this without action. ",
+          "createdAt": "2024-02-19T09:06:05Z",
+          "updatedAt": "2024-02-19T09:06:05Z"
         }
       ]
     },
@@ -2581,7 +2610,7 @@
       "id": "MDU6SXNzdWU2NTMxMTYzNDc=",
       "title": "make it possible to log persistent congestion",
       "url": "https://github.com/quicwg/qlog/issues/100",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -2593,8 +2622,8 @@
       ],
       "body": "This would be *really* important for generating metrics.\r\n\r\nLogically, it's a congestion event, but I'm not sure if it would probably make sense to add this as a state to the `congestion_state_updated` event, because once you declare persistent congestion, your congestion controller enters either slow start or congestion avoidance (not sure which one, haven't implemented persistent congestion yet), which are already `congestion_state_updated` events.",
       "createdAt": "2020-07-08T08:54:37Z",
-      "updatedAt": "2022-09-07T23:51:21Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T08:59:03Z",
+      "closedAt": "2024-02-19T08:59:03Z",
       "comments": [
         {
           "author": "rmarx",
@@ -3310,7 +3339,7 @@
       "id": "MDU6SXNzdWU3MTU0Mjg2Njk=",
       "title": "key update logging",
       "url": "https://github.com/quicwg/qlog/issues/118",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
@@ -3319,8 +3348,8 @@
       ],
       "body": "The spec is not clear on when to log key updates. I'm trying to debug a failure of the key update interop runner test case, and qlog just doesn't give me enough information what's going on.\r\nThe main problem is that there's no `key phase` information available on the `PacketHeader`.\r\n\r\n* During the handshake (all keys with trigger `tls`), it's most useful to log when a new key becomes available, as it allows you to see why packets might end up as undecryptable.\r\n* Key updates for 1-RTT keys are more tricky: For a locally initiated key update, it's only clear how to log the send key. You do compute the receive key at the same point, but you don't use it until the client has acted upon the key update.\r\n\r\nI think the following would be the easiest:\r\n\r\n1. Add a `key_phase` field on the `PacketHeader`. This is the key phase `N`, not the key phase bit. The receiver will know the full key phase value after successfully decrypting a packet. For undecryptable packets, there should be a `key_phase_bit` field.\r\n2. Split the `key_updated` event: The event in its current form makes a lot of sense for TLS-initiated updates. For 1-RTT key updates, there's no need to distinguish between the `server_1rtt_secret` and the `client_1rtt_secret`.",
       "createdAt": "2020-10-06T07:43:28Z",
-      "updatedAt": "2020-10-31T13:58:10Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T09:07:18Z",
+      "closedAt": "2024-02-19T09:07:18Z",
       "comments": [
         {
           "author": "rmarx",
@@ -3328,6 +3357,13 @@
           "body": "Related to #52 ",
           "createdAt": "2020-10-31T13:58:09Z",
           "updatedAt": "2020-10-31T13:58:09Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Fixed in #390. ",
+          "createdAt": "2024-02-19T09:07:18Z",
+          "updatedAt": "2024-02-19T09:07:18Z"
         }
       ]
     },
@@ -5049,7 +5085,7 @@
       "id": "MDU6SXNzdWU5Mzc0OTkyMTA=",
       "title": "Aggregating stream_frame",
       "url": "https://github.com/quicwg/qlog/issues/163",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "kuroa-me",
       "authorAssociation": "NONE",
       "assignees": [],
@@ -5059,8 +5095,8 @@
       ],
       "body": "I am currently implementing qlog for video streaming using quiche.\r\nDue to the nature of video streaming, there are a lot of back and forth of `STREAM` and `ACK` frames, and they are not very useful to log.\r\nFrom the `server` vantage point, `ACK`s can be aggregated by either `packets_acked` or `frames_processed` event. However, I did not find a way to aggregate `STREAM` frames the server send out. Is there a good way to solve this problem?",
       "createdAt": "2021-07-06T04:06:03Z",
-      "updatedAt": "2023-07-05T00:52:40Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T03:52:11Z",
+      "closedAt": "2024-02-19T03:52:11Z",
       "comments": [
         {
           "author": "rmarx",
@@ -5117,6 +5153,13 @@
           "body": "This custom optimization seems completely fine to do if people want to add the complexity. However, for the reasons outlined, I don't see a reason to try and design this into base qlog specification.\r\n\r\nPerhaps the original poster has had time to learn from deployment since the issue was opened. But absent any followup I think this can be safely punted into a qlog extension.",
           "createdAt": "2023-07-05T00:52:39Z",
           "updatedAt": "2023-07-05T00:52:39Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Closing as timed out.",
+          "createdAt": "2024-02-19T03:52:11Z",
+          "updatedAt": "2024-02-19T03:52:11Z"
         }
       ]
     },
@@ -6440,7 +6483,7 @@
       "id": "I_kwDOCrLn6M5RrX-9",
       "title": "Section on I-JSON seems to confusingly redefine uint64",
       "url": "https://github.com/quicwg/qlog/issues/229",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -6451,8 +6494,8 @@
       ],
       "body": "The section on I-JSON notes serialization concerns about 64-bit numbers that might be required for protocols like QUIC or HTTP/3.\r\n\r\nIt then says:\r\n\r\n> Concretely, the following definition of uint64 should override the original and (web-based) tools should take into account that a uint64 field can be either a number or string.\r\n\r\n> uint64 = text / uint .size 8\r\n\r\nI find this confusing. This document defines a custom `unit64` itself. It's not entirely clear when the above override applies or not.",
       "createdAt": "2022-09-12T18:13:17Z",
-      "updatedAt": "2023-11-08T10:16:21Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T09:25:00Z",
+      "closedAt": "2024-02-19T09:25:00Z",
       "comments": [
         {
           "author": "rmarx",
@@ -6597,15 +6640,15 @@
       "id": "I_kwDOCrLn6M5S0nSQ",
       "title": "revisit old / new fields in various events",
       "url": "https://github.com/quicwg/qlog/issues/242",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "One might argue that having an `old` field doesn\u2019t make any sense, since you can just have a look at the last event to see what the value was.\r\n\r\nWe should consider removing the `old` field (and maybe renaming the `new` field).",
       "createdAt": "2022-09-28T15:03:56Z",
-      "updatedAt": "2022-09-29T12:36:51Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T09:16:14Z",
+      "closedAt": "2024-02-19T09:16:14Z",
       "comments": [
         {
           "author": "rmarx",
@@ -6613,6 +6656,13 @@
           "body": "For context: I chose the old/new approach for `*Updated` events because:\r\n\r\n1. You often start with a \"default\" value (e.g., for MTU) that you update later, but you wouldn't log the initial value (as that's part of the standard config), or at least not as an `Updated` event (though you -should- in that case)\r\n2. When streaming logs in e.g., a \"ring buffer\" style, you might loose earlier events, making it impossible to track full history. Having both old and new in 1 event would help with this. This is a use case sometimes mentioned by @nibanks \r\n\r\nOne of the main things I dislike is the naming of the `new` field. It would be nicer to have a name matching the semantics better (e.g., `stream_state` instead of `new` in `stream_state_updated` event). \r\n\r\nAt this time, I don't have a strong preference for keeping old/new or changing to another scheme. ",
           "createdAt": "2022-09-29T12:36:51Z",
           "updatedAt": "2022-09-29T12:36:51Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I assume my answer was satisfactory @marten-seemann? I'm still in favor of keeping the ability to log older values though, and lacking a better proposal, I'll close this for now.",
+          "createdAt": "2024-02-19T09:16:14Z",
+          "updatedAt": "2024-02-19T09:16:14Z"
         }
       ]
     },
@@ -7449,10 +7499,12 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "editorial"
+      ],
       "body": "              Not sure I'm the biggest fan of referring explicitly to the other 2 docs here, since this MAIN doc is supposed to be generic (except maybe for some examples).\r\n\r\n_Originally posted by @rmarx in https://github.com/quicwg/qlog/pull/289#discussion_r1420675552_\r\n\r\nSee my followup comments on that PR. It is useful to provide explicit statements but perhaps we want to extract the mention of QUIC and H3 event schema serialization intentions into their own documents. We can recommend in the base schema that each extension state if it is generic or make some format-specific optimization.\r\n            ",
       "createdAt": "2023-12-09T20:12:07Z",
-      "updatedAt": "2023-12-09T20:12:07Z",
+      "updatedAt": "2024-02-19T03:43:19Z",
       "closedAt": null,
       "comments": []
     },
@@ -7691,7 +7743,7 @@
       "id": "I_kwDOCrLn6M58l2dv",
       "title": "Clarify value of packets_acked:packet_number_space",
       "url": "https://github.com/quicwg/qlog/issues/372",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -7700,8 +7752,8 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:packet_acked:\r\n\r\n  `PacketNumberSpace.application_data`, as this is by far the most prevalent packet\r\n  number space a typical QUIC connection will use.\r\n\r\n  Editorial note: The usage of the . notation\r\n  `PacketNumberSpace.application_data` seems slightly novel here. Just\r\n  write \"application_data\"?",
       "createdAt": "2024-01-19T11:10:43Z",
-      "updatedAt": "2024-01-24T01:24:36Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T09:18:10Z",
+      "closedAt": "2024-02-19T09:18:10Z",
       "comments": [
         {
           "author": "rmarx",
@@ -7740,7 +7792,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_id_updated\r\n\r\n  It would be nice to be able to optionally log CID-associated sequence\r\n  numbers and the type of CID source (ODCID, Initial CID,\r\n  preferred_address transport parameter, NCID frame, etc.)",
       "createdAt": "2024-01-19T11:13:39Z",
-      "updatedAt": "2024-01-19T19:12:21Z",
+      "updatedAt": "2024-02-19T03:37:39Z",
       "closedAt": null,
       "comments": [
         {
@@ -7756,6 +7808,13 @@
           "body": "Hmm... so basically you're saying the preferred approach is to note connection IDs from logged NCID frames, etc., then correlate that to connection_id_updated.\r\n\r\nI think that's entirely valid, so I'm somewhat retracting this suggestion &mdash; no need to add redundancy here &mdash; unless other people think it's valuable.",
           "createdAt": "2024-01-19T19:12:20Z",
           "updatedAt": "2024-01-19T19:12:20Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Seems like we can close with no action.",
+          "createdAt": "2024-02-19T03:37:38Z",
+          "updatedAt": "2024-02-19T03:37:38Z"
         }
       ]
     },
@@ -8083,15 +8142,15 @@
       "id": "I_kwDOCrLn6M5_Y-Le",
       "title": "`ConnectionClose` storing a uint64 error_code and a uint64 error_code_value seems redundant",
       "url": "https://github.com/quicwg/qlog/issues/391",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "evanrittenhouse",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "As the title states, I don't quite see a reason for [`ConnectionClose`](https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-connectioncloseframe) to have both `error_code` and `error_code_value` store uint64s. It seems like it may be clearer if either:\r\n1. `error_code` is some non-uint64 value\r\n2. `error_code` is a uint64, but `error_code_value` drops out of the event.",
       "createdAt": "2024-02-15T19:16:42Z",
-      "updatedAt": "2024-02-15T20:03:39Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-19T09:21:44Z",
+      "closedAt": "2024-02-19T09:21:44Z",
       "comments": [
         {
           "author": "LPardue",
@@ -18762,7 +18821,7 @@
       "labels": [],
       "body": "Focuses on cutting down words and deduplicating things. Maybe not as far as MT\r\nwould take things but I think this avoids any major cuts.\r\n\r\nFixes #358\r\n",
       "createdAt": "2023-12-19T01:54:44Z",
-      "updatedAt": "2023-12-19T03:44:51Z",
+      "updatedAt": "2024-02-19T11:32:33Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "98d720cd6519002775c224e94e03a2d0c9fbb431",
@@ -18934,6 +18993,94 @@
               "updatedAt": "2023-12-19T03:44:34Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5wivtv",
+          "commit": {
+            "abbreviatedOid": "98433ff"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2024-02-19T11:07:15Z",
+          "updatedAt": "2024-02-19T11:31:37Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "```suggestion\r\nThe following is a non-exhaustive list of example data types that could contain\r\n```",
+              "createdAt": "2024-02-19T11:07:15Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            },
+            {
+              "originalPosition": 48,
+              "body": "```suggestion\r\nsensitive information that might allow identification or correlation of\r\n```",
+              "createdAt": "2024-02-19T11:07:35Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            },
+            {
+              "originalPosition": 87,
+              "body": "In combination with the consistency changes below for plaintext, this indeed seems ok",
+              "createdAt": "2024-02-19T11:12:34Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            },
+            {
+              "originalPosition": 101,
+              "body": "```suggestion\r\nInternet protocols using qlog can be equivalent to the ability to store or read plaintext\r\n```",
+              "createdAt": "2024-02-19T11:20:18Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            },
+            {
+              "originalPosition": 110,
+              "body": "`extending to granularity over the level of information that is allowed to be\r\ncaptured` \r\n\r\nthis is a very weird sentence to me that I'm having issues parsing the meaning of... could do with a re-formulation (the e.g., helps, but still :))",
+              "createdAt": "2024-02-19T11:22:14Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            },
+            {
+              "originalPosition": 123,
+              "body": "```suggestion\r\nand their environments might limit access control techniques. Implementations should\r\n```",
+              "createdAt": "2024-02-19T11:23:49Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            },
+            {
+              "originalPosition": 124,
+              "body": "```suggestion\r\nmake enabling qlog conspicuous (e.g., requiring clear and explicit actions to\r\n```",
+              "createdAt": "2024-02-19T11:24:12Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            },
+            {
+              "originalPosition": 184,
+              "body": "```suggestion\r\nThe most extreme form of minimization or anonymization is deleting a field,\r\n```",
+              "createdAt": "2024-02-19T11:29:02Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            },
+            {
+              "originalPosition": 201,
+              "body": "```suggestion\r\n(see {{raw-info}}). Therefore, qlog users should exercise caution and limit the\r\n```",
+              "createdAt": "2024-02-19T11:31:12Z",
+              "updatedAt": "2024-02-19T11:31:37Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5wi6hT",
+          "commit": {
+            "abbreviatedOid": "bf2c940"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-02-19T11:32:33Z",
+          "updatedAt": "2024-02-19T11:32:33Z",
+          "comments": [
+            {
+              "originalPosition": 40,
+              "body": "It's fine for me to remove this, but then there's another sentence just a little bit further that also mentions \"potentially-sensitive and sensitive\" that probably should be cut as well. ",
+              "createdAt": "2024-02-19T11:32:33Z",
+              "updatedAt": "2024-02-19T11:32:33Z"
+            }
+          ]
         }
       ]
     },
@@ -19075,18 +19222,26 @@
       "labels": [],
       "body": "Closes #382\r\n",
       "createdAt": "2024-01-28T18:51:26Z",
-      "updatedAt": "2024-02-05T09:36:54Z",
+      "updatedAt": "2024-02-19T09:22:35Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "391958c3917b29147b303457cee9a9e6c1cafeae",
+      "baseRefOid": "dd8882eb422692b671cff724fae1a7711579a548",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-settings",
-      "headRefOid": "26d2e9499b9490f9cc231e75f383a891e7f7236d",
+      "headRefOid": "5b20830fd2ee621e5ec5463425d6ac451dc83f0c",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Instead of a separate raw_type field, we'll just allow the nae to be a union of enum and uint64.",
+          "createdAt": "2024-02-19T09:22:33Z",
+          "updatedAt": "2024-02-19T09:22:33Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M5uKtoc",
@@ -19142,7 +19297,7 @@
       "labels": [],
       "body": "Tweaks the language related to the ConnectionCloseFrame trigger_frame_type\r\nand adds it to connection_closed event.\r\n\r\nCloses #366",
       "createdAt": "2024-01-28T19:17:39Z",
-      "updatedAt": "2024-01-29T15:54:17Z",
+      "updatedAt": "2024-02-19T09:27:34Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "28a34e234e0414aba447a106a1558d2cbce4c666",
@@ -19167,6 +19322,13 @@
           "body": "> While I'm not terribly opposed to it, I'd still like to not add to the `connectivity` event, but do keep the editorial work with the CONNECTION_CLOSE frame (and maybe just reference that for the `connectivity` event?)\r\n\r\nMakes sense, I spun it off to its own PR https://github.com/quicwg/qlog/pull/386. \r\n\r\nIf we want to do a cross reference from connection_closed, then lets do that separate",
           "createdAt": "2024-01-29T15:30:45Z",
           "updatedAt": "2024-01-29T15:32:19Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "As explained above, I think we should close this without action (i.e., don't add `trigger_frame_type` to `connection_closed`)",
+          "createdAt": "2024-02-19T09:27:32Z",
+          "updatedAt": "2024-02-19T09:27:32Z"
         }
       ],
       "reviews": []
@@ -19347,24 +19509,26 @@
       "id": "PR_kwDOCrLn6M5mBMRY",
       "title": "Explain 64-bit I-JSON issues but don't embed that in CDDL",
       "url": "https://github.com/quicwg/qlog/pull/388",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Alternative to #359.\r\n\r\nI-JSON can mess with big numbers and we can't constrain the range.\r\nWe don't want to mandate bigint support on anyone. We don't want\r\nto make non-JSON serializers/parsers have to worry about stringified\r\nnumbers - so modifying the CDDL directly seems off.\r\n\r\nThere's lots of ways that implementations can internally handle values,\r\nwe don't care much about that here. For interop, settle on allow JSON parsers\r\nto write uint64 as strings if they want to. Make it clear that parsers\r\nshould expect that, unless they have some non-standard way of knowing.\r\n\r\nFixes #229\r\n",
       "createdAt": "2024-02-05T12:44:51Z",
-      "updatedAt": "2024-02-06T15:30:12Z",
+      "updatedAt": "2024-02-19T09:25:02Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "724f324d9cf756d06a742d00611b995929085096",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-uint64-cddl-duality",
       "headRefOid": "c252137a0c1b48488fda8f89a8c54afe0dafce46",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-02-19T09:24:59Z",
+      "mergedAt": "2024-02-19T09:24:59Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "a6c9a3f0c49a16921e862c00332476b83de6db42"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -19406,6 +19570,19 @@
               "updatedAt": "2024-02-05T14:49:25Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5whrxW",
+          "commit": {
+            "abbreviatedOid": "c252137"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-02-19T08:58:11Z",
+          "updatedAt": "2024-02-19T08:58:11Z",
+          "comments": []
         }
       ]
     },
@@ -19507,6 +19684,200 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 392,
+      "id": "PR_kwDOCrLn6M5nPOpx",
+      "title": "CONNECTION_CLOSE frame tidyup",
+      "url": "https://github.com/quicwg/qlog/pull/392",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "* Import CryptoError into allowed values\r\n* Remove `error_code_value` field as its redundant\r\n\r\nFixes #391\r\n",
+      "createdAt": "2024-02-19T03:35:45Z",
+      "updatedAt": "2024-02-19T09:21:48Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "dd8882eb422692b671cff724fae1a7711579a548",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "connection-close-frame",
+      "headRefOid": "24b5ceb15d4b22892badc25b247840e1e9e80763",
+      "closedAt": "2024-02-19T09:21:42Z",
+      "mergedAt": "2024-02-19T09:21:42Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "23ff60205e4f2a46285a87102b3c119af75afcd1"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5whkZJ",
+          "commit": {
+            "abbreviatedOid": "24b5ceb"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-02-19T08:43:44Z",
+          "updatedAt": "2024-02-19T08:43:44Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 393,
+      "id": "PR_kwDOCrLn6M5nPPzU",
+      "title": "fix QUIC-TLS refs",
+      "url": "https://github.com/quicwg/qlog/pull/393",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Builds are reporting a conflict",
+      "createdAt": "2024-02-19T03:41:53Z",
+      "updatedAt": "2024-02-19T09:17:48Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "dd8882eb422692b671cff724fae1a7711579a548",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-build-error",
+      "headRefOid": "996f34cc651d0a0149b0dc752d0d89f1a2b22c13",
+      "closedAt": "2024-02-19T09:17:44Z",
+      "mergedAt": "2024-02-19T09:17:44Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "0b9a6eb196c45cde26b6feddbcacb1876d770540"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5whkzs",
+          "commit": {
+            "abbreviatedOid": "996f34c"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-02-19T08:44:35Z",
+          "updatedAt": "2024-02-19T08:44:35Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 394,
+      "id": "PR_kwDOCrLn6M5nPVpk",
+      "title": "s/PacketNumberSpace.application_data/application_data",
+      "url": "https://github.com/quicwg/qlog/pull/394",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #372\n",
+      "createdAt": "2024-02-19T04:12:29Z",
+      "updatedAt": "2024-02-19T09:18:30Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "dd8882eb422692b671cff724fae1a7711579a548",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "remove-cddl-indirection",
+      "headRefOid": "5605b9e0e1bb0319359ba1e454c21ddb45c5fa6c",
+      "closedAt": "2024-02-19T09:18:09Z",
+      "mergedAt": "2024-02-19T09:18:09Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "56856eceb3bcca220fc756de2d1a359c0f954279"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5whj_D",
+          "commit": {
+            "abbreviatedOid": "5605b9e"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-02-19T08:42:50Z",
+          "updatedAt": "2024-02-19T08:42:50Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 395,
+      "id": "PR_kwDOCrLn6M5nPZJO",
+      "title": "State clearly what lengths mean for stream and datagram data moved",
+      "url": "https://github.com/quicwg/qlog/pull/395",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Addresses part of #375",
+      "createdAt": "2024-02-19T04:29:20Z",
+      "updatedAt": "2024-02-19T09:44:20Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "dd8882eb422692b671cff724fae1a7711579a548",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "stream-datagram-data-lengths",
+      "headRefOid": "64255e92f0ca5906df289b1f19bdc11f2dfc56c7",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "As discussed during editorial meeting:\r\nI'm not the biggest fan of current text since it isn't clear for all the possible uses (e.g., `transport` to `application` strips QUIC level stuff but keeps H3 frame headers, while `application` to `user` also strips those out etc.). Maybe best to word it in terms of \"only the payload is moved to the higher layer\" or something like that? ",
+          "createdAt": "2024-02-19T09:44:19Z",
+          "updatedAt": "2024-02-19T09:44:19Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 396,
+      "id": "PR_kwDOCrLn6M5nPjy8",
+      "title": "Add fin and reset_stream fields",
+      "url": "https://github.com/quicwg/qlog/pull/396",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #375.\r\n\r\nPer the discussion, it can be useful to know when an application triggers a\r\nstream close, or when it receives one, without having to do offset/length maths.\r\n\r\nI omitted stop_sending in this commit because it seems a little bit of a stretch,\r\nmainly because it's wire image has no offset or final size. Also, STOP_SENDING\r\nrelates to asking the peer to do something, which further complicates the\r\n(potential) use of offset and length fields.\r\n\r\nAn alternative would be to keep `fin` here but define new events for reset and\r\nstop. Those could both contain from, to and error fields but only the reset\r\nwould have offset and length.\r\n",
+      "createdAt": "2024-02-19T05:15:49Z",
+      "updatedAt": "2024-02-19T09:33:11Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "dd8882eb422692b671cff724fae1a7711579a548",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "stream-data-moved-flags",
+      "headRefOid": "2c2322ae5be66e758a6baa806e542d5a978f9628",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed during editorial meeting:\r\nKeep `fin` here, move `reset_stream` and `stop_sending` to separate event(s) (possibly having 2 because reset_stream is so different from stop_sending).\r\n\r\n@marten-seemann it would help to have a quick mockup of what `reset_stream_at` might look like (not because we want to add it to main qlog yet, but if the current design would be compatible with that, it would be nice :) ",
+          "createdAt": "2024-02-19T09:33:11Z",
+          "updatedAt": "2024-02-19T09:33:11Z"
+        }
+      ],
+      "reviews": []
     }
   ]
 }
