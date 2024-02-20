@@ -1511,8 +1511,8 @@ considerations presented in this section may pose varying risks depending on the
 the data itself or its handling. Generally, the largest risk factors arise from
 data considered as potenially-sensitive or sensitive.
 
-The following is a non-exhaustive list of example data types could contain
-sensitive information that might allow identification or correlatation of
+The following is a non-exhaustive list of example data types that could contain
+sensitive information that might allow identification or correlation of
 individual connections, endpoints, users or sessions across qlog or other data
 sources (e.g., captures of encrypted packets):
 
@@ -1531,15 +1531,15 @@ sources (e.g., captures of encrypted packets):
 * High-resolution event timestamps or inter-event timings, event counts, packet
   sizes, and frame sizes.
 
-* Full, or partial encrypted, raw packet and frame payloads.
+* Full or partial raw packet and frame payloads that are encrypted.
 
-* Full, or partial, plaintext raw packet and frame payloads e.g., HTTP Field
-  values, HTTP response data, TLS SNI field values.
+* Full or partial raw packet and frame payloads that are plaintext e.g., HTTP Field
+  values, HTTP response data, or TLS SNI field values.
 
 ## Operational implications and recommendations
 
 Operational considerations should focus on authorizing capture and access to logs. Logging of
-Internet protocols using qlog can be equivalent the ability to store or read plaintext
+Internet protocols using qlog can be equivalent to the ability to store or read plaintext
 communications. Without a more detailed analysis, all of the security considerations of plaintext access apply.
 
 It is recommended that qlog capture is subject to access control and auditing,
@@ -1550,8 +1550,8 @@ It is recommended that access to stored qlogs is subject to access control and
 auditing.
 
 End users might not understand the implications of qlog to security or privacy,
-and their environments limit access control techniques. Implementations should
-make enabling qlog conspicous (e.g., requiring clear and explicit actions to
+and their environments might limit access control techniques. Implementations should
+make enabling qlog conspicuous (e.g., requiring clear and explicit actions to
 start a capture) and resistant to social engineering, automation, or drive-by
 attacks; for example, isolation or sandboxing of capture from other activities
 in the same process or component.
@@ -1573,7 +1573,7 @@ potential risks of (involuntary) disclosure, which can depend on use cases
 (e.g., research datasets might have different requirements to live operational
 troubleshooting).
 
-The most extreme for of minimization or anonymization is deleting a field,
+The most extreme form of minimization or anonymization is deleting a field,
 equivalent to not logging it. qlog implementations should offer fine-grained
 control for this on a per-use-case or per-connection basis.
 
@@ -1590,7 +1590,7 @@ is crucial. Operators should consider agressive approaches to deletion or
 aggregation.
 
 The most sensitive data in qlog is typically contained in RawInfo type fields
-(see {{raw-info}}). Therefore, qlog users exercise caution and limit the
+(see {{raw-info}}). Therefore, qlog users should exercise caution and limit the
 inclusion of such fields for all but the most stringent use cases.
 
 # IANA Considerations
