@@ -7,7 +7,7 @@ Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
 Expires: 23 August 2024                                             Meta
                                                          M. Seemann, Ed.
-                                                           Protocol Labs
+                                                                        
                                                           L. Pardue, Ed.
                                                               Cloudflare
                                                         20 February 2024
@@ -150,7 +150,9 @@ Table of Contents
        8.12.25. CryptoError
    9.  Security and Privacy Considerations
    10. IANA Considerations
-   11. Normative References
+   11. References
+     11.1.  Normative References
+     11.2.  Informative References
    Acknowledgements
    Change Log
      Since draft-ietf-qlog-quic-events-05:
@@ -351,43 +353,43 @@ Table of Contents
 
                             Table 1: QUIC Events
 
-   QUIC events extend the $ProtocolEventBody extension point defined in
+   QUIC events extend the $ProtocolEventData extension point defined in
    [QLOG-MAIN].
 
-   QuicEvents = ConnectivityServerListening /
-                ConnectivityConnectionStarted /
-                ConnectivityConnectionClosed /
-                ConnectivityConnectionIDUpdated /
-                ConnectivitySpinBitUpdated /
-                ConnectivityConnectionStateUpdated /
-                ConnectivityMTUUpdated /
-                SecurityKeyUpdated /
-                SecurityKeyDiscarded /
-                QUICVersionInformation /
-                QUICALPNInformation /
-                QUICParametersSet /
-                QUICParametersRestored /
-                QUICPacketSent /
-                QUICPacketReceived /
-                QUICPacketDropped /
-                QUICPacketBuffered /
-                QUICPacketsAcked /
-                QUICDatagramsSent /
-                QUICDatagramsReceived /
-                QUICDatagramDropped /
-                QUICStreamStateUpdated /
-                QUICFramesProcessed /
-                QUICStreamDataMoved /
-                QUICDatagramDataMoved /
-                RecoveryParametersSet /
-                RecoveryMetricsUpdated /
-                RecoveryCongestionStateUpdated /
-                RecoveryLossTimerUpdated /
-                RecoveryPacketLost
+   QuicEventData = ConnectivityServerListening /
+                   ConnectivityConnectionStarted /
+                   ConnectivityConnectionClosed /
+                   ConnectivityConnectionIDUpdated /
+                   ConnectivitySpinBitUpdated /
+                   ConnectivityConnectionStateUpdated /
+                   ConnectivityMTUUpdated /
+                   SecurityKeyUpdated /
+                   SecurityKeyDiscarded /
+                   QUICVersionInformation /
+                   QUICALPNInformation /
+                   QUICParametersSet /
+                   QUICParametersRestored /
+                   QUICPacketSent /
+                   QUICPacketReceived /
+                   QUICPacketDropped /
+                   QUICPacketBuffered /
+                   QUICPacketsAcked /
+                   QUICDatagramsSent /
+                   QUICDatagramsReceived /
+                   QUICDatagramDropped /
+                   QUICStreamStateUpdated /
+                   QUICFramesProcessed /
+                   QUICStreamDataMoved /
+                   QUICDatagramDataMoved /
+                   RecoveryParametersSet /
+                   RecoveryMetricsUpdated /
+                   RecoveryCongestionStateUpdated /
+                   RecoveryLossTimerUpdated /
+                   RecoveryPacketLost
 
-   $ProtocolEventBody /= QuicEvents
+   $ProtocolEventData /= QuicEventData
 
-      Figure 1: QuicEvents definition and ProtocolEventBody extension
+     Figure 1: QuicEventData definition and ProtocolEventData extension
 
 4.  Connectivity events
 
@@ -644,8 +646,8 @@ Table of Contents
    has Extra importance level; see Section 9.2 of [QLOG-MAIN].
 
    ConnectivityMTUUpdated = {
-     ? old: uint16
-     new: uint16
+     ? old: uint32
+     new: uint32
 
      ; at some point, MTU discovery stops, as a "good enough"
      ; packet size has been found
@@ -691,33 +693,43 @@ Table of Contents
       server logs this event with server_versions set and
       client_versions to the single-element array containing the
       client's attempted version.  The absence of chosen_version implies
-      no overlap was found.
+      no overlap was found
 
    *  Upon receiving a version negotiation packet from the server, the
       client logs this event with client_versions set and
       server_versions to the versions in the version negotiation packet
       and chosen_version to the version it will use for the next initial
-      packet
+      packet.  If the client receives a set of server_versions with no
+      viable overlap with its own supported versions, this event should
+      be logged without the chosen_version set
 
 5.2.  alpn_information
 
-   The alpn_information event support application level protocol
-   negotiation over the QUIC transport; see Section 7.4 of
-   [QUIC-TRANSPORT].  It has Core importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   The alpn_information event supports Application-Layer Protocol
+   Negotiation (ALPN) over the QUIC transport; see [RFC7301] and
+   Section 7.4 of [QUIC-TRANSPORT].  It has Core importance level; see
+   Section 9.2 of [QLOG-MAIN].
 
-   QUIC implementations each have their own list of application level
-   protocols and versions thereof they support.  The client includes a
-   list of their supported options in its first initial as part of the
-   TLS Application Layer Protocol Negotiation (alpn) extension.  If
-   there are common option(s), the server chooses the most optimal one
-   and communicates this back to the client.  If not, the connection is
-   closed.
+   QUIC endpoints are configured with a list of supported ALPN
+   identifiers.  Clients send the list in a TLS ClientHello, and servers
+   match against their list.  On success, a single ALPN identifier is
+   chosen and sent back in a TLS ServerHello.  If no match is found, the
+   connection is closed.
+
+   ALPN identifiers are byte sequences, that may be possible to present
+   as UTF-8.  The ALPNIdentifier` type supports either format.
+   Implementations SHOULD log at least one format, but MAY log both or
+   none.
 
    QUICALPNInformation = {
-       ? server_alpns: [* text]
-       ? client_alpns: [* text]
-       ? chosen_alpn: text
+       ? server_alpns: [* ALPNIdentifier]
+       ? client_alpns: [* ALPNIdentifier]
+       ? chosen_alpn: ALPNIdentifier
+   }
+
+   ALPNIdentifier = {
+     ? byte_value: hexstring
+     ? string_value: text
    }
 
                  Figure 10: QUICALPNInformation definition
@@ -861,9 +873,6 @@ Table of Contents
        ? frames: [* $QuicFrame]
        ? is_coalesced: bool .default false
 
-       ; only if header.packet_type === "retry"
-       ? retry_token: Token
-
        ; only if header.packet_type === "stateless_reset"
        ; is always 128 bits in length.
        ? stateless_reset_token: StatelessResetToken
@@ -906,9 +915,6 @@ Table of Contents
        header: PacketHeader
        ? frames: [* $QuicFrame]
        ? is_coalesced: bool .default false
-
-       ; only if header.packet_type === "retry"
-       ? retry_token: Token
 
        ; only if header.packet_type === "stateless_reset"
        ; Is always 128 bits in length.
@@ -959,6 +965,7 @@ Table of Contents
            "duplicate" /
            "connection_unknown" /
            "decryption_failure" /
+           "key_unavailable" /
            "general"
    }
 
@@ -981,8 +988,9 @@ Table of Contents
    *  connection_unknown: packet does not relate to a known connection
       or Connection ID
 
-   *  decryption_failure: decryption key was unavailable, decryption
-      failed
+   *  decryption_failure: decryption failed
+
+   *  key_unavailable: decryption key was unavailable
 
    *  general: situations not clearly covered in the other categories
 
@@ -1038,8 +1046,8 @@ Table of Contents
                    Figure 17: QUICPacketsAcked definition
 
    If packet_number_space is omitted, it assumes the default value of
-   PacketNumberSpace.application_data, as this is by far the most
-   prevalent packet number space a typical QUIC connection will use.
+   application_data, as this is by far the most prevalent packet number
+   space a typical QUIC connection will use.
 
 5.10.  datagrams_sent
 
@@ -1194,16 +1202,16 @@ Table of Contents
    this single frames_processed event.
 
    The frame_processed event can be used to signal internal state change
-   not resulting directly from the actual parsing of a frame (e.g., the
-   frame could have been parsed, data put into a buffer, then later
+   not resulting directly from the actual "parsing" of a frame (e.g.,
+   the frame could have been parsed, data put into a buffer, then later
    processed, then logged with this event).
 
    The packet_received event can convey all constituent frames.  It is
    not expected that the frames_processed event will also be used for a
    redundant purpose.  Rather, implementations can use this event to
    avoid having to log full packets or to convey extra information about
-   when frames are processed (for example, frame processing is deferred
-   for any reason).
+   when frames are processed (for example, if frame processing is
+   deferred for any reason).
 
    Note that for some events, this approach will lose some information
    (e.g., for which encryption level are packets being acknowledged?).
@@ -1347,7 +1355,7 @@ Table of Contents
        ? new: hexstring
 
        ; needed for 1RTT key updates
-       ? generation: uint32
+       ? key_phase: uint64
        ? trigger:
            ; (e.g., initial, handshake and 0-RTT keys
            ; are generated by TLS)
@@ -1357,6 +1365,11 @@ Table of Contents
    }
 
                   Figure 25: SecurityKeyUpdated definition
+
+   Note that the key_phase is the full value of the key phase (as
+   indicated by @M and @N in Figure 9 of [QUIC-TLS]).  The key phase bit
+   used on the packet header is the least significant bit of the key
+   phase.
 
 6.2.  key_discarded
 
@@ -1368,7 +1381,7 @@ Table of Contents
        ? key: hexstring
 
        ; needed for 1RTT key updates
-       ? generation: uint32
+       ? key_phase: uint64
        ? trigger:
            ; (e.g., initial, handshake and 0-RTT keys
            ; are generated by TLS)
@@ -1395,7 +1408,7 @@ Table of Contents
 
    All these settings are typically set once and never change.
    Implementation that do, for some reason, change these parameters
-   during execution, MAY emit the parameters_set event twice.
+   during execution, MAY emit the parameters_set event more than once.
 
    RecoveryParametersSet = {
 
@@ -1710,7 +1723,7 @@ Table of Contents
        ; if present
        ? flags: uint8
 
-       ; only if packet_type === "initial"
+       ; only if packet_type === "initial" || "retry"
        ? token: Token
 
        ; only if packet_type === "initial" || "handshake" || "0RTT"
@@ -1904,7 +1917,7 @@ Table of Contents
        frame_type: "reset_stream"
        stream_id: uint64
        error_code: $ApplicationError /
-                   uint32
+                   uint64
 
        ; in bytes
        final_size: uint64
@@ -1922,7 +1935,7 @@ Table of Contents
        frame_type: "stop_sending"
        stream_id: uint64
        error_code: $ApplicationError /
-                   uint32
+                   uint64
 
        ; total frame length, including frame header
        ? length: uint32
@@ -1938,6 +1951,7 @@ Table of Contents
        offset: uint64
        length: uint64
        ? payload_length: uint32
+       ? raw: RawInfo
    }
 
                      Figure 53: CryptoFrame definition
@@ -2078,9 +2092,15 @@ Table of Contents
 
 8.12.19.  ConnectionCloseFrame
 
-   The error_code_value field is the numerical value without VLIE
-   encoding.  This is useful because some error types are spread out
-   over a range of codes (e.g., QUIC's crypto_error).
+   An endpoint that receives unknown error codes can record it in the
+   error_code field using the numerical value without variable-length
+   integer encoding.
+
+   When the connection is closed due a connection-level error, the
+   trigger_frame_type field can be used to log the frame that triggered
+   the error.  For known frame types, the appropriate string value is
+   used.  For unknown frame types, the numerical value without variable-
+   length integer encoding is used.
 
    ErrorSpace = "transport" /
                 "application"
@@ -2089,13 +2109,12 @@ Table of Contents
        frame_type: "connection_close"
        ? error_space: ErrorSpace
        ? error_code: TransportError /
+                     CryptoError /
                      $ApplicationError /
-                     uint32
-       ? error_code_value: uint64
+                     uint64
        ? reason: text
 
-       ; For known frame types, the appropriate "frame_type" string
-       ; For unknown frame types, the hex encoded frame identifier value
+       ; when error_space === "transport"
        ? trigger_frame_type: uint64 /
                              text
    }
@@ -2202,7 +2221,9 @@ Table of Contents
 
    There are no IANA considerations.
 
-11.  Normative References
+11.  References
+
+11.1.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -2233,10 +2254,9 @@ Table of Contents
               and Congestion Control", RFC 9002, DOI 10.17487/RFC9002,
               May 2021, <https://www.rfc-editor.org/rfc/rfc9002>.
 
-   [QUIC-TLS] Snijders, J., Heitz, J., Scudder, J., and A. Azimov,
-              "Extended BGP Administrative Shutdown Communication",
-              RFC 9003, DOI 10.17487/RFC9003, January 2021,
-              <https://www.rfc-editor.org/rfc/rfc9003>.
+   [QUIC-TLS] Thomson, M., Ed. and S. Turner, Ed., "Using TLS to Secure
+              QUIC", RFC 9001, DOI 10.17487/RFC9001, May 2021,
+              <https://www.rfc-editor.org/rfc/rfc9001>.
 
    [QUIC-TRANSPORT]
               Iyengar, J., Ed. and M. Thomson, Ed., "QUIC: A UDP-Based
@@ -2257,6 +2277,13 @@ Table of Contents
               Datagram Extension to QUIC", RFC 9221,
               DOI 10.17487/RFC9221, March 2022,
               <https://www.rfc-editor.org/rfc/rfc9221>.
+
+11.2.  Informative References
+
+   [RFC7301]  Friedl, S., Popov, A., Langley, A., and E. Stephan,
+              "Transport Layer Security (TLS) Application-Layer Protocol
+              Negotiation Extension", RFC 7301, DOI 10.17487/RFC7301,
+              July 2014, <https://www.rfc-editor.org/rfc/rfc7301>.
 
 Acknowledgements
 
@@ -2452,10 +2479,9 @@ Authors' Addresses
 
 
    Marten Seemann (editor)
-   Protocol Labs
    Email: martenseemann@gmail.com
 
 
    Lucas Pardue (editor)
    Cloudflare
-   Email: lucaspardue.24.7@gmail.com
+   Email: lucas@lucaspardue.com

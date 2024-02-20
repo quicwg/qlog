@@ -1068,7 +1068,6 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <div class="author">
       <div class="author-name">M. Seemann, <span class="editor">Ed.</span>
 </div>
-<div class="org">Protocol Labs</div>
 </div>
 <div class="author">
       <div class="author-name">L. Pardue, <span class="editor">Ed.</span>
@@ -1413,7 +1412,15 @@ various programming languages can be found at
             <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
-            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref">11</a>. <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref">11</a>. <a href="#name-references" class="internal xref">References</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.1">
+                <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="auto internal xref">11.1</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.2">
+                <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="auto internal xref">11.2</a>.  <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
             <p id="section-toc.1-1.12.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgements" class="internal xref">Acknowledgements</a></p>
@@ -1839,48 +1846,48 @@ this specification.<a href="#section-3-3" class="pilcrow">¶</a></p>
         </tbody>
       </table>
 </div>
-<p id="section-3-5">QUIC events extend the <code>$ProtocolEventBody</code> extension point defined in
+<p id="section-3-5">QUIC events extend the <code>$ProtocolEventData</code> extension point defined in
 <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3-5" class="pilcrow">¶</a></p>
-<span id="name-quicevents-definition-and-p"></span><div id="quicevents-def">
+<span id="name-quiceventdata-definition-an"></span><div id="quicevent-data-def">
 <figure id="figure-1">
         <div class="lang-cddl sourcecode" id="section-3-6.1">
 <pre>
-QuicEvents = ConnectivityServerListening /
-             ConnectivityConnectionStarted /
-             ConnectivityConnectionClosed /
-             ConnectivityConnectionIDUpdated /
-             ConnectivitySpinBitUpdated /
-             ConnectivityConnectionStateUpdated /
-             ConnectivityMTUUpdated /
-             SecurityKeyUpdated /
-             SecurityKeyDiscarded /
-             QUICVersionInformation /
-             QUICALPNInformation /
-             QUICParametersSet /
-             QUICParametersRestored /
-             QUICPacketSent /
-             QUICPacketReceived /
-             QUICPacketDropped /
-             QUICPacketBuffered /
-             QUICPacketsAcked /
-             QUICDatagramsSent /
-             QUICDatagramsReceived /
-             QUICDatagramDropped /
-             QUICStreamStateUpdated /
-             QUICFramesProcessed /
-             QUICStreamDataMoved /
-             QUICDatagramDataMoved /
-             RecoveryParametersSet /
-             RecoveryMetricsUpdated /
-             RecoveryCongestionStateUpdated /
-             RecoveryLossTimerUpdated /
-             RecoveryPacketLost
+QuicEventData = ConnectivityServerListening /
+                ConnectivityConnectionStarted /
+                ConnectivityConnectionClosed /
+                ConnectivityConnectionIDUpdated /
+                ConnectivitySpinBitUpdated /
+                ConnectivityConnectionStateUpdated /
+                ConnectivityMTUUpdated /
+                SecurityKeyUpdated /
+                SecurityKeyDiscarded /
+                QUICVersionInformation /
+                QUICALPNInformation /
+                QUICParametersSet /
+                QUICParametersRestored /
+                QUICPacketSent /
+                QUICPacketReceived /
+                QUICPacketDropped /
+                QUICPacketBuffered /
+                QUICPacketsAcked /
+                QUICDatagramsSent /
+                QUICDatagramsReceived /
+                QUICDatagramDropped /
+                QUICStreamStateUpdated /
+                QUICFramesProcessed /
+                QUICStreamDataMoved /
+                QUICDatagramDataMoved /
+                RecoveryParametersSet /
+                RecoveryMetricsUpdated /
+                RecoveryCongestionStateUpdated /
+                RecoveryLossTimerUpdated /
+                RecoveryPacketLost
 
-$ProtocolEventBody /= QuicEvents
+$ProtocolEventData /= QuicEventData
 </pre>
 </div>
 <figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
-<a href="#name-quicevents-definition-and-p" class="selfRef">QuicEvents definition and ProtocolEventBody extension</a>
+<a href="#name-quiceventdata-definition-an" class="selfRef">QuicEventData definition and ProtocolEventData extension</a>
         </figcaption></figure>
 </div>
 </section>
@@ -2255,8 +2262,8 @@ level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-
           <div class="lang-cddl sourcecode" id="section-4.7-2.1">
 <pre>
 ConnectivityMTUUpdated = {
-  ? old: uint16
-  new: uint16
+  ? old: uint32
+  new: uint32
 
   ; at some point, MTU discovery stops, as a "good enough"
   ; packet size has been found
@@ -2319,13 +2326,15 @@ event with <code>server_versions</code> and <code>chosen_version</code> set<a hr
             <p id="section-5.1-5.3.1">Upon receiving a client initial with an unsupported version, the server logs
 this event with <code>server_versions</code> set and <code>client_versions</code> to the
 single-element array containing the client's attempted version. The absence of
-chosen_version implies no overlap was found.<a href="#section-5.1-5.3.1" class="pilcrow">¶</a></p>
+chosen_version implies no overlap was found<a href="#section-5.1-5.3.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.1-5.4">
             <p id="section-5.1-5.4.1">Upon receiving a version negotiation packet from the server, the client logs
 this event with <code>client_versions</code> set and <code>server_versions</code> to the versions in
-the version negotiation packet and chosen_version to the version it will use for
-the next initial packet<a href="#section-5.1-5.4.1" class="pilcrow">¶</a></p>
+the version negotiation packet and chosen_version to the version it will use
+for the next initial packet. If the client receives a set of <code>server_versions</code>
+with no viable overlap with its own supported versions, this event should be
+logged without the <code>chosen_version</code> set<a href="#section-5.1-5.4.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 </section>
@@ -2335,23 +2344,25 @@ the next initial packet<a href="#section-5.1-5.4.1" class="pilcrow">¶</a></p>
         <h3 id="name-alpn_information">
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-alpn_information" class="section-name selfRef">alpn_information</a>
         </h3>
-<p id="section-5.2-1">The <code>alpn_information</code> event support application level protocol negotiation over
-the QUIC transport; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-7.4" class="relref">Section 7.4</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It has Core
-importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
-<p id="section-5.2-2">QUIC implementations each have their own list of application level protocols and
-versions thereof they support. The client includes a list of their supported
-options in its first initial as part of the TLS Application Layer Protocol
-Negotiation (alpn) extension. If there are common option(s), the server chooses
-the most optimal one and communicates this back to the client. If not, the
-connection is closed.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.2-1">The <code>alpn_information</code> event supports Application-Layer Protocol Negotiation
+(ALPN) over the QUIC transport; see <span>[<a href="#RFC7301" class="cite xref">RFC7301</a>]</span> and <span><a href="https://rfc-editor.org/rfc/rfc9000#section-7.4" class="relref">Section 7.4</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<p id="section-5.2-2">QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
+<p id="section-5.2-3">ALPN identifiers are byte sequences, that may be possible to present as UTF-8.
+The <code>ALPNIdentifier</code>` type supports either format. Implementations <span class="bcp14">SHOULD</span> log at
+least one format, but <span class="bcp14">MAY</span> log both or none.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
 <span id="name-quicalpninformation-definit"></span><div id="quic-alpninformation-def">
 <figure id="figure-10">
-          <div class="lang-cddl sourcecode" id="section-5.2-3.1">
+          <div class="lang-cddl sourcecode" id="section-5.2-4.1">
 <pre>
 QUICALPNInformation = {
-    ? server_alpns: [* text]
-    ? client_alpns: [* text]
-    ? chosen_alpn: text
+    ? server_alpns: [* ALPNIdentifier]
+    ? client_alpns: [* ALPNIdentifier]
+    ? chosen_alpn: ALPNIdentifier
+}
+
+ALPNIdentifier = {
+  ? byte_value: hexstring
+  ? string_value: text
 }
 </pre>
 </div>
@@ -2359,24 +2370,24 @@ QUICALPNInformation = {
 <a href="#name-quicalpninformation-definit" class="selfRef">QUICALPNInformation definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.2-4">Intended use:<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+<p id="section-5.2-5">Intended use:<a href="#section-5.2-5" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-5.2-5.1">
-            <p id="section-5.2-5.1.1">When sending an initial, the client logs this event with <code>client_alpns</code> set<a href="#section-5.2-5.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-5.2-6.1">
+            <p id="section-5.2-6.1.1">When sending an initial, the client logs this event with <code>client_alpns</code> set<a href="#section-5.2-6.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-5.2-5.2">
-            <p id="section-5.2-5.2.1">When receiving an initial with a supported alpn, the server logs this event
+          <li class="normal" id="section-5.2-6.2">
+            <p id="section-5.2-6.2.1">When receiving an initial with a supported alpn, the server logs this event
 with <code>server_alpns</code> set, <code>client_alpns</code> equalling the client-provided list,
-and chosen_alpn to the value it will send back to the client.<a href="#section-5.2-5.2.1" class="pilcrow">¶</a></p>
+and chosen_alpn to the value it will send back to the client.<a href="#section-5.2-6.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-5.2-5.3">
-            <p id="section-5.2-5.3.1">When receiving an initial with an alpn, the client logs this event with
-<code>chosen_alpn</code> to the received value.<a href="#section-5.2-5.3.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-5.2-6.3">
+            <p id="section-5.2-6.3.1">When receiving an initial with an alpn, the client logs this event with
+<code>chosen_alpn</code> to the received value.<a href="#section-5.2-6.3.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-5.2-5.4">
-            <p id="section-5.2-5.4.1">Alternatively, a client can choose to not log the first event, but wait for
+          <li class="normal" id="section-5.2-6.4">
+            <p id="section-5.2-6.4.1">Alternatively, a client can choose to not log the first event, but wait for
 the receipt of the server initial to log this event with both <code>client_alpns</code>
-and <code>chosen_alpn</code> set.<a href="#section-5.2-5.4.1" class="pilcrow">¶</a></p>
+and <code>chosen_alpn</code> set.<a href="#section-5.2-6.4.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 </section>
@@ -2519,9 +2530,6 @@ QUICPacketSent = {
     ? frames: [* $QuicFrame]
     ? is_coalesced: bool .default false
 
-    ; only if header.packet_type === "retry"
-    ? retry_token: Token
-
     ; only if header.packet_type === "stateless_reset"
     ; is always 128 bits in length.
     ? stateless_reset_token: StatelessResetToken
@@ -2573,9 +2581,6 @@ QUICPacketReceived = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
     ? is_coalesced: bool .default false
-
-    ; only if header.packet_type === "retry"
-    ? retry_token: Token
 
     ; only if header.packet_type === "stateless_reset"
     ; Is always 128 bits in length.
@@ -2634,6 +2639,7 @@ QUICPacketDropped = {
         "duplicate" /
         "connection_unknown" /
         "decryption_failure" /
+        "key_unavailable" /
         "general"
 }
 </pre>
@@ -2663,10 +2669,13 @@ QUICPacketDropped = {
             <p id="section-5.7-5.6.1"><code>connection_unknown</code>: packet does not relate to a known connection or Connection ID<a href="#section-5.7-5.6.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.7-5.7">
-            <p id="section-5.7-5.7.1"><code>decryption_failure</code>: decryption key was unavailable, decryption failed<a href="#section-5.7-5.7.1" class="pilcrow">¶</a></p>
+            <p id="section-5.7-5.7.1"><code>decryption_failure</code>: decryption failed<a href="#section-5.7-5.7.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.7-5.8">
-            <p id="section-5.7-5.8.1"><code>general</code>: situations not clearly covered in the other categories<a href="#section-5.7-5.8.1" class="pilcrow">¶</a></p>
+            <p id="section-5.7-5.8.1"><code>key_unavailable</code>: decryption key was unavailable<a href="#section-5.7-5.8.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-5.7-5.9">
+            <p id="section-5.7-5.9.1"><code>general</code>: situations not clearly covered in the other categories<a href="#section-5.7-5.9.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 <p id="section-5.7-6">For more details on <code>datagram_id</code>, see <a href="#quic-datagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.7-6" class="pilcrow">¶</a></p>
@@ -2738,7 +2747,7 @@ QUICPacketsAcked = {
           </figcaption></figure>
 </div>
 <p id="section-5.9-4">If <code>packet_number_space</code> is omitted, it assumes the default value of
-<code>PacketNumberSpace.application_data</code>, as this is by far the most prevalent packet
+<code>application_data</code>, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.<a href="#section-5.9-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2928,14 +2937,14 @@ Since for almost all cases, the effects of applying a frame to the internal stat
 of an implementation can be inferred from that frame's contents, these events
 are aggregated into this single <code>frames_processed</code> event.<a href="#section-5.14-2" class="pilcrow">¶</a></p>
 <p id="section-5.14-3">The <code>frame_processed</code> event can be used to signal internal state change not
-resulting directly from the actual <code>parsing</code> of a frame (e.g., the frame could
+resulting directly from the actual "parsing" of a frame (e.g., the frame could
 have been parsed, data put into a buffer, then later processed, then logged with
 this event).<a href="#section-5.14-3" class="pilcrow">¶</a></p>
 <p id="section-5.14-4">The <code>packet_received</code> event can convey all constituent frames. It is not
 expected that the <code>frames_processed</code> event will also be used for a redundant
 purpose. Rather, implementations can use this event to avoid having to log full
 packets or to convey extra information about when frames are processed (for
-example, frame processing is deferred for any reason).<a href="#section-5.14-4" class="pilcrow">¶</a></p>
+example, if frame processing is deferred for any reason).<a href="#section-5.14-4" class="pilcrow">¶</a></p>
 <p id="section-5.14-5">Note that for some events, this approach will lose some information (e.g., for which
 encryption level are packets being acknowledged?). If this information is
 important, the <code>packet_received</code> event can be used instead.<a href="#section-5.14-5" class="pilcrow">¶</a></p>
@@ -3104,7 +3113,7 @@ SecurityKeyUpdated = {
     ? new: hexstring
 
     ; needed for 1RTT key updates
-    ? generation: uint32
+    ? key_phase: uint64
     ? trigger:
         ; (e.g., initial, handshake and 0-RTT keys
         ; are generated by TLS)
@@ -3118,6 +3127,9 @@ SecurityKeyUpdated = {
 <a href="#name-securitykeyupdated-definiti" class="selfRef">SecurityKeyUpdated definition</a>
           </figcaption></figure>
 </div>
+<p id="section-6.1-3">Note that the key_phase is the full value of the key phase (as indicated by
+@M and @N in Figure 9 of <span>[<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>). The key phase bit used on
+the packet header is the least significant bit of the key phase.<a href="#section-6.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="security-keydiscarded">
@@ -3135,7 +3147,7 @@ SecurityKeyDiscarded = {
     ? key: hexstring
 
     ; needed for 1RTT key updates
-    ? generation: uint32
+    ? key_phase: uint64
     ? trigger:
         ; (e.g., initial, handshake and 0-RTT keys
         ; are generated by TLS)
@@ -3172,7 +3184,7 @@ and congestion control into a single event. It has Base importance level; see
 <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
 <p id="section-7.1-2">All these settings are typically set once and never change. Implementation that
 do, for some reason, change these parameters during execution, <span class="bcp14">MAY</span> emit the
-<code>parameters_set</code> event twice.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
+<code>parameters_set</code> event more than once.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
 <span id="name-recoveryparametersset-defin"></span><div id="recovery-parametersset-def">
 <figure id="figure-27">
           <div class="lang-cddl sourcecode" id="section-7.1-3.1">
@@ -3639,7 +3651,7 @@ PacketHeader = {
     ; if present
     ? flags: uint8
 
-    ; only if packet_type === "initial"
+    ; only if packet_type === "initial" || "retry"
     ? token: Token
 
     ; only if packet_type === "initial" || "handshake" || "0RTT"
@@ -3932,7 +3944,7 @@ ResetStreamFrame = {
     frame_type: "reset_stream"
     stream_id: uint64
     error_code: $ApplicationError /
-                uint32
+                uint64
 
     ; in bytes
     final_size: uint64
@@ -3962,7 +3974,7 @@ StopSendingFrame = {
     frame_type: "stop_sending"
     stream_id: uint64
     error_code: $ApplicationError /
-                uint32
+                uint64
 
     ; total frame length, including frame header
     ? length: uint32
@@ -3990,6 +4002,7 @@ CryptoFrame = {
     offset: uint64
     length: uint64
     ? payload_length: uint32
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4282,12 +4295,16 @@ PathResponseFrame = {
           <h4 id="name-connectioncloseframe">
 <a href="#section-8.12.19" class="section-number selfRef">8.12.19. </a><a href="#name-connectioncloseframe" class="section-name selfRef">ConnectionCloseFrame</a>
           </h4>
-<p id="section-8.12.19-1">The error_code_value field is the numerical value without VLIE encoding. This is
-useful because some error types are spread out over a range of codes (e.g.,
-QUIC's crypto_error).<a href="#section-8.12.19-1" class="pilcrow">¶</a></p>
+<p id="section-8.12.19-1">An endpoint that receives unknown error codes can record it in the error_code
+field using the numerical value without variable-length integer encoding.<a href="#section-8.12.19-1" class="pilcrow">¶</a></p>
+<p id="section-8.12.19-2">When the connection is closed due a connection-level error, the
+<code>trigger_frame_type</code> field can be used to log the frame that triggered the
+error. For known frame types, the appropriate string value is used. For unknown
+frame types, the numerical value without variable-length integer encoding is
+used.<a href="#section-8.12.19-2" class="pilcrow">¶</a></p>
 <span id="name-connectioncloseframe-defini"></span><div id="connectioncloseframe-def">
 <figure id="figure-66">
-            <div class="lang-cddl sourcecode" id="section-8.12.19-2.1">
+            <div class="lang-cddl sourcecode" id="section-8.12.19-3.1">
 <pre>
 ErrorSpace = "transport" /
              "application"
@@ -4296,13 +4313,12 @@ ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
     ? error_code: TransportError /
+                  CryptoError /
                   $ApplicationError /
-                  uint32
-    ? error_code_value: uint64
+                  uint64
     ? reason: text
 
-    ; For known frame types, the appropriate "frame_type" string
-    ; For unknown frame types, the hex encoded frame identifier value
+    ; when error_space === "transport"
     ? trigger_frame_type: uint64 /
                           text
 }
@@ -4481,55 +4497,73 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
 <p id="section-10-1">There are no IANA considerations.<a href="#section-10-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="sec-normative-references">
 <section id="section-11">
-      <h2 id="name-normative-references">
-<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      <h2 id="name-references">
+<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-references" class="section-name selfRef">References</a>
       </h2>
+<div id="sec-normative-references">
+<section id="section-11.1">
+        <h3 id="name-normative-references">
+<a href="#section-11.1" class="section-number selfRef">11.1. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+        </h3>
 <dl class="references">
 <dt id="CDDL">[CDDL]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Vigano, C.</span>, and <span class="refAuthor">C. Bormann</span>, <span class="refTitle">"Concise Data Definition Language (CDDL): A Notational Convention to Express Concise Binary Object Representation (CBOR) and JSON Data Structures"</span>, <span class="seriesInfo">RFC 8610</span>, <span class="seriesInfo">DOI 10.17487/RFC8610</span>, <time datetime="2019-06" class="refDate">June 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8610">https://www.rfc-editor.org/rfc/rfc8610</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="GREASEBIT">[GREASEBIT]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Thomson, M.</span>, <span class="refTitle">"Greasing the QUIC Bit"</span>, <span class="seriesInfo">RFC 9287</span>, <span class="seriesInfo">DOI 10.17487/RFC9287</span>, <time datetime="2022-08" class="refDate">August 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9287">https://www.rfc-editor.org/rfc/rfc9287</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QLOG-MAIN">[QLOG-MAIN]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Main logging schema for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-main-schema-07</span>, <time datetime="2023-10-23" class="refDate">23 October 2023</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QUIC-DATAGRAM">[QUIC-DATAGRAM]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Pauly, T.</span>, <span class="refAuthor">Kinnear, E.</span>, and <span class="refAuthor">D. Schinazi</span>, <span class="refTitle">"An Unreliable Datagram Extension to QUIC"</span>, <span class="seriesInfo">RFC 9221</span>, <span class="seriesInfo">DOI 10.17487/RFC9221</span>, <time datetime="2022-03" class="refDate">March 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9221">https://www.rfc-editor.org/rfc/rfc9221</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QUIC-RECOVERY">[QUIC-RECOVERY]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">I. Swett, Ed.</span>, <span class="refTitle">"QUIC Loss Detection and Congestion Control"</span>, <span class="seriesInfo">RFC 9002</span>, <span class="seriesInfo">DOI 10.17487/RFC9002</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9002">https://www.rfc-editor.org/rfc/rfc9002</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QUIC-TLS">[QUIC-TLS]</dt>
-      <dd>
-<span class="refAuthor">Snijders, J.</span>, <span class="refAuthor">Heitz, J.</span>, <span class="refAuthor">Scudder, J.</span>, and <span class="refAuthor">A. Azimov</span>, <span class="refTitle">"Extended BGP Administrative Shutdown Communication"</span>, <span class="seriesInfo">RFC 9003</span>, <span class="seriesInfo">DOI 10.17487/RFC9003</span>, <time datetime="2021-01" class="refDate">January 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9003">https://www.rfc-editor.org/rfc/rfc9003</a>&gt;</span>. </dd>
+        <dd>
+<span class="refAuthor">Thomson, M., Ed.</span> and <span class="refAuthor">S. Turner, Ed.</span>, <span class="refTitle">"Using TLS to Secure QUIC"</span>, <span class="seriesInfo">RFC 9001</span>, <span class="seriesInfo">DOI 10.17487/RFC9001</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9001">https://www.rfc-editor.org/rfc/rfc9001</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QUIC-TRANSPORT">[QUIC-TRANSPORT]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Iyengar, J., Ed.</span> and <span class="refAuthor">M. Thomson, Ed.</span>, <span class="refTitle">"QUIC: A UDP-Based Multiplexed and Secure Transport"</span>, <span class="seriesInfo">RFC 9000</span>, <span class="seriesInfo">DOI 10.17487/RFC9000</span>, <time datetime="2021-05" class="refDate">May 2021</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9000">https://www.rfc-editor.org/rfc/rfc9000</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC9221">[RFC9221]</dt>
-    <dd>
+      <dd>
 <span class="refAuthor">Pauly, T.</span>, <span class="refAuthor">Kinnear, E.</span>, and <span class="refAuthor">D. Schinazi</span>, <span class="refTitle">"An Unreliable Datagram Extension to QUIC"</span>, <span class="seriesInfo">RFC 9221</span>, <span class="seriesInfo">DOI 10.17487/RFC9221</span>, <time datetime="2022-03" class="refDate">March 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9221">https://www.rfc-editor.org/rfc/rfc9221</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
 </div>
+<div id="sec-informative-references">
+<section id="section-11.2">
+        <h3 id="name-informative-references">
+<a href="#section-11.2" class="section-number selfRef">11.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+        </h3>
+<dl class="references">
+<dt id="RFC7301">[RFC7301]</dt>
+      <dd>
+<span class="refAuthor">Friedl, S.</span>, <span class="refAuthor">Popov, A.</span>, <span class="refAuthor">Langley, A.</span>, and <span class="refAuthor">E. Stephan</span>, <span class="refTitle">"Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension"</span>, <span class="seriesInfo">RFC 7301</span>, <span class="seriesInfo">DOI 10.17487/RFC7301</span>, <time datetime="2014-07" class="refDate">July 2014</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7301">https://www.rfc-editor.org/rfc/rfc7301</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+</section>
 <div id="acknowledgements">
 <section id="appendix-A">
       <h2 id="name-acknowledgements">
@@ -4845,7 +4879,6 @@ fields, which are now called packet_type instead of type)<a href="#appendix-B.9-
 </address>
 <address class="vcard">
         <div dir="auto" class="left"><span class="fn nameRole">Marten Seemann (<span class="role">editor</span>)</span></div>
-<div dir="auto" class="left"><span class="org">Protocol Labs</span></div>
 <div class="email">
 <span>Email:</span>
 <a href="mailto:martenseemann@gmail.com" class="email">martenseemann@gmail.com</a>
@@ -4856,7 +4889,7 @@ fields, which are now called packet_type instead of type)<a href="#appendix-B.9-
 <div dir="auto" class="left"><span class="org">Cloudflare</span></div>
 <div class="email">
 <span>Email:</span>
-<a href="mailto:lucaspardue.24.7@gmail.com" class="email">lucaspardue.24.7@gmail.com</a>
+<a href="mailto:lucas@lucaspardue.com" class="email">lucas@lucaspardue.com</a>
 </div>
 </address>
 </section>
