@@ -5,22 +5,22 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 27 July 2024                                               Meta
+Expires: 30 August 2024                                             Meta
                                                          M. Seemann, Ed.
-                                                                        
+                                                           Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         24 January 2024
+                                                        27 February 2024
 
 
-                     HTTP/3 qlog event definitions
+                HTTP/3 and QPACK qlog event definitions
                  draft-ietf-quic-qlog-h3-events-latest
 
 Abstract
 
    This document describes concrete qlog event definitions and their
-   metadata for HTTP/3-related events.  These events can then be
-   embedded in the higher level schema defined in [QLOG-MAIN].
+   metadata for HTTP/3 and QPACK-related events.  These events can then
+   be embedded in the higher level schema defined in [QLOG-MAIN].
 
 Note to Readers
 
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 27 July 2024.
+   This Internet-Draft will expire on 30 August 2024.
 
 Copyright Notice
 
@@ -72,7 +72,7 @@ Table of Contents
      1.1.  Notational Conventions
    2.  Overview
      2.1.  Usage with QUIC
-   3.  HTTP/3 Event Overview
+   3.  HTTP/3 and QPACK Event Overview
    4.  HTTP/3 Events
      4.1.  parameters_set
      4.2.  parameters_restored
@@ -98,14 +98,36 @@ Table of Contents
        5.3.9.  H3ReservedFrame
        5.3.10. H3UnknownFrame
        5.3.11. H3ApplicationError
-   6.  Security and Privacy Considerations
-   7.  IANA Considerations
-   8.  References
-     8.1.  Normative References
-     8.2.  Informative References
+   6.  QPACK Events
+     6.1.  state_updated
+     6.2.  stream_state_updated
+     6.3.  dynamic_table_updated
+     6.4.  headers_encoded
+     6.5.  headers_decoded
+     6.6.  instruction_created
+     6.7.  instruction_parsed
+   7.  QPACK Data Field Definitions
+     7.1.  QPACKInstruction
+       7.1.1.  SetDynamicTableCapacityInstruction
+       7.1.2.  InsertWithNameReferenceInstruction
+       7.1.3.  InsertWithoutNameReferenceInstruction
+       7.1.4.  DuplicateInstruction
+       7.1.5.  SectionAcknowledgementInstruction
+       7.1.6.  StreamCancellationInstruction
+       7.1.7.  InsertCountIncrementInstruction
+     7.2.  QPACKHeaderBlockRepresentation
+       7.2.1.  IndexedHeaderField
+       7.2.2.  LiteralHeaderFieldWithName
+       7.2.3.  LiteralHeaderFieldWithoutName
+     7.3.  QPACKHeaderBlockPrefix
+     7.4.  QPACKTableType
+   8.  Security and Privacy Considerations
+   9.  IANA Considerations
+   10. References
+     10.1.  Normative References
+     10.2.  Informative References
    Acknowledgements
    Change Log
-     Since draft-ietf-quic-qlog-h3-events-05:
      Since draft-ietf-quic-qlog-h3-events-04:
      Since draft-ietf-quic-qlog-h3-events-03:
      Since draft-ietf-quic-qlog-h3-events-02:
@@ -120,8 +142,8 @@ Table of Contents
 
    This document describes the values of the qlog name ("category" +
    "event") and "data" fields and their semantics for the HTTP/3
-   protocol [HTTP/3] and some of extensions (see [EXTENDED-CONNECT],
-   [H3_PRIORITIZATION] and [H3-DATAGRAM]).
+   protocol [HTTP/3], QPACK [QPACK], and some of their extensions (see
+   [EXTENDED-CONNECT], [H3_PRIORITIZATION] and [H3-DATAGRAM]).
 
 1.1.  Notational Conventions
 
@@ -141,10 +163,11 @@ Table of Contents
 
 2.  Overview
 
-   This document describes how HTTP/3 can be expressed in qlog using the
-   schema defined in [QLOG-MAIN].  HTTP/3 events are defined with a
-   category, a name (the concatenation of "category" and "event"), an
-   "importance", an optional "trigger", and "data" fields.
+   This document describes how the HTTP/3 and QPACK can be expressed in
+   qlog using the schema defined in [QLOG-MAIN].  HTTP/3 and QPACK
+   events are defined with a category, a name (the concatenation of
+   "category" and "event"), an "importance", an optional "trigger", and
+   "data" fields.
 
    Some data fields use complex datastructures.  These are represented
    as enums or re-usable definitions, which are grouped together on the
@@ -169,10 +192,10 @@ Table of Contents
    abcd1234_server.qlog would contain the server-side trace of the
    connection with GUID abcd1234).
 
-3.  HTTP/3 Event Overview
+3.  HTTP/3 and QPACK Event Overview
 
    This document defines events in two categories, written as lowercase
-   to follow convention: h3 (Section 4).
+   to follow convention: h3 (Section 4) and qpack (Section 6).
 
    As described in Section 3.4.2 of [QLOG-MAIN], the qlog "name" field
    is the concatenation of category and type.
@@ -180,48 +203,62 @@ Table of Contents
    Table 1 summarizes the name value of each event type that is defined
    in this specification.
 
-           +========================+============+=============+
-           | Name value             | Importance | Definition  |
-           +========================+============+=============+
-           | h3:parameters_set      | Base       | Section 4.1 |
-           +------------------------+------------+-------------+
-           | h3:parameters_restored | Base       | Section 4.2 |
-           +------------------------+------------+-------------+
-           | h3:stream_type_set     | Base       | Section 4.3 |
-           +------------------------+------------+-------------+
-           | h3:priority_updated    | Base       | Section 4.4 |
-           +------------------------+------------+-------------+
-           | h3:frame_created       | Core       | Section 4.5 |
-           +------------------------+------------+-------------+
-           | h3:frame_parsed        | Core       | Section 4.6 |
-           +------------------------+------------+-------------+
-           | h3:datagram_created    | Base       | Section 4.7 |
-           +------------------------+------------+-------------+
-           | h3:datagram_parsed     | Base       | Section 4.8 |
-           +------------------------+------------+-------------+
-           | h3:push_resolved       | Extra      | Section 4.9 |
-           +------------------------+------------+-------------+
+        +=============================+============+=============+
+        | Name value                  | Importance | Definition  |
+        +=============================+============+=============+
+        | h3:parameters_set           | Base       | Section 4.1 |
+        +-----------------------------+------------+-------------+
+        | h3:parameters_restored      | Base       | Section 4.2 |
+        +-----------------------------+------------+-------------+
+        | h3:stream_type_set          | Base       | Section 4.3 |
+        +-----------------------------+------------+-------------+
+        | h3:priority_updated         | Base       | Section 4.4 |
+        +-----------------------------+------------+-------------+
+        | h3:frame_created            | Core       | Section 4.5 |
+        +-----------------------------+------------+-------------+
+        | h3:frame_parsed             | Core       | Section 4.6 |
+        +-----------------------------+------------+-------------+
+        | h3:datagram_created         | Base       | Section 4.7 |
+        +-----------------------------+------------+-------------+
+        | h3:datagram_parsed          | Base       | Section 4.8 |
+        +-----------------------------+------------+-------------+
+        | h3:push_resolved            | Extra      | Section 4.9 |
+        +-----------------------------+------------+-------------+
+        | qpack:state_updated         | Base       | Section 6.1 |
+        +-----------------------------+------------+-------------+
+        | qpack:stream_state_updated  | Core       | Section 6.2 |
+        +-----------------------------+------------+-------------+
+        | qpack:dynamic_table_updated | Extra      | Section 6.3 |
+        +-----------------------------+------------+-------------+
+        | qpack:headers_encoded       | Base       | Section 6.4 |
+        +-----------------------------+------------+-------------+
+        | qpack:headers_decoded       | Base       | Section 6.5 |
+        +-----------------------------+------------+-------------+
+        | qpack:instruction_created   | Base       | Section 6.6 |
+        +-----------------------------+------------+-------------+
+        | qpack:instruction_parsed    | Base       | Section 6.7 |
+        +-----------------------------+------------+-------------+
 
-                           Table 1: HTTP/3 Events
+                     Table 1: HTTP/3 and QPACK Events
 
 4.  HTTP/3 Events
 
-   HTTP/3 events extend the $ProtocolEventData extension point defined
+   HTTP/3 events extend the $ProtocolEventBody extension point defined
    in [QLOG-MAIN].
 
-   H3EventData = H3ParametersSet /
-                 H3ParametersRestored /
-                 H3StreamTypeSet /
-                 H3PriorityUpdated /
-                 H3FrameCreated /
-                 H3FrameParsed /
-                 H3DatagramCreated /
-                 H3DatagramParsed /
-                 H3PushResolved
+   H3Events = H3ParametersSet /
+              H3ParametersRestored /
+              H3StreamTypeSet /
+              H3PriorityUpdated /
+              H3FrameCreated /
+              H3FrameParsed /
+              H3DatagramCreated /
+              H3DatagramParsed /
+              H3PushResolved
 
-   $ProtocolEventData /= H3EventData
+   $ProtocolEventBody /= H3Events
 
-      Figure 1: H3EventData definition and ProtocolEventData extension
+       Figure 1: H3Events definition and ProtocolEventBody extension
 
    HTTP events are logged when a certain condition happens at the
    application layer, and there isn't always a one to one mapping
@@ -231,22 +268,24 @@ Table of Contents
 
 4.1.  parameters_set
 
-   The parameters_set event contains HTTP/3 and QPACK-level settings,
-   mostly those received from the HTTP/3 SETTINGS frame.  It has Base
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   All these parameters are typically set once and never change.
-   However, they might be set at different times during the connection,
-   therefore a qlog can have multiple instances of parameters_set with
-   different fields set.
+   This event contains HTTP/3 and QPACK-level settings, mostly those
+   received from the HTTP/3 SETTINGS frame.  All these parameters are
+   typically set once and never change.  However, they are typically set
+   at different times during the connection, so there can be several
+   instances of this event with different fields set.
 
    The "owner" field reflects how Settings are exchanged on a
    connection.  Sent settings have the value "local" and received
-   settings have the value "received".
+   settings have the value "received".  A qlog can have multiple
+   instances of this event.
 
    As a reminder the CDDL unwrap operator (~), see [RFC8610]), copies
    the fields from the referenced type (H3Parameters) into the target
    type directly, extending the target with the unwrapped fields.
+
+   Definition:
 
    H3ParametersSet = {
        ? owner: Owner
@@ -278,18 +317,21 @@ Table of Contents
 
                     Figure 2: H3ParametersSet definition
 
-   The parameters_set event can contain any number of unspecified
-   fields.  This allows for representation of reserved settings (aka
-   GREASE) or ad-hoc support for extension settings that do not have a
-   related qlog schema definition.
+   This event can contain any number of unspecified fields.  This allows
+   for representation of reserved settings (aka GREASE) or ad-hoc
+   support for extension settings that do not have a related qlog schema
+   definition.
 
 4.2.  parameters_restored
 
+   Importance: Base
+
    When using QUIC 0-RTT, HTTP/3 clients are expected to remember and
-   reuse the server's SETTINGs from the previous connection.  The
-   parameters_restored event is used to indicate which HTTP/3 settings
-   were restored and to which values when utilizing 0-RTT.  It has Base
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   reuse the server's SETTINGs from the previous connection.  This event
+   is used to indicate which HTTP/3 settings were restored and to which
+   values when utilizing 0-RTT.
+
+   Definition:
 
    H3ParametersRestored = {
        ~H3Parameters
@@ -297,26 +339,20 @@ Table of Contents
 
                  Figure 3: H3ParametersRestored definition
 
-   The parameters_restored event can contain any number of unspecified
-   fields.  This allows for representation of reserved settings (aka
-   GREASE) or ad-hoc support for extension settings that do not have a
-   related qlog schema definition.
+   Similar to H3ParametersSet this event can contain any number of
+   unspecified fields to allow for reserved or extension settings.
 
 4.3.  stream_type_set
 
-   The stream_type_set event conveys when a HTTP/3 stream type becomes
-   known; see Sections 6.1 and 6.2 of [HTTP/3].  It has Base importance
-   level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   Client bidirectional streams always have a stream_type value of
-   "request".  Server bidirectional streams have no defined use,
-   although extensions could change that.
+   Emitted when a stream's type becomes known.  This is typically when a
+   stream is opened and the stream's type indicator is sent or received.
 
-   Unidirectional streams in either direction begin with with a
-   variable-length integer type.  Where the type is not known, the
-   stream_type value of "unknown" type can be used and the value
-   captured in the stream_type_value field; a numerical value without
-   variable-length integer encoding.
+   The stream_type_value field is the numerical value without VLIE
+   encoding.
+
+   Definition:
 
    H3StreamTypeSet = {
        ? owner: Owner
@@ -342,12 +378,15 @@ Table of Contents
 
 4.4.  priority_updated
 
+   Importance: Base
+
    Emitted when the priority of a request stream or push stream is
    initialized or updated through mechanisms defined in [RFC9218].  For
    example, the priority can be updated through signals received from
    client and/or server (e.g., in HTTP/3 HEADERS or PRIORITY_UPDATE
    frames) or it can be changed or overridden due to local policies.
-   The event has Base importance level; see Section 9.2 of [QLOG-MAIN].
+
+   Definition:
 
    H3PriorityUpdated = {
        ; if the prioritized element is a request stream
@@ -364,13 +403,14 @@ Table of Contents
 
 4.5.  frame_created
 
-   The frame_created event is emitted when the HTTP/3 framing actually
-   happens.  It has Core importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   Importance: Core
 
-   This event does not necessarily coincide with HTTP/3 data getting
-   passed to the QUIC layer.  For that, see the stream_data_moved event
-   in [QLOG-QUIC].
+   This event is emitted when the HTTP/3 framing actually happens.  This
+   does not necessarily coincide with HTTP/3 data getting passed to the
+   QUIC layer.  For that, see the "stream_data_moved" event in
+   [QLOG-QUIC].
+
+   Definition:
 
    H3FrameCreated = {
        stream_id: uint64
@@ -383,12 +423,14 @@ Table of Contents
 
 4.6.  frame_parsed
 
-   The frame_parsed event is emitted when the HTTP/3 frame is parsed.
-   It has Core importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Core
 
-   This event is not necessarily the same as when the HTTP/3 data is
-   actually received on the QUIC layer.  For that, see the
-   stream_data_moved event in [QLOG-QUIC].
+   This event is emitted when the HTTP/3 frame is parsed.  This is not
+   necessarily the same as when the HTTP/3 data is actually received on
+   the QUIC layer.  For that, see the "stream_data_moved" event in
+   [QLOG-QUIC].
+
+   Definition:
 
    H3FrameParsed = {
        stream_id: uint64
@@ -407,13 +449,14 @@ Table of Contents
 
 4.7.  datagram_created
 
-   The datagram_created event is emitted when an HTTP/3 Datagram is
-   created (see [RFC9297]).  It has Base importance level; see
-   Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   This event does not necessarily coincide with the HTTP/3 Datagram
-   getting passed to the QUIC layer.  For that, see the
-   datagram_data_moved event in [QLOG-QUIC].
+   This event is emitted when an HTTP/3 Datagram is created (see
+   [RFC9297]).  This does not necessarily coincide with the HTTP/3
+   Datagram getting passed to the QUIC layer.  For that, see the
+   "datagram_data_moved" event in [QLOG-QUIC].
+
+   Definition:
 
    H3DatagramCreated = {
        quarter_stream_id: uint64
@@ -425,13 +468,14 @@ Table of Contents
 
 4.8.  datagram_parsed
 
-   The datagram_parsed event is emitted when the HTTP/3 Datagram is
-   parsed (see [RFC9297]).  It has Base importance level; see
-   Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   This event is not necessarily the same as when the HTTP/3 Datagram is
-   actually received on the QUIC layer.  For that, see the
-   datagram_data_moved event in [QLOG-QUIC].
+   This event is emitted when the HTTP/3 Datagram is parsed (see
+   [RFC9297]).  This is not necessarily the same as when the HTTP/3
+   Datagram is actually received on the QUIC layer.  For that, see the
+   "datagram_data_moved" event in [QLOG-QUIC].
+
+   Definition:
 
    H3DatagramParsed = {
        quarter_stream_id: uint64
@@ -443,12 +487,15 @@ Table of Contents
 
 4.9.  push_resolved
 
-   The push_resolved event is emitted when a pushed resource
-   (Section 4.6 of [HTTP/3]) is successfully claimed (used) or,
-   conversely, abandoned (rejected) by the application on top of HTTP/3
-   (e.g., the web browser).  This event provides additional context that
-   can is aid debugging issues related to server push.  It has Extra
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Extra
+
+   This event is emitted when a pushed resource is successfully claimed
+   (used) or, conversely, abandoned (rejected) by the application on top
+   of HTTP/3 (e.g., the web browser).  This event is added to help debug
+   problems with unexpected PUSH behaviour, which is commonplace with
+   HTTP/2.
+
+   Definition:
 
    H3PushResolved = {
        ? push_id: uint64
@@ -656,8 +703,8 @@ Table of Contents
 
 5.3.10.  H3UnknownFrame
 
-   The frame_type_value field is the numerical value without variable-
-   length integer encoding.
+   The frame_type_value field is the numerical value without VLIE
+   encoding.
 
    H3UnknownFrame = {
        frame_type: "unknown"
@@ -696,18 +743,395 @@ Table of Contents
    ; e.g., QUIC's ConnectionClose Frame
    $ApplicationError /= H3ApplicationError
 
-6.  Security and Privacy Considerations
+6.  QPACK Events
+
+   QPACK events extend the $ProtocolEventBody extension point defined in
+   [QLOG-MAIN].
+
+   QPACKEvents = QPACKStateUpdate /
+                 QPACKStreamStateUpdate /
+                 QPACKDynamicTableUpdate /
+                 QPACKHeadersEncoded /
+                 QPACKHeadersDecoded /
+                 QPACKInstructionCreated /
+                 QPACKInstructionParsed
+
+   $ProtocolEventBody /= QPACKEvents
+
+     Figure 28: QPACKEvents definition and ProtocolEventBody extension
+
+   QPACK events mainly serve as an aid to debug low-level QPACK
+   issues.The higher-level, plaintext header values SHOULD (also) be
+   logged in the http.frame_created and http.frame_parsed event data
+   (instead).
+
+   QPACK does not have its own parameters_set event.  This was merged
+   with http.parameters_set for brevity, since qpack is a required
+   extension for HTTP/3 anyway.  Other HTTP/3 extensions MAY also log
+   their SETTINGS fields in http.parameters_set or MAY define their own
+   events.
+
+6.1.  state_updated
+
+   Importance: Base
+
+   This event is emitted when one or more of the internal QPACK
+   variables changes value.  Note that some variables have two
+   variations (one set locally, one requested by the remote peer).  This
+   is reflected in the "owner" field.  As such, this field MUST be
+   correct for all variables included a single event instance.  If you
+   need to log settings from two sides, you MUST emit two separate event
+   instances.
+
+   Definition:
+
+   QPACKStateUpdate = {
+       owner: Owner
+       ? dynamic_table_capacity: uint64
+
+       ; effective current size, sum of all the entries
+       ? dynamic_table_size: uint64
+       ? known_received_count: uint64
+       ? current_insert_count: uint64
+   }
+
+                   Figure 29: QPACKStateUpdate definition
+
+6.2.  stream_state_updated
+
+   Importance: Core
+
+   This event is emitted when a stream becomes blocked or unblocked by
+   header decoding requests or QPACK instructions.
+
+   This event is of "Core" importance, as it might have a large impact
+   on HTTP/3's observed performance.
+
+   Definition:
+
+   QPACKStreamStateUpdate = {
+       stream_id: uint64
+
+       ; streams are assumed to start "unblocked"
+       ; until they become "blocked"
+       state: QPACKStreamState
+   }
+
+   QPACKStreamState = "blocked" /
+                      "unblocked"
+
+                Figure 30: QPACKStreamStateUpdate definition
+
+6.3.  dynamic_table_updated
+
+   Importance: Extra
+
+   This event is emitted when one or more entries are inserted or
+   evicted from QPACK's dynamic table.
+
+   Definition:
+
+   QPACKDynamicTableUpdate = {
+
+       ; local = the encoder's dynamic table
+       ; remote = the decoder's dynamic table
+       owner: Owner
+       update_type: QPACKDynamicTableUpdateType
+       entries: [+ QPACKDynamicTableEntry]
+   }
+
+   QPACKDynamicTableUpdateType = "inserted" /
+                                 "evicted"
+
+   QPACKDynamicTableEntry = {
+       index: uint64
+       ? name: text /
+               hexstring
+       ? value: text /
+                hexstring
+   }
+
+               Figure 31: QPACKDynamicTableUpdate definition
+
+6.4.  headers_encoded
+
+   Importance: Base
+
+   This event is emitted when an uncompressed header block is encoded
+   successfully.
+
+   This event has overlap with http.frame_created for the HeadersFrame
+   type.  When outputting both events, implementers MAY omit the
+   "headers" field in this event.
+
+   Definition:
+
+   QPACKHeadersEncoded = {
+       ? stream_id: uint64
+       ? headers: [+ H3HTTPField]
+       block_prefix: QPACKHeaderBlockPrefix
+       header_block: [+ QPACKHeaderBlockRepresentation]
+       ? raw: RawInfo
+   }
+
+                 Figure 32: QPACKHeadersEncoded definition
+
+6.5.  headers_decoded
+
+   Importance: Base
+
+   This event is emitted when a compressed header block is decoded
+   successfully.
+
+   This event has overlap with http.frame_parsed for the HeadersFrame
+   type.  When outputting both events, implementers MAY omit the
+   "headers" field in this event.
+
+   Definition:
+
+   QPACKHeadersDecoded = {
+       ? stream_id: uint64
+       ? headers: [+ H3HTTPField]
+       block_prefix: QPACKHeaderBlockPrefix
+       header_block: [+ QPACKHeaderBlockRepresentation]
+       ? raw: RawInfo
+   }
+
+                 Figure 33: QPACKHeadersDecoded definition
+
+6.6.  instruction_created
+
+   Importance: Base
+
+   This event is emitted when a QPACK instruction (both decoder and
+   encoder) is created and added to the encoder/decoder stream.
+
+   Definition:
+
+   QPACKInstructionCreated = {
+
+       ; see definition in appendix
+       instruction: QPACKInstruction
+       ? raw: RawInfo
+   }
+
+               Figure 34: QPACKInstructionCreated definition
+
+   Encoder/decoder semantics and stream_id's are implicit in either the
+   instruction types or can be logged via other events (e.g.,
+   http.stream_type_set)
+
+6.7.  instruction_parsed
+
+   Importance: Base
+
+   This event is emitted when a QPACK instruction (both decoder and
+   encoder) is read from the encoder/decoder stream.
+
+   Definition:
+
+   QPACKInstructionParsed = {
+
+       ; see QPACKInstruction definition in appendix
+       instruction: QPACKInstruction
+       ? raw: RawInfo
+   }
+
+                Figure 35: QPACKInstructionParsed definition
+
+   Encoder/decoder semantics and stream_id's are implicit in either the
+   instruction types or can be logged via other events (e.g.,
+   http.stream_type_set)
+
+7.  QPACK Data Field Definitions
+
+   The following data field definitions can be used in QPACK events.
+
+7.1.  QPACKInstruction
+
+   The instructions do not have explicit encoder/decoder types, since
+   there is no overlap between the instructions of both types in neither
+   name nor function.
+
+   QPACKInstruction = SetDynamicTableCapacityInstruction /
+                      InsertWithNameReferenceInstruction /
+                      InsertWithoutNameReferenceInstruction /
+                      DuplicateInstruction /
+                      SectionAcknowledgementInstruction /
+                      StreamCancellationInstruction /
+                      InsertCountIncrementInstruction
+
+                   Figure 36: QPACKInstruction definition
+
+7.1.1.  SetDynamicTableCapacityInstruction
+
+   SetDynamicTableCapacityInstruction = {
+       instruction_type: "set_dynamic_table_capacity"
+       capacity: uint32
+   }
+
+          Figure 37: SetDynamicTableCapacityInstruction definition
+
+7.1.2.  InsertWithNameReferenceInstruction
+
+   InsertWithNameReferenceInstruction = {
+       instruction_type: "insert_with_name_reference"
+       table_type: QPACKTableType
+       name_index: uint32
+       huffman_encoded_value: bool
+       ? value_length: uint32
+       ? value: text
+   }
+
+          Figure 38: InsertWithNameReferenceInstruction definition
+
+7.1.3.  InsertWithoutNameReferenceInstruction
+
+   InsertWithoutNameReferenceInstruction = {
+       instruction_type: "insert_without_name_reference"
+       huffman_encoded_name: bool
+       ? name_length: uint32
+       ? name: text
+       huffman_encoded_value: bool
+       ? value_length: uint32
+       ? value: text
+   }
+
+        Figure 39: InsertWithoutNameReferenceInstruction definition
+
+7.1.4.  DuplicateInstruction
+
+   DuplicateInstruction = {
+       instruction_type: "duplicate"
+       index: uint32
+   }
+
+                 Figure 40: DuplicateInstruction definition
+
+7.1.5.  SectionAcknowledgementInstruction
+
+   SectionAcknowledgementInstruction = {
+       instruction_type: "section_acknowledgement"
+       stream_id: uint64
+   }
+
+          Figure 41: SectionAcknowledgementInstruction definition
+
+7.1.6.  StreamCancellationInstruction
+
+   StreamCancellationInstruction = {
+       instruction_type: "stream_cancellation"
+       stream_id: uint64
+   }
+
+            Figure 42: StreamCancellationInstruction definition
+
+7.1.7.  InsertCountIncrementInstruction
+
+   InsertCountIncrementInstruction = {
+       instruction_type: "insert_count_increment"
+       increment: uint32
+   }
+
+           Figure 43: InsertCountIncrementInstruction definition
+
+7.2.  QPACKHeaderBlockRepresentation
+
+   QPACKHeaderBlockRepresentation = IndexedHeaderField /
+                                    LiteralHeaderFieldWithName /
+                                    LiteralHeaderFieldWithoutName
+
+            Figure 44: QPACKHeaderBlockRepresentation definition
+
+7.2.1.  IndexedHeaderField
+
+   This is also used for "indexed header field with post-base index"
+
+   IndexedHeaderField = {
+       header_field_type: "indexed_header"
+
+       ; MUST be "dynamic" if is_post_base is true
+       table_type: QPACKTableType
+       index: uint32
+
+       ; to represent the "indexed header field with post-base index"
+       ; header field type
+       is_post_base: bool .default false
+   }
+
+                  Figure 45: IndexedHeaderField definition
+
+7.2.2.  LiteralHeaderFieldWithName
+
+   This is also used for "Literal header field with post-base name
+   reference".
+
+   LiteralHeaderFieldWithName = {
+       header_field_type: "literal_with_name"
+
+       ; the 3rd "N" bit
+       preserve_literal: bool
+
+       ; MUST be "dynamic" if is_post_base is true
+       table_type: QPACKTableType
+       name_index: uint32
+       huffman_encoded_value: bool
+       ? value_length: uint32
+       ? value: text
+
+       ; to represent the "indexed header field with post-base index"
+       ; header field type
+       is_post_base: bool .default false
+   }
+
+              Figure 46: LiteralHeaderFieldWithName definition
+
+7.2.3.  LiteralHeaderFieldWithoutName
+
+   LiteralHeaderFieldWithoutName = {
+       header_field_type: "literal_without_name"
+
+       ; the 3rd "N" bit
+       preserve_literal: bool
+       huffman_encoded_name: bool
+       ? name_length: uint32
+       ? name: text
+       huffman_encoded_value: bool
+       ? value_length: uint32
+       ? value: text
+   }
+
+            Figure 47: LiteralHeaderFieldWithoutName definition
+
+7.3.  QPACKHeaderBlockPrefix
+
+   QPACKHeaderBlockPrefix = {
+       required_insert_count: uint32
+       sign_bit: bool
+       delta_base: uint32
+   }
+
+                Figure 48: QPACKHeaderBlockPrefix definition
+
+7.4.  QPACKTableType
+
+   QPACKTableType = "static" /
+                    "dynamic"
+
+                    Figure 49: QPACKTableType definition
+
+8.  Security and Privacy Considerations
 
    The security and privacy considerations discussed in [QLOG-MAIN]
    apply to this document as well.
 
-7.  IANA Considerations
+9.  IANA Considerations
 
    There are no IANA considerations.
 
-8.  References
+10.  References
 
-8.1.  Normative References
+10.1.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -747,6 +1171,11 @@ Table of Contents
               2023, <https://datatracker.ietf.org/doc/html/draft-ietf-
               quic-qlog-quic-events-06>.
 
+   [QPACK]    Krasic, C., Bishop, M., and A. Frindell, Ed., "QPACK:
+              Field Compression for HTTP/3", RFC 9204,
+              DOI 10.17487/RFC9204, June 2022,
+              <https://www.rfc-editor.org/rfc/rfc9204>.
+
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
@@ -764,7 +1193,7 @@ Table of Contents
               Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
               2022, <https://www.rfc-editor.org/rfc/rfc9297>.
 
-8.2.  Informative References
+10.2.  Informative References
 
    [RFC8610]  Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -785,12 +1214,6 @@ Acknowledgements
 Change Log
 
    This section is to be removed before publishing as an RFC.
-
-Since draft-ietf-quic-qlog-h3-events-05:
-
-   *  Removed all qpack event definitions (#335)
-
-   *  Various editorial changes
 
 Since draft-ietf-quic-qlog-h3-events-04:
 
@@ -956,9 +1379,10 @@ Authors' Addresses
 
 
    Marten Seemann (editor)
+   Protocol Labs
    Email: martenseemann@gmail.com
 
 
    Lucas Pardue (editor)
    Cloudflare
-   Email: lucas@lucaspardue.com
+   Email: lucaspardue.24.7@gmail.com

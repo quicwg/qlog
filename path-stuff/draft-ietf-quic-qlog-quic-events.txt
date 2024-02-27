@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 27 July 2024                                               Meta
+Expires: 30 August 2024                                             Meta
                                                          M. Seemann, Ed.
-                                                                        
+                                                           Protocol Labs
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         24 January 2024
+                                                        27 February 2024
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 27 July 2024.
+   This Internet-Draft will expire on 30 August 2024.
 
 Copyright Notice
 
@@ -81,7 +81,8 @@ Table of Contents
      4.4.  connection_id_updated
      4.5.  spin_bit_updated
      4.6.  connection_state_updated
-     4.7.  mtu_updated
+     4.7.  path_assigned
+     4.8.  mtu_updated
    5.  QUIC events
      5.1.  version_information
      5.2.  alpn_information
@@ -99,6 +100,7 @@ Table of Contents
      5.14. frames_processed
      5.15. stream_data_moved
      5.16. datagram_data_moved
+     5.17. migration_state_updated
    6.  Security Events
      6.1.  key_updated
      6.2.  key_discarded
@@ -115,39 +117,40 @@ Table of Contents
      8.2.  ConnectionID
      8.3.  Owner
      8.4.  IPAddress and IPVersion
-     8.5.  PacketType
-     8.6.  PacketNumberSpace
-     8.7.  PacketHeader
-     8.8.  Token
-     8.9.  Stateless Reset Token
-     8.10. KeyType
-     8.11. ECN
-     8.12. QUIC Frames
-       8.12.1.  PaddingFrame
-       8.12.2.  PingFrame
-       8.12.3.  AckFrame
-       8.12.4.  ResetStreamFrame
-       8.12.5.  StopSendingFrame
-       8.12.6.  CryptoFrame
-       8.12.7.  NewTokenFrame
-       8.12.8.  StreamFrame
-       8.12.9.  MaxDataFrame
-       8.12.10. MaxStreamDataFrame
-       8.12.11. MaxStreamsFrame
-       8.12.12. DataBlockedFrame
-       8.12.13. StreamDataBlockedFrame
-       8.12.14. StreamsBlockedFrame
-       8.12.15. NewConnectionIDFrame
-       8.12.16. RetireConnectionIDFrame
-       8.12.17. PathChallengeFrame
-       8.12.18. PathResponseFrame
-       8.12.19. ConnectionCloseFrame
-       8.12.20. HandshakeDoneFrame
-       8.12.21. UnknownFrame
-       8.12.22. DatagramFrame
-       8.12.23. TransportError
-       8.12.24. ApplicationError
-       8.12.25. CryptoError
+     8.5.  PathEndpointInfo
+     8.6.  PacketType
+     8.7.  PacketNumberSpace
+     8.8.  PacketHeader
+     8.9.  Token
+     8.10. Stateless Reset Token
+     8.11. KeyType
+     8.12. ECN
+     8.13. QUIC Frames
+       8.13.1.  PaddingFrame
+       8.13.2.  PingFrame
+       8.13.3.  AckFrame
+       8.13.4.  ResetStreamFrame
+       8.13.5.  StopSendingFrame
+       8.13.6.  CryptoFrame
+       8.13.7.  NewTokenFrame
+       8.13.8.  StreamFrame
+       8.13.9.  MaxDataFrame
+       8.13.10. MaxStreamDataFrame
+       8.13.11. MaxStreamsFrame
+       8.13.12. DataBlockedFrame
+       8.13.13. StreamDataBlockedFrame
+       8.13.14. StreamsBlockedFrame
+       8.13.15. NewConnectionIDFrame
+       8.13.16. RetireConnectionIDFrame
+       8.13.17. PathChallengeFrame
+       8.13.18. PathResponseFrame
+       8.13.19. ConnectionCloseFrame
+       8.13.20. HandshakeDoneFrame
+       8.13.21. UnknownFrame
+       8.13.22. DatagramFrame
+       8.13.23. TransportError
+       8.13.24. ApplicationError
+       8.13.25. CryptoError
    9.  Security and Privacy Considerations
    10. IANA Considerations
    11. Normative References
@@ -189,7 +192,7 @@ Table of Contents
 
 2.  Overview
 
-   This document describes how the QUIC protocol can be expressed in
+   This document describes how the QUIC protocol is can be expressed in
    qlog using the schema defined in [QLOG-MAIN].  QUIC protocol events
    are defined with a category, a name (the concatenation of "category"
    and "event"), an "importance", an optional "trigger", and "data"
@@ -200,14 +203,14 @@ Table of Contents
    bottom of this document for clarity.
 
    When any event from this document is included in a qlog trace, the
-   protocol_type qlog array field MUST contain an entry with the value
+   "protocol_type" qlog array field MUST contain an entry with the value
    "QUIC".
 
-   When the qlog group_id field is used, it is recommended to use QUIC's
-   Original Destination Connection ID (ODCID, the CID chosen by the
-   client when first contacting the server), as this is the only value
-   that does not change over the course of the connection and can be
-   used to link more advanced QUIC packets (e.g., Retry, Version
+   When the qlog "group_id" field is used, it is recommended to use
+   QUIC's Original Destination Connection ID (ODCID, the CID chosen by
+   the client when first contacting the server), as this is the only
+   value that does not change over the course of the connection and can
+   be used to link more advanced QUIC packets (e.g., Retry, Version
    Negotiation) to a given connection.  Similarly, the ODCID should be
    used as the qlog filename or file identifier, potentially suffixed by
    the vantagepoint type (For example, abcd1234_server.qlog would
@@ -230,8 +233,8 @@ Table of Contents
 
    Note:  In some cases, the length fields are also explicitly reflected
       inside of packet headers.  For example, the QUIC STREAM frame has
-      a length field indicating its payload size.  Similarly, the QUIC
-      Long Header has a length field which is equal to the payload
+      a "length" field indicating its payload size.  Similarly, the QUIC
+      Long Header has a "length" field which is equal to the payload
       length plus the packet number length.  In these cases, those
       fields are intentionally preserved in the event definitions.  Even
       though this can lead to duplicate data when the full RawInfo is
@@ -242,7 +245,7 @@ Table of Contents
 
    A single qlog event trace is typically associated with a single QUIC
    connection.  However, for several types of events (for example, a
-   Section 5.7 event with trigger value of connection_unknown), it can
+   Section 5.7 event with trigger value of "connection_unknown"), it can
    be impossible to tie them to a specific QUIC connection, especially
    on the server.
 
@@ -268,8 +271,8 @@ Table of Contents
    categories: connectivity (Section 4), security (Section 6), quic
    Section 5, and recovery Section 7.
 
-   As described in Section 3.4.2 of [QLOG-MAIN], the qlog name field is
-   the concatenation of category and type.
+   As described in Section 3.4.2 of [QLOG-MAIN], the qlog "name" field
+   is the concatenation of category and type.
 
    Table 1 summarizes the name value of each event type that is defined
    in this specification.
@@ -289,7 +292,9 @@ Table of Contents
    +---------------------------------------+------------+--------------+
    | connectivity:connection_state_updated | Base       | Section 4.6  |
    +---------------------------------------+------------+--------------+
-   | connectivity:mtu_updated              | Extra      | Section 4.7  |
+   | connectivity:path_assigned            | Base       | Section 4.7  |
+   +---------------------------------------+------------+--------------+
+   | connectivity:mtu_updated              | Extra      | Section 4.8  |
    +---------------------------------------+------------+--------------+
    | quic:version_information              | Core       | Section 5.1  |
    +---------------------------------------+------------+--------------+
@@ -330,6 +335,9 @@ Table of Contents
    | quic:datagram_data_moved              | Base       | Section      |
    |                                       |            | 5.16         |
    +---------------------------------------+------------+--------------+
+   | quic:migration_state_updated          | Extra      | Section      |
+   |                                       |            | 5.17         |
+   +---------------------------------------+------------+--------------+
    | security:key_updated                  | Base       | Section 6.1  |
    +---------------------------------------+------------+--------------+
    | security:key_discarded                | Base       | Section 6.2  |
@@ -351,50 +359,54 @@ Table of Contents
 
                             Table 1: QUIC Events
 
-   QUIC events extend the $ProtocolEventData extension point defined in
+   QUIC events extend the $ProtocolEventBody extension point defined in
    [QLOG-MAIN].
 
-   QuicEventData = ConnectivityServerListening /
-                   ConnectivityConnectionStarted /
-                   ConnectivityConnectionClosed /
-                   ConnectivityConnectionIDUpdated /
-                   ConnectivitySpinBitUpdated /
-                   ConnectivityConnectionStateUpdated /
-                   ConnectivityMTUUpdated /
-                   SecurityKeyUpdated /
-                   SecurityKeyDiscarded /
-                   QUICVersionInformation /
-                   QUICALPNInformation /
-                   QUICParametersSet /
-                   QUICParametersRestored /
-                   QUICPacketSent /
-                   QUICPacketReceived /
-                   QUICPacketDropped /
-                   QUICPacketBuffered /
-                   QUICPacketsAcked /
-                   QUICDatagramsSent /
-                   QUICDatagramsReceived /
-                   QUICDatagramDropped /
-                   QUICStreamStateUpdated /
-                   QUICFramesProcessed /
-                   QUICStreamDataMoved /
-                   QUICDatagramDataMoved /
-                   RecoveryParametersSet /
-                   RecoveryMetricsUpdated /
-                   RecoveryCongestionStateUpdated /
-                   RecoveryLossTimerUpdated /
-                   RecoveryPacketLost
+   QuicEvents = ConnectivityServerListening /
+                ConnectivityConnectionStarted /
+                ConnectivityConnectionClosed /
+                ConnectivityConnectionIDUpdated /
+                ConnectivitySpinBitUpdated /
+                ConnectivityConnectionStateUpdated /
+                ConnectivityPathAssigned /
+                ConnectivityMTUUpdated /
+                SecurityKeyUpdated /
+                SecurityKeyDiscarded /
+                QUICVersionInformation /
+                QUICALPNInformation /
+                QUICParametersSet /
+                QUICParametersRestored /
+                QUICPacketSent /
+                QUICPacketReceived /
+                QUICPacketDropped /
+                QUICPacketBuffered /
+                QUICPacketsAcked /
+                QUICDatagramsSent /
+                QUICDatagramsReceived /
+                QUICDatagramDropped /
+                QUICStreamStateUpdated /
+                QUICFramesProcessed /
+                QUICStreamDataMoved /
+                QUICDatagramDataMoved /
+                RecoveryParametersSet /
+                RecoveryMetricsUpdated /
+                RecoveryCongestionStateUpdated /
+                RecoveryLossTimerUpdated /
+                RecoveryPacketLost
 
-   $ProtocolEventData /= QuicEventData
+   $ProtocolEventBody /= QuicEvents
 
-     Figure 1: QuicEventData definition and ProtocolEventData extension
+      Figure 1: QuicEvents definition and ProtocolEventBody extension
 
 4.  Connectivity events
 
 4.1.  server_listening
 
-   Emitted when the server starts accepting connections.  It has Extra
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Extra
+
+   Emitted when the server starts accepting connections.
+
+   Definition:
 
    ConnectivityServerListening = {
        ? ip_v4: IPAddress
@@ -414,12 +426,14 @@ Table of Contents
 
 4.2.  connection_started
 
-   The connection_started event is used for both attempting (client-
-   perspective) and accepting (server-perspective) new connections.
-   Note that while there is overlap with the connection_state_updated
-   event, this event is separate event in order to capture additional
-   data that can be useful to log.  It has Base importance level; see
-   Section 9.2 of [QLOG-MAIN].
+   Importance: Base
+
+   Used for both attempting (client-perspective) and accepting (server-
+   perspective) new connections.  Note that this event has overlap with
+   connection_state_updated and this is a separate event mainly because
+   of all the additional data that should be logged.
+
+   Definition:
 
    ConnectivityConnectionStarted = {
        ? ip_version: IPVersion
@@ -441,17 +455,17 @@ Table of Contents
 
 4.3.  connection_closed
 
-   The connection_closed event is used for logging when a connection was
-   closed, typically when an error or timeout occurred.  It has Base
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   Note that this event has overlap with the connection_state_updated
-   event, as well as the CONNECTION_CLOSE frame.  However, in practice,
-   when analyzing large deployments, it can be useful to have a single
-   event representing a connection_closed event, which also includes an
-   additional reason field to provide more information.  Furthermore, it
-   is useful to log closures due to timeouts, which are difficult to
-   reflect using the other options.
+   Used for logging when a connection was closed, typically when an
+   error or timeout occurred.  Note that this event has overlap with
+   connectivity:connection_state_updated, as well as the
+   CONNECTION_CLOSE frame.  However, in practice, when analyzing large
+   deployments, it can be useful to have a single event representing a
+   connection_closed event, which also includes an additional reason
+   field to provide additional information.  Additionally, it is useful
+   to log closures due to timeouts, which are difficult to reflect using
+   the other options.
 
    In QUIC there are two main connection-closing error categories:
    connection and application errors.  They have well-defined error
@@ -459,6 +473,8 @@ Table of Contents
    errors that occur that may or may not get mapped to the official
    error codes in implementation-specific ways.  As such, multiple error
    codes can be set on the same event to reflect this.
+
+   Definition:
 
    ConnectivityConnectionClosed = {
 
@@ -487,18 +503,21 @@ Table of Contents
 
 4.4.  connection_id_updated
 
-   The connection_id_updated event is emitted when either party updates
-   their current Connection ID.  As this typically happens only
-   sparingly over the course of a connection, using this event is more
-   efficient than logging the observed CID with each and every
-   packet_sent or packet_received events.  It has Base importance level;
-   see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   The connection_id_updated event is viewed from the perspective of the
-   endpoint applying the new ID.  As such, when the endpoint receives a
-   new connection ID from the peer, it will see the dst_ fields are set.
-   When the endpoint updates its own connection ID (e.g.,
-   NEW_CONNECTION_ID frame), it logs the src_ fields.
+   This event is emitted when either party updates their current
+   Connection ID.  As this typically happens only sparingly over the
+   course of a connection, this event allows loggers to be more
+   efficient than logging the observed CID with each packet in the
+   .header field of the "packet_sent" or "packet_received" events.
+
+   This is viewed from the perspective of the endpoint applying the new
+   id.  As such, when the endpoint receives a new connection id from the
+   peer, it will see the dst_ fields are set.  When the endpoint updates
+   its own connection id (e.g., NEW_CONNECTION_ID frame), it logs the
+   src_ fields.
+
+   Definition:
 
    ConnectivityConnectionIDUpdated = {
        owner: Owner
@@ -510,11 +529,12 @@ Table of Contents
 
 4.5.  spin_bit_updated
 
-   The spin_bit_updated event conveys information about the QUIC latency
-   spin bit; see Section 17.4 of [QUIC-TRANSPORT].  The event is emitted
-   when the spin bit changes value, it SHOULD NOT be emitted if the spin
-   bit is set without changing its value.  It has Base importance level;
-   see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
+
+   To be emitted when the spin bit changes value.  It SHOULD NOT be
+   emitted if the spin bit is set without changing its value.
+
+   Definition:
 
    ConnectivitySpinBitUpdated = {
        state: bool
@@ -524,16 +544,18 @@ Table of Contents
 
 4.6.  connection_state_updated
 
-   The connection_state_updated event is used to track progress through
-   QUIC's complex handshake and connection close procedures.  It has
-   Base importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   It is intended to provide exhaustive options to log each state
-   individually, but also provides a more basic, simpler set for
-   implementations less interested in tracking each smaller state
-   transition.  As such, users should not expect to see all these states
-   reflected in all qlogs and implementers should focus on support for
-   the SimpleConnectionState set.
+   This event is used to track progress through QUIC's complex handshake
+   and connection close procedures.  It is intended to provide
+   exhaustive options to log each state individually, but also provides
+   a more basic, simpler set for implementations less interested in
+   tracking each smaller state transition.  As such, users should not
+   expect to see -all- these states reflected in all qlogs and
+   implementers should focus on support for the SimpleConnectionState
+   set.
+
+   Definition:
 
    ConnectivityConnectionStateUpdated = {
        ? old: ConnectionState /
@@ -547,16 +569,16 @@ Table of Contents
        "attempted" /
        ; peer address validated by: client sent Handshake packet OR
        ; client used CONNID chosen by the server.
-       ; RFC 9000 Section 8.1
+       ; transport-draft-32, section-8.1
        "peer_validated" /
        "handshake_started" /
        ; 1 RTT can be sent, but handshake isn't done yet
        "early_write" /
        ; TLS handshake complete: Finished received and sent
-       ; RFC 9001 Section 4.1.1
+       ; tls-draft-32, section-4.1.1
        "handshake_complete" /
        ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
-       ; can be sent). RFC 9001 Section 4.1.2
+       ; can be sent). tls-draft-32, section-4.1.2
        "handshake_confirmed" /
        "closing" /
        ; connection_close sent/received
@@ -632,44 +654,99 @@ Table of Contents
 
       -  state = handshake_confirmed
 
-   Note:  connection_state_changed with a new state of attempted is the
-      same conceptual event as the connection_startedevent above from
-      the client's perspective.  Similarly, a state
-      ofclosingordrainingcorresponds to theconnection_closed` event.
+   Note:  connection_state_changed with a new state of "attempted" is
+      the same conceptual event as the connection_started event above
+      from the client's perspective.  Similarly, a state of "closing" or
+      "draining" corresponds to the connection_closed event.
 
-4.7.  mtu_updated
+4.7.  path_assigned
 
-   The mtu_updated event indicates that the estimated Path MTU was
-   updated.  This happens as part of the Path MTU discovery process.  It
-   has Extra importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
+
+   This event is used to associate a single PathID's value with other
+   parameters that describe a unique network path.
+
+   As described in [QLOG-MAIN], each qlog event can be linked to a
+   single network path by means of the top-level "path" field, whose
+   value is a PathID.  However, since it can be cumbersome to encode
+   additional path metadata (such as IP addresses or Connection IDs)
+   directly into the PathID, this event allows such an association to
+   happen separately.  As such, PathIDs can be short and unique, and can
+   even be updated to be associated with new metadata as the
+   connection's state evolves.
+
+   Definition:
+
+   ConnectivityPathAssigned = {
+       path_id: PathID
+
+       ; the information for traffic going towards the remote receiver
+       ? path_remote: PathEndpointInfo
+
+       ; the information for traffic coming in at the local endpoint
+       ? path_local: PathEndpointInfo
+   }
+
+               Figure 8: ConnectivityPathAssigned definition
+
+   Choosing the different path_id values is left up to the
+   implementation.  Some options include using a uniquely incrementing
+   integer, using the (first) Destination Connection ID associated with
+   a path (or its sequence number), or using (a hash of) the two
+   endpoint IP addresses.
+
+   It is important to note that the empty string ("") is a valid PathID
+   and that it is the default assigned to events that do not explicitly
+   set a "path" field.  Put differently, the initial path of a QUIC
+   connection on which the handshake occurs (see also Section 4.2) is
+   implicitly associated with the PathID with value "".  Associating
+   metadata with this default path is possible by logging the
+   ConnectivityPathAssigned event with a value of "" for the path_id
+   field.
+
+   As paths and their metadata can evolve over time, multiple
+   ConnectivityPathAssigned events can be emitted for each unique
+   PathID.  The latest event contains the most up-to-date information
+   for that PathID.  As such, the first time a PathID is seen in a
+   ConnectivityPathAssigned event, it is an indication that the path is
+   created.  Subsequent occurrences indicate the path is updated, while
+   a final occurrence with both path_local and path_remote fields
+   omitted implicitly indicates the path has been abandoned.
+
+4.8.  mtu_updated
+
+   Importance: Extra
 
    ConnectivityMTUUpdated = {
-     ? old: uint32
-     new: uint32
+     ? old: uint16
+     new: uint16
 
      ; at some point, MTU discovery stops, as a "good enough"
      ; packet size has been found
      ? done: bool .default false
    }
 
-                Figure 8: ConnectivityMTUUpdated definition
+                Figure 9: ConnectivityMTUUpdated definition
+
+   This event indicates that the estimated Path MTU was updated.  This
+   happens as part of the Path MTU discovery process.
 
 5.  QUIC events
 
 5.1.  version_information
 
-   The version_information event supports QUIC version negotiation; see
-   Section 6 of [QUIC-TRANSPORT].  It has Core importance level; see
-   Section 9.2 of [QLOG-MAIN].
+   Importance: Core
 
-   QUIC endpoints each have their own list of QUIC versions they
+   QUIC endpoints each have their own list of of QUIC versions they
    support.  The client uses the most likely version in their first
-   initial.  If the server does not support that version, it replies
-   with a Version Negotiation packet, which contains its supported
-   versions.  From this, the client selects a version.  The
-   version_information event aggregates all this information in a single
-   event type.  It also allows logging of supported versions at an
-   endpoint without actual version negotiation needing to happen.
+   initial.  If the server does support that version, it replies with a
+   version_negotiation packet, containing supported versions.  From
+   this, the client selects a version.  This event aggregates all this
+   information in a single event type.  It also allows logging of
+   supported versions at an endpoint without actual version negotiation
+   needing to happen.
+
+   Definition:
 
    QUICVersionInformation = {
        ? server_versions: [+ QuicVersion]
@@ -677,7 +754,7 @@ Table of Contents
        ? chosen_version: QuicVersion
    }
 
-                Figure 9: QUICVersionInformation definition
+                Figure 10: QUICVersionInformation definition
 
    Intended use:
 
@@ -691,22 +768,17 @@ Table of Contents
       server logs this event with server_versions set and
       client_versions to the single-element array containing the
       client's attempted version.  The absence of chosen_version implies
-      no overlap was found
+      no overlap was found.
 
    *  Upon receiving a version negotiation packet from the server, the
       client logs this event with client_versions set and
       server_versions to the versions in the version negotiation packet
       and chosen_version to the version it will use for the next initial
-      packet.  If the client receives a set of server_versions with no
-      viable overlap with its own supported versions, this event should
-      be logged without the chosen_version set
+      packet
 
 5.2.  alpn_information
 
-   The alpn_information event support application level protocol
-   negotiation over the QUIC transport; see Section 7.4 of
-   [QUIC-TRANSPORT].  It has Core importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   Importance: Core
 
    QUIC implementations each have their own list of application level
    protocols and versions thereof they support.  The client includes a
@@ -716,13 +788,15 @@ Table of Contents
    and communicates this back to the client.  If not, the connection is
    closed.
 
+   Definition:
+
    QUICALPNInformation = {
        ? server_alpns: [* text]
        ? client_alpns: [* text]
        ? chosen_alpn: text
    }
 
-                 Figure 10: QUICALPNInformation definition
+                 Figure 11: QUICALPNInformation definition
 
    Intended use:
 
@@ -743,12 +817,13 @@ Table of Contents
 
 5.3.  parameters_set
 
-   The parameters_set event groups settings from several different
-   sources (transport parameters, TLS ciphers, etc.) into a single
-   event.  This is done to minimize the amount of events and to decouple
-   conceptual setting impacts from their underlying mechanism for easier
-   high-level reasoning.  The event has Core importance level; see
-   Section 9.2 of [QLOG-MAIN].
+   Importance: Core
+
+   This event groups settings from several different sources (transport
+   parameters, TLS ciphers, etc.) into a single event.  This is done to
+   minimize the amount of events and to decouple conceptual setting
+   impacts from their underlying mechanism for easier high-level
+   reasoning.
 
    All these settings are typically set once and never change.  However,
    they are typically set at different times during the connection, so
@@ -756,9 +831,9 @@ Table of Contents
    different fields set.
 
    Note that some settings have two variations (one set locally, one
-   requested by the remote peer).  This is reflected in the owner field.
-   As such, this field MUST be correct for all settings included a
-   single event instance.  If you need to log settings from two sides,
+   requested by the remote peer).  This is reflected in the "owner"
+   field.  As such, this field MUST be correct for all settings included
+   a single event instance.  If you need to log settings from two sides,
    you MUST emit two separate event instances.
 
    In the case of connection resumption and 0-RTT, some of the server's
@@ -767,6 +842,8 @@ Table of Contents
    In these cases, utilize the separate parameters_restored event to
    indicate the initial values, and this event to indicate the updated
    values, as normal.
+
+   Definition:
 
    QUICParametersSet = {
        ? owner: Owner
@@ -816,23 +893,25 @@ Table of Contents
        stateless_reset_token: StatelessResetToken
    }
 
-                  Figure 11: QUICParametersSet definition
+                  Figure 12: QUICParametersSet definition
 
    Additionally, this event can contain any number of unspecified
-   fields.  This is to reflect setting of, for example, unknown
-   (greased) transport parameters or custom extensions.
+   fields.  This is to reflect setting of for example unknown (greased)
+   transport parameters or employed (proprietary) extensions.
 
 5.4.  parameters_restored
 
-   When using QUIC 0-RTT, clients are expected to remember and restore
-   the server's transport parameters from the previous connection.  The
-   parameters_restored event is used to indicate which parameters were
-   restored and to which values when utilizing 0-RTT.  It has Base
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   Note that not all transport parameters should be restored (many are
-   even prohibited from being re-utilized).  The ones listed here are
-   the ones expected to be useful for correct 0-RTT usage.
+   When using QUIC 0-RTT, clients are expected to remember and restore
+   the server's transport parameters from the previous connection.  This
+   event is used to indicate which parameters were restored and to which
+   values when utilizing 0-RTT.  Note that not all transport parameters
+   should be restored (many are even prohibited from being re-utilized).
+   The ones listed here are the ones expected to be useful for correct
+   0-RTT usage.
+
+   Definition:
 
    QUICParametersRestored = {
        ? disable_active_migration: bool
@@ -847,16 +926,17 @@ Table of Contents
        ? initial_max_streams_uni: uint64
    }
 
-                Figure 12: QUICParametersRestored definition
+                Figure 13: QUICParametersRestored definition
 
-   Note that, like the parameters_set event, this event can contain any
+   Note that, like parameters_set above, this event can contain any
    number of unspecified fields to allow for additional/custom
    parameters.
 
 5.5.  packet_sent
 
-   The packet_sent event indicates a QUIC-level packet was sent.  It has
-   Core importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Core
+
+   Definition:
 
    QUICPacketSent = {
        header: PacketHeader
@@ -877,32 +957,33 @@ Table of Contents
        ? is_mtu_probe_packet: bool .default false
 
        ? trigger:
-         ; RFC 9002 Section 6.1.1
+         ; draft-23 5.1.1
          "retransmit_reordered" /
-         ; RFC 9002 Section 6.1.2
+         ; draft-23 5.1.2
          "retransmit_timeout" /
-         ; RFC 9002 Section 6.2.4
+         ; draft-23 5.3.1
          "pto_probe" /
-         ; RFC 9002 6.2.3
+         ; draft-19 6.2
          "retransmit_crypto" /
          ; needed for some CCs to figure out bandwidth allocations
          ; when there are no normal sends
          "cc_bandwidth_probe"
    }
 
-                    Figure 13: QUICPacketSent definition
+                    Figure 14: QUICPacketSent definition
 
    The encryption_level and packet_number_space are not logged
    explicitly: the header.packet_type specifies this by inference
    (assuming correct implementation)
 
-   For more details on datagram_id, see Section 5.10.  It is only needed
-   when keeping track of packet coalescing.
+   For more details on "datagram_id", see Section 5.10.  It is only
+   needed when keeping track of packet coalescing.
 
 5.6.  packet_received
 
-   The packet_received event indicates a QUIC-level packet was received.
-   It has Core importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Core
+
+   Definition:
 
    QUICPacketReceived = {
        header: PacketHeader
@@ -927,23 +1008,26 @@ Table of Contents
            "keys_available"
    }
 
-                  Figure 14: QUICPacketReceived definition
+                  Figure 15: QUICPacketReceived definition
 
    The encryption_level and packet_number_space are not logged
    explicitly: the header.packet_type specifies this by inference
    (assuming correct implementation)
 
-   For more details on datagram_id, see Section 5.10.  It is only needed
-   when keeping track of packet coalescing.
+   For more details on "datagram_id", see Section 5.10.  It is only
+   needed when keeping track of packet coalescing.
 
 5.7.  packet_dropped
 
-   The packet_dropped event indicates a QUIC-level packet was dropped.
-   It has Base importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
+
+   This event indicates a QUIC-level packet was dropped.
 
    The trigger field indicates a general reason category for dropping
    the packet, while the details field can contain additional
    implementation-specific information.
+
+   Definition:
 
    QUICPacketDropped = {
 
@@ -958,13 +1042,12 @@ Table of Contents
            "rejected" /
            "unsupported" /
            "invalid" /
-           "duplicate" /
            "connection_unknown" /
            "decryption_failure" /
            "general"
    }
 
-                  Figure 15: QUICPacketDropped definition
+                  Figure 16: QUICPacketDropped definition
 
    Some example situations for each of the trigger categories include:
 
@@ -978,8 +1061,6 @@ Table of Contents
 
    *  invalid: packet parsing or validation error
 
-   *  duplicate: duplicate packet
-
    *  connection_unknown: packet does not relate to a known connection
       or Connection ID
 
@@ -988,15 +1069,18 @@ Table of Contents
 
    *  general: situations not clearly covered in the other categories
 
-   For more details on datagram_id, see Section 5.10.
+   For more details on "datagram_id", see Section 5.10.
 
 5.8.  packet_buffered
 
-   The packet_buffered event is emitted when a packet is buffered
-   because it cannot be processed yet.  Typically, this is because the
-   packet cannot be parsed yet, and thus only the full packet contents
-   can be logged when it was parsed in a packet_received event.  The
-   event has Base importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
+
+   This event is emitted when a packet is buffered because it cannot be
+   processed yet.  Typically, this is because the packet cannot be
+   parsed yet, and thus only the full packet contents can be logged when
+   it was parsed in a packet_received event.
+
+   Definition:
 
    QUICPacketBuffered = {
 
@@ -1014,30 +1098,32 @@ Table of Contents
            "keys_unavailable"
    }
 
-                  Figure 16: QUICPacketBuffered definition
+                  Figure 17: QUICPacketBuffered definition
 
-   For more details on datagram_id, see Section 5.10.  It is only needed
-   when keeping track of packet coalescing.
+   For more details on "datagram_id", see Section 5.10.  It is only
+   needed when keeping track of packet coalescing.
 
 5.9.  packets_acked
 
-   The packets_acked event is emitted when a (group of) sent packet(s)
-   is acknowledged by the remote peer _for the first time_. It has Extra
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Extra
 
-   This information could also be deduced from the contents of received
-   ACK frames.  However, ACK frames require additional processing logic
-   to determine when a given packet is acknowledged for the first time,
-   as QUIC uses ACK ranges which can include repeated ACKs.
-   Additionally, this event can be used by implementations that do not
-   log frame contents.
+   This event is emitted when a (group of) sent packet(s) is
+   acknowledged by the remote peer _for the first time_. This
+   information could also be deduced from the contents of received ACK
+   frames.  However, ACK frames require additional processing logic to
+   determine when a given packet is acknowledged for the first time, as
+   QUIC uses ACK ranges which can include repeated ACKs.  Additionally,
+   this event can be used by implementations that do not log frame
+   contents.
+
+   Definition:
 
    QUICPacketsAcked = {
        ? packet_number_space: PacketNumberSpace
        ? packet_numbers: [+ uint64]
    }
 
-                   Figure 17: QUICPacketsAcked definition
+                   Figure 18: QUICPacketsAcked definition
 
    If packet_number_space is omitted, it assumes the default value of
    PacketNumberSpace.application_data, as this is by far the most
@@ -1045,10 +1131,13 @@ Table of Contents
 
 5.10.  datagrams_sent
 
+   Importance: Extra
+
    When one or more UDP-level datagrams are passed to the socket.  This
    is useful for determining how QUIC packet buffers are drained to the
-   OS.  The event has Extra importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   OS.
+
+   Definition:
 
    QUICDatagramsSent = {
 
@@ -1067,26 +1156,29 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-                  Figure 18: QUICDatagramsSent definition
+                  Figure 19: QUICDatagramsSent definition
 
    Since QUIC implementations rarely control UDP logic directly, the raw
    data excludes UDP-level headers in all fields.
 
-   The datagram_id is a qlog-specific concept to allow tracking of QUIC
-   packet coalescing inside UDP datagrams.  Since QUIC generates many
-   UDP datagrams, unique identifiers are required to be able to track
-   them individually in qlog traces.  However, neither UDP nor QUIC
-   exchanges datagram identifiers on the wire.  Selecting identifier
-   values is thus left to qlog implementations, which should consider
-   how to generate unique values within the scope of their created
-   traces.
+   The "datagram_id" is a qlog-specific concept to allow tracking of
+   QUIC packet coalescing inside UDP datagrams.  Since QUIC generates
+   many UDP datagrams, unique identifiers are required to be able to
+   track them individually in qlog traces.  However, neither UDP nor
+   QUIC exchanges datagram identifiers on the wire.  Selecting
+   identifier values is thus left to qlog implementations, which should
+   consider how to generate unique values within the scope of their
+   created traces.
 
 5.11.  datagrams_received
 
+   Importance: Extra
+
    When one or more UDP-level datagrams are received from the socket.
    This is useful for determining how datagrams are passed to the user
-   space stack from the OS.  The event has Extra importance level; see
-   Section 9.2 of [QLOG-MAIN].
+   space stack from the OS.
+
+   Definition:
 
    QUICDatagramsReceived = {
 
@@ -1105,17 +1197,20 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-                Figure 19: QUICDatagramsReceived definition
+                Figure 20: QUICDatagramsReceived definition
 
-   For more details on datagram_ids, see Section 5.10.
+   For more details on "datagram_ids", see Section 5.10.
 
 5.12.  datagram_dropped
 
+   Importance: Extra
+
    When a UDP-level datagram is dropped.  This is typically done if it
    does not contain a valid QUIC packet.  If it does, but the QUIC
-   packet is dropped for other reasons, the packet_dropped event
-   (Section 5.7) should be used instead.  The event has Extra importance
-   level; see Section 9.2 of [QLOG-MAIN].
+   packet is dropped for other reasons, packet_dropped (Section 5.7)
+   should be used instead.
+
+   Definition:
 
    QUICDatagramDropped = {
 
@@ -1124,16 +1219,19 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 20: QUICDatagramDropped definition
+                 Figure 21: QUICDatagramDropped definition
 
 5.13.  stream_state_updated
 
-   The stream_state_updated event is emitted whenever the internal state
-   of a QUIC stream is updated; see Section 3 of [QUIC-TRANSPORT].  Most
-   of this can be inferred from several types of frames going over the
+   Importance: Base
+
+   This event is emitted whenever the internal state of a QUIC stream is
+   updated, as described in QUIC transport draft-23 section 3.  Most of
+   this can be inferred from several types of frames going over the
    wire, but it's much easier to have explicit signals for these state
-   changes.  The event has Base importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   changes.
+
+   Definition:
 
    StreamType = "unidirectional" /
                 "bidirectional"
@@ -1150,19 +1248,19 @@ Table of Contents
    }
 
    StreamState =
-       ; bidirectional stream states, RFC 9000 Section 3.4.
+       ; bidirectional stream states, draft-23 3.4.
        "idle" /
        "open" /
        "half_closed_local" /
        "half_closed_remote" /
        "closed" /
-       ; sending-side stream states, RFC 9000 Section 3.1.
+       ; sending-side stream states, draft-23 3.1.
        "ready" /
        "send" /
        "data_sent" /
        "reset_sent" /
        "reset_received" /
-       ; receive-side stream states, RFC 9000 Section 3.2.
+       ; receive-side stream states, draft-23 3.2.
        "receive" /
        "size_known" /
        "data_read" /
@@ -1173,7 +1271,7 @@ Table of Contents
        ; memory actually freed
        "destroyed"
 
-                Figure 21: QUICStreamStateUpdated definition
+                Figure 22: QUICStreamStateUpdated definition
 
    QUIC implementations SHOULD mainly log the simplified bidirectional
    (HTTP/2-alike) stream states (e.g., idle, open, closed) instead of
@@ -1183,29 +1281,29 @@ Table of Contents
 
 5.14.  frames_processed
 
-   The frame_processed event is intended to prevent a large
-   proliferation of specific purpose events (e.g., packets_acknowledged,
-   flow_control_updated, stream_data_received).  It has Extra importance
-   level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Extra
 
-   Implementations have the opportunity to (selectively) log this type
-   of signal without having to log packet-level details (e.g., in
-   packet_received).  Since for almost all cases, the effects of
-   applying a frame to the internal state of an implementation can be
-   inferred from that frame's contents, these events are aggregated into
-   this single frames_processed event.
+   This event's main goal is to prevent a large proliferation of
+   specific purpose events (e.g., packets_acknowledged,
+   flow_control_updated, stream_data_received).  Implementations have
+   the opportunity to (selectively) log this type of signal without
+   having to log packet-level details (e.g., in packet_received).  Since
+   for almost all cases, the effects of applying a frame to the internal
+   state of an implementation can be inferred from that frame's
+   contents, these events are aggregated into this single
+   "frames_processed" event.
 
-   The frame_processed event can be used to signal internal state change
-   not resulting directly from the actual "parsing" of a frame (e.g.,
-   the frame could have been parsed, data put into a buffer, then later
-   processed, then logged with this event).
+   This event can be used to signal internal state change not resulting
+   directly from the actual "parsing" of a frame (e.g., the frame could
+   have been parsed, data put into a buffer, then later processed, then
+   logged with this event).
 
-   The packet_received event can convey all constituent frames.  It is
-   not expected that the frames_processed event will also be used for a
-   redundant purpose.  Rather, implementations can use this event to
-   avoid having to log full packets or to convey extra information about
-   when frames are processed (for example, if frame processing is
-   deferred for any reason).
+   Implementations logging "packet_received" and which include all of
+   the packet's constituent frames therein, are not expected to emit
+   this "frames_processed" event.  Rather, implementations not wishing
+   to log full packets or that wish to explicitly convey extra
+   information about when frames are processed (if not directly tied to
+   their reception) can use this event.
 
    Note that for some events, this approach will lose some information
    (e.g., for which encryption level are packets being acknowledged?).
@@ -1214,25 +1312,26 @@ Table of Contents
 
    In some implementations, it can be difficult to log frames directly,
    even when using packet_sent and packet_received events.  For these
-   cases, the frames_processed event also contains the packet_numbers
-   field, which can be used to more explicitly link this event to the
-   packet_sent/received events.  The field is an array, which supports
-   using a single frames_processed event for multiple frames received
-   over multiple packets.  To map between frames and packets, the
-   position and order of entries in the frames and packet_numbers is
-   used.  If the optional packet_numbers field is used, each frame MUST
-   have a corresponding packet number at the same index.
+   cases, this event also contains the packet_numbers field, which can
+   be used to more explicitly link this event to the packet_sent/
+   received events.  The field is an array, which supports using a
+   single "frames_processed" event for multiple frames received over
+   multiple packets.  To map between frames and packets, the position
+   and order of entries in the "frames" and "packet_numbers" is used.
+   If the optional "packet_numbers" field is used, each frame MUST have
+   a corresponding packet number at the same index.
+
+   Definition:
 
    QUICFramesProcessed = {
        frames: [* $QuicFrame]
        ? packet_numbers: [* uint64]
    }
 
-                 Figure 22: QUICFramesProcessed definition
+                 Figure 23: QUICFramesProcessed definition
 
-   For example, an instance of the frames_processed event that
-   represents four STREAM frames received over two packets would have
-   the fields serialized as:
+   For example, an instance of this event that represents four STREAM
+   frames received over two packets would have the fields serialized as:
 
    "frames":[
      {"frame_type":"stream","stream_id":0,"offset":0,"length":500},
@@ -1249,28 +1348,28 @@ Table of Contents
 
 5.15.  stream_data_moved
 
-   The stream_data_moved event is used to indicate when QUIC stream data
-   moves between the different layers.  This helps make clear the flow
-   of data, how long data remains in various buffers, and the overheads
-   introduced by individual layers.  The event has Base importance
-   level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   For example, it can be useful to understand when when data moves from
-   an application protocol (e.g., HTTP) to QUIC stream buffers and vice
-   versa.  Similarly, when data moves from the application protocol
-   layer into a user-facing application such as a web browser.
+   Used to indicate when QUIC stream data moves between the different
+   layers (for example passing from the application protocol (e.g.,
+   HTTP) to QUIC stream buffers and vice versa) or between the
+   application protocol (e.g., HTTP) and the actual user application on
+   top (for example a browser engine).  This helps make clear the flow
+   of data, how long data remains in various buffers and the overheads
+   introduced by individual layers.
 
-   The stream_data_moved event can provide insight into whether received
-   data on a QUIC stream is moved to the application protocol
-   immediately (for example per received packet) or in larger batches
-   (for example, all QUIC packets are processed first and afterwards the
-   application layer reads from the streams with newly available data).
-   This can help identify bottlenecks, flow control issues, or
-   scheduling problems.
+   For example, this helps make clear whether received data on a QUIC
+   stream is moved to the application protocol immediately (for example
+   per received packet) or in larger batches (for example, all QUIC
+   packets are processed first and afterwards the application layer
+   reads from the streams with newly available data).  This in turn can
+   help identify bottlenecks, flow control issues or scheduling
+   problems.
 
    This event is only for data in QUIC streams.  For data in QUIC
-   Datagram Frames, see the datagram_data_moved event defined in
-   Section 5.16.
+   Datagram Frames, see Section 5.16.
+
+   Definition:
 
    QUICStreamDataMoved = {
        ? stream_id: uint64
@@ -1291,32 +1390,32 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 23: QUICStreamDataMoved definition
+                 Figure 24: QUICStreamDataMoved definition
 
 5.16.  datagram_data_moved
 
-   The datagram_data_moved event is used to indicate when QUIC Datagram
-   Frame data (see [RFC9221]) moves between the different layers.  This
-   helps make clear the flow of data, how long data remains in various
-   buffers, and the overheads introduced by individual layers.  The
-   event has Base importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   For example, passing from the application protocol (e.g.,
-   WebTransport) to QUIC Datagram Frame buffers and vice versa.
-   Similarly, when data moves from the application protocol layer into a
-   user-facing application such as a web browser.
+   Used to indicate when QUIC Datagram Frame data (see [RFC9221]) moves
+   between the different layers (for example passing from the
+   application protocol (e.g., WebTransport) to QUIC Datagram Frame
+   buffers and vice versa) or between the application protocol and the
+   actual user application on top (for example a gaming engine or media
+   playback software).  This helps make clear the flow of data, how long
+   data remains in various buffers and the overheads introduced by
+   individual layers.
 
-   The datagram_data_moved event can provide insight into whether
-   received data in a QUIC Datagram Frame is moved to the application
-   protocol immediately (for example per received packet) or in larger
-   batches (for example, all QUIC packets are processed first and
-   afterwards the application layer reads all Datagrams at once).  This
-   can help identify bottlenecks, flow control issues, or scheduling
-   problems.
+   For example, this helps make clear whether received data in a QUIC
+   Datagram Frame is moved to the application protocol immediately (for
+   example per received packet) or in larger batches (for example, all
+   QUIC packets are processed first and afterwards the application layer
+   reads all Datagrams at once).  This in turn can help identify
+   bottlenecks or scheduling problems.
 
    This event is only for data in QUIC Datagram Frames.  For data in
-   QUIC streams, see the stream_data_moved event defined in
-   Section 5.15.
+   QUIC streams, see Section 5.15.
+
+   Definition:
 
    QUICDatagramDataMoved = {
        ; byte length of the moved data
@@ -1334,14 +1433,69 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                Figure 24: QUICDatagramDataMoved definition
+                Figure 25: QUICDatagramDataMoved definition
+
+5.17.  migration_state_updated
+
+   Importance: Extra
+
+   Use to provide additional information when attempting (client-side)
+   connection migration.  While most details of the QUIC connection
+   migration process can be inferred by observing the PATH_CHALLENGE and
+   PATH_RESPONSE frames, in combination with the
+   ConnectivityPathAssigned event, it can be useful to explicitly log
+   the progression of the migration and potentially made decisions in a
+   single location/event.
+
+   Generally speaking, connection migration goes through two phases: a
+   probing phase (which is not always needed/present), and a migration
+   phase (which can be abandoned upon error).
+
+   Implementations that log per-path information in a
+   QUICMigrationStateUpdated, SHOULD also emit QUICPathAssigned events,
+   to serve as a ground-truth source of information.
+
+   Definition:
+
+   QUICMigrationStateUpdated = {
+       ? old: MigrationState
+       new: MigrationState
+
+       ? path_id: PathID
+
+       ; the information for traffic going towards the remote receiver
+       ? path_remote: PathEndpointInfo
+
+       ; the information for traffic coming in at the local endpoint
+       ? path_local: PathEndpointInfo
+   }
+
+   ; Note that MigrationState does not describe a full state machine
+   ; These entries are not necessarily chronological,
+   ; nor will they always all appear during a connection migration attempt.
+   MigrationState =
+       ; probing packets are sent, migration not initiated yet
+       "probing_started" /
+       ; did not get reply to probing packets, discarding path as an option
+       "probing_abandoned" /
+       ; received reply to probing packets, path is migration candidate
+       "probing_successful" /
+       ; non-probing packets are sent, attempting migration
+       "migration_started" /
+       ; something went wrong during the migration, abandoning attempt
+       "migration_abandoned" /
+       ; new path is now fully used, old path is discarded
+       "migration_complete"
+
+              Figure 26: QUICMigrationStateUpdated definition
 
 6.  Security Events
 
 6.1.  key_updated
 
-   The key_updated event has Base importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   Importance: Base
+
+   Definition:
 
    SecurityKeyUpdated = {
        key_type: KeyType
@@ -1358,12 +1512,13 @@ Table of Contents
            "local_update"
    }
 
-                  Figure 25: SecurityKeyUpdated definition
+                  Figure 27: SecurityKeyUpdated definition
 
 6.2.  key_discarded
 
-   The key_discarded event has Base importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   Importance: Base
+
+   Definition:
 
    SecurityKeyDiscarded = {
        key_type: KeyType
@@ -1379,7 +1534,7 @@ Table of Contents
            "local_update"
    }
 
-                 Figure 26: SecurityKeyDiscarded definition
+                 Figure 28: SecurityKeyDiscarded definition
 
 7.  Recovery events
 
@@ -1391,17 +1546,19 @@ Table of Contents
 
 7.1.  parameters_set
 
-   The parameters_set event groups initial parameters from both loss
-   detection and congestion control into a single event.  It has Base
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   All these settings are typically set once and never change.
-   Implementation that do, for some reason, change these parameters
-   during execution, MAY emit the parameters_set event more than once.
+   This event groups initial parameters from both loss detection and
+   congestion control into a single event.  All these settings are
+   typically set once and never change.  Implementation that do, for
+   some reason, change these parameters during execution, MAY emit the
+   parameters_set event twice.
+
+   Definition:
 
    RecoveryParametersSet = {
 
-       ; Loss detection, see RFC 9002 Appendix A.2
+       ; Loss detection, see recovery draft-23, Appendix A.2
        ; in amount of packets
        ? reordering_threshold: uint16
 
@@ -1414,7 +1571,7 @@ Table of Contents
        ; in ms
        ? initial_rtt:float32
 
-       ; congestion control, see RFC 9002 Appendix B.2
+       ; congestion control, Appendix B.1.
        ; in bytes. Note that this could be updated after pmtud
        ? max_datagram_size: uint32
 
@@ -1430,27 +1587,28 @@ Table of Contents
        ? persistent_congestion_threshold: uint16
    }
 
-                Figure 27: RecoveryParametersSet definition
+                Figure 29: RecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
 
 7.2.  metrics_updated
 
-   The metrics_updated event is emitted when one or more of the
-   observable recovery metrics changes value.  It has Core importance
-   level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Core
 
-   This event SHOULD group all possible metric updates that happen at or
-   around the same time in a single event (e.g., if min_rtt and
-   smoothed_rtt change at the same time, they should be bundled in a
-   single metrics_updated entry, rather than split out into two).
-   Consequently, a metrics_updated event is only guaranteed to contain
-   at least one of the listed metrics.
+   This event is emitted when one or more of the observable recovery
+   metrics changes value.  This event SHOULD group all possible metric
+   updates that happen at or around the same time in a single event
+   (e.g., if min_rtt and smoothed_rtt change at the same time, they
+   should be bundled in a single metrics_updated entry, rather than
+   split out into two).  Consequently, a metrics_updated event is only
+   guaranteed to contain at least one of the listed metrics.
+
+   Definition:
 
    RecoveryMetricsUpdated = {
 
-       ; Loss detection, see RFC 9002 Appendix A.3
+       ; Loss detection, see recovery draft-23, Appendix A.3
        ; all following rtt fields are expressed in ms
        ? min_rtt: float32
        ? smoothed_rtt: float32
@@ -1458,7 +1616,7 @@ Table of Contents
        ? rtt_variance: float32
        ? pto_count: uint16
 
-       ; Congestion control, see RFC 9002 Appendix B.2.
+       ; Congestion control, Appendix B.2.
        ; in bytes
        ? congestion_window: uint64
        ? bytes_in_flight: uint64
@@ -1474,7 +1632,7 @@ Table of Contents
        ? pacing_rate: uint64
    }
 
-                Figure 28: RecoveryMetricsUpdated definition
+                Figure 30: RecoveryMetricsUpdated definition
 
    In order to make logging easier, implementations MAY log values even
    if they are the same as previously reported values (e.g., two
@@ -1482,16 +1640,16 @@ Table of Contents
    same value for min_rtt).  However, applications SHOULD try to log
    only actual updates to values.
 
-   Additionally, the metrics_updated event can contain any number of
-   unspecified fields to support different recovery approaches.
+   Additionally, this event can contain any number of unspecified fields
+   to support different recovery approaches.
 
 7.3.  congestion_state_updated
 
-   The congestion_state_updated event signifies when the congestion
-   controller enters a significant new state and changes its behaviour.
-   It has Base importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Base
 
-   The event is generic to support different Congestion Control
+   This event signifies when the congestion controller enters a
+   significant new state and changes its behaviour.  This event's
+   definition is kept generic to support different Congestion Control
    algorithms.  For example, for the algorithm defined in the Recovery
    draft ("enhanced" New Reno), the following states are defined:
 
@@ -1503,6 +1661,8 @@ Table of Contents
 
    *  recovery
 
+   Definition:
+
    RecoveryCongestionStateUpdated = {
        ? old: text
        new: text
@@ -1511,20 +1671,19 @@ Table of Contents
            "ECN"
    }
 
-            Figure 29: RecoveryCongestionStateUpdated definition
+            Figure 31: RecoveryCongestionStateUpdated definition
 
-   The trigger field SHOULD be logged if there are multiple ways in
+   The "trigger" field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
    can only be due to a single event occurring (e.g., slow start is
    exited only when ssthresh is exceeded).
 
 7.4.  loss_timer_updated
 
-   The loss_timer_updated event is emitted when a recovery loss timer
-   changes state.  It has Extra importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   Importance: Extra
 
-   The three main event types are:
+   This event is emitted when a recovery loss timer changes state.  The
+   three main event types are:
 
    *  set: the timer is set with a delta timeout for when it will
       trigger next
@@ -1535,12 +1694,14 @@ Table of Contents
    *  cancelled: when a timer is cancelled (e.g., all outstanding
       packets are acknowledged, start idle period)
 
-   In order to indicate an active timer's timeout update, a new set
+   In order to indicate an active timer's timeout update, a new "set"
    event is used.
+
+   Definition:
 
    RecoveryLossTimerUpdated = {
 
-       ; called "mode" in RFC 9002 A.9.
+       ; called "mode" in draft-23 A.9.
        ? timer_type: "ack" /
                      "pto"
        ? packet_number_space: PacketNumberSpace
@@ -1553,17 +1714,18 @@ Table of Contents
        ? delta: float32
    }
 
-               Figure 30: RecoveryLossTimerUpdated definition
+               Figure 32: RecoveryLossTimerUpdated definition
 
 7.5.  packet_lost
 
-   The packet_lost event is emitted when a packet is deemed lost by loss
-   detection.  It has Core importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   Importance: Core
 
-   It is RECOMMENDED to populate the optional trigger field in order to
-   help disambiguate among the various possible causes of a loss
+   This event is emitted when a packet is deemed lost by loss detection.
+   It is RECOMMENDED to populate the optional "trigger" field in order
+   to help disambiguate among the various possible causes of a loss
    declaration.
+
+   Definition:
 
    RecoveryPacketLost = {
 
@@ -1581,18 +1743,18 @@ Table of Contents
            "pto_expired"
    }
 
-                  Figure 31: RecoveryPacketLost definition
+                  Figure 33: RecoveryPacketLost definition
 
 7.6.  marked_for_retransmit
 
-   The marked_for_retransmit event indicates which data was marked for
-   retransmission upon detection of packet loss (see packet_lost).  It
-   has Extra importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Extra
 
-   Similar to the reasoning for the frames_processed event, in order to
-   keep the amount of different events low, this signal is grouped into
-   in a single event based on existing QUIC frame definitions for all
-   types of retransmittable data.
+   This event indicates which data was marked for retransmit upon
+   detecting a packet loss (see packet_lost).  Similar to the reasoning
+   for the "frames_processed" event, in order to keep the amount of
+   different events low, this signal is grouped into in a single event
+   based on existing QUIC frame definitions for all types of
+   retransmittable data.
 
    Implementations retransmitting full packets or frames directly can
    just log the constituent frames of the lost packet here (or do away
@@ -1608,17 +1770,20 @@ Table of Contents
    events (e.g., looking at overlapping stream data offsets and length,
    one can determine when data was retransmitted).
 
+   Definition:
+
    RecoveryMarkedForRetransmit = {
        frames: [+ $QuicFrame]
    }
 
-             Figure 32: RecoveryMarkedForRetransmit definition
+             Figure 34: RecoveryMarkedForRetransmit definition
 
 7.7.  ecn_state_updated
 
-   The ecn_state_updated event indicates a progression in the ECN state
-   machine as described in section A.4 of [QUIC-TRANSPORT].  It has
-   Extra importance level; see Section 9.2 of [QLOG-MAIN].
+   Importance: Extra
+
+   This event indicates a progression in the ECN state machine as
+   described in section A.4 of [QUIC-TRANSPORT].
 
    ECNStateUpdated = {
       ? old: ECNState
@@ -1637,7 +1802,7 @@ Table of Contents
      ; sends packets with ECT(0) marking
      "capable"
 
-                   Figure 33: ECNStateUpdated definition
+                   Figure 35: ECNStateUpdated definition
 
 8.  QUIC data field definitions
 
@@ -1645,38 +1810,66 @@ Table of Contents
 
    QuicVersion = hexstring
 
-                     Figure 34: QuicVersion definition
+                     Figure 36: QuicVersion definition
 
 8.2.  ConnectionID
 
    ConnectionID = hexstring
 
-                     Figure 35: ConnectionID definition
+                     Figure 37: ConnectionID definition
 
 8.3.  Owner
 
    Owner = "local" /
            "remote"
 
-                        Figure 36: Owner definition
+                        Figure 38: Owner definition
 
 8.4.  IPAddress and IPVersion
 
    ; an IPAddress can either be a "human readable" form
    ; (e.g., "127.0.0.1" for v4 or
    ; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
-   ; use a raw byte-form (as the string forms can be ambiguous)
+   ; use a raw byte-form (as the string forms can be ambiguous).
+   ; Additionally, a hash-based or redacted representation
+   ; can be used if needed for privacy or security reasons.
    IPAddress = text /
                hexstring
 
-                      Figure 37: IPAddress definition
+                      Figure 39: IPAddress definition
 
    IPVersion = "v4" /
                "v6"
 
-                      Figure 38: IPVersion definition
+                      Figure 40: IPVersion definition
 
-8.5.  PacketType
+8.5.  PathEndpointInfo
+
+   PathEndpointInfo indicates a single half/direction of a path.  A full
+   path is comprised of two halves.  Firstly: the server sends to the
+   remote client IP + port using a specific destination Connection ID.
+   Secondly: the client sends to the remote server IP + port using a
+   different destination Connection ID.
+
+   As such, structures logging path information SHOULD include two
+   different PathEndpointInfo instances, one for each half of the path.
+
+   PathEndpointInfo = {
+       ? ip_v4: IPAddress
+       ? ip_v6: IPAddress
+       ? port_v4: uint16
+       ? port_v6: uint16
+
+       ; Even though usually only a single ConnectionID
+       ; is associated with a given path at a time,
+       ; there are situations where there can be an overlap
+       ; or a need to keep track of previous ConnectionIDs
+       ? connection_ids: [+ ConnectionID]
+   }
+
+                   Figure 41: PathEndpointInfo definition
+
+8.6.  PacketType
 
    PacketType = "initial" /
                 "handshake" /
@@ -1687,17 +1880,17 @@ Table of Contents
                 "stateless_reset" /
                 "unknown"
 
-                      Figure 39: PacketType definition
+                      Figure 42: PacketType definition
 
-8.6.  PacketNumberSpace
+8.7.  PacketNumberSpace
 
    PacketNumberSpace = "initial" /
                        "handshake" /
                        "application_data"
 
-                  Figure 40: PacketNumberSpace definition
+                  Figure 43: PacketNumberSpace definition
 
-8.7.  PacketHeader
+8.8.  PacketHeader
 
    PacketHeader = {
        ? quic_bit: bool .default true
@@ -1729,9 +1922,9 @@ Table of Contents
        ? dcid: ConnectionID
    }
 
-                     Figure 41: PacketHeader definition
+                     Figure 44: PacketHeader definition
 
-8.8.  Token
+8.9.  Token
 
    Token = {
        ? type: "retry" /
@@ -1745,7 +1938,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                        Figure 42: Token definition
+                        Figure 45: Token definition
 
    The token carried in an Initial packet can either be a retry token
    from a Retry packet, or one originally provided by the server in a
@@ -1753,18 +1946,18 @@ Table of Contents
    validation purposes).  Retry and resumption tokens typically contain
    encoded metadata to check the token's validity when it is used, but
    this metadata and its format is implementation specific.  For that,
-   Token includes a general-purpose details field.
+   this event includes a general-purpose "details" field.
 
-8.9.  Stateless Reset Token
+8.10.  Stateless Reset Token
 
    StatelessResetToken = hexstring .size 16
 
-                Figure 43: Stateless Reset Token definition
+                Figure 46: Stateless Reset Token definition
 
    The stateless reset token is carried in stateless reset packets, in
    transport parameters and in NEW_CONNECTION_ID frames.
 
-8.10.  KeyType
+8.11.  KeyType
 
    KeyType = "server_initial_secret" /
              "client_initial_secret" /
@@ -1775,17 +1968,17 @@ Table of Contents
              "server_1rtt_secret" /
              "client_1rtt_secret"
 
-                       Figure 44: KeyType definition
+                       Figure 47: KeyType definition
 
-8.11.  ECN
+8.12.  ECN
 
    ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 
-                         Figure 45: ECN definition
+                         Figure 48: ECN definition
 
    The ECN bits carried in the IP header.
 
-8.12.  QUIC Frames
+8.13.  QUIC Frames
 
    The generic $QuicFrame is defined here as a CDDL extension point (a
    "socket" or "plug").  It can be extended to support additional QUIC
@@ -1796,7 +1989,7 @@ Table of Contents
        * text => any
    }
 
-                    Figure 46: QuicFrame plug definition
+                    Figure 49: QuicFrame plug definition
 
    The QUIC frame types defined in this document are as follows:
 
@@ -1825,9 +2018,9 @@ Table of Contents
 
    $QuicFrame /= QuicBaseFrames
 
-                    Figure 47: QuicBaseFrames definition
+                    Figure 50: QuicBaseFrames definition
 
-8.12.1.  PaddingFrame
+8.13.1.  PaddingFrame
 
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
@@ -1846,9 +2039,9 @@ Table of Contents
        payload_length: uint32
    }
 
-                     Figure 48: PaddingFrame definition
+                     Figure 51: PaddingFrame definition
 
-8.12.2.  PingFrame
+8.13.2.  PingFrame
 
    PingFrame = {
        frame_type: "ping"
@@ -1858,9 +2051,9 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                      Figure 49: PingFrame definition
+                      Figure 52: PingFrame definition
 
-8.12.3.  AckFrame
+8.13.3.  AckFrame
 
    ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
    ; For two numbers:
@@ -1889,7 +2082,7 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                       Figure 50: AckFrame definition
+                       Figure 53: AckFrame definition
 
    Note that the packet ranges in AckFrame.acked_ranges do not
    necessarily have to be ordered (e.g., [[5,9],[1,4]] is a valid
@@ -1900,13 +2093,13 @@ Table of Contents
    that case, implementers SHOULD log [120] instead and tools MUST be
    able to deal with both notations.
 
-8.12.4.  ResetStreamFrame
+8.13.4.  ResetStreamFrame
 
    ResetStreamFrame = {
        frame_type: "reset_stream"
        stream_id: uint64
        error_code: $ApplicationError /
-                   uint64
+                   uint32
 
        ; in bytes
        final_size: uint64
@@ -1916,45 +2109,44 @@ Table of Contents
        ? payload_length: uint32
    }
 
-                   Figure 51: ResetStreamFrame definition
+                   Figure 54: ResetStreamFrame definition
 
-8.12.5.  StopSendingFrame
+8.13.5.  StopSendingFrame
 
    StopSendingFrame = {
        frame_type: "stop_sending"
        stream_id: uint64
        error_code: $ApplicationError /
-                   uint64
+                   uint32
 
        ; total frame length, including frame header
        ? length: uint32
        ? payload_length: uint32
    }
 
-                   Figure 52: StopSendingFrame definition
+                   Figure 55: StopSendingFrame definition
 
-8.12.6.  CryptoFrame
+8.13.6.  CryptoFrame
 
    CryptoFrame = {
        frame_type: "crypto"
        offset: uint64
        length: uint64
        ? payload_length: uint32
-       ? raw: RawInfo
    }
 
-                     Figure 53: CryptoFrame definition
+                     Figure 56: CryptoFrame definition
 
-8.12.7.  NewTokenFrame
+8.13.7.  NewTokenFrame
 
    NewTokenFrame = {
      frame_type: "new_token"
      token: Token
    }
 
-                    Figure 54: NewTokenFrame definition
+                    Figure 57: NewTokenFrame definition
 
-8.12.8.  StreamFrame
+8.13.8.  StreamFrame
 
    StreamFrame = {
        frame_type: "stream"
@@ -1972,18 +2164,18 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 55: StreamFrame definition
+                     Figure 58: StreamFrame definition
 
-8.12.9.  MaxDataFrame
+8.13.9.  MaxDataFrame
 
    MaxDataFrame = {
      frame_type: "max_data"
      maximum: uint64
    }
 
-                     Figure 56: MaxDataFrame definition
+                     Figure 59: MaxDataFrame definition
 
-8.12.10.  MaxStreamDataFrame
+8.13.10.  MaxStreamDataFrame
 
    MaxStreamDataFrame = {
      frame_type: "max_stream_data"
@@ -1991,9 +2183,9 @@ Table of Contents
      maximum: uint64
    }
 
-                  Figure 57: MaxStreamDataFrame definition
+                  Figure 60: MaxStreamDataFrame definition
 
-8.12.11.  MaxStreamsFrame
+8.13.11.  MaxStreamsFrame
 
    MaxStreamsFrame = {
      frame_type: "max_streams"
@@ -2001,18 +2193,18 @@ Table of Contents
      maximum: uint64
    }
 
-                   Figure 58: MaxStreamsFrame definition
+                   Figure 61: MaxStreamsFrame definition
 
-8.12.12.  DataBlockedFrame
+8.13.12.  DataBlockedFrame
 
    DataBlockedFrame = {
      frame_type: "data_blocked"
      limit: uint64
    }
 
-                   Figure 59: DataBlockedFrame definition
+                   Figure 62: DataBlockedFrame definition
 
-8.12.13.  StreamDataBlockedFrame
+8.13.13.  StreamDataBlockedFrame
 
    StreamDataBlockedFrame = {
      frame_type: "stream_data_blocked"
@@ -2020,9 +2212,9 @@ Table of Contents
      limit: uint64
    }
 
-                Figure 60: StreamDataBlockedFrame definition
+                Figure 63: StreamDataBlockedFrame definition
 
-8.12.14.  StreamsBlockedFrame
+8.13.14.  StreamsBlockedFrame
 
    StreamsBlockedFrame = {
      frame_type: "streams_blocked"
@@ -2030,9 +2222,9 @@ Table of Contents
      limit: uint64
    }
 
-                 Figure 61: StreamsBlockedFrame definition
+                 Figure 64: StreamsBlockedFrame definition
 
-8.12.15.  NewConnectionIDFrame
+8.13.15.  NewConnectionIDFrame
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
@@ -2046,18 +2238,18 @@ Table of Contents
      ? stateless_reset_token: StatelessResetToken
    }
 
-                 Figure 62: NewConnectionIDFrame definition
+                 Figure 65: NewConnectionIDFrame definition
 
-8.12.16.  RetireConnectionIDFrame
+8.13.16.  RetireConnectionIDFrame
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
      sequence_number: uint32
    }
 
-               Figure 63: RetireConnectionIDFrame definition
+               Figure 66: RetireConnectionIDFrame definition
 
-8.12.17.  PathChallengeFrame
+8.13.17.  PathChallengeFrame
 
    PathChallengeFrame = {
      frame_type: "path_challenge"
@@ -2066,9 +2258,9 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 64: PathChallengeFrame definition
+                  Figure 67: PathChallengeFrame definition
 
-8.12.18.  PathResponseFrame
+8.13.18.  PathResponseFrame
 
    PathResponseFrame = {
      frame_type: "path_response"
@@ -2077,9 +2269,9 @@ Table of Contents
      ? data: hexstring
    }
 
-                  Figure 65: PathResponseFrame definition
+                  Figure 68: PathResponseFrame definition
 
-8.12.19.  ConnectionCloseFrame
+8.13.19.  ConnectionCloseFrame
 
    The error_code_value field is the numerical value without VLIE
    encoding.  This is useful because some error types are spread out
@@ -2093,7 +2285,7 @@ Table of Contents
        ? error_space: ErrorSpace
        ? error_code: TransportError /
                      $ApplicationError /
-                     uint64
+                     uint32
        ? error_code_value: uint64
        ? reason: text
 
@@ -2103,17 +2295,17 @@ Table of Contents
                              text
    }
 
-                 Figure 66: ConnectionCloseFrame definition
+                 Figure 69: ConnectionCloseFrame definition
 
-8.12.20.  HandshakeDoneFrame
+8.13.20.  HandshakeDoneFrame
 
    HandshakeDoneFrame = {
      frame_type: "handshake_done";
    }
 
-                  Figure 67: HandshakeDoneFrame definition
+                  Figure 70: HandshakeDoneFrame definition
 
-8.12.21.  UnknownFrame
+8.13.21.  UnknownFrame
 
    The frame_type_value field is the numerical value without VLIE
    encoding.
@@ -2124,9 +2316,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 68: UnknownFrame definition
+                     Figure 71: UnknownFrame definition
 
-8.12.22.  DatagramFrame
+8.13.22.  DatagramFrame
 
    The QUIC DATAGRAM frame is defined in Section 4 of [RFC9221].
 
@@ -2136,9 +2328,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 69: DatagramFrame definition
+                    Figure 72: DatagramFrame definition
 
-8.12.23.  TransportError
+8.13.23.  TransportError
 
    TransportError = "no_error" /
                     "internal_error" /
@@ -2160,9 +2352,9 @@ Table of Contents
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
-                    Figure 70: TransportError definition
+                    Figure 73: TransportError definition
 
-8.12.24.  ApplicationError
+8.13.24.  ApplicationError
 
    By definition, an application error is defined by the application-
    level protocol running on top of QUIC (e.g., HTTP/3).
@@ -2178,7 +2370,7 @@ Table of Contents
    $ApplicationError /= "new_error_name" /
                         "another_new_error_name"
 
-8.12.25.  CryptoError
+8.13.25.  CryptoError
 
    These errors are defined in the TLS document as "A TLS alert is
    turned into a QUIC connection error by converting the one-byte alert
@@ -2194,7 +2386,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 71: CryptoError definition
+                     Figure 74: CryptoError definition
 
 9.  Security and Privacy Considerations
 
@@ -2455,9 +2647,10 @@ Authors' Addresses
 
 
    Marten Seemann (editor)
+   Protocol Labs
    Email: martenseemann@gmail.com
 
 
    Lucas Pardue (editor)
    Cloudflare
-   Email: lucas@lucaspardue.com
+   Email: lucaspardue.24.7@gmail.com
