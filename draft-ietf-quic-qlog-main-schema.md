@@ -710,7 +710,7 @@ could be serialized as
 
 ## Path {#path-field}
 
-A qlog event can be associated with a single network "path" (usually, but not
+A qlog event can be associated with a single "network path" (usually, but not
 always, identified by a 4-tuple of IP addresses and ports). In many cases, the
 path will be the same for all events in a given trace, and does not need to be
 logged explicitly with each event. In this case, the "path" field can be omitted
@@ -718,7 +718,7 @@ logged explicitly with each event. In this case, the "path" field can be omitted
 "common_fields" instead (see {{common-fields}}).
 
 However, in some situations, such as during QUIC's Connection Migration or when
-using MultiPath features, it is useful to be able to split events across
+using Multipath features, it is useful to be able to split events across
 multiple (concurrent) paths.
 
 Definition:
@@ -730,7 +730,7 @@ PathID = text .default ""
 
 
 The "path" field is an identifier that is associated with a single network path.
-This document intentionally does not further define how to choose this
+This document intentionally does not define further how to choose this
 identifier's value per-path or how to potentially log other parameters that can
 be associated with such a path. This is left for other documents. Implementers
 are free to encode path information directly into the PathID or to log
