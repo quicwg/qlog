@@ -14,7 +14,7 @@ endif
 cddl:
 	@for f in $(drafts_source); do \
 	    echo "Validating $$f"; \
-	    ./cddl_validate.sh $$f > /tmp/foo 2>&1 ; \
+	    ./cddl_validate.sh $$f > /tmp/foo-$$f 2>&1 ; \
 	    if [ $$? -eq 0 ]; then \
 	        echo "  OK"; \
 	    else \
