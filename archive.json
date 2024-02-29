@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-02-27T00:42:51.623913+00:00",
+  "timestamp": "2024-02-29T00:43:52.630717+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -5899,7 +5899,7 @@
       ],
       "body": "Once data for a stream is sent in a packet, it has to remain in some form of retransmission buffer (either a separate buffer or as ranges in the main stream buffer or ...) until the data is ACKed as received, only then can it be discarded completely. \r\n\r\nAt this time, there is no way to track how much sent-but-unacked data is outstanding for a given stream. \r\n\r\nThe most organic way to do this seems to be to add a new target to the `data_moved` event. We currently have `\"user\",\"application\",\"transport\",\"network\"`, where we might regard \"network\" as being \"sent but unacked\", but then we still lack a \"discarded\" state. \r\n\r\nBikeshedding is possible on the name: \"discarded\", \"resolved\", \"acknowledged\", ... as conceptually we could even replace the \"user\" target with this one as well, and saying that indicates the data has left the \"network protocol stack\" (either on the sender or receiver side), terming it as \"handled\"/\"resolved\" would make sense there.\r\n\r\ncc @LPardue ",
       "createdAt": "2022-02-11T08:39:33Z",
-      "updatedAt": "2022-02-11T08:54:11Z",
+      "updatedAt": "2024-02-28T10:59:13Z",
       "closedAt": null,
       "comments": [
         {
@@ -5908,6 +5908,13 @@
           "body": "There's two transitions here:\r\n\r\nSend side: transport -> $foo\r\nReceive side: application -> $bar\r\n\r\n$bar I think is sufficiently expressed by \"user\" in my opinion. \r\n\r\nFor $foo, it's a bit tricky because the current values are all entities, while you've proposed non-entity terms here. Some additional suggestions would be \"null\", \"free\", or \"terminal\" (as in terminal state, not a bash terminal). \r\n\r\nThe nice thing about modelling a discarding transition is that it can also be used for stream resets. Helps to understand the point in time a transport implementation actually frees any buffers, independent of the RESET_STREAM frame.",
           "createdAt": "2022-02-11T08:54:11Z",
           "updatedAt": "2022-02-11T08:54:11Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This seems related (at least a bit) to https://github.com/quicwg/qlog/pull/396.\r\n\r\nI'm not sure we still want to go down this road (also don't remember what first triggered opening this issue). \r\nAs it is, it seems like this is something that can be done on a per-implementation basis if needed (using the mechanism I described above), which probably makes most sense since this is mostly for debugging internal memory management, which is unlikely to be the same across stacks (and unlikely to be able to properly use generalized tooling). \r\n\r\nProposal: close without action. What do you think @LPardue ?",
+          "createdAt": "2024-02-28T10:59:12Z",
+          "updatedAt": "2024-02-28T10:59:12Z"
         }
       ]
     },
@@ -7513,7 +7520,7 @@
       "id": "I_kwDOCrLn6M55PSHD",
       "title": "Edit down the security section",
       "url": "https://github.com/quicwg/qlog/issues/358",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -7522,8 +7529,8 @@
       ],
       "body": "We've had comments it's long. Let's look for opportunities to shave text.",
       "createdAt": "2023-12-09T20:57:05Z",
-      "updatedAt": "2023-12-09T20:57:05Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-28T13:54:14Z",
+      "closedAt": "2024-02-28T13:54:14Z",
       "comments": []
     },
     {
@@ -7531,15 +7538,15 @@
       "id": "I_kwDOCrLn6M58lt7T",
       "title": "Improve connectivity:connection_closed",
       "url": "https://github.com/quicwg/qlog/issues/366",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_closed:\r\n\r\n  This is missing the frame type field in the QUIC CONNECTION_CLOSE\r\n  frame which is rather useful information.\r\n\r\n  connection_code can be a string or a uint32, but QUIC uses a variable\r\n  length integer here and thus this can be up to 62 bits. Same for the\r\n  application_code.\r\n\r\n  It is up to the decoder to infer by presence of connection_code or\r\n  application_code to infer whether this was an application or transport\r\n  CONNECTION_CLOSE. But this requires it to log such a value. It would\r\n  be nice if this can be communicated without necessarily knowing the\r\n  actual value. Consider either adding a field to distinguish between\r\n  transport and app errors or replacing the \"error\" field of \"trigger\"\r\n  with \"app_error\" and \"transport_error\".",
       "createdAt": "2024-01-19T10:55:33Z",
-      "updatedAt": "2024-01-28T19:30:38Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-28T13:56:47Z",
+      "closedAt": "2024-02-28T13:56:47Z",
       "comments": [
         {
           "author": "LPardue",
@@ -7554,6 +7561,13 @@
           "body": "I created #384 to address the frame type trigger field.\r\n\r\nOn re-reading the issue I realised I misinterpreted the request about not knowing an error code. If an endpoint doesn't know the specific error code, the trigger field allows to articulate transport or app errors via the existing values. So I don't think a change here is an improvement.",
           "createdAt": "2024-01-28T19:29:48Z",
           "updatedAt": "2024-01-28T19:30:38Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Closing as we think this can already be handled by other means",
+          "createdAt": "2024-02-28T13:56:47Z",
+          "updatedAt": "2024-02-28T13:56:47Z"
         }
       ]
     },
@@ -7635,15 +7649,15 @@
       "id": "I_kwDOCrLn6M58ly6Z",
       "title": "Improve quic:parameters_set",
       "url": "https://github.com/quicwg/qlog/issues/369",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:parameters_set:\r\n\r\n  As things stand, there is no facility for logging the reception of unknown\r\n  transport parameters by an endpoint. Since transport parameters are used to\r\n  negotiate extensions to QUIC, having logged data about the presence of\r\n  transport parameters sent by a peer but not understood, and the consequential\r\n  ability to get information about the prevalence of any given unsupported\r\n  transport parameter in incoming traffic, seems like it would be quite useful.\r\n\r\n  I think this event needs more clarify in terms of the distinction between\r\n  attempting to negotiate a feature and it being enabled. It should be possible\r\n  to log the feature set a local or remote endpoint is requesting and it\r\n  should be possible to log the actually negotiated feature set. Possibly\r\n  this can be resolved via simple clarification. If a client connects to\r\n  a server, does it start by emitting parameters_set (owner=local) with (e.g.)\r\n  max_datagram_frame_size set, and then when the server responds without\r\n  it, emit parameters_set (owner=remote) without it? I guess this allows\r\n  the necessary information to be inferred.\r\n\r\n  If the absence of a field indicates it was not negotiated after receiving\r\n  transport parameters from a server, this creates a problem if this event has\r\n  to be used to log other parameters determined at different times (which seems\r\n  plausible for `tls_cipher`, `early_data_enabled`, etc.), as then logging\r\n  those parameters could be misinterpreted as a sign that the transport\r\n  parameters have been received and a feature has not been negotiated.\r\n  Either the cause of a parameters_set event should be clarified (maybe a trigger\r\n  field) or possibly this should be split into different event types.\r\n\r\n  I think it would be valuable to have the ability to log information\r\n  such as spin bit policy (e.g. enabled, disabled due to random chance,\r\n  disabled administratively), independent of the actual spin_bit_updated\r\n  event).",
       "createdAt": "2024-01-19T11:04:16Z",
-      "updatedAt": "2024-01-24T07:26:22Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-28T11:53:58Z",
+      "closedAt": "2024-02-28T11:53:58Z",
       "comments": [
         {
           "author": "LPardue",
@@ -7658,6 +7672,13 @@
           "body": "I think our understanding of the issues is in agreement. I do think some work is needed here and that the \"owner\" field isn't enough.",
           "createdAt": "2024-01-24T07:26:21Z",
           "updatedAt": "2024-01-24T07:26:21Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I decided to split this off for easier tracking.\r\n\r\nThe first point is indeed tracked in #176 and will be continued there.\r\nThe second point is now at #398, the third at #399.\r\n\r\nClosing this one because of that :) ",
+          "createdAt": "2024-02-28T11:53:58Z",
+          "updatedAt": "2024-02-28T11:53:58Z"
         }
       ]
     },
@@ -7783,7 +7804,7 @@
       "id": "I_kwDOCrLn6M58l4BB",
       "title": "Improve connectivity:connection_id_updated",
       "url": "https://github.com/quicwg/qlog/issues/373",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -7792,8 +7813,8 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nconnectivity:connection_id_updated\r\n\r\n  It would be nice to be able to optionally log CID-associated sequence\r\n  numbers and the type of CID source (ODCID, Initial CID,\r\n  preferred_address transport parameter, NCID frame, etc.)",
       "createdAt": "2024-01-19T11:13:39Z",
-      "updatedAt": "2024-02-19T03:37:39Z",
-      "closedAt": null,
+      "updatedAt": "2024-02-27T14:41:07Z",
+      "closedAt": "2024-02-27T14:41:07Z",
       "comments": [
         {
           "author": "rmarx",
@@ -8179,6 +8200,80 @@
           "body": "Without running the CDDL validator, I'm guessing yes :) That would be the most practical solution I think! ",
           "createdAt": "2024-02-15T20:03:37Z",
           "updatedAt": "2024-02-15T20:03:37Z"
+        }
+      ]
+    },
+    {
+      "number": 397,
+      "id": "I_kwDOCrLn6M6Aj2XC",
+      "title": "Split out ECN \"capable\" state",
+      "url": "https://github.com/quicwg/qlog/issues/397",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "marten-seemann"
+      ],
+      "labels": [],
+      "body": "`ECNState` currently has 4 different options.\r\n\r\nDuring IETF 118, it was mentioned by @mirjak that the `capable` option is potentially not fine-grained enough.\r\nI don't know enough about ECN/L4S to know what the change should be here, but the discussion is on YouTube here: https://youtu.be/qbAm_HfLv_c?feature=shared&t=4419\r\n\r\nSomething for @marten-seemann to follow-up on",
+      "createdAt": "2024-02-27T15:23:30Z",
+      "updatedAt": "2024-02-27T16:36:39Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "mirjak",
+          "authorAssociation": "NONE",
+          "body": "I don't think you need more fine-grained options for the capable ECNState but maybe another state to indicate if the sender, that is in the capable state, also marks packets as ECN capable. In the capable state it can mark packets with either Not-ECT, ECT(0), ECT(1). Where ECT(1) is used to indicate L4S support. ",
+          "createdAt": "2024-02-27T16:36:38Z",
+          "updatedAt": "2024-02-27T16:36:38Z"
+        }
+      ]
+    },
+    {
+      "number": 398,
+      "id": "I_kwDOCrLn6M6Aq7o2",
+      "title": "Difference between negotiated vs actually accepted/enabled TPs",
+      "url": "https://github.com/quicwg/qlog/issues/398",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Spinoff/splitoff from #369.\r\n\r\n@hlandau  originally reported for `quic:parameters_set`:\r\n\r\nI think this event needs more clarify in terms of the distinction between\r\nattempting to negotiate a feature and it being enabled. It should be possible\r\nto log the feature set a local or remote endpoint is requesting and it\r\nshould be possible to log the actually negotiated feature set. Possibly\r\nthis can be resolved via simple clarification. If a client connects to\r\na server, does it start by emitting parameters_set (owner=local) with (e.g.)\r\nmax_datagram_frame_size set, and then when the server responds without\r\nit, emit parameters_set (owner=remote) without it? I guess this allows\r\nthe necessary information to be inferred.\r\n\r\nIf the absence of a field indicates it was not negotiated after receiving\r\ntransport parameters from a server, this creates a problem if this event has\r\nto be used to log other parameters determined at different times (which seems\r\nplausible for tls_cipher, early_data_enabled, etc.), as then logging\r\nthose parameters could be misinterpreted as a sign that the transport\r\nparameters have been received and a feature has not been negotiated.\r\nEither the cause of a parameters_set event should be clarified (maybe a trigger\r\nfield) or possibly this should be split into different event types.",
+      "createdAt": "2024-02-28T11:26:54Z",
+      "updatedAt": "2024-02-28T11:33:36Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "There are imo 2 things here, 1 per paragraph:\r\n\r\n1. The intent is indeed to log (at least) 2 `parameters_set` events. One with `owner=local` for the ones you send to the peer, and one with `owner=remote` with ones you receive from the peer. Comparing the values in the two SHOULD be enough to deduce the actually negotiated features/values. If not, the solution would be to emit a third `parameters_set` event reflecting the final value (e.g., at the client, you'd have `owner=local`, then `owner=remote` for what you got from the server and then again `owner=local` to reflect the final values you \"set\" at the client side that will be used). I don't immediately see an existing TP for which this approach would not work. Do you think this is sufficient to resolve your first paragraph @hlandau? If it's indeed a question of a \"simple clarification\" being needed, would you be able to suggest text for such a clarification that would make it easier for you?\r\n\r\n2. I must admit I don't fully understand this part. Specifically \"as then logging those parameters could be misinterpreted as a sign that the transport parameters have been received and a feature has not been negotiated\". Could you give a concrete example of such a case happening? An important aspect here is that the naming is a bit annoying, as it's `parameters_set` but it's not just the literal \"transport parameters\" but much more general \"parameters\" as a whole. So using the event to log non-TP parameters (e.g., early_data_enabled) MUST NOT be inferred to say that this also means that TPs have been received/negotiated (maybe that's also just a clarification then?). If you still feel a trigger would be a good solution, could you give a few examples of such triggers to help my understanding? Thanks :) ",
+          "createdAt": "2024-02-28T11:33:35Z",
+          "updatedAt": "2024-02-28T11:33:35Z"
+        }
+      ]
+    },
+    {
+      "number": 399,
+      "id": "I_kwDOCrLn6M6ArF_H",
+      "title": "Logging spin bit policy",
+      "url": "https://github.com/quicwg/qlog/issues/399",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Splitoff of #369.\r\n\r\n@hlandau said:\r\n\r\nI think it would be valuable to have the ability to log information\r\nsuch as spin bit policy (e.g. enabled, disabled due to random chance,\r\ndisabled administratively), independent of the actual spin_bit_updated\r\nevent).\r\n\r\n@LPardue replied:\r\n\r\nPersonally I'm not interested in spending effort on that but if others want to propose text that fine.",
+      "createdAt": "2024-02-28T11:49:51Z",
+      "updatedAt": "2024-02-28T11:52:46Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I agree with @LPardue here that this is not something we should standardize here, though I'm also not 100% opposed to it if people contribute text.\r\n\r\nPersonally, I feel this should better be punted to if/when something like the Loss Bits proposal (https://datatracker.ietf.org/doc/draft-mdt-quic-explicit-measurements/00/) is adopted/RFC'd, so it can be tackled in 1 go. \r\n\r\nWould you be willing to contribute text @hlandau? Otherwise, we will close this with no action. \r\n",
+          "createdAt": "2024-02-28T11:52:46Z",
+          "updatedAt": "2024-02-28T11:52:46Z"
         }
       ]
     }
@@ -17789,13 +17884,13 @@
       "labels": [],
       "body": "This PR adds basic support for associating paths (defined by IP + port + Connection ID) with individual qlog events. This is done through a textual per-event `path_id` which can be associated with the necessary metadata using the `path_assigned` event (to prevent the `path_id` itself having to contain encoded information/becoming too long).\r\n\r\nWhile using the new path association possibilities in combination with logged PATH_CHALLENGE/PATH_RESPONSE frames (and other info like preferred_address) is enough to implicitly track connection migration attempts, it can be useful to explicitly log migration progression as well. For this, the `migration_state_updated` event was also added.",
       "createdAt": "2023-11-08T10:28:05Z",
-      "updatedAt": "2023-11-17T21:14:17Z",
+      "updatedAt": "2024-02-28T10:30:18Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f058c608b3853f382cbe9fd809db96ff57386ac2",
       "headRepository": "quicwg/qlog",
       "headRefName": "path-stuff",
-      "headRefOid": "6b20a1984d9ee04ec55b7587050ceec5860f4bf2",
+      "headRefOid": "fc0f517e18e466db7d7579d5819caee9ce5453a3",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -17807,6 +17902,27 @@
           "body": "We have a few issues related to migration, which ones does this PR address? Asking because it would be good to close things we think will be fixed.",
           "createdAt": "2023-11-17T21:12:22Z",
           "updatedAt": "2023-11-17T21:12:22Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, I'm looking to merge this by Monday (draft cutoff for IETF 119).\r\n\r\nI see that @qdeconinck and @mpiraux have been doing some implementation work on this in quiche; has that led to additional insights (especially on how \"ready for multipath\" this design is)? Any major changes needed? \r\n\r\nAdditionally, I could use some help to make sense of @mirjak's comments at the last meeting (not because they're not good comments, I just don't understand enough of the intricacies of paths/multipath probably).\r\n\r\nHere is the specific part: https://youtu.be/qbAm_HfLv_c?feature=shared&t=4841 where she talks about needing not just the `path_id` when receiving an ACK because you also need to have a CID to identify a multipath packet number. I follow that, BUT I thought that was just always taken care of by the `ACK_MP` frame (which includes the CID? https://quicwg.org/multipath/draft-ietf-quic-multipath.html#name-ack_mp-frame) so this I'm confused... \r\n\r\nI also feel you could have path_ids like \"pathx:CID1\" and \"pathx:CID2\" (so kind of hierarchical path_ids that link to the same conceptual \"path\" but differentiate based on the CID being used). If that kind of scheme is canonified by a later \"qlog for multipath\" it would ensure consistency across implementations (if the issue is that the hierarcharical approach is too loosy-goosy for now ;)). \r\n\r\nIn short: I'm planning to merge this by Monday unless we have major blockers here (that of course doesn't mean this can't change later, but I don't want to keep this as a floating PR too much longer). Thanks! ",
+          "createdAt": "2024-02-27T16:13:00Z",
+          "updatedAt": "2024-02-27T16:13:00Z"
+        },
+        {
+          "author": "mirjak",
+          "authorAssociation": "NONE",
+          "body": "The current multipath draft doesn't have an explicit path ID. You say in the text a path is identified by the 4-tuple. This is not strictly aways true as due to migration the 4 tuple can change while the path is effectively the same. In the current draft we omit this problem by not defining an explicit path ID but _only_ use the CID as identifier.\r\n\r\nHowever having this said we are still discussing that problem and there is a PR that does introduce an explicit path ID. If that's the thing that ends up being standardised in the end, your text is mostly fine. \r\n\r\nIf that is not the solution we go for in the multipath draft, I recommend to not introduce a potentially ambiguous path ID and only use the CID as identifier. \r\n\r\nSorry for not being more helpful at this point.\r\n",
+          "createdAt": "2024-02-27T16:30:15Z",
+          "updatedAt": "2024-02-27T16:30:15Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thanks for the info @mirjak \r\n\r\nSo, I understand there's no direct path ID in multipath, which is why I also de-couple the `pathID` in qlog to be any string, and implementations/specs are free to fill that in as they like. If there is a \"proper\" `pathID` introduced in multipath later, that can just be used. \r\n\r\nIf not, the real question here is if implementations can (somewhat) easily derive a textual pathID to uniquely identify a path by coupling it to the info in `path_assigned`. As you say, a path is not always just the 4-tuple, so we also have an array of ConnectionIDs in `PathEndpointInfo`, which IIUC SHOULD be enough to cover that. Similarly, this allows keeping the same `pathID` even if the 4 tuple changes after migration (just use a new `path_assigned` event with the same `pathID` but changing the other parameters). \r\n\r\n> If that is not the solution we go for in the multipath draft, I recommend to not introduce a potentially ambiguous path ID and only use the CID as identifier.\r\n\r\nThere, I would say that you can use assign the CID to `pathID` and use `path_assigned` to give additional information on the path. Would that seem reasonable? \r\n\r\n\r\nThe real question here is if we have enough to be usable, no matter what the multipath draft ends up doing (as having actual/full multipath support with everything properly worked out is a non-goal at this point). ",
+          "createdAt": "2024-02-28T10:30:17Z",
+          "updatedAt": "2024-02-28T10:30:17Z"
         }
       ],
       "reviews": [
@@ -18558,21 +18674,21 @@
       "id": "PR_kwDOCrLn6M5hmXsY",
       "title": "Define uint64 duality once",
       "url": "https://github.com/quicwg/qlog/pull/359",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Closes #229\n",
       "createdAt": "2023-12-09T22:00:39Z",
-      "updatedAt": "2024-02-05T10:00:44Z",
+      "updatedAt": "2024-02-28T14:37:24Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "bd070df2475d916f1b507a9eee1982e9749fb1c3",
       "headRepository": "quicwg/qlog",
       "headRefName": "uint64-can-be-string",
       "headRefOid": "cf78fde3b16665af07ff8043b8956a18a8544a15",
-      "closedAt": null,
+      "closedAt": "2024-02-28T14:37:23Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -18590,6 +18706,13 @@
           "body": "Discussed during editors meeting. \r\nLucas will update this with new opinion about how we should handle uint64 in combo with CDDL. ",
           "createdAt": "2024-02-05T10:00:43Z",
           "updatedAt": "2024-02-05T10:00:43Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "overtaken by #388 ",
+          "createdAt": "2024-02-28T14:37:23Z",
+          "updatedAt": "2024-02-28T14:37:23Z"
         }
       ],
       "reviews": [
@@ -18814,24 +18937,26 @@
       "id": "PR_kwDOCrLn6M5iUsrA",
       "title": "Edit down the security section",
       "url": "https://github.com/quicwg/qlog/pull/364",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Focuses on cutting down words and deduplicating things. Maybe not as far as MT\r\nwould take things but I think this avoids any major cuts.\r\n\r\nFixes #358\r\n",
       "createdAt": "2023-12-19T01:54:44Z",
-      "updatedAt": "2024-02-20T17:30:39Z",
+      "updatedAt": "2024-02-28T13:54:22Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "a6c9a3f0c49a16921e862c00332476b83de6db42",
       "headRepository": "quicwg/qlog",
       "headRefName": "make-sec-more-concise",
       "headRefOid": "1455e02811fa833540dcfb58a5108d6df7d8c1a4",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-02-28T13:54:13Z",
+      "mergedAt": "2024-02-28T13:54:13Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "1803174140b198b76cc4258773878ad76afe50ff"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -19089,6 +19214,19 @@
               "updatedAt": "2024-02-19T11:32:33Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5xeAqx",
+          "commit": {
+            "abbreviatedOid": "1455e02"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-02-27T14:36:19Z",
+          "updatedAt": "2024-02-27T14:36:19Z",
+          "comments": []
         }
       ]
     },
@@ -19298,21 +19436,21 @@
       "id": "PR_kwDOCrLn6M5lQ135",
       "title": "Tweak trigger_frame_type field and add it to connection_closed",
       "url": "https://github.com/quicwg/qlog/pull/384",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Tweaks the language related to the ConnectionCloseFrame trigger_frame_type\r\nand adds it to connection_closed event.\r\n\r\nCloses #366",
       "createdAt": "2024-01-28T19:17:39Z",
-      "updatedAt": "2024-02-19T09:27:34Z",
+      "updatedAt": "2024-02-28T13:56:17Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "28a34e234e0414aba447a106a1558d2cbce4c666",
       "headRepository": "quicwg/qlog",
       "headRefName": "connection_closed-frame-trigger",
       "headRefOid": "67e91a8b8d6424b65a8cc3723e44eb290da32960",
-      "closedAt": null,
+      "closedAt": "2024-02-28T13:56:17Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -19865,7 +20003,7 @@
       "labels": [],
       "body": "Fixes #375.\r\n\r\nPer the discussion, it can be useful to know when an application triggers a\r\nstream close, or when it receives one, without having to do offset/length maths.\r\n\r\nI omitted stop_sending in this commit because it seems a little bit of a stretch,\r\nmainly because it's wire image has no offset or final size. Also, STOP_SENDING\r\nrelates to asking the peer to do something, which further complicates the\r\n(potential) use of offset and length fields.\r\n\r\nAn alternative would be to keep `fin` here but define new events for reset and\r\nstop. Those could both contain from, to and error fields but only the reset\r\nwould have offset and length.\r\n",
       "createdAt": "2024-02-19T05:15:49Z",
-      "updatedAt": "2024-02-19T09:33:11Z",
+      "updatedAt": "2024-02-28T10:53:13Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "dd8882eb422692b671cff724fae1a7711579a548",
@@ -19883,6 +20021,13 @@
           "body": "Discussed during editorial meeting:\r\nKeep `fin` here, move `reset_stream` and `stop_sending` to separate event(s) (possibly having 2 because reset_stream is so different from stop_sending).\r\n\r\n@marten-seemann it would help to have a quick mockup of what `reset_stream_at` might look like (not because we want to add it to main qlog yet, but if the current design would be compatible with that, it would be nice :) ",
           "createdAt": "2024-02-19T09:33:11Z",
           "updatedAt": "2024-02-19T09:33:11Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Actually discussed further during meeting, opinions changed :) \r\n\r\nI'm now in favor of something quite general, say:\r\n\r\n```\r\n? additional_info: [+ text]\r\n\r\n; possible values for QUIC/H3 currently are \"fin_set\", \"stream_reset\", \"stream_reset_at\", \"stop_sending\"\r\n```\r\n\r\nWith the idea that other events can be used to determine what exactly happened (e.g., look at the actual STREAM_RESET frame) and keep this event what it was originally intended for: showing when which type of data (and now info) is communicated between the layers (as this doesn't always coincide with packet sent/received)",
+          "createdAt": "2024-02-28T10:53:12Z",
+          "updatedAt": "2024-02-28T10:53:12Z"
         }
       ],
       "reviews": []
