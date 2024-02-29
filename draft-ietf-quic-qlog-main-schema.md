@@ -663,19 +663,20 @@ enable automated validation of aggregated qlog schemas.
 The only common field defined for the data field is the `trigger` field,
 which is discussed in {{trigger-field}}.
 
-~~~ cddl
+~~~
 ; The ProtocolEventData is any key-value map (e.g., JSON object)
-; only the optional trigger field is defined in this document
-$ProtocolEventData /= {
+; For example:
+EventTypeX = {
     ? trigger: text
-    * text => any
+   * text => any
 }
-; event documents are intended to extend this socket by using:
-; NewProtocolEventData = EventType1 /
-;                        EventType2 /
-;                        ... /
-;                        EventTypeN
-; $ProtocolEventData /= NewProtocolEventData
+
+; Event documents are intended to extend this socket by using:
+NewProtocolEventData = EventType1 /
+                       EventType2 /
+                       ... /
+                       EventTypeN
+$ProtocolEventData /= NewProtocolEventData
 ~~~
 {: #protocoleventdata-def title="ProtocolEventData definition"}
 
@@ -984,6 +985,20 @@ calculation.
 
 There are some event types and data classes that are common across protocols,
 applications, and use cases. This section specifies such common definitions.
+
+~~~ cddl
+GenericEventData = GenericError /
+                GenericWarning /
+                GenericInfo /
+                GenericDebug
+
+SimulationEventData = SimulationScenario /
+                SimulationMarker
+
+$ProtocolEventData /= GenericEventData / SimulationEventData
+~~~
+{: #commonevent-integration title="ProtocolEventData extension for common
+events"}
 
 ## Generic events
 
