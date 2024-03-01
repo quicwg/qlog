@@ -716,8 +716,15 @@ The `encryption_level` and `packet_number_space` are not logged explicitly:
 the `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
-For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
-when keeping track of packet coalescing.
+Multiple QUIC packets can be coalesced in the same UDP datagram, especially
+during the handshake (see {{Section 12.2 of QUIC-TRANSPORT}}). For this purpose,
+implementations SHOULD use qlog Datagram IDs and assign coalesced QUIC packets
+the same Datagram ID in the `datagram_id` field, see also
+{{quic-datagramssent}}. When multiple `packet_sent` events have the same
+`datagram_id`, this indicates they were coalesced into a single UDP datagram.
+However, in cases where implementations cannot track datagrams in this way, the
+`is_coalesced` field can be used to indicate that a packet was (intended to be)
+coalesced. Implementations MAY use both methods concurrently.
 
 ## packet_received {#quic-packetreceived}
 
@@ -751,8 +758,8 @@ The `encryption_level` and `packet_number_space` are not logged explicitly: the
 `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
-For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
-when keeping track of packet coalescing.
+For more details on `datagram_id` and `is_coalesced`, see {{quic-packetsent}}.
+They is only needed when keeping track of packet coalescing.
 
 ## packet_dropped {#quic-packetdropped}
 
@@ -770,6 +777,7 @@ QUICPacketDropped = {
     ; as other fields might not be decrypteable or parseable
     ? header: PacketHeader
     ? raw: RawInfo
+    ? is_coalesced: bool .default false
     ? datagram_id: uint32
     ? details: {* text => any}
     ? trigger:
@@ -798,7 +806,8 @@ Some example situations for each of the trigger categories include:
 - `key_unavailable`: decryption key was unavailable
 - `general`: situations not clearly covered in the other categories
 
-For more details on `datagram_id`, see {{quic-datagramssent}}.
+For more details on `datagram_id` and `is_coalesced`, see
+{{quic-datagramssent}}.
 
 ## packet_buffered {#quic-packetbuffered}
 
@@ -815,6 +824,7 @@ QUICPacketBuffered = {
     ; filled here as other elements might not be available yet
     ? header: PacketHeader
     ? raw: RawInfo
+    ? is_coalesced: bool .default false
     ? datagram_id: uint32
     ? trigger:
         ; indicates the parser cannot keep up, temporarily buffers
@@ -827,8 +837,9 @@ QUICPacketBuffered = {
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
-For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
-when keeping track of packet coalescing.
+For more details on `datagram_id` and `is_coalesced`, see
+{{quic-datagramssent}}. It is only needed when keeping track of packet
+coalescing.
 
 ## packets_acked {#quic-packetsacked}
 
