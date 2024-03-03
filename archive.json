@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-02-29T00:43:52.630717+00:00",
+  "timestamp": "2024-03-03T00:46:22.725245+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -5623,9 +5623,17 @@
       "labels": [],
       "body": "https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-parameters_set defines some of the core QUIC TPs and then says\r\n\r\n> Additionally, this event can contain any number of unspecified fields. This is to reflect setting of for example unknown (greased) transport parameters or employed (proprietary) extensions.\r\n\r\nThat's fine but is it weak and doesn't help interoperability much. We know this is going to be an area of innovation - new extensions and grease values. The spec would be improved by having a well-defined \"extension bucket\" field that TPs can go in, an array of integers tuples would be fine, for example.\r\n\r\nThis would help something like the qlog crate accomodate different users https://github.com/cloudflare/quiche/blob/master/tools/qlog/src/lib.rs#L1712 and parse input from different loggers.\r\n\r\n",
       "createdAt": "2021-09-15T21:43:26Z",
-      "updatedAt": "2021-09-15T21:43:26Z",
+      "updatedAt": "2024-02-29T15:27:56Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, this turned out to be slightly easier than expected, see #400. ",
+          "createdAt": "2024-02-29T15:27:55Z",
+          "updatedAt": "2024-02-29T15:27:55Z"
+        }
+      ]
     },
     {
       "number": 178,
@@ -7278,7 +7286,7 @@
       "labels": [],
       "body": "I am wondering if the new H3PriorityUpdated event (see #312) needs some specified `trigger` field values.\r\n\r\nConceptually, you can get the necessary context from other events surrounding this event (e.g., if you get a H3FrameParsed with a HEADERS containing a `priority` field preceding this, that's a clear indicator that's the trigger). However, there are cases where this is less clear (e.g., default initialization to a value different from the spec, local override due to configuration or other logic, merging of client and server-sent priorities for the same stream, ...)\r\n\r\nWe don't NEED to define any triggers here (`trigger` is always defined on event data, just not necessarily specced in qlog), but I'm wondering if some default values would be useful here @LPardue?\r\n\r\ne.g., \r\n```\r\n? trigger: \"client_directive\" / \"server_directive\" / \"local_override\" / \"local_default\" / \"merge\" / \"merge_override\"\r\n```",
       "createdAt": "2023-07-06T10:51:06Z",
-      "updatedAt": "2023-10-21T17:59:21Z",
+      "updatedAt": "2024-03-01T16:09:59Z",
       "closedAt": null,
       "comments": [
         {
@@ -7287,6 +7295,13 @@
           "body": "Personally, I don't think I'd have the ability to pass through enough context to my logging library to capture the trigger. But I think I need a bit more time to work on the implementation.",
           "createdAt": "2023-10-21T17:59:21Z",
           "updatedAt": "2023-10-21T17:59:21Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@LPardue any update on your opinion on this? I still think this would be useful in general, even if quiche can't pass it :) and i still like the values I proposed above. Are you opposed to a PR for this? ",
+          "createdAt": "2024-03-01T16:09:56Z",
+          "updatedAt": "2024-03-01T16:09:56Z"
         }
       ]
     },
@@ -7696,9 +7711,17 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:packet_sent:\r\n\r\n  The meaning of `is_coalesced` should be clarified. I assume this is\r\n  set to true unless a packet is both the first and last packet in a\r\n  datagram. However that is not necessarily obvious when a packet is\r\n  being generated; another option is to define this as being true for\r\n  every packet but the first packet in a datagram.\r\n\r\nquic:packet_received:\r\n\r\n  See comment on is_coalesced above",
       "createdAt": "2024-01-19T11:05:38Z",
-      "updatedAt": "2024-01-19T11:05:41Z",
+      "updatedAt": "2024-03-01T16:03:20Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, I clarified this in #403, but I'm not longer fully sure the `is_coalesced` approach is the best.\r\n\r\nMaybe @hlandau could take another look now that the intent is clearer and indicate which approach you prefer? :) ",
+          "createdAt": "2024-03-01T16:03:19Z",
+          "updatedAt": "2024-03-01T16:03:19Z"
+        }
+      ]
     },
     {
       "number": 371,
@@ -8061,7 +8084,7 @@
       "labels": [],
       "body": "In H3 [parameters_set](https://quicwg.org/qlog/draft-ietf-quic-qlog-h3-events.html#name-parameters_set) , we have a\r\n\r\n```\r\n; additional settings for grease and extensions\r\n    * text => uint64\r\n```\r\n\r\nif I grok CDDL correctly, this allows us to have any number of pairs that would serialize like \r\n\r\n```\r\n\"my_sekret_extension\": 123,\r\n\"9999\": 0\r\n```\r\n\r\nIt got me thinking a bit. This isn't explained super clearly and people might overlook it. Maybe there's more use for this in some other types. Leading to, maybe we should define this as a generic tuple type in the base spec along with some text, then we can reuse it across various events?",
       "createdAt": "2024-01-22T23:23:47Z",
-      "updatedAt": "2024-02-05T09:34:38Z",
+      "updatedAt": "2024-03-02T02:54:18Z",
       "closedAt": null,
       "comments": [
         {
@@ -8084,6 +8107,20 @@
           "body": "Discussed in meeting.\r\nLucas: main intent is to formally allow any event to be extensible (instead of having to copy-paste all event parameters to a new event name). Currently possible in code of course, but not in proper CDDL schema. \r\nRobin: probably not possible without making everything a socket, but need to double check with CDDL defs. ",
           "createdAt": "2024-02-05T09:34:35Z",
           "updatedAt": "2024-02-05T09:34:35Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, turns out this is possible in a relatively simple way.\r\n\r\nI thought we would have to make every event their own \"type socket\" (like `$protocolEventBody` or `$quicFrame`), but it turns out we can make do with \"group sockets\" (they use $$ instead of $ and don't require all the boilerplate the other sockets need). Both are described here: https://datatracker.ietf.org/doc/html/rfc8610#section-3.9\r\n\r\nI have a more extensive example at #400, but that's only for 2 events (`parameters_set` and `parameters_restored`). \r\n\r\nIf we want to allow this for all events, this is possible, but would require adding something like this on the bottom of each event definition:\r\n\r\n```\r\n* $$quic-eventname-extension\r\n```\r\n\r\nThat's basically all that's needed... (which is much less than what's needed for the \"type sockets\").\r\n\r\nWith that, you can specify new fields on a per-event basis by extending one specific extension point, which is IIUC what @LPardue asked here. \r\n\r\nSo say there's a new extension that adds 2 loss bits and you want to add those to the packet_sent event:\r\n\r\n```\r\n$$quic-packetsent-extension //= (\r\n    q_bit: bool\r\n    ? l_bit: bool\r\n)\r\n```\r\n\r\nNote that this can also be used for other things than events (e.g., `H3Parameters`). It won't work for extending things like ENUMs (or e.g., `H3Setting`), but for that we can still use the more verbose \"type sockets\" that we've been doing before if needed. \r\n\r\n----\r\n\r\nThe main downside is that all the new fields are by definition optional when regarded in the complete schema, because for now, we of course don't have any extensions yet, so we have to do `* $$quic-eventname-extension` (there will be zero or more) or `? $$quic-eventname-extension` (they are optional) in our current definition. So even if later extensions mandate a new field (as the example above, q_bit is mandatory), this wouldn't be enforced in the combined schema.\r\n\r\nThere are of course workarounds for this (e.g., script that gathers CDDL from all docs can remove the * or ? before the used $$ fields so they do properly track this), but it's good to be aware of this. \r\n\r\nAFAICT, there is no way to prevent this without additional boilerplate (e.g., we could not use * or ?, but then we'd have to define an (empty) extension for each of these in the current documents... annoying). \r\n\r\n---\r\n\r\nI propose we track this general issue here going forward (instead of related #261, #176, #170, #124, #192).\r\n\r\nI could use some opinions on this here @LPardue @marten-seemann @lnicco :) \r\n\r\n",
+          "createdAt": "2024-02-29T15:53:48Z",
+          "updatedAt": "2024-02-29T15:53:48Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Nice. The caveats sound fine to me (but my understanding isn't as comprehensive as yours). It does sound to me that we'll probably want to have some support in place for future extensions to help get validated but that is outside the scope of the qlog documents themselves.",
+          "createdAt": "2024-03-02T02:54:18Z",
+          "updatedAt": "2024-03-02T02:54:18Z"
         }
       ]
     },
@@ -8146,7 +8183,7 @@
       "labels": [],
       "body": "This would be interesting for Version Negotiation, Retry, CONNECTION_CLOSE etc. sent by a server.",
       "createdAt": "2024-02-02T10:23:57Z",
-      "updatedAt": "2024-02-05T09:25:04Z",
+      "updatedAt": "2024-03-01T15:05:58Z",
       "closedAt": null,
       "comments": [
         {
@@ -8155,6 +8192,13 @@
           "body": "Discussed during meeting.\r\nRobin: not a big fan of this; use `datagrams_*` instead or `group_id`/`path_id` or custom field or separate trace\r\nLucas: not super-strong opinion there \r\nMarten: imo server log sending out retries should log everything in a single event, not spilt out\r\nRobin: will think about it some more; get back to you\r\n\r\nsee also #211 ",
           "createdAt": "2024-02-05T09:14:25Z",
           "updatedAt": "2024-02-05T09:25:04Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, still not a big fan of having this separately from `path_id` (see #336) or conceptually `group_id`.\r\n\r\nI get that logging a separate `path_assigned` event is annoying for this type of thing, but there you could also choose to just log the IP addresses as the `pathID` as that's a string (see for example slide 5 here: https://datatracker.ietf.org/meeting/118/materials/slides-118-quic-qlog-00). \r\n\r\nI'm mostly afraid that if you add ip fields to all these events, people will use them for \"normal\" logs as well, not just for the use cases you describe, which is something I -really- want to discourage. ",
+          "createdAt": "2024-03-01T15:05:57Z",
+          "updatedAt": "2024-03-01T15:05:57Z"
         }
       ]
     },
@@ -20031,6 +20075,212 @@
         }
       ],
       "reviews": []
+    },
+    {
+      "number": 400,
+      "id": "PR_kwDOCrLn6M5oTvLX",
+      "title": "Make Parameters events extensible",
+      "url": "https://github.com/quicwg/qlog/pull/400",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #176.\r\n\r\nThis uses CDDL's \"group socket\" (https://datatracker.ietf.org/doc/html/rfc8610#section-3.9) to allow others to later specify additional parameters that can be logged to the event in a typed/explicit way. \r\n\r\nExample in a later document (say for reliable stream resets):\r\n\r\n```\r\n$$quic-parametersset-extension //= (\r\n  reliable_stream_reset: text\r\n)\r\n```\r\n\r\nOne conceptual \"downside\" is that by definition all fields in the extension will be optional, even if not preceded by a `?` (as in the example above). This is because the extension isn't yet known when processing the current definition, so it has to be either `?` (optional) or `*` (0 or more, which is used here as it's recommended by RFC8610). I don't see this as a major issue, but something to be aware of. \r\n\r\n",
+      "createdAt": "2024-02-29T15:26:25Z",
+      "updatedAt": "2024-03-02T02:46:07Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "1803174140b198b76cc4258773878ad76afe50ff",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "tp-extension",
+      "headRefOid": "f03b8a731bb01e37116ca218aaf4d9a2b00237ff",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5x_0m2",
+          "commit": {
+            "abbreviatedOid": "f03b8a7"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM but I didn't really check the scripts that closely",
+          "createdAt": "2024-03-02T02:46:07Z",
+          "updatedAt": "2024-03-02T02:46:07Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 401,
+      "id": "PR_kwDOCrLn6M5oUCxD",
+      "title": "Enforce stricter extensibility for ProtocolEventData",
+      "url": "https://github.com/quicwg/qlog/pull/401",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #192.\r\n\r\nCurrently, `$ProtocolEventData` accepts just about anything, which makes it extensible but very useless for any real validation.\r\n\r\nBy not explicitly assigning the `* text => any` to the type in the main doc, we keep the extensibility, but improve validation capabilities.\r\n\r\nThis also properly adds the Generic and Simulation events to the `$ProtocolEventData`, which they really should have been from the start ;) ",
+      "createdAt": "2024-02-29T16:10:07Z",
+      "updatedAt": "2024-03-02T03:03:14Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "1803174140b198b76cc4258773878ad76afe50ff",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "strict-eventbody",
+      "headRefOid": "0febd1d851b1bac5d01dd2196a6100139e61dce3",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5x_2hl",
+          "commit": {
+            "abbreviatedOid": "0febd1d"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-02T03:03:14Z",
+          "updatedAt": "2024-03-02T03:03:14Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "I recall we had some previous discussion about this. I'd never acknowledged this trigger field (from a serializer or parser perspective). Are we aware of anyone using it?",
+              "createdAt": "2024-03-02T03:03:14Z",
+              "updatedAt": "2024-03-02T03:03:14Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 402,
+      "id": "PR_kwDOCrLn6M5obGzg",
+      "title": "Clarify serialization expectations across documents",
+      "url": "https://github.com/quicwg/qlog/pull/402",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #357.\r\n\r\nI'm not particularly fond of the prose in the main schema, but I think it covers the load for what I'd prefer to say (instead of linking to the current subdocuments directly). \r\n\r\nCC @LPardue ",
+      "createdAt": "2024-03-01T15:42:41Z",
+      "updatedAt": "2024-03-02T03:07:43Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "1803174140b198b76cc4258773878ad76afe50ff",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "serialization-recommendations",
+      "headRefOid": "f66a59c47acc0244cfaf06d311d565da68125f2d",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5x_2qU",
+          "commit": {
+            "abbreviatedOid": "f66a59c"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM",
+          "createdAt": "2024-03-02T03:07:43Z",
+          "updatedAt": "2024-03-02T03:07:43Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 403,
+      "id": "PR_kwDOCrLn6M5obO8U",
+      "title": "Add clarification on is_coalesced and add it to more events",
+      "url": "https://github.com/quicwg/qlog/pull/403",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #370. \r\n\r\nThis better explains the intent behind `is_coalesced` and also adds it to other events that *probably* should have it as well. \r\n\r\nI'm not sure anymore that this is the best design however, since there's a lot of duplication for a feature that isn't THAT important to track...\r\n\r\nI wonder if we can get away with something like \"If implementations don't want to track individual datagram IDs, but still want to indicate a packet was/could be coalesced, they can use datagram_id = -1 to indicate this\" (and then of course we remove `is_coalesced` and make `datagram_id` an `int32` instead of `uint32`).\r\n\r\nThat would be a bit dirty... but reduce the confusion and duplication considerably? ",
+      "createdAt": "2024-03-01T16:02:36Z",
+      "updatedAt": "2024-03-01T16:02:37Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "1803174140b198b76cc4258773878ad76afe50ff",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "coalesce-clarification",
+      "headRefOid": "71cf68cdeb4e0e35d378aad0f48cc26a85a7d5ee",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 404,
+      "id": "PR_kwDOCrLn6M5obRRL",
+      "title": "Fix legacy connection_id_updated text",
+      "url": "https://github.com/quicwg/qlog/pull/404",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #346.\r\n\r\n@LPardue PTAL if this is clear :) ",
+      "createdAt": "2024-03-01T16:08:38Z",
+      "updatedAt": "2024-03-02T22:42:30Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "1803174140b198b76cc4258773878ad76afe50ff",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "connidupdated-fix",
+      "headRefOid": "b949dc971126cf1d6039d4cd39e77a808001d1cf",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5yAawR",
+          "commit": {
+            "abbreviatedOid": "b949dc9"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM",
+          "createdAt": "2024-03-02T19:36:03Z",
+          "updatedAt": "2024-03-02T19:36:03Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yAlqa",
+          "commit": {
+            "abbreviatedOid": "b949dc9"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-03-02T22:42:30Z",
+          "updatedAt": "2024-03-02T22:42:30Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
