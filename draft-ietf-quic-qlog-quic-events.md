@@ -83,6 +83,10 @@ The following fields from {{QLOG-MAIN}} are imported and used: name, category,
 type, data, group_id, protocol_type, importance, RawInfo, and time-related
 fields.
 
+As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
+are intentionally agnostic to serialization formats. The choice of format is an
+implementation decision.
+
 # Overview
 
 This document describes how the QUIC protocol can be expressed in qlog using

@@ -1204,21 +1204,26 @@ these unknown fields.
 
 # Serializing qlog {#concrete-formats}
 
-qlog schema definitions in this document, {{QLOG-QUIC}} and {{QLOG-H3}} are
-intentionally agnostic to serialization formats. The choice of format is an
-implementation decision. Some examples of possible formats are JSON, CBOR, CSV,
-protocol buffers, flatbuffers, etc.
+qlog schema definitions in this document are intentionally agnostic to
+serialization formats. The choice of format is an implementation decision.
+
+Other documents related to qlog (for example event definitions for specific
+protocols), SHOULD be similarly agnostic to the employed serialization format
+and SHOULD clearly indicate this. If not, they MUST include an explanation on
+which serialization formats are supported and on how to employ them correctly.
 
 Serialization formats make certain tradeoffs between usability, flexibility,
 interoperability, and efficiency. Implementations should take these into
-consideration when choosing a format. For instance, a textual format like JSON
-can be more flexible than a binary format but more verbose, typically making it
-less efficient than a binary format. A plaintext readable (yet relatively large)
-format like JSON is potentially more usable for users operating on the logs
-directly, while a more optimized yet restricted format can better suit the
-constraints of a large scale operation. A custom or restricted format could be
-more efficient for analysis with custom tooling but might not be interoperable
-with general-purpose qlog tools.
+consideration when choosing a format. Some examples of possible formats are
+JSON, CBOR, CSV, protocol buffers, flatbuffers, etc. which each have their own
+characteristics. For instance, a textual format like JSON can be more flexible
+than a binary format but more verbose, typically making it less efficient than a
+binary format. A plaintext readable (yet relatively large) format like JSON is
+potentially more usable for users operating on the logs directly, while a more
+optimized yet restricted format can better suit the constraints of a large scale
+operation. A custom or restricted format could be more efficient for analysis
+with custom tooling but might not be interoperable with general-purpose qlog
+tools.
 
 Considering these tradeoffs, JSON-based serialization formats provide features
 that make them a good starting point for qlog flexibility and interoperability.
