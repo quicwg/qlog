@@ -187,9 +187,9 @@ this specification.
 | quic:packet_dropped              | Base       | {{quic-packetdropped}} |
 | quic:packet_buffered             | Base       | {{quic-packetbuffered}} |
 | quic:packets_acked               | Extra      | {{quic-packetsacked}} |
-| quic:datagrams_sent              | Extra      | {{quic-datagramssent}} |
-| quic:datagrams_received          | Extra      | {{quic-datagramsreceived}} |
-| quic:datagram_dropped            | Extra      | {{quic-datagramdropped}} |
+| quic:udp_datagrams_sent              | Extra      | {{quic-udpdatagramssent}} |
+| quic:udp_datagrams_received          | Extra      | {{quic-udpdatagramsreceived}} |
+| quic:udp_datagram_dropped            | Extra      | {{quic-udpdatagramdropped}} |
 | quic:stream_state_updated        | Base       | {{quic-streamstateupdated}} |
 | quic:frames_processed            | Extra      | {{quic-framesprocessed}} |
 | quic:stream_data_moved                | Base       | {{quic-streamdatamoved}} |
@@ -227,9 +227,9 @@ QuicEventData = ConnectivityServerListening /
                 QUICPacketDropped /
                 QUICPacketBuffered /
                 QUICPacketsAcked /
-                QUICDatagramsSent /
-                QUICDatagramsReceived /
-                QUICDatagramDropped /
+                QUICUDPDatagramsSent /
+                QUICUDPDatagramsReceived /
+                QUICUDPDatagramDropped /
                 QUICStreamStateUpdated /
                 QUICFramesProcessed /
                 QUICStreamDataMoved /
@@ -733,7 +733,7 @@ The `encryption_level` and `packet_number_space` are not logged explicitly:
 the `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
-For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
+For more details on `datagram_id`, see {{quic-udpdatagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packet_received {#quic-packetreceived}
@@ -768,7 +768,7 @@ The `encryption_level` and `packet_number_space` are not logged explicitly: the
 `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
-For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
+For more details on `datagram_id`, see {{quic-udpdatagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packet_dropped {#quic-packetdropped}
@@ -815,7 +815,7 @@ Some example situations for each of the trigger categories include:
 - `key_unavailable`: decryption key was unavailable
 - `general`: situations not clearly covered in the other categories
 
-For more details on `datagram_id`, see {{quic-datagramssent}}.
+For more details on `datagram_id`, see {{quic-udpdatagramssent}}.
 
 ## packet_buffered {#quic-packetbuffered}
 
@@ -844,7 +844,7 @@ QUICPacketBuffered = {
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
-For more details on `datagram_id`, see {{quic-datagramssent}}. It is only needed
+For more details on `datagram_id`, see {{quic-udpdatagramssent}}. It is only needed
 when keeping track of packet coalescing.
 
 ## packets_acked {#quic-packetsacked}
@@ -871,14 +871,14 @@ If `packet_number_space` is omitted, it assumes the default value of
 `application_data`, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
-## datagrams_sent {#quic-datagramssent}
+## udp_datagrams_sent {#quic-udpdatagramssent}
 
 When one or more UDP-level datagrams are passed to the socket. This is useful
 for determining how QUIC packet buffers are drained to the OS. The event has
 Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
-QUICDatagramsSent = {
+QUICUDPDatagramsSent = {
 
     ; to support passing multiple at once
     ? count: uint16
@@ -895,7 +895,7 @@ QUICDatagramsSent = {
     ? datagram_ids: [+ uint32]
 }
 ~~~
-{: #quic-datagramssent-def title="QUICDatagramsSent definition"}
+{: #quic-udpdatagramssent-def title="QUICUDPDatagramsSent definition"}
 
 Since QUIC implementations rarely control UDP logic directly, the raw data
 excludes UDP-level headers in all fields.
@@ -907,14 +907,14 @@ However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
 Selecting identifier values is thus left to qlog implementations, which should
 consider how to generate unique values within the scope of their created traces.
 
-## datagrams_received {#quic-datagramsreceived}
+## udp_datagrams_received {#quic-udpdatagramsreceived}
 
 When one or more UDP-level datagrams are received from the socket. This is
 useful for determining how datagrams are passed to the user space stack from the
 OS. The event has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
-QUICDatagramsReceived = {
+QUICUDPDatagramsReceived = {
 
     ; to support passing multiple at once
     ? count: uint16
@@ -931,11 +931,11 @@ QUICDatagramsReceived = {
     ? datagram_ids: [+ uint32]
 }
 ~~~
-{: #quic-datagramsreceived-def title="QUICDatagramsReceived definition"}
+{: #quic-udpdatagramsreceived-def title="QUICUDPDatagramsReceived definition"}
 
-For more details on `datagram_ids`, see {{quic-datagramssent}}.
+For more details on `datagram_ids`, see {{quic-udpdatagramssent}}.
 
-## datagram_dropped {#quic-datagramdropped}
+## udp_datagram_dropped {#quic-udpdatagramdropped}
 
 When a UDP-level datagram is dropped. This is typically done if it does not
 contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
@@ -944,14 +944,14 @@ used instead. The event has Extra importance level; see {{Section 9.2 of
 QLOG-MAIN}}.
 
 ~~~ cddl
-QUICDatagramDropped = {
+QUICUDPDatagramDropped = {
 
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: RawInfo
 }
 ~~~
-{: #quic-datagramdropped-def title="QUICDatagramDropped definition"}
+{: #quic-udpdatagramdropped-def title="QUICUDPDatagramDropped definition"}
 
 ## stream_state_updated {#quic-streamstateupdated}
 
