@@ -348,8 +348,8 @@ importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 The `connection_id_updated` event is viewed from the perspective of the endpoint
 applying the new ID. As such, when the endpoint receives a new connection ID
-from the peer, it will see the dst_ fields are set. When the endpoint updates
-its own connection ID (e.g., NEW_CONNECTION_ID frame), it logs the src_ fields.
+from the peer, the owner field will be "remote". When the endpoint updates its
+own connection ID, the owner field will be "local".
 
 ~~~ cddl
 ConnectivityConnectionIDUpdated = {
