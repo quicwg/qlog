@@ -29,7 +29,14 @@ function generate_aux_object() {
     echo "AuxObjectWithAllTypesForValidationOnly = {" >> $tmpfile
     for type in ${unused_types}; do
       lowercase_type=$(echo ${type} | tr '[:upper:]' '[:lower:]')
-      echo "    ${lowercase_type}_: ${type}" >> $tmpfile
+      # When using CDDL group sockets, they start with $$ 
+      # (see https://datatracker.ietf.org/doc/html/rfc8610#section-3.9)
+      # These should not be included in the list of all objects here,
+      # since this gives validation errors (e.g., $$my-socket-name is not a type)
+      # Group sockets aren't types, and shouldn't be listed as such here
+      if [[ $lowercase_type != \$\$* ]]; then
+        echo "    ${lowercase_type}_: ${type}" >> $tmpfile
+      fi
     done
     echo -e "}\n" >> $tmpfile
 

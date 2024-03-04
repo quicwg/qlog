@@ -27,13 +27,12 @@ author:
   -
     ins: M. Seemann
     name: Marten Seemann
-    org: Protocol Labs
     email: martenseemann@gmail.com
     role: editor
   - ins: L. Pardue
     name: Lucas Pardue
     org: Cloudflare
-    email: lucaspardue.24.7@gmail.com
+    email: lucas@lucaspardue.com
     role: editor
 
 normative:
@@ -44,6 +43,20 @@ informative:
 
   QLOG-H3:
     I-D.ietf-quic-qlog-h3-events
+
+  ANRW-2020:
+    target: https://qlog.edm.uhasselt.be/anrw/
+    title: "Debugging QUIC and HTTP/3 with qlog and qvis"
+    date: 2020-09
+    author:
+    -
+      name: Robin Marx
+    -
+      name: Maxime Piraux
+    -
+      name: Peter Quax
+    -
+      name: Wim Lamotte
 
 
 --- abstract
@@ -88,8 +101,7 @@ This document defines qlog, an extensible high-level schema and harness that
 provides a shareable, aggregatable and structured logging format. This
 high-level schema is independent of protocol, with logging entries for specific
 protocols and use cases being defined in other documents (see for example
-{{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3 and QPACK-related event
-definitions).
+{{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3-related event definitions).
 
 The goal of this high-level schema is to provide amenities and default
 characteristics that each logging file should contain (or should be able to
@@ -117,7 +129,7 @@ Data Definition Language {{!CDDL=RFC8610}}. This document uses the basic
 syntax, the specific `text`, `uint`, `float32`, `float64`, `bool`, and
 `any` types, as well as the `.default`, `.size`, and `.regexp` control
 operators, the `~` unwrapping operator, and the `$` extension point
-syntax from {{!CDDL=RFC8610}}.
+syntax from {{CDDL}}.
 
 Additionally, this document defines the following custom types for
 clarity:
@@ -495,7 +507,7 @@ An Event is defined in {{event-def}} as:
 Event = {
     time: float64
     name: text
-    data: $ProtocolEventBody
+    data: $ProtocolEventData
     ? path: PathID
     ? time_format: TimeFormat
     ? protocol_type: ProtocolType
@@ -521,8 +533,7 @@ with identical values. It is possible to optimize out this duplication using
 
 The specific values for each of these fields and their semantics are defined in
 separate documents, depending on protocol or use case. For example: event
-definitions for QUIC, HTTP/3 and QPACK can be found in {{QLOG-QUIC}} and
-{{QLOG-H3}}.
+definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
 
 Events are intended to be extended with custom fields, therefore they MAY
 contain other fields not defined in this document. Custom fields may be known or
@@ -556,8 +567,6 @@ midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports tw
 more succinct timestamps formats to allow reducing file size. The employed format
 is indicated in the "time_format" field, which allows one of three values:
 "absolute", "delta" or "relative".
-
-Definition:
 
 ~~~ cddl
 TimeFormat = "absolute" /
@@ -626,7 +635,7 @@ non-empty character sequence representing a category, followed by a colon (':'),
 followed by a non-empty character sequence representing a type.
 
 Category allows a higher-level grouping of events per specific event type. For
-example for QUIC and HTTP/3, the different categories could be "quic", "http",
+example for QUIC and HTTP/3, the different categories could be "quic", "h3",
 "qpack", and "recovery". Within these categories, the event type provides
 additional granularity. For example for QUIC and HTTP/3, within the "quic"
 category, there would be "packet_sent" and "packet_received" events.
@@ -648,30 +657,28 @@ field value definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and
 {{QLOG-H3}}.
 
 This field is defined here as a CDDL extension point (a "socket" or
-"plug") named `$ProtocolEventBody`. Other documents MUST properly extend
+"plug") named `$ProtocolEventData`. Other documents MUST properly extend
 this extension point when defining new data field content options to
 enable automated validation of aggregated qlog schemas.
 
 The only common field defined for the data field is the `trigger` field,
 which is discussed in {{trigger-field}}.
 
-Definition:
-
 ~~~ cddl
-; The ProtocolEventBody is any key-value map (e.g., JSON object)
+; The ProtocolEventData is any key-value map (e.g., JSON object)
 ; only the optional trigger field is defined in this document
-$ProtocolEventBody /= {
+$ProtocolEventData /= {
     ? trigger: text
     * text => any
 }
 ; event documents are intended to extend this socket by using:
-; NewProtocolEvents = EventType1 /
-;                     EventType2 /
-;                     ... /
-;                     EventTypeN
-; $ProtocolEventBody /= NewProtocolEvents
+; NewProtocolEventData = EventType1 /
+;                        EventType2 /
+;                        ... /
+;                        EventTypeN
+; $ProtocolEventData /= NewProtocolEventData
 ~~~
-{: #protocoleventbody-def title="ProtocolEventBody definition"}
+{: #protocoleventdata-def title="ProtocolEventData definition"}
 
 One purely illustrative example for a QUIC "packet_sent" event is shown in
 {{data-ex}}:
@@ -745,8 +752,6 @@ An event's "protocol_type" array field indicates to which protocols (or protocol
 of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).
 
-Definition:
-
 ~~~ cddl
 ProtocolType = [+ text]
 ~~~
@@ -818,8 +823,6 @@ contains a string value. Implementations are free to use their preferred string
 serialization for this field, so long as it contains a unique value per logical
 group. Some examples can be seen in {{group-id-ex}}.
 
-Definition:
-
 ~~~ cddl
 GroupID = text
 ~~~
@@ -866,8 +869,6 @@ event. This is useful, for instance, where an application splits work across
 CPUs, processes, or threads and events for a single trace occur on potentially
 different combinations thereof. Each field is optional to support deployment
 diversity.
-
-Definition:
 
 ~~~ cddl
 SystemInformation = {
@@ -954,8 +955,6 @@ The list of default qlog fields that are typically logged in common_fields (as
 opposed to as individual fields per event instance) are shown in the listing
 below:
 
-Definition:
-
 ~~~ cddl
 CommonFields = {
     ? path: PathID
@@ -984,8 +983,6 @@ take up considerable space, and can have a considerable privacy and security
 impact (see {{privacy}}). Where applicable, these fields are grouped in a
 separate, optional, field named "raw" of type RawInfo. The exact definition of
 entities, headers, trailers and payloads depend on the protocol used.
-
-Definition:
 
 ~~~ cddl
 RawInfo = {
@@ -1034,11 +1031,9 @@ name of the heading in lowercase (e.g., the "name" of the error event is
 "generic:error").
 
 ### error
-Importance: Core
 
-Used to log details of an internal error that might not get reflected on the wire.
-
-Definition:
+Used to log details of an internal error that might not get reflected on the
+wire. It has Core importance level; see {{importance}}.
 
 ~~~ cddl
 GenericError = {
@@ -1049,12 +1044,9 @@ GenericError = {
 {: #generic-error-def title="GenericError definition"}
 
 ### warning
-Importance: Base
 
 Used to log details of an internal warning that might not get reflected on the
-wire.
-
-Definition:
+wire. It has Base importance level; see {{importance}}.
 
 ~~~ cddl
 GenericWarning = {
@@ -1065,12 +1057,10 @@ GenericWarning = {
 {: #generic-warning-def title="GenericWarning definition"}
 
 ### info
-Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Definition:
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
 
 ~~~ cddl
 GenericInfo = {
@@ -1080,12 +1070,10 @@ GenericInfo = {
 {: #generic-info-def title="GenericInfo definition"}
 
 ### debug
-Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Definition:
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
 
 ~~~ cddl
 GenericDebug = {
@@ -1095,12 +1083,10 @@ GenericDebug = {
 {: #generic-debug-def title="GenericDebug definition"}
 
 ### verbose
-Importance: Extra
 
 Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages.
-
-Definition:
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
 
 ~~~ cddl
 GenericVerbose = {
@@ -1123,13 +1109,11 @@ the name of the heading in lowercase (e.g., the "name" of the scenario event is
 "simulation:scenario").
 
 ### scenario
-Importance: Extra
 
 Used to specify which specific scenario is being tested at this particular
-instance. This supports, for example, aggregation of
-several simulations into one trace (e.g., split by `group_id`).
-
-Definition:
+instance. This supports, for example, aggregation of several simulations into
+one trace (e.g., split by `group_id`). It has Extra importance level; see
+{{importance}}.
 
 ~~~ cddl
 SimulationScenario = {
@@ -1140,13 +1124,10 @@ SimulationScenario = {
 {: #simulation-scenario-def title="SimulationScenario definition"}
 
 ### marker
-Importance: Extra
 
 Used to indicate when specific emulation conditions are triggered at set times
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered).
-
-Definition:
+triggered). It has Extra importance level; see {{importance}}.
 
 ~~~ cddl
 SimulationMarker = {
@@ -1162,8 +1143,8 @@ This document defines the main schema for the qlog format together with some
 common events, which on their own do not provide much logging utility. It is
 expected that logging is extended with specific, per-protocol event definitions
 that specify the name (category + type) and data needed for each individual
-event. Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3 and
-QPACK event definitions {{QLOG-H3}}.
+event. Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3
+event definitions {{QLOG-H3}}.
 
 This section defines some basic annotations and concepts that SHOULD be used by
 event definition documents. Doing so ensures a measure of consistency that makes
@@ -1191,7 +1172,7 @@ additional events is typically avoided. Exceptions have been made for common
 events that benefit from being easily identifiable or individually logged (for
 example `packets_acked`).
 
-## Event importance indicators
+## Event importance levels {#importance}
 
 Depending on how events are designed, it may be that several events allow the
 logging of similar or overlapping data. For example the separate QUIC
@@ -1200,20 +1181,22 @@ logging of similar or overlapping data. For example the separate QUIC
 should be logged or used, and which event should take precedence if e.g., both are
 present and provide conflicting information.
 
-To aid in this decision making, each event SHOULD have an "importance indicator"
-with one of three values, in decreasing order of importance and expected usage:
+To aid in this decision making, qlog defines three event importance levels, in
+decreasing order of importance and expected usage:
 
 * Core
 * Base
 * Extra
 
-The "Core" events are the events that SHOULD be present in all qlog files for a
+Events definitions SHOULD assign an importance level.
+
+Core-level events SHOULD be present in all qlog files for a
 given protocol. These are typically tied to basic packet and frame parsing and
 creation, as well as listing basic internal metrics. Tool implementers SHOULD
 expect and add support for these events, though SHOULD NOT expect all Core events
 to be present in each qlog trace.
 
-The "Base" events add additional debugging options and MAY be present in qlog
+Base-level events add additional debugging options and MAY be present in qlog
 files. Most of these can be implicitly inferred from data in Core events (if
 those contain all their properties), but for many it is better to log the events
 explicitly as well, making it clearer how the implementation behaves. These
@@ -1222,14 +1205,14 @@ state machines change, and used to help show when decisions are actually made
 based on received data. Tool implementers SHOULD at least add support for
 showing the contents of these events, if they do not handle them explicitly.
 
-The "Extra" events are considered mostly useful for low-level debugging of the
+Extra-level events are considered mostly useful for low-level debugging of the
 implementation, rather than the protocol. They allow more fine-grained tracking
 of internal behavior. As such, they MAY be present in qlog files and tool
 implementers MAY add support for these, but they are not required to.
 
 Note that in some cases, implementers might not want to log for example data
-content details in the "Core" events due to performance or privacy considerations.
-In this case, they SHOULD use (a subset of) relevant "Base" events instead to
+content details in Core-level events due to performance or privacy considerations.
+In this case, they SHOULD use (a subset of) relevant Base-level events instead to
 ensure usability of the qlog output. As an example, implementations that do not
 log QUIC `packet_received` events and thus also not which (if any) ACK frames the
 packet contains, SHOULD log `packets_acked` events instead.
@@ -1238,7 +1221,7 @@ Finally, for event types whose data (partially) overlap with other event types'
 definitions, where necessary the event definition document should include explicit
 guidance on which to use in specific situations.
 
-## Custom fields\
+## Custom fields
 
 Event definition documents are free to define new category and event types,
 top-level fields (e.g., a per-event field indicating its privacy properties or
@@ -1253,96 +1236,138 @@ these unknown fields.
 
 # Serializing qlog {#concrete-formats}
 
-This document and other related qlog schema definitions are intentionally
-independent of serialization format. This means that implementers themselves can
-choose how to represent and serialize qlog data practically on disk or on the
-wire. Some examples of possible formats are JSON, CBOR, CSV, protobuf,
-flatbuffers, etc.
+qlog schema definitions in this document are intentionally agnostic to
+serialization formats. The choice of format is an implementation decision.
 
-All these formats make certain tradeoffs between flexibility and efficiency, with
-textual formats like JSON typically being more flexible but also less efficient
-than binary formats like protocol buffers. The format choice will depend on the
-practical use case of the qlog user. For example, for use in day to day debugging,
-a plaintext readable (yet relatively large) format like JSON is probably
-preferred. However, for use in production, a more optimized yet restricted format
-can be better. In this latter case, it will be more difficult to achieve
-interoperability between qlog implementations of various protocol stacks, as some
-custom or tweaked events from one might not be compatible with the format of the
-other. This will also reflect in tooling: not all tools will support all formats.
+Other documents related to qlog (for example event definitions for specific
+protocols), SHOULD be similarly agnostic to the employed serialization format
+and SHOULD clearly indicate this. If not, they MUST include an explanation on
+which serialization formats are supported and on how to employ them correctly.
 
-This being said, the authors prefer JSON as the basis for storing qlog,
-as it retains full flexibility and maximum interoperability. Storage
-overhead can be managed well in practice by employing compression. For
-this reason, this document details how to practically transform qlog
-schema definitions to {{!JSON=RFC8259}}, its subset {{!I-JSON=RFC7493}},
-and its streamable derivative {{!JSON-Text-Sequences=RFC7464}}s. Concrete options
-to bring down JSON size and processing overheads are discuseed in {{optimizations}}.
+Serialization formats make certain tradeoffs between usability, flexibility,
+interoperability, and efficiency. Implementations should take these into
+consideration when choosing a format. Some examples of possible formats are
+JSON, CBOR, CSV, protocol buffers, flatbuffers, etc. which each have their own
+characteristics. For instance, a textual format like JSON can be more flexible
+than a binary format but more verbose, typically making it less efficient than a
+binary format. A plaintext readable (yet relatively large) format like JSON is
+potentially more usable for users operating on the logs directly, while a more
+optimized yet restricted format can better suit the constraints of a large scale
+operation. A custom or restricted format could be more efficient for analysis
+with custom tooling but might not be interoperable with general-purpose qlog
+tools.
 
-As depending on the employed format different deserializers/parsers should be
-used, the "qlog_format" field is used to indicate the chosen serialization
-approach. This field is always a string, but can be made hierarchical by the use
-of the "." separator between entries. For example, a value of "JSON.optimizationA"
-can indicate that a default JSON format is being used, but that a certain
-optimization of type A was applied to the file as well (see also
-{{optimizations}}).
+Considering these tradeoffs, JSON-based serialization formats provide features
+that make them a good starting point for qlog flexibility and interoperability.
+For these reasons, JSON is a recommended default and expanded considerations are
+given to how to map qlog to JSON ({{format-json}}, and its streaming counterpart
+JSON Text Sequences ({{format-json-seq}}. {{json-interop}} presents
+interoperability considerations for both formats, and {{optimizations}} presents
+potential optimizations.
+
+Serialization formats require appropriate deserializers/parsers. The
+"qlog_format" field ({{qlog-file-schema}}) is used to indicate the chosen
+serialization format.
 
 ## qlog to JSON mapping {#format-json}
 
-When mapping qlog to normal JSON, the "qlog_format" field MUST have the value
-"JSON". This is also the default qlog serialization and default value of this
-field.
+As described in {{qlog-file-schema}}, JSON is the default qlog serialization. When
+mapping qlog to normal JSON, QlogFile ({{qlog-file-def}}) is used and the
+"qlog_format" field MUST have the value "JSON". The file extension/suffix SHOULD
+be ".qlog". The Media Type, if any, SHOULD be "application/qlog+json" per
+{{!RFC6839}}.
 
-When using normal JSON serialization, the file extension/suffix SHOULD
-be ".qlog" and the Media Type (if any) SHOULD be "application/qlog+json"
-per {{!RFC6839}}.
-
-JSON files by definition ({{!RFC8259}}) MUST utilize the UTF-8 encoding,
-both for the file itself and the string values.
-
-While not specifically required by the JSON specification, all qlog field
-names in a JSON serialization MUST be lowercase.
+In accordance with {{Section 8.1 of !RFC8259}}, JSON files are required to use
+UTF-8 both for the file itself and the string values it contains. In addition,
+all qlog field names MUST be lowercase when serialized to JSON.
 
 In order to serialize CDDL-based qlog event and data structure
 definitions to JSON, the official CDDL-to-JSON mapping defined in
-Appendix E of {{!CDDL=RFC8610}} SHOULD be employed.
+{{Appendix E of CDDL}} SHOULD be employed.
 
-### I-JSON
+## qlog to JSON Text Sequences mapping {#format-json-seq}
 
-For some use cases, it should be taken into account that not all popular
-JSON parsers support the full JSON format. Especially for parsers
-integrated with the JavaScript programming language (e.g., Web browsers,
-NodeJS), users are recommended to stick to a JSON subset dubbed
-{{!I-JSON=RFC7493}} (or Internet-JSON).
+One of the downsides of using normal JSON is that it is inherently a
+non-streamable format. A qlog serializer could work around this by opening a
+file, writing the required opening data, streaming qlog events by appending
+them, and then finalizing the log by appending appropriate closing tags e.g.,
+"]}]}". However, failure to append closing tags, could lead to problems because
+most JSON parsers will fail if a document is malformed. Some streaming JSON
+parsers are able to handle missing closing tags, however they are not widely
+deployed in popular environments (e.g., Web browsers)
 
-One of the key limitations of JavaScript and thus I-JSON is that it
-cannot represent full 64-bit integers in standard operating mode (i.e.,
-without using BigInt extensions), instead being limited to the range of
-`[-(2**53)+1, (2**53)-1]`. In these circumstances, Appendix E of
-{{!CDDL=RFC8610}} recommends defining new CDDL types for int64 and
-uint64 that limit their values to this range.
+To overcome the issues related to JSON streaming, a qlog mapping to a streamable
+JSON format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}) is provided.
 
-While this can be sensible and workable for most use cases, some
-protocols targeting qlog serialization (e.g., QUIC, HTTP/3), might
-require full uint64 variables in some (rare) circumstances. In these
-situations, it should be allowed to also use the string-based
-representation of uint64 values alongside the numerical representation.
-Concretely, the following definition of uint64 should override the
-original and (web-based) tools should take into account that a uint64
-field can be either a number or string.
+JSON Text Sequences are very similar to JSON, except that objects are
+serialized as individual records, each prefixed by an ASCII Record Separator
+(\<RS\>, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Note
+that each record can also contain any amount of newlines in its body, as long as
+it ends with a newline character before the next \<RS\> character.
 
-~~~
-uint64 = text /
-         uint .size 8
-~~~
-{: #cddl-ijson-uint64-def title="Custom uint64 definition for I-JSON"}
+In order to leverage the streaming capability, each qlog event is serialized and
+interpreted as an individual JSON Text Sequence record, that is appended as a
+new object to the back of an event stream or log file. Put differently, unlike
+default JSON, it does not require a document to be wrapped as a full object with
+"{ ... }" or "\[... \]".
 
-### Truncated values {#truncated-values}
+This alternative record streaming approach cannot be accommodated by QlogFile
+({{qlog-file-def}}). Instead, QlogFileSeq is defined in {{qlog-file-seq-def}},
+which notably includes only a single trace (TraceSeq) and omits an explicit
+"events" array. An example is provided in {{json-seq-ex}}. The "group_id" field
+can still be used on a per-event basis to include events from conceptually
+different sources in a single JSON-SEQ qlog file.
+
+When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
+"JSON-SEQ". The file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
+The Media Type, if any, SHOULD be "application/qlog+json-seq" per {{!RFC8091}}.
+
+While not specifically required by the JSON-SEQ specification, all qlog field
+names MUST be lowercase when serialized to JSON-SEQ.
+
+In order to serialize all other CDDL-based qlog event and data structure
+definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
+{{Appendix E of CDDL}} SHOULD be employed.
+
+
+### Supporting JSON Text Sequences in tooling
+
+Note that JSON Text Sequences are not supported in most default programming
+environments (unlike normal JSON). However, several custom JSON-SEQ parsing
+libraries exist in most programming languages that can be used and the format is
+easy enough to parse with existing implementations (i.e., by splitting the file
+into its component records and feeding them to a normal JSON parser individually,
+as each record by itself is a valid JSON object).
+
+## JSON Interoperability {#json-interop}
+
+Some JSON implementations have issues with the full JSON format, especially those
+integrated within a JavaScript environment (e.g., Web browsers, NodeJS). I-JSON
+(Internet-JSON) is a subset of JSON for such environments; see
+{{!I-JSON=RFC7493}}. One of the key limitations of JavaScript, and thus I-JSON,
+is that it cannot represent full 64-bit integers in standard operating mode
+(i.e., without using BigInt extensions), instead being limited to the range
+-(2<sup>53</sup>)+1 to (2<sup>53</sup>)-1.
+
+To accommodate such constraints in CDDL, {{Appendix E of CDDL}} recommends
+defining new CDDL types for int64 and uint64 that limit their values to the
+restricted 64-bit integer range. However, some of the protocols that qlog is
+intended to support (e.g., QUIC, HTTP/3), can use the full range of uint64
+values.
+
+As such, to support situations where I-JSON is in use, seralizers MAY encode
+uint64 values using JSON strings. qlog parsers, therefore, SHOULD support
+parsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band
+information indicating that neither the serializer nor parser are constrained by
+I-JSON.
+
+## Truncated values {#truncated-values}
 
 For some use cases (e.g., limiting file size, privacy), it can be
 necessary not to log a full raw blob (using the `hexstring` type) but
-instead a truncated value (for example, only the first 100 bytes of an
+instead a truncated value. For example, one might only store the first 100 bytes of an
 HTTP response body to be able to discern which file it actually
-contained). In these cases, the original byte-size length cannot be
+contained. In these cases, the original byte-size length cannot be
 obtained from the serialized value directly.
 
 As such, all qlog schema definitions SHOULD include a separate,
@@ -1360,304 +1385,61 @@ The main possible permutations are shown by example in
 {{truncated-values-ex}}.
 
 ~~~~~~~~
-// both the full raw value and its length are present
+// both the content's value and its length are present
 // (length is redundant)
 {
-    "raw_length": 5,
-    "raw": "051428abff"
+    "content_length": 5,
+    "content": "051428abff"
 }
 
-// only the raw value is present, indicating it
-// represents the fields full value the byte
-// length is obtained by calculating raw.length / 2
+// only the content value is present, indicating it
+// represents the content's full value. The byte
+// length is obtained by calculating content.length / 2
 {
-    "raw": "051428abff"
+    "content": "051428abff"
 }
 
-// only the length field is present, meaning the
-// value was omitted
+// only the length is present, meaning the value
+// was omitted
 {
-    "raw_length": 5,
+    "content_length": 5,
 }
 
-// both fields are present and the lengths do not match:
-// the value was truncated to the first three bytes.
+// both value and length are present, but the lengths
+// do not match: the value was truncated to
+// the first three bytes.
 {
-    "raw_length": 5,
-    "raw": "051428"
+    "content_length": 5,
+    "content": "051428"
 }
 ~~~~~~~~
 {: #truncated-values-ex title="Example for serializing truncated
 hexstrings"}
 
-## qlog to JSON Text Sequences mapping {#format-json-seq}
-
-JSON Text Sequences are very similar to JSON, except that JSON objects are
-serialized as individual records, each prefixed by an ASCII Record Separator
-(\<RS\>, 0x1E), and each ending with an ASCII Line Feed character (\n, 0x0A). Note
-that each record can also contain any amount of newlines in its body, as long as
-it ends with a newline character before the next \<RS\> character.
-
-Each qlog event is serialized and interpreted as an individual JSON Text Sequence
-record, and can simply be appended as a new object at the back of an event stream
-or log file. Put differently, unlike default JSON, it does not require a file to
-be wrapped as a full object with "{ ... }" or "\[... \]".
-
-For this to work, some qlog definitions have to be adjusted however.
-Mainly, events are no longer part of the "events" array in the Trace
-object, but are instead logged separately from the qlog "header", as
-indicated by the TraceSeq object in {{trace-seq-def}}. Additionally,
-qlog's JSON-SEQ mapping does not allow logging multiple individual
-traces in a single qlog file. As such, the QlogFile:traces field is
-replaced by the singular QlogFileSeq:trace field, see
-{{qlog-file-seq-def}}. An example can be seen in {{json-seq-ex}}. Note
-that the "group_id" field can still be used on a per-event basis to
-include events from conceptually different sources in a single JSON-SEQ
-qlog file.
-
-When using JSON-SEQ serialization, the file extension/suffix SHOULD be
-".sqlog" (for "streaming" qlog) and the Media Type (if any) SHOULD be
-"application/qlog+json-seq" per {{!RFC8091}}.
-
-While not specifically required by the JSON-SEQ specification, all qlog
-field names in a JSON-SEQ serialization MUST be lowercase.
-
-In order to serialize all other CDDL-based qlog event and data structure
-definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
-Appendix E of {{!CDDL=RFC8610}} SHOULD still be employed.
-
-### Supporting JSON Text Sequences in tooling
-
-Note that JSON Text Sequences are not supported in most default programming
-environments (unlike normal JSON). However, several custom JSON-SEQ parsing
-libraries exist in most programming languages that can be used and the format is
-easy enough to parse with existing implementations (i.e., by splitting the file
-into its component records and feeding them to a normal JSON parser individually,
-as each record by itself is a valid JSON object).
-
-## Other optimized formatting options {#optimizations}
+## Optimization of serialized data {#optimizations}
 
 Both the JSON and JSON-SEQ formatting options described above are serviceable in
 general small to medium scale (debugging) setups. However, these approaches tend
 to be relatively verbose, leading to larger file sizes. Additionally, generalized
 JSON(-SEQ) (de)serialization performance is typically (slightly) lower than that
-of more optimized and predictable formats. Both aspects make these formats more
-challenging ([though still practical](https://qlog.edm.uhasselt.be/anrw/)) to use
-in large scale setups.
+of more optimized and predictable formats. Both aspects present challenges to
+large scale setups, though they may still be practical to deploy; see [ANRW-2020].
+JSON and JSON-SEQ compress very well using commonly-available algorithms such as
+GZIP or Brotli.
 
 During the development of qlog, a multitude of alternative formatting
-and optimization options were compared. The results of this study are [summarized on the qlog
+and optimization options were assessed and the results are [summarized on the qlog
 github
 repository](https://github.com/quiclog/internet-drafts/issues/30#issuecomment-617675097).
-The rest of this section discusses some of these approaches implementations could
-choose and the expected gains and tradeoffs inherent therein. Tools SHOULD support
-mainly the compression options listed in {{compression}}, as they provide the
-largest wins for the least cost overall.
 
-Over time, specific qlog formats and encodings can be created that more formally
-define and combine some of the discussed optimizations or add new ones. It was
-decided to define these schemes in separate documents to keep the main qlog definition
-clean and generalizable, as not all contexts require the same performance or
-flexibility as others and qlog is intended to be a broadly usable and extensible
-format (for example more flexibility is needed in earlier stages of protocol
-development, while more performance is typically needed in later stages). This is
-also the main reason why the general qlog format is the less optimized JSON
-instead of a more performant option.
+Formal definition of additional qlog formats or encodings that use the
+optimization techniques described here, or any other optimization technique is
+left to future activity that can apply the following guidelines.
 
-To be able to easily distinguish between these options in qlog compatible tooling
-(without the need to have the user provide out-of-band information or to
-(heuristically) parse and process files in a multitude of ways, see also
-{{tooling}}), it is recommended that explicit file extensions are used to indicate specific
-formats. As there are no standards in place for this type of extension to format
-mapping, a commonly used scheme is proposed: list the
-applied optimizations in the extension in ascending order of application (e.g., if
-a qlog file is first optimized with technique A and then compressed with technique
-B, the resulting file would have the extension ".(s)qlog.A.B"). This allows
-tooling to start at the back of the extension to "undo" applied optimizations to
-finally arrive at the expected qlog representation.
-
-### Data structure optimizations {#structure-optimizations}
-
-The first general category of optimizations is to alter the representation of data
-within an JSON(-SEQ) qlog file to reduce file size.
-
-The first option is to employ a scheme similar to the CSV (comma separated value
-{{!RFC4180}}) format, which utilizes the concept of column "headers" to prevent
-repeating field names for each datapoint instance. Concretely for JSON qlog,
-several field names are repeated with each event (i.e., time, name, data). These
-names could be extracted into a separate list, after which qlog events could be
-serialized as an array of values, as opposed to a full object. This approach was a
-key part of the original qlog format (prior to draft-02) using the "event_fields"
-field. However, tests showed that this optimization only provided a mean file size
-reduction of 5% (100MB to 95MB) while significantly increasing the implementation
-complexity, and this approach was abandoned in favor of the default JSON setup.
-Implementations using this format should not employ a separate file extension (as
-it still uses JSON), but rather employ a new value of "JSON.namedheaders" (or
-"JSON-SEQ.namedheaders") for the "qlog_format" field (see {{qlog-file-schema}}).
-
-The second option is to replace field values and/or names with indices into a
-(dynamic) lookup table. This is a common compression technique and can provide
-significant file size reductions (up to 50% in tests, 100MB to 50MB). However,
-this approach is even more difficult to implement efficiently and requires either
-including the (dynamic) table in the resulting file (an approach taken by for
-example [Chromium's NetLog
-format](https://www.chromium.org/developers/design-documents/network-stack/netlog))
-or defining a (static) table up-front and sharing this between implementations.
-Implementations using this approach should not employ a separate file extension
-(as it still uses JSON), but rather employ a new value of "JSON.dictionary" (or
-"JSON-SEQ.dictionary") for the "qlog_format" field (see {{qlog-file-schema}}).
-
-As both options either proved difficult to implement, reduced qlog file
-readability, and provided too little improvement compared to other more
-straightforward options (for example {{compression}}), these schemes are not
-inherently part of qlog.
-
-### Compression {#compression}
-
-The second general category of optimizations is to utilize a (generic) compression
-scheme for textual data. As qlog in the JSON(-SEQ) format typically contains a
-large amount of repetition, off-the-shelf (text) compression techniques typically
-succeed very well in bringing down file sizes (regularly with up to two orders of
-magnitude in tests, even for "fast" compression levels). As such, utilizing
-compression is recommended before attempting other optimization options, even
-though this might (somewhat) increase processing costs due to the additional
-compression step.
-
-The first option is to use GZIP compression ({{!RFC1952}}). This generic
-compression scheme provides multiple compression levels (providing a trade-off
-between compression speed and size reduction). Utilized at level 6 (a medium
-setting thought to be applicable for streaming compression of a qlog stream in
-commodity devices), gzip compresses qlog JSON files to 7% of their initial size on
-average (100MB to 7MB). For this option, the file extension .(s)qlog.gz SHOULD BE
-used. The "qlog_format" field should still reflect the original JSON formatting of
-the qlog data (e.g., "JSON" or "JSON-SEQ").
-
-The second option is to use Brotli compression ({{!RFC7932}}). While similar to
-gzip, this more recent compression scheme provides a better efficiency. It also
-allows multiple compression levels. Utilized at level 4 (a medium setting thought
-to be applicable for streaming compression of a qlog stream in commodity devices),
-brotli compresses qlog JSON files to 7% of their initial size on average (100MB to
-7MB). For this option, the file extension .(s)qlog.br SHOULD BE used. The
-"qlog_format" field should still reflect the original JSON formatting of the qlog
-data (e.g., "JSON" or "JSON-SEQ").
-
-Other compression algorithms of course exist (for example xz, zstd, and lz4). The
-gzip and brotli are recommended because of their tweakable behaviour and wide
-support in web-based environments, which is envisioned as the main tooling ecosystem
-(see also {{tooling}}).
-
-### Binary formats {#binary}
-
-The third general category of optimizations is to use a more optimized (often
-binary) format instead of the textual JSON format. This approach inherently
-produces smaller files and often has better (de)serialization performance.
-However, the resultant files are no longer human readable and some formats require
-hard tradeoffs between flexibility for performance.
-
-The first option is to use the CBOR (Concise Binary Object Representation
-{{!RFC7049}}) format. For the purposes of qlog, CBOR can be viewed as a straightforward
-binary variant of JSON. As such, existing JSON qlog files can be trivially
-converted to and from CBOR (though slightly more work is needed for JSON-SEQ qlogs
-to convert them to CBOR-SEQ, see {{?RFC8742}}). While CBOR thus does retain the
-full qlog flexibility, it only provides a 25% file size reduction (100MB to 75MB)
-compared to textual JSON(-SEQ). As CBOR support in programming environments is not
-as widespread as that of textual JSON and the format lacks human readability, CBOR
-was not chosen as the default qlog format. For this option, the file extension
-.(s)qlog.cbor SHOULD BE used. The "qlog_format" field should still reflect the
-original JSON formatting of the qlog data (e.g., "JSON" or "JSON-SEQ"). The media
-type should indicate both whether JSON or JSON Text Sequences are used, as well as
-whether CBOR or CBOR Sequences are used (see the table below).
-
-A second option is to use a more specialized binary format, such as [Protocol
-Buffers](https://developers.google.com/protocol-buffers) (protobuf). This format
-is battle-tested, has support for optional fields and has libraries in most
-programming languages. Still, it is significantly less flexible than textual JSON
-or CBOR, as it relies on a separate, pre-defined schema (a .proto file). As such,
-it it not possible to (easily) log new event types in protobuf files without
-adjusting this schema as well, which has its own practical challenges. As qlog is
-intended to be a flexible, general purpose format, this type of format was not
-chosen as its basic serialization. The lower flexibility does lead to
-significantly reduced file sizes. A straightforward mapping of the qlog main
-schema and QUIC/HTTP3 event types to protobuf created qlog files 24% as large as
-the raw JSON equivalents (100MB to 24MB). For this option, the file extension
-.(s)qlog.protobuf SHOULD BE used. The "qlog_format" field should reflect the
-different internal format, for example: "qlog_format": "protobuf".
-
-Note that binary formats can (and should) also be used in conjunction with
-compression (see {{compression}}). For example, CBOR compresses well (to about 6%
-of the original textual JSON size (100MB to 6MB) for both gzip and brotli) and so
-does protobuf (5% (gzip) to 3% (brotli)). However, these gains are similar to the
-ones achieved by simply compression the textual JSON equivalents directly (7%, see
-{{compression}}). As such, since compression is still needed to achieve optimal
-file size reductions event with binary formats, the more flexible
-compressed textual JSON options are likely a better default for the qlog format in
-general.
-
-{::comment} The definition of the qlog main schema and existing event type
-documents (for example {{QLOG-QUIC}} {{QLOG-H3}}) should allow a relatively easy qlog
-definition in a variety of binary format schemas. {:/comment}
-
-### Overview and summary {#format-summary}
-
-In summary, textual JSON was chosen as the main qlog format due to its high
-flexibility and because its inefficiencies can be largely solved by the
-utilization of compression techniques (which are needed to achieve optimal results
-with other formats as well).
-
-Still, qlog implementers are free to define other qlog formats depending on their
-needs and context of use. These formats should be described in their own
-documents, the discussion in this document mainly acting as inspiration and
-high-level guidance. Implementers are encouraged to add concrete qlog formats and
-definitions to [the designated public
-repository](https://github.com/quiclog/qlog).
-
-The following table provides an overview of all the discussed qlog formatting
-options with examples:
-
-| format                                    | qlog_format               | extension        | media type                  |
-|-------------------------------------------|---------------------------|------------------|-----------------------------|
-| JSON {{format-json}}                      | JSON                      | .qlog            | application/qlog+json       |
-| JSON Text Sequences  {{format-json-seq}}  | JSON-SEQ                  | .sqlog           | application/qlog+json-seq   |
-| named headers {{structure-optimizations}} | JSON(-SEQ).namedheaders   | .(s)qlog         | application/qlog+json(-seq) |
-| dictionary {{structure-optimizations}}    | JSON(-SEQ).dictionary     | .(s)qlog         | application/qlog+json(-seq) |
-| CBOR {{binary}}                           | JSON(-SEQ)                | .(s)qlog.cbor    | application/qlog+json(-seq)+cbor(-seq) |
-| protobuf {{binary}}                       | protobuf                  | .qlog.protobuf   | NOT SPECIFIED BY IANA       |
-|                                           |                           |                  |
-| gzip {{compression}}                      | no change                 | .gz suffix       | application/gzip            |
-| brotli {{compression}}                    | no change                 | .br suffix       | NOT SPECIFIED BY IANA       |
-
-## Conversion between formats {#conversion}
-
-As discussed in the previous sections, a qlog file can be serialized in a
-multitude of formats, each of which can conceivably be transformed into or from
-one another without loss of information. For example, a number of JSON-SEQ
-streamed qlogs could be combined into a JSON formatted qlog for later processing.
-Similarly, a captured binary qlog could be transformed to JSON for easier
-interpretation and sharing.
-
-Secondly, other structured logging approaches contain
-similar (though typically not identical) data to qlog, like raw packet capture
-files (for example .pcap files from tcpdump) or endpoint-specific logging formats
-(for example the NetLog format in Google Chrome). These are sometimes the only
-options, if an implementation cannot or will not support direct qlog output for
-any reason, but does provide other internal or external (e.g., SSLKEYLOGFILE
-export to allow decryption of packet captures) logging options For this second
-category, a (partial) transformation from/to qlog can also be defined.
-
-As such, when defining a new qlog serialization format or wanting to utilize
-qlog-compatible tools with existing codebases lacking qlog support, it is
-recommended to define and provide a concrete mapping from one format to default
-JSON-serialized qlog. Several of such mappings exist. Firstly,
-[pcap2qlog]((https://github.com/quiclog/pcap2qlog) transforms QUIC and HTTP/3
-packet capture files to qlog. Secondly,
-[netlog2qlog](https://github.com/quiclog/qvis/tree/master/visualizations/src/components/filemanager/netlogconverter)
-converts chromium's internal dictionary-encoded JSON format to qlog. Finally,
-[quictrace2qlog](https://github.com/quiclog/quictrace2qlog) converts the older
-quictrace format to JSON qlog. Tools can then easily integrate with these
-converters (either by incorporating them directly or for example using them as a
-(web-based) API) so users can provide different file types with ease. For example,
-the [qvis](https://qvis.edm.uhasselt.be) toolsuite supports a multitude of formats
-and qlog serializations.
+In order to help tools correctly parse and process serialized qlog, it is
+RECOMMENDED that new formats also define suitable file extensions and media
+types. This provides a clear signal and avoids the need to provide out-of-band
+information or to rely on heuristic fallbacks; see {{tooling}}.
 
 # Methods of access and generation
 
@@ -1746,103 +1528,106 @@ still provide adequate output for incomplete logs.
 
 # Security and privacy considerations {#privacy}
 
-Protocols such as TLS {{!RFC8446}} and QUIC {{!RFC9000}} provide varying degrees
-of secure protection for the wire image {{?RFC8546}}. There is inevitably
-tension between security and observability, when logging can reveal aspects of
-the wire image, that would ordinarily be protected. This tension equally applies
-to any privacy considerations that build on security properties, especially if
-data can be correlated across data sources.
+Protocols such as TLS {{?RFC8446}} and QUIC {{?RFC9000}} offer secure protection
+for the wire image {{?RFC8546}}. Logging can reveal aspects of the wire image
+that would ordinarily be protected, creating tension between observability,
+security and privacy, especially if data can be correlated across data sources.
 
-qlog operators and implementers should be mindful of the security and privacy
-risks inherent in handling qlog data. This includes but is not limited to
-logging, storing, or using the data. Data might be considered as non-sensitive,
-potentially-sensitive, or sensitive; applying the considerations in this section
-may produce different risks depending on the nature of the data itself, or its
-handling. However, in many cases the largest risk factors arise from data that
-can be considered as potenially-sensitive or sensitive.
+Depending on the observability use case any data could be logged or captured. As
+per {{?RFC6973}}, operators must be aware that such data could be compromised,
+risking the privacy of all participants. Entities that expect protocol
+features to ensure data privacy might unknowingly be subject to broader privacy
+risks, undermining their ability to assess or respond effectively.
 
-The following is a non-exhaustive list of such fields and types of data that can
-be carried in qlog data:
+## Data at risk
 
-* IP addresses and transport protocol port numbers, which can be used to
-  uniquely identify individual connections, endpoints, and potentially users.
+qlog operators and implementers need to consider security and privacy risks when
+handling qlog data, including logging, storage, usage, and more. The
+considerations presented in this section may pose varying risks depending on the
+the data itself or its handling.
 
-* Session, Connection, or User identifiers which can be used to correlate
-  nominally separate contexts. For example, QUIC Connection IDs can be used to
-  identify and track users across geographical networks {{Section 9.5 of
-  !RFC9000}}).
+The following is a non-exhaustive list of example data types that could contain
+sensitive information that might allow identification or correlation of
+individual connections, endpoints, users or sessions across qlog or other data
+sources (e.g., captures of encrypted packets):
 
-* System-level information such as CPU, process, or thread identifiers.
+* IP addresses and transport protocol port numbers.
 
-* Stored State which can be used to correlate individual connections or sessions
-  over time. Examples include QUIC address validation and retry tokens, TLS
-  session tickets, and HTTP cookies.
+* Session, Connection, or User identifiers e.g., QUIC Connection IDs {{Section
+  9.5 of !RFC9000}}).
 
-* Decryption keys, passwords, and tokens which can be used with other data
-  sources (e.g., captures of encrypted packets) to correlate qlog data to a
-  specific connection or user or leak additional information. Examples include
-  TLS decryption keys and HTTP-level API access or authorization tokens.
+* System-level information e.g., CPU, process, or thread identifiers.
 
-* Data that can be used to correlate qlogs to other data sources (e.g., captures
-  of encrypted packets). Examples include high-resolution event timestamps or
-  inter-event timings, event counts, packet and frame sizes.
+* Stored State e.g., QUIC address validation and retry tokens, TLS session
+  tickets, and HTTP cookies.
 
-* Full or partial encrypted raw packet and frame payloads, which can be used
-  with other data sources (e.g., captures of encrypted packets) to correlate
-  qlog data to a specific connection or session.
+* TLS decryption keys, passwords, and HTTP-level API access or authorization tokens.
 
-* Full or partial plaintext raw packet and frame payloads (e.g., HTTP Field
-  values, HTTP response data, TLS SNI field values), which can contain directly
-  sensitive information.
+* High-resolution event timestamps or inter-event timings, event counts, packet
+  sizes, and frame sizes.
 
-The simplest and most extreme form of protection against abuse of this
-information is the complete deletion of a given field, which is equivalent to
-not logging the field(s) in question. While deletion completely protects the
-data in the deleted fields from the risk of compromise, it also reduces the
-utility of the dataset as a whole. As such, a balance should be found between
-logging these fields and the potential risks inherent in their (involuntary)
-disclosure. This balance depends on the use case at hand (e.g., research
-datasets might have different requirements to live operational troubleshooting).
-Capturing the minimal amount of data required for a specific purpose can help to
-minimize the risks associated with data usage. qlog implementations that provide
-fine-grained control over the inclusion of data fields, ideally on a
-per-use-case or per-connection basis, improve the ability to minimize data.
+* Full or partial raw packet and frame payloads that are encrypted.
 
-Any data that is determined to be necessary for a use case at hand could be
-logged or captured. As per {{!RFC6973}}, operators must be aware that such data
-will be at risk of compromise. As such, measures should be taken to firstly
-reduce the risk of compromise and secondly reduce the risk of abuse of
-compromised data. While a full discussion of both aspects is out of scope for
-this document, the following paragraphs discuss high-level considerations that
-can be applied to qlog data.
+* Full or partial raw packet and frame payloads that are plaintext e.g., HTTP Field
+  values, HTTP response data, or TLS SNI field values.
 
-To reduce the risk of compromise, operators can take measures such as: limiting
-the length of time that data is stored, encrypting data in transit and at rest,
-limiting access rights to the data, and auditing data usage practices. qlog
-deployments that provide integrated options for automated or manual data
-deletion and (aggressive) aggregation, improve the ability to minimize the risk
-of compromise.
+## Operational implications and recommendations
 
-To reduce the risk of data abuse after compromise, data can be anonymized,
-pseudonymized, otherwise permutated/replaced, truncated, (re-)encrypted, or
-aggregated. A partial discussion of applicable techniques (especially for IP
-address information) can be found in {{Appendix B of !DNS-PRIVACY=RFC8932}}.
-Operators should, however, be aware that many of these techniques have been
-shown to be insufficient to safeguard user privacy and/or to protect user
-identity, especially if a qlog data set is large or easily correlated against
-other data sources.
+Operational considerations should focus on authorizing capture and access to logs. Logging of
+Internet protocols using qlog can be equivalent to the ability to store or read plaintext
+communications. Without a more detailed analysis, all of the security considerations of plaintext access apply.
 
-Finally, qlog operators should consider the interplay between their use case
-needs and end user rights or preferences. While active user participation (as
-indicated by {{!RFC6973}}) on a per-qlog basis is difficult, as logs are often
-captured out-of-band to the main user interaction and intent, general user
-expectations should be taken into account. qlog deployments that provide
-mechanisms to integrate the capture, storage and removal of qlogs with more
-general, often pre-existing, user preference and privacy control systems,
-improve the ability to protect data sensitive or confidential to the end user.
-In qlog, these data are typically (but not exclusively) contained in fields of
-the RawInfo type (see {{raw-info}}). qlog users should thus be particularly
-hesitant to include these fields for all but the most stringent use cases.
+It is recommended that qlog capture is subject to access control and auditing.
+These controls should support granular levels of information capture based on
+role and permissions (e.g., capture of more-sensitive data requires higher
+privileges).
+
+It is recommended that access to stored qlogs is subject to access control and
+auditing.
+
+End users might not understand the implications of qlog to security or privacy,
+and their environments might limit access control techniques. Implementations should
+make enabling qlog conspicuous (e.g., requiring clear and explicit actions to
+start a capture) and resistant to social engineering, automation, or drive-by
+attacks; for example, isolation or sandboxing of capture from other activities
+in the same process or component.
+
+It is recommended that data retention policies are defined for the storage of
+qlog files.
+
+It is recommended that qlog files are encrypted in transit and at rest.
+
+## Data minimization or anonymization
+
+Applying data minimization or anonymization techniques to qlog might help
+address some security and privacy risks. However, removing or anonymizing data
+without sufficient care might not enhance privacy or security and
+could diminish the utility of qlog data.
+
+Operators and implementers should balance the value of logged data with the
+potential risks of (involuntary) disclosure, which can depend on use cases
+(e.g., research datasets might have different requirements to live operational
+troubleshooting).
+
+The most extreme form of minimization or anonymization is deleting a field,
+equivalent to not logging it. qlog implementations should offer fine-grained
+control for this on a per-use-case or per-connection basis.
+
+Data can undergo anonymization, pseudonymization, permutation, truncation,
+re-encryption, or aggregation; see {{Appendix B of !DNS-PRIVACY=RFC8932}} for
+techniques, especially regarding IP addresses. However, operators should be
+cautious because many anonymization methods have been shown to be insufficient to safeguard
+user privacy or identity, particularly with large or easily correlated data sets.
+
+Operators should consider end user rights and preferences. Active user participation (as
+indicated by {{!RFC6973}}) on a per-qlog basis is challenging but aligning qlog
+capture, storage, and removal with existing user preference and privacy controls
+is crucial. Operators should consider agressive approaches to deletion or
+aggregation.
+
+The most sensitive data in qlog is typically contained in RawInfo type fields
+(see {{raw-info}}). Therefore, qlog users should exercise caution and limit the
+inclusion of such fields for all but the most stringent use cases.
 
 # IANA Considerations
 
@@ -1941,3 +1726,4 @@ their feedback and suggestions.
 * Triggers are now properties on the "data" field value, instead of separate field
   types (#23)
 * group_ids in common_fields is now just also group_id
+
