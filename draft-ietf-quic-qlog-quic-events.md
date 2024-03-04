@@ -578,9 +578,9 @@ minimize the amount of events and to decouple conceptual setting impacts from
 their underlying mechanism for easier high-level reasoning. The event has Core
 importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
-All these settings are typically set once and never change. However, they are
-typically set at different times during the connection, so there will typically be
-several instances of this event with different fields set.
+Most of these settings are typically set once and never change. However, they
+are usually set at different times during the connection, so there will
+regularly be several instances of this event with different fields set.
 
 Note that some settings have two variations (one set locally, one requested by the
 remote peer). This is reflected in the `owner` field. As such, this field MUST be
@@ -631,6 +631,8 @@ QUICParametersSet = {
     ; RFC9287
     ; true if present, absent or false if extension not negotiated
     ? grease_quic_bit: bool
+
+    * $$quic-parametersset-extension
 }
 
 PreferredAddress = {
@@ -644,9 +646,17 @@ PreferredAddress = {
 ~~~
 {: #quic-parametersset-def title="QUICParametersSet definition"}
 
-Additionally, this event can contain any number of unspecified fields. This is
-to reflect setting of, for example, unknown (greased) transport parameters or
-custom extensions.
+The generic `$$quic-parametersset-extension` is defined here as a CDDL extension
+point (a "group socket"). It can be used to support additional, unknown, custom,
+and greased parameters. An example of such an extension can be found in
+{{parametersset-extension-example}}.
+
+~~~~~~~~
+$$quic-parametersset-extension //= (
+  ? new_transport_parameter: uint64
+)
+~~~~~~~~
+{: #parametersset-extension-example title="quic-parametersset-extension example"}
 
 ## parameters_restored {#quic-parametersrestored}
 
@@ -672,12 +682,15 @@ QUICParametersRestored = {
     ? initial_max_stream_data_uni: uint64
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
+
+    * $$quic-parametersrestored-extension
 }
 ~~~
 {: #quic-parametersrestored-def title="QUICParametersRestored definition"}
 
-Note that, like the `parameters_set` event, this event can contain any number of
-unspecified fields to allow for additional/custom parameters.
+The generic `$$quic-parametersrestored-extension` is defined here as a CDDL
+extension point (a "group socket"). It can be used to support additional and
+custom parameters.
 
 ## packet_sent {#quic-packetsent}
 
