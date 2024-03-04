@@ -1313,33 +1313,32 @@ different recovery approaches.
 
 ## congestion_state_updated {#recovery-congestionstateupdated}
 
-The `congestion_state_updated` event signifies when the congestion controller
+The `congestion_state_updated` event indicates when the congestion controller
 enters a significant new state and changes its behaviour. It has Base importance
 level; see {{Section 9.2 of QLOG-MAIN}}.
 
-The event is generic to support different Congestion Control algorithms. For
-example, for the algorithm defined in the Recovery draft ("enhanced" New Reno),
-the following states are defined:
-
-* slow_start
-* congestion_avoidance
-* application_limited
-* recovery
+The values of the event's fields are intentionally unspecified here in order to
+support different Congestion Control algorithms, as these typically have
+different states and even different implementations of these states across
+stacks. For example, for the algorithm defined in the Recovery draft ("enhanced"
+New Reno), the following states are used: Slow Start, Congestion Avoidance,
+Application Limited and Recovery. Similarly, states can be triggered by a
+variety of events, including detection of Persistent Congestion or receipt of
+ECN markings.
 
 ~~~ cddl
 RecoveryCongestionStateUpdated = {
     ? old: text
     new: text
-    ? trigger:
-        "persistent_congestion" /
-        "ECN"
+    ? trigger: text
 }
 ~~~
 {: #recovery-congestionstateupdated-def title="RecoveryCongestionStateUpdated definition"}
 
-The `trigger` field SHOULD be logged if there are multiple ways in which a state change
-can occur but MAY be omitted if a given state can only be due to a single event
-occurring (e.g., slow start is exited only when ssthresh is exceeded).
+The `trigger` field SHOULD be logged if there are multiple ways in which a state
+change can occur but MAY be omitted if a given state can only be due to a single
+event occurring (for example Slow Start is often exited only when ssthresh is
+exceeded).
 
 ## loss_timer_updated {#recovery-losstimerupdated}
 
