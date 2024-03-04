@@ -177,6 +177,7 @@ this specification.
 | connectivity:connection_id_updated    | Base       | {{connectivity-connectionidupdated}} |
 | connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
 | connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
+| connectivity:path_assigned            | Base       | {{connectivity-pathassigned}} |
 | connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
 | quic:version_information         | Core       | {{quic-versioninformation}} |
 | quic:alpn_information            | Core       | {{quic-alpninformation}} |
@@ -194,6 +195,7 @@ this specification.
 | quic:frames_processed            | Extra      | {{quic-framesprocessed}} |
 | quic:stream_data_moved                | Base       | {{quic-streamdatamoved}} |
 | quic:datagram_data_moved              | Base       | {{quic-datagramdatamoved}} |
+| quic:migration_state_updated          | Extra      | {{quic-migrationstateupdated}} |
 | security:key_updated                  | Base       | {{security-keyupdated}} |
 | security:key_discarded                | Base       | {{security-keydiscarded}} |
 | recovery:parameters_set               | Base       | {{recovery-parametersset}} |
@@ -215,6 +217,7 @@ QuicEventData = ConnectivityServerListening /
                 ConnectivityConnectionIDUpdated /
                 ConnectivitySpinBitUpdated /
                 ConnectivityConnectionStateUpdated /
+                ConnectivityPathAssigned /
                 ConnectivityMTUUpdated /
                 SecurityKeyUpdated /
                 SecurityKeyDiscarded /
@@ -470,6 +473,56 @@ Note:
 conceptual event as the `connection_started`` event above from the client's
 perspective. Similarly, a state of `closing` or `draining` corresponds to the
 `connection_closed` event.
+
+## path_assigned {#connectivity-pathassigned}
+Importance: Base
+
+This event is used to associate a single PathID's value with other parameters
+that describe a unique network path.
+
+As described in {{QLOG-MAIN}}, each qlog event can be linked to a single network
+path by means of the top-level "path" field, whose value is a PathID. However,
+since it can be cumbersome to encode additional path metadata (such as IP
+addresses or Connection IDs) directly into the PathID, this event allows such an
+association to happen separately. As such, PathIDs can be short and unique, and
+can even be updated to be associated with new metadata as the connection's state
+evolves.
+
+Definition:
+
+~~~ cddl
+ConnectivityPathAssigned = {
+    path_id: PathID
+
+    ; the information for traffic going towards the remote receiver
+    ? path_remote: PathEndpointInfo
+
+    ; the information for traffic coming in at the local endpoint
+    ? path_local: PathEndpointInfo
+}
+~~~
+{: #connectivity-pathassigned-def title="ConnectivityPathAssigned definition"}
+
+Choosing the different `path_id` values is left up to the implementation. Some
+options include using a uniquely incrementing integer, using the (first)
+Destination Connection ID associated with a path (or its sequence number), or
+using (a hash of) the two endpoint IP addresses.
+
+It is important to note that the empty string ("") is a valid PathID and that it
+is the default assigned to events that do not explicitly set a "path" field. Put
+differently, the initial path of a QUIC connection on which the handshake occurs
+(see also {{connectivity-connectionstarted}}) is implicitly associated with the
+PathID with value "". Associating metadata with this default path is possible by
+logging the ConnectivityPathAssigned event with a value of "" for the `path_id`
+field.
+
+As paths and their metadata can evolve over time, multiple
+ConnectivityPathAssigned events can be emitted for each unique PathID. The
+latest event contains the most up-to-date information for that PathID. As such,
+the first time a PathID is seen in a ConnectivityPathAssigned event, it is an
+indication that the path is created. Subsequent occurrences indicate the path is
+updated, while a final occurrence with both `path_local` and `path_remote`
+fields omitted implicitly indicates the path has been abandoned.
 
 ## mtu_updated {#connectivity-mtuupdated}
 
@@ -1158,6 +1211,63 @@ QUICDatagramDataMoved = {
 ~~~
 {: #quic-datagramdatamoved-def title="QUICDatagramDataMoved definition"}
 
+
+
+## migration_state_updated {#quic-migrationstateupdated}
+Importance: Extra
+
+Use to provide additional information when attempting (client-side) connection
+migration. While most details of the QUIC connection migration process can be
+inferred by observing the PATH_CHALLENGE and PATH_RESPONSE frames, in
+combination with the ConnectivityPathAssigned event, it can be useful to
+explicitly log the progression of the migration and potentially made decisions
+in a single location/event.
+
+Generally speaking, connection migration goes through two phases: a probing
+phase (which is not always needed/present), and a migration phase (which can be
+abandoned upon error).
+
+Implementations that log per-path information in a QUICMigrationStateUpdated,
+SHOULD also emit QUICPathAssigned events, to serve as a ground-truth source of
+information.
+
+Definition:
+
+~~~ cddl
+QUICMigrationStateUpdated = {
+    ? old: MigrationState
+    new: MigrationState
+
+    ? path_id: PathID
+
+    ; the information for traffic going towards the remote receiver
+    ? path_remote: PathEndpointInfo
+
+    ; the information for traffic coming in at the local endpoint
+    ? path_local: PathEndpointInfo
+}
+
+; Note that MigrationState does not describe a full state machine
+; These entries are not necessarily chronological,
+; nor will they always all appear during
+; a connection migration attempt.
+MigrationState =
+    ; probing packets are sent, migration not initiated yet
+    "probing_started" /
+    ; did not get reply to probing packets,
+    ; discarding path as an option
+    "probing_abandoned" /
+    ; received reply to probing packets, path is migration candidate
+    "probing_successful" /
+    ; non-probing packets are sent, attempting migration
+    "migration_started" /
+    ; something went wrong during the migration, abandoning attempt
+    "migration_abandoned" /
+    ; new path is now fully used, old path is discarded
+    "migration_complete"
+~~~
+{: #quic-migrationstateupdated-def title="QUICMigrationStateUpdated definition"}
+
 # Security Events {#sec-ev}
 
 ## key_updated {#security-keyupdated}
@@ -1487,7 +1597,9 @@ Owner = "local" /
 ; an IPAddress can either be a "human readable" form
 ; (e.g., "127.0.0.1" for v4 or
 ; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
-; use a raw byte-form (as the string forms can be ambiguous)
+; use a raw byte-form (as the string forms can be ambiguous).
+; Additionally, a hash-based or redacted representation
+; can be used if needed for privacy or security reasons.
 IPAddress = text /
             hexstring
 ~~~
@@ -1498,6 +1610,32 @@ IPVersion = "v4" /
             "v6"
 ~~~
 {: #ipversion-def title="IPVersion definition"}
+
+## PathEndpointInfo
+
+PathEndpointInfo indicates a single half/direction of a path. A full path is
+comprised of two halves. Firstly: the server sends to the remote client IP
++ port using a specific destination Connection ID. Secondly: the client sends to
+the remote server IP + port using a different destination Connection ID.
+
+As such, structures logging path information SHOULD include two different
+PathEndpointInfo instances, one for each half of the path.
+
+~~~ cddl
+PathEndpointInfo = {
+    ? ip_v4: IPAddress
+    ? ip_v6: IPAddress
+    ? port_v4: uint16
+    ? port_v6: uint16
+
+    ; Even though usually only a single ConnectionID
+    ; is associated with a given path at a time,
+    ; there are situations where there can be an overlap
+    ; or a need to keep track of previous ConnectionIDs
+    ? connection_ids: [+ ConnectionID]
+}
+~~~
+{: #pathendpointinfo-def title="PathEndpointInfo definition"}
 
 ## PacketType
 
