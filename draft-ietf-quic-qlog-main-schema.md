@@ -1648,6 +1648,14 @@ their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-main-schema-07:
+{:numbered="false"}
+
+* Added path and PathID (#336)
+* Removed custom definition of uint64 type (#360, #388)
+* ProtocolEventBody is now called ProtocolEventData (#352)
+* Editorial changes (#364, #289, #353, #361, #362)
+
 ## Since draft-ietf-quic-qlog-main-schema-06:
 {:numbered="false"}
 

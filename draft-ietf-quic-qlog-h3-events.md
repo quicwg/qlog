@@ -675,6 +675,11 @@ Yamamoto, and Christian Huitema for their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-h3-events-06:
+{:numbered="false"}
+
+* ProtocolEventBody is now called ProtocolEventData (#352)
+* Editorial changes (#402)
 
 ## Since draft-ietf-quic-qlog-h3-events-05:
 {:numbered="false"}

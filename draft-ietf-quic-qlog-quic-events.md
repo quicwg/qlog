@@ -2207,6 +2207,20 @@ Yamamoto, and Christian Huitema for their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-qlog-quic-events-06:
+{:numbered="false"}
+
+* Added PathAssigned and MigrationStateUpdated events (#336)
+* Added extension points to parameters_set and parameters_restored (#400)
+* Removed error_code_value from connection_closed (#386, #392)
+* Renamed generation to key_phase for key_updated and key_discarded (#390)
+* Removed retry_token from packet_sent and packet_received (#389)
+* Updated ALPN handling (#385)
+* Added key_unavailable trigger to packet_dropped (#381)
+* Updated several uint32 to uint64
+* ProtocolEventBody is now called ProtocolEventData (#352)
+* Editorial changes (#402, #404, #394, #393)
+
 ## Since draft-ietf-qlog-quic-events-05:
 {:numbered="false"}
 
