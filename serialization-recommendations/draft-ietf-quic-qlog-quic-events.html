@@ -14,12 +14,12 @@
 QUIC events. These events can then be embedded in the higher level schema defined
 in  . 
     " name="description">
-<meta content="xml2rfc 3.19.4" name="generator">
+<meta content="xml2rfc 3.20.0" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-ietf-quic-qlog-quic-events-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.19.4
-    Python 3.11.6
+  xml2rfc 3.20.0
+    Python 3.11.8
     ConfigArgParse 1.7
     google-i18n-address 3.1.0
     intervaltree 3.1.0
@@ -1034,7 +1034,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 2 September 2024</td>
+<td class="center">Expires 5 September 2024</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1047,12 +1047,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2024-03-01" class="published">1 March 2024</time>
+<time datetime="2024-03-04" class="published">4 March 2024</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2024-09-02">2 September 2024</time></dd>
+<dd class="expires"><time datetime="2024-09-05">5 September 2024</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1120,7 +1120,7 @@ various programming languages can be found at
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 2 September 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 5 September 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2405,9 +2405,9 @@ and <code>chosen_alpn</code> set.<a href="#section-5.2-6.4.1" class="pilcrow">¶
 minimize the amount of events and to decouple conceptual setting impacts from
 their underlying mechanism for easier high-level reasoning. The event has Core
 importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
-<p id="section-5.3-2">Most of these settings are typically set once and never change. However, they
-are usually set at different times during the connection, so there will
-regularly be several instances of this event with different fields set.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
+<p id="section-5.3-2">All these settings are typically set once and never change. However, they are
+typically set at different times during the connection, so there will typically be
+several instances of this event with different fields set.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
 <p id="section-5.3-3">Note that some settings have two variations (one set locally, one requested by the
 remote peer). This is reflected in the <code>owner</code> field. As such, this field <span class="bcp14">MUST</span> be
 correct for all settings included a single event instance. If you need to log
@@ -2419,7 +2419,7 @@ separate <code>parameters_restored</code> event to indicate the initial values, 
 event to indicate the updated values, as normal.<a href="#section-5.3-4" class="pilcrow">¶</a></p>
 <span id="name-quicparametersset-definitio"></span><div id="quic-parametersset-def">
 <figure id="figure-11">
-          <div class="breakable lang-cddl sourcecode" id="section-5.3-5.1">
+          <div class="lang-cddl sourcecode" id="section-5.3-5.1">
 <pre>
 QUICParametersSet = {
     ? owner: Owner
@@ -2458,8 +2458,6 @@ QUICParametersSet = {
     ; RFC9287
     ; true if present, absent or false if extension not negotiated
     ? grease_quic_bit: bool
-
-    * $$quic-parametersset-extension
 }
 
 PreferredAddress = {
@@ -2467,7 +2465,7 @@ PreferredAddress = {
     ip_v6: IPAddress
     port_v4: uint16
     port_v6: uint16
-    connection_id: ConnectionID$
+    connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
 }
 </pre>
@@ -2476,23 +2474,9 @@ PreferredAddress = {
 <a href="#name-quicparametersset-definitio" class="selfRef">QUICParametersSet definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.3-6">The generic <code>$$quic-parametersset-extension</code> is defined here as a CDDL extension
-point (a "group socket"). It can be used to support additional, unknown, custom,
-and greased parameters. An example of such an extension can be found in
-<a href="#parametersset-extension-example" class="auto internal xref">Figure 12</a>.<a href="#section-5.3-6" class="pilcrow">¶</a></p>
-<span id="name-quic-parametersset-extensio"></span><div id="parametersset-extension-example">
-<figure id="figure-12">
-          <div class="alignLeft art-text artwork" id="section-5.3-7.1">
-<pre>
-$$quic-parametersset-extension //= (
-  ? new_transport_parameter: uint64
-)
-</pre>
-</div>
-<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
-<a href="#name-quic-parametersset-extensio" class="selfRef">quic-parametersset-extension example</a>
-          </figcaption></figure>
-</div>
+<p id="section-5.3-6">Additionally, this event can contain any number of unspecified fields. This is
+to reflect setting of, for example, unknown (greased) transport parameters or
+custom extensions.<a href="#section-5.3-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-parametersrestored">
@@ -2508,7 +2492,7 @@ when utilizing 0-RTT. It has Base importance level; see <span><a href="https://d
 prohibited from being re-utilized). The ones listed here are the ones expected
 to be useful for correct 0-RTT usage.<a href="#section-5.4-2" class="pilcrow">¶</a></p>
 <span id="name-quicparametersrestored-defi"></span><div id="quic-parametersrestored-def">
-<figure id="figure-13">
+<figure id="figure-12">
           <div class="lang-cddl sourcecode" id="section-5.4-3.1">
 <pre>
 QUICParametersRestored = {
@@ -2522,18 +2506,15 @@ QUICParametersRestored = {
     ? initial_max_stream_data_uni: uint64
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
-
-    * $$quic-parametersrestored-extension
 }
 </pre>
 </div>
-<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
+<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
 <a href="#name-quicparametersrestored-defi" class="selfRef">QUICParametersRestored definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.4-4">The generic <code>$$quic-parametersrestored-extension</code> is defined here as a CDDL
-extension point (a "group socket"). It can be used to support additional and
-custom parameters.<a href="#section-5.4-4" class="pilcrow">¶</a></p>
+<p id="section-5.4-4">Note that, like the <code>parameters_set</code> event, this event can contain any number of
+unspecified fields to allow for additional/custom parameters.<a href="#section-5.4-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetsent">
@@ -2544,7 +2525,7 @@ custom parameters.<a href="#section-5.4-4" class="pilcrow">¶</a></p>
 <p id="section-5.5-1">The <code>packet_sent</code> event indicates a QUIC-level packet was sent. It has Core
 importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.5-1" class="pilcrow">¶</a></p>
 <span id="name-quicpacketsent-definition"></span><div id="quic-packetsent-def">
-<figure id="figure-14">
+<figure id="figure-13">
           <div class="lang-cddl sourcecode" id="section-5.5-2.1">
 <pre>
 QUICPacketSent = {
@@ -2577,7 +2558,7 @@ QUICPacketSent = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
 <a href="#name-quicpacketsent-definition" class="selfRef">QUICPacketSent definition</a>
           </figcaption></figure>
 </div>
@@ -2596,7 +2577,7 @@ when keeping track of packet coalescing.<a href="#section-5.5-4" class="pilcrow"
 <p id="section-5.6-1">The <code>packet_received</code> event indicates a QUIC-level packet was received. It has
 Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.6-1" class="pilcrow">¶</a></p>
 <span id="name-quicpacketreceived-definiti"></span><div id="quic-packetreceived-def">
-<figure id="figure-15">
+<figure id="figure-14">
           <div class="lang-cddl sourcecode" id="section-5.6-2.1">
 <pre>
 QUICPacketReceived = {
@@ -2620,7 +2601,7 @@ QUICPacketReceived = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
+<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
 <a href="#name-quicpacketreceived-definiti" class="selfRef">QUICPacketReceived definition</a>
           </figcaption></figure>
 </div>
@@ -2642,7 +2623,7 @@ Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/
 while the details field can contain additional implementation-specific
 information.<a href="#section-5.7-2" class="pilcrow">¶</a></p>
 <span id="name-quicpacketdropped-definitio"></span><div id="quic-packetdropped-def">
-<figure id="figure-16">
+<figure id="figure-15">
           <div class="lang-cddl sourcecode" id="section-5.7-3.1">
 <pre>
 QUICPacketDropped = {
@@ -2666,7 +2647,7 @@ QUICPacketDropped = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
+<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
 <a href="#name-quicpacketdropped-definitio" class="selfRef">QUICPacketDropped definition</a>
           </figcaption></figure>
 </div>
@@ -2713,7 +2694,7 @@ cannot be processed yet. Typically, this is because the packet cannot be parsed
 yet, and thus only the full packet contents can be logged when it was parsed in
 a <code>packet_received</code> event. The event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.8-1" class="pilcrow">¶</a></p>
 <span id="name-quicpacketbuffered-definiti"></span><div id="quic-packetbuffered-def">
-<figure id="figure-17">
+<figure id="figure-16">
           <div class="lang-cddl sourcecode" id="section-5.8-2.1">
 <pre>
 QUICPacketBuffered = {
@@ -2733,7 +2714,7 @@ QUICPacketBuffered = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
 <a href="#name-quicpacketbuffered-definiti" class="selfRef">QUICPacketBuffered definition</a>
           </figcaption></figure>
 </div>
@@ -2755,7 +2736,7 @@ given packet is acknowledged for the first time, as QUIC uses ACK ranges which
 can include repeated ACKs. Additionally, this event can be used by
 implementations that do not log frame contents.<a href="#section-5.9-2" class="pilcrow">¶</a></p>
 <span id="name-quicpacketsacked-definition"></span><div id="quic-packetsacked-def">
-<figure id="figure-18">
+<figure id="figure-17">
           <div class="lang-cddl sourcecode" id="section-5.9-3.1">
 <pre>
 QUICPacketsAcked = {
@@ -2764,7 +2745,7 @@ QUICPacketsAcked = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
 <a href="#name-quicpacketsacked-definition" class="selfRef">QUICPacketsAcked definition</a>
           </figcaption></figure>
 </div>
@@ -2782,7 +2763,7 @@ number space a typical QUIC connection will use.<a href="#section-5.9-4" class="
 for determining how QUIC packet buffers are drained to the OS. The event has
 Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.10-1" class="pilcrow">¶</a></p>
 <span id="name-quicdatagramssent-definitio"></span><div id="quic-datagramssent-def">
-<figure id="figure-19">
+<figure id="figure-18">
           <div class="lang-cddl sourcecode" id="section-5.10-2.1">
 <pre>
 QUICDatagramsSent = {
@@ -2803,7 +2784,7 @@ QUICDatagramsSent = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
 <a href="#name-quicdatagramssent-definitio" class="selfRef">QUICDatagramsSent definition</a>
           </figcaption></figure>
 </div>
@@ -2826,7 +2807,7 @@ consider how to generate unique values within the scope of their created traces.
 useful for determining how datagrams are passed to the user space stack from the
 OS. The event has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.11-1" class="pilcrow">¶</a></p>
 <span id="name-quicdatagramsreceived-defin"></span><div id="quic-datagramsreceived-def">
-<figure id="figure-20">
+<figure id="figure-19">
           <div class="lang-cddl sourcecode" id="section-5.11-2.1">
 <pre>
 QUICDatagramsReceived = {
@@ -2847,7 +2828,7 @@ QUICDatagramsReceived = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
 <a href="#name-quicdatagramsreceived-defin" class="selfRef">QUICDatagramsReceived definition</a>
           </figcaption></figure>
 </div>
@@ -2864,7 +2845,7 @@ contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
 other reasons, the <code>packet_dropped</code> event (<a href="#quic-packetdropped" class="auto internal xref">Section 5.7</a>) should be
 used instead. The event has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.12-1" class="pilcrow">¶</a></p>
 <span id="name-quicdatagramdropped-definit"></span><div id="quic-datagramdropped-def">
-<figure id="figure-21">
+<figure id="figure-20">
           <div class="lang-cddl sourcecode" id="section-5.12-2.1">
 <pre>
 QUICDatagramDropped = {
@@ -2875,7 +2856,7 @@ QUICDatagramDropped = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
+<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
 <a href="#name-quicdatagramdropped-definit" class="selfRef">QUICDatagramDropped definition</a>
           </figcaption></figure>
 </div>
@@ -2892,7 +2873,7 @@ inferred from several types of frames going over the wire, but it's much easier
 to have explicit signals for these state changes. The event has Base importance
 level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.13-1" class="pilcrow">¶</a></p>
 <span id="name-quicstreamstateupdated-defi"></span><div id="quic-streamstateupdated-def">
-<figure id="figure-22">
+<figure id="figure-21">
           <div class="lang-cddl sourcecode" id="section-5.13-2.1">
 <pre>
 StreamType = "unidirectional" /
@@ -2934,7 +2915,7 @@ StreamState =
     "destroyed"
 </pre>
 </div>
-<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
+<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
 <a href="#name-quicstreamstateupdated-defi" class="selfRef">QUICStreamStateUpdated definition</a>
           </figcaption></figure>
 </div>
@@ -2980,7 +2961,7 @@ packets, the position and order of entries in the <code>frames</code> and <code>
 is used. If the optional <code>packet_numbers</code> field is used, each frame <span class="bcp14">MUST</span> have a
 corresponding packet number at the same index.<a href="#section-5.14-6" class="pilcrow">¶</a></p>
 <span id="name-quicframesprocessed-definit"></span><div id="quic-framesprocessed-def">
-<figure id="figure-23">
+<figure id="figure-22">
           <div class="lang-cddl sourcecode" id="section-5.14-7.1">
 <pre>
 QUICFramesProcessed = {
@@ -2989,7 +2970,7 @@ QUICFramesProcessed = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
+<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
 <a href="#name-quicframesprocessed-definit" class="selfRef">QUICFramesProcessed definition</a>
           </figcaption></figure>
 </div>
@@ -3035,7 +3016,7 @@ or scheduling problems.<a href="#section-5.15-3" class="pilcrow">¶</a></p>
 <p id="section-5.15-4">This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
 see the <code>datagram_data_moved</code> event defined in <a href="#quic-datagramdatamoved" class="auto internal xref">Section 5.16</a>.<a href="#section-5.15-4" class="pilcrow">¶</a></p>
 <span id="name-quicstreamdatamoved-definit"></span><div id="quic-streamdatamoved-def">
-<figure id="figure-24">
+<figure id="figure-23">
           <div class="lang-cddl sourcecode" id="section-5.15-5.1">
 <pre>
 QUICStreamDataMoved = {
@@ -3058,7 +3039,7 @@ QUICStreamDataMoved = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
+<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
 <a href="#name-quicstreamdatamoved-definit" class="selfRef">QUICStreamDataMoved definition</a>
           </figcaption></figure>
 </div>
@@ -3086,7 +3067,7 @@ problems.<a href="#section-5.16-3" class="pilcrow">¶</a></p>
 <p id="section-5.16-4">This event is only for data in QUIC Datagram Frames. For data in QUIC streams,
 see the <code>stream_data_moved</code> event defined in <a href="#quic-streamdatamoved" class="auto internal xref">Section 5.15</a>.<a href="#section-5.16-4" class="pilcrow">¶</a></p>
 <span id="name-quicdatagramdatamoved-defin"></span><div id="quic-datagramdatamoved-def">
-<figure id="figure-25">
+<figure id="figure-24">
           <div class="lang-cddl sourcecode" id="section-5.16-5.1">
 <pre>
 QUICDatagramDataMoved = {
@@ -3106,7 +3087,7 @@ QUICDatagramDataMoved = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
+<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
 <a href="#name-quicdatagramdatamoved-defin" class="selfRef">QUICDatagramDataMoved definition</a>
           </figcaption></figure>
 </div>
@@ -3126,7 +3107,7 @@ QUICDatagramDataMoved = {
         </h3>
 <p id="section-6.1-1">The <code>key_updated</code> event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
 <span id="name-securitykeyupdated-definiti"></span><div id="security-keyupdated-def">
-<figure id="figure-26">
+<figure id="figure-25">
           <div class="lang-cddl sourcecode" id="section-6.1-2.1">
 <pre>
 SecurityKeyUpdated = {
@@ -3145,7 +3126,7 @@ SecurityKeyUpdated = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
+<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
 <a href="#name-securitykeyupdated-definiti" class="selfRef">SecurityKeyUpdated definition</a>
           </figcaption></figure>
 </div>
@@ -3161,7 +3142,7 @@ the packet header is the least significant bit of the key phase.<a href="#sectio
         </h3>
 <p id="section-6.2-1">The <code>key_discarded</code> event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
 <span id="name-securitykeydiscarded-defini"></span><div id="security-keydiscarded-def">
-<figure id="figure-27">
+<figure id="figure-26">
           <div class="lang-cddl sourcecode" id="section-6.2-2.1">
 <pre>
 SecurityKeyDiscarded = {
@@ -3179,7 +3160,7 @@ SecurityKeyDiscarded = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
+<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
 <a href="#name-securitykeydiscarded-defini" class="selfRef">SecurityKeyDiscarded definition</a>
           </figcaption></figure>
 </div>
@@ -3208,7 +3189,7 @@ and congestion control into a single event. It has Base importance level; see
 do, for some reason, change these parameters during execution, <span class="bcp14">MAY</span> emit the
 <code>parameters_set</code> event more than once.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
 <span id="name-recoveryparametersset-defin"></span><div id="recovery-parametersset-def">
-<figure id="figure-28">
+<figure id="figure-27">
           <div class="lang-cddl sourcecode" id="section-7.1-3.1">
 <pre>
 RecoveryParametersSet = {
@@ -3243,7 +3224,7 @@ RecoveryParametersSet = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
+<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
 <a href="#name-recoveryparametersset-defin" class="selfRef">RecoveryParametersSet definition</a>
           </figcaption></figure>
 </div>
@@ -3264,7 +3245,7 @@ same time, they should be bundled in a single <code>metrics_updated</code> entry
 than split out into two). Consequently, a <code>metrics_updated</code> event is only
 guaranteed to contain at least one of the listed metrics.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
 <span id="name-recoverymetricsupdated-defi"></span><div id="recovery-metricsupdated-def">
-<figure id="figure-29">
+<figure id="figure-28">
           <div class="lang-cddl sourcecode" id="section-7.2-3.1">
 <pre>
 RecoveryMetricsUpdated = {
@@ -3294,7 +3275,7 @@ RecoveryMetricsUpdated = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
+<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
 <a href="#name-recoverymetricsupdated-defi" class="selfRef">RecoveryMetricsUpdated definition</a>
           </figcaption></figure>
 </div>
@@ -3332,7 +3313,7 @@ the following states are defined:<a href="#section-7.3-2" class="pilcrow">¶</a>
 </li>
         </ul>
 <span id="name-recoverycongestionstateupda"></span><div id="recovery-congestionstateupdated-def">
-<figure id="figure-30">
+<figure id="figure-29">
           <div class="lang-cddl sourcecode" id="section-7.3-4.1">
 <pre>
 RecoveryCongestionStateUpdated = {
@@ -3344,7 +3325,7 @@ RecoveryCongestionStateUpdated = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
+<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
 <a href="#name-recoverycongestionstateupda" class="selfRef">RecoveryCongestionStateUpdated definition</a>
           </figcaption></figure>
 </div>
@@ -3375,7 +3356,7 @@ acknowledged, start idle period)<a href="#section-7.4-3.3.1" class="pilcrow">¶<
         </ul>
 <p id="section-7.4-4">In order to indicate an active timer's timeout update, a new <code>set</code> event is used.<a href="#section-7.4-4" class="pilcrow">¶</a></p>
 <span id="name-recoverylosstimerupdated-de"></span><div id="recovery-losstimerupdated-def">
-<figure id="figure-31">
+<figure id="figure-30">
           <div class="lang-cddl sourcecode" id="section-7.4-5.1">
 <pre>
 RecoveryLossTimerUpdated = {
@@ -3394,7 +3375,7 @@ RecoveryLossTimerUpdated = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
+<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
 <a href="#name-recoverylosstimerupdated-de" class="selfRef">RecoveryLossTimerUpdated definition</a>
           </figcaption></figure>
 </div>
@@ -3410,7 +3391,7 @@ detection. It has Core importance level; see <span><a href="https://datatracker.
 <p id="section-7.5-2">It is <span class="bcp14">RECOMMENDED</span> to populate the optional <code>trigger</code> field in order to help
 disambiguate among the various possible causes of a loss declaration.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
 <span id="name-recoverypacketlost-definiti"></span><div id="recovery-packetlost-def">
-<figure id="figure-32">
+<figure id="figure-31">
           <div class="lang-cddl sourcecode" id="section-7.5-3.1">
 <pre>
 RecoveryPacketLost = {
@@ -3430,7 +3411,7 @@ RecoveryPacketLost = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
+<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
 <a href="#name-recoverypacketlost-definiti" class="selfRef">RecoveryPacketLost definition</a>
           </figcaption></figure>
 </div>
@@ -3459,7 +3440,7 @@ if that frame was never or will never be put on the wire.<a href="#section-7.6-3
 (e.g., looking at overlapping stream data offsets and length, one can determine
 when data was retransmitted).<a href="#section-7.6-4" class="pilcrow">¶</a></p>
 <span id="name-recoverymarkedforretransmit"></span><div id="recovery-markedforretransmit-def">
-<figure id="figure-33">
+<figure id="figure-32">
           <div class="lang-cddl sourcecode" id="section-7.6-5.1">
 <pre>
 RecoveryMarkedForRetransmit = {
@@ -3467,7 +3448,7 @@ RecoveryMarkedForRetransmit = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
+<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
 <a href="#name-recoverymarkedforretransmit" class="selfRef">RecoveryMarkedForRetransmit definition</a>
           </figcaption></figure>
 </div>
@@ -3482,7 +3463,7 @@ RecoveryMarkedForRetransmit = {
 as described in section A.4 of <span>[<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It has Extra importance
 level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-07#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.7-1" class="pilcrow">¶</a></p>
 <span id="name-ecnstateupdated-definition"></span><div id="recovery-ecnstateupdated-def">
-<figure id="figure-34">
+<figure id="figure-33">
           <div class="lang-cddl sourcecode" id="section-7.7-2.1">
 <pre>
 ECNStateUpdated = {
@@ -3503,7 +3484,7 @@ ECNState =
   "capable"
 </pre>
 </div>
-<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
+<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
 <a href="#name-ecnstateupdated-definition" class="selfRef">ECNStateUpdated definition</a>
           </figcaption></figure>
 </div>
@@ -3522,13 +3503,13 @@ ECNState =
 <a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-quicversion" class="section-name selfRef">QuicVersion</a>
         </h3>
 <span id="name-quicversion-definition"></span><div id="quicversion-def">
-<figure id="figure-35">
+<figure id="figure-34">
           <div class="lang-cddl sourcecode" id="section-8.1-1.1">
 <pre>
 QuicVersion = hexstring
 </pre>
 </div>
-<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
+<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
 <a href="#name-quicversion-definition" class="selfRef">QuicVersion definition</a>
           </figcaption></figure>
 </div>
@@ -3540,13 +3521,13 @@ QuicVersion = hexstring
 <a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-connectionid" class="section-name selfRef">ConnectionID</a>
         </h3>
 <span id="name-connectionid-definition"></span><div id="connectionid-def">
-<figure id="figure-36">
+<figure id="figure-35">
           <div class="lang-cddl sourcecode" id="section-8.2-1.1">
 <pre>
 ConnectionID = hexstring
 </pre>
 </div>
-<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
+<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
 <a href="#name-connectionid-definition" class="selfRef">ConnectionID definition</a>
           </figcaption></figure>
 </div>
@@ -3558,14 +3539,14 @@ ConnectionID = hexstring
 <a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-owner" class="section-name selfRef">Owner</a>
         </h3>
 <span id="name-owner-definition"></span><div id="owner-def">
-<figure id="figure-37">
+<figure id="figure-36">
           <div class="lang-cddl sourcecode" id="section-8.3-1.1">
 <pre>
 Owner = "local" /
         "remote"
 </pre>
 </div>
-<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
+<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
 <a href="#name-owner-definition" class="selfRef">Owner definition</a>
           </figcaption></figure>
 </div>
@@ -3577,7 +3558,7 @@ Owner = "local" /
 <a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-ipaddress-and-ipversion" class="section-name selfRef">IPAddress and IPVersion</a>
         </h3>
 <span id="name-ipaddress-definition"></span><div id="ipaddress-def">
-<figure id="figure-38">
+<figure id="figure-37">
           <div class="lang-cddl sourcecode" id="section-8.4-1.1">
 <pre>
 ; an IPAddress can either be a "human readable" form
@@ -3588,19 +3569,19 @@ IPAddress = text /
             hexstring
 </pre>
 </div>
-<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
+<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
 <a href="#name-ipaddress-definition" class="selfRef">IPAddress definition</a>
           </figcaption></figure>
 </div>
 <span id="name-ipversion-definition"></span><div id="ipversion-def">
-<figure id="figure-39">
+<figure id="figure-38">
           <div class="lang-cddl sourcecode" id="section-8.4-2.1">
 <pre>
 IPVersion = "v4" /
             "v6"
 </pre>
 </div>
-<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
+<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
 <a href="#name-ipversion-definition" class="selfRef">IPVersion definition</a>
           </figcaption></figure>
 </div>
@@ -3612,7 +3593,7 @@ IPVersion = "v4" /
 <a href="#section-8.5" class="section-number selfRef">8.5. </a><a href="#name-packettype" class="section-name selfRef">PacketType</a>
         </h3>
 <span id="name-packettype-definition"></span><div id="packettype-def">
-<figure id="figure-40">
+<figure id="figure-39">
           <div class="lang-cddl sourcecode" id="section-8.5-1.1">
 <pre>
 PacketType = "initial" /
@@ -3625,7 +3606,7 @@ PacketType = "initial" /
              "unknown"
 </pre>
 </div>
-<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
+<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
 <a href="#name-packettype-definition" class="selfRef">PacketType definition</a>
           </figcaption></figure>
 </div>
@@ -3637,7 +3618,7 @@ PacketType = "initial" /
 <a href="#section-8.6" class="section-number selfRef">8.6. </a><a href="#name-packetnumberspace" class="section-name selfRef">PacketNumberSpace</a>
         </h3>
 <span id="name-packetnumberspace-definitio"></span><div id="packetnumberspace-def">
-<figure id="figure-41">
+<figure id="figure-40">
           <div class="lang-cddl sourcecode" id="section-8.6-1.1">
 <pre>
 PacketNumberSpace = "initial" /
@@ -3645,7 +3626,7 @@ PacketNumberSpace = "initial" /
                     "application_data"
 </pre>
 </div>
-<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
+<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
 <a href="#name-packetnumberspace-definitio" class="selfRef">PacketNumberSpace definition</a>
           </figcaption></figure>
 </div>
@@ -3657,7 +3638,7 @@ PacketNumberSpace = "initial" /
 <a href="#section-8.7" class="section-number selfRef">8.7. </a><a href="#name-packetheader" class="section-name selfRef">PacketHeader</a>
         </h3>
 <span id="name-packetheader-definition"></span><div id="packetheader-def">
-<figure id="figure-42">
+<figure id="figure-41">
           <div class="lang-cddl sourcecode" id="section-8.7-1.1">
 <pre>
 PacketHeader = {
@@ -3691,7 +3672,7 @@ PacketHeader = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
+<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
 <a href="#name-packetheader-definition" class="selfRef">PacketHeader definition</a>
           </figcaption></figure>
 </div>
@@ -3703,7 +3684,7 @@ PacketHeader = {
 <a href="#section-8.8" class="section-number selfRef">8.8. </a><a href="#name-token" class="section-name selfRef">Token</a>
         </h3>
 <span id="name-token-definition"></span><div id="token-def">
-<figure id="figure-43">
+<figure id="figure-42">
           <div class="lang-cddl sourcecode" id="section-8.8-1.1">
 <pre>
 Token = {
@@ -3719,7 +3700,7 @@ Token = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
+<figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
 <a href="#name-token-definition" class="selfRef">Token definition</a>
           </figcaption></figure>
 </div>
@@ -3737,13 +3718,13 @@ specific. For that, <code>Token</code> includes a general-purpose <code>details<
 <a href="#section-8.9" class="section-number selfRef">8.9. </a><a href="#name-stateless-reset-token" class="section-name selfRef">Stateless Reset Token</a>
         </h3>
 <span id="name-stateless-reset-token-defin"></span><div id="stateless-reset-token-def">
-<figure id="figure-44">
+<figure id="figure-43">
           <div class="lang-cddl sourcecode" id="section-8.9-1.1">
 <pre>
 StatelessResetToken = hexstring .size 16
 </pre>
 </div>
-<figcaption><a href="#figure-44" class="selfRef">Figure 44</a>:
+<figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
 <a href="#name-stateless-reset-token-defin" class="selfRef">Stateless Reset Token definition</a>
           </figcaption></figure>
 </div>
@@ -3757,7 +3738,7 @@ parameters and in NEW_CONNECTION_ID frames.<a href="#section-8.9-2" class="pilcr
 <a href="#section-8.10" class="section-number selfRef">8.10. </a><a href="#name-keytype" class="section-name selfRef">KeyType</a>
         </h3>
 <span id="name-keytype-definition"></span><div id="keytype-def">
-<figure id="figure-45">
+<figure id="figure-44">
           <div class="lang-cddl sourcecode" id="section-8.10-1.1">
 <pre>
 KeyType = "server_initial_secret" /
@@ -3770,7 +3751,7 @@ KeyType = "server_initial_secret" /
           "client_1rtt_secret"
 </pre>
 </div>
-<figcaption><a href="#figure-45" class="selfRef">Figure 45</a>:
+<figcaption><a href="#figure-44" class="selfRef">Figure 44</a>:
 <a href="#name-keytype-definition" class="selfRef">KeyType definition</a>
           </figcaption></figure>
 </div>
@@ -3782,13 +3763,13 @@ KeyType = "server_initial_secret" /
 <a href="#section-8.11" class="section-number selfRef">8.11. </a><a href="#name-ecn" class="section-name selfRef">ECN</a>
         </h3>
 <span id="name-ecn-definition"></span><div id="ecn-def">
-<figure id="figure-46">
+<figure id="figure-45">
           <div class="lang-cddl sourcecode" id="section-8.11-1.1">
 <pre>
 ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 </pre>
 </div>
-<figcaption><a href="#figure-46" class="selfRef">Figure 46</a>:
+<figcaption><a href="#figure-45" class="selfRef">Figure 45</a>:
 <a href="#name-ecn-definition" class="selfRef">ECN definition</a>
           </figcaption></figure>
 </div>
@@ -3803,7 +3784,7 @@ ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 <p id="section-8.12-1">The generic <code>$QuicFrame</code> is defined here as a CDDL extension point (a "socket"
 or "plug"). It can be extended to support additional QUIC frame types.<a href="#section-8.12-1" class="pilcrow">¶</a></p>
 <span id="name-quicframe-plug-definition"></span><div id="quicframe-def">
-<figure id="figure-47">
+<figure id="figure-46">
           <div class="lang-cddl sourcecode" id="section-8.12-2.1">
 <pre>
 ; The QuicFrame is any key-value map (e.g., JSON object)
@@ -3812,13 +3793,13 @@ $QuicFrame /= {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-47" class="selfRef">Figure 47</a>:
+<figcaption><a href="#figure-46" class="selfRef">Figure 46</a>:
 <a href="#name-quicframe-plug-definition" class="selfRef">QuicFrame plug definition</a>
           </figcaption></figure>
 </div>
 <p id="section-8.12-3">The QUIC frame types defined in this document are as follows:<a href="#section-8.12-3" class="pilcrow">¶</a></p>
 <span id="name-quicbaseframes-definition"></span><div id="quicbaseframe-def">
-<figure id="figure-48">
+<figure id="figure-47">
           <div class="lang-cddl sourcecode" id="section-8.12-4.1">
 <pre>
 QuicBaseFrames /= PaddingFrame /
@@ -3847,7 +3828,7 @@ QuicBaseFrames /= PaddingFrame /
 $QuicFrame /= QuicBaseFrames
 </pre>
 </div>
-<figcaption><a href="#figure-48" class="selfRef">Figure 48</a>:
+<figcaption><a href="#figure-47" class="selfRef">Figure 47</a>:
 <a href="#name-quicbaseframes-definition" class="selfRef">QuicBaseFrames definition</a>
           </figcaption></figure>
 </div>
@@ -3863,7 +3844,7 @@ individual PaddingFrame.<a href="#section-8.12.1-1" class="pilcrow">¶</a></p>
 emit just a single PaddingFrame and set the payload_length property to the amount
 of PADDING bytes/frames included in the packet.<a href="#section-8.12.1-2" class="pilcrow">¶</a></p>
 <span id="name-paddingframe-definition"></span><div id="paddingframe-def">
-<figure id="figure-49">
+<figure id="figure-48">
             <div class="lang-cddl sourcecode" id="section-8.12.1-3.1">
 <pre>
 PaddingFrame = {
@@ -3875,7 +3856,7 @@ PaddingFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-49" class="selfRef">Figure 49</a>:
+<figcaption><a href="#figure-48" class="selfRef">Figure 48</a>:
 <a href="#name-paddingframe-definition" class="selfRef">PaddingFrame definition</a>
             </figcaption></figure>
 </div>
@@ -3887,7 +3868,7 @@ PaddingFrame = {
 <a href="#section-8.12.2" class="section-number selfRef">8.12.2. </a><a href="#name-pingframe" class="section-name selfRef">PingFrame</a>
           </h4>
 <span id="name-pingframe-definition"></span><div id="pingframe-def">
-<figure id="figure-50">
+<figure id="figure-49">
             <div class="lang-cddl sourcecode" id="section-8.12.2-1.1">
 <pre>
 PingFrame = {
@@ -3899,7 +3880,7 @@ PingFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-50" class="selfRef">Figure 50</a>:
+<figcaption><a href="#figure-49" class="selfRef">Figure 49</a>:
 <a href="#name-pingframe-definition" class="selfRef">PingFrame definition</a>
             </figcaption></figure>
 </div>
@@ -3911,7 +3892,7 @@ PingFrame = {
 <a href="#section-8.12.3" class="section-number selfRef">8.12.3. </a><a href="#name-ackframe" class="section-name selfRef">AckFrame</a>
           </h4>
 <span id="name-ackframe-definition"></span><div id="ackframe-def">
-<figure id="figure-51">
+<figure id="figure-50">
             <div class="lang-cddl sourcecode" id="section-8.12.3-1.1">
 <pre>
 ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
@@ -3942,7 +3923,7 @@ AckFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-51" class="selfRef">Figure 51</a>:
+<figcaption><a href="#figure-50" class="selfRef">Figure 50</a>:
 <a href="#name-ackframe-definition" class="selfRef">AckFrame definition</a>
             </figcaption></figure>
 </div>
@@ -3959,7 +3940,7 @@ log [120] instead and tools <span class="bcp14">MUST</span> be able to deal with
 <a href="#section-8.12.4" class="section-number selfRef">8.12.4. </a><a href="#name-resetstreamframe" class="section-name selfRef">ResetStreamFrame</a>
           </h4>
 <span id="name-resetstreamframe-definition"></span><div id="resetstreamframe-def">
-<figure id="figure-52">
+<figure id="figure-51">
             <div class="lang-cddl sourcecode" id="section-8.12.4-1.1">
 <pre>
 ResetStreamFrame = {
@@ -3977,7 +3958,7 @@ ResetStreamFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-52" class="selfRef">Figure 52</a>:
+<figcaption><a href="#figure-51" class="selfRef">Figure 51</a>:
 <a href="#name-resetstreamframe-definition" class="selfRef">ResetStreamFrame definition</a>
             </figcaption></figure>
 </div>
@@ -3989,7 +3970,7 @@ ResetStreamFrame = {
 <a href="#section-8.12.5" class="section-number selfRef">8.12.5. </a><a href="#name-stopsendingframe" class="section-name selfRef">StopSendingFrame</a>
           </h4>
 <span id="name-stopsendingframe-definition"></span><div id="stopsendingframe-def">
-<figure id="figure-53">
+<figure id="figure-52">
             <div class="lang-cddl sourcecode" id="section-8.12.5-1.1">
 <pre>
 StopSendingFrame = {
@@ -4004,7 +3985,7 @@ StopSendingFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-53" class="selfRef">Figure 53</a>:
+<figcaption><a href="#figure-52" class="selfRef">Figure 52</a>:
 <a href="#name-stopsendingframe-definition" class="selfRef">StopSendingFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4016,7 +3997,7 @@ StopSendingFrame = {
 <a href="#section-8.12.6" class="section-number selfRef">8.12.6. </a><a href="#name-cryptoframe" class="section-name selfRef">CryptoFrame</a>
           </h4>
 <span id="name-cryptoframe-definition"></span><div id="cryptoframe-def">
-<figure id="figure-54">
+<figure id="figure-53">
             <div class="lang-cddl sourcecode" id="section-8.12.6-1.1">
 <pre>
 CryptoFrame = {
@@ -4028,7 +4009,7 @@ CryptoFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-54" class="selfRef">Figure 54</a>:
+<figcaption><a href="#figure-53" class="selfRef">Figure 53</a>:
 <a href="#name-cryptoframe-definition" class="selfRef">CryptoFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4040,7 +4021,7 @@ CryptoFrame = {
 <a href="#section-8.12.7" class="section-number selfRef">8.12.7. </a><a href="#name-newtokenframe" class="section-name selfRef">NewTokenFrame</a>
           </h4>
 <span id="name-newtokenframe-definition"></span><div id="newtokenframe-def">
-<figure id="figure-55">
+<figure id="figure-54">
             <div class="lang-cddl sourcecode" id="section-8.12.7-1.1">
 <pre>
 NewTokenFrame = {
@@ -4049,7 +4030,7 @@ NewTokenFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-55" class="selfRef">Figure 55</a>:
+<figcaption><a href="#figure-54" class="selfRef">Figure 54</a>:
 <a href="#name-newtokenframe-definition" class="selfRef">NewTokenFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4061,7 +4042,7 @@ NewTokenFrame = {
 <a href="#section-8.12.8" class="section-number selfRef">8.12.8. </a><a href="#name-streamframe" class="section-name selfRef">StreamFrame</a>
           </h4>
 <span id="name-streamframe-definition"></span><div id="streamframe-def">
-<figure id="figure-56">
+<figure id="figure-55">
             <div class="lang-cddl sourcecode" id="section-8.12.8-1.1">
 <pre>
 StreamFrame = {
@@ -4081,7 +4062,7 @@ StreamFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-56" class="selfRef">Figure 56</a>:
+<figcaption><a href="#figure-55" class="selfRef">Figure 55</a>:
 <a href="#name-streamframe-definition" class="selfRef">StreamFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4093,7 +4074,7 @@ StreamFrame = {
 <a href="#section-8.12.9" class="section-number selfRef">8.12.9. </a><a href="#name-maxdataframe" class="section-name selfRef">MaxDataFrame</a>
           </h4>
 <span id="name-maxdataframe-definition"></span><div id="maxdataframe-def">
-<figure id="figure-57">
+<figure id="figure-56">
             <div class="lang-cddl sourcecode" id="section-8.12.9-1.1">
 <pre>
 MaxDataFrame = {
@@ -4102,7 +4083,7 @@ MaxDataFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-57" class="selfRef">Figure 57</a>:
+<figcaption><a href="#figure-56" class="selfRef">Figure 56</a>:
 <a href="#name-maxdataframe-definition" class="selfRef">MaxDataFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4114,7 +4095,7 @@ MaxDataFrame = {
 <a href="#section-8.12.10" class="section-number selfRef">8.12.10. </a><a href="#name-maxstreamdataframe" class="section-name selfRef">MaxStreamDataFrame</a>
           </h4>
 <span id="name-maxstreamdataframe-definiti"></span><div id="maxstreamdataframe-def">
-<figure id="figure-58">
+<figure id="figure-57">
             <div class="lang-cddl sourcecode" id="section-8.12.10-1.1">
 <pre>
 MaxStreamDataFrame = {
@@ -4124,7 +4105,7 @@ MaxStreamDataFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-58" class="selfRef">Figure 58</a>:
+<figcaption><a href="#figure-57" class="selfRef">Figure 57</a>:
 <a href="#name-maxstreamdataframe-definiti" class="selfRef">MaxStreamDataFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4136,7 +4117,7 @@ MaxStreamDataFrame = {
 <a href="#section-8.12.11" class="section-number selfRef">8.12.11. </a><a href="#name-maxstreamsframe" class="section-name selfRef">MaxStreamsFrame</a>
           </h4>
 <span id="name-maxstreamsframe-definition"></span><div id="maxstreamsframe-def">
-<figure id="figure-59">
+<figure id="figure-58">
             <div class="lang-cddl sourcecode" id="section-8.12.11-1.1">
 <pre>
 MaxStreamsFrame = {
@@ -4146,7 +4127,7 @@ MaxStreamsFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-59" class="selfRef">Figure 59</a>:
+<figcaption><a href="#figure-58" class="selfRef">Figure 58</a>:
 <a href="#name-maxstreamsframe-definition" class="selfRef">MaxStreamsFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4158,7 +4139,7 @@ MaxStreamsFrame = {
 <a href="#section-8.12.12" class="section-number selfRef">8.12.12. </a><a href="#name-datablockedframe" class="section-name selfRef">DataBlockedFrame</a>
           </h4>
 <span id="name-datablockedframe-definition"></span><div id="datablockedframe-def">
-<figure id="figure-60">
+<figure id="figure-59">
             <div class="lang-cddl sourcecode" id="section-8.12.12-1.1">
 <pre>
 DataBlockedFrame = {
@@ -4167,7 +4148,7 @@ DataBlockedFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-60" class="selfRef">Figure 60</a>:
+<figcaption><a href="#figure-59" class="selfRef">Figure 59</a>:
 <a href="#name-datablockedframe-definition" class="selfRef">DataBlockedFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4179,7 +4160,7 @@ DataBlockedFrame = {
 <a href="#section-8.12.13" class="section-number selfRef">8.12.13. </a><a href="#name-streamdatablockedframe" class="section-name selfRef">StreamDataBlockedFrame</a>
           </h4>
 <span id="name-streamdatablockedframe-defi"></span><div id="streamdatablockedframe-def">
-<figure id="figure-61">
+<figure id="figure-60">
             <div class="lang-cddl sourcecode" id="section-8.12.13-1.1">
 <pre>
 StreamDataBlockedFrame = {
@@ -4189,7 +4170,7 @@ StreamDataBlockedFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-61" class="selfRef">Figure 61</a>:
+<figcaption><a href="#figure-60" class="selfRef">Figure 60</a>:
 <a href="#name-streamdatablockedframe-defi" class="selfRef">StreamDataBlockedFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4201,7 +4182,7 @@ StreamDataBlockedFrame = {
 <a href="#section-8.12.14" class="section-number selfRef">8.12.14. </a><a href="#name-streamsblockedframe" class="section-name selfRef">StreamsBlockedFrame</a>
           </h4>
 <span id="name-streamsblockedframe-definit"></span><div id="streamsblockedframe-def">
-<figure id="figure-62">
+<figure id="figure-61">
             <div class="lang-cddl sourcecode" id="section-8.12.14-1.1">
 <pre>
 StreamsBlockedFrame = {
@@ -4211,7 +4192,7 @@ StreamsBlockedFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-62" class="selfRef">Figure 62</a>:
+<figcaption><a href="#figure-61" class="selfRef">Figure 61</a>:
 <a href="#name-streamsblockedframe-definit" class="selfRef">StreamsBlockedFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4223,7 +4204,7 @@ StreamsBlockedFrame = {
 <a href="#section-8.12.15" class="section-number selfRef">8.12.15. </a><a href="#name-newconnectionidframe" class="section-name selfRef">NewConnectionIDFrame</a>
           </h4>
 <span id="name-newconnectionidframe-defini"></span><div id="newconnectionidframe-def">
-<figure id="figure-63">
+<figure id="figure-62">
             <div class="lang-cddl sourcecode" id="section-8.12.15-1.1">
 <pre>
 NewConnectionIDFrame = {
@@ -4239,7 +4220,7 @@ NewConnectionIDFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-63" class="selfRef">Figure 63</a>:
+<figcaption><a href="#figure-62" class="selfRef">Figure 62</a>:
 <a href="#name-newconnectionidframe-defini" class="selfRef">NewConnectionIDFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4251,7 +4232,7 @@ NewConnectionIDFrame = {
 <a href="#section-8.12.16" class="section-number selfRef">8.12.16. </a><a href="#name-retireconnectionidframe" class="section-name selfRef">RetireConnectionIDFrame</a>
           </h4>
 <span id="name-retireconnectionidframe-def"></span><div id="retireconnectionid-def">
-<figure id="figure-64">
+<figure id="figure-63">
             <div class="lang-cddl sourcecode" id="section-8.12.16-1.1">
 <pre>
 RetireConnectionIDFrame = {
@@ -4260,7 +4241,7 @@ RetireConnectionIDFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-64" class="selfRef">Figure 64</a>:
+<figcaption><a href="#figure-63" class="selfRef">Figure 63</a>:
 <a href="#name-retireconnectionidframe-def" class="selfRef">RetireConnectionIDFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4272,7 +4253,7 @@ RetireConnectionIDFrame = {
 <a href="#section-8.12.17" class="section-number selfRef">8.12.17. </a><a href="#name-pathchallengeframe" class="section-name selfRef">PathChallengeFrame</a>
           </h4>
 <span id="name-pathchallengeframe-definiti"></span><div id="pathchallengeframe-def">
-<figure id="figure-65">
+<figure id="figure-64">
             <div class="lang-cddl sourcecode" id="section-8.12.17-1.1">
 <pre>
 PathChallengeFrame = {
@@ -4283,7 +4264,7 @@ PathChallengeFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-65" class="selfRef">Figure 65</a>:
+<figcaption><a href="#figure-64" class="selfRef">Figure 64</a>:
 <a href="#name-pathchallengeframe-definiti" class="selfRef">PathChallengeFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4295,7 +4276,7 @@ PathChallengeFrame = {
 <a href="#section-8.12.18" class="section-number selfRef">8.12.18. </a><a href="#name-pathresponseframe" class="section-name selfRef">PathResponseFrame</a>
           </h4>
 <span id="name-pathresponseframe-definitio"></span><div id="pathresponseframe-def">
-<figure id="figure-66">
+<figure id="figure-65">
             <div class="lang-cddl sourcecode" id="section-8.12.18-1.1">
 <pre>
 PathResponseFrame = {
@@ -4306,7 +4287,7 @@ PathResponseFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-66" class="selfRef">Figure 66</a>:
+<figcaption><a href="#figure-65" class="selfRef">Figure 65</a>:
 <a href="#name-pathresponseframe-definitio" class="selfRef">PathResponseFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4325,7 +4306,7 @@ error. For known frame types, the appropriate string value is used. For unknown
 frame types, the numerical value without variable-length integer encoding is
 used.<a href="#section-8.12.19-2" class="pilcrow">¶</a></p>
 <span id="name-connectioncloseframe-defini"></span><div id="connectioncloseframe-def">
-<figure id="figure-67">
+<figure id="figure-66">
             <div class="lang-cddl sourcecode" id="section-8.12.19-3.1">
 <pre>
 ErrorSpace = "transport" /
@@ -4346,7 +4327,7 @@ ConnectionCloseFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-67" class="selfRef">Figure 67</a>:
+<figcaption><a href="#figure-66" class="selfRef">Figure 66</a>:
 <a href="#name-connectioncloseframe-defini" class="selfRef">ConnectionCloseFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4358,7 +4339,7 @@ ConnectionCloseFrame = {
 <a href="#section-8.12.20" class="section-number selfRef">8.12.20. </a><a href="#name-handshakedoneframe" class="section-name selfRef">HandshakeDoneFrame</a>
           </h4>
 <span id="name-handshakedoneframe-definiti"></span><div id="handshakedoneframe-def">
-<figure id="figure-68">
+<figure id="figure-67">
             <div class="lang-cddl sourcecode" id="section-8.12.20-1.1">
 <pre>
 HandshakeDoneFrame = {
@@ -4366,7 +4347,7 @@ HandshakeDoneFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-68" class="selfRef">Figure 68</a>:
+<figcaption><a href="#figure-67" class="selfRef">Figure 67</a>:
 <a href="#name-handshakedoneframe-definiti" class="selfRef">HandshakeDoneFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4379,7 +4360,7 @@ HandshakeDoneFrame = {
           </h4>
 <p id="section-8.12.21-1">The frame_type_value field is the numerical value without VLIE encoding.<a href="#section-8.12.21-1" class="pilcrow">¶</a></p>
 <span id="name-unknownframe-definition"></span><div id="unknownframe-def">
-<figure id="figure-69">
+<figure id="figure-68">
             <div class="lang-cddl sourcecode" id="section-8.12.21-2.1">
 <pre>
 UnknownFrame = {
@@ -4389,7 +4370,7 @@ UnknownFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-69" class="selfRef">Figure 69</a>:
+<figcaption><a href="#figure-68" class="selfRef">Figure 68</a>:
 <a href="#name-unknownframe-definition" class="selfRef">UnknownFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4402,7 +4383,7 @@ UnknownFrame = {
           </h4>
 <p id="section-8.12.22-1">The QUIC DATAGRAM frame is defined in <span><a href="https://rfc-editor.org/rfc/rfc9221#section-4" class="relref">Section 4</a> of [<a href="#RFC9221" class="cite xref">RFC9221</a>]</span>.<a href="#section-8.12.22-1" class="pilcrow">¶</a></p>
 <span id="name-datagramframe-definition"></span><div id="datagramframe-def">
-<figure id="figure-70">
+<figure id="figure-69">
             <div class="lang-cddl sourcecode" id="section-8.12.22-2.1">
 <pre>
 DatagramFrame = {
@@ -4412,7 +4393,7 @@ DatagramFrame = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-70" class="selfRef">Figure 70</a>:
+<figcaption><a href="#figure-69" class="selfRef">Figure 69</a>:
 <a href="#name-datagramframe-definition" class="selfRef">DatagramFrame definition</a>
             </figcaption></figure>
 </div>
@@ -4424,7 +4405,7 @@ DatagramFrame = {
 <a href="#section-8.12.23" class="section-number selfRef">8.12.23. </a><a href="#name-transporterror" class="section-name selfRef">TransportError</a>
           </h4>
 <span id="name-transporterror-definition"></span><div id="transporterror-def">
-<figure id="figure-71">
+<figure id="figure-70">
             <div class="lang-cddl sourcecode" id="section-8.12.23-1.1">
 <pre>
 TransportError = "no_error" /
@@ -4448,7 +4429,7 @@ TransportError = "no_error" /
                  ; use the CryptoError type instead
 </pre>
 </div>
-<figcaption><a href="#figure-71" class="selfRef">Figure 71</a>:
+<figcaption><a href="#figure-70" class="selfRef">Figure 70</a>:
 <a href="#name-transporterror-definition" class="selfRef">TransportError definition</a>
             </figcaption></figure>
 </div>
@@ -4485,14 +4466,14 @@ the range reserved for CRYPTO_ERROR."<a href="#section-8.12.25-1" class="pilcrow
 string is defined as having a dynamic component here, which should include the
 hex-encoded and zero-padded value of the TLS alert description.<a href="#section-8.12.25-2" class="pilcrow">¶</a></p>
 <span id="name-cryptoerror-definition"></span><div id="cryptoerror-def">
-<figure id="figure-72">
+<figure id="figure-71">
             <div class="lang-cddl sourcecode" id="section-8.12.25-3.1">
 <pre>
 ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
 CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 </pre>
 </div>
-<figcaption><a href="#figure-72" class="selfRef">Figure 72</a>:
+<figcaption><a href="#figure-71" class="selfRef">Figure 71</a>:
 <a href="#name-cryptoerror-definition" class="selfRef">CryptoError definition</a>
             </figcaption></figure>
 </div>
