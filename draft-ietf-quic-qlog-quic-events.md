@@ -1249,11 +1249,13 @@ QUICMigrationStateUpdated = {
 
 ; Note that MigrationState does not describe a full state machine
 ; These entries are not necessarily chronological,
-; nor will they always all appear during a connection migration attempt.
+; nor will they always all appear during
+; a connection migration attempt.
 MigrationState =
     ; probing packets are sent, migration not initiated yet
     "probing_started" /
-    ; did not get reply to probing packets, discarding path as an option
+    ; did not get reply to probing packets,
+    ; discarding path as an option
     "probing_abandoned" /
     ; received reply to probing packets, path is migration candidate
     "probing_successful" /
