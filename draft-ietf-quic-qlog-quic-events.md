@@ -635,10 +635,37 @@ Most of these settings are typically set once and never change. However, they
 are usually set at different times during the connection, so there will
 regularly be several instances of this event with different fields set.
 
-Note that some settings have two variations (one set locally, one requested by the
-remote peer). This is reflected in the `owner` field. As such, this field MUST be
-correct for all settings included a single event instance. If you need to log
-settings from two sides, you MUST emit two separate event instances.
+Some parameters have two variations: one set locally, and one requested by the
+remote peer, and both are valid and used during the connection. This is
+reflected in the `owner` field. As such, this field MUST be correct for all
+settings included a single event instance. If you need to log settings from two
+sides, you MUST emit two separate event instances.
+
+In contrast, some parameters are the result of negotiation between peers. In
+this case, one endpoint generally suggests a possible value for a parameter and
+its peer then suggests another possible value. The final value used by both
+endpoints is the result of some parameter-specific function applied over the two
+suggested values. Such negotiation SHOULD be expressed as a series of
+`parameters_set` events with the appropriate `owner` field value set. For
+example:
+
+- The local endpoint logs a `parameters_set` event with an `owner` of `local`
+  reflecting the parameter value(s) it would like to use.
+- The local endpoint receives parameter values from the peer and logs a
+  `parameters_set` event with an `owner` of `remote` reflecting the desired
+  value(s) expressed by the peer.
+- The local endpoint logs a `parameters_set` event with an `owner` of `local`
+  reflecting the resulting parameter value(s) determined from the suggested
+  parameter value(s) communicated by the local and remote endpoints.
+
+Consequently, each parameter value in a `parameters_set` event supersedes the
+previous value of that parameter if present. If a parameter does not appear in a
+given `parameters_set` event, its value is unchanged from the previous event
+which set that parameter. If a parameter never appears in a `parameters_set`
+event, it retains its default value. This default value thus cannot be restored
+implicitly (for example by omitting a parameter in a subsequent
+`parameters_set`) and, if needed, should instead be restored explicitly by
+re-assigning the default value in an new `parameters_set` event.
 
 In the case of connection resumption and 0-RTT, some of the server's parameters
 are stored up-front at the client and used for the initial connection startup.
