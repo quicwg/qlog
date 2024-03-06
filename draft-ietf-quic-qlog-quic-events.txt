@@ -93,9 +93,9 @@ Table of Contents
      5.7.  packet_dropped
      5.8.  packet_buffered
      5.9.  packets_acked
-     5.10. datagrams_sent
-     5.11. datagrams_received
-     5.12. datagram_dropped
+     5.10. udp_datagrams_sent
+     5.11. udp_datagrams_received
+     5.12. udp_datagram_dropped
      5.13. stream_state_updated
      5.14. frames_processed
      5.15. stream_data_moved
@@ -321,13 +321,13 @@ Table of Contents
    +---------------------------------------+------------+--------------+
    | quic:packets_acked                    | Extra      | Section 5.9  |
    +---------------------------------------+------------+--------------+
-   | quic:datagrams_sent                   | Extra      | Section      |
+   | quic:udp_datagrams_sent               | Extra      | Section      |
    |                                       |            | 5.10         |
    +---------------------------------------+------------+--------------+
-   | quic:datagrams_received               | Extra      | Section      |
+   | quic:udp_datagrams_received           | Extra      | Section      |
    |                                       |            | 5.11         |
    +---------------------------------------+------------+--------------+
-   | quic:datagram_dropped                 | Extra      | Section      |
+   | quic:udp_datagram_dropped             | Extra      | Section      |
    |                                       |            | 5.12         |
    +---------------------------------------+------------+--------------+
    | quic:stream_state_updated             | Base       | Section      |
@@ -388,9 +388,9 @@ Table of Contents
                    QUICPacketDropped /
                    QUICPacketBuffered /
                    QUICPacketsAcked /
-                   QUICDatagramsSent /
-                   QUICDatagramsReceived /
-                   QUICDatagramDropped /
+                   QUICUDPDatagramsSent /
+                   QUICUDPDatagramsReceived /
+                   QUICUDPDatagramDropped /
                    QUICStreamStateUpdated /
                    QUICFramesProcessed /
                    QUICStreamDataMoved /
@@ -1128,14 +1128,14 @@ Table of Contents
    application_data, as this is by far the most prevalent packet number
    space a typical QUIC connection will use.
 
-5.10.  datagrams_sent
+5.10.  udp_datagrams_sent
 
    When one or more UDP-level datagrams are passed to the socket.  This
    is useful for determining how QUIC packet buffers are drained to the
    OS.  The event has Extra importance level; see Section 9.2 of
    [QLOG-MAIN].
 
-   QUICDatagramsSent = {
+   QUICUDPDatagramsSent = {
 
        ; to support passing multiple at once
        ? count: uint16
@@ -1152,7 +1152,7 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-                  Figure 20: QUICDatagramsSent definition
+                 Figure 20: QUICUDPDatagramsSent definition
 
    Since QUIC implementations rarely control UDP logic directly, the raw
    data excludes UDP-level headers in all fields.
@@ -1166,14 +1166,14 @@ Table of Contents
    how to generate unique values within the scope of their created
    traces.
 
-5.11.  datagrams_received
+5.11.  udp_datagrams_received
 
    When one or more UDP-level datagrams are received from the socket.
    This is useful for determining how datagrams are passed to the user
    space stack from the OS.  The event has Extra importance level; see
    Section 9.2 of [QLOG-MAIN].
 
-   QUICDatagramsReceived = {
+   QUICUDPDatagramsReceived = {
 
        ; to support passing multiple at once
        ? count: uint16
@@ -1190,11 +1190,11 @@ Table of Contents
        ? datagram_ids: [+ uint32]
    }
 
-                Figure 21: QUICDatagramsReceived definition
+               Figure 21: QUICUDPDatagramsReceived definition
 
    For more details on datagram_ids, see Section 5.10.
 
-5.12.  datagram_dropped
+5.12.  udp_datagram_dropped
 
    When a UDP-level datagram is dropped.  This is typically done if it
    does not contain a valid QUIC packet.  If it does, but the QUIC
@@ -1202,14 +1202,14 @@ Table of Contents
    (Section 5.7) should be used instead.  The event has Extra importance
    level; see Section 9.2 of [QLOG-MAIN].
 
-   QUICDatagramDropped = {
+   QUICUDPDatagramDropped = {
 
        ; The RawInfo fields do not include the UDP headers,
        ; only the UDP payload
        ? raw: RawInfo
    }
 
-                 Figure 22: QUICDatagramDropped definition
+                Figure 22: QUICUDPDatagramDropped definition
 
 5.13.  stream_state_updated
 
