@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-03-05T00:43:24.123503+00:00",
+  "timestamp": "2024-03-07T00:35:25.607107+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -6718,15 +6718,15 @@
       "id": "I_kwDOCrLn6M5TouXl",
       "title": "Should congestion_state_updated define some values for old and new?",
       "url": "https://github.com/quicwg/qlog/issues/246",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "congestion_state_updated fields include an `old` and `new` field that takes a `text` type. The prose that explains this event includes examples \"slow_start, congestion_avoidance, application_limited, recovery\"\r\n\r\nPerhaps we should make these actual values in CDDL, add the BBR CC phases, and support general text too.",
       "createdAt": "2022-10-10T13:31:01Z",
-      "updatedAt": "2024-03-04T15:44:48Z",
-      "closedAt": null,
+      "updatedAt": "2024-03-06T10:32:19Z",
+      "closedAt": "2024-03-06T10:32:19Z",
       "comments": [
         {
           "author": "rmarx",
@@ -7322,15 +7322,15 @@
       "id": "I_kwDOCrLn6M5qw-Hg",
       "title": "QUICDatagramsSent or UDPDatagramsSent",
       "url": "https://github.com/quicwg/qlog/issues/323",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "We currently have several events that can be used to indicate how QUIC packets are sent in UDP datagrams (`quic:datagrams_sent`, `quic:datagrams_received` etc.).\r\n\r\nHowever, adding support for RFC9221 (Unreliable Datagram extension for QUIC), which adds the new DatagramFrame, causes some issues with the naming here.\r\n\r\nFor example, we also want a `datagram_data_moved` event in addition to the existing `(stream_)data_moved` event, but that would be ambiguous which \"datagram\" we're actually talking about (UDP datagrams or QUIC Datagram Frames). \r\n\r\nSince we've renamed the `transport` category to `quic` (before it was `transport:datagrams_*`), it makes sense to rename these events to `udp:datagrams_*` as well for consistency and clarity.\r\n",
       "createdAt": "2023-07-06T09:59:38Z",
-      "updatedAt": "2023-07-06T09:59:38Z",
-      "closedAt": null,
+      "updatedAt": "2024-03-06T10:34:04Z",
+      "closedAt": "2024-03-06T10:34:04Z",
       "comments": []
     },
     {
@@ -7778,7 +7778,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:packet_sent:\r\n\r\n  The meaning of `is_coalesced` should be clarified. I assume this is\r\n  set to true unless a packet is both the first and last packet in a\r\n  datagram. However that is not necessarily obvious when a packet is\r\n  being generated; another option is to define this as being true for\r\n  every packet but the first packet in a datagram.\r\n\r\nquic:packet_received:\r\n\r\n  See comment on is_coalesced above",
       "createdAt": "2024-01-19T11:05:38Z",
-      "updatedAt": "2024-03-01T16:03:20Z",
+      "updatedAt": "2024-03-06T01:12:26Z",
       "closedAt": null,
       "comments": [
         {
@@ -7787,6 +7787,20 @@
           "body": "So, I clarified this in #403, but I'm not longer fully sure the `is_coalesced` approach is the best.\r\n\r\nMaybe @hlandau could take another look now that the intent is clearer and indicate which approach you prefer? :) ",
           "createdAt": "2024-03-01T16:03:19Z",
           "updatedAt": "2024-03-01T16:03:19Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "@rmarx My reading here:\r\n\r\n>However, in cases where implementations cannot track datagrams in this way, the\r\n>`is_coalesced` field can be used to indicate that a packet was (intended to be)\r\n>coalesced. Implementations MAY use both methods concurrently.\r\n\r\nis that `is_coalesced` is basically non-preferred and only for use if an implementation cannot use `datagram_id`. That seems like a good approach.\r\n\r\n\"intended to be\" needs clarifying... this implies a packet could be intended to be coalesced but isn't actually. So to have that you actually have to introduce a concept of \"coalescable\" rather than \"was coalesced\", which feels like it opens a bit of a can of worms where either we have to define that, or an implementation basically gets to define some arbitrary set of conditions which is \"coalescing desired\". But that then kind of feels uselessly vague.\r\n\r\nI almost feel like we should just drop `is_coalesced` unless we can identify a concrete use case for it. It seems hard to lock down a proper meaning for it and the utility (unless I am missing something) seems minimal given the minimal implementation costs of the preferred `datagram_id` approach.",
+          "createdAt": "2024-03-06T00:28:32Z",
+          "updatedAt": "2024-03-06T00:28:32Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Yeah I'm in Hugo, per my comment on PR #403 , datagram_id seems yseful enough without the is_coaleaced field and avoids the can o' worms",
+          "createdAt": "2024-03-06T01:12:25Z",
+          "updatedAt": "2024-03-06T01:12:25Z"
         }
       ]
     },
@@ -8373,7 +8387,7 @@
       "labels": [],
       "body": "Spinoff/splitoff from #369.\r\n\r\n@hlandau  originally reported for `quic:parameters_set`:\r\n\r\nI think this event needs more clarify in terms of the distinction between\r\nattempting to negotiate a feature and it being enabled. It should be possible\r\nto log the feature set a local or remote endpoint is requesting and it\r\nshould be possible to log the actually negotiated feature set. Possibly\r\nthis can be resolved via simple clarification. If a client connects to\r\na server, does it start by emitting parameters_set (owner=local) with (e.g.)\r\nmax_datagram_frame_size set, and then when the server responds without\r\nit, emit parameters_set (owner=remote) without it? I guess this allows\r\nthe necessary information to be inferred.\r\n\r\nIf the absence of a field indicates it was not negotiated after receiving\r\ntransport parameters from a server, this creates a problem if this event has\r\nto be used to log other parameters determined at different times (which seems\r\nplausible for tls_cipher, early_data_enabled, etc.), as then logging\r\nthose parameters could be misinterpreted as a sign that the transport\r\nparameters have been received and a feature has not been negotiated.\r\nEither the cause of a parameters_set event should be clarified (maybe a trigger\r\nfield) or possibly this should be split into different event types.",
       "createdAt": "2024-02-28T11:26:54Z",
-      "updatedAt": "2024-02-28T11:33:36Z",
+      "updatedAt": "2024-03-06T00:47:00Z",
       "closedAt": null,
       "comments": [
         {
@@ -8382,6 +8396,13 @@
           "body": "There are imo 2 things here, 1 per paragraph:\r\n\r\n1. The intent is indeed to log (at least) 2 `parameters_set` events. One with `owner=local` for the ones you send to the peer, and one with `owner=remote` with ones you receive from the peer. Comparing the values in the two SHOULD be enough to deduce the actually negotiated features/values. If not, the solution would be to emit a third `parameters_set` event reflecting the final value (e.g., at the client, you'd have `owner=local`, then `owner=remote` for what you got from the server and then again `owner=local` to reflect the final values you \"set\" at the client side that will be used). I don't immediately see an existing TP for which this approach would not work. Do you think this is sufficient to resolve your first paragraph @hlandau? If it's indeed a question of a \"simple clarification\" being needed, would you be able to suggest text for such a clarification that would make it easier for you?\r\n\r\n2. I must admit I don't fully understand this part. Specifically \"as then logging those parameters could be misinterpreted as a sign that the transport parameters have been received and a feature has not been negotiated\". Could you give a concrete example of such a case happening? An important aspect here is that the naming is a bit annoying, as it's `parameters_set` but it's not just the literal \"transport parameters\" but much more general \"parameters\" as a whole. So using the event to log non-TP parameters (e.g., early_data_enabled) MUST NOT be inferred to say that this also means that TPs have been received/negotiated (maybe that's also just a clarification then?). If you still feel a trigger would be a good solution, could you give a few examples of such triggers to help my understanding? Thanks :) ",
           "createdAt": "2024-02-28T11:33:35Z",
           "updatedAt": "2024-02-28T11:33:35Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "1 sounds good to me and makes sense.\r\n\r\nFor 2, an example scenario:\r\n\r\n- Client sends handshake, TPs include idle timeout TP, parameters_set(owner=local, idle_timeout=...) logged\r\n- Server sends handshake, TP include idle timeout TP, parameters_set(owner=remote, idle_timeout=...) logged\r\n- Some other event on the client happens which causes parameters_set(owner=local, foo=...) to be logged\r\n- This obviously should not imply `idle_timeout` is no longer configured.\r\n- But for a parameters_set event which is TP-triggered, absence of `idle_timeout` seems to imply it was not sent.\r\n\r\nOK, thinking about it, is the intention here to have \"stateful\" handling of this where a qlog consumer models the current state as the product of all events? i.e.,\r\n\r\n```\r\ncurParams.idleTimeout = UNSET\r\nfor each params event:\r\n  if event.idleTimeout is present:\r\n    curParams.idleTimeout = event.idleTimeout\r\n```\r\n\r\nThat works but should be made clear. Can a param transition back to its \"unset\" value using `null` explicitly? Or is `null` the same as a field being missing?\r\n\r\nHere's some wording I've come up with quickly, feel free to mess with it:\r\n\r\n```\r\nSome parameters are the result of negotiation between peers. In this case, one\r\nendpoint generally suggests a possible value for a parameter and its peer then\r\nsuggests another possible value. The value used is the result of some\r\nparameter-specific function applied over those two suggested values.\r\nSuch negotiation SHOULD be expressed as a series of `parameters_set` events.\r\nFor example:\r\n\r\n- The local endpoint logs a `parameters_set` event with an `owner` of `local`\r\n  reflecting the negotiated parameter values it would like to use.\r\n- The local endpoint receives parameter values from the peer and logs a\r\n  `parameters_set` event with an `owner` of `remote` reflecting the desired\r\n  values expressed by the peer.\r\n- The local endpoint logs a `parameters_set` event with an `owner` of `local`\r\n  reflecting the negotiated parameter values determined from the two sets\r\n  of paramater values communicated by the local and remote endpoints.\r\n\r\nEach parameter in a `parameters_set` event supersedes the previous value of that\r\nparameter if present. If a parameter does not appear in a given `parameters_set`\r\nevent, its value is unchanged from the previous event which set that parameter.\r\nIf a parameter never appears in a `parameters_set` event, it retains its default\r\nvalue. A default value may be restored by specifying a JSON value of `null` for\r\na parameter, which is semantically distinct from the absence of a parameter in a\r\n`parameters_set` event.\r\n```",
+          "createdAt": "2024-03-06T00:46:59Z",
+          "updatedAt": "2024-03-06T00:46:59Z"
         }
       ]
     },
@@ -8390,15 +8411,15 @@
       "id": "I_kwDOCrLn6M6ArF_H",
       "title": "Logging spin bit policy",
       "url": "https://github.com/quicwg/qlog/issues/399",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Splitoff of #369.\r\n\r\n@hlandau said:\r\n\r\nI think it would be valuable to have the ability to log information\r\nsuch as spin bit policy (e.g. enabled, disabled due to random chance,\r\ndisabled administratively), independent of the actual spin_bit_updated\r\nevent).\r\n\r\n@LPardue replied:\r\n\r\nPersonally I'm not interested in spending effort on that but if others want to propose text that fine.",
       "createdAt": "2024-02-28T11:49:51Z",
-      "updatedAt": "2024-02-28T11:52:46Z",
-      "closedAt": null,
+      "updatedAt": "2024-03-06T09:51:20Z",
+      "closedAt": "2024-03-06T09:51:20Z",
       "comments": [
         {
           "author": "rmarx",
@@ -8406,6 +8427,13 @@
           "body": "I agree with @LPardue here that this is not something we should standardize here, though I'm also not 100% opposed to it if people contribute text.\r\n\r\nPersonally, I feel this should better be punted to if/when something like the Loss Bits proposal (https://datatracker.ietf.org/doc/draft-mdt-quic-explicit-measurements/00/) is adopted/RFC'd, so it can be tackled in 1 go. \r\n\r\nWould you be willing to contribute text @hlandau? Otherwise, we will close this with no action. \r\n",
           "createdAt": "2024-02-28T11:52:46Z",
           "updatedAt": "2024-02-28T11:52:46Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "I think this can be closed for now. The amount of text that would be needed for it isn't congruent with the limited value I suspect. Can be revisited for draft-mdt-quic-explicit-measurements.",
+          "createdAt": "2024-03-06T01:11:35Z",
+          "updatedAt": "2024-03-06T01:11:35Z"
         }
       ]
     },
@@ -20398,13 +20426,13 @@
       "labels": [],
       "body": "Fixes #370. \r\n\r\nThis better explains the intent behind `is_coalesced` and also adds it to other events that *probably* should have it as well. \r\n\r\nI'm not sure anymore that this is the best design however, since there's a lot of duplication for a feature that isn't THAT important to track...\r\n\r\nI wonder if we can get away with something like \"If implementations don't want to track individual datagram IDs, but still want to indicate a packet was/could be coalesced, they can use datagram_id = -1 to indicate this\" (and then of course we remove `is_coalesced` and make `datagram_id` an `int32` instead of `uint32`).\r\n\r\nThat would be a bit dirty... but reduce the confusion and duplication considerably? ",
       "createdAt": "2024-03-01T16:02:36Z",
-      "updatedAt": "2024-03-04T09:16:14Z",
+      "updatedAt": "2024-03-06T20:56:22Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "1803174140b198b76cc4258773878ad76afe50ff",
       "headRepository": "quicwg/qlog",
       "headRefName": "coalesce-clarification",
-      "headRefOid": "71cf68cdeb4e0e35d378aad0f48cc26a85a7d5ee",
+      "headRefOid": "1d98de25b1bcca0c77dec4c1ad839c5399aabf72",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -20423,9 +20451,104 @@
           "body": "I think the new text that clarifies how the datagram_id is used is good. I don't think we benefit from the `is_coalesced` field, since it's a subset of a subset i.e. if an implementation cares enough about logging coalescing, then it can do the work to add datagram_id support.",
           "createdAt": "2024-03-04T09:16:13Z",
           "updatedAt": "2024-03-04T09:16:13Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thanks for the comments on #370 @HLandau and @LPardue.\r\n\r\nI agree and have removed `is_coalesced` in my latests commit. I've also moved all the text related to this to the `datagramssent` event so it's less spread-out. \r\n\r\nPTAL and see if the explanation there around `datagram_id` is clear enough. Thanks :) ",
+          "createdAt": "2024-03-06T10:26:05Z",
+          "updatedAt": "2024-03-06T10:26:05Z"
+        },
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "Looks good. Might want to rename this issue.",
+          "createdAt": "2024-03-06T20:56:21Z",
+          "updatedAt": "2024-03-06T20:56:21Z"
         }
       ],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5ycg0d",
+          "commit": {
+            "abbreviatedOid": "1d98de2"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T15:28:35Z",
+          "updatedAt": "2024-03-06T15:28:36Z",
+          "comments": [
+            {
+              "originalPosition": 97,
+              "body": "This second SHOULD kudt seems to be repeating the requirement above?",
+              "createdAt": "2024-03-06T15:28:35Z",
+              "updatedAt": "2024-03-06T15:28:36Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ydFQJ",
+          "commit": {
+            "abbreviatedOid": "1d98de2"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T16:20:53Z",
+          "updatedAt": "2024-03-06T16:20:53Z",
+          "comments": [
+            {
+              "originalPosition": 97,
+              "body": "It is; I wasn't aware that's a problem. Would you prefer to change the first `SHOULD` to a `should` or the second one here? ",
+              "createdAt": "2024-03-06T16:20:53Z",
+              "updatedAt": "2024-03-06T16:20:53Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ydcRY",
+          "commit": {
+            "abbreviatedOid": "1d98de2"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T16:54:58Z",
+          "updatedAt": "2024-03-06T16:54:59Z",
+          "comments": [
+            {
+              "originalPosition": 98,
+              "body": "So I might be misreading what you intend but with current text but I could even go further with something like\r\n\r\n```suggestion\r\nqlog defines it's own mechanism for tracking coalescing across packet-level and\r\ndatagram-level qlog events, a \"datagram identifier\" carried in `datagram_id` fields.\r\nqlog implementations that want to track coalescing can use this mechanism, the \r\nselectiion of specific and locally-unique `datagram_id` values is an implementation\r\nchoice.\r\n```",
+              "createdAt": "2024-03-06T16:54:59Z",
+              "updatedAt": "2024-03-06T16:54:59Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ydcbb",
+          "commit": {
+            "abbreviatedOid": "1d98de2"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T16:55:16Z",
+          "updatedAt": "2024-03-06T16:55:16Z",
+          "comments": [
+            {
+              "originalPosition": 97,
+              "body": "I made a suggestion PTAL",
+              "createdAt": "2024-03-06T16:55:16Z",
+              "updatedAt": "2024-03-06T16:55:16Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 404,
@@ -20494,13 +20617,13 @@
       "labels": [],
       "body": "Closes #273.\r\n\r\nPTAL @marten-seemann ",
       "createdAt": "2024-03-04T14:26:14Z",
-      "updatedAt": "2024-03-04T19:51:00Z",
+      "updatedAt": "2024-03-06T10:43:55Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2d6f293b8408c5554a2698e10bee8a26a3ea732b",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-calcnotes",
-      "headRefOid": "928bcd911c32270a737d8a7a7749d67131b0695a",
+      "headRefOid": "1fb94a3ea9457a457f470f67be3e8385b5993642",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -20554,24 +20677,26 @@
       "id": "PR_kwDOCrLn6M5omVo1",
       "title": "Clarify UDP datagram namespace",
       "url": "https://github.com/quicwg/qlog/pull/407",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Closes #323.\r\n\r\nI decided not to use the full `udp:` namespace since we might need to properly define that later (if qlog for UDP is ever done proper). So I now just added the prefix `udp_` to the necessary events to make clear these are UDP datagrams, not QUIC datagram frames. ",
       "createdAt": "2024-03-04T14:40:35Z",
-      "updatedAt": "2024-03-04T19:49:38Z",
+      "updatedAt": "2024-03-06T10:34:06Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2d6f293b8408c5554a2698e10bee8a26a3ea732b",
       "headRepository": "quicwg/qlog",
       "headRefName": "udp-namespace",
       "headRefOid": "fe27479e04006919dc7cba999ed76658d0dba4a1",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-03-06T10:34:03Z",
+      "mergedAt": "2024-03-06T10:34:03Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "f24ca16d26ff317defde9c5920d68d4c81c81f88"
+      },
       "comments": [],
       "reviews": [
         {
@@ -20594,24 +20719,26 @@
       "id": "PR_kwDOCrLn6M5om0_T",
       "title": "Clarify congestion_state_updated usage",
       "url": "https://github.com/quicwg/qlog/pull/408",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Closes #246.",
       "createdAt": "2024-03-04T15:43:41Z",
-      "updatedAt": "2024-03-04T19:47:28Z",
+      "updatedAt": "2024-03-06T10:32:22Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2d6f293b8408c5554a2698e10bee8a26a3ea732b",
       "headRepository": "quicwg/qlog",
       "headRefName": "cc-state-guidance",
       "headRefOid": "551dee843462111b031f0c80c849f51f1e9bab3c",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-03-06T10:32:18Z",
+      "mergedAt": "2024-03-06T10:32:18Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "c697710ef953dac7fb5c2bb12a913d65f19494f9"
+      },
       "comments": [],
       "reviews": [
         {
@@ -20626,6 +20753,173 @@
           "createdAt": "2024-03-04T19:47:28Z",
           "updatedAt": "2024-03-04T19:47:28Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 409,
+      "id": "PR_kwDOCrLn6M5o0RJD",
+      "title": "Clarify paramers_set merging of parameter values",
+      "url": "https://github.com/quicwg/qlog/pull/409",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #398.\r\n\r\nPTAL @hlandau. \r\n\r\nThe suggestion of using `null` as a JSON value in #398 makes conceptual sense, but not really since we're working with CDDL to define the events and their fields, as it doesn't easily allow to make a type \"nullable\" for something like this. \r\n\r\nAs such, I changed the recommendation to explicitly setting the default value if needed; I hope that's acceptable. \r\n\r\nFor the rest, I mostly just used your text with minor editorial changes. ",
+      "createdAt": "2024-03-06T09:49:24Z",
+      "updatedAt": "2024-03-06T22:26:40Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "67a777edcf575ce9f163b4382ec1e4afed57d6bb",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "clarify-paramsmerge",
+      "headRefOid": "6256a65b46d37392fb79016bcf1285e3d52eabb6",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5yaovB",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2024-03-06T12:17:51Z",
+          "updatedAt": "2024-03-06T12:17:54Z",
+          "comments": [
+            {
+              "originalPosition": 27,
+              "body": "I find this very confusing. Why do we need to log anything at all? There are not many parameters that are negotiated (idle timeout. anything else?).\r\n\r\nIf we really want to log this, let's create a separate owner value for that.",
+              "createdAt": "2024-03-06T12:17:51Z",
+              "updatedAt": "2024-03-06T12:17:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yapGK",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T12:18:36Z",
+          "updatedAt": "2024-03-06T12:18:36Z",
+          "comments": [
+            {
+              "originalPosition": 34,
+              "body": "This doesn't work for 0-RTT, does it?",
+              "createdAt": "2024-03-06T12:18:36Z",
+              "updatedAt": "2024-03-06T12:18:36Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ybLNz",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T13:10:33Z",
+          "updatedAt": "2024-03-06T13:10:34Z",
+          "comments": [
+            {
+              "originalPosition": 34,
+              "body": "0-RTT is special cased in the paragraph below this one and should use `parameters_restored`. (That's not to say that that is 100% watertight, I might have missed something in that flow, but it's indeed not the intent to use only `parameters_set` for 0-RTT and this new text is not intended for 0-RTT indeed).",
+              "createdAt": "2024-03-06T13:10:34Z",
+              "updatedAt": "2024-03-06T13:10:34Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yfR8r",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T20:57:24Z",
+          "updatedAt": "2024-03-06T20:57:24Z",
+          "comments": [
+            {
+              "originalPosition": 27,
+              "body": "No objection to a separate owner value",
+              "createdAt": "2024-03-06T20:57:24Z",
+              "updatedAt": "2024-03-06T20:57:24Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yfSsX",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "state": "APPROVED",
+          "body": "LGTM, though one comment",
+          "createdAt": "2024-03-06T20:59:27Z",
+          "updatedAt": "2024-03-06T20:59:38Z",
+          "comments": [
+            {
+              "originalPosition": 38,
+              "body": "If we don't support `null` I guess that means some default values (i.e., absence of a TP) might be unrepresentable in qlog.",
+              "createdAt": "2024-03-06T20:59:27Z",
+              "updatedAt": "2024-03-06T20:59:38Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yf2-B",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T22:26:03Z",
+          "updatedAt": "2024-03-06T22:26:03Z",
+          "comments": [
+            {
+              "originalPosition": 34,
+              "body": "I don't think this event should be logged more than once per connection. Transport parameters are only exchanged once, after all. If we have a separate owner value as suggested above, this property would also hold in qlog.",
+              "createdAt": "2024-03-06T22:26:03Z",
+              "updatedAt": "2024-03-06T22:26:04Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yf3Ku",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-06T22:26:40Z",
+          "updatedAt": "2024-03-06T22:26:40Z",
+          "comments": [
+            {
+              "originalPosition": 27,
+              "body": "`negotiated`? I don't think this is super valuable to log, since it can easily be derived from the two `parameters_set` events anyway.",
+              "createdAt": "2024-03-06T22:26:40Z",
+              "updatedAt": "2024-03-06T22:26:40Z"
+            }
+          ]
         }
       ]
     }
