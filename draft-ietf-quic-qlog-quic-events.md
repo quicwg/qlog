@@ -112,30 +112,11 @@ trace of the connection with ODCID abcd1234).
 
 ## Raw packet and frame information
 
-QUIC packets always include an AEAD authentication tag at the end.
-In general, the length of the AEAD tag depends on the TLS cipher
-suite, although all cipher suites used in QUIC v1 use a 16 byte tag.
-
-Note:
-
-: As QUIC appends an authentication tag after the packet payload, the packet
-header_lengths can be calculated as:
-
-: header_length = length - payload_length - 16
-
-: For UDP datagrams, the calculation is simpler:
-
-: header_length = length - payload_length
-
-Note:
-
-: In some cases, the length fields are also explicitly reflected inside of packet
-headers. For example, the QUIC STREAM frame has a `length` field indicating its
-payload size. Similarly, the QUIC Long Header has a `length` field which is equal
-to the payload length plus the packet number length. In these cases, those fields
-are intentionally preserved in the event definitions. Even though this can lead to
-duplicate data when the full RawInfo is logged, it allows a more direct mapping of
-the QUIC specifications to qlog, making it easier for users to interpret.
+QUIC packets always include an AEAD authentication tag at the end. In general,
+the length of the AEAD tag depends on the TLS cipher suite, although all cipher
+suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
+lengths in fields of type RawInfo (as defined in {{QLOG-MAIN}}) related to QUIC
+packets, the AEAD tag is regarded as a trailer.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
