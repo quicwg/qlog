@@ -265,6 +265,8 @@ ConnectivityServerListening = {
     ; the server will always answer client initials with a retry
     ; (no 1-RTT connection setups by choice)
     ? retry_required: bool
+
+    * $$connectivity-serverlistening-extension
 }
 ~~~
 {: #connectivity-serverlistening-def title="ConnectivityServerListening definition"}
@@ -292,6 +294,8 @@ ConnectivityConnectionStarted = {
     ? dst_port: uint16
     ? src_cid: ConnectionID
     ? dst_cid: ConnectionID
+
+    * $$connectivity-connectionstarted-extension
 }
 ~~~
 {: #connectivity-connectionstarted-def title="ConnectivityConnectionStarted definition"}
@@ -340,6 +344,8 @@ ConnectivityConnectionClosed = {
         "version_mismatch" /
         ; for example HTTP/3's GOAWAY frame
         "application"
+
+    * $$connectivity-connectionclosed-extension
 }
 ~~~
 {: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
@@ -363,6 +369,8 @@ ConnectivityConnectionIDUpdated = {
     owner: Owner
     ? old: ConnectionID
     ? new: ConnectionID
+
+    * $$connectivity-connectionidupdated-extension
 }
 ~~~
 {: #connectivity-connectionidupdated-def title="ConnectivityConnectionIDUpdated definition"}
@@ -378,6 +386,8 @@ QLOG-MAIN}}.
 ~~~ cddl
 ConnectivitySpinBitUpdated = {
     state: bool
+
+    * $$connectivity-spinbitupdated-extension
 }
 ~~~
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
@@ -400,6 +410,8 @@ ConnectivityConnectionStateUpdated = {
            SimpleConnectionState
     new: ConnectionState /
          SimpleConnectionState
+
+    * $$connectivity-connectionstateupdated-extension
 }
 
 ConnectionState =
@@ -499,6 +511,8 @@ ConnectivityPathAssigned = {
 
     ; the information for traffic coming in at the local endpoint
     ? path_local: PathEndpointInfo
+
+    * $$connectivity-pathassigned-extension
 }
 ~~~
 {: #connectivity-pathassigned-def title="ConnectivityPathAssigned definition"}
@@ -532,12 +546,14 @@ level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 ConnectivityMTUUpdated = {
-  ? old: uint32
-  new: uint32
+    ? old: uint32
+    new: uint32
 
-  ; at some point, MTU discovery stops, as a "good enough"
-  ; packet size has been found
-  ? done: bool .default false
+    ; at some point, MTU discovery stops, as a "good enough"
+    ; packet size has been found
+    ? done: bool .default false
+
+    * $$connectivity-mtuupdated-extension
 }
 ~~~
 {: #connectivity-mtuupdated-def title="ConnectivityMTUUpdated definition"}
@@ -563,6 +579,8 @@ QUICVersionInformation = {
     ? server_versions: [+ QuicVersion]
     ? client_versions: [+ QuicVersion]
     ? chosen_version: QuicVersion
+
+    * $$quic-versioninformation-extension
 }
 ~~~
 {: #quic-versioninformation-def title="QUICVersionInformation definition"}
@@ -602,6 +620,8 @@ QUICALPNInformation = {
     ? server_alpns: [* ALPNIdentifier]
     ? client_alpns: [* ALPNIdentifier]
     ? chosen_alpn: ALPNIdentifier
+
+    * $$quic-alpninformation-extension
 }
 
 ALPNIdentifier = {
@@ -778,6 +798,8 @@ QUICPacketSent = {
       ; needed for some CCs to figure out bandwidth allocations
       ; when there are no normal sends
       "cc_bandwidth_probe"
+
+    * $$quic-packetsent-extension
 }
 ~~~
 {: #quic-packetsent-def title="QUICPacketSent definition"}
@@ -813,6 +835,8 @@ QUICPacketReceived = {
         ; if packet was buffered because it couldn't be
         ; decrypted before
         "keys_available"
+
+    * $$quic-packetreceived-extension
 }
 ~~~
 {: #quic-packetreceived-def title="QUICPacketReceived definition"}
@@ -852,6 +876,8 @@ QUICPacketDropped = {
         "decryption_failure" /
         "key_unavailable" /
         "general"
+
+    * $$quic-packetdropped-extension
 }
 ~~~
 {: #quic-packetdropped-def title="QUICPacketDropped definition"}
@@ -893,6 +919,8 @@ QUICPacketBuffered = {
         ; if packet cannot be decrypted because the proper keys were
         ; not yet available
         "keys_unavailable"
+
+    * $$quic-packetbuffered-extension
 }
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
@@ -916,6 +944,8 @@ implementations that do not log frame contents.
 QUICPacketsAcked = {
     ? packet_number_space: PacketNumberSpace
     ? packet_numbers: [+ uint64]
+
+    * $$quic-packetsacked-extension
 }
 ~~~
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
@@ -946,6 +976,8 @@ QUICUDPDatagramsSent = {
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
+
+    * $$quic-udpdatagramssent-extension
 }
 ~~~
 {: #quic-udpdatagramssent-def title="QUICUDPDatagramsSent definition"}
@@ -982,6 +1014,8 @@ QUICUDPDatagramsReceived = {
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
+
+    * $$quic-udpdatagramsreceived-extension
 }
 ~~~
 {: #quic-udpdatagramsreceived-def title="QUICUDPDatagramsReceived definition"}
@@ -1002,6 +1036,8 @@ QUICUDPDatagramDropped = {
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: RawInfo
+
+    * $$quic-udpdatagramdropped-extension
 }
 ~~~
 {: #quic-udpdatagramdropped-def title="QUICUDPDatagramDropped definition"}
@@ -1027,6 +1063,8 @@ QUICStreamStateUpdated = {
     new: StreamState
     ? stream_side: "sending" /
                    "receiving"
+
+    * $$quic-streamstateupdated-extension
 }
 
 StreamState =
@@ -1103,6 +1141,8 @@ corresponding packet number at the same index.
 QUICFramesProcessed = {
     frames: [* $QuicFrame]
     ? packet_numbers: [* uint64]
+
+    * $$quic-framesprocessed-extension
 }
 ~~~
 {: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
@@ -1165,6 +1205,8 @@ QUICStreamDataMoved = {
           "network" /
           text
     ? raw: RawInfo
+
+    * $$quic-streamdatamoved-extension
 }
 ~~~
 {: #quic-streamdatamoved-def title="QUICStreamDataMoved definition"}
@@ -1207,6 +1249,8 @@ QUICDatagramDataMoved = {
           "network" /
           text
     ? raw: RawInfo
+
+    * $$quic-datagramdatamoved-extension
 }
 ~~~
 {: #quic-datagramdatamoved-def title="QUICDatagramDataMoved definition"}
@@ -1245,6 +1289,8 @@ QUICMigrationStateUpdated = {
 
     ; the information for traffic coming in at the local endpoint
     ? path_local: PathEndpointInfo
+
+    * $$quic-migrationstateupdated-extension
 }
 
 ; Note that MigrationState does not describe a full state machine
@@ -1288,6 +1334,8 @@ SecurityKeyUpdated = {
         "tls" /
         "remote_update" /
         "local_update"
+
+    * $$quic-keyupdated-extension
 }
 ~~~
 {: #security-keyupdated-def title="SecurityKeyUpdated definition"}
@@ -1314,6 +1362,8 @@ SecurityKeyDiscarded = {
         "tls" /
         "remote_update" /
         "local_update"
+
+    * $$quic-keydiscarded-extension
 }
 ~~~
 {: #security-keydiscarded-def title="SecurityKeyDiscarded definition"}
@@ -1365,6 +1415,8 @@ RecoveryParametersSet = {
 
     ; as PTO multiplier
     ? persistent_congestion_threshold: uint16
+
+    * $$recovery-parametersset-extension
 }
 ~~~
 {: #recovery-parametersset-def title="RecoveryParametersSet definition"}
@@ -1409,6 +1461,8 @@ RecoveryMetricsUpdated = {
 
     ; in bits per second
     ? pacing_rate: uint64
+
+    * $$recovery-metricsupdated-extension
 }
 ~~~
 {: #recovery-metricsupdated-def title="RecoveryMetricsUpdated definition"}
@@ -1441,6 +1495,8 @@ RecoveryCongestionStateUpdated = {
     ? old: text
     new: text
     ? trigger: text
+
+    * $$recovery-congestionstateupdated-extension
 }
 ~~~
 {: #recovery-congestionstateupdated-def title="RecoveryCongestionStateUpdated definition"}
@@ -1478,6 +1534,8 @@ RecoveryLossTimerUpdated = {
     ; if event_type === "set": delta time is in ms from
     ; this event's timestamp until when the timer will trigger
     ? delta: float32
+
+    * $$recovery-losstimerupdated-extension
 }
 ~~~
 {: #recovery-losstimerupdated-def title="RecoveryLossTimerUpdated definition"}
@@ -1505,6 +1563,8 @@ RecoveryPacketLost = {
         "time_threshold" /
         ; RFC 9002 Section 6.2.4 paragraph 6, MAY
         "pto_expired"
+
+    * $$recovery-packetlost-extension
 }
 ~~~
 {: #recovery-packetlost-def title="RecoveryPacketLost definition"}
@@ -1535,6 +1595,8 @@ when data was retransmitted).
 ~~~ cddl
 RecoveryMarkedForRetransmit = {
     frames: [+ $QuicFrame]
+
+    * $$recovery-markedforretransmit-extension
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
@@ -1549,6 +1611,8 @@ level; see {{Section 9.2 of QLOG-MAIN}}.
 ECNStateUpdated = {
    ? old: ECNState
     new: ECNState
+
+    * $$recovery-ecnstateupdated-extension
 }
 
 ECNState =
@@ -1632,6 +1696,8 @@ PathEndpointInfo = {
     ; there are situations where there can be an overlap
     ; or a need to keep track of previous ConnectionIDs
     ? connection_ids: [+ ConnectionID]
+
+    * $$quic-pathendpointinfo-extension
 }
 ~~~
 {: #pathendpointinfo-def title="PathEndpointInfo definition"}
@@ -1690,6 +1756,8 @@ PacketHeader = {
     ? dcil: uint8
     ? scid: ConnectionID
     ? dcid: ConnectionID
+
+    * $$quic-packetheader-extension
 }
 ~~~
 {: #packetheader-def title="PacketHeader definition"}
@@ -1707,6 +1775,8 @@ Token = {
       * text => any
     }
     ? raw: RawInfo
+
+    * $$quic-token-extension
 }
 ~~~
 {: #token-def title="Token definition"}

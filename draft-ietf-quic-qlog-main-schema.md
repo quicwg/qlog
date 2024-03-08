@@ -1039,6 +1039,8 @@ wire. It has Core importance level; see {{importance}}.
 GenericError = {
     ? code: uint64
     ? message: text
+
+    * $$generic-error-extension
 }
 ~~~
 {: #generic-error-def title="GenericError definition"}
@@ -1052,6 +1054,8 @@ wire. It has Base importance level; see {{importance}}.
 GenericWarning = {
     ? code: uint64
     ? message: text
+
+    * $$generic-warning-extension
 }
 ~~~
 {: #generic-warning-def title="GenericWarning definition"}
@@ -1065,6 +1069,8 @@ has Extra importance level; see {{importance}}.
 ~~~ cddl
 GenericInfo = {
     message: text
+
+    * $$generic-info-extension
 }
 ~~~
 {: #generic-info-def title="GenericInfo definition"}
@@ -1078,6 +1084,8 @@ has Extra importance level; see {{importance}}.
 ~~~ cddl
 GenericDebug = {
     message: text
+
+    * $$generic-debug-extension
 }
 ~~~
 {: #generic-debug-def title="GenericDebug definition"}
@@ -1091,6 +1099,8 @@ has Extra importance level; see {{importance}}.
 ~~~ cddl
 GenericVerbose = {
     message: text
+
+    * $$generic-verbose-extension
 }
 ~~~
 {: #generic-verbose-def title="GenericVerbose definition"}
@@ -1119,6 +1129,8 @@ one trace (e.g., split by `group_id`). It has Extra importance level; see
 SimulationScenario = {
     ? name: text
     ? details: {* text => any }
+
+    * $$simulation-scenario-extension
 }
 ~~~
 {: #simulation-scenario-def title="SimulationScenario definition"}
@@ -1133,6 +1145,8 @@ triggered). It has Extra importance level; see {{importance}}.
 SimulationMarker = {
     ? type: text
     ? message: text
+
+    * $$simulation-marker-extension
 }
 ~~~
 {: #simulation-marker-def title="SimulationMarker definition"}

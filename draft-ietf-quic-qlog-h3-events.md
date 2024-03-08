@@ -196,6 +196,8 @@ H3ParametersSet = {
     ; indicates whether this implementation waits for a SETTINGS
     ; frame before processing requests
     ? waits_for_settings: bool
+
+    * $$h3-parametersset-extension
 }
 
 H3Parameters = {
@@ -214,6 +216,8 @@ H3Parameters = {
 
     ; additional settings for grease and extensions
     * text => uint64
+
+    * $$h3-parameters-extension
 }
 ~~~
 {: #h3-parametersset-def title="H3ParametersSet definition"}
@@ -232,6 +236,8 @@ utilizing 0-RTT. It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 ~~~ cddl
 H3ParametersRestored = {
     ~H3Parameters
+
+    * $$h3-parametersrestored-extension
 }
 ~~~
 {: #h3-parametersrestored-def title="H3ParametersRestored definition"}
@@ -266,6 +272,8 @@ H3StreamTypeSet = {
 
     ; only when stream_type === "push"
     ? associated_push_id: uint64
+
+    * $$h3-streamtypeset-extension
 }
 
 H3StreamType =  "request" /
@@ -297,6 +305,8 @@ H3PriorityUpdated = {
 
     ? old: H3Priority
     new: H3Priority
+
+    * $$h3-priorityupdated-extension
 }
 ~~~
 {: #h3-priorityupdated-def title="H3PriorityUpdated definition"}
@@ -315,6 +325,8 @@ H3FrameCreated = {
     ? length: uint64
     frame: $H3Frame
     ? raw: RawInfo
+
+    * $$h3-framecreated-extension
 }
 ~~~
 {: #h3-framecreated-def title="H3FrameCreated definition"}
@@ -334,6 +346,8 @@ H3FrameParsed = {
     ? length: uint64
     frame: $H3Frame
     ? raw: RawInfo
+
+    * $$h3-frameparsed-extension
 }
 ~~~
 {: #h3-frameparsed-def title="H3FrameParsed definition"}
@@ -357,6 +371,8 @@ H3DatagramCreated = {
     quarter_stream_id: uint64
     ? datagram: $H3Datagram
     ? raw: RawInfo
+
+    * $$h3-datagramcreated-extension
 }
 ~~~
 {: #h3-datagramcreated-def title="H3DatagramCreated definition"}
@@ -375,6 +391,8 @@ H3DatagramParsed = {
     quarter_stream_id: uint64
     ? datagram: $H3Datagram
     ? raw: RawInfo
+
+    * $$h3-datagramparsed-extension
 }
 ~~~
 {: #h3-datagramparsed-def title="H3DatagramParsed definition"}
@@ -395,10 +413,12 @@ H3PushResolved = {
     ; to the push_id
     ? stream_id: uint64
     decision: H3PushDecision
+
+    * $$h3-pushresolved-extension
 }
 
 H3PushDecision = "claimed" /
-                   "abandoned"
+                 "abandoned"
 ~~~
 {: #h3-pushresolved-def title="H3PushResolved definition"}
 
