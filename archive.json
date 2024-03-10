@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-03-07T00:35:25.607107+00:00",
+  "timestamp": "2024-03-10T00:47:27.008660+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -6875,7 +6875,7 @@
       "id": "I_kwDOCrLn6M5akagV",
       "title": "remove note containing equation to calculate header length",
       "url": "https://github.com/quicwg/qlog/issues/273",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -6886,8 +6886,8 @@
       ],
       "body": "",
       "createdAt": "2023-01-04T19:53:14Z",
-      "updatedAt": "2023-11-08T10:15:02Z",
-      "closedAt": null,
+      "updatedAt": "2024-03-08T15:28:20Z",
+      "closedAt": "2024-03-08T15:28:20Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -8452,6 +8452,30 @@
       "updatedAt": "2024-03-04T11:48:47Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 410,
+      "id": "I_kwDOCrLn6M6BpHJ9",
+      "title": "Connectivity::Connection_closed application trigger type is confusing",
+      "url": "https://github.com/quicwg/qlog/issues/410",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "```\r\nConnectivityConnectionClosed = {\r\n\r\n    ; which side closed the connection\r\n    ? owner: Owner\r\n    ? connection_code: TransportError /\r\n                       CryptoError /\r\n                       uint32\r\n    ? application_code: $ApplicationError /\r\n                        uint32\r\n    ? internal_code: uint32\r\n    ? reason: text\r\n    ? trigger:\r\n        \"clean\" /\r\n        \"handshake_timeout\" /\r\n        \"idle_timeout\" /\r\n        ; this is called the \"immediate close\" in the QUIC RFC\r\n        \"error\" /\r\n        \"stateless_reset\" /\r\n        \"version_mismatch\" /\r\n        ; for example HTTP/3's GOAWAY frame\r\n        \"application\"\r\n}\r\n```\r\n\r\nGOAWAY doesn't close the connection, so I find this example a bit confusing.\r\n\r\nIn quiche, I would be able to close a connection using transport or an application CONNECTION_CLOSE and log that information in the other fields like `connection_code` etc. \r\n\r\nMaybe we should remove that trigger variant?",
+      "createdAt": "2024-03-08T00:04:14Z",
+      "updatedAt": "2024-03-08T09:50:12Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I see the confusion. I think the intent was to make a difference between e.g., a programmer-triggered close on the QUIC level (\"clean\") vs a GOAWAY triggered one at the application level. Even though the GOAWAY doesn't immediately trigger the close directly, it was the conceptual \"trigger\" that led to the connection being closed down. Of course, you can make an argument that stacks won't track this and will not log this, and I can follow that :) \r\n\r\nI was also thinking of non-HTTP3 stuff running over QUIC however that might have application-level direct-close things (especially at the side initiating the close of course), so I wouldn't just do away with `application` here. Maybe just remove the comment? ",
+          "createdAt": "2024-03-08T09:50:11Z",
+          "updatedAt": "2024-03-08T09:50:11Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -20426,7 +20450,7 @@
       "labels": [],
       "body": "Fixes #370. \r\n\r\nThis better explains the intent behind `is_coalesced` and also adds it to other events that *probably* should have it as well. \r\n\r\nI'm not sure anymore that this is the best design however, since there's a lot of duplication for a feature that isn't THAT important to track...\r\n\r\nI wonder if we can get away with something like \"If implementations don't want to track individual datagram IDs, but still want to indicate a packet was/could be coalesced, they can use datagram_id = -1 to indicate this\" (and then of course we remove `is_coalesced` and make `datagram_id` an `int32` instead of `uint32`).\r\n\r\nThat would be a bit dirty... but reduce the confusion and duplication considerably? ",
       "createdAt": "2024-03-01T16:02:36Z",
-      "updatedAt": "2024-03-06T20:56:22Z",
+      "updatedAt": "2024-03-07T13:49:18Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "1803174140b198b76cc4258773878ad76afe50ff",
@@ -20547,6 +20571,46 @@
               "updatedAt": "2024-03-06T16:55:16Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ylG0X",
+          "commit": {
+            "abbreviatedOid": "1d98de2"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-07T12:39:10Z",
+          "updatedAt": "2024-03-07T12:39:10Z",
+          "comments": [
+            {
+              "originalPosition": 98,
+              "body": "I feel that loses a (potentially obvious, but still good to call out) aspect in how to use the `datagram_id` though... so maybe something like this then:\r\n\r\n```suggestion\r\nqlog defines its own mechanism for tracking coalescing across packet-level and\r\ndatagram-level qlog events, a \"datagram identifier\" carried in `datagram_id`\r\nfields. qlog implementations that want to track coalescing can use this\r\nmechanism, where multiple packet-level events sharing the same `datagram_id`\r\nindicate they were coalesced in the same UDP datagram. The selection of specific\r\nand locally-unique `datagram_id` values is an implementation choice. \r\n```",
+              "createdAt": "2024-03-07T12:39:10Z",
+              "updatedAt": "2024-03-07T12:39:10Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yltfK",
+          "commit": {
+            "abbreviatedOid": "1d98de2"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-07T13:49:17Z",
+          "updatedAt": "2024-03-07T13:49:18Z",
+          "comments": [
+            {
+              "originalPosition": 98,
+              "body": "Looks good",
+              "createdAt": "2024-03-07T13:49:17Z",
+              "updatedAt": "2024-03-07T13:49:18Z"
+            }
+          ]
         }
       ]
     },
@@ -20610,24 +20674,26 @@
       "id": "PR_kwDOCrLn6M5omOtr",
       "title": "Clarify RawInfo calculation for QUIC packets",
       "url": "https://github.com/quicwg/qlog/pull/406",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Closes #273.\r\n\r\nPTAL @marten-seemann ",
       "createdAt": "2024-03-04T14:26:14Z",
-      "updatedAt": "2024-03-06T10:43:55Z",
+      "updatedAt": "2024-03-08T22:41:31Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2d6f293b8408c5554a2698e10bee8a26a3ea732b",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-calcnotes",
       "headRefOid": "1fb94a3ea9457a457f470f67be3e8385b5993642",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-03-08T15:28:19Z",
+      "mergedAt": "2024-03-08T15:28:19Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "57b679678b44d80234a0e10a08e53fe5ef9e7532"
+      },
       "comments": [],
       "reviews": [
         {
@@ -20669,6 +20735,32 @@
               "updatedAt": "2024-03-04T19:51:00Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yuMPT",
+          "commit": {
+            "abbreviatedOid": "1fb94a3"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-03-08T11:46:30Z",
+          "updatedAt": "2024-03-08T11:46:30Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5yzADR",
+          "commit": {
+            "abbreviatedOid": "1fb94a3"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "Thank you @rmarx!",
+          "createdAt": "2024-03-08T22:41:31Z",
+          "updatedAt": "2024-03-08T22:41:31Z",
+          "comments": []
         }
       ]
     },
@@ -20768,7 +20860,7 @@
       "labels": [],
       "body": "Closes #398.\r\n\r\nPTAL @hlandau. \r\n\r\nThe suggestion of using `null` as a JSON value in #398 makes conceptual sense, but not really since we're working with CDDL to define the events and their fields, as it doesn't easily allow to make a type \"nullable\" for something like this. \r\n\r\nAs such, I changed the recommendation to explicitly setting the default value if needed; I hope that's acceptable. \r\n\r\nFor the rest, I mostly just used your text with minor editorial changes. ",
       "createdAt": "2024-03-06T09:49:24Z",
-      "updatedAt": "2024-03-06T22:26:40Z",
+      "updatedAt": "2024-03-07T12:48:32Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "67a777edcf575ce9f163b4382ec1e4afed57d6bb",
@@ -20918,6 +21010,66 @@
               "body": "`negotiated`? I don't think this is super valuable to log, since it can easily be derived from the two `parameters_set` events anyway.",
               "createdAt": "2024-03-06T22:26:40Z",
               "updatedAt": "2024-03-06T22:26:40Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ylIsl",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-07T12:43:18Z",
+          "updatedAt": "2024-03-07T12:43:19Z",
+          "comments": [
+            {
+              "originalPosition": 34,
+              "body": "This event will be logged at least twice per connection by definition, since there are two sets of TPs: one for the local entity and one for the peer. This event also tracks more state than just transport parameters (e.g., TLS level params like resumption or early data) that are probably set in a different codepath/at a different time and benefit from having multiple `parameters_set`.\r\n\r\nI agree with the subset of your statement that the event probably shouldn't be logged more than once per connection for specific fields with the same owner though. \r\n\r\nStill, for me personally the most important part here is `If a parameter does not appear in a given parameters_set event, its value is unchanged from the previous event which set that parameter.` to help make clear that subsequent `parameters_set` do not invalidate earlier values, which I agree with @hlandau is not 100% clear right now. \r\n\r\n\r\n ",
+              "createdAt": "2024-03-07T12:43:18Z",
+              "updatedAt": "2024-03-07T12:43:19Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ylKK9",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-07T12:46:25Z",
+          "updatedAt": "2024-03-07T12:46:25Z",
+          "comments": [
+            {
+              "originalPosition": 27,
+              "body": "So, I'm still not 100% sure what we're proposing here...\r\n\r\nOption A:\r\n- log `parameters_set` with owner=local for local value\r\n- log `parameters_set` with owner=remote for peer's value\r\n- log `parameters_set` with owner=negotiated for final value\r\n\r\nor Option B:\r\n- log `parameters_set` with owner=negotiated for local value\r\n- log `parameters_set` with owner=negotiated for peer's value\r\n- log `parameters_set` with owner=negotiated for final value\r\n\r\nor Option C:\r\n- log `parameters_set` with owner=negotiated final value\r\n\r\nI'm not sure I like C (lose quite some information there... don't know which values the peers proposed originally?).\r\nI'm also not sure how either A or B improves upon the proposed text though... you're still logging 3 events? ",
+              "createdAt": "2024-03-07T12:46:25Z",
+              "updatedAt": "2024-03-07T12:46:25Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5ylLIj",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-07T12:48:32Z",
+          "updatedAt": "2024-03-07T12:48:32Z",
+          "comments": [
+            {
+              "originalPosition": 38,
+              "body": "I'm not sure I understand? Absence of a TP is simply that: absence of a TP in the `parameters_set`. \r\n\r\nWhether this means the TP was actually absent on the wire or whether the implementation didn't/couldn't log it is indeed unclear, but the qlogger can do what they want (e.g., also simply couldn't log `null`), so that's never fixable imo. \r\n\r\nIf you mean to say that the default value of a TP is `null`, then I'd say that derives from the RFC that defines the TP, and absence implies that value?",
+              "createdAt": "2024-03-07T12:48:32Z",
+              "updatedAt": "2024-03-07T12:52:47Z"
             }
           ]
         }
