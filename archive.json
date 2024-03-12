@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-03-10T00:47:27.008660+00:00",
+  "timestamp": "2024-03-12T00:43:00.609703+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -8474,6 +8474,37 @@
           "body": "I see the confusion. I think the intent was to make a difference between e.g., a programmer-triggered close on the QUIC level (\"clean\") vs a GOAWAY triggered one at the application level. Even though the GOAWAY doesn't immediately trigger the close directly, it was the conceptual \"trigger\" that led to the connection being closed down. Of course, you can make an argument that stacks won't track this and will not log this, and I can follow that :) \r\n\r\nI was also thinking of non-HTTP3 stuff running over QUIC however that might have application-level direct-close things (especially at the side initiating the close of course), so I wouldn't just do away with `application` here. Maybe just remove the comment? ",
           "createdAt": "2024-03-08T09:50:11Z",
           "updatedAt": "2024-03-08T09:50:11Z"
+        }
+      ]
+    },
+    {
+      "number": 411,
+      "id": "I_kwDOCrLn6M6Bz-7V",
+      "title": "Logging non-UTF-8 reasons",
+      "url": "https://github.com/quicwg/qlog/issues/411",
+      "state": "OPEN",
+      "author": "hlandau",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Similarly to the ALPN string issue, we define the `CONNECTION_CLOSE` reason string here as text: https://github.com/quicwg/qlog/blob/57b679678b44d80234a0e10a08e53fe5ef9e7532/draft-ietf-quic-qlog-quic-events.md?plain=1#L313\r\n\r\nThe problem here is that RFC 9000 only says the reason string SHOULD be UTF-8. It could be arbitrary, or binary data, even if that is a bad idea.\r\n\r\nIt should be possible to log a reason string which an implementation sees which does not appear to be valid UTF-8.",
+      "createdAt": "2024-03-10T20:18:29Z",
+      "updatedAt": "2024-03-10T20:43:06Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "body": "This is related to this implementation issue: https://github.com/openssl/openssl/pull/23807",
+          "createdAt": "2024-03-10T20:20:22Z",
+          "updatedAt": "2024-03-10T20:20:22Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Agree, I just had to implement this and cast to the bytes to a lossy utf8. Let's make it possible in the spec to capture raw bytes .",
+          "createdAt": "2024-03-10T20:43:05Z",
+          "updatedAt": "2024-03-10T20:43:05Z"
         }
       ]
     }
