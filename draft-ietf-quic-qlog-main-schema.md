@@ -1642,8 +1642,8 @@ Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
 Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, and Jeremy Lainé for
-their feedback and suggestions.
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
+Yamamoto, Christian Huitema and Hugo Landau for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
