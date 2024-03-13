@@ -208,7 +208,9 @@ this specification.
 {: #quic-events title="QUIC Events"}
 
 QUIC events extend the `$ProtocolEventData` extension point defined in
-{{QLOG-MAIN}}.
+{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+per-event extension points via the `$$` CDDL "group socket" syntax, as also
+described in {{QLOG-MAIN}}.
 
 ~~~ cddl
 QuicEventData = ConnectivityServerListening /
@@ -719,18 +721,6 @@ PreferredAddress = {
 ~~~
 {: #quic-parametersset-def title="QUICParametersSet definition"}
 
-The generic `$$quic-parametersset-extension` is defined here as a CDDL extension
-point (a "group socket"). It can be used to support additional, unknown, custom,
-and greased parameters. An example of such an extension can be found in
-{{parametersset-extension-example}}.
-
-~~~~~~~~
-$$quic-parametersset-extension //= (
-  ? new_transport_parameter: uint64
-)
-~~~~~~~~
-{: #parametersset-extension-example title="quic-parametersset-extension example"}
-
 ## parameters_restored {#quic-parametersrestored}
 
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
@@ -760,10 +750,6 @@ QUICParametersRestored = {
 }
 ~~~
 {: #quic-parametersrestored-def title="QUICParametersRestored definition"}
-
-The generic `$$quic-parametersrestored-extension` is defined here as a CDDL
-extension point (a "group socket"). It can be used to support additional and
-custom parameters.
 
 ## packet_sent {#quic-packetsent}
 
@@ -1822,8 +1808,9 @@ The ECN bits carried in the IP header.
 
 ## QUIC Frames
 
-The generic `$QuicFrame` is defined here as a CDDL extension point (a "socket"
-or "plug"). It can be extended to support additional QUIC frame types.
+The generic `$QuicFrame` is defined here as a CDDL extension point (a "type
+socket" or "type plug"). It can be extended to support additional QUIC frame
+types.
 
 ~~~ cddl
 ; The QuicFrame is any key-value map (e.g., JSON object)
@@ -2226,9 +2213,10 @@ By definition, an application error is defined by the application-level
 protocol running on top of QUIC (e.g., HTTP/3).
 
 As such, it cannot be defined here directly. Applications MAY use the provided
-extension point through the use of the CDDL "socket" mechanism.
+extension point through the use of the CDDL "type socket" mechanism.
 
-Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:
+Application-level qlog definitions that wish to define new ApplicationError
+strings MUST do so by extending the $ApplicationError socket as such:
 
 ~~~
 $ApplicationError /= "new_error_name" /

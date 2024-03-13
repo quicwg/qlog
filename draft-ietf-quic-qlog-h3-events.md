@@ -146,7 +146,10 @@ in this specification.
 
 # HTTP/3 Events {#h3-ev}
 
-HTTP/3 events extend the `$ProtocolEventData` extension point defined in {{QLOG-MAIN}}.
+HTTP/3 events extend the `$ProtocolEventData` extension point defined in
+{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+per-event extension points via the `$$` CDDL "group socket" syntax, as also
+described in {{QLOG-MAIN}}.
 
 ~~~ cddl
 H3EventData = H3ParametersSet /
@@ -436,8 +439,9 @@ Owner = "local" /
 
 ## H3Frame
 
-The generic `$H3Frame` is defined here as a CDDL extension point (a "socket"
-or "plug"). It can be extended to support additional HTTP/3 frame types.
+The generic `$H3Frame` is defined here as a CDDL extension point (a "type
+socket" or "type plug"). It can be extended to support additional HTTP/3 frame
+types.
 
 ~~~ cddl
 ; The H3Frame is any key-value map (e.g., JSON object)
@@ -466,9 +470,10 @@ $H3Frame /= H3BaseFrames
 
 ## H3Datagram
 
-The generic `$H3Datagram` is defined here as a CDDL extension point (a "socket"
-or "plug"). It can be extended to support additional HTTP/3 datagram types. This
-document intentionally does not define any specific HTTP/3 Datagram types.
+The generic `$H3Datagram` is defined here as a CDDL extension point (a "type
+socket" or "type plug"). It can be extended to support additional HTTP/3
+datagram types. This document intentionally does not define any specific HTTP/3
+Datagram types.
 
 ~~~ cddl
 ; The H3Datagram is any key-value map (e.g., JSON object)

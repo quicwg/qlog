@@ -124,12 +124,11 @@ etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
 
 ### Schema definition
 
-To define events and data structures, all qlog documents use the Concise
-Data Definition Language {{!CDDL=RFC8610}}. This document uses the basic
-syntax, the specific `text`, `uint`, `float32`, `float64`, `bool`, and
-`any` types, as well as the `.default`, `.size`, and `.regexp` control
-operators, the `~` unwrapping operator, and the `$` extension point
-syntax from {{CDDL}}.
+To define events and data structures, all qlog documents use the Concise Data
+Definition Language {{!CDDL=RFC8610}}. This document uses the basic syntax, the
+specific `text`, `uint`, `float32`, `float64`, `bool`, and `any` types, as well
+as the `.default`, `.size`, and `.regexp` control operators, the `~` unwrapping
+operator, and the `$` and `$$` extension points syntax from {{CDDL}}.
 
 Additionally, this document defines the following custom types for
 clarity:
@@ -651,15 +650,15 @@ JSON serialization example:
 
 ## Data {#data-field}
 
-An event's "data" field is a generic object. It contains the per-event metadata and its
-form and semantics are defined per specific sort of event. For example, data
-field value definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and
-{{QLOG-H3}}.
+An event's "data" field is a generic object. It contains the per-event metadata
+and its form and semantics are defined per specific sort of event. For example,
+data field value definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}}
+and {{QLOG-H3}}.
 
-This field is defined here as a CDDL extension point (a "socket" or
-"plug") named `$ProtocolEventData`. Other documents MUST properly extend
-this extension point when defining new data field content options to
-enable automated validation of aggregated qlog schemas.
+This field is defined here as a CDDL extension point (a "type socket" or "type
+plug") named `$ProtocolEventData`. Other documents MUST properly extend this
+extension point when defining new data field content options to enable automated
+validation of aggregated qlog schemas.
 
 The only common field defined for the data field is the `trigger` field,
 which is discussed in {{trigger-field}}.
@@ -714,6 +713,37 @@ could be serialized as
 }
 ~~~~~~~~
 {: #data-ex title="Example of the 'data' field for a QUIC packet_sent event"}
+
+Note that the `$ProtocolEventData` setup only allows extending qlog with
+completely new event data definitions (i.e., by assigning additional event types
+to the socket, see {{protocoleventdata-def}}). However, this is often not
+enough, as authors of qlog extensions might wish to extend existing event data
+definitions (for example by adding an additional field) without (fully)
+re-defining them under a new name. For this purpose, any event data definition
+SHOULD also contain an additional generic CDDL "group socket" extension point (a
+data field starting with `$$`) to allow for such incremental changes. An example
+of the use of such a group socket for the hypothetical QUIC "packet_sent" event
+and its later extension is shown in {{groupsocket-extension-example}}.
+
+~~~~~~~~
+; original definition in document A
+TransportPacketSent = {
+    ? packet_size: uint16
+    header: PacketHeader
+    ? frames:[* QuicFrame]
+    ? trigger: "pto_probe" /
+               "retransmit_timeout" /
+               "bandwidth_probe"
+
+    $$transport-packetsent-extension
+}
+
+; later extension of TransportPacketSent in document B
+$$transport-packetsent-extension //= (
+  ? additional_field: bool
+)
+~~~~~~~~
+{: #groupsocket-extension-example title="Example of using a generic CDDL group socket to extend an existing event data definition"}
 
 ## Path {#path-field}
 
