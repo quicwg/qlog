@@ -650,83 +650,100 @@ JSON serialization example:
 
 ## Data {#data-field}
 
-An event's "data" field is a generic object. It contains the per-event metadata
-and its form and semantics are defined per specific sort of event. For example,
-data field value definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}}
-and {{QLOG-H3}}.
+An event's "data" field is a generic key-value map (e.g., JSON object). It
+defines the per-event metadata that is to be logged. Its specific subfields and
+their semantics are defined per specific event type. For example, data field
+definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
 
-This field is defined here as a CDDL extension point (a "type socket" or "type
-plug") named `$ProtocolEventData`. Other documents MUST properly extend this
-extension point when defining new data field content options to enable automated
-validation of aggregated qlog schemas.
+In order to keep qlog fully extensible, two separate CDDL extension points
+("sockets" or "plugs") are used to fully define data fields.
 
-The only common field defined for the data field is the `trigger` field,
-which is discussed in {{trigger-field}}.
-
-~~~ cddl
-; The ProtocolEventData is any key-value map (e.g., JSON object)
-; only the optional trigger field is defined in this document
-$ProtocolEventData /= {
-    ? trigger: text
-    * text => any
-}
-; event documents are intended to extend this socket by using:
-; NewProtocolEventData = EventType1 /
-;                        EventType2 /
-;                        ... /
-;                        EventTypeN
-; $ProtocolEventData /= NewProtocolEventData
-~~~
-{: #protocoleventdata-def title="ProtocolEventData definition"}
-
-One purely illustrative example for a QUIC "packet_sent" event is shown in
-{{data-ex}}:
-
-~~~~~~~~
-TransportPacketSent = {
-    ? packet_size: uint16
-    header: PacketHeader
-    ? frames:[* QuicFrame]
-    ? trigger: "pto_probe" /
-               "retransmit_timeout" /
-               "bandwidth_probe"
-}
-
-could be serialized as
-
-{
-    "packet_size": 1280,
-    "header": {
-        "packet_type": "1RTT",
-        "packet_number": 123
-    },
-    "frames": [
-        {
-            "frame_type": "stream",
-            "length": 1000,
-            "offset": 456
-        },
-        {
-            "frame_type": "padding"
-        }
-    ]
-}
-~~~~~~~~
-{: #data-ex title="Example of the 'data' field for a QUIC packet_sent event"}
-
-Note that the `$ProtocolEventData` setup only allows extending qlog with
-completely new event data definitions (i.e., by assigning additional event types
-to the socket, see {{protocoleventdata-def}}). However, this is often not
-enough, as authors of qlog extensions might wish to extend existing event data
-definitions (for example by adding an additional field) without (fully)
-re-defining them under a new name. For this purpose, any event data definition
-SHOULD also contain an additional generic CDDL "group socket" extension point (a
-data field starting with `$$`) to allow for such incremental changes. An example
-of the use of such a group socket for the hypothetical QUIC "packet_sent" event
-and its later extension is shown in {{groupsocket-extension-example}}.
+Firstly, to allow existing data field definitions to be extended (for example by
+adding an additional field needed for a new protocol feature), a CDDL "group
+socket" is used. This takes the form of a subfield with a name of
+`$$CATEGORY-NAME-extension`. This field acts as a placeholder that can later be
+replaced with newly defined fields by assigning them to the socket with the
+`//=` operator. Multiple extensions can be assigned to the same group socket. An
+example is shown in {{groupsocket-extension-example}}.
 
 ~~~~~~~~
 ; original definition in document A
+MyCategoryEventX = {
+    field_a: uint8
+
+    $$mycategory-eventx-extension
+}
+
+; later extension of EventX in document B
+$$mycategory-eventx-extension //= (
+  ? additional_field_b: bool
+)
+
+; another extension of EventX in document C
+$$mycategory-eventx-extension //= (
+  ? additional_field_c: text
+)
+
+; if document A, B and C are then used in conjunction,
+; the combined MyCategoryEventX CDDL is equivalent to this:
+MyCategoryEventX = {
+    field_a: uint8
+
+    ? additional_field_b: bool
+    ? additional_field_c: text
+}
+~~~~~~~~
+{: #groupsocket-extension-example title="Example of using a generic CDDL group socket to extend an existing event data definition"}
+
+Secondly, to allow documents to define fully new event data field definitions
+(as opposed to extend existing ones), a CDDL "type socket" is used. For this
+purpose, the type of the "data" field in the qlog Event type (see {{event-def}})
+is the extensible `$ProtocolEventData` type. This field acts as an open enum of
+possible types that are allowed for the data field. As such, any new event data
+field is defined as its own CDDL type and later merged with the existing
+`$ProtocolEventData` enum using the `/=` extension operator. Any generic
+key-value map type can be assigned to `$ProtocolEventData` (the only common
+"data" subfield defined in this document is the optional `trigger` field, see
+{{trigger-field}}). An example of this setup is shown in
+{{protocoleventdata-def}}.
+
+~~~~~~~~
+; We define two separate events in a single document
+MyCategoryEvent1 /= {
+    field_1: uint8
+
+    ? trigger: text
+
+    $$mycategory-event1-extension
+}
+
+MyCategoryEvent2 /= {
+    field_2: bool
+
+    ? trigger: text
+
+    $$mycategory-event2-extension
+}
+
+; the events are both merged with the existing $ProtocolEventData type enum
+$ProtocolEventData /= MyCategoryEvent1 / MyCategoryEvent2
+
+; the "data" field of a qlog event can now also be of type MyCategoryEvent1 and MyCategoryEvent2
+~~~~~~~~
+{: #protocoleventdata-def title="ProtocolEventData extension"}
+
+Documents defining new qlog events MUST properly extend `$ProtocolEventData`
+when defining data fields to enable automated validation of aggregated qlog
+schemas. Furthermore, they SHOULD properly add a `$$CATEGORY-NAME-extension`
+extension field to newly defined event data to allow the new events to be
+properly extended by other documents.
+
+
+A combined but purely illustrative example of the use of both extension points
+for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
+
+~~~~~~~~
+; defined in the main QUIC event document
 TransportPacketSent = {
     ? packet_size: uint16
     header: PacketHeader
@@ -738,12 +755,41 @@ TransportPacketSent = {
     $$transport-packetsent-extension
 }
 
-; later extension of TransportPacketSent in document B
+; make sure the event is added to the global list of recognized qlog events
+$ProtocolEventData /= TransportPacketSent
+
+; defined in a separate document that defines a theoretical QUIC protocol extension
 $$transport-packetsent-extension //= (
   ? additional_field: bool
 )
+
+; If both documents are utilized at the same time,
+; the following JSON serialization would pass an automated CDDL schema validation check:
+
+{
+  "category": "transport",
+  "name": "packetsent",
+  "data": {
+      "packet_size": 1280,
+      "header": {
+          "packet_type": "1RTT",
+          "packet_number": 123
+      },
+      "frames": [
+          {
+              "frame_type": "stream",
+              "length": 1000,
+              "offset": 456
+          },
+          {
+              "frame_type": "padding"
+          }
+      ],
+      additional_field: true
+  }
+}
 ~~~~~~~~
-{: #groupsocket-extension-example title="Example of using a generic CDDL group socket to extend an existing event data definition"}
+{: #data-ex title="Example of an extended 'data' field for a conceptual QUIC packet_sent event"}
 
 ## Path {#path-field}
 
