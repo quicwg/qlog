@@ -2051,6 +2051,11 @@ error. For known frame types, the appropriate string value is used. For unknown
 frame types, the numerical value without variable-length integer encoding is
 used.
 
+The CONNECTION_CLOSE reason is a byte sequences, that may be possible to
+present as UTF-8. The `reason_text` and `reason_bytes` fields provide support
+for either format. Implementations SHOULD log at least one format, but MAY log
+both or none.
+
 ~~~ cddl
 ErrorSpace = "transport" /
              "application"
@@ -2062,7 +2067,8 @@ ConnectionCloseFrame = {
                   CryptoError /
                   $ApplicationError /
                   uint64
-    ? reason: text
+    ? reason_text: text
+    ? reason_bytes: hexstring
 
     ; when error_space === "transport"
     ? trigger_frame_type: uint64 /
