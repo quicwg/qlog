@@ -2052,7 +2052,7 @@ frame types, the numerical value without variable-length integer encoding is
 used.
 
 The CONNECTION_CLOSE reason is a byte sequences, that may be possible to
-present as UTF-8. The `reason_text` and `reason_bytes` fields provide support
+present as UTF-8. The `reason` and `reason_bytes` fields provide support
 for either format. Implementations SHOULD log at least one format, but MAY log
 both or none.
 
@@ -2067,7 +2067,7 @@ ConnectionCloseFrame = {
                   CryptoError /
                   $ApplicationError /
                   uint64
-    ? reason_text: text
+    ? reason: text
     ? reason_bytes: hexstring
 
     ; when error_space === "transport"
