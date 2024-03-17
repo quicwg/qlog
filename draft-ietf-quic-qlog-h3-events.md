@@ -538,10 +538,20 @@ H3HeadersFrame = {
 ~~~
 {: #h3-headersframe-def title="H3HeadersFrame definition"}
 
+HTTP/3 can transport field names or values that are not valid; see {{Section 4.2
+of RFC9114}}. While it is usually expected that fields can be presented as
+strings, where invalid values are received it can be useful to log the exact
+bytes. In order to support either format, the `H3HTTPField` has fields of either
+text or hexstring type. An `H3HTTPField` MUST include either the `name_text` or
+`name_bytes` field and MAY include both. An `H3HTTPField` MAY include a
+`value_text` or `value_bytes` field or neither.
+
 ~~~ cddl
 H3HTTPField = {
-    name: text
-    ? value: text
+    ? name_text: text
+    ? name_bytes: hexstring
+    ? value_text: text
+    ? value_bytes: hexstring
 }
 ~~~
 {: #h3field-def title="H3HTTPField definition"}
