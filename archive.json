@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-03-14T00:43:13.057339+00:00",
+  "timestamp": "2024-03-17T00:47:25.019229+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7282,15 +7282,15 @@
       "id": "I_kwDOCrLn6M5quLtz",
       "title": "Migration-related events",
       "url": "https://github.com/quicwg/qlog/issues/318",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "The qlog schema has had a placeholder section for migration-related events for a long time.  #317 removes the offending text and we  and instead we can continue discussion on this issue.",
       "createdAt": "2023-07-05T23:11:40Z",
-      "updatedAt": "2024-03-04T14:12:41Z",
-      "closedAt": null,
+      "updatedAt": "2024-03-14T12:40:39Z",
+      "closedAt": "2024-03-14T12:40:39Z",
       "comments": [
         {
           "author": "rmarx",
@@ -20891,7 +20891,7 @@
       "labels": [],
       "body": "Closes #398.\r\n\r\nPTAL @hlandau. \r\n\r\nThe suggestion of using `null` as a JSON value in #398 makes conceptual sense, but not really since we're working with CDDL to define the events and their fields, as it doesn't easily allow to make a type \"nullable\" for something like this. \r\n\r\nAs such, I changed the recommendation to explicitly setting the default value if needed; I hope that's acceptable. \r\n\r\nFor the rest, I mostly just used your text with minor editorial changes. ",
       "createdAt": "2024-03-06T09:49:24Z",
-      "updatedAt": "2024-03-07T12:48:32Z",
+      "updatedAt": "2024-03-16T07:30:54Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "67a777edcf575ce9f163b4382ec1e4afed57d6bb",
@@ -21103,6 +21103,200 @@
               "updatedAt": "2024-03-07T12:52:47Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5zsSZO",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-16T07:30:54Z",
+          "updatedAt": "2024-03-16T07:30:54Z",
+          "comments": [
+            {
+              "originalPosition": 38,
+              "body": "I guess this is not so much a problem for TPs as they are only exchanged once. But it seems like this event is intended to be more general.\r\n\r\nFor other kinds of parameters which might be renegotiable I could see a problem if it is possible for a feature to transition from negotiated to the default/non-negotiated state.\r\n\r\nMaybe it is not a problem in practice? I'm just envisaging this event type being expanded to other things besides TPs in future.",
+              "createdAt": "2024-03-16T07:30:54Z",
+              "updatedAt": "2024-03-16T07:30:54Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 412,
+      "id": "PR_kwDOCrLn6M5p0H6D",
+      "title": "Add raw bytes field support to CONNECTION_CLOSE.",
+      "url": "https://github.com/quicwg/qlog/pull/412",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #411\r\n\r\nSame approach as the one we look for ALPNInformation. Allows endpoints to log either, because sometimes it is more useful to print and consume a string like \"It's borked\" than it's hex encoded equivalent.",
+      "createdAt": "2024-03-16T04:25:27Z",
+      "updatedAt": "2024-03-16T11:33:51Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "utf-aint",
+      "headRefOid": "33bf2bfcc4db8a71da31c4001cfd51f85be1af8a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I'm not the biggest fan of this not using the same pattern as we did for ALPNInformation... which would be more like this:\r\n\r\n```\r\n...\r\n? reason: CloseReason\r\n...\r\n\r\nCloseReason = {\r\n    ? byte_value: hexstring\r\n    ? string_value: text\r\n}\r\n```\r\n\r\nIs there a particular reason to change from that established precedent? \r\n",
+          "createdAt": "2024-03-16T11:03:22Z",
+          "updatedAt": "2024-03-16T11:03:22Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "The main reason (pun intended) is that the `QUICALPNInformation` event contains 3 instances of ALPNInformation, which would make a flatter structure really hard to describe. Here, there is only one instance of the reason, so it seems of less value to create another structure type to hold it. \r\n\r\nI won't defend that choice with much vigor if others prefer a Structured approach. ",
+          "createdAt": "2024-03-16T11:33:50Z",
+          "updatedAt": "2024-03-16T11:33:50Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5zsSRt",
+          "commit": {
+            "abbreviatedOid": "d6241e6"
+          },
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-03-16T07:26:14Z",
+          "updatedAt": "2024-03-16T07:26:14Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5zsSXz",
+          "commit": {
+            "abbreviatedOid": "d6241e6"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2024-03-16T07:29:50Z",
+          "updatedAt": "2024-03-16T07:30:38Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "I'd prefer to not rename this field.",
+              "createdAt": "2024-03-16T07:29:50Z",
+              "updatedAt": "2024-03-16T07:30:38Z"
+            },
+            {
+              "originalPosition": 5,
+              "body": "That's not how I read RFC 9000. The field SHOULD be UTF-8, so the expectation is that it actually is. We're just creating an escape hatch here in case this assumption doesn't hold.",
+              "createdAt": "2024-03-16T07:30:35Z",
+              "updatedAt": "2024-03-16T07:30:38Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5zsSjo",
+          "commit": {
+            "abbreviatedOid": "d6241e6"
+          },
+          "author": "hlandau",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-16T07:31:56Z",
+          "updatedAt": "2024-03-16T07:31:56Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "Agreed - need better wording alignment",
+              "createdAt": "2024-03-16T07:31:56Z",
+              "updatedAt": "2024-03-16T07:31:56Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5zsTk7",
+          "commit": {
+            "abbreviatedOid": "d6241e6"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-16T08:06:31Z",
+          "updatedAt": "2024-03-16T08:06:31Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "If you're logging a reason sent by a peer you don't have any relationship with, there is no guarantee it is following the SHOULD. Therefore, it is only a possibility that the reason is presentable as UTF-8. I can't think of a more succint way to describe this possibility than the current text. If you have concrete suggestions for alternative text, please propose them :D",
+              "createdAt": "2024-03-16T08:06:31Z",
+              "updatedAt": "2024-03-16T08:06:31Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5zsTnp",
+          "commit": {
+            "abbreviatedOid": "d6241e6"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-16T08:08:09Z",
+          "updatedAt": "2024-03-16T08:08:10Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "I can live with that",
+              "createdAt": "2024-03-16T08:08:10Z",
+              "updatedAt": "2024-03-16T08:08:10Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5zsUID",
+          "commit": {
+            "abbreviatedOid": "d6241e6"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-16T08:26:52Z",
+          "updatedAt": "2024-03-16T08:26:52Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "Spoke offline with Marten and came up with a slight variant",
+              "createdAt": "2024-03-16T08:26:52Z",
+              "updatedAt": "2024-03-16T08:26:52Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5zsVCk",
+          "commit": {
+            "abbreviatedOid": "33bf2bf"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-03-16T09:01:50Z",
+          "updatedAt": "2024-03-16T09:01:50Z",
+          "comments": []
         }
       ]
     }
