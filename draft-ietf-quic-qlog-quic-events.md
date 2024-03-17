@@ -2170,7 +2170,17 @@ document as well.
 
 # IANA Considerations
 
-There are no IANA considerations.
+This document registers a new entry in the "qlog event extension schema
+identifer" registry.
+
+Extension URI:
+: urn:ietf:params:qlog:quic
+
+Description:
+: Event definitions related to the QUIC transport protocol.
+
+Reference:
+: This Document.
 
 --- back
 
