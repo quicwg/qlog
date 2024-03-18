@@ -104,7 +104,12 @@ re-usable definitions, which are grouped together on the bottom of this document
 for clarity.
 
 When any event from this document is included in a qlog trace, the
-"protocol_type" qlog array field MUST contain an entry with the value "HTTP3".
+"protocol_type" qlog array field MUST contain an entry with the value "HTTP3":
+
+~~~ cddl
+$ProtocolType /= "HTTP3"
+~~~
+{: #protocoltype-extension-h3 title="ProtocolType extension for HTTP/3"}
 
 ## Usage with QUIC
 
@@ -186,7 +191,7 @@ The "owner" field reflects how Settings are exchanged on a connection. Sent
 settings have the value "local" and received settings have the value
 "received".
 
-As a reminder the CDDL unwrap operator (~), see {{?RFC8610}}), copies the fields
+As a reminder the CDDL unwrap operator (~) (see {{?RFC8610}}), copies the fields
 from the referenced type (H3Parameters) into the target type directly, extending the
 target with the unwrapped fields.
 
@@ -227,7 +232,9 @@ H3Parameters = {
 
 The `parameters_set` event can contain any number of unspecified fields. This
 allows for representation of reserved settings (aka GREASE) or ad-hoc support
-for extension settings that do not have a related qlog schema definition.
+for extension settings that do not have a related qlog schema definition. For
+extension settings that do have a qlog schema defintion, the
+$$h3-parameters-extension socket SHOULD be used.
 
 ## parameters_restored {#h3-parametersrestored}
 
@@ -245,10 +252,6 @@ H3ParametersRestored = {
 ~~~
 {: #h3-parametersrestored-def title="H3ParametersRestored definition"}
 
-The `parameters_restored` event can contain any number of unspecified fields. This
-allows for representation of reserved settings (aka GREASE) or ad-hoc support
-for extension settings that do not have a related qlog schema definition.
-
 ## stream_type_set {#h3-streamtypeset}
 
 The `stream_type_set` event conveys when a HTTP/3 stream type becomes known; see
@@ -264,11 +267,14 @@ integer type. Where the type is not known, the stream_type value of "unknown"
 type can be used and the value captured in the stream_type_value field; a
 numerical value without variable-length integer encoding.
 
+The generic `$H3StreamType` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional HTTP/3 stream types.
+
 ~~~ cddl
 H3StreamTypeSet = {
     ? owner: Owner
     stream_id: uint64
-    stream_type: H3StreamType
+    stream_type: $H3StreamType
 
     ; only when stream_type === "unknown"
     ? stream_type_value: uint64
@@ -279,7 +285,7 @@ H3StreamTypeSet = {
     * $$h3-streamtypeset-extension
 }
 
-H3StreamType =  "request" /
+$H3StreamType /=  "request" /
                   "control" /
                   "push" /
                   "reserved" /
@@ -439,17 +445,16 @@ Owner = "local" /
 
 ## H3Frame
 
-The generic `$H3Frame` is defined here as a CDDL extension point (a "type
-socket" or "type plug"). It can be extended to support additional HTTP/3 frame
-types.
+The generic `$H3Frame` is defined here as a CDDL "type socket" extension point.
+It can be extended to support additional HTTP/3 frame types.
 
-~~~ cddl
+~~~~~~
 ; The H3Frame is any key-value map (e.g., JSON object)
 $H3Frame /= {
     * text => any
 }
-~~~
-{: #h3-frame-def title="H3Frame plug definition"}
+~~~~~~
+{: #h3-frame-def title="H3Frame type socket definition"}
 
 The HTTP/3 frame types defined in this document are as follows:
 
@@ -470,18 +475,18 @@ $H3Frame /= H3BaseFrames
 
 ## H3Datagram
 
-The generic `$H3Datagram` is defined here as a CDDL extension point (a "type
-socket" or "type plug"). It can be extended to support additional HTTP/3
-datagram types. This document intentionally does not define any specific HTTP/3
-Datagram types.
+The generic `$H3Datagram` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional HTTP/3 datagram types. This
+document intentionally does not define any specific qlog schemas for specific
+HTTP/3 Datagram types.
 
-~~~ cddl
+~~~~~~
 ; The H3Datagram is any key-value map (e.g., JSON object)
 $H3Datagram /= {
     * text => any
 }
-~~~
-{: #h3-datagram-def title="H3Datagram plug definition"}
+~~~~~~
+{: #h3-datagram-def title="H3Datagram type socket definition"}
 
 ### H3DataFrame
 
@@ -667,11 +672,11 @@ H3ApplicationError = "http_no_error" /
 ~~~
 {: #h3-applicationerror-def title="H3ApplicationError definition"}
 
-The H3ApplicationError defines the general $ApplicationError
-definition in the qlog QUIC definition, see {{QLOG-QUIC}}.
+The H3ApplicationError extends the general $ApplicationError
+definition in the qlog QUIC document, see {{QLOG-QUIC}}.
 
 ~~~ cddl
-; ensure HTTP errors are properly validate in QUIC events as well
+; ensure HTTP errors are properly validated in QUIC events as well
 ; e.g., QUIC's ConnectionClose Frame
 $ApplicationError /= H3ApplicationError
 ~~~

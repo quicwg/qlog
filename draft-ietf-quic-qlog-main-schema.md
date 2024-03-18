@@ -509,7 +509,7 @@ Event = {
     data: $ProtocolEventData
     ? path: PathID
     ? time_format: TimeFormat
-    ? protocol_type: ProtocolType
+    ? protocol_type: ProtocolTypeList
     ? group_id: GroupID
     ? system_info: SystemInformation
 
@@ -725,10 +725,12 @@ MyCategoryEvent2 /= {
     * $$mycategory-event2-extension
 }
 
-; the events are both merged with the existing $ProtocolEventData type enum
+; the events are both merged with the existing
+; $ProtocolEventData type enum
 $ProtocolEventData /= MyCategoryEvent1 / MyCategoryEvent2
 
-; the "data" field of a qlog event can now also be of type MyCategoryEvent1 and MyCategoryEvent2
+; the "data" field of a qlog event can now also be of type
+; MyCategoryEvent1 and MyCategoryEvent2
 ~~~~~~~~
 {: #protocoleventdata-def title="ProtocolEventData extension"}
 
@@ -757,13 +759,15 @@ TransportPacketSent = {
 ; Add the event to the global list of recognized qlog events
 $ProtocolEventData /= TransportPacketSent
 
-; Defined in a separate document that describes a theoretical QUIC protocol extension
+; Defined in a separate document that describes a
+; theoretical QUIC protocol extension
 $$transport-packetsent-extension //= (
   ? additional_field: bool
 )
 
 ; If both documents are utilized at the same time,
-; the following JSON serialization would pass an automated CDDL schema validation check:
+; the following JSON serialization would pass an automated
+; CDDL schema validation check:
 
 {
   "time": 123456,
@@ -821,7 +825,7 @@ associated info in a separate event. For example, QUIC has the "path_assigned"
 event to couple the PathID value to a specific path configuration, see
 {{QLOG-QUIC}}.
 
-## ProtocolType {#protocol-type-field}
+## ProtocolTypeList and ProtocolType {#protocol-type-field}
 
 An event's "protocol_type" array field indicates to which protocols (or protocol
 "stacks") this event belongs. This allows a single qlog file to aggregate traces
@@ -829,9 +833,11 @@ of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).
 
 ~~~ cddl
-ProtocolType = [+ text]
+ProtocolTypeList = [+ $ProtocolType]
+
+$ProtocolType /= "UNKNOWN"
 ~~~
-{: #protocol-type-def title="ProtocolType definition"}
+{: #protocol-type-def title="ProtocolTypeList and ProtocolType socket definition"}
 
 For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
 entry values, see {{QLOG-QUIC}} and {{QLOG-H3}}.
@@ -1036,7 +1042,7 @@ CommonFields = {
     ? path: PathID
     ? time_format: TimeFormat
     ? reference_time: float64
-    ? protocol_type: ProtocolType
+    ? protocol_type: ProtocolTypeList
     ? group_id: GroupID
     * text => any
 }

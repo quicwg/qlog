@@ -99,7 +99,12 @@ re-usable definitions, which are grouped together on the bottom of this document
 for clarity.
 
 When any event from this document is included in a qlog trace, the
-`protocol_type` qlog array field MUST contain an entry with the value "QUIC".
+`protocol_type` qlog array field MUST contain an entry with the value "QUIC":
+
+~~~ cddl
+$ProtocolType /= "QUIC"
+~~~
+{: #protocoltype-extension-quic title="ProtocolType extension for QUIC"}
 
 When the qlog `group_id` field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
@@ -329,7 +334,7 @@ ConnectivityConnectionClosed = {
 
     ; which side closed the connection
     ? owner: Owner
-    ? connection_code: TransportError /
+    ? connection_code: $TransportError /
                        CryptoError /
                        uint32
     ? application_code: $ApplicationError /
@@ -1808,17 +1813,16 @@ The ECN bits carried in the IP header.
 
 ## QUIC Frames
 
-The generic `$QuicFrame` is defined here as a CDDL extension point (a "type
-socket" or "type plug"). It can be extended to support additional QUIC frame
-types.
+The generic `$QuicFrame` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional QUIC frame types.
 
-~~~ cddl
+~~~~~~
 ; The QuicFrame is any key-value map (e.g., JSON object)
 $QuicFrame /= {
     * text => any
 }
-~~~
-{: #quicframe-def title="QuicFrame plug definition"}
+~~~~~~
+{: #quicframe-def title="QuicFrame type socket definition"}
 
 The QUIC frame types defined in this document are as follows:
 
@@ -2134,7 +2138,7 @@ ErrorSpace = "transport" /
 ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
-    ? error_code: TransportError /
+    ? error_code: $TransportError /
                   CryptoError /
                   $ApplicationError /
                   uint64
@@ -2184,8 +2188,11 @@ DatagramFrame = {
 
 ### TransportError
 
+The generic `$TransportError` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional Transport errors.
+
 ~~~ cddl
-TransportError = "no_error" /
+$TransportError /= "no_error" /
                  "internal_error" /
                  "connection_refused" /
                  "flow_control_error" /
@@ -2212,16 +2219,16 @@ TransportError = "no_error" /
 By definition, an application error is defined by the application-level
 protocol running on top of QUIC (e.g., HTTP/3).
 
-As such, it cannot be defined here directly. Applications MAY use the provided
-extension point through the use of the CDDL "type socket" mechanism.
+As such, it cannot be defined here directly. It is instead defined as an empty
+CDDL "type socket" extension point.
 
 Application-level qlog definitions that wish to define new ApplicationError
 strings MUST do so by extending the $ApplicationError socket as such:
 
-~~~
+~~~~~~
 $ApplicationError /= "new_error_name" /
                      "another_new_error_name"
-~~~
+~~~~~~
 
 ### CryptoError
 
