@@ -1172,7 +1172,7 @@ e.g., using a fragment or query identifier (characters after a "#" or "?" in the
 URI).
 
 For extensions defined in RFCs, the URI used SHOULD be a URN starting with
-`urn:ietf:params:qlog` followed by a registered, descriptive name.
+`urn:ietf:params:qlog:` followed by a registered, descriptive name.
 
 A log file that that uses events from extension schema SHOULD list all schema
 identifiers in the `additional_event_schema` field.
@@ -1723,7 +1723,7 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau, and Jonathan Lennow for their feedback
+Yamamoto, Christian Huitema, Hugo Landau, and Jonathan Lennox for their feedback
 and suggestions.
 
 # Change Log
