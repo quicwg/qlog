@@ -99,7 +99,12 @@ re-usable definitions, which are grouped together on the bottom of this document
 for clarity.
 
 When any event from this document is included in a qlog trace, the
-`protocol_type` qlog array field MUST contain an entry with the value "QUIC".
+`protocol_type` qlog array field MUST contain an entry with the value "QUIC":
+
+~~~ cddl
+$ProtocolType /= "QUIC"
+~~~
+{: #protocoltype-extension-quic title="ProtocolType extension for QUIC"}
 
 When the qlog `group_id` field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
@@ -189,7 +194,9 @@ this specification.
 {: #quic-events title="QUIC Events"}
 
 QUIC events extend the `$ProtocolEventData` extension point defined in
-{{QLOG-MAIN}}.
+{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+per-event extension points via the `$$` CDDL "group socket" syntax, as also
+described in {{QLOG-MAIN}}.
 
 ~~~ cddl
 QuicEventData = ConnectivityServerListening /
@@ -246,6 +253,8 @@ ConnectivityServerListening = {
     ; the server will always answer client initials with a retry
     ; (no 1-RTT connection setups by choice)
     ? retry_required: bool
+
+    * $$connectivity-serverlistening-extension
 }
 ~~~
 {: #connectivity-serverlistening-def title="ConnectivityServerListening definition"}
@@ -273,6 +282,8 @@ ConnectivityConnectionStarted = {
     ? dst_port: uint16
     ? src_cid: ConnectionID
     ? dst_cid: ConnectionID
+
+    * $$connectivity-connectionstarted-extension
 }
 ~~~
 {: #connectivity-connectionstarted-def title="ConnectivityConnectionStarted definition"}
@@ -304,7 +315,7 @@ ConnectivityConnectionClosed = {
 
     ; which side closed the connection
     ? owner: Owner
-    ? connection_code: TransportError /
+    ? connection_code: $TransportError /
                        CryptoError /
                        uint32
     ? application_code: $ApplicationError /
@@ -321,6 +332,8 @@ ConnectivityConnectionClosed = {
         "version_mismatch" /
         ; for example HTTP/3's GOAWAY frame
         "application"
+
+    * $$connectivity-connectionclosed-extension
 }
 ~~~
 {: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
@@ -344,6 +357,8 @@ ConnectivityConnectionIDUpdated = {
     owner: Owner
     ? old: ConnectionID
     ? new: ConnectionID
+
+    * $$connectivity-connectionidupdated-extension
 }
 ~~~
 {: #connectivity-connectionidupdated-def title="ConnectivityConnectionIDUpdated definition"}
@@ -359,6 +374,8 @@ QLOG-MAIN}}.
 ~~~ cddl
 ConnectivitySpinBitUpdated = {
     state: bool
+
+    * $$connectivity-spinbitupdated-extension
 }
 ~~~
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
@@ -381,6 +398,8 @@ ConnectivityConnectionStateUpdated = {
            SimpleConnectionState
     new: ConnectionState /
          SimpleConnectionState
+
+    * $$connectivity-connectionstateupdated-extension
 }
 
 ConnectionState =
@@ -480,6 +499,8 @@ ConnectivityPathAssigned = {
 
     ; the information for traffic coming in at the local endpoint
     ? path_local: PathEndpointInfo
+
+    * $$connectivity-pathassigned-extension
 }
 ~~~
 {: #connectivity-pathassigned-def title="ConnectivityPathAssigned definition"}
@@ -513,12 +534,14 @@ level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 ConnectivityMTUUpdated = {
-  ? old: uint32
-  new: uint32
+    ? old: uint32
+    new: uint32
 
-  ; at some point, MTU discovery stops, as a "good enough"
-  ; packet size has been found
-  ? done: bool .default false
+    ; at some point, MTU discovery stops, as a "good enough"
+    ; packet size has been found
+    ? done: bool .default false
+
+    * $$connectivity-mtuupdated-extension
 }
 ~~~
 {: #connectivity-mtuupdated-def title="ConnectivityMTUUpdated definition"}
@@ -544,6 +567,8 @@ QUICVersionInformation = {
     ? server_versions: [+ QuicVersion]
     ? client_versions: [+ QuicVersion]
     ? chosen_version: QuicVersion
+
+    * $$quic-versioninformation-extension
 }
 ~~~
 {: #quic-versioninformation-def title="QUICVersionInformation definition"}
@@ -583,6 +608,8 @@ QUICALPNInformation = {
     ? server_alpns: [* ALPNIdentifier]
     ? client_alpns: [* ALPNIdentifier]
     ? chosen_alpn: ALPNIdentifier
+
+    * $$quic-alpninformation-extension
 }
 
 ALPNIdentifier = {
@@ -680,18 +707,6 @@ PreferredAddress = {
 ~~~
 {: #quic-parametersset-def title="QUICParametersSet definition"}
 
-The generic `$$quic-parametersset-extension` is defined here as a CDDL extension
-point (a "group socket"). It can be used to support additional, unknown, custom,
-and greased parameters. An example of such an extension can be found in
-{{parametersset-extension-example}}.
-
-~~~~~~~~
-$$quic-parametersset-extension //= (
-  ? new_transport_parameter: uint64
-)
-~~~~~~~~
-{: #parametersset-extension-example title="quic-parametersset-extension example"}
-
 ## parameters_restored {#quic-parametersrestored}
 
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
@@ -721,10 +736,6 @@ QUICParametersRestored = {
 }
 ~~~
 {: #quic-parametersrestored-def title="QUICParametersRestored definition"}
-
-The generic `$$quic-parametersrestored-extension` is defined here as a CDDL
-extension point (a "group socket"). It can be used to support additional and
-custom parameters.
 
 ## packet_sent {#quic-packetsent}
 
@@ -759,6 +770,8 @@ QUICPacketSent = {
       ; needed for some CCs to figure out bandwidth allocations
       ; when there are no normal sends
       "cc_bandwidth_probe"
+
+    * $$quic-packetsent-extension
 }
 ~~~
 {: #quic-packetsent-def title="QUICPacketSent definition"}
@@ -794,6 +807,8 @@ QUICPacketReceived = {
         ; if packet was buffered because it couldn't be
         ; decrypted before
         "keys_available"
+
+    * $$quic-packetreceived-extension
 }
 ~~~
 {: #quic-packetreceived-def title="QUICPacketReceived definition"}
@@ -833,6 +848,8 @@ QUICPacketDropped = {
         "decryption_failure" /
         "key_unavailable" /
         "general"
+
+    * $$quic-packetdropped-extension
 }
 ~~~
 {: #quic-packetdropped-def title="QUICPacketDropped definition"}
@@ -874,6 +891,8 @@ QUICPacketBuffered = {
         ; if packet cannot be decrypted because the proper keys were
         ; not yet available
         "keys_unavailable"
+
+    * $$quic-packetbuffered-extension
 }
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
@@ -897,6 +916,8 @@ implementations that do not log frame contents.
 QUICPacketsAcked = {
     ? packet_number_space: PacketNumberSpace
     ? packet_numbers: [+ uint64]
+
+    * $$quic-packetsacked-extension
 }
 ~~~
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
@@ -927,6 +948,8 @@ QUICUDPDatagramsSent = {
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
+
+    * $$quic-udpdatagramssent-extension
 }
 ~~~
 {: #quic-udpdatagramssent-def title="QUICUDPDatagramsSent definition"}
@@ -963,6 +986,8 @@ QUICUDPDatagramsReceived = {
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
+
+    * $$quic-udpdatagramsreceived-extension
 }
 ~~~
 {: #quic-udpdatagramsreceived-def title="QUICUDPDatagramsReceived definition"}
@@ -983,6 +1008,8 @@ QUICUDPDatagramDropped = {
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: RawInfo
+
+    * $$quic-udpdatagramdropped-extension
 }
 ~~~
 {: #quic-udpdatagramdropped-def title="QUICUDPDatagramDropped definition"}
@@ -1008,6 +1035,8 @@ QUICStreamStateUpdated = {
     new: StreamState
     ? stream_side: "sending" /
                    "receiving"
+
+    * $$quic-streamstateupdated-extension
 }
 
 StreamState =
@@ -1084,6 +1113,8 @@ corresponding packet number at the same index.
 QUICFramesProcessed = {
     frames: [* $QuicFrame]
     ? packet_numbers: [* uint64]
+
+    * $$quic-framesprocessed-extension
 }
 ~~~
 {: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
@@ -1146,6 +1177,8 @@ QUICStreamDataMoved = {
           "network" /
           text
     ? raw: RawInfo
+
+    * $$quic-streamdatamoved-extension
 }
 ~~~
 {: #quic-streamdatamoved-def title="QUICStreamDataMoved definition"}
@@ -1188,6 +1221,8 @@ QUICDatagramDataMoved = {
           "network" /
           text
     ? raw: RawInfo
+
+    * $$quic-datagramdatamoved-extension
 }
 ~~~
 {: #quic-datagramdatamoved-def title="QUICDatagramDataMoved definition"}
@@ -1226,6 +1261,8 @@ QUICMigrationStateUpdated = {
 
     ; the information for traffic coming in at the local endpoint
     ? path_local: PathEndpointInfo
+
+    * $$quic-migrationstateupdated-extension
 }
 
 ; Note that MigrationState does not describe a full state machine
@@ -1269,6 +1306,8 @@ SecurityKeyUpdated = {
         "tls" /
         "remote_update" /
         "local_update"
+
+    * $$quic-keyupdated-extension
 }
 ~~~
 {: #security-keyupdated-def title="SecurityKeyUpdated definition"}
@@ -1295,6 +1334,8 @@ SecurityKeyDiscarded = {
         "tls" /
         "remote_update" /
         "local_update"
+
+    * $$quic-keydiscarded-extension
 }
 ~~~
 {: #security-keydiscarded-def title="SecurityKeyDiscarded definition"}
@@ -1346,6 +1387,8 @@ RecoveryParametersSet = {
 
     ; as PTO multiplier
     ? persistent_congestion_threshold: uint16
+
+    * $$recovery-parametersset-extension
 }
 ~~~
 {: #recovery-parametersset-def title="RecoveryParametersSet definition"}
@@ -1390,6 +1433,8 @@ RecoveryMetricsUpdated = {
 
     ; in bits per second
     ? pacing_rate: uint64
+
+    * $$recovery-metricsupdated-extension
 }
 ~~~
 {: #recovery-metricsupdated-def title="RecoveryMetricsUpdated definition"}
@@ -1422,6 +1467,8 @@ RecoveryCongestionStateUpdated = {
     ? old: text
     new: text
     ? trigger: text
+
+    * $$recovery-congestionstateupdated-extension
 }
 ~~~
 {: #recovery-congestionstateupdated-def title="RecoveryCongestionStateUpdated definition"}
@@ -1459,6 +1506,8 @@ RecoveryLossTimerUpdated = {
     ; if event_type === "set": delta time is in ms from
     ; this event's timestamp until when the timer will trigger
     ? delta: float32
+
+    * $$recovery-losstimerupdated-extension
 }
 ~~~
 {: #recovery-losstimerupdated-def title="RecoveryLossTimerUpdated definition"}
@@ -1486,6 +1535,8 @@ RecoveryPacketLost = {
         "time_threshold" /
         ; RFC 9002 Section 6.2.4 paragraph 6, MAY
         "pto_expired"
+
+    * $$recovery-packetlost-extension
 }
 ~~~
 {: #recovery-packetlost-def title="RecoveryPacketLost definition"}
@@ -1516,6 +1567,8 @@ when data was retransmitted).
 ~~~ cddl
 RecoveryMarkedForRetransmit = {
     frames: [+ $QuicFrame]
+
+    * $$recovery-markedforretransmit-extension
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
@@ -1530,6 +1583,8 @@ level; see {{Section 9.2 of QLOG-MAIN}}.
 ECNStateUpdated = {
    ? old: ECNState
     new: ECNState
+
+    * $$recovery-ecnstateupdated-extension
 }
 
 ECNState =
@@ -1613,6 +1668,8 @@ PathEndpointInfo = {
     ; there are situations where there can be an overlap
     ; or a need to keep track of previous ConnectionIDs
     ? connection_ids: [+ ConnectionID]
+
+    * $$quic-pathendpointinfo-extension
 }
 ~~~
 {: #pathendpointinfo-def title="PathEndpointInfo definition"}
@@ -1671,6 +1728,8 @@ PacketHeader = {
     ? dcil: uint8
     ? scid: ConnectionID
     ? dcid: ConnectionID
+
+    * $$quic-packetheader-extension
 }
 ~~~
 {: #packetheader-def title="PacketHeader definition"}
@@ -1688,6 +1747,8 @@ Token = {
       * text => any
     }
     ? raw: RawInfo
+
+    * $$quic-token-extension
 }
 ~~~
 {: #token-def title="Token definition"}
@@ -1733,16 +1794,16 @@ The ECN bits carried in the IP header.
 
 ## QUIC Frames
 
-The generic `$QuicFrame` is defined here as a CDDL extension point (a "socket"
-or "plug"). It can be extended to support additional QUIC frame types.
+The generic `$QuicFrame` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional QUIC frame types.
 
-~~~ cddl
+~~~~~~
 ; The QuicFrame is any key-value map (e.g., JSON object)
 $QuicFrame /= {
     * text => any
 }
-~~~
-{: #quicframe-def title="QuicFrame plug definition"}
+~~~~~~
+{: #quicframe-def title="QuicFrame type socket definition"}
 
 The QUIC frame types defined in this document are as follows:
 
@@ -2058,7 +2119,7 @@ ErrorSpace = "transport" /
 ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
-    ? error_code: TransportError /
+    ? error_code: $TransportError /
                   CryptoError /
                   $ApplicationError /
                   uint64
@@ -2108,8 +2169,11 @@ DatagramFrame = {
 
 ### TransportError
 
+The generic `$TransportError` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional Transport errors.
+
 ~~~ cddl
-TransportError = "no_error" /
+$TransportError /= "no_error" /
                  "internal_error" /
                  "connection_refused" /
                  "flow_control_error" /
@@ -2136,15 +2200,16 @@ TransportError = "no_error" /
 By definition, an application error is defined by the application-level
 protocol running on top of QUIC (e.g., HTTP/3).
 
-As such, it cannot be defined here directly. Applications MAY use the provided
-extension point through the use of the CDDL "socket" mechanism.
+As such, it cannot be defined here directly. It is instead defined as an empty
+CDDL "type socket" extension point.
 
-Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:
+Application-level qlog definitions that wish to define new ApplicationError
+strings MUST do so by extending the $ApplicationError socket as such:
 
-~~~
+~~~~~~
 $ApplicationError /= "new_error_name" /
                      "another_new_error_name"
-~~~
+~~~~~~
 
 ### CryptoError
 
