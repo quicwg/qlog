@@ -661,7 +661,7 @@ In order to keep qlog fully extensible, two separate CDDL extension points
 Firstly, to allow existing data field definitions to be extended (for example by
 adding an additional field needed for a new protocol feature), a CDDL "group
 socket" is used. This takes the form of a subfield with a name of
-`$$CATEGORY-NAME-extension`. This field acts as a placeholder that can later be
+`* $$CATEGORY-NAME-extension`. This field acts as a placeholder that can later be
 replaced with newly defined fields by assigning them to the socket with the
 `//=` operator. Multiple extensions can be assigned to the same group socket. An
 example is shown in {{groupsocket-extension-example}}.
@@ -671,7 +671,7 @@ example is shown in {{groupsocket-extension-example}}.
 MyCategoryEventX = {
     field_a: uint8
 
-    $$mycategory-eventx-extension
+    * $$mycategory-eventx-extension
 }
 
 ; later extension of EventX in document B
@@ -714,7 +714,7 @@ MyCategoryEvent1 /= {
 
     ? trigger: text
 
-    $$mycategory-event1-extension
+    * $$mycategory-event1-extension
 }
 
 MyCategoryEvent2 /= {
@@ -722,7 +722,7 @@ MyCategoryEvent2 /= {
 
     ? trigger: text
 
-    $$mycategory-event2-extension
+    * $$mycategory-event2-extension
 }
 
 ; the events are both merged with the existing $ProtocolEventData type enum
@@ -734,10 +734,9 @@ $ProtocolEventData /= MyCategoryEvent1 / MyCategoryEvent2
 
 Documents defining new qlog events MUST properly extend `$ProtocolEventData`
 when defining data fields to enable automated validation of aggregated qlog
-schemas. Furthermore, they SHOULD properly add a `$$CATEGORY-NAME-extension`
+schemas. Furthermore, they SHOULD properly add a `* $$CATEGORY-NAME-extension`
 extension field to newly defined event data to allow the new events to be
 properly extended by other documents.
-
 
 A combined but purely illustrative example of the use of both extension points
 for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
@@ -752,13 +751,13 @@ TransportPacketSent = {
                "retransmit_timeout" /
                "bandwidth_probe"
 
-    $$transport-packetsent-extension
+    * $$transport-packetsent-extension
 }
 
-; make sure the event is added to the global list of recognized qlog events
+; Add the event to the global list of recognized qlog events
 $ProtocolEventData /= TransportPacketSent
 
-; defined in a separate document that defines a theoretical QUIC protocol extension
+; Defined in a separate document that describes a theoretical QUIC protocol extension
 $$transport-packetsent-extension //= (
   ? additional_field: bool
 )
@@ -767,8 +766,9 @@ $$transport-packetsent-extension //= (
 ; the following JSON serialization would pass an automated CDDL schema validation check:
 
 {
+  "time": 123456,
   "category": "transport",
-  "name": "packetsent",
+  "name": "packet_sent",
   "data": {
       "packet_size": 1280,
       "header": {
@@ -1092,6 +1092,20 @@ calculation.
 
 There are some event types and data classes that are common across protocols,
 applications, and use cases. This section specifies such common definitions.
+
+~~~ cddl
+GenericEventData = GenericError /
+                GenericWarning /
+                GenericInfo /
+                GenericDebug
+
+SimulationEventData = SimulationScenario /
+                SimulationMarker
+
+$ProtocolEventData /= GenericEventData / SimulationEventData
+~~~
+{: #commonevent-integration title="ProtocolEventData extension for common
+events"}
 
 ## Generic events
 
