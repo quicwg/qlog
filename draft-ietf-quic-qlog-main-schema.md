@@ -1158,18 +1158,19 @@ of protocols.
 
 ## Extended Event Schema
 
-New events SHOULD be defined using an extension schema, using the annotations
-and concepts presented in this section.
+New event definitions SHOULD be part of an extension schema, using the
+annotations and concepts presented in this section. Events can be grouped
+together into a category but cannot belong to multiple categories. A schema
+defines one or more qlog event categories.
 
 Each extension schema is named by a URI. That URI MUST be absolute; it precisely
 identifies the format and meaning of the extension. URIs that contain a domain
 name SHOULD also contain a month-date in the form mmyyyy. The definition of the
 element and assignment of the URI MUST have been authorized by the owner of the
 domain name on or very close to that date. (This avoids problems when domain
-names change ownership.) If the resource or document defines several categories
-or groups of events, then the URI MUST identify the actual extension in use,
-e.g., using a fragment or query identifier (characters after a "#" or "?" in the
-URI).
+names change ownership.) If the resource or document defines several categories,
+then the URI MUST identify the actual extension in use, e.g., using a fragment
+or query identifier (characters after a "#" or "?" in the URI).
 
 For extensions defined in RFCs, the URI used SHOULD be a URN starting with
 `urn:ietf:params:qlog:` followed by a registered, descriptive name.
