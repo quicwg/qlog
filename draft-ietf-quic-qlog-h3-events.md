@@ -50,9 +50,8 @@ informative:
 
 --- abstract
 
-This document describes concrete qlog event definitions and their metadata for
-HTTP/3-related events. These events can then be embedded in the higher
-level schema defined in {{QLOG-MAIN}}.
+This document defines a qlog extension schema containing concrete qlog event
+definitions and their metadata for HTTP/3-related events.
 
 --- note_Note_to_Readers
 
@@ -71,10 +70,12 @@ various programming languages can be found at
 
 # Introduction
 
-This document describes the values of the qlog name ("category" + "event") and
+This document defines a qlog extension schema ({{Section 9 of QLOG-MAIN}})
+containing concrete qlog event definitions and their metadata for HTTP/3-related
+events. Specifically, the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the HTTP/3 protocol {{RFC9114}} and some
-of extensions (see {{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}}
-and {{!H3-DATAGRAM=RFC9297}}).
+of it's extensions (see {{!EXTENDED-CONNECT=RFC9220}},
+{{!H3_PRIORITIZATION=RFC9218}} and {{!H3-DATAGRAM=RFC9297}}).
 
 ## Notational Conventions
 
@@ -94,10 +95,12 @@ implementation decision.
 
 # Overview
 
-This document describes how HTTP/3 can be expressed in qlog using the schema
-defined in {{QLOG-MAIN}}. HTTP/3 events are defined with a category, a name (the
-concatenation of "category" and "event"), an "importance", an optional
-"trigger", and "data" fields.
+This document defines a single event schema identified by the URI
+"urn:ietf:params:qlog:h3".
+
+HTTP/3 events are defined with a category, a name (the concatenation of
+"category" and "event"), an "importance", an optional "trigger", and "data"
+fields.
 
 Some data fields use complex datastructures. These are represented as enums or
 re-usable definitions, which are grouped together on the bottom of this document
@@ -105,6 +108,16 @@ for clarity.
 
 When any event from this document is included in a qlog trace, the
 "protocol_type" qlog array field MUST contain an entry with the value "HTTP3".
+
+## Draft Schema Identification
+
+Only implementations of the final, published RFC can use the schema identified
+by "urn:ietf:params:qlog:h3". Until such an RFC exists, implementations MUST NOT
+identify themselves using this URI.
+
+Implementations of draft versions of the extension schema MUST append the string
+"-" and the corresponding draft number to the URI. For example, draft 07 of this
+document is identified using the URI "urn:ietf:params:qlog:h3-07".
 
 ## Usage with QUIC
 
@@ -120,9 +133,9 @@ identifier, potentially suffixed by the vantagepoint type (For example,
 abcd1234_server.qlog would contain the server-side trace of the connection with
 GUID abcd1234).
 
-# HTTP/3 Event Overview
+# Event Overview
 
-This document defines events in two categories, written as lowercase to follow
+This document defines a single category of events, written as lowercase to follow
 convention: h3 ({{h3-ev}}).
 
 As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
