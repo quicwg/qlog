@@ -1178,7 +1178,7 @@ For extensions defined in RFCs, the URI used SHOULD be a URN starting with
 A log file that that uses events from extension schema SHOULD list all schema
 identifiers in the `additional_event_schemas` field.
 
-For example, a qlog file that uses three hypothetical standard qlog extension
+For example, a qlog file that uses two hypothetical standard qlog extension
 schema named "rick" and "morty", along with a private extension named "pickle"
 would indicate this as:
 
