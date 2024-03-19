@@ -215,7 +215,7 @@ component traces, defined in {{qlog-file-def}} as:
 QlogFile = {
     qlog_version: text
     ? qlog_format: text .default "JSON"
-    ? additional_event_schema: [+ text]
+    ? additional_event_schemas: [+ text]
     ? title: text
     ? description: text
     ? traces: [+ Trace /
@@ -231,7 +231,7 @@ MUST either be one of the options defined in this document (i.e.,
 {{concrete-formats}}) or the field MUST be omitted entirely. When the field is
 omitted the default value of "JSON" applies.
 
-The optional "additional_event_schema" field is described in {{event-extensibility}}.
+The optional "additional_event_schemas" field is described in {{event-extensibility}}.
 
 The optional "title" and "description" fields provide additional free-text
 information about the file.
@@ -372,7 +372,7 @@ of component traces, defined in {{qlog-file-def}} as:
 QlogFileSeq = {
     qlog_format: "JSON-SEQ"
     qlog_version: text
-    ? additional_event_schema: [+ text]
+    ? additional_event_schemas: [+ text]
     ? title: text
     ? description: text
     trace: TraceSeq
@@ -384,7 +384,7 @@ The required "qlog_format" field MUST have the value "JSON-SEQ".
 
 The required "qlog_version" field MUST have the value "0.4".
 
-The optional "additional_event_schema" field is described in {{event-extensibility}}.
+The optional "additional_event_schemas" field is described in {{event-extensibility}}.
 
 The optional "title" and "description" fields provide additional free-text
 information about the file.
@@ -1175,15 +1175,17 @@ For extensions defined in RFCs, the URI used SHOULD be a URN starting with
 `urn:ietf:params:qlog:` followed by a registered, descriptive name.
 
 A log file that that uses events from extension schema SHOULD list all schema
-identifiers in the `additional_event_schema` field.
+identifiers in the `additional_event_schemas` field.
 
-For example, a qlog file that uses two hypothetical qlog extension schema named
-"rick" and "morty" would indicate this as:
+For example, a qlog file that uses three hypothetical standard qlog extension
+schema named "rick" and "morty", along with a private extension named "pickle"
+would indicate this as:
 
 ~~~
-additional_event_schema = [
+additional_event_schemas = [
                             urn:ietf:params:qlog:rick,
-                            urn:ietf:params:qlog:morty
+                            urn:ietf:params:qlog:morty,
+                            https://example.com/032024/pickle.html#me
                           ]
 ~~~
 
@@ -1693,8 +1695,7 @@ event extension schema. It has the following format:
 
 No entries are registered by this document.
 
-The registry operates under the Expert Review policy, per {{Section 4.5 of
-!RFC8126}}.  When reviewing requests, the expert SHOULD check that:
+The registry operates under the Expert Review policy, per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert SHOULD check that:
 
 : The guidance in {{event-extensibility}} and in {{privacy}} has been duly
 considered. However, the outcome of this check cannot be used as a basis for
