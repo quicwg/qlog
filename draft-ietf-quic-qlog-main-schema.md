@@ -1695,13 +1695,13 @@ event extension schema. It has the following format:
 
 No entries are registered by this document.
 
-The registry operates under the Expert Review policy, per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert SHOULD check that:
-
-: The guidance in {{event-extensibility}} and in {{privacy}} has been duly
-considered. However, the outcome of this check cannot be used as a basis for
-rejection.
-
-: The request URI is appropriate to the extension and unique.
+The registry operates under the Expert Review policy, per {{Section 4.5 of
+!RFC8126}}.  When reviewing requests, the expert SHOULD check that the guidance
+in {{event-extensibility}} and in {{privacy}} has been duly considered. However,
+the outcome of this check cannot be used as a basis for rejection. The expert
+SHOULD also check that the request URI is appropriate to the extension and
+unique, including determining if the number of requested URIs are proportional
+to the number of extension points.
 
 Registration requests should use the following template:
 
