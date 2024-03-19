@@ -157,6 +157,13 @@ logged as `float64` in the millisecond resolution.
 Other qlog documents can define their own CDDL-compatible (struct) types
 (e.g., separately for each Packet type that a protocol supports).
 
+The member fields in all qlog CDDL type definitions are listed without any
+expectation of a fixed ordering. Specific qlog serializations MAY impose a
+stricter ordering of fields, but the default JSON and JSON Text Sequences
+serializations discussed in this document (see {{concrete-formats}}) do not.
+qlog tools SHOULD NOT assume a specific ordering of qlog member field
+occurrences in general.
+
 > Note to RFC editor: Please remove the following text in this section before
 publication.
 
