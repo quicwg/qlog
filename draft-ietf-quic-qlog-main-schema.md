@@ -1166,7 +1166,7 @@ defines one or more qlog event categories.
 Each extension schema is named by a URI. That URI MUST be absolute; it precisely
 identifies the format and meaning of the extension. URIs that contain a domain
 name SHOULD also contain a month-date in the form mmyyyy. The definition of the
-element and assignment of the URI MUST have been authorized by the owner of the
+schema and assignment of the URI MUST have been authorized by the owner of the
 domain name on or very close to that date. (This avoids problems when domain
 names change ownership.) If the resource or document defines several categories,
 then the URI MUST identify the actual extension in use, e.g., using a fragment
