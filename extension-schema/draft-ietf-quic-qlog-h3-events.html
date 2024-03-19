@@ -10,9 +10,8 @@
 <meta content="Marten Seemann" name="author">
 <meta content="Lucas Pardue" name="author">
 <meta content="
-       This document describes concrete qlog event definitions and their metadata for
-HTTP/3-related events. These events can then be embedded in the higher
-level schema defined in  . 
+       This document defines a qlog extension schema containing concrete qlog event
+definitions and their metadata for HTTP/3-related events. 
     " name="description">
 <meta content="xml2rfc 3.20.1" name="generator">
 <meta content="Internet-Draft" name="keyword">
@@ -1080,9 +1079,8 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <h1 id="title">HTTP/3 qlog event definitions</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document describes concrete qlog event definitions and their metadata for
-HTTP/3-related events. These events can then be embedded in the higher
-level schema defined in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document defines a qlog extension schema containing concrete qlog event
+definitions and their metadata for HTTP/3-related events.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 </section>
 <section class="note" id="section-note.1">
       <h2 id="name-note-to-readers">
@@ -1161,12 +1159,15 @@ various programming languages can be found at
             <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-overview" class="internal xref">Overview</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
-                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-usage-with-quic" class="internal xref">Usage with QUIC</a></p>
+                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-draft-schema-identification" class="internal xref">Draft Schema Identification</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
+                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-usage-with-quic" class="internal xref">Usage with QUIC</a></p>
 </li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
-            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-http-3-event-overview" class="internal xref">HTTP/3 Event Overview</a></p>
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-event-overview" class="internal xref">Event Overview</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
             <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-http-3-events-2" class="internal xref">HTTP/3 Events</a></p>
@@ -1316,10 +1317,12 @@ various programming languages can be found at
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">This document describes the values of the qlog name ("category" + "event") and
+<p id="section-1-1">This document defines a qlog extension schema (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9" class="relref">Section 9</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>)
+containing concrete qlog event definitions and their metadata for HTTP/3-related
+events. Specifically, the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the HTTP/3 protocol <span>[<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span> and some
-of extensions (see <span>[<a href="#EXTENDED-CONNECT" class="cite xref">EXTENDED-CONNECT</a>]</span>, <span>[<a href="#H3_PRIORITIZATION" class="cite xref">H3_PRIORITIZATION</a>]</span>
-and <span>[<a href="#H3-DATAGRAM" class="cite xref">H3-DATAGRAM</a>]</span>).<a href="#section-1-1" class="pilcrow">¶</a></p>
+of it's extensions (see <span>[<a href="#EXTENDED-CONNECT" class="cite xref">EXTENDED-CONNECT</a>]</span>,
+<span>[<a href="#H3_PRIORITIZATION" class="cite xref">H3_PRIORITIZATION</a>]</span> and <span>[<a href="#H3-DATAGRAM" class="cite xref">H3-DATAGRAM</a>]</span>).<a href="#section-1-1" class="pilcrow">¶</a></p>
 <div id="notational-conventions">
 <section id="section-1.1">
         <h3 id="name-notational-conventions">
@@ -1347,40 +1350,54 @@ implementation decision.<a href="#section-1.1-4" class="pilcrow">¶</a></p>
       <h2 id="name-overview">
 <a href="#section-2" class="section-number selfRef">2. </a><a href="#name-overview" class="section-name selfRef">Overview</a>
       </h2>
-<p id="section-2-1">This document describes how HTTP/3 can be expressed in qlog using the schema
-defined in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>. HTTP/3 events are defined with a category, a name (the
-concatenation of "category" and "event"), an "importance", an optional
-"trigger", and "data" fields.<a href="#section-2-1" class="pilcrow">¶</a></p>
-<p id="section-2-2">Some data fields use complex datastructures. These are represented as enums or
+<p id="section-2-1">This document defines a single event schema identified by the URI
+"urn:ietf:params:qlog:h3".<a href="#section-2-1" class="pilcrow">¶</a></p>
+<p id="section-2-2">HTTP/3 events are defined with a category, a name (the concatenation of
+"category" and "event"), an "importance", an optional "trigger", and "data"
+fields.<a href="#section-2-2" class="pilcrow">¶</a></p>
+<p id="section-2-3">Some data fields use complex datastructures. These are represented as enums or
 re-usable definitions, which are grouped together on the bottom of this document
-for clarity.<a href="#section-2-2" class="pilcrow">¶</a></p>
-<p id="section-2-3">When any event from this document is included in a qlog trace, the
-"protocol_type" qlog array field <span class="bcp14">MUST</span> contain an entry with the value "HTTP3".<a href="#section-2-3" class="pilcrow">¶</a></p>
-<div id="usage-with-quic">
+for clarity.<a href="#section-2-3" class="pilcrow">¶</a></p>
+<p id="section-2-4">When any event from this document is included in a qlog trace, the
+"protocol_type" qlog array field <span class="bcp14">MUST</span> contain an entry with the value "HTTP3".<a href="#section-2-4" class="pilcrow">¶</a></p>
+<div id="draft-schema-identification">
 <section id="section-2.1">
-        <h3 id="name-usage-with-quic">
-<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-usage-with-quic" class="section-name selfRef">Usage with QUIC</a>
+        <h3 id="name-draft-schema-identification">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-draft-schema-identification" class="section-name selfRef">Draft Schema Identification</a>
         </h3>
-<p id="section-2.1-1">The events described in this document can be used with or without logging the
+<p id="section-2.1-1">Only implementations of the final, published RFC can use the schema identified
+by "urn:ietf:params:qlog:h3". Until such an RFC exists, implementations <span class="bcp14">MUST NOT</span>
+identify themselves using this URI.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-2">Implementations of draft versions of the extension schema <span class="bcp14">MUST</span> append the string
+"-" and the corresponding draft number to the URI. For example, draft 07 of this
+document is identified using the URI "urn:ietf:params:qlog:h3-07".<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="usage-with-quic">
+<section id="section-2.2">
+        <h3 id="name-usage-with-quic">
+<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-usage-with-quic" class="section-name selfRef">Usage with QUIC</a>
+        </h3>
+<p id="section-2.2-1">The events described in this document can be used with or without logging the
 related QUIC events defined in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>. If used with QUIC events, the QUIC
 document takes precedence in terms of recommended filenames and trace separation
-setups.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
-<p id="section-2.1-2">If used without QUIC events, it is recommended that the implementation assign a
+setups.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
+<p id="section-2.2-2">If used without QUIC events, it is recommended that the implementation assign a
 globally unique identifier to each HTTP/3 connection. This ID can then be used as
 the value of the qlog "group_id" field, as well as the qlog filename or file
 identifier, potentially suffixed by the vantagepoint type (For example,
 abcd1234_server.qlog would contain the server-side trace of the connection with
-GUID abcd1234).<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+GUID abcd1234).<a href="#section-2.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
 </div>
-<div id="http3-event-overview">
+<div id="event-overview">
 <section id="section-3">
-      <h2 id="name-http-3-event-overview">
-<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-http-3-event-overview" class="section-name selfRef">HTTP/3 Event Overview</a>
+      <h2 id="name-event-overview">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-event-overview" class="section-name selfRef">Event Overview</a>
       </h2>
-<p id="section-3-1">This document defines events in two categories, written as lowercase to follow
+<p id="section-3-1">This document defines a single category of events, written as lowercase to follow
 convention: h3 (<a href="#h3-ev" class="auto internal xref">Section 4</a>).<a href="#section-3-1" class="pilcrow">¶</a></p>
 <p id="section-3-2">As described in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-3.4.2" class="relref">Section 3.4.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog "name" field is the
 concatenation of category and type.<a href="#section-3-2" class="pilcrow">¶</a></p>
