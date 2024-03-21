@@ -74,7 +74,7 @@ This document defines a qlog extension schema ({{Section 9 of QLOG-MAIN}})
 containing concrete qlog event definitions and their metadata for HTTP/3-related
 events. Specifically, the values of the qlog name ("category" + "event") and
 "data" fields and their semantics for the HTTP/3 protocol {{RFC9114}} and some
-of it's extensions (see {{!EXTENDED-CONNECT=RFC9220}},
+of its extensions (see {{!EXTENDED-CONNECT=RFC9220}},
 {{!H3_PRIORITIZATION=RFC9218}} and {{!H3-DATAGRAM=RFC9297}}).
 
 ## Notational Conventions
