@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-03-19T00:43:27.787953+00:00",
+  "timestamp": "2024-03-21T00:45:19.185989+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -1712,7 +1712,7 @@
       "id": "MDU6SXNzdWU1NzEyMDA1NDc=",
       "title": "Add IP addresses to datagram_* events",
       "url": "https://github.com/quicwg/qlog/issues/57",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -1725,8 +1725,8 @@
       ],
       "body": "We currently extracted these to other events, assuming they wouldn't change or only change sparingly at specific times, handled by other events (e.g., when doing migration).\r\n\r\nHowever, this is not always the case. For example, @huitema mentioned:\r\n\r\n> NAT rebinding, probes of packets before migration\r\n\r\nFor these cases, it would be interesting to have (optional) IP from/to addresses in the datagram_* events as well. ",
       "createdAt": "2020-02-26T09:45:54Z",
-      "updatedAt": "2022-08-04T01:22:27Z",
-      "closedAt": null,
+      "updatedAt": "2024-03-19T11:59:09Z",
+      "closedAt": "2024-03-19T11:59:09Z",
       "comments": [
         {
           "author": "LPardue",
@@ -1741,6 +1741,13 @@
           "body": "yeah I discussed this with Robin. He recommended considering a `PathInfo` struct that basically contains the 4 tuple and it can be reused for all cases, including Connection Migration and Multi-path ",
           "createdAt": "2022-08-04T01:22:27Z",
           "updatedAt": "2022-08-04T01:22:27Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Solved by https://github.com/quicwg/qlog/pull/336",
+          "createdAt": "2024-03-19T11:59:09Z",
+          "updatedAt": "2024-03-19T11:59:09Z"
         }
       ]
     },
@@ -3911,7 +3918,7 @@
       "id": "MDU6SXNzdWU3OTUwOTU4NTU=",
       "title": "Multipath support",
       "url": "https://github.com/quicwg/qlog/issues/134",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -3922,8 +3929,8 @@
       ],
       "body": "With the multipath conversation gaining traction in the QUIC wg, it's time to start thinking more seriously about adding (rough) multipath support to qlog and qvis to aid practical implementation efforts (e.g., see https://huitema.wordpress.com/2021/01/26/implementing-multipath-in-quic).\r\n\r\nThe simplest approach that I can see would be to associate a `path_id` with each qlog event:\r\n\r\n```\r\nEvent definition without multipath:\r\nclass Event {\r\n    time: number,\r\n    name:string,\r\n    data:any\r\n}\r\n\r\nEvent definition with multipath:\r\nclass Event {\r\n    time:number,\r\n    name:string,\r\n    path_id:number | string,\r\n    data:any\r\n}\r\n```\r\n\r\nThis would allow users to log all events belonging to a single \"connection\" to differentiate per-path events without having to split them up in separate qlog Trace objects. Additionally, it prevents from having to overload the existing `group_id` field with an additional meaning.\r\n\r\nHowever, the main problem I can see is that the `path_id` (which can be anything, preferably an opaque/obscured value) is not available everywhere in the code that wants to output a qlog event. For example, a congestion controller will wish to output the `recovery:metrics_updated` event, but might not necessarily have the `path_id` available in the code path where these metrics are calculated/available (e.g., if a congestion control method is re-used as-is between single-path and multi-path QUIC). Similar concerns exist for other events (e.g., ACK processing or event `packet_sent` if this is logged before the packet scheduler decides which path to take). \r\n\r\nWhile there are of course always solutions to this (e.g., pass the path_id as extra parameter/as global variable/put it on a stack/put it on a logging object reference/etc.) it is at this time unclear if this is an actual problem and if implementers would wish to add these patchwork \"solutions\" if required, just to get proper qlog output.\r\n\r\nCC @huitema @mpiraux\r\n\r\n\r\n",
       "createdAt": "2021-01-27T13:20:50Z",
-      "updatedAt": "2022-09-29T13:44:13Z",
-      "closedAt": null,
+      "updatedAt": "2024-03-19T11:58:37Z",
+      "closedAt": "2024-03-19T11:58:37Z",
       "comments": [
         {
           "author": "huitema",
@@ -4092,6 +4099,13 @@
           "body": "I'm not too sure I like the \"single field\" option for inclusion in the current documents...\r\n\r\nThe only way this would work as a single addition (that I can see) is to add it to the main event definition, for example:\r\n```\r\nEvent = {\r\n    time: float64\r\n    name: text\r\n    ; only used in multipath contexts\r\n    ? path_id: text\r\n    data: $ProtocolEventBody\r\n\r\n    ? time_format: TimeFormat\r\n\r\n    ? protocol_type: ProtocolType\r\n    ? group_id: GroupID\r\n\r\n    ; events can contain any amount of custom fields\r\n    * text => any\r\n}\r\n```\r\n\r\nSomething like that is easy enough to do in an extension document that can give more context. \r\n\r\n------\r\n\r\nThat being said, we do still need to decided how to properly handle RFC9000 connection migration and how/if to log IP addresses for QUIC packets, which this has overlap with (discussed partially in https://github.com/quicwg/qlog/pull/211#issuecomment-1249383687). \r\n\r\nI don't think handling connection migration is best done with a singular `path_id` field, but I could very well be wrong. \r\n\r\n",
           "createdAt": "2022-09-29T13:19:14Z",
           "updatedAt": "2022-09-29T13:44:13Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Fixed by https://github.com/quicwg/qlog/pull/336",
+          "createdAt": "2024-03-19T11:58:34Z",
+          "updatedAt": "2024-03-19T11:58:34Z"
         }
       ]
     },
@@ -17865,21 +17879,21 @@
       "id": "PR_kwDOCrLn6M5WT7Mp",
       "title": "additional_schema using URI/URN",
       "url": "https://github.com/quicwg/qlog/pull/329",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "alternative to https://github.com/quicwg/qlog/pull/284/files, based on the suggestion by @JonathanLennox to do something similar to https://www.rfc-editor.org/rfc/rfc8285.html#section-5 and https://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-10\r\n\r\nCloses https://github.com/quicwg/qlog/issues/283",
       "createdAt": "2023-07-25T09:32:38Z",
-      "updatedAt": "2024-03-18T16:19:11Z",
+      "updatedAt": "2024-03-19T03:36:09Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "57a8c67bea1d35aa585fb7c2fadbd98faf3cfb39",
       "headRepository": "quicwg/qlog",
       "headRefName": "versioning-schema-urn",
       "headRefOid": "fec683a9a4f0e7e90e0a5abcda340d8e7682e608",
-      "closedAt": null,
+      "closedAt": "2024-03-19T03:36:09Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -17890,6 +17904,13 @@
           "body": "I assume this is subsumed by #415 @LPardue? Should we close this already or wait for the other one to be merged? ",
           "createdAt": "2024-03-18T16:19:10Z",
           "updatedAt": "2024-03-18T16:19:10Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I forgot about this entirely :facepalm:, it doesn't make sense to keep open as I don't want to have to fix the bitrot.",
+          "createdAt": "2024-03-19T03:36:09Z",
+          "updatedAt": "2024-03-19T03:36:09Z"
         }
       ],
       "reviews": []
@@ -21442,13 +21463,13 @@
       "labels": [],
       "body": "Alternative to #284.\r\n\r\nThis follows Lennox's suggestion to take influence from RFC 8285 and reference\r\nextension schema according to a URI. IETF documents can use URNs under a formal\r\nnamespace, and as such we register a new `qlog` URN Sub-namespace for\r\nRegistered Protocol Parameter Identifiers.\r\n\r\nFixes #283",
       "createdAt": "2024-03-17T23:59:57Z",
-      "updatedAt": "2024-03-18T13:38:06Z",
+      "updatedAt": "2024-03-19T10:58:23Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
       "headRepository": "quicwg/qlog",
       "headRefName": "extension-schema",
-      "headRefOid": "3b822f02f16d2a8df4d5858a37a9cdaee7c6f68c",
+      "headRefOid": "36396a1050cbcfc768b2bebe0e76d2153671a607",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -21467,6 +21488,13 @@
           "body": "This matches my suggestion, looks good to me!",
           "createdAt": "2024-03-18T07:38:06Z",
           "updatedAt": "2024-03-18T07:38:06Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I pushed some changes to update the text in h3, if we like that approach I will carry it over to the quic doc.",
+          "createdAt": "2024-03-19T05:42:42Z",
+          "updatedAt": "2024-03-19T05:42:42Z"
         }
       ],
       "reviews": [
@@ -21685,6 +21713,66 @@
               "updatedAt": "2024-03-18T13:38:06Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5z7_4Q",
+          "commit": {
+            "abbreviatedOid": "3b822f0"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-19T03:37:53Z",
+          "updatedAt": "2024-03-19T03:37:53Z",
+          "comments": [
+            {
+              "originalPosition": 4,
+              "body": "Thanks for the clarification",
+              "createdAt": "2024-03-19T03:37:53Z",
+              "updatedAt": "2024-03-19T03:37:53Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5z8DXr",
+          "commit": {
+            "abbreviatedOid": "e8ae653"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-19T03:54:27Z",
+          "updatedAt": "2024-03-19T03:54:27Z",
+          "comments": [
+            {
+              "originalPosition": 63,
+              "body": "This is an open question we should ask in the meeting",
+              "createdAt": "2024-03-19T03:54:27Z",
+              "updatedAt": "2024-03-19T03:54:27Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5z-1D_",
+          "commit": {
+            "abbreviatedOid": "36396a1"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-19T10:58:23Z",
+          "updatedAt": "2024-03-19T10:58:23Z",
+          "comments": [
+            {
+              "originalPosition": 23,
+              "body": "```suggestion\r\nof its extensions (see {{!EXTENDED-CONNECT=RFC9220}},\r\n```",
+              "createdAt": "2024-03-19T10:58:23Z",
+              "updatedAt": "2024-03-19T10:58:23Z"
+            }
+          ]
         }
       ]
     },
@@ -21700,7 +21788,7 @@
       "labels": [],
       "body": "Fixes #379.\r\nAlso closes https://github.com/quicwg/qlog/issues/261, https://github.com/quicwg/qlog/issues/176, https://github.com/quicwg/qlog/issues/170, https://github.com/quicwg/qlog/issues/124, https://github.com/quicwg/qlog/issues/192, https://github.com/quicwg/qlog/issues/297.\r\n\r\nAdds extensibility for all events through the `* $$category-name-ext` pattern first used in #400, now extended to ALL events as discussed in #379.\r\n\r\nMakes all official protocol extension points also extensible in qlog. This was mostly already the case except for a few holdouts ($H3StreamType, $ProtocolType, $TransportError). The full list currently is:\r\n- frames: $QuicFrame and $H3Frame and $H3Datagram\r\n- TPs: $$quic-parametersset-extension and $$quic-parametersrestored-extension \r\n- settings: $$h3-parameters-extension (and inherently H3Setting by the way it's defined)\r\n- H3 stream types: $H3StreamType\r\n- error codes: $ApplicationError, $TransportError\r\n- ALPN (at least qlog-level APLN; the other one is inherent in ALPNInformation): $ProtocolType\r\n\r\nI don't think we need to make QUIC's StreamType extensible (since that's also in the RFC as always just uni- or bidirectional, with no way to change that through IANA (or even wire image, due to looking at the 2 LSBs)). Thoughts on this @LPardue ?\r\n\r\n\r\n",
       "createdAt": "2024-03-18T16:15:56Z",
-      "updatedAt": "2024-03-18T20:57:58Z",
+      "updatedAt": "2024-03-19T09:40:01Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
@@ -21720,6 +21808,133 @@
           "updatedAt": "2024-03-18T20:55:55Z"
         }
       ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M5z8PKK",
+          "commit": {
+            "abbreviatedOid": "96c78b8"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-19T04:47:57Z",
+          "updatedAt": "2024-03-19T04:47:58Z",
+          "comments": [
+            {
+              "originalPosition": 49,
+              "body": "can we remove the `text => uint` now that we have $$h3-parameters-extension?",
+              "createdAt": "2024-03-19T04:47:57Z",
+              "updatedAt": "2024-03-19T04:47:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5z8PkL",
+          "commit": {
+            "abbreviatedOid": "96c78b8"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-19T04:49:46Z",
+          "updatedAt": "2024-03-19T04:49:46Z",
+          "comments": [
+            {
+              "originalPosition": 35,
+              "body": "Is there any danger that mentioning JSON object here could confusing people about what serialization formats are allowed?",
+              "createdAt": "2024-03-19T04:49:46Z",
+              "updatedAt": "2024-03-19T04:49:46Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5z8QIM",
+          "commit": {
+            "abbreviatedOid": "96c78b8"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-19T04:52:44Z",
+          "updatedAt": "2024-03-19T04:52:44Z",
+          "comments": [
+            {
+              "originalPosition": 84,
+              "body": "This example makes me realize that qlog event data field order cannot be significant. I don't think we state that anywhere already?",
+              "createdAt": "2024-03-19T04:52:44Z",
+              "updatedAt": "2024-03-19T04:52:44Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5z9u14",
+          "commit": {
+            "abbreviatedOid": "96c78b8"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-19T08:57:47Z",
+          "updatedAt": "2024-03-19T08:57:47Z",
+          "comments": [
+            {
+              "originalPosition": 35,
+              "body": "I thought about it, but I dont' think so... we discuss this in detail in the serialization section and JSON is the main provided option there, so I think it's fine to have it as an example here.",
+              "createdAt": "2024-03-19T08:57:47Z",
+              "updatedAt": "2024-03-19T08:57:47Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M5z-Gjj",
+          "commit": {
+            "abbreviatedOid": "96c78b8"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-03-19T09:40:01Z",
+          "updatedAt": "2024-03-19T09:40:01Z",
+          "comments": [
+            {
+              "originalPosition": 84,
+              "body": "Good point. Tracking that here now: https://github.com/quicwg/qlog/pull/418",
+              "createdAt": "2024-03-19T09:40:01Z",
+              "updatedAt": "2024-03-19T09:40:01Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 418,
+      "id": "PR_kwDOCrLn6M5qD-aF",
+      "title": "Clarify no-ordering expectation for qlog fields",
+      "url": "https://github.com/quicwg/qlog/pull/418",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "As noticed by @LPardue [here](https://github.com/quicwg/qlog/pull/417#discussion_r1529706045), we don't actually say anywhere that CDDL field ordering does not matter (it's implied by CDDL and JSON themselves, but probably good to reinforce explicitly).\r\n\r\n Not the biggest fan of current prose... tried to find examples in other RFCs but they're all over the place :) So let me know if you'd like to see it worded differently. \r\n\r\n",
+      "createdAt": "2024-03-19T09:32:55Z",
+      "updatedAt": "2024-03-19T09:32:56Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "no-order",
+      "headRefOid": "f930191514fd19373facf3414e4c9001ac2cd18d",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
