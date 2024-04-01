@@ -65,11 +65,12 @@ various programming languages can be found at
 
 # Introduction
 
-This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the QUIC protocol (see
-{{!QUIC-TRANSPORT=RFC9000}}, {{!QUIC-RECOVERY=RFC9002}}, and
-{{!QUIC-TLS=RFC9001}}) and some of its extensions (see
-{{!QUIC-DATAGRAM=RFC9221}} and {{!GREASEBIT=RFC9287}}).
+This document defines a qlog extension schema ({{Section 9 of QLOG-MAIN}})
+containing concrete qlog event definitions related to QUIC. Specifically, the
+values of the qlog name ("category" + "event") and "data" fields and their
+semantics for the QUIC protocol (see {{!QUIC-TRANSPORT=RFC9000}},
+{{!QUIC-RECOVERY=RFC9002}}, and {{!QUIC-TLS=RFC9001}}) and some of its
+extensions (see {{!QUIC-DATAGRAM=RFC9221}} and {{!GREASEBIT=RFC9287}}).
 
 ## Notational Conventions
 
@@ -89,10 +90,13 @@ implementation decision.
 
 # Overview
 
-This document describes how the QUIC protocol can be expressed in qlog using
-the schema defined in {{QLOG-MAIN}}. QUIC protocol events are defined with a
-category, a name (the concatenation of "category" and "event"), an "importance",
-an optional "trigger", and "data" fields.
+This document describes how the QUIC protocol can be expressed in qlog. It
+defines a qlog extension schema for use with the main schema {{QLOG-MAIN}}. QUIC
+protocol events are defined with a category, a name (the concatenation of
+"category" and "event"), an "importance", an optional "trigger", and "data"
+fields. The schema is identified by the URI "urn:ietf:params:qlog:quic", that
+contains the following category identifiers: "connectivity", "quic", "security",
+and "recovery".
 
 Some data fields use complex datastructures. These are represented as enums or
 re-usable definitions, which are grouped together on the bottom of this document
@@ -2175,6 +2179,9 @@ identifer" registry.
 
 Extension URI:
 : urn:ietf:params:qlog:quic
+
+Category Identifier(s):
+: connectivity, quic, security, recovery
 
 Description:
 : Event definitions related to the QUIC transport protocol.

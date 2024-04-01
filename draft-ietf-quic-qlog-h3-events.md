@@ -71,11 +71,11 @@ various programming languages can be found at
 # Introduction
 
 This document defines a qlog extension schema ({{Section 9 of QLOG-MAIN}})
-containing concrete qlog event definitions and their metadata for HTTP/3-related
-events. Specifically, the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the HTTP/3 protocol {{RFC9114}} and some
-of its extensions (see {{!EXTENDED-CONNECT=RFC9220}},
-{{!H3_PRIORITIZATION=RFC9218}} and {{!H3-DATAGRAM=RFC9297}}).
+containing concrete qlog event definitions related to HTTP/3. Specifically, the
+values of the qlog name ("category" + "event") and "data" fields and their
+semantics for the HTTP/3 protocol {{RFC9114}} and some of its extensions (see
+{{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}} and
+{{!H3-DATAGRAM=RFC9297}}).
 
 ## Notational Conventions
 
@@ -95,12 +95,12 @@ implementation decision.
 
 # Overview
 
-This document defines a single event schema identified by the URI
-"urn:ietf:params:qlog:h3".
-
+This document describes how the QUIC protocol can be expressed in qlog. It
+defines a qlog extension schema for use with the main schema {{QLOG-MAIN}}.
 HTTP/3 events are defined with a category, a name (the concatenation of
 "category" and "event"), an "importance", an optional "trigger", and "data"
-fields.
+fields.  The schema is identified by the URI "urn:ietf:params:qlog:h3", it
+contains a category identifier "h3".
 
 Some data fields use complex datastructures. These are represented as enums or
 re-usable definitions, which are grouped together on the bottom of this document
@@ -118,6 +118,8 @@ identify themselves using this URI.
 Implementations of draft versions of the extension schema MUST append the string
 "-" and the corresponding draft number to the URI. For example, draft 07 of this
 document is identified using the URI "urn:ietf:params:qlog:h3-07".
+
+The category name is not affected by this requirement.
 
 ## Usage with QUIC
 
@@ -676,6 +678,9 @@ identifer" registry.
 
 Extension URI:
 : urn:ietf:params:qlog:h3
+
+Category Identifier(s):
+: h3
 
 Description:
 : Event definitions related to the HTTP/3 application protocol.
