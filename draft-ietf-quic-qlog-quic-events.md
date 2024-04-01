@@ -94,7 +94,7 @@ This document describes how the QUIC protocol can be expressed in qlog. It
 defines a qlog extension schema for use with the main schema {{QLOG-MAIN}}. QUIC
 protocol events are defined with a category, a name (the concatenation of
 "category" and "event"), an "importance", an optional "trigger", and "data"
-fields. The schema is identified by the URI "urn:ietf:params:qlog:quic", that
+fields. The schema is identified by the URI "urn:ietf:params:qlog:quic", it
 contains the following category identifiers: "connectivity", "quic", "security",
 and "recovery".
 
