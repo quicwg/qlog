@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 22 September 2024                                          Meta
+Expires: 3 October 2024                                             Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                           21 March 2024
+                                                            1 April 2024
 
 
                       Main logging schema for qlog
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 22 September 2024.
+   This Internet-Draft will expire on 3 October 2024.
 
 Copyright Notice
 
@@ -1249,9 +1249,17 @@ Table of Contents
 9.1.  Extended Event Schema
 
    New event definitions SHOULD be part of an extension schema, using
-   the annotations and concepts presented in this section.  Events can
-   be grouped together into a category but cannot belong to multiple
-   categories.  A schema defines one or more qlog event categories.
+   the annotations and concepts presented in this section.
+
+   A schema defines one or more qlog event categories that can contain
+   multiple event definitions.  Each event MUST only belong to a single
+   category.
+
+   It is not possible to extend a category with new events.  Instead,
+   extension schema MUST define new categories with globally unique
+   identifiers.  Per #name-field, event names are the concatenation of
+   category and type.  Therefore, unique category identifiers ensure
+   events in qlog files are disambuiguated.
 
    Each extension schema is named by a URI.  That URI MUST be absolute;
    it precisely identifies the format and meaning of the extension.
@@ -1259,8 +1267,8 @@ Table of Contents
    the form mmyyyy.  The definition of the schema and assignment of the
    URI MUST have been authorized by the owner of the domain name on or
    very close to that date.  (This avoids problems when domain names
-   change ownership.)  If the resource or document defines several
-   categories, then the URI MUST identify the actual extension in use,
+   change ownership.)  If the resource or document defines several event
+   categories, then the URI MUST identify the actual category in use,
    e.g., using a fragment or query identifier (characters after a "#" or
    "?" in the URI).
 
@@ -1268,18 +1276,29 @@ Table of Contents
    with urn:ietf:params:qlog: followed by a registered, descriptive
    name.
 
-   A log file that that uses events from extension schema SHOULD list
-   all schema identifiers in the additional_event_schemas field.
+   A log file that uses events from extension schema SHOULD list all
+   schema identifiers in the additional_event_schemas field; see
+   Section 3 and Section 4.
 
-   For example, a qlog file that uses two hypothetical standard qlog
-   extension schema named "rick" and "morty", along with a private
-   extension named "pickle" would indicate this as:
+   In the following example, a qlog file contains two hypothetical
+   standardized extension schema, along with a private extension.  The
+   first schema is named "rick" and consists of categories "roll",
+   "astley", and "moranis".  The second schema is named "john" and
+   consists of categories "doe", "candy", and "goodman".  The private
+   schema is named "pickle" and consists of categories "pepper",
+   "lilly", and "rick":
 
-   additional_event_schemas = [
-                               urn:ietf:params:qlog:rick,
-                               urn:ietf:params:qlog:morty,
-                               https://example.com/032024/pickle.html#me
-                             ]
+additional_event_schemas = [
+                            urn:ietf:params:qlog:rick#roll,
+                            urn:ietf:params:qlog:rick#astley,
+                            urn:ietf:params:qlog:rick#moranis,
+                            urn:ietf:params:qlog:john#doe,
+                            urn:ietf:params:qlog:john#candy,
+                            urn:ietf:params:qlog:john#goodman,
+                            https://example.com/032024/pickle.html#pepper,
+                            https://example.com/032024/pickle.html#lilly,
+                            https://example.com/032024/pickle.html#rick,
+                          ]
 
    The registration requirements for extension schema identifiers are
    detailed in Section 14.
@@ -1824,10 +1843,10 @@ Table of Contents
    purpose of registering event extension schema.  It has the following
    format:
 
-                +===============+=============+===========+
-                | Extension URI | Description | Reference |
-                +===============+=============+===========+
-                +---------------+-------------+-----------+
+    +===============+=======================+=============+===========+
+    | Extension URI | Categor Identifier(s) | Description | Reference |
+    +===============+=======================+=============+===========+
+    +---------------+-----------------------+-------------+-----------+
 
                                   Table 1
 
@@ -1837,14 +1856,20 @@ Table of Contents
    of [RFC8126].  When reviewing requests, the expert SHOULD check that
    the guidance in Section 9 and in Section 13 has been duly considered.
    However, the outcome of this check cannot be used as a basis for
-   rejection.  The expert SHOULD also check that the request URI is
-   appropriate to the extension and unique, including determining if the
-   number of requested URIs are proportional to the number of extension
-   points.
+   rejection.
+
+   The expert SHOULD check that the request URI is appropriate to the
+   extension and unique, including determining if the number of
+   requested URIs are proportional to the number of extension points.
+   The expert MUST check that category identifiers are unique.  Non-
+   unique URI or category names are sufficent grounds for rejection.
 
    Registration requests should use the following template:
 
-   Extension URI:  [The extension identifier]
+   Extension URI:  [the extension schema identifier]
+
+   Category identifiers:  [a comma-seperated list of the full set of
+      categories belonging to the schema]
 
    Description:  [a description of the extension schema]
 
