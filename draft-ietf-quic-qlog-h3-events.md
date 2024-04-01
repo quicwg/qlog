@@ -95,7 +95,7 @@ implementation decision.
 
 # Overview
 
-This document describes how the QUIC protocol can be expressed in qlog. It
+This document describes how the HTTP/3 protocol can be expressed in qlog. It
 defines a qlog extension schema for use with the main schema {{QLOG-MAIN}}.
 HTTP/3 events are defined with a category, a name (the concatenation of
 "category" and "event"), an "importance", an optional "trigger", and "data"
