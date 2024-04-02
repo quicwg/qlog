@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 3 October 2024                                             Meta
+Expires: 4 October 2024                                             Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            1 April 2024
+                                                            2 April 2024
 
 
                       Main logging schema for qlog
@@ -54,7 +54,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 3 October 2024.
+   This Internet-Draft will expire on 4 October 2024.
 
 Copyright Notice
 
@@ -1251,12 +1251,12 @@ Table of Contents
    New event definitions SHOULD be part of an extension schema, using
    the annotations and concepts presented in this section.
 
-   A schema defines one or more qlog event categories that can contain
-   multiple event definitions.  Each event MUST only belong to a single
-   category.
+   An extension schema defines one or more qlog event categories that
+   can contain multiple event definitions.  Each event MUST only belong
+   to a single category.
 
    It is not possible to extend a category with new events.  Instead,
-   extension schema MUST define new categories with globally unique
+   extension schemas MUST define new categories with globally unique
    identifiers.  Per #name-field, event names are the concatenation of
    category and type.  Therefore, unique category identifiers ensure
    events in qlog files are disambuiguated.
@@ -1267,7 +1267,7 @@ Table of Contents
    the form mmyyyy.  The definition of the schema and assignment of the
    URI MUST have been authorized by the owner of the domain name on or
    very close to that date.  (This avoids problems when domain names
-   change ownership.)  If the resource or document defines several event
+   change ownership.)  If the extension schema contains several event
    categories, then the URI MUST identify the actual category in use,
    e.g., using a fragment or query identifier (characters after a "#" or
    "?" in the URI).
@@ -1276,29 +1276,31 @@ Table of Contents
    with urn:ietf:params:qlog: followed by a registered, descriptive
    name.
 
-   A log file that uses events from extension schema SHOULD list all
-   schema identifiers in the additional_event_schemas field; see
-   Section 3 and Section 4.
+   A log file that uses events from extension schemas SHOULD list all
+   extension schema identifiers in the additional_event_schemas field;
+   see Section 3 and Section 4.
 
-   In the following example, a qlog file contains two hypothetical
-   standardized extension schema, along with a private extension.  The
-   first schema is named "rick" and consists of categories "roll",
-   "astley", and "moranis".  The second schema is named "john" and
-   consists of categories "doe", "candy", and "goodman".  The private
-   schema is named "pickle" and consists of categories "pepper",
-   "lilly", and "rick":
+   In the following example, a qlog file contains events defined in two
+   hypothetical standardized extension schema, along with a private
+   extension.  The first schema is named "rick" and consists of
+   categories "roll", "astley", and "moranis".  The second schema is
+   named "john" and consists of categories "doe", "candy", and
+   "goodman".  The private schema is named "pickle" and consists of
+   categories "pepper", "lilly", and "rick":
 
-additional_event_schemas = [
-                            urn:ietf:params:qlog:rick#roll,
-                            urn:ietf:params:qlog:rick#astley,
-                            urn:ietf:params:qlog:rick#moranis,
-                            urn:ietf:params:qlog:john#doe,
-                            urn:ietf:params:qlog:john#candy,
-                            urn:ietf:params:qlog:john#goodman,
-                            https://example.com/032024/pickle.html#pepper,
-                            https://example.com/032024/pickle.html#lilly,
-                            https://example.com/032024/pickle.html#rick,
+"additional_event_schemas": [
+                            "urn:ietf:params:qlog:rick#roll",
+                            "urn:ietf:params:qlog:rick#astley",
+                            "urn:ietf:params:qlog:rick#moranis",
+                            "urn:ietf:params:qlog:john#doe",
+                            "urn:ietf:params:qlog:john#candy",
+                            "urn:ietf:params:qlog:john#goodman",
+                            "https://example.com/032024/pickle.html#pepper",
+                            "https://example.com/032024/pickle.html#lilly",
+                            "https://example.com/032024/pickle.html#rick",
                           ]
+
+    Figure 35: Example of using the additional-event-schema field
 
    The registration requirements for extension schema identifiers are
    detailed in Section 14.
@@ -1558,7 +1560,7 @@ additional_event_schemas = [
    tools MUST be able to deal with this situation and derive the length
    of the field from the raw value if no separate length-indicating
    field is present.  The main possible permutations are shown by
-   example in Figure 35.
+   example in Figure 36.
 
    // both the content's value and its length are present
    // (length is redundant)
@@ -1588,7 +1590,7 @@ additional_event_schemas = [
        "content": "051428"
    }
 
-          Figure 35: Example for serializing truncated hexstrings
+          Figure 36: Example for serializing truncated hexstrings
 
 10.5.  Optimization of serialized data
 
@@ -1652,7 +1654,7 @@ additional_event_schemas = [
    example, for QUIC, it is recommended to use the Original Destination
    Connection ID (ODCID), followed by the vantage point type of the
    logging endpoint.  Examples of all options for QUIC are shown in
-   Figure 36.
+   Figure 37.
 
    Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
 
@@ -1679,7 +1681,7 @@ additional_event_schemas = [
    this would result in event instances in the qlog file being
    tagged with the "group_id" field with values "abcde" and "12345".
 
-     Figure 36: Environment variable examples for a QUIC implementation
+     Figure 37: Environment variable examples for a QUIC implementation
 
 12.  Tooling requirements
 
@@ -1843,12 +1845,12 @@ additional_event_schemas = [
    purpose of registering event extension schema.  It has the following
    format:
 
-    +===============+=======================+=============+===========+
-    | Extension URI | Categor Identifier(s) | Description | Reference |
-    +===============+=======================+=============+===========+
-    +---------------+-----------------------+-------------+-----------+
+   +===============+========================+=============+===========+
+   | Extension URI | Category Identifier(s) | Description | Reference |
+   +===============+========================+=============+===========+
+   +---------------+------------------------+-------------+-----------+
 
-                                  Table 1
+                                 Table 1
 
    No entries are registered by this document.
 
