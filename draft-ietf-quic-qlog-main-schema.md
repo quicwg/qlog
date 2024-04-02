@@ -1161,11 +1161,11 @@ of protocols.
 New event definitions SHOULD be part of an extension schema, using the
 annotations and concepts presented in this section.
 
-A schema defines one or more qlog event categories that can contain multiple
+An extension schema defines one or more qlog event categories that can contain multiple
 event definitions. Each event MUST only belong to a single category.
 
 It is not possible to extend a category with new events. Instead, extension
-schema MUST define new categories with globally unique identifiers. Per
+schemas MUST define new categories with globally unique identifiers. Per
 {{{#name-field}}}, event names are the concatenation of category and type.
 Therefore, unique category identifiers ensure events in qlog files are
 disambuiguated.
@@ -1175,18 +1175,18 @@ identifies the format and meaning of the extension. URIs that contain a domain
 name SHOULD also contain a month-date in the form mmyyyy. The definition of the
 schema and assignment of the URI MUST have been authorized by the owner of the
 domain name on or very close to that date. (This avoids problems when domain
-names change ownership.) If the resource or document defines several event
+names change ownership.) If the extension schema contains several event
 categories, then the URI MUST identify the actual category in use, e.g., using
 a fragment or query identifier (characters after a "#" or "?" in the URI).
 
 For extensions defined in RFCs, the URI used SHOULD be a URN starting with
 `urn:ietf:params:qlog:` followed by a registered, descriptive name.
 
-A log file that uses events from extension schema SHOULD list all schema
+A log file that uses events from extension schemas SHOULD list all extension schema
 identifiers in the `additional_event_schemas` field; see {{qlog-file-schema}}
 and {{qlog-file-seq-schema}}.
 
-In the following example, a qlog file contains two hypothetical standardized
+In the following example, a qlog file contains events defined in two hypothetical standardized
 extension schema, along with a private extension. The first schema is named
 "rick" and consists of categories "roll", "astley", and "moranis". The second
 schema is named "john" and consists of categories "doe", "candy", and "goodman".
@@ -1194,18 +1194,19 @@ The private schema is named "pickle" and consists of categories "pepper",
 "lilly", and "rick":
 
 ~~~
-additional_event_schemas = [
-                            urn:ietf:params:qlog:rick#roll,
-                            urn:ietf:params:qlog:rick#astley,
-                            urn:ietf:params:qlog:rick#moranis,
-                            urn:ietf:params:qlog:john#doe,
-                            urn:ietf:params:qlog:john#candy,
-                            urn:ietf:params:qlog:john#goodman,
-                            https://example.com/032024/pickle.html#pepper,
-                            https://example.com/032024/pickle.html#lilly,
-                            https://example.com/032024/pickle.html#rick,
+"additional_event_schemas": [
+                            "urn:ietf:params:qlog:rick#roll",
+                            "urn:ietf:params:qlog:rick#astley",
+                            "urn:ietf:params:qlog:rick#moranis",
+                            "urn:ietf:params:qlog:john#doe",
+                            "urn:ietf:params:qlog:john#candy",
+                            "urn:ietf:params:qlog:john#goodman",
+                            "https://example.com/032024/pickle.html#pepper",
+                            "https://example.com/032024/pickle.html#lilly",
+                            "https://example.com/032024/pickle.html#rick",
                           ]
 ~~~
+{: #additional-event-schema-ex title="Example of using the additional-event-schema field"}
 
 The registration requirements for extension schema identifiers are detailed in
 {{iana}}.
@@ -1708,7 +1709,7 @@ IANA is requested to create the "qlog event extension schema identifer" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
 event extension schema. It has the following format:
 
-| Extension URI | Categor Identifier(s) | Description | Reference |
+| Extension URI | Category Identifier(s) | Description | Reference |
 ||||
 
 No entries are registered by this document.
