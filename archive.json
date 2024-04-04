@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-04-02T00:47:23.798210+00:00",
+  "timestamp": "2024-04-04T00:46:03.378482+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -21463,13 +21463,13 @@
       "labels": [],
       "body": "Alternative to #284.\r\n\r\nThis follows Lennox's suggestion to take influence from RFC 8285 and reference\r\nextension schema according to a URI. IETF documents can use URNs under a formal\r\nnamespace, and as such we register a new `qlog` URN Sub-namespace for\r\nRegistered Protocol Parameter Identifiers.\r\n\r\nFixes #283",
       "createdAt": "2024-03-17T23:59:57Z",
-      "updatedAt": "2024-04-01T11:40:41Z",
+      "updatedAt": "2024-04-02T14:13:06Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
       "headRepository": "quicwg/qlog",
       "headRefName": "extension-schema",
-      "headRefOid": "889d6d4396751bb7e5596576dcb964f4764d9a46",
+      "headRefOid": "2735deaf2fc575513d59c7de3aa0eba854fcc60e",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -21502,6 +21502,27 @@
           "body": "On thinking some more, I think allowing extension of categories with new events is a complication we can avoid. Specifically, allowing different documents to extend a category risks non-unique event names if the document author is not careful with type names. For example. if `ext-schema-a` and `ext-schema-b` both extend `h3` with a `my-ev-type` event (concating to the name `h3:my-ev-type`, then they'll be fine until someone tries to use both. It's going to be very hard to police event type names, especially for private extensions.\r\n\r\nInstead, we can enforce that new schema need to define new globally-unique categories. For example, if we wanted to add new quic events in the future as part of a rollup extension schema, we could define `quic-2030`, `recovery-2030` etc. Adding this to the guidance pushes private extensions to avoid the problem, and requires standard extensions to do it.\r\n\r\nI pushed an update that attempts to explain all this.\r\n\r\n",
           "createdAt": "2024-04-01T11:36:02Z",
           "updatedAt": "2024-04-01T11:36:02Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> As you'll see, a few remarks, most tiny, but a few that imo should be tackled.\r\n> \r\n> I'm personally not a big fan of disallowing extensions to extend existing protocol/category namespaces... I get the rationale, but I think this will cause unnecessary churn and overhead for implementers (listing all extension docs in `additional_event_schema`, requesting addition to IANA, tools having to decide how to validate etc.). That said... I don't really have a better solution atm to the issues this solves :(\r\n\r\nI don't think it's that much extra work really. An IANA registration request is as simple as an email that will be forwarded to the designated experts (probably you, me and anyone else that wants to volunteer). Lazy implementations can omit the additional schema field at the cost of risk that tools will break. \r\n\r\nIf we allowed extension to categories while only recommending that `additional_event_schema` is provided, we risk tools having to deal with ambiguous types, which sucks. \r\n\r\n> \r\n> If we do keep this, imo we do need to add some guidance on naming of new extensions for existing qlog definitions.\r\n> \r\n> For example, https://www.ietf.org/archive/id/draft-ietf-tsvwg-careful-resume-07.html#name-cr_phase-event, is really a good fit for \"quic:recovery\", but wouldn't be able to just use that... so what should it do?\r\n> \r\n> It can't just do `quic-ext:recovery` because that would pollute `quic-ext` for all other extensions... it can't do `quic-rfcXYZA:recovery` because juck. It might do `quic-careful-resume:recovery` but this should probably be recommended by the main spec to prevent a weird growth of these things going forward (UNLESS you expect all this to be caught in the IANA registration process, where expert reviews can catch `quic-ext` and require it be renamed to something like `quic-careful-resume`? even then though... a bit of prose with an example could be nice here).\r\n\r\nThe careful resume event is a good example but I disagree about your analysis. The definition of the event leaves it completely ambiguous about what category it belongs to, so it is unclear what it's serialized name would be. You seem to assume the event is for QUIC, but careful resume is a transport-independent.  So, assuming we get this PR hammered out, the careful resume document would have clearer guidance to follow about defining an extension schema. My recommendation would for it to define a new URI like `urn:ietf:params:qlog:careful-resume` and category identifier `cr`, then the event type could be `phase_updated` and it's serialized name would be `cr:phase_updated`. \r\n\r\n",
+          "createdAt": "2024-04-02T10:46:28Z",
+          "updatedAt": "2024-04-02T10:46:28Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> If we allowed extension to categories while only recommending that additional_event_schema is provided, we risk tools having to deal with ambiguous types, which sucks.\r\n\r\nI agree, and that's why I said I also don't see a better solution (sadly) :) \r\n\r\n> The careful resume event is a good example but I disagree about your analysis\r\n\r\nSo ok, maybe careful-resume can get away with its own identifier outside of quic :) but then let's assume a loss-bits extension that is specific to QUIC's header and defines the `loss_bits_updated` event. Then it's still a bit unclear if they should have `urn:ietf:params:qlog:loss-bits` or `urn:ietf:params:qlog:quic-loss-bits` or `urn:ietf:params:qlog:quic-ext-loss-bits` or... (or if this even matters as much ;)) and thus if we should have a bit of guidance for that (i.e., extensions of existing protocols/categories)\r\n\r\n",
+          "createdAt": "2024-04-02T12:38:40Z",
+          "updatedAt": "2024-04-02T12:38:51Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I don't think the schema identifier is that important, it's just a unique thing. \r\n\r\nGuidance for category identifiers would be useful but I'm not sure we have enough experience to be that helpful. It should reflect the expert guidance, the the category name should be specific and unique, and also keep in mind that it can't be extended in future. So if there's a loss bit extension schema that wanted to have different categories if could have urn:ietf:params:qlog:loss-bits#quic-loss-bits and urn:ietf:params:qlog:loss-bits#sctp-loss-bits.\r\n\r\nThat does raise the question whether we should allow adding new categories to existing schema. That seems something that is OK. ",
+          "createdAt": "2024-04-02T14:13:05Z",
+          "updatedAt": "2024-04-02T14:13:05Z"
         }
       ],
       "reviews": [
@@ -21800,6 +21821,204 @@
               "updatedAt": "2024-04-01T09:51:22Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51m63H",
+          "commit": {
+            "abbreviatedOid": "889d6d4"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "As you'll see, a few remarks, most tiny, but a few that imo should be tackled.\r\n\r\nI'm personally not a big fan of disallowing extensions to extend existing protocol/category namespaces... I get the rationale, but I think this will cause unnecessary churn and overhead for implementers (listing all extension docs in `additional_event_schema`, requesting addition to IANA, tools having to decide how to validate etc.). That said... I don't really have a better solution atm to the issues this solves :( \r\n\r\nIf we do keep this, imo we do need to add some guidance on naming of new extensions for existing qlog definitions.\r\n\r\nFor example, https://www.ietf.org/archive/id/draft-ietf-tsvwg-careful-resume-07.html#name-cr_phase-event, is really a good fit for \"quic:recovery\", but wouldn't be able to just use that... so what should it do? \r\n\r\nIt can't just do `quic-ext:recovery` because that would pollute `quic-ext` for all other extensions... it can't do `quic-rfcXYZA:recovery` because juck. It might do `quic-careful-resume:recovery` but this should probably be recommended by the main spec to prevent a weird growth of these things going forward (UNLESS you expect all this to be caught in the IANA registration process, where expert reviews can catch `quic-ext` and require it be renamed to something like `quic-careful-resume`? even then though... a bit of prose with an example could be nice here). ",
+          "createdAt": "2024-04-02T09:16:11Z",
+          "updatedAt": "2024-04-02T09:44:16Z",
+          "comments": [
+            {
+              "originalPosition": 85,
+              "body": "Not sure if this is actually an issue, but IIUC, this would mean that listing the H3 events in `additional_event_schemas` will lead to a URI like this:\r\n\r\n`urn:ietf:params:qlog:h3#h3` \r\n\r\nConceptually fine, but the duplication of h3 is a bit weird. Makes me wonder if in general we should go for the \"full acronym\" in the extension URI (i.e., http3 instead of h3, analogous to quic instead of q1)? ",
+              "createdAt": "2024-04-02T09:16:11Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 57,
+              "body": "```suggestion\r\nAn extension schema defines one or more qlog event categories that can contain multiple\r\n```",
+              "createdAt": "2024-04-02T09:17:57Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 66,
+              "body": "```suggestion\r\nIt is not possible to extend an existing category, defined in a different document, with new events. Instead, extension\r\n```",
+              "createdAt": "2024-04-02T09:18:32Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 67,
+              "body": "```suggestion\r\nschemas MUST define new categories with globally unique identifiers. Per\r\n```",
+              "createdAt": "2024-04-02T09:18:51Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 73,
+              "body": "Not exactly sure what the intention is of including \"format\" here... might be confused with \"serialization format\", which is certainly not the intent. Replace with a different word or remove? ",
+              "createdAt": "2024-04-02T09:21:29Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 77,
+              "body": "```suggestion\r\nnames change ownership.) If the extension schema contains several event\r\n```",
+              "createdAt": "2024-04-02T09:22:15Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 79,
+              "body": "I wonder why we'd use an \"e.g.,\" here... are there other accepted options? if not, remove the e.g.,. If yes, I'd like to see at least one in the example :) ",
+              "createdAt": "2024-04-02T09:24:00Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 84,
+              "body": "```suggestion\r\nA log file that uses events from extension schemas SHOULD list all extension schema\r\n```",
+              "createdAt": "2024-04-02T09:24:35Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 85,
+              "body": "```suggestion\r\nidentifiers (potentially multiple per extension schema in the case multiple categories are used) in the `additional_event_schemas` field; see {{qlog-file-schema}}\r\n```\r\n\r\nI feel that at this point, there's lots of ambiguity between a \"schema identifier\" and a specification of it for a specific category and what should actually be listed in the `additional_event_schemas`. The example below makes it a bit clearer, but I think we need more in this prose as well. I think the above is the minimum we could get away with, but potentially more text is needed (and maybe a new term like \"category identifier\"?)",
+              "createdAt": "2024-04-02T09:26:45Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 88,
+              "body": "```suggestion\r\nIn the following example, a qlog file contains events defined in two hypothetical standardized\r\n```",
+              "createdAt": "2024-04-02T09:27:13Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 106,
+              "body": "```suggestion\r\n\"additional_event_schemas\": [\r\n                            \"urn:ietf:params:qlog:rick#roll\",\r\n                            \"urn:ietf:params:qlog:rick#astley\",\r\n                            \"urn:ietf:params:qlog:rick#moranis\",\r\n                            \"urn:ietf:params:qlog:john#doe\",\r\n                            \"urn:ietf:params:qlog:john#candy\",\r\n                            \"urn:ietf:params:qlog:john#goodman\",\r\n                            \"https://example.com/032024/pickle.html#pepper\",\r\n                            \"https://example.com/032024/pickle.html#lilly\",\r\n                            \"https://example.com/032024/pickle.html#rick\",\r\n                          ]\r\n```\r\n\r\nSince it's an example of a JSON serialized qlog file, it should be valid JSON. ",
+              "createdAt": "2024-04-02T09:30:52Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 107,
+              "body": "```suggestion\r\n~~~\r\n{: #additional-event-schema-ex title=\"Example of using the additional-event-schema field\"}\r\n```",
+              "createdAt": "2024-04-02T09:32:11Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 141,
+              "body": "```suggestion\r\n| Extension URI | Category Identifier(s) | Description | Reference |\r\n```",
+              "createdAt": "2024-04-02T09:32:45Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            },
+            {
+              "originalPosition": 86,
+              "body": "So here, I'm wondering if we should give guidance to tools on how to actually use the `additional_event_schemas` field? Like, they SHOULD use it to see if they support the listed event categories, but they SHOULD NOT bork on unexpected events (and rather just ignore them). \r\n\r\nput differently: I think we need to make clear that tools/users MUST NOT treat this as a fully qualified list and expect all/none events to be present, but rather more as a hint to further improve operations. ",
+              "createdAt": "2024-04-02T09:35:30Z",
+              "updatedAt": "2024-04-02T09:44:16Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51njZQ",
+          "commit": {
+            "abbreviatedOid": "889d6d4"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T10:23:16Z",
+          "updatedAt": "2024-04-02T10:23:16Z",
+          "comments": [
+            {
+              "originalPosition": 85,
+              "body": "yeah that makes sense",
+              "createdAt": "2024-04-02T10:23:16Z",
+              "updatedAt": "2024-04-02T10:23:17Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51nkU0",
+          "commit": {
+            "abbreviatedOid": "889d6d4"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T10:25:03Z",
+          "updatedAt": "2024-04-02T10:25:03Z",
+          "comments": [
+            {
+              "originalPosition": 66,
+              "body": "I don't think we need the \"different document\" qualification, there may be no document at all for something like a private extension. The blanket rule is always the same, no extension.",
+              "createdAt": "2024-04-02T10:25:03Z",
+              "updatedAt": "2024-04-02T10:25:03Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51nmVK",
+          "commit": {
+            "abbreviatedOid": "889d6d4"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T10:27:03Z",
+          "updatedAt": "2024-04-02T10:27:03Z",
+          "comments": [
+            {
+              "originalPosition": 73,
+              "body": "lol, still a hangover from copy/paste. What we should say here is that a schema URI precisely identifies the category name and the event type(s) (the CDDL definition)",
+              "createdAt": "2024-04-02T10:27:03Z",
+              "updatedAt": "2024-04-02T10:27:04Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51nnL9",
+          "commit": {
+            "abbreviatedOid": "889d6d4"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T10:28:44Z",
+          "updatedAt": "2024-04-02T10:28:44Z",
+          "comments": [
+            {
+              "originalPosition": 79,
+              "body": "This was also a copy/paste. I don't see a good argument for allowing flexibility to be honest. How about we just restrict it to `#`?",
+              "createdAt": "2024-04-02T10:28:44Z",
+              "updatedAt": "2024-04-02T10:28:44Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51nn7_",
+          "commit": {
+            "abbreviatedOid": "889d6d4"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T10:29:49Z",
+          "updatedAt": "2024-04-02T10:29:49Z",
+          "comments": [
+            {
+              "originalPosition": 86,
+              "body": "Yeah that would be good to have.",
+              "createdAt": "2024-04-02T10:29:49Z",
+              "updatedAt": "2024-04-02T10:29:49Z"
+            }
+          ]
         }
       ]
     },
@@ -21815,7 +22034,7 @@
       "labels": [],
       "body": "Fixes #379.\r\nAlso closes https://github.com/quicwg/qlog/issues/261, https://github.com/quicwg/qlog/issues/176, https://github.com/quicwg/qlog/issues/170, https://github.com/quicwg/qlog/issues/124, https://github.com/quicwg/qlog/issues/192, https://github.com/quicwg/qlog/issues/297.\r\n\r\nAdds extensibility for all events through the `* $$category-name-ext` pattern first used in #400, now extended to ALL events as discussed in #379.\r\n\r\nMakes all official protocol extension points also extensible in qlog. This was mostly already the case except for a few holdouts ($H3StreamType, $ProtocolType, $TransportError). The full list currently is:\r\n- frames: $QuicFrame and $H3Frame and $H3Datagram\r\n- TPs: $$quic-parametersset-extension and $$quic-parametersrestored-extension \r\n- settings: $$h3-parameters-extension (and inherently H3Setting by the way it's defined)\r\n- H3 stream types: $H3StreamType\r\n- error codes: $ApplicationError, $TransportError\r\n- ALPN (at least qlog-level APLN; the other one is inherent in ALPNInformation): $ProtocolType\r\n\r\nI don't think we need to make QUIC's StreamType extensible (since that's also in the RFC as always just uni- or bidirectional, with no way to change that through IANA (or even wire image, due to looking at the 2 LSBs)). Thoughts on this @LPardue ?\r\n\r\n\r\n",
       "createdAt": "2024-03-18T16:15:56Z",
-      "updatedAt": "2024-03-19T09:40:01Z",
+      "updatedAt": "2024-04-02T09:08:09Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
@@ -21935,6 +22154,26 @@
               "updatedAt": "2024-03-19T09:40:01Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51m2Ph",
+          "commit": {
+            "abbreviatedOid": "96c78b8"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T09:08:09Z",
+          "updatedAt": "2024-04-02T09:08:09Z",
+          "comments": [
+            {
+              "originalPosition": 35,
+              "body": "agree",
+              "createdAt": "2024-04-02T09:08:09Z",
+              "updatedAt": "2024-04-02T09:08:09Z"
+            }
+          ]
         }
       ]
     },
@@ -21950,19 +22189,93 @@
       "labels": [],
       "body": "As noticed by @LPardue [here](https://github.com/quicwg/qlog/pull/417#discussion_r1529706045), we don't actually say anywhere that CDDL field ordering does not matter (it's implied by CDDL and JSON themselves, but probably good to reinforce explicitly).\r\n\r\n Not the biggest fan of current prose... tried to find examples in other RFCs but they're all over the place :) So let me know if you'd like to see it worded differently. \r\n\r\n",
       "createdAt": "2024-03-19T09:32:55Z",
-      "updatedAt": "2024-03-19T09:32:56Z",
+      "updatedAt": "2024-04-02T08:48:51Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
       "headRepository": "quicwg/qlog",
       "headRefName": "no-order",
-      "headRefOid": "f930191514fd19373facf3414e4c9001ac2cd18d",
+      "headRefOid": "b2b962ed32c1600f1eb3b6c3c7b3e6b8ce457f81",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M51mcC6",
+          "commit": {
+            "abbreviatedOid": "f930191"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T08:25:28Z",
+          "updatedAt": "2024-04-02T08:25:28Z",
+          "comments": [
+            {
+              "originalPosition": 9,
+              "body": "I'm not sure this hits the right notes for me. An alternative suggestion is something like \r\n\r\n```suggestion\r\nThe ordering of member fields in qlog CDDL type definitions is not significant.\r\nThe ordering of member field in the serialization formats defined in this\r\ndocument, JSON ({{format-json}}) and JSON Text Sequences ({{format-json-seq}}),\r\nis not significant and qlog tools MUST NOT assume so. Other qlog serialization\r\nformats MAY define field order significance, if they do they MUST define\r\nrequirements for qlog tools supporting those formats.\r\n```",
+              "createdAt": "2024-04-02T08:25:28Z",
+              "updatedAt": "2024-04-02T08:25:28Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51mm9y",
+          "commit": {
+            "abbreviatedOid": "5811dbd"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T08:43:41Z",
+          "updatedAt": "2024-04-02T08:43:41Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "```suggestion\r\nThe ordering of member fields in the serialization formats defined in this\r\n```",
+              "createdAt": "2024-04-02T08:43:41Z",
+              "updatedAt": "2024-04-02T08:43:41Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51mnTu",
+          "commit": {
+            "abbreviatedOid": "f930191"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-04-02T08:44:22Z",
+          "updatedAt": "2024-04-02T08:44:22Z",
+          "comments": [
+            {
+              "originalPosition": 9,
+              "body": "Agree that's a much better version :) accepted",
+              "createdAt": "2024-04-02T08:44:22Z",
+              "updatedAt": "2024-04-02T08:44:22Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M51mprW",
+          "commit": {
+            "abbreviatedOid": "b2b962e"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "Lgtm :-)",
+          "createdAt": "2024-04-02T08:48:51Z",
+          "updatedAt": "2024-04-02T08:48:51Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
