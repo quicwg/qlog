@@ -8,6 +8,7 @@ ifneq (,$(shell grep "path *= *$(LIBDIR)" .gitmodules 2>/dev/null))
 else
 	git clone -q --depth 10 $(CLONE_ARGS) \
 	    -b main https://github.com/martinthomson/i-d-template $(LIBDIR)
+	git reset --hard 0c86ef463bd8e3516588c99446938ac665875e5b
 endif
 
 # run cddl_validate.sh for all drafts_source files 
