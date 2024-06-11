@@ -10,9 +10,11 @@ else
 	    -b main https://github.com/martinthomson/i-d-template $(LIBDIR)
 endif
 
-# run cddl_validate.sh for all drafts_source files 
-cddl:
-	@for f in $(drafts_source); do \
+cddl:: $(addsuffix .cddl,$(drafts))
+
+# run cddl_validate.sh for all changed files
+%.cddl: %.md
+	@for f in $@; do \
 	    echo "Validating $$f"; \
 	    ./cddl_validate.sh $$f > /tmp/foo-$$f 2>&1 ; \
 	    if [ $$? -eq 0 ]; then \
@@ -29,8 +31,7 @@ clean::
 		$(MAKE) -f $(LIBDIR)/main.mk $@
 		-rm -f \
 	    $(addsuffix -[0-9][0-9].{json$(COMMA)cddl},$(drafts)) \
-	    $(addsuffix .{json$(COMMA)cddl},$(drafts)) \
-			Gemfile.lock
+	    $(addsuffix .{json$(COMMA)cddl},$(drafts))
 
 # override lib/main.mk all target, to also install deps from Gemfile
 .PHONY: all
