@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-05-19T00:52:11.268687+00:00",
+  "timestamp": "2024-06-18T00:51:19.922940+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -8297,7 +8297,7 @@
       "id": "I_kwDOCrLn6M5-ChUf",
       "title": "packet_sent doesn't allow logging of IP address (for packets sent outside of a connection)",
       "url": "https://github.com/quicwg/qlog/issues/387",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -8306,8 +8306,8 @@
       "labels": [],
       "body": "This would be interesting for Version Negotiation, Retry, CONNECTION_CLOSE etc. sent by a server.",
       "createdAt": "2024-02-02T10:23:57Z",
-      "updatedAt": "2024-03-01T15:05:58Z",
-      "closedAt": null,
+      "updatedAt": "2024-06-10T09:47:42Z",
+      "closedAt": "2024-06-10T09:47:41Z",
       "comments": [
         {
           "author": "rmarx",
@@ -8322,6 +8322,20 @@
           "body": "So, still not a big fan of having this separately from `path_id` (see #336) or conceptually `group_id`.\r\n\r\nI get that logging a separate `path_assigned` event is annoying for this type of thing, but there you could also choose to just log the IP addresses as the `pathID` as that's a string (see for example slide 5 here: https://datatracker.ietf.org/meeting/118/materials/slides-118-quic-qlog-00). \r\n\r\nI'm mostly afraid that if you add ip fields to all these events, people will use them for \"normal\" logs as well, not just for the use cases you describe, which is something I -really- want to discourage. ",
           "createdAt": "2024-03-01T15:05:57Z",
           "updatedAt": "2024-03-01T15:05:57Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@marten-seemann now that https://github.com/quicwg/qlog/pull/336 has been merged, and with my comments above, do you think we can close this issue? ",
+          "createdAt": "2024-06-10T09:07:43Z",
+          "updatedAt": "2024-06-10T09:07:43Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed during editor's meeting.\r\n\r\nMarten: really useful to log events outside connections for debugging\r\nLucas: true, but in practice we don't do this at scale because we get so much bad stuff. Have whole DDoS protection layers to protect against this. Also annoying to link outside connection events to actual connections (e.g., VNEG/RETRY).\r\n\r\nMarten: proposed adding separate events to explicitly log this stuff\r\nRobin: seems too much work/overhead just to add ip address info. Feel like the pathID \"hack\" proposed above allows for this use case.\r\nMarten: I can work, but it's dirty. Paths aren't necessarily 4-tuples; abusing fact that pathID is a string\r\nRobin: true... but if you look at how `PathEndpointInfo` is defined, that's basically also just a 4-tuple? You would just skip the `path_assigned` step by serializing it yourself.\r\nMarten: don't want to make it more complicated than necessary. I don't like the pathID solution, really don't, but creating new events/category seems like a lot of overhead.\r\n\r\nRobin: ok. For now then just closing this issue without action; use pathID for this use case. Open to revisiting later if more feedback from the field comes in. \r\n",
+          "createdAt": "2024-06-10T09:47:42Z",
+          "updatedAt": "2024-06-10T09:47:42Z"
         }
       ]
     },
@@ -8503,15 +8517,15 @@
       "id": "I_kwDOCrLn6M6Bz-7V",
       "title": "Logging non-UTF-8 reasons",
       "url": "https://github.com/quicwg/qlog/issues/411",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "hlandau",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "Similarly to the ALPN string issue, we define the `CONNECTION_CLOSE` reason string here as text: https://github.com/quicwg/qlog/blob/57b679678b44d80234a0e10a08e53fe5ef9e7532/draft-ietf-quic-qlog-quic-events.md?plain=1#L313\r\n\r\nThe problem here is that RFC 9000 only says the reason string SHOULD be UTF-8. It could be arbitrary, or binary data, even if that is a bad idea.\r\n\r\nIt should be possible to log a reason string which an implementation sees which does not appear to be valid UTF-8.",
       "createdAt": "2024-03-10T20:18:29Z",
-      "updatedAt": "2024-03-10T20:43:06Z",
-      "closedAt": null,
+      "updatedAt": "2024-06-10T09:51:47Z",
+      "closedAt": "2024-06-10T09:51:47Z",
       "comments": [
         {
           "author": "hlandau",
@@ -20424,7 +20438,7 @@
       "labels": [],
       "body": "Fixes #192.\r\n\r\nCurrently, `$ProtocolEventData` accepts just about anything, which makes it extensible but very useless for any real validation.\r\n\r\nBy not explicitly assigning the `* text => any` to the type in the main doc, we keep the extensibility, but improve validation capabilities.\r\n\r\nThis also properly adds the Generic and Simulation events to the `$ProtocolEventData`, which they really should have been from the start ;) ",
       "createdAt": "2024-02-29T16:10:07Z",
-      "updatedAt": "2024-03-04T09:48:27Z",
+      "updatedAt": "2024-06-10T09:27:27Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "1803174140b198b76cc4258773878ad76afe50ff",
@@ -20496,6 +20510,39 @@
               "updatedAt": "2024-03-04T09:48:28Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M59mfAB",
+          "commit": {
+            "abbreviatedOid": "0febd1d"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-06-10T09:23:21Z",
+          "updatedAt": "2024-06-10T09:23:21Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "Email was sent May 13th (https://mailarchive.ietf.org/arch/msg/quic/e4CnmK2_NUrNAHOlo9Q-fV1JW6g/) without comments from the WG. So it seems this should be a go.",
+              "createdAt": "2024-06-10T09:23:21Z",
+              "updatedAt": "2024-06-10T09:23:21Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M59miDN",
+          "commit": {
+            "abbreviatedOid": "0febd1d"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-06-10T09:27:27Z",
+          "updatedAt": "2024-06-10T09:27:27Z",
+          "comments": []
         }
       ]
     },
@@ -20963,7 +21010,7 @@
       "labels": [],
       "body": "Closes #398.\r\n\r\nPTAL @hlandau. \r\n\r\nThe suggestion of using `null` as a JSON value in #398 makes conceptual sense, but not really since we're working with CDDL to define the events and their fields, as it doesn't easily allow to make a type \"nullable\" for something like this. \r\n\r\nAs such, I changed the recommendation to explicitly setting the default value if needed; I hope that's acceptable. \r\n\r\nFor the rest, I mostly just used your text with minor editorial changes. ",
       "createdAt": "2024-03-06T09:49:24Z",
-      "updatedAt": "2024-03-16T07:30:54Z",
+      "updatedAt": "2024-06-10T09:29:11Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "67a777edcf575ce9f163b4382ec1e4afed57d6bb",
@@ -21195,6 +21242,26 @@
               "updatedAt": "2024-03-16T07:30:54Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M59mi_D",
+          "commit": {
+            "abbreviatedOid": "6256a65"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-06-10T09:29:11Z",
+          "updatedAt": "2024-06-10T09:29:11Z",
+          "comments": [
+            {
+              "originalPosition": 27,
+              "body": "@marten-seemann : as discussed in the editor's meeting, PTAL and let me know which changes, if any, you'd like here. ",
+              "createdAt": "2024-06-10T09:29:11Z",
+              "updatedAt": "2024-06-10T09:29:11Z"
+            }
+          ]
         }
       ]
     },
@@ -21203,24 +21270,26 @@
       "id": "PR_kwDOCrLn6M5p0H6D",
       "title": "Add raw bytes field support to CONNECTION_CLOSE.",
       "url": "https://github.com/quicwg/qlog/pull/412",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Fixes #411\r\n\r\nSame approach as the one we look for ALPNInformation. Allows endpoints to log either, because sometimes it is more useful to print and consume a string like \"It's borked\" than it's hex encoded equivalent.",
       "createdAt": "2024-03-16T04:25:27Z",
-      "updatedAt": "2024-03-18T10:19:15Z",
+      "updatedAt": "2024-06-10T09:51:49Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
       "headRepository": "quicwg/qlog",
       "headRefName": "utf-aint",
-      "headRefOid": "33bf2bfcc4db8a71da31c4001cfd51f85be1af8a",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "e261f985058ca2cc1f17ade53b845ea56a5eeeb9",
+      "closedAt": "2024-06-10T09:51:46Z",
+      "mergedAt": "2024-06-10T09:51:46Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "13304c4dcdfff8e669a773e0e403f06a70665267"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -21376,6 +21445,45 @@
           "createdAt": "2024-03-16T09:01:50Z",
           "updatedAt": "2024-03-16T09:01:50Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M59mTT6",
+          "commit": {
+            "abbreviatedOid": "33bf2bf"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "small nits",
+          "createdAt": "2024-06-10T09:12:29Z",
+          "updatedAt": "2024-06-10T09:12:51Z",
+          "comments": [
+            {
+              "originalPosition": 6,
+              "body": "```suggestion\r\nfield. The `reason_bytes` field supports logging the raw bytes, which can be useful\r\n```",
+              "createdAt": "2024-06-10T09:12:29Z",
+              "updatedAt": "2024-06-10T09:12:51Z"
+            },
+            {
+              "originalPosition": 7,
+              "body": "```suggestion\r\nwhen the value is not UTF-8 or when an endpoint does not want to decode it.\r\n```",
+              "createdAt": "2024-06-10T09:12:39Z",
+              "updatedAt": "2024-06-10T09:12:51Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M59mz_p",
+          "commit": {
+            "abbreviatedOid": "e261f98"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-06-10T09:51:31Z",
+          "updatedAt": "2024-06-10T09:51:31Z",
+          "comments": []
         }
       ]
     },
@@ -21391,7 +21499,7 @@
       "labels": [],
       "body": "Fixes #413",
       "createdAt": "2024-03-17T02:05:57Z",
-      "updatedAt": "2024-03-18T10:17:59Z",
+      "updatedAt": "2024-06-10T09:53:03Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
@@ -21455,6 +21563,26 @@
               "updatedAt": "2024-03-18T10:17:59Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M59m1We",
+          "commit": {
+            "abbreviatedOid": "edd9600"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-06-10T09:53:02Z",
+          "updatedAt": "2024-06-10T09:53:03Z",
+          "comments": [
+            {
+              "originalPosition": 19,
+              "body": "I'll change to use the old names",
+              "createdAt": "2024-06-10T09:53:03Z",
+              "updatedAt": "2024-06-10T09:53:03Z"
+            }
+          ]
         }
       ]
     },
@@ -21470,7 +21598,7 @@
       "labels": [],
       "body": "Alternative to #284.\r\n\r\nThis follows Lennox's suggestion to take influence from RFC 8285 and reference\r\nextension schema according to a URI. IETF documents can use URNs under a formal\r\nnamespace, and as such we register a new `qlog` URN Sub-namespace for\r\nRegistered Protocol Parameter Identifiers.\r\n\r\nFixes #283",
       "createdAt": "2024-03-17T23:59:57Z",
-      "updatedAt": "2024-04-02T14:13:06Z",
+      "updatedAt": "2024-05-22T22:24:48Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
@@ -22026,6 +22154,26 @@
               "updatedAt": "2024-04-02T10:29:49Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M57iAOs",
+          "commit": {
+            "abbreviatedOid": "2735dea"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-05-22T22:24:48Z",
+          "updatedAt": "2024-05-22T22:24:48Z",
+          "comments": [
+            {
+              "originalPosition": 85,
+              "body": "how about `urn:ietf:params:qlog:http#h3`? That would make it easy to add support for other HTTP versions or extensions as new catagories",
+              "createdAt": "2024-05-22T22:24:48Z",
+              "updatedAt": "2024-05-22T22:24:48Z"
+            }
+          ]
         }
       ]
     },
@@ -22189,24 +22337,26 @@
       "id": "PR_kwDOCrLn6M5qD-aF",
       "title": "Clarify no-ordering expectation for qlog fields",
       "url": "https://github.com/quicwg/qlog/pull/418",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "As noticed by @LPardue [here](https://github.com/quicwg/qlog/pull/417#discussion_r1529706045), we don't actually say anywhere that CDDL field ordering does not matter (it's implied by CDDL and JSON themselves, but probably good to reinforce explicitly).\r\n\r\n Not the biggest fan of current prose... tried to find examples in other RFCs but they're all over the place :) So let me know if you'd like to see it worded differently. \r\n\r\n",
       "createdAt": "2024-03-19T09:32:55Z",
-      "updatedAt": "2024-04-02T08:48:51Z",
+      "updatedAt": "2024-06-10T09:09:31Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0897c957124eede9dee76ab798b1bba99d53558",
       "headRepository": "quicwg/qlog",
       "headRefName": "no-order",
       "headRefOid": "b2b962ed32c1600f1eb3b6c3c7b3e6b8ce457f81",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-06-10T09:09:23Z",
+      "mergedAt": "2024-06-10T09:09:23Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "e7e21b4cb00078370aed470df974ebde4d96a2f8"
+      },
       "comments": [],
       "reviews": [
         {
