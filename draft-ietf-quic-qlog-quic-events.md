@@ -1300,7 +1300,7 @@ The `key_updated` event has Base importance level; see {{Section 9.2 of QLOG-MAI
 
 ~~~ cddl
 SecurityKeyUpdated = {
-    key_type: KeyType
+    key_type: $KeyType
     ? old: hexstring
     ? new: hexstring
 
@@ -1329,7 +1329,7 @@ QLOG-MAIN}}.
 
 ~~~ cddl
 SecurityKeyDiscarded = {
-    key_type: KeyType
+    key_type: $KeyType
     ? key: hexstring
 
     ; needed for 1RTT key updates
@@ -1748,8 +1748,7 @@ PacketHeader = {
 
 ~~~ cddl
 Token = {
-    ? type: "retry" /
-            "resumption"
+    ? type: $TokenType
 
     ; decoded fields included in the token
     ; (typically: peer's IP address, creation time)
@@ -1760,6 +1759,11 @@ Token = {
 
     * $$quic-token-extension
 }
+
+BaseTokenType = "retry" /
+                "resumption"
+
+$TokenType /= BaseTokenType
 ~~~
 {: #token-def title="Token definition"}
 
@@ -1783,14 +1787,16 @@ parameters and in NEW_CONNECTION_ID frames.
 ## KeyType
 
 ~~~ cddl
-KeyType = "server_initial_secret" /
-          "client_initial_secret" /
-          "server_handshake_secret" /
-          "client_handshake_secret" /
-          "server_0rtt_secret" /
-          "client_0rtt_secret" /
-          "server_1rtt_secret" /
-          "client_1rtt_secret"
+BaseKeyTypes =  "server_initial_secret" /
+                "client_initial_secret" /
+                "server_handshake_secret" /
+                "client_handshake_secret" /
+                "server_0rtt_secret" /
+                "client_0rtt_secret" /
+                "server_1rtt_secret" /
+                "client_1rtt_secret"
+
+$KeyType /= BaseKeyTypes
 ~~~
 {: #keytype-def title="KeyType definition"}
 
