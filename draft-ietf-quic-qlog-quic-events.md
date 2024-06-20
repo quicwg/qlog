@@ -933,7 +933,7 @@ implementations that do not log frame contents.
 
 ~~~ cddl
 QUICPacketsAcked = {
-    ? packet_number_space: PacketNumberSpace
+    ? packet_number_space: $PacketNumberSpace
     ? packet_numbers: [+ uint64]
 
     * $$quic-packetsacked-extension
@@ -1517,7 +1517,7 @@ RecoveryLossTimerUpdated = {
     ; called "mode" in RFC 9002 A.9.
     ? timer_type: "ack" /
                   "pto"
-    ? packet_number_space: PacketNumberSpace
+    ? packet_number_space: $PacketNumberSpace
     event_type: "set" /
                 "expired" /
                 "cancelled"
@@ -1696,7 +1696,7 @@ PathEndpointInfo = {
 ## PacketType
 
 ~~~ cddl
-PacketType = "initial" /
+BasePacketTypes = "initial" /
              "handshake" /
              "0RTT" /
              "1RTT" /
@@ -1704,15 +1704,19 @@ PacketType = "initial" /
              "version_negotiation" /
              "stateless_reset" /
              "unknown"
+
+$PacketType /= BasePacketTypes
 ~~~
 {: #packettype-def title="PacketType definition"}
 
 ## PacketNumberSpace
 
 ~~~ cddl
-PacketNumberSpace = "initial" /
-                    "handshake" /
-                    "application_data"
+BasePacketNumberSpaces =  "initial" /
+                          "handshake" /
+                          "application_data"
+
+$PacketNumberSpace /= BasePacketNumberSpaces
 ~~~
 {: #packetnumberspace-def title="PacketNumberSpace definition"}
 
@@ -1721,7 +1725,7 @@ PacketNumberSpace = "initial" /
 ~~~ cddl
 PacketHeader = {
     ? quic_bit: bool .default true
-    packet_type: PacketType
+    packet_type: $PacketType
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
