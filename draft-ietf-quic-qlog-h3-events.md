@@ -191,24 +191,10 @@ The "owner" field reflects how Settings are exchanged on a connection. Sent
 settings have the value "local" and received settings have the value
 "received".
 
-As a reminder the CDDL unwrap operator (~) (see {{?RFC8610}}), copies the fields
-from the referenced type (H3Parameters) into the target type directly, extending the
-target with the unwrapped fields.
-
 ~~~ cddl
 H3ParametersSet = {
     ? owner: Owner
-    ~H3Parameters
 
-    ; qlog-specific
-    ; indicates whether this implementation waits for a SETTINGS
-    ; frame before processing requests
-    ? waits_for_settings: bool
-
-    * $$h3-parametersset-extension
-}
-
-H3Parameters = {
     ; RFC9114
     ? max_field_section_size: uint64
 
@@ -222,16 +208,19 @@ H3Parameters = {
     ; RFC9297 (SETTINGS_H3_DATAGRAM)
     ? h3_datagram: uint16
 
-    * $$h3-parameters-extension
+    ; qlog-specific
+    ; indicates whether this implementation waits for a SETTINGS
+    ; frame before processing requests
+    ? waits_for_settings: bool
+
+    * $$h3-parametersset-extension
 }
 ~~~
 {: #h3-parametersset-def title="H3ParametersSet definition"}
 
 The `parameters_set` event can contain any number of unspecified fields. This
 allows for representation of reserved settings (aka GREASE) or ad-hoc support
-for extension settings that do not have a related qlog schema definition. For
-extension settings that do have a qlog schema defintion, the
-$$h3-parameters-extension socket SHOULD be used.
+for extension settings that do not have a related qlog schema definition.
 
 ## parameters_restored {#h3-parametersrestored}
 
@@ -242,7 +231,18 @@ utilizing 0-RTT. It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 H3ParametersRestored = {
-    ~H3Parameters
+    ; RFC9114
+    ? max_field_section_size: uint64
+
+    ; RFC9204
+    ? max_table_capacity: uint64
+    ? blocked_streams_count: uint64
+
+    ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
+    ? extended_connect: uint16
+
+    ; RFC9297 (SETTINGS_H3_DATAGRAM)
+    ? h3_datagram: uint16
 
     * $$h3-parametersrestored-extension
 }
