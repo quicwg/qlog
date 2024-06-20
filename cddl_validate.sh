@@ -21,7 +21,7 @@ function extract_cddl() {
 
 # Prepend an object with all the unused types to a CDDL file
 # This makes sure there is at least 1 instance of each type to be checked by the cddl tool
-# Additionally, this generates dummy extensions for type and group sockets defined
+# Additionally, this generates sample extensions for type and group sockets defined
 # This is especially useful for extension points that are defined, but not yet exercised in the current set of documents
 # $1: the input (.cddl) file name
 function generate_aux_object() {
