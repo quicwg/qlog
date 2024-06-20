@@ -73,7 +73,7 @@ function generate_aux_object() {
     done
     echo -e "}\n" >> $tmpfile
 
-    # generate dummy extension data for the sockets
+    # generate sample extension data for the sockets
     for socket in ${all_group_sockets}; do
       # to test if the setup works, replace the next line with an empty echo; 
       # you should see cddl errors :)
