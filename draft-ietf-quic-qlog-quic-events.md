@@ -1186,23 +1186,19 @@ QUICStreamDataMoved = {
 
     ; byte length of the moved data
     ? length: uint64
-    ? from: "user" /
-            "application" /
-            "transport" /
-            "network" /
-            text
-    ? to: "user" /
-          "application" /
-          "transport" /
-          "network" /
-          text
+    ? from: $DataLocation
+    ? to: $DataLocation
     ? raw: RawInfo
 
     * $$quic-streamdatamoved-extension
 }
+
+$DataLocation /=  "user" /
+                  "application" /
+                  "transport" /
+                  "network"
 ~~~
 {: #quic-streamdatamoved-def title="QUICStreamDataMoved definition"}
-
 
 ## datagram_data_moved {#quic-datagramdatamoved}
 
@@ -1230,24 +1226,14 @@ see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
 QUICDatagramDataMoved = {
     ; byte length of the moved data
     ? length: uint64
-    ? from: "user" /
-            "application" /
-            "transport" /
-            "network" /
-            text
-    ? to: "user" /
-          "application" /
-          "transport" /
-          "network" /
-          text
+    ? from: $DataLocation
+    ? to: $DataLocation
     ? raw: RawInfo
 
     * $$quic-datagramdatamoved-extension
 }
 ~~~
 {: #quic-datagramdatamoved-def title="QUICDatagramDataMoved definition"}
-
-
 
 ## migration_state_updated {#quic-migrationstateupdated}
 Importance: Extra
