@@ -1827,7 +1827,7 @@ $QuicFrame /= {
 The QUIC frame types defined in this document are as follows:
 
 ~~~ cddl
-QuicBaseFrames /= PaddingFrame /
+QuicBaseFrames =  PaddingFrame /
                   PingFrame /
                   AckFrame /
                   ResetStreamFrame /

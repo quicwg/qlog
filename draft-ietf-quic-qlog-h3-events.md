@@ -222,9 +222,6 @@ H3Parameters = {
     ; RFC9297 (SETTINGS_H3_DATAGRAM)
     ? h3_datagram: uint16
 
-    ; additional settings for grease and extensions
-    * text => uint64
-
     * $$h3-parameters-extension
 }
 ~~~
