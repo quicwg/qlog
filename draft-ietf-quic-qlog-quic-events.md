@@ -1683,27 +1683,23 @@ PathEndpointInfo = {
 ## PacketType
 
 ~~~ cddl
-BasePacketTypes = "initial" /
-             "handshake" /
-             "0RTT" /
-             "1RTT" /
-             "retry" /
-             "version_negotiation" /
-             "stateless_reset" /
-             "unknown"
-
-$PacketType /= BasePacketTypes
+$PacketType /=  "initial" /
+                "handshake" /
+                "0RTT" /
+                "1RTT" /
+                "retry" /
+                "version_negotiation" /
+                "stateless_reset" /
+                "unknown"
 ~~~
 {: #packettype-def title="PacketType definition"}
 
 ## PacketNumberSpace
 
 ~~~ cddl
-BasePacketNumberSpaces =  "initial" /
-                          "handshake" /
-                          "application_data"
-
-$PacketNumberSpace /= BasePacketNumberSpaces
+$PacketNumberSpace /= "initial" /
+                      "handshake" /
+                      "application_data"
 ~~~
 {: #packetnumberspace-def title="PacketNumberSpace definition"}
 
@@ -1760,10 +1756,8 @@ Token = {
     * $$quic-token-extension
 }
 
-BaseTokenType = "retry" /
-                "resumption"
-
-$TokenType /= BaseTokenType
+$TokenType /= "retry" /
+              "resumption"
 ~~~
 {: #token-def title="Token definition"}
 
@@ -1787,16 +1781,14 @@ parameters and in NEW_CONNECTION_ID frames.
 ## KeyType
 
 ~~~ cddl
-BaseKeyTypes =  "server_initial_secret" /
-                "client_initial_secret" /
-                "server_handshake_secret" /
-                "client_handshake_secret" /
-                "server_0rtt_secret" /
-                "client_0rtt_secret" /
-                "server_1rtt_secret" /
-                "client_1rtt_secret"
-
-$KeyType /= BaseKeyTypes
+$KeyType /= "server_initial_secret" /
+            "client_initial_secret" /
+            "server_handshake_secret" /
+            "client_handshake_secret" /
+            "server_0rtt_secret" /
+            "client_0rtt_secret" /
+            "server_1rtt_secret" /
+            "client_1rtt_secret"
 ~~~
 {: #keytype-def title="KeyType definition"}
 
