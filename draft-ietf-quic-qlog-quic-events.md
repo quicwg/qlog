@@ -2151,12 +2151,12 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
-The frame_type_value field is the numerical value without VLIE encoding.
+The frame_type_bytes field is the numerical value without VLIE encoding.
 
 ~~~ cddl
 UnknownFrame = {
     frame_type: "unknown"
-    frame_type_value: uint64
+    frame_type_bytes: uint64
     ? raw: RawInfo
 }
 ~~~

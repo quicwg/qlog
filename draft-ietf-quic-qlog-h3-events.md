@@ -552,6 +552,9 @@ H3CancelPushFrame = {
 
 ### H3SettingsFrame
 
+The `name_bytes` field supports logging the raw value of a setting identifier,
+to support logging unknown settings.
+
 ~~~ cddl
 H3SettingsFrame = {
     frame_type: "settings"
@@ -559,7 +562,8 @@ H3SettingsFrame = {
 }
 
 H3Setting = {
-    name: text
+    ? name: text
+    ? name_bytes: uint64
     value: uint64
 }
 ~~~
