@@ -1050,21 +1050,22 @@ QUICStreamStateUpdated = {
 
     ; mainly useful when opening the stream
     ? stream_type: StreamType
-    ? old: StreamState
-    new: StreamState
+    ? old: $StreamState
+    new: $StreamState
     ? stream_side: "sending" /
                    "receiving"
 
     * $$quic-streamstateupdated-extension
 }
 
-StreamState =
+BaseStreamStates =  "idle" /
+                    "open" /
+                    "closed"
+
+GranularStreamStates =
     ; bidirectional stream states, RFC 9000 Section 3.4.
-    "idle" /
-    "open" /
     "half_closed_local" /
     "half_closed_remote" /
-    "closed" /
     ; sending-side stream states, RFC 9000 Section 3.1.
     "ready" /
     "send" /
@@ -1078,17 +1079,17 @@ StreamState =
     "reset_read" /
     ; both-side states
     "data_received" /
-    ; qlog-defined:
-    ; memory actually freed
+    ; qlog-defined: memory actually freed
     "destroyed"
+
+$StreamState /= BaseStreamStates / GranularStreamStates
 ~~~
 {: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
-QUIC implementations SHOULD mainly log the simplified bidirectional
-(HTTP/2-alike) stream states (e.g., `idle`, `open`, `closed`) instead of the more
-fine-grained stream states (e.g., `data_sent`, `reset_received`). These latter ones are
-mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
-equally.
+QUIC implementations SHOULD mainly log the simplified (HTTP/2-alike)
+BaseStreamStates instead of the more fine-grained GranularStreamStates. These
+latter ones are mainly for more in-depth debugging. Tools SHOULD be able to deal
+with both types equally.
 
 ## frames_processed {#quic-framesprocessed}
 
