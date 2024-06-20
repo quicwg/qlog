@@ -261,7 +261,7 @@ change that.
 
 Unidirectional streams in either direction begin with with a variable-length
 integer type. Where the type is not known, the stream_type value of "unknown"
-type can be used and the value captured in the stream_type_value field; a
+type can be used and the value captured in the stream_type_bytes field; a
 numerical value without variable-length integer encoding.
 
 The generic `$H3StreamType` is defined here as a CDDL "type socket" extension
@@ -274,7 +274,7 @@ H3StreamTypeSet = {
     stream_type: $H3StreamType
 
     ; only when stream_type === "unknown"
-    ? stream_type_value: uint64
+    ? stream_type_bytes: uint64
 
     ; only when stream_type === "push"
     ? associated_push_id: uint64
@@ -638,13 +638,13 @@ H3ReservedFrame = {
 
 ### H3UnknownFrame
 
-The frame_type_value field is the numerical value without variable-length
+The frame_type_bytes field is the numerical value without variable-length
 integer encoding.
 
 ~~~ cddl
 H3UnknownFrame = {
     frame_type: "unknown"
-    frame_type_value: uint64
+    frame_type_bytes: uint64
     ? raw: RawInfo
 }
 ~~~

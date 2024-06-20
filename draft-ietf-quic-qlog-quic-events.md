@@ -2151,7 +2151,8 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
-The frame_type_bytes field is the numerical value without VLIE encoding.
+The frame_type_bytes field is the numerical value without variable-length
+integer encoding.
 
 ~~~ cddl
 UnknownFrame = {
