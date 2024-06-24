@@ -330,7 +330,6 @@ ConnectivityConnectionClosed = {
         "error" /
         "stateless_reset" /
         "version_mismatch" /
-        ; for example HTTP/3's GOAWAY frame
         "application"
 
     * $$connectivity-connectionclosed-extension
