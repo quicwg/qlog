@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 19 December 2024                                           Meta
+Expires: 26 December 2024                                           Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            17 June 2024
+                                                            24 June 2024
 
 
                      HTTP/3 qlog event definitions
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 19 December 2024.
+   This Internet-Draft will expire on 26 December 2024.
 
 Copyright Notice
 
@@ -100,9 +100,7 @@ Table of Contents
        5.3.11. H3ApplicationError
    6.  Security and Privacy Considerations
    7.  IANA Considerations
-   8.  References
-     8.1.  Normative References
-     8.2.  Informative References
+   8.  Normative References
    Acknowledgements
    Change Log
      Since draft-ietf-quic-qlog-h3-events-06:
@@ -157,7 +155,11 @@ Table of Contents
 
    When any event from this document is included in a qlog trace, the
    "protocol_type" qlog array field MUST contain an entry with the value
-   "HTTP3".
+   "HTTP3":
+
+   $ProtocolType /= "HTTP3"
+
+                Figure 1: ProtocolType extension for HTTP/3
 
 2.1.  Usage with QUIC
 
@@ -212,7 +214,9 @@ Table of Contents
 4.  HTTP/3 Events
 
    HTTP/3 events extend the $ProtocolEventData extension point defined
-   in [QLOG-MAIN].
+   in [QLOG-MAIN].  Additionally, they allow for direct extensibility by
+   their use of per-event extension points via the $$ CDDL "group
+   socket" syntax, as also described in [QLOG-MAIN].
 
    H3EventData = H3ParametersSet /
                  H3ParametersRestored /
@@ -226,7 +230,7 @@ Table of Contents
 
    $ProtocolEventData /= H3EventData
 
-      Figure 1: H3EventData definition and ProtocolEventData extension
+      Figure 2: H3EventData definition and ProtocolEventData extension
 
    HTTP events are logged when a certain condition happens at the
    application layer, and there isn't always a one to one mapping
@@ -249,21 +253,9 @@ Table of Contents
    connection.  Sent settings have the value "local" and received
    settings have the value "received".
 
-   As a reminder the CDDL unwrap operator (~), see [RFC8610]), copies
-   the fields from the referenced type (H3Parameters) into the target
-   type directly, extending the target with the unwrapped fields.
-
    H3ParametersSet = {
        ? owner: Owner
-       ~H3Parameters
 
-       ; qlog-specific
-       ; indicates whether this implementation waits for a SETTINGS
-       ; frame before processing requests
-       ? waits_for_settings: bool
-   }
-
-   H3Parameters = {
        ; RFC9114
        ? max_field_section_size: uint64
 
@@ -277,11 +269,15 @@ Table of Contents
        ; RFC9297 (SETTINGS_H3_DATAGRAM)
        ? h3_datagram: uint16
 
-       ; additional settings for grease and extensions
-       * text => uint64
+       ; qlog-specific
+       ; indicates whether this implementation waits for a SETTINGS
+       ; frame before processing requests
+       ? waits_for_settings: bool
+
+       * $$h3-parametersset-extension
    }
 
-                    Figure 2: H3ParametersSet definition
+                    Figure 3: H3ParametersSet definition
 
    The parameters_set event can contain any number of unspecified
    fields.  This allows for representation of reserved settings (aka
@@ -297,15 +293,23 @@ Table of Contents
    importance level; see Section 9.2 of [QLOG-MAIN].
 
    H3ParametersRestored = {
-       ~H3Parameters
+       ; RFC9114
+       ? max_field_section_size: uint64
+
+       ; RFC9204
+       ? max_table_capacity: uint64
+       ? blocked_streams_count: uint64
+
+       ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
+       ? extended_connect: uint16
+
+       ; RFC9297 (SETTINGS_H3_DATAGRAM)
+       ? h3_datagram: uint16
+
+       * $$h3-parametersrestored-extension
    }
 
-                 Figure 3: H3ParametersRestored definition
-
-   The parameters_restored event can contain any number of unspecified
-   fields.  This allows for representation of reserved settings (aka
-   GREASE) or ad-hoc support for extension settings that do not have a
-   related qlog schema definition.
+                 Figure 4: H3ParametersRestored definition
 
 4.3.  stream_type_set
 
@@ -320,22 +324,28 @@ Table of Contents
    Unidirectional streams in either direction begin with with a
    variable-length integer type.  Where the type is not known, the
    stream_type value of "unknown" type can be used and the value
-   captured in the stream_type_value field; a numerical value without
+   captured in the stream_type_bytes field; a numerical value without
    variable-length integer encoding.
+
+   The generic $H3StreamType is defined here as a CDDL "type socket"
+   extension point.  It can be extended to support additional HTTP/3
+   stream types.
 
    H3StreamTypeSet = {
        ? owner: Owner
        stream_id: uint64
-       stream_type: H3StreamType
+       stream_type: $H3StreamType
 
        ; only when stream_type === "unknown"
-       ? stream_type_value: uint64
+       ? stream_type_bytes: uint64
 
        ; only when stream_type === "push"
        ? associated_push_id: uint64
+
+       * $$h3-streamtypeset-extension
    }
 
-   H3StreamType =  "request" /
+   $H3StreamType /=  "request" /
                      "control" /
                      "push" /
                      "reserved" /
@@ -343,7 +353,7 @@ Table of Contents
                      "qpack_encode" /
                      "qpack_decode"
 
-                    Figure 4: H3StreamTypeSet definition
+                    Figure 5: H3StreamTypeSet definition
 
 4.4.  priority_updated
 
@@ -363,9 +373,11 @@ Table of Contents
 
        ? old: H3Priority
        new: H3Priority
+
+       * $$h3-priorityupdated-extension
    }
 
-                   Figure 5: H3PriorityUpdated definition
+                   Figure 6: H3PriorityUpdated definition
 
 4.5.  frame_created
 
@@ -382,9 +394,11 @@ Table of Contents
        ? length: uint64
        frame: $H3Frame
        ? raw: RawInfo
+
+       * $$h3-framecreated-extension
    }
 
-                    Figure 6: H3FrameCreated definition
+                    Figure 7: H3FrameCreated definition
 
 4.6.  frame_parsed
 
@@ -400,9 +414,11 @@ Table of Contents
        ? length: uint64
        frame: $H3Frame
        ? raw: RawInfo
+
+       * $$h3-frameparsed-extension
    }
 
-                     Figure 7: H3FrameParsed definition
+                     Figure 8: H3FrameParsed definition
 
    HTTP/3 DATA frames can have arbitrarily large lengths to reduce frame
    header overhead.  As such, DATA frames can span multiple QUIC
@@ -424,9 +440,11 @@ Table of Contents
        quarter_stream_id: uint64
        ? datagram: $H3Datagram
        ? raw: RawInfo
+
+       * $$h3-datagramcreated-extension
    }
 
-                   Figure 8: H3DatagramCreated definition
+                   Figure 9: H3DatagramCreated definition
 
 4.8.  datagram_parsed
 
@@ -442,9 +460,11 @@ Table of Contents
        quarter_stream_id: uint64
        ? datagram: $H3Datagram
        ? raw: RawInfo
+
+       * $$h3-datagramparsed-extension
    }
 
-                   Figure 9: H3DatagramParsed definition
+                   Figure 10: H3DatagramParsed definition
 
 4.9.  push_resolved
 
@@ -462,12 +482,14 @@ Table of Contents
        ; to the push_id
        ? stream_id: uint64
        decision: H3PushDecision
+
+       * $$h3-pushresolved-extension
    }
 
    H3PushDecision = "claimed" /
-                      "abandoned"
+                    "abandoned"
 
-                    Figure 10: H3PushResolved definition
+                    Figure 11: H3PushResolved definition
 
 5.  HTTP/3 Data Field Definitions
 
@@ -478,12 +500,12 @@ Table of Contents
    Owner = "local" /
            "remote"
 
-                        Figure 11: Owner definition
+                        Figure 12: Owner definition
 
 5.2.  H3Frame
 
-   The generic $H3Frame is defined here as a CDDL extension point (a
-   "socket" or "plug").  It can be extended to support additional HTTP/3
+   The generic $H3Frame is defined here as a CDDL "type socket"
+   extension point.  It can be extended to support additional HTTP/3
    frame types.
 
    ; The H3Frame is any key-value map (e.g., JSON object)
@@ -491,7 +513,7 @@ Table of Contents
        * text => any
    }
 
-                     Figure 12: H3Frame plug definition
+                 Figure 13: H3Frame type socket definition
 
    The HTTP/3 frame types defined in this document are as follows:
 
@@ -507,21 +529,21 @@ Table of Contents
 
    $H3Frame /= H3BaseFrames
 
-                     Figure 13: H3BaseFrames definition
+                     Figure 14: H3BaseFrames definition
 
 5.3.  H3Datagram
 
-   The generic $H3Datagram is defined here as a CDDL extension point (a
-   "socket" or "plug").  It can be extended to support additional HTTP/3
+   The generic $H3Datagram is defined here as a CDDL "type socket"
+   extension point.  It can be extended to support additional HTTP/3
    datagram types.  This document intentionally does not define any
-   specific HTTP/3 Datagram types.
+   specific qlog schemas for specific HTTP/3 Datagram types.
 
    ; The H3Datagram is any key-value map (e.g., JSON object)
    $H3Datagram /= {
        * text => any
    }
 
-                   Figure 14: H3Datagram plug definition
+                Figure 15: H3Datagram type socket definition
 
 5.3.1.  H3DataFrame
 
@@ -530,7 +552,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 15: H3DataFrame definition
+                     Figure 16: H3DataFrame definition
 
 5.3.2.  H3HeadersFrame
 
@@ -558,21 +580,21 @@ Table of Contents
      }
    ]
 
-                     Figure 16: H3HeadersFrame example
+                     Figure 17: H3HeadersFrame example
 
    H3HeadersFrame = {
        frame_type: "headers"
        headers: [* H3HTTPField]
    }
 
-                    Figure 17: H3HeadersFrame definition
+                    Figure 18: H3HeadersFrame definition
 
    H3HTTPField = {
        name: text
        ? value: text
    }
 
-                     Figure 18: H3HTTPField definition
+                     Figure 19: H3HTTPField definition
 
 5.3.3.  H3CancelPushFrame
 
@@ -581,9 +603,12 @@ Table of Contents
        push_id: uint64
    }
 
-                  Figure 19: H3CancelPushFrame definition
+                  Figure 20: H3CancelPushFrame definition
 
 5.3.4.  H3SettingsFrame
+
+   The name_bytes field supports logging the raw value of a setting
+   identifier, to support logging unknown settings.
 
    H3SettingsFrame = {
        frame_type: "settings"
@@ -591,11 +616,12 @@ Table of Contents
    }
 
    H3Setting = {
-       name: text
+       ? name: text
+       ? name_bytes: uint64
        value: uint64
    }
 
-                   Figure 20: H3SettingsFrame definition
+                   Figure 21: H3SettingsFrame definition
 
 5.3.5.  H3PushPromiseFrame
 
@@ -605,7 +631,7 @@ Table of Contents
        headers: [* H3HTTPField]
    }
 
-                  Figure 21: H3PushPromiseFrame definition
+                  Figure 22: H3PushPromiseFrame definition
 
 5.3.6.  H3GoAwayFrame
 
@@ -617,7 +643,7 @@ Table of Contents
        id: uint64
    }
 
-                    Figure 22: H3GoawayFrame definition
+                    Figure 23: H3GoawayFrame definition
 
 5.3.7.  H3MaxPushIDFrame
 
@@ -626,7 +652,7 @@ Table of Contents
        push_id: uint64
    }
 
-                   Figure 23: H3MaxPushIDFrame definition
+                   Figure 24: H3MaxPushIDFrame definition
 
 5.3.8.  H3PriorityUpdateFrame
 
@@ -648,7 +674,7 @@ Table of Contents
    ; Example: u=5, i
    H3Priority = text
 
-                Figure 24: h3priorityupdateframe definition
+                Figure 25: h3priorityupdateframe definition
 
 5.3.9.  H3ReservedFrame
 
@@ -657,20 +683,20 @@ Table of Contents
        ? length: uint64
    }
 
-                   Figure 25: H3ReservedFrame definition
+                   Figure 26: H3ReservedFrame definition
 
 5.3.10.  H3UnknownFrame
 
-   The frame_type_value field is the numerical value without variable-
+   The frame_type_bytes field is the numerical value without variable-
    length integer encoding.
 
    H3UnknownFrame = {
        frame_type: "unknown"
-       frame_type_value: uint64
+       frame_type_bytes: uint64
        ? raw: RawInfo
    }
 
-                     Figure 26: UnknownFrame definition
+                     Figure 27: UnknownFrame definition
 
 5.3.11.  H3ApplicationError
 
@@ -692,12 +718,12 @@ Table of Contents
                           "http_connect_error" /
                           "http_version_fallback"
 
-                  Figure 27: H3ApplicationError definition
+                  Figure 28: H3ApplicationError definition
 
-   The H3ApplicationError defines the general $ApplicationError
-   definition in the qlog QUIC definition, see [QLOG-QUIC].
+   The H3ApplicationError extends the general $ApplicationError
+   definition in the qlog QUIC document, see [QLOG-QUIC].
 
-   ; ensure HTTP errors are properly validate in QUIC events as well
+   ; ensure HTTP errors are properly validated in QUIC events as well
    ; e.g., QUIC's ConnectionClose Frame
    $ApplicationError /= H3ApplicationError
 
@@ -710,9 +736,7 @@ Table of Contents
 
    There are no IANA considerations.
 
-8.  References
-
-8.1.  Normative References
+8.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -768,14 +792,6 @@ Table of Contents
    [RFC9297]  Schinazi, D. and L. Pardue, "HTTP Datagrams and the
               Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
               2022, <https://www.rfc-editor.org/rfc/rfc9297>.
-
-8.2.  Informative References
-
-   [RFC8610]  Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
-              Definition Language (CDDL): A Notational Convention to
-              Express Concise Binary Object Representation (CBOR) and
-              JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
-              June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
 
 Acknowledgements
 
