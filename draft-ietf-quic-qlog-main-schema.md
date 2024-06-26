@@ -1176,8 +1176,8 @@ name SHOULD also contain a month-date in the form mmyyyy. The definition of the
 schema and assignment of the URI MUST have been authorized by the owner of the
 domain name on or very close to that date. (This avoids problems when domain
 names change ownership.) If the extension schema contains several event
-categories, then the URI MUST identify the actual category in use, e.g., using
-a fragment or query identifier (characters after a "#" or "?" in the URI).
+categories, then the URI MUST identify the actual category in use using
+a fragment identifier (characters after a "#" in the URI).
 
 For extensions defined in RFCs, the URI used SHOULD be a URN starting with
 `urn:ietf:params:qlog:` followed by a registered, descriptive name.
