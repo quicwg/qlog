@@ -1161,29 +1161,33 @@ of protocols.
 New event definitions SHOULD be part of an extension schema, using the
 annotations and concepts presented in this section.
 
-An extension schema defines one or more qlog event categories that can contain multiple
-event definitions. Each event MUST only belong to a single category.
-
-It is not possible to extend a category with new events. Instead, extension
-schemas MUST define new categories with globally unique identifiers. Per
+An extension schema defines one or more qlog event categories that can contain
+multiple event definitions. Each category MUST have a globally unique category
+identifier. Each event MUST only belong to a single category. Per
 {{{#name-field}}}, event names are the concatenation of category and type.
-Therefore, unique category identifiers ensure events in qlog files are
-disambuiguated.
+Therefore, these requirements ensure there are no ambiguities when multiple
+extension schema are in use.
 
-Each extension schema is named by a URI. That URI MUST be absolute. URIs that contain a domain
-name SHOULD also contain a month-date in the form mmyyyy. The definition of the
-schema and assignment of the URI MUST have been authorized by the owner of the
-domain name on or very close to that date. (This avoids problems when domain
-names change ownership.) If the extension schema contains several event
-categories, then the URI MUST identify the actual category in use using
-a fragment identifier (characters after a "#" in the URI).
+Implementations that might record events from extension schemas SHOULD list all
+category identifiers in use. This is achieved by including the appropriate URI
+in the `additional_event_schemas` field of the QlogFile ({{qlog-file-schema}})
+or QlogFileSeq ({{qlog-file-seq-schema}}). The `additional_event_schema` is a
+hint to tools about the possible events that a qlog file might contain. The file
+may contain events that do not belong to a listed category identifier. Tools
+MUST NOT treat this as an error; see {{tooling}}.
 
-For extensions defined in RFCs, the URI used SHOULD be a URN starting with
+Each extension schema is named by a URI. That URI MUST be absolute and MUST
+include a category identifier, indicated using a fragment identifier (characters
+after a "#" in the URI).
+
+For extension schema defined in RFCs, the URI used SHOULD be a URN starting with
 `urn:ietf:params:qlog:` followed by a registered, descriptive name.
 
-A log file that uses events from extension schemas SHOULD list all extension schema
-identifiers in the `additional_event_schemas` field; see {{qlog-file-schema}}
-and {{qlog-file-seq-schema}}.
+Private or non-standard extension schema a can use other URI formats. URIs that
+contain a domain name SHOULD also contain a month-date in the form mmyyyy. The
+definition of the schema and assignment of the URI MUST have been authorized by
+the owner of the domain name on or very close to that date. (This avoids
+problems when domain names change ownership.)
 
 In the following example, a qlog file contains events defined in two hypothetical standardized
 extension schema, along with a private extension. The first schema is named
@@ -1207,7 +1211,7 @@ The private schema is named "pickle" and consists of categories "pepper",
 ~~~
 {: #additional-event-schema-ex title="Example of using the additional-event-schema field"}
 
-The registration requirements for extension schema identifiers are detailed in
+The registration requirements for extension schema URIs are detailed in
 {{iana}}.
 
 ## Event design
@@ -1704,7 +1708,7 @@ IANA Registry Reference:
 : [](https://www.iana.org/assignments/qlog){: brackets="angle"}
 
 
-IANA is requested to create the "qlog event extension schema identifer" registry
+IANA is requested to create the "qlog event extension schema URI" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
 event extension schema. It has the following format:
 
@@ -1718,7 +1722,7 @@ The registry operates under the Expert Review policy, per {{Section 4.5 of
 in {{event-extensibility}} and in {{privacy}} has been duly considered. However,
 the outcome of this check cannot be used as a basis for rejection.
 
-The expert SHOULD check that the request URI is appropriate to the extension and
+The expert SHOULD check that the requested URI is appropriate to the extension and
 unique, including determining if the number of requested URIs are proportional
 to the number of extension points.  The expert MUST check that category
 identifiers are unique. Non-unique URI or category names are sufficent grounds
