@@ -2782,25 +2782,29 @@ of protocols.<a href="#section-9-2" class="pilcrow">¶</a></p>
         </h3>
 <p id="section-9.1-1">New event definitions <span class="bcp14">SHOULD</span> be part of an extension schema, using the
 annotations and concepts presented in this section.<a href="#section-9.1-1" class="pilcrow">¶</a></p>
-<p id="section-9.1-2">An extension schema defines one or more qlog event categories that can contain multiple
-event definitions. Each event <span class="bcp14">MUST</span> only belong to a single category.<a href="#section-9.1-2" class="pilcrow">¶</a></p>
-<p id="section-9.1-3">It is not possible to extend a category with new events. Instead, extension
-schemas <span class="bcp14">MUST</span> define new categories with globally unique identifiers. Per
+<p id="section-9.1-2">An extension schema defines one or more qlog event categories that can contain
+multiple event definitions. Each category <span class="bcp14">MUST</span> have a globally unique category
+identifier. Each event <span class="bcp14">MUST</span> only belong to a single category. Per
 <span class="contact-name">#name-field</span>, event names are the concatenation of category and type.
-Therefore, unique category identifiers ensure events in qlog files are
-disambuiguated.<a href="#section-9.1-3" class="pilcrow">¶</a></p>
-<p id="section-9.1-4">Each extension schema is named by a URI. That URI <span class="bcp14">MUST</span> be absolute. URIs that contain a domain
-name <span class="bcp14">SHOULD</span> also contain a month-date in the form mmyyyy. The definition of the
-schema and assignment of the URI <span class="bcp14">MUST</span> have been authorized by the owner of the
-domain name on or very close to that date. (This avoids problems when domain
-names change ownership.) If the extension schema contains several event
-categories, then the URI <span class="bcp14">MUST</span> identify the actual category in use using
-a fragment identifier (characters after a "#" in the URI).<a href="#section-9.1-4" class="pilcrow">¶</a></p>
-<p id="section-9.1-5">For extensions defined in RFCs, the URI used <span class="bcp14">SHOULD</span> be a URN starting with
+Therefore, these requirements ensure there are no ambiguities when multiple
+extension schema are in use.<a href="#section-9.1-2" class="pilcrow">¶</a></p>
+<p id="section-9.1-3">Implementations that might record events from extension schemas <span class="bcp14">SHOULD</span> list all
+category identifiers in use. This is achieved by including the appropriate URI
+in the <code>additional_event_schemas</code> field of the QlogFile (<a href="#qlog-file-schema" class="auto internal xref">Section 3</a>)
+or QlogFileSeq (<a href="#qlog-file-seq-schema" class="auto internal xref">Section 4</a>). The <code>additional_event_schema</code> is a
+hint to tools about the possible events that a qlog file might contain. The file
+may contain events that do not belong to a listed category identifier. Tools
+<span class="bcp14">MUST NOT</span> treat this as an error; see <a href="#tooling" class="auto internal xref">Section 12</a>.<a href="#section-9.1-3" class="pilcrow">¶</a></p>
+<p id="section-9.1-4">Each extension schema is named by a URI. That URI <span class="bcp14">MUST</span> be absolute and <span class="bcp14">MUST</span>
+include a category identifier, indicated using a fragment identifier (characters
+after a "#" in the URI).<a href="#section-9.1-4" class="pilcrow">¶</a></p>
+<p id="section-9.1-5">For extension schema defined in RFCs, the URI used <span class="bcp14">SHOULD</span> be a URN starting with
 <code>urn:ietf:params:qlog:</code> followed by a registered, descriptive name.<a href="#section-9.1-5" class="pilcrow">¶</a></p>
-<p id="section-9.1-6">A log file that uses events from extension schemas <span class="bcp14">SHOULD</span> list all extension schema
-identifiers in the <code>additional_event_schemas</code> field; see <a href="#qlog-file-schema" class="auto internal xref">Section 3</a>
-and <a href="#qlog-file-seq-schema" class="auto internal xref">Section 4</a>.<a href="#section-9.1-6" class="pilcrow">¶</a></p>
+<p id="section-9.1-6">Private or non-standard extension schema a can use other URI formats. URIs that
+contain a domain name <span class="bcp14">SHOULD</span> also contain a month-date in the form mmyyyy. The
+definition of the schema and assignment of the URI <span class="bcp14">MUST</span> have been authorized by
+the owner of the domain name on or very close to that date. (This avoids
+problems when domain names change ownership.)<a href="#section-9.1-6" class="pilcrow">¶</a></p>
 <p id="section-9.1-7">In the following example, a qlog file contains events defined in two hypothetical standardized
 extension schema, along with a private extension. The first schema is named
 "rick" and consists of categories "roll", "astley", and "moranis". The second
@@ -2828,7 +2832,7 @@ The private schema is named "pickle" and consists of categories "pepper",
 <a href="#name-example-of-using-the-additi" class="selfRef">Example of using the additional-event-schema field</a>
           </figcaption></figure>
 </div>
-<p id="section-9.1-9">The registration requirements for extension schema identifiers are detailed in
+<p id="section-9.1-9">The registration requirements for extension schema URIs are detailed in
 <a href="#iana" class="auto internal xref">Section 14</a>.<a href="#section-9.1-9" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -3384,7 +3388,7 @@ Registered Protocol Parameter Identifiers" registry (<span>[<a href="#RFC3553" c
 </dd>
       <dd class="break"></dd>
 </dl>
-<p id="section-14-3">IANA is requested to create the "qlog event extension schema identifer" registry
+<p id="section-14-3">IANA is requested to create the "qlog event extension schema URI" registry
 at <span><a href="https://www.iana.org/assignments/qlog">https://www.iana.org/assignments/qlog</a></span> for the purpose of registering
 event extension schema. It has the following format:<a href="#section-14-3" class="pilcrow">¶</a></p>
 <table class="center" id="table-1">
@@ -3410,7 +3414,7 @@ event extension schema. It has the following format:<a href="#section-14-3" clas
 <p id="section-14-6">The registry operates under the Expert Review policy, per <span><a href="https://rfc-editor.org/rfc/rfc8126#section-4.5" class="relref">Section 4.5</a> of [<a href="#RFC8126" class="cite xref">RFC8126</a>]</span>.  When reviewing requests, the expert <span class="bcp14">SHOULD</span> check that the guidance
 in <a href="#event-extensibility" class="auto internal xref">Section 9</a> and in <a href="#privacy" class="auto internal xref">Section 13</a> has been duly considered. However,
 the outcome of this check cannot be used as a basis for rejection.<a href="#section-14-6" class="pilcrow">¶</a></p>
-<p id="section-14-7">The expert <span class="bcp14">SHOULD</span> check that the request URI is appropriate to the extension and
+<p id="section-14-7">The expert <span class="bcp14">SHOULD</span> check that the requested URI is appropriate to the extension and
 unique, including determining if the number of requested URIs are proportional
 to the number of extension points.  The expert <span class="bcp14">MUST</span> check that category
 identifiers are unique. Non-unique URI or category names are sufficent grounds
