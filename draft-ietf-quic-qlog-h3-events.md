@@ -574,12 +574,10 @@ H3SettingsFrame = {
 }
 
 H3Setting = {
-    ? name: text
-    ? name_bytes: uint64
     ? name: H3SettingsName
-
     ; only when name === "unknown"
-    ? raw_type: uint64
+    ? name_bytes: uint64
+
     value: uint64
 }
 
