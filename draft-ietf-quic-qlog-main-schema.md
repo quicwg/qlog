@@ -1146,14 +1146,14 @@ SimulationMarker = {
 # Event extensibility {#event-extensibility}
 
 The main qlog schema defined by this document describes log and trace formats
-that have related events. A minimal set of common events are presented in
+that have related events. A minimal set of common events is presented in
 {{events}}. It is expected that logging is extended with specific, per-protocol
 event definitions that specify the name (category + type) and data needed for
 each individual event. Examples include the QUIC event definitions {{QLOG-QUIC}}
 and HTTP/3 event definitions {{QLOG-H3}}.
 
 New event definitions SHOULD follow the guidance in this section, which provides
-consistency that makes it easier for qlog implementers to support a wide variety
+consistency measures that make it easier for qlog implementers to support a wide variety
 of protocols.
 
 ## Extended Event Schema
@@ -1172,8 +1172,8 @@ Implementations that might record events from extension schemas SHOULD list all
 category identifiers in use. This is achieved by including the appropriate URI
 in the `additional_event_schemas` field of the QlogFile ({{qlog-file-schema}})
 or QlogFileSeq ({{qlog-file-seq-schema}}). The `additional_event_schema` is a
-hint to tools about the possible events that a qlog file might contain. The file
-may contain events that do not belong to a listed category identifier. Tools
+hint to tools about the possible event categories (and event types contained therein) that a qlog file might contain. The file
+may contain event types that do not belong to a listed category identifier. Tools
 MUST NOT treat this as an error; see {{tooling}}.
 
 Each extension schema is named by a URI. That URI MUST be absolute and MUST
@@ -1183,7 +1183,7 @@ after a "#" in the URI).
 For extension schema defined in RFCs, the URI used SHOULD be a URN starting with
 `urn:ietf:params:qlog:` followed by a registered, descriptive name.
 
-Private or non-standard extension schema a can use other URI formats. URIs that
+Private or non-standard extension schema can use other URI formats. URIs that
 contain a domain name SHOULD also contain a month-date in the form mmyyyy. The
 definition of the schema and assignment of the URI MUST have been authorized by
 the owner of the domain name on or very close to that date. (This avoids
