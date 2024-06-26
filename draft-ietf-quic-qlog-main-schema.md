@@ -1170,8 +1170,7 @@ schemas MUST define new categories with globally unique identifiers. Per
 Therefore, unique category identifiers ensure events in qlog files are
 disambuiguated.
 
-Each extension schema is named by a URI. That URI MUST be absolute; it precisely
-identifies the format and meaning of the extension. URIs that contain a domain
+Each extension schema is named by a URI. That URI MUST be absolute. URIs that contain a domain
 name SHOULD also contain a month-date in the form mmyyyy. The definition of the
 schema and assignment of the URI MUST have been authorized by the owner of the
 domain name on or very close to that date. (This avoids problems when domain
