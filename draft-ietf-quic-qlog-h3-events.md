@@ -558,8 +558,14 @@ H3CancelPushFrame = {
 
 ### H3SettingsFrame
 
-The `name_bytes` field supports logging the raw value of a setting identifier,
-to support logging unknown settings.
+The settings field can contain zero or more entries. Each setting has a name
+field, which corresponds to Setting Name as defined (or as would be defined if
+registered) in the "HTTP/3 Settings" registry maintained at
+<https://www.iana.org/assignments/http3-parameters>.
+
+An endpoint that receives unknown settings is not able to log a specific name.
+Instead, the name value of "unknown" can be used and the value captured in the
+`name_bytes` field; a numerical value without variable-length integer encoding.
 
 ~~~ cddl
 H3SettingsFrame = {
@@ -568,10 +574,20 @@ H3SettingsFrame = {
 }
 
 H3Setting = {
-    ? name: text
+    ? name: $H3SettingsName
+    ; only when name === "unknown"
     ? name_bytes: uint64
+
     value: uint64
 }
+
+$H3SettingsName /= "settings_qpack_max_table_capacity" /
+                   "settings_max_field_section_size" /
+                   "settings_qpack_blocked_streams" /
+                   "settings_enable_connect_protocol" /
+                   "settings_h3_datagram" /
+                   "reserved" /
+                   "unknown"
 ~~~
 {: #h3settingsframe-def title="H3SettingsFrame definition"}
 
