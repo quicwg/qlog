@@ -503,10 +503,38 @@ H3DataFrame = {
 
 ### H3HeadersFrame
 
-This represents an *uncompressed*, plaintext HTTP Headers frame (e.g., no QPACK
-compression is applied).
+The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an HTTP field
+section; see {{Section 7.2.2 of RFC9114}}. `H3HeaderFrame`, in contrast,
+contains the HTTP field section without QPACK encoding.
 
-For example:
+~~~ cddl
+H3HTTPField = {
+    ? name: text
+    ? name_bytes: hexstring
+    ? value: text
+    ? value_bytes: hexstring
+}
+~~~
+{: #h3field-def title="H3HTTPField definition"}
+
+~~~ cddl
+H3HeadersFrame = {
+    frame_type: "headers"
+    headers: [* H3HTTPField]
+}
+~~~
+{: #h3-headersframe-def title="H3HeadersFrame definition"}
+
+For example, the HTTP field section
+
+~~~
+:path: value
+:method: GET
+:authority: example.org
+:scheme: https
+~~~
+
+would be represented in a JSON serialization as:
 
 ~~~
 headers: [
@@ -520,7 +548,7 @@ headers: [
   },
   {
     "name": ":authority",
-    "value": "127.0.0.1:4433"
+    "value": "example.org"
   },
   {
     "name": ":scheme",
@@ -530,31 +558,17 @@ headers: [
 ~~~
 {: #h3-headersframe-ex title="H3HeadersFrame example"}
 
-~~~ cddl
-H3HeadersFrame = {
-    frame_type: "headers"
-    headers: [* H3HTTPField]
-}
-~~~
-{: #h3-headersframe-def title="H3HeadersFrame definition"}
+{{Section 4.2 of RFC9114}} and {{Section 5.1 of RFC 9110}} define rules for the
+characters used in HTTP field sections names and values. Characters outside the
+range are invalid and result in the message being treated as malformed.
 
-HTTP/3 can transport field names or values that are not valid; see {{Section 4.2
-of RFC9114}}. While it is usually expected that fields can be presented as
-strings, where invalid values are received it can be useful to log the exact
-bytes. In order to support either format, the `H3HTTPField` has fields of either
-text or hexstring type. An `H3HTTPField` MUST include either the `name` or
-`name_bytes` field and MAY include both. An `H3HTTPField` MAY include a
-`value` or `value_bytes` field or neither.
-
-~~~ cddl
-H3HTTPField = {
-    ? name: text
-    ? name_bytes: hexstring
-    ? value: text
-    ? value_bytes: hexstring
-}
-~~~
-{: #h3field-def title="H3HTTPField definition"}
+It is useful to log HTTP fields that are valid or invalid. Characters in the
+allowed range can be safely logged by the text type used in the `name` and
+`value` fields of `H3HTTPField`. Characters outside the range are unsafe for the
+text type and need to be logged using the `name_bytes` and `value_bytes` field.
+An instance of `H3HTTPField` MUST include either the `name` or `name_bytes`
+field and MAY include both. An `H3HTTPField` MAY include a `value` or
+`value_bytes` field or neither.
 
 ### H3CancelPushFrame
 
