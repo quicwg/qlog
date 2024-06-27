@@ -560,7 +560,7 @@ headers: [
 ~~~
 {: #h3-headersframe-ex title="H3HeadersFrame example"}
 
-{{Section 4.2 of RFC9114}} and {{Section 5.1 of RFC 9110}} define rules for the
+{{Section 4.2 of RFC9114}} and {{Section 5.1 of RFC9110}} define rules for the
 characters used in HTTP field sections names and values. Characters outside the
 range are invalid and result in the message being treated as malformed.
 
