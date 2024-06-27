@@ -560,7 +560,7 @@ H3CancelPushFrame = {
 
 The settings field can contain zero or more entries. Each setting has a name
 field, which corresponds to Setting Name as defined (or as would be defined if
-registered) in the the "HTTP/3 Settings" registry maintained at
+registered) in the "HTTP/3 Settings" registry maintained at
 <https://www.iana.org/assignments/http3-parameters>.
 
 An endpoint that receives unknown settings is not able to log a specific name.
@@ -574,14 +574,14 @@ H3SettingsFrame = {
 }
 
 H3Setting = {
-    ? name: H3SettingsName
+    ? name: $H3SettingsName
     ; only when name === "unknown"
     ? name_bytes: uint64
 
     value: uint64
 }
 
-H3SettingsName = "settings_qpack_max_table_capacity" /
+$H3SettingsName /= "settings_qpack_max_table_capacity" /
                    "settings_max_field_section_size" /
                    "settings_qpack_blocked_streams" /
                    "settings_enable_connect_protocol" /
