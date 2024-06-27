@@ -5,8 +5,11 @@
 set -e
 set -o nounset
 
-INPUT_FILE="$1"
-BASE_FILENAME="${INPUT_FILE%.*}"
+INPUT_FILE_ORIG="$1"
+BASE_FILENAME="${INPUT_FILE_ORIG%.*}"
+# so you can also pass the .cddl as argument, 
+# which we seem to do due to recent makefile changes somehow...
+INPUT_FILE="${BASE_FILENAME}.md" 
 CDDL_FILE="${BASE_FILENAME}.cddl"
 CDDL_JSON_FILE="${BASE_FILENAME}.json"
 

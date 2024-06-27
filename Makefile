@@ -16,11 +16,11 @@ cddl:: $(addsuffix .cddl,$(drafts))
 %.cddl: %.md
 	@for f in $@; do \
 	    echo "Validating $$f"; \
-	    ./cddl_validate.sh $$f > /tmp/foo-$$f 2>&1 ; \
+		./cddl_validate.sh $$f > /tmp/foo-$$f 2>&1 ; \
 	    if [ $$? -eq 0 ]; then \
 	        echo "  OK"; \
 	    else \
-	        echo "  ERROR"; \
+	        echo "  ERROR $$? : "; \
 					echo "  debug with: ./cddl_validate.sh $$f"; \
 	    fi; \
 	done
