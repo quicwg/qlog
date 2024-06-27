@@ -36,6 +36,8 @@ author:
     role: editor
 
 normative:
+  RFC9110:
+    display: HTTP
 
   RFC9114:
     display: HTTP/3
