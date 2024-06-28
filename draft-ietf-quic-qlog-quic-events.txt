@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 29 December 2024                                           Meta
+Expires: 30 December 2024                                           Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            27 June 2024
+                                                            28 June 2024
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 29 December 2024.
+   This Internet-Draft will expire on 30 December 2024.
 
 Copyright Notice
 
@@ -544,116 +544,76 @@ Table of Contents
    QUIC's complex handshake and connection close procedures.  It has
    Base importance level; see Section 9.2 of [QLOG-MAIN].
 
-   It is intended to provide exhaustive options to log each state
-   individually, but also provides a more basic, simpler set for
-   implementations less interested in tracking each smaller state
-   transition.  As such, users should not expect to see all these states
-   reflected in all qlogs and implementers should focus on support for
-   the SimpleConnectionState set.
+   [QUIC-TRANSPORT] does not contain an exhaustive flow diagram with
+   possible connection states nor their transitions (though some are
+   explicitly mentioned, like the 'closing' and 'draining' states).  As
+   such, this document *non-exhaustively* defines those states that are
+   most likely to be useful for debugging QUIC connections.
+
+   QUIC implementations SHOULD mainly log the simplified
+   BaseConnectionStates, adding the more fine-grained
+   GranularConnectionStates when more in-depth debugging is required.
+   Tools SHOULD be able to deal with both types equally.
 
    ConnectivityConnectionStateUpdated = {
-       ? old: ConnectionState /
-              SimpleConnectionState
-       new: ConnectionState /
-            SimpleConnectionState
+       ? old: $ConnectionState
+       new: $ConnectionState
 
        * $$connectivity-connectionstateupdated-extension
    }
 
-   ConnectionState =
-       ; initial sent/received
+   BaseConnectionStates =
+       ; Initial packet sent/received
        "attempted" /
-       ; peer address validated by: client sent Handshake packet OR
-       ; client used CONNID chosen by the server.
-       ; RFC 9000 Section 8.1
-       "peer_validated" /
+
+       ; Handshake packet sent/received
        "handshake_started" /
-       ; 1 RTT can be sent, but handshake isn't done yet
-       "early_write" /
-       ; TLS handshake complete: Finished received and sent
+
+       ; Both sent a TLS Finished message and verified the peer's TLS Finished message
+       ; 1-RTT packets can be sent
        ; RFC 9001 Section 4.1.1
        "handshake_complete" /
-       ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
-       ; can be sent). RFC 9001 Section 4.1.2
-       "handshake_confirmed" /
-       "closing" /
-       ; connection_close sent/received
-       "draining" /
-       ; draining period done, connection state discarded
+
+       ; CONNECTION_CLOSE sent/received, stateless reset received or idle timeout
        "closed"
 
-   SimpleConnectionState =
-       "attempted" /
-       "handshake_started" /
+   GranularConnectionStates =
+       ; RFC 9000 Section 8.1
+       ; client sent Handshake packet OR
+       ; client used connection ID chosen by the server OR
+       ; client used valid address validation token
+       "peer_validated" /
+
+       ; 1-RTT data can be sent by the server, but handshake is not done yet
+       ; (server has sent TLS Finished; sometimes called 0.5 RTT data)
+       "early_write" /
+
+       ; HANDSHAKE_DONE sent/received.
+       ; RFC 9001 Section 4.1.2
        "handshake_confirmed" /
+
+       ; CONNECTION_CLOSE sent
+       "closing" /
+
+       ; CONNECTION_CLOSE received
+       "draining" /
+
+       ; draining or closing period done, connection state discarded
        "closed"
+
+   $ConnectionState /= BaseConnectionStates / GranularConnectionStates
 
           Figure 8: ConnectivityConnectionStateUpdated definition
 
-   These states correspond to the following transitions for both client
-   and server:
-
-   *Client:*
-
-   *  send initial
-
-      -  state = attempted
-
-   *  get initial
-
-      -  state = validated _(not really "needed" at the client, but
-         somewhat useful to indicate progress nonetheless)_
-
-   *  get first Handshake packet
-
-      -  state = handshake_started
-
-   *  get Handshake packet containing ServerFinished
-
-      -  state = handshake_complete
-
-   *  send ClientFinished
-
-      -  state = early_write (1RTT can now be sent)
-
-   *  get HANDSHAKE_DONE
-
-      -  state = handshake_confirmed
-
-   *Server:*
-
-   *  get initial
-
-      -  state = attempted
-
-   *  send initial _(TODO don't think this needs a separate state, since
-      some handshake will always be sent in the same flight as this?)_
-
-   *  send handshake EE, CERT, CV, ...
-
-      -  state = handshake_started
-
-   *  send ServerFinished
-
-      -  state = early_write (1RTT can now be sent)
-
-   *  get first handshake packet / something using a server-issued CID
-      of min length
-
-      -  state = validated
-
-   *  get handshake packet containing ClientFinished
-
-      -  state = handshake_complete
-
-   *  send HANDSHAKE_DONE
-
-      -  state = handshake_confirmed
-
-   Note:  connection_state_changed with a new state of attempted is the
-      same conceptual event as the connection_startedevent above from
-      the client's perspective.  Similarly, a state
-      ofclosingordrainingcorresponds to theconnection_closed` event.
+   The connection_state_changed event has some overlap with the
+   connection_closed and connection_started events, and the handling of
+   various frames (for example in a packet_received event).  Still, it
+   can be useful to log these logical state transitions separately,
+   especially if they map to an internal implementation state machine,
+   to explicitly track progress.  As such, implementations are allowed
+   to use other ConnectionState values that adhere more closely to their
+   internal logic.  Tools SHOULD be able to deal with these custom
+   states in a similar way to the pre-defined states in this document.
 
 4.7.  path_assigned
 

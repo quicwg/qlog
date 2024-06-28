@@ -1034,7 +1034,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 29 December 2024</td>
+<td class="center">Expires 30 December 2024</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1047,12 +1047,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2024-06-27" class="published">27 June 2024</time>
+<time datetime="2024-06-28" class="published">28 June 2024</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2024-12-29">29 December 2024</time></dd>
+<dd class="expires"><time datetime="2024-12-30">30 December 2024</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1120,7 +1120,7 @@ various programming languages can be found at
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 29 December 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 30 December 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2101,175 +2101,79 @@ ConnectivitySpinBitUpdated = {
 <p id="section-4.6-1">The <code>connection_state_updated</code> event is used to track progress through QUIC's
 complex handshake and connection close procedures. It has Base importance
 level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.6-1" class="pilcrow">¶</a></p>
-<p id="section-4.6-2">It is intended to provide exhaustive options to log each state individually, but
-also provides a more basic, simpler set for implementations less interested in
-tracking each smaller state transition. As such, users should not expect to see
-all these states reflected in all qlogs and implementers should focus on support
-for the SimpleConnectionState set.<a href="#section-4.6-2" class="pilcrow">¶</a></p>
+<p id="section-4.6-2"><span>[<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span> does not contain an exhaustive flow diagram with possible
+connection states nor their transitions (though some are explicitly mentioned,
+like the 'closing' and 'draining' states). As such, this document
+<strong>non-exhaustively</strong> defines those states that are most likely to be useful for
+debugging QUIC connections.<a href="#section-4.6-2" class="pilcrow">¶</a></p>
+<p id="section-4.6-3">QUIC implementations <span class="bcp14">SHOULD</span> mainly log the simplified BaseConnectionStates,
+adding the more fine-grained GranularConnectionStates when more in-depth
+debugging is required. Tools <span class="bcp14">SHOULD</span> be able to deal with both types equally.<a href="#section-4.6-3" class="pilcrow">¶</a></p>
 <span id="name-connectivityconnectionstate"></span><div id="connectivity-connectionstateupdated-def">
 <figure id="figure-8">
-          <div class="lang-cddl sourcecode" id="section-4.6-3.1">
+          <div class="lang-cddl sourcecode" id="section-4.6-4.1">
 <pre>
 ConnectivityConnectionStateUpdated = {
-    ? old: ConnectionState /
-           SimpleConnectionState
-    new: ConnectionState /
-         SimpleConnectionState
+    ? old: $ConnectionState
+    new: $ConnectionState
 
     * $$connectivity-connectionstateupdated-extension
 }
 
-ConnectionState =
-    ; initial sent/received
+BaseConnectionStates =
+    ; Initial packet sent/received
     "attempted" /
-    ; peer address validated by: client sent Handshake packet OR
-    ; client used CONNID chosen by the server.
-    ; RFC 9000 Section 8.1
-    "peer_validated" /
+
+    ; Handshake packet sent/received
     "handshake_started" /
-    ; 1 RTT can be sent, but handshake isn't done yet
-    "early_write" /
-    ; TLS handshake complete: Finished received and sent
+
+    ; Both sent a TLS Finished message and verified the peer's TLS Finished message
+    ; 1-RTT packets can be sent
     ; RFC 9001 Section 4.1.1
     "handshake_complete" /
-    ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
-    ; can be sent). RFC 9001 Section 4.1.2
-    "handshake_confirmed" /
-    "closing" /
-    ; connection_close sent/received
-    "draining" /
-    ; draining period done, connection state discarded
+
+    ; CONNECTION_CLOSE sent/received, stateless reset received or idle timeout
     "closed"
 
-SimpleConnectionState =
-    "attempted" /
-    "handshake_started" /
+GranularConnectionStates =
+    ; RFC 9000 Section 8.1
+    ; client sent Handshake packet OR
+    ; client used connection ID chosen by the server OR
+    ; client used valid address validation token
+    "peer_validated" /
+
+    ; 1-RTT data can be sent by the server, but handshake is not done yet
+    ; (server has sent TLS Finished; sometimes called 0.5 RTT data)
+    "early_write" /
+
+    ; HANDSHAKE_DONE sent/received.
+    ; RFC 9001 Section 4.1.2
     "handshake_confirmed" /
+
+    ; CONNECTION_CLOSE sent
+    "closing" /
+
+    ; CONNECTION_CLOSE received
+    "draining" /
+
+    ; draining or closing period done, connection state discarded
     "closed"
+
+$ConnectionState /= BaseConnectionStates / GranularConnectionStates
 </pre>
 </div>
 <figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
 <a href="#name-connectivityconnectionstate" class="selfRef">ConnectivityConnectionStateUpdated definition</a>
           </figcaption></figure>
 </div>
-<p id="section-4.6-4">These states correspond to the following transitions for both client and server:<a href="#section-4.6-4" class="pilcrow">¶</a></p>
-<p id="section-4.6-5"><strong>Client:</strong><a href="#section-4.6-5" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-6.1">
-            <p id="section-4.6-6.1.1">send initial<a href="#section-4.6-6.1.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-6.1.2.1">
-                <p id="section-4.6-6.1.2.1.1">state = attempted<a href="#section-4.6-6.1.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-6.2">
-            <p id="section-4.6-6.2.1">get initial<a href="#section-4.6-6.2.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-6.2.2.1">
-                <p id="section-4.6-6.2.2.1.1">state = validated <em>(not really "needed" at the client, but somewhat useful to indicate progress nonetheless)</em><a href="#section-4.6-6.2.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-6.3">
-            <p id="section-4.6-6.3.1">get first Handshake packet<a href="#section-4.6-6.3.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-6.3.2.1">
-                <p id="section-4.6-6.3.2.1.1">state = handshake_started<a href="#section-4.6-6.3.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-6.4">
-            <p id="section-4.6-6.4.1">get Handshake packet containing ServerFinished<a href="#section-4.6-6.4.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-6.4.2.1">
-                <p id="section-4.6-6.4.2.1.1">state = handshake_complete<a href="#section-4.6-6.4.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-6.5">
-            <p id="section-4.6-6.5.1">send ClientFinished<a href="#section-4.6-6.5.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-6.5.2.1">
-                <p id="section-4.6-6.5.2.1.1">state = early_write
-  (1RTT can now be sent)<a href="#section-4.6-6.5.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-6.6">
-            <p id="section-4.6-6.6.1">get HANDSHAKE_DONE<a href="#section-4.6-6.6.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-6.6.2.1">
-                <p id="section-4.6-6.6.2.1.1">state = handshake_confirmed<a href="#section-4.6-6.6.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-        </ul>
-<p id="section-4.6-7"><strong>Server:</strong><a href="#section-4.6-7" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-8.1">
-            <p id="section-4.6-8.1.1">get initial<a href="#section-4.6-8.1.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-8.1.2.1">
-                <p id="section-4.6-8.1.2.1.1">state = attempted<a href="#section-4.6-8.1.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-8.2">
-            <p id="section-4.6-8.2.1">send initial <em>(TODO don't think this needs a separate state, since some handshake will always be sent in the same flight as this?)</em><a href="#section-4.6-8.2.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-4.6-8.3">
-            <p id="section-4.6-8.3.1">send handshake EE, CERT, CV, ...<a href="#section-4.6-8.3.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-8.3.2.1">
-                <p id="section-4.6-8.3.2.1.1">state = handshake_started<a href="#section-4.6-8.3.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-8.4">
-            <p id="section-4.6-8.4.1">send ServerFinished<a href="#section-4.6-8.4.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-8.4.2.1">
-                <p id="section-4.6-8.4.2.1.1">state = early_write
-  (1RTT can now be sent)<a href="#section-4.6-8.4.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-8.5">
-            <p id="section-4.6-8.5.1">get first handshake packet / something using a server-issued CID of min length<a href="#section-4.6-8.5.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-8.5.2.1">
-                <p id="section-4.6-8.5.2.1.1">state = validated<a href="#section-4.6-8.5.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-8.6">
-            <p id="section-4.6-8.6.1">get handshake packet containing ClientFinished<a href="#section-4.6-8.6.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-8.6.2.1">
-                <p id="section-4.6-8.6.2.1.1">state = handshake_complete<a href="#section-4.6-8.6.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-          <li class="normal" id="section-4.6-8.7">
-            <p id="section-4.6-8.7.1">send HANDSHAKE_DONE<a href="#section-4.6-8.7.1" class="pilcrow">¶</a></p>
-<ul class="normal">
-<li class="normal" id="section-4.6-8.7.2.1">
-                <p id="section-4.6-8.7.2.1.1">state = handshake_confirmed<a href="#section-4.6-8.7.2.1.1" class="pilcrow">¶</a></p>
-</li>
-            </ul>
-</li>
-        </ul>
-<span class="break"></span><dl class="dlParallel" id="section-4.6-9">
-          <dt id="section-4.6-9.1">Note:</dt>
-          <dd style="margin-left: 1.5em" id="section-4.6-9.2">
-            <p id="section-4.6-9.2.1"><code>connection_state_changed</code> with a new state of <code>attempted</code> is the same
-conceptual event as the <code>connection_started</code><code> event above from the client's
-perspective. Similarly, a state of </code>closing<code> or </code>draining<code> corresponds to the
-</code>connection_closed` event.<a href="#section-4.6-9.2.1" class="pilcrow">¶</a></p>
-</dd>
-        <dd class="break"></dd>
-</dl>
+<p id="section-4.6-5">The <code>connection_state_changed</code> event has some overlap with the
+<code>connection_closed</code> and <code>connection_started</code> events, and the handling of various
+frames (for example in a <code>packet_received</code> event). Still, it can be useful to
+log these logical state transitions separately, especially if they map to an
+internal implementation state machine, to explicitly track progress. As such,
+implementations are allowed to use other ConnectionState values that adhere more
+closely to their internal logic. Tools <span class="bcp14">SHOULD</span> be able to deal with these custom
+states in a similar way to the pre-defined states in this document.<a href="#section-4.6-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="connectivity-pathassigned">
