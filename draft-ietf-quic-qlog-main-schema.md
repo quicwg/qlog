@@ -221,6 +221,7 @@ component traces, defined in {{qlog-file-def}} as:
 QlogFile = {
     qlog_version: text
     ? qlog_format: text .default "JSON"
+    ? additional_event_schemas: [+ text]
     ? title: text
     ? description: text
     ? traces: [+ Trace /
@@ -235,6 +236,8 @@ The optional "qlog_format" field indicates the serialization format. Its value
 MUST either be one of the options defined in this document (i.e.,
 {{concrete-formats}}) or the field MUST be omitted entirely. When the field is
 omitted the default value of "JSON" applies.
+
+The optional "additional_event_schemas" field is described in {{event-extensibility}}.
 
 The optional "title" and "description" fields provide additional free-text
 information about the file.
@@ -375,6 +378,7 @@ of component traces, defined in {{qlog-file-def}} as:
 QlogFileSeq = {
     qlog_format: "JSON-SEQ"
     qlog_version: text
+    ? additional_event_schemas: [+ text]
     ? title: text
     ? description: text
     trace: TraceSeq
@@ -385,6 +389,8 @@ QlogFileSeq = {
 The required "qlog_format" field MUST have the value "JSON-SEQ".
 
 The required "qlog_version" field MUST have the value "0.4".
+
+The optional "additional_event_schemas" field is described in {{event-extensibility}}.
 
 The optional "title" and "description" fields provide additional free-text
 information about the file.
@@ -1254,18 +1260,76 @@ SimulationMarker = {
 ~~~
 {: #simulation-marker-def title="SimulationMarker definition"}
 
-# Event definition guidelines
+# Event extensibility {#event-extensibility}
 
-This document defines the main schema for the qlog format together with some
-common events, which on their own do not provide much logging utility. It is
-expected that logging is extended with specific, per-protocol event definitions
-that specify the name (category + type) and data needed for each individual
-event. Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3
-event definitions {{QLOG-H3}}.
+The main qlog schema defined by this document describes log and trace formats
+that have related events. A minimal set of common events is presented in
+{{events}}. It is expected that logging is extended with specific, per-protocol
+event definitions that specify the name (category + type) and data needed for
+each individual event. Examples include the QUIC event definitions {{QLOG-QUIC}}
+and HTTP/3 event definitions {{QLOG-H3}}.
 
-This section defines some basic annotations and concepts that SHOULD be used by
-event definition documents. Doing so ensures a measure of consistency that makes
-it easier for qlog implementers to support a wide variety of protocols.
+New event definitions SHOULD follow the guidance in this section, which provides
+consistency measures that make it easier for qlog implementers to support a wide variety
+of protocols.
+
+## Extended Event Schema
+
+New event definitions SHOULD be part of an extension schema, using the
+annotations and concepts presented in this section.
+
+An extension schema defines one or more qlog event categories that can contain
+multiple event definitions. Each category MUST have a globally unique category
+identifier. Each event MUST only belong to a single category. Per
+{{{#name-field}}}, event names are the concatenation of category and type.
+Therefore, these requirements ensure there are no ambiguities when multiple
+extension schema are in use.
+
+Implementations that might record events from extension schemas SHOULD list all
+category identifiers in use. This is achieved by including the appropriate URI
+in the `additional_event_schemas` field of the QlogFile ({{qlog-file-schema}})
+or QlogFileSeq ({{qlog-file-seq-schema}}). The `additional_event_schema` is a
+hint to tools about the possible event categories (and event types contained therein) that a qlog file might contain. The file
+may contain event types that do not belong to a listed category identifier. Tools
+MUST NOT treat this as an error; see {{tooling}}.
+
+Each extension schema is named by a URI. That URI MUST be absolute and MUST
+include a category identifier, indicated using a fragment identifier (characters
+after a "#" in the URI).
+
+For extension schema defined in RFCs, the URI used SHOULD be a URN starting with
+`urn:ietf:params:qlog:` followed by a registered, descriptive name.
+
+Private or non-standard extension schema can use other URI formats. URIs that
+contain a domain name SHOULD also contain a month-date in the form mmyyyy. The
+definition of the schema and assignment of the URI MUST have been authorized by
+the owner of the domain name on or very close to that date. (This avoids
+problems when domain names change ownership.)
+
+In the following example, a qlog file contains events defined in two hypothetical standardized
+extension schema, along with a private extension. The first schema is named
+"rick" and consists of categories "roll", "astley", and "moranis". The second
+schema is named "john" and consists of categories "doe", "candy", and "goodman".
+The private schema is named "pickle" and consists of categories "pepper",
+"lilly", and "rick":
+
+~~~
+"additional_event_schemas": [
+                            "urn:ietf:params:qlog:rick#roll",
+                            "urn:ietf:params:qlog:rick#astley",
+                            "urn:ietf:params:qlog:rick#moranis",
+                            "urn:ietf:params:qlog:john#doe",
+                            "urn:ietf:params:qlog:john#candy",
+                            "urn:ietf:params:qlog:john#goodman",
+                            "https://example.com/032024/pickle.html#pepper",
+                            "https://example.com/032024/pickle.html#lilly",
+                            "https://example.com/032024/pickle.html#rick",
+                          ]
+~~~
+{: #additional-event-schema-ex title="Example of using the additional-event-schema field"}
+
+The registration requirements for extension schema URIs are detailed in
+{{iana}}.
 
 ## Event design
 
@@ -1746,9 +1810,54 @@ The most sensitive data in qlog is typically contained in RawInfo type fields
 (see {{raw-info}}). Therefore, qlog users should exercise caution and limit the
 inclusion of such fields for all but the most stringent use cases.
 
-# IANA Considerations
+# IANA Considerations {#iana}
 
-There are no IANA considerations.
+IANA is requested to register a new entry in the "IETF URN Sub-namespace for
+Registered Protocol Parameter Identifiers" registry ({{!RFC3553}})":
+
+Registered Parameter Identifier:
+: qlog
+
+Reference:
+: This Document
+
+IANA Registry Reference:
+: [](https://www.iana.org/assignments/qlog){: brackets="angle"}
+
+
+IANA is requested to create the "qlog event extension schema URI" registry
+at [](https://www.iana.org/assignments/qlog) for the purpose of registering
+event extension schema. It has the following format:
+
+| Extension URI | Category Identifier(s) | Description | Reference |
+||||
+
+No entries are registered by this document.
+
+The registry operates under the Expert Review policy, per {{Section 4.5 of
+!RFC8126}}.  When reviewing requests, the expert SHOULD check that the guidance
+in {{event-extensibility}} and in {{privacy}} has been duly considered. However,
+the outcome of this check cannot be used as a basis for rejection.
+
+The expert SHOULD check that the requested URI is appropriate to the extension and
+unique, including determining if the number of requested URIs are proportional
+to the number of extension points.  The expert MUST check that category
+identifiers are unique. Non-unique URI or category names are sufficent grounds
+for rejection.
+
+Registration requests should use the following template:
+
+Extension URI:
+: \[the extension schema identifier\]
+
+Category identifiers:
+: \[a comma-seperated list of the full set of categories belonging to the schema\]
+
+Description:
+: \[a description of the extension schema\]
+
+Reference:
+: \[to a specification defining the schema\]
 
 --- back
 
@@ -1760,7 +1869,8 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema and Hugo Landau for their feedback and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau, and Jonathan Lennox for their feedback
+and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
