@@ -216,18 +216,20 @@ This is achieved by a logical logging hierarchy of:
   * Trace(s)
     * Event(s)
 
-Two log file schema are defined: QLogFile ({{qlog-file-schema}}) and QLogFileSeq
-({{qlog-file-seq-schema}}).
+An abstract LogFile class is declared ({{abstract-logfile}}), from which all
+concrete log file formats derive using log file schemas. This document defines
+the QLogFile ({{qlog-file-schema}}) and QLogFileSeq ({{qlog-file-seq-schema}})
+schemas.
 
 A trace is conceptually fluid but the conventional use case is to group events
 related to a single data flow, such as a single logical QUIC connection, at a
 single vantage point ({{vantage-point}}). Concrete trace definitions relate to
-the log file schema they are contained in; see ({{traces}}, {{trace}}, and
+the log file schemas they are contained in; see ({{traces}}, {{trace}}, and
 {{traceseq}}).
 
 Events are logged at a time instant and convey specific details of the logging
 use case. For example, a QUIC packet being sent or received. This document
-defines an abstract Event class ({{abstract-event}}) containing common fields, which
+declares an abstract Event class ({{abstract-event}}) containing common fields, which
 all concrete events derive from. Concrete events are defined by event schema
 that declare a namespace, consisting of one or more categories, containing one
 or more related event types. For example, this document defines the `main` event
@@ -244,6 +246,57 @@ schema structured as:
     * `scenario` event type
     * `marker` event type
 
+# Abstract LogFile Class {#abstract-logfile}
+
+A Log file is intended to contain a collection of events that are in some way
+related. An abstract LogFile class containing fields common to all log files is
+defined. Each concrete log file format derives from this, extending it by
+defining semantics and any custom fields.
+
+~~~ cddl
+LogFile = {
+    file_schema: text
+    qlog_serialization_format: text
+    ? title: text
+    ? description: text
+    event_schema: [+text]
+
+    ; can contain any amount of custom fields
+    * text => any
+}
+~~~
+{: #abstract-logfile-def title="LogFile definition"}
+
+The required "file_schema" field identifies the concrete log file format. It
+MUST have a value that is an absolute URI; see {{schema-uri}} for rules and
+guidance. In order to make it easier to parse and identify qlog files and their
+serialization format, the "file_schema" and "qlog_serialization_format" fields
+and their values SHOULD be in the first 256 characters/bytes of the resulting
+log file.
+
+The required "qlog_serialization_format" field indicates the serialization
+format using a media type {{!RFC2046}}. It is case-insensitive.
+
+The optional "title" and "description" fields provide additional free-text
+information about the file.
+
+The required "event_schema" field is described in {{event-types-and-schema}}.
+
+## Concrete Schema URI {#schema-uri}
+
+Concrete log file schemas MUST identify themselves using a URI.
+
+Log schemas defined by RFCs SHOULD be URN of the form
+`urn:ietf:params:qlog:file:<schema-identifier>`, where `<schema-identifier>` is
+a globally-unique name. URN MUST be registered with IANA; see {{iana}}.
+
+Private or non-standard event categories can use other URI formats. URIs that
+contain a domain name SHOULD also contain a month-date in the form mmyyyy. For
+example, "https://example.org/072024/customfileschema". The definition of the
+file schema and assignment of the URI MUST have been authorized by the owner of
+the domain name on or very close to that date. This avoids problems when domain
+names change ownership. For example,
+
 # QlogFile schema {#qlog-file-schema}
 
 A qlog using the QlogFile schema can contain several individual traces and logs
@@ -253,36 +306,19 @@ component traces, defined in {{qlog-file-def}} as:
 
 ~~~ cddl
 QlogFile = {
-    qlog_version: text
-    ? qlog_format: text .default "JSON"
-    event_categories: [+text]
-    ? title: text
-    ? description: text
     ? traces: [+ Trace /
                  TraceError]
 }
 ~~~
 {: #qlog-file-def title="QlogFile definition"}
 
-The required "qlog_version" field MUST have the value "0.4".
-
-The optional "qlog_format" field indicates the serialization format. Its value
-MUST either be one of the options defined in this document (i.e.,
-{{concrete-formats}}) or the field MUST be omitted entirely. When the field is
-omitted the default value of "JSON" applies.
-
-The optional "title" and "description" fields provide additional free-text
-information about the file.
-
-The required "event_categories" field is described in {{event-types-and-schema}}.
+The QlogFile schema URI is `urn:ietf:params:qlog:file:contained`.
 
 The optional "traces" field contains an array of qlog traces ({{trace}}), each
 of which contain metadata and an array of qlog events ({{abstract-event}}).
 
-In order to make it easier to parse and identify qlog files and their
-serialization format, the "qlog_version" and "qlog_format" fields and their
-values SHOULD be in the first 256 characters/bytes of the resulting log file.
-
+The default serialization format is JSON; see {{format-json}} for guidance
+on populating the "qlog_serialization_format" field and other considerations.
 Where a qlog file is serialized to a JSON format, one of the downsides is that
 it is inherently a non-streamable format. Put differently, it is not possible to
 simply append new qlog events to a log file without "closing" this file at the
@@ -294,8 +330,8 @@ JSON serialization example:
 
 ~~~
 {
-    "qlog_version": "0.4",
-    "qlog_format": "JSON",
+    "file_schema": "urn:ietf:params:qlog:file:contained",
+    "qlog_serialization_format": "application/qlog+json",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
     "traces": [...]
@@ -410,27 +446,18 @@ of component traces, defined in {{qlog-file-def}} as:
 
 ~~~ cddl
 QlogFileSeq = {
-    qlog_format: "JSON-SEQ"
-    qlog_version: text
-    event_categories: [+text]
-    ? title: text
-    ? description: text
     trace: TraceSeq
 }
 ~~~
 {: #qlog-file-seq-def title="QlogFileSeq definition"}
 
-The required "qlog_format" field MUST have the value "JSON-SEQ".
+The QlogFileSeq schema URI is `urn:ietf:params:qlog:file:sequential`.
 
-The required "qlog_version" field MUST have the value "0.4".
+The required "trace" field contains a singular trace metadata. All qlog events
+in the file are related to this trace; see {{traceseq}}.
 
-The required "event_categories" field is described in {{event-types-and-schema}}.
-
-The optional "title" and "description" fields provide additional free-text
-information about the file.
-
-The optional "trace" field contains a singular trace metadata. All qlog events
-in the file are related to this trace.
+See {{format-json-seq}} for guidance on populating the
+"qlog_serialization_format" field and other serialization considerations.
 
 JSON-SEQ serialization example:
 
@@ -441,8 +468,8 @@ JSON-SEQ serialization example:
 // For display purposes, Record Separators are rendered as <RS>
 
 <RS>{
-    "qlog_version": "0.4",
-    "qlog_format": "JSON-SEQ",
+    "file_schema": "urn:ietf:params:qlog:file:sequential",
+    "qlog_serialization_format": "application/qlog+json-seq",
     "title": "Name of JSON Text Sequence qlog file (short)",
     "description": "Description for this trace file (long)",
     "trace": {
@@ -463,8 +490,6 @@ JSON-SEQ serialization example:
 ...
 ~~~~~~~~
 {: #json-seq-ex title="Top-level element"}
-
-For further information about serialization, see {{format-json-seq}}.
 
 ## TraceSeq
 
@@ -1433,16 +1458,15 @@ interoperability considerations for both formats, and {{optimizations}} presents
 potential optimizations.
 
 Serialization formats require appropriate deserializers/parsers. The
-"qlog_format" field ({{qlog-file-schema}}) is used to indicate the chosen
+"qlog_serialization_format" field ({{abstract-logfile}}}) is used to indicate the chosen
 serialization format.
 
 ## qlog to JSON mapping {#format-json}
 
-As described in {{qlog-file-schema}}, JSON is the default qlog serialization. When
-mapping qlog to normal JSON, QlogFile ({{qlog-file-def}}) is used and the
-"qlog_format" field MUST have the value "JSON". The file extension/suffix SHOULD
-be ".qlog". The Media Type, if any, SHOULD be "application/qlog+json" per
-{{!RFC6839}}.
+As described in {{qlog-file-schema}}, JSON is the default qlog serialization.
+When mapping qlog to normal JSON, QlogFile ({{qlog-file-def}}) is used. The
+Media Type is "application/qlog+json" per {{!RFC6839}}. The file
+extension/suffix SHOULD be ".qlog".
 
 In accordance with {{Section 8.1 of !RFC8259}}, JSON files are required to use
 UTF-8 both for the file itself and the string values it contains. In addition,
@@ -1485,9 +1509,9 @@ which notably includes only a single trace (TraceSeq) and omits an explicit
 can still be used on a per-event basis to include events from conceptually
 different sources in a single JSON-SEQ qlog file.
 
-When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
-"JSON-SEQ". The file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
-The Media Type, if any, SHOULD be "application/qlog+json-seq" per {{!RFC8091}}.
+When mapping qlog to JSON-SEQ, the Media Type is "application/qlog+json-seq" per
+{{!RFC8091}}. The file extension/suffix SHOULD be ".sqlog" (for "streaming"
+qlog).
 
 While not specifically required by the JSON-SEQ specification, all qlog field
 names MUST be lowercase when serialized to JSON-SEQ.
@@ -1798,7 +1822,7 @@ inclusion of such fields for all but the most stringent use cases.
 
 # IANA Considerations {#iana}
 
-There are no IANA considerations.
+TODO: file and event schema registration stuff
 
 --- back
 
