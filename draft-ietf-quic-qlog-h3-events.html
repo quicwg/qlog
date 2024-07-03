@@ -1957,12 +1957,52 @@ H3DataFrame = {
           <h4 id="name-h3headersframe">
 <a href="#section-5.3.2" class="section-number selfRef">5.3.2. </a><a href="#name-h3headersframe" class="section-name selfRef">H3HeadersFrame</a>
           </h4>
-<p id="section-5.3.2-1">This represents an <em>uncompressed</em>, plaintext HTTP Headers frame (e.g., no QPACK
-compression is applied).<a href="#section-5.3.2-1" class="pilcrow">¶</a></p>
-<p id="section-5.3.2-2">For example:<a href="#section-5.3.2-2" class="pilcrow">¶</a></p>
-<span id="name-h3headersframe-example"></span><div id="h3-headersframe-ex">
+<p id="section-5.3.2-1">The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an HTTP field
+section; see <span><a href="https://rfc-editor.org/rfc/rfc9114#section-7.2.2" class="relref">Section 7.2.2</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>. <code>H3HeaderFrame</code>, in contrast,
+contains the HTTP field section without QPACK encoding.<a href="#section-5.3.2-1" class="pilcrow">¶</a></p>
+<span id="name-h3httpfield-definition"></span><div id="h3field-def">
 <figure id="figure-17">
-            <div class="alignLeft art-text artwork" id="section-5.3.2-3.1">
+            <div class="lang-cddl sourcecode" id="section-5.3.2-2.1">
+<pre>
+H3HTTPField = {
+    ? name: text
+    ? name_bytes: hexstring
+    ? value: text
+    ? value_bytes: hexstring
+}
+</pre>
+</div>
+<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<a href="#name-h3httpfield-definition" class="selfRef">H3HTTPField definition</a>
+            </figcaption></figure>
+</div>
+<span id="name-h3headersframe-definition"></span><div id="h3-headersframe-def">
+<figure id="figure-18">
+            <div class="lang-cddl sourcecode" id="section-5.3.2-3.1">
+<pre>
+H3HeadersFrame = {
+    frame_type: "headers"
+    headers: [* H3HTTPField]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<a href="#name-h3headersframe-definition" class="selfRef">H3HeadersFrame definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-5.3.2-4">For example, the HTTP field section<a href="#section-5.3.2-4" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-5.3.2-5">
+<pre>
+:path: /index.html
+:method: GET
+:authority: example.org
+:scheme: https
+</pre><a href="#section-5.3.2-5" class="pilcrow">¶</a>
+</div>
+<p id="section-5.3.2-6">would be represented in a JSON serialization as:<a href="#section-5.3.2-6" class="pilcrow">¶</a></p>
+<span id="name-h3headersframe-example"></span><div id="h3-headersframe-ex">
+<figure id="figure-19">
+            <div class="alignLeft art-text artwork" id="section-5.3.2-7.1">
 <pre>
 headers: [
   {
@@ -1975,7 +2015,7 @@ headers: [
   },
   {
     "name": ":authority",
-    "value": "127.0.0.1:4433"
+    "value": "example.org"
   },
   {
     "name": ":scheme",
@@ -1984,38 +2024,20 @@ headers: [
 ]
 </pre>
 </div>
-<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
 <a href="#name-h3headersframe-example" class="selfRef">H3HeadersFrame example</a>
             </figcaption></figure>
 </div>
-<span id="name-h3headersframe-definition"></span><div id="h3-headersframe-def">
-<figure id="figure-18">
-            <div class="lang-cddl sourcecode" id="section-5.3.2-4.1">
-<pre>
-H3HeadersFrame = {
-    frame_type: "headers"
-    headers: [* H3HTTPField]
-}
-</pre>
-</div>
-<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
-<a href="#name-h3headersframe-definition" class="selfRef">H3HeadersFrame definition</a>
-            </figcaption></figure>
-</div>
-<span id="name-h3httpfield-definition"></span><div id="h3field-def">
-<figure id="figure-19">
-            <div class="lang-cddl sourcecode" id="section-5.3.2-5.1">
-<pre>
-H3HTTPField = {
-    name: text
-    ? value: text
-}
-</pre>
-</div>
-<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
-<a href="#name-h3httpfield-definition" class="selfRef">H3HTTPField definition</a>
-            </figcaption></figure>
-</div>
+<p id="section-5.3.2-8"><span><a href="https://rfc-editor.org/rfc/rfc9114#section-4.2" class="relref">Section 4.2</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span> and <span><a href="https://rfc-editor.org/rfc/rfc9110#section-5.1" class="relref">Section 5.1</a> of [<a href="#RFC9110" class="cite xref">HTTP</a>]</span> define rules for the
+characters used in HTTP field sections names and values. Characters outside the
+range are invalid and result in the message being treated as malformed. It can however be useful to also log these invalid HTTP fields.
+Characters in the
+allowed range can be safely logged by the text type used in the <code>name</code> and
+<code>value</code> fields of <code>H3HTTPField</code>. Characters outside the range are unsafe for the
+text type and need to be logged using the <code>name_bytes</code> and <code>value_bytes</code> field.
+An instance of <code>H3HTTPField</code> <span class="bcp14">MUST</span> include either the <code>name</code> or <code>name_bytes</code>
+field and <span class="bcp14">MAY</span> include both. An <code>H3HTTPField</code> <span class="bcp14">MAY</span> include a <code>value</code> or
+<code>value_bytes</code> field or neither.<a href="#section-5.3.2-8" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="h3cancelpushframe">
@@ -2313,6 +2335,10 @@ document as well.<a href="#section-6-1" class="pilcrow">¶</a></p>
 <dt id="H3_PRIORITIZATION">[H3_PRIORITIZATION]</dt>
       <dd>
 <span class="refAuthor">Oku, K.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Extensible Prioritization Scheme for HTTP"</span>, <span class="seriesInfo">RFC 9218</span>, <span class="seriesInfo">DOI 10.17487/RFC9218</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9218">https://www.rfc-editor.org/rfc/rfc9218</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9110">[HTTP]</dt>
+      <dd>
+<span class="refAuthor">Fielding, R., Ed.</span>, <span class="refAuthor">Nottingham, M., Ed.</span>, and <span class="refAuthor">J. Reschke, Ed.</span>, <span class="refTitle">"HTTP Semantics"</span>, <span class="seriesInfo">STD 97</span>, <span class="seriesInfo">RFC 9110</span>, <span class="seriesInfo">DOI 10.17487/RFC9110</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9110">https://www.rfc-editor.org/rfc/rfc9110</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC9114">[HTTP/3]</dt>
       <dd>
