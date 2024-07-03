@@ -1650,7 +1650,7 @@ for the wire image {{?RFC8546}}. Logging can reveal aspects of the wire image
 that would ordinarily be protected, creating tension between observability,
 security and privacy, especially if data can be correlated across data sources.
 
-qlog permits logging of a broad and detialed range of data. Operators and
+qlog permits logging of a broad and detailed range of data. Operators and
 implementers are responsible for deciding what data is logged to address their
 requirements and constraints. As per {{?RFC6973}}, operators must be aware that
 data could be compromised, risking the privacy of all participants. Where
@@ -1728,7 +1728,7 @@ potential risks of voluntary or involuntary disclosure to trusted or untrusted
 entities. The data requirements and definition of entities depends greatly on
 the intended use cases. For example, a research project might be tightly scoped,
 time bound, and require participants to explicitly opt in to having their data
-collected with the intention for this to be shared in a publication. Whereas a
+collected with the intention for this to be shared in a publication. Conversely, a
 server administrator might desire to collect telemetry, from users whom they have
 no relationship with, for continuing operational needs.
 
