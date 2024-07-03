@@ -530,7 +530,7 @@ H3HeadersFrame = {
 For example, the HTTP field section
 
 ~~~
-:path: value
+:path: /index.html
 :method: GET
 :authority: example.org
 :scheme: https
