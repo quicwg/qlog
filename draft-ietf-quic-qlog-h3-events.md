@@ -562,9 +562,8 @@ headers: [
 
 {{Section 4.2 of RFC9114}} and {{Section 5.1 of RFC9110}} define rules for the
 characters used in HTTP field sections names and values. Characters outside the
-range are invalid and result in the message being treated as malformed.
-
-It is useful to log HTTP fields that are valid or invalid. Characters in the
+range are invalid and result in the message being treated as malformed. It can however be useful to also log these invalid HTTP fields.
+Characters in the
 allowed range can be safely logged by the text type used in the `name` and
 `value` fields of `H3HTTPField`. Characters outside the range are unsafe for the
 text type and need to be logged using the `name_bytes` and `value_bytes` field.
