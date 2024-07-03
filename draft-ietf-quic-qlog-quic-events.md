@@ -1139,6 +1139,14 @@ processed first and afterwards the application layer reads from the streams with
 newly available data). This can help identify bottlenecks, flow control issues,
 or scheduling problems.
 
+The `additional_info` field supports optional logging of information
+related to the stream state. For example, an application layer that moves data
+into transport and simultaneously ends the stream, can log `fin_set`. As
+another example, a transport layer that has received an instruction to reset a
+stream can indicate this to the application layer using `reset_stream`.
+In both cases, the length-carrying fields (`length` or `raw`) can be
+omitted or contain zero values.
+
 This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
 see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
 
@@ -1149,8 +1157,12 @@ QUICStreamDataMoved = {
 
     ; byte length of the moved data
     ? length: uint64
+
     ? from: $DataLocation
     ? to: $DataLocation
+
+    ? additional_info: $DataMovedAdditionalInfo
+
     ? raw: RawInfo
 
     * $$quic-streamdatamoved-extension
@@ -1160,6 +1172,9 @@ $DataLocation /=  "user" /
                   "application" /
                   "transport" /
                   "network"
+
+$DataMovedAdditionalInfo /= "fin_set" /
+                            "stream_reset"
 ~~~
 {: #quic-streamdatamoved-def title="QUICStreamDataMoved definition"}
 
