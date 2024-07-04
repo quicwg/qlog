@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-07-02T00:51:23.553457+00:00",
+  "timestamp": "2024-07-04T00:51:29.287123+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -8091,7 +8091,7 @@
       "id": "I_kwDOCrLn6M58l-nN",
       "title": "Improve quic:stream_data_moved",
       "url": "https://github.com/quicwg/qlog/issues/375",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -8101,8 +8101,8 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:stream_data_moved:\r\n\r\n  A brief explanation of each from/to value here and the intended meaning would\r\n  be a big improvement. Also clarify that raw here refers to the referenced\r\n  stream application data (and does not include frame headers etc.).\r\n\r\n  Consider having a way to report when the end-of-stream (FIN) condition is\r\n  reported to an application. One option here is to have an optional \"fin\" field\r\n  here.\r\n\r\n  There does not appear to be any way to communicate when a stream reset event is\r\n  delivered to an application in an equivalent way, which would be useful.\r\n\r\nquic:datagram_data_moved:\r\n\r\n  As with stream_data_moved, clarify meaning of the from/to fields here.",
       "createdAt": "2024-01-19T11:26:23Z",
-      "updatedAt": "2024-02-05T09:48:21Z",
-      "closedAt": null,
+      "updatedAt": "2024-07-03T13:20:51Z",
+      "closedAt": "2024-07-03T13:20:51Z",
       "comments": [
         {
           "author": "rmarx",
@@ -8650,7 +8650,7 @@
       "id": "I_kwDOCrLn6M6Cj2lP",
       "title": "Logging of HTTP field names or values that contain illegal bytes",
       "url": "https://github.com/quicwg/qlog/issues/413",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -8659,8 +8659,8 @@
       "labels": [],
       "body": "While normally HTTP header names and values are expected to be safe strings (possibly with even further restrictions on the chartacter set that is allowed), it's possible that an endpoint could receive garbage bytes that it would validate and reject. In such scenarios, it can be useful to log what was received for the purposes of debugging root causes.\r\n\r\nThe [H3HeadersFrame](https://quicwg.org/qlog/draft-ietf-quic-qlog-h3-events.html#name-h3headersframe) uses the `H3HTTPField` type, where names and values use the `text` type. This is unfortunate as it forces implementers into certain approaches to logging. For instance, Rust has a `f[rom_utf8_lossy()](https://doc.rust-lang.org/std/string/struct.String.html#method.from_utf8_lossy)` method that would insert a \ufffd for an invalid sequence. While safe, this discards information that could be useful to understand excatly what was received.",
       "createdAt": "2024-03-17T01:51:48Z",
-      "updatedAt": "2024-03-17T01:51:54Z",
-      "closedAt": null,
+      "updatedAt": "2024-07-03T13:21:43Z",
+      "closedAt": "2024-07-03T13:21:43Z",
       "comments": []
     },
     {
@@ -20548,7 +20548,7 @@
       "labels": [],
       "body": "Addresses part of #375",
       "createdAt": "2024-02-19T04:29:20Z",
-      "updatedAt": "2024-06-27T18:37:19Z",
+      "updatedAt": "2024-07-03T13:34:52Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "dd8882eb422692b671cff724fae1a7711579a548",
@@ -20566,6 +20566,13 @@
           "body": "As discussed during editorial meeting:\r\nI'm not the biggest fan of current text since it isn't clear for all the possible uses (e.g., `transport` to `application` strips QUIC level stuff but keeps H3 frame headers, while `application` to `user` also strips those out etc.). Maybe best to word it in terms of \"only the payload is moved to the higher layer\" or something like that? ",
           "createdAt": "2024-02-19T09:44:19Z",
           "updatedAt": "2024-02-19T09:44:19Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> I'm not the biggest fan of current text since it isn't clear for all the possible uses (e.g., transport to application strips QUIC level stuff but keeps H3 frame headers, while application to user also strips those out etc.).\r\n\r\nThis is the QUIC document, so the intent of the proposed text\r\n\r\n> There are no packet or frame headers and length values in the `length` or `raw` fields MUST reflect that.\r\n\r\nis that it is solely in the scope of QUIC packets.\r\n\r\nNow you mention it, I don't actually think the `user` location is suitable for the `$DataLocation` type. QUIC streams and datagrams don't mean anything without an application protocol. And how an application protocol uses them is specific to its definition. To use HTTP/3 as an example, I'm never going to pass QUIC stream or datagram data directly to a user. I'm going to pass them:\r\n\r\n* HTTP request or response messages\r\n* HTTP datagrams\r\n* GOAWAY\r\n\r\nThere are HTTP/3 qlog events for each of these. \r\n\r\nEven an extension like WebTransport is going to pass WebTransport stream data, not raw QUIC. In which case, qlog for that extension should probably definine its own event type too.\r\n",
+          "createdAt": "2024-07-03T13:34:51Z",
+          "updatedAt": "2024-07-03T13:34:51Z"
         }
       ],
       "reviews": [
@@ -20589,24 +20596,26 @@
       "id": "PR_kwDOCrLn6M5nPjy8",
       "title": "Add fin and reset_stream fields",
       "url": "https://github.com/quicwg/qlog/pull/396",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Fixes #375.\r\n\r\nPer the discussion, it can be useful to know when an application triggers a\r\nstream close, or when it receives one, without having to do offset/length maths.\r\n\r\nI omitted stop_sending in this commit because it seems a little bit of a stretch,\r\nmainly because it's wire image has no offset or final size. Also, STOP_SENDING\r\nrelates to asking the peer to do something, which further complicates the\r\n(potential) use of offset and length fields.\r\n\r\nAn alternative would be to keep `fin` here but define new events for reset and\r\nstop. Those could both contain from, to and error fields but only the reset\r\nwould have offset and length.\r\n",
       "createdAt": "2024-02-19T05:15:49Z",
-      "updatedAt": "2024-06-28T14:11:10Z",
+      "updatedAt": "2024-07-03T13:20:53Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b734d43439a29e7ae42702bb715c5391895828f5",
       "headRepository": "quicwg/qlog",
       "headRefName": "stream-data-moved-flags",
       "headRefOid": "d96aa973243c8bd963c6a6de057aed457d3aec42",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2024-07-03T13:20:50Z",
+      "mergedAt": "2024-07-03T13:20:50Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "5f73ff0b06d0f98ead177e5177de1ddb2be300c7"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -20656,6 +20665,19 @@
           "body": "See latest comment (which I, again, didn't submit as an actual review apparently)",
           "createdAt": "2024-06-27T18:41:02Z",
           "updatedAt": "2024-06-27T18:41:02Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6Ah9Sj",
+          "commit": {
+            "abbreviatedOid": "d96aa97"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-07-03T12:59:55Z",
+          "updatedAt": "2024-07-03T12:59:55Z",
           "comments": []
         }
       ]
@@ -21776,24 +21798,26 @@
       "id": "PR_kwDOCrLn6M5p2X21",
       "title": "Allow logging of header name and value bytes",
       "url": "https://github.com/quicwg/qlog/pull/414",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Fixes #413",
       "createdAt": "2024-03-17T02:05:57Z",
-      "updatedAt": "2024-06-28T15:05:52Z",
+      "updatedAt": "2024-07-03T13:21:45Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b734d43439a29e7ae42702bb715c5391895828f5",
       "headRepository": "quicwg/qlog",
       "headRefName": "http-fields-aint-strings",
-      "headRefOid": "6a6b2407a2d0c4236b78d3512b8cd99ffe6ac2db",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "7ea43279bac07afc0f3a5db6013bbe34ff7abac2",
+      "closedAt": "2024-07-03T13:21:42Z",
+      "mergedAt": "2024-07-03T13:21:42Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "ae561a7deb68edc145bdbd03a01afb06b132fc68"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -21897,9 +21921,9 @@
           "comments": [
             {
               "originalPosition": 41,
-              "body": "```suggestion\r\n:path: /\r\n```\r\n\r\nfor consistency with the example below (maybe even better to go for something like /my-resource ?",
+              "body": "```suggestion\r\n:path: /index.html\r\n```\r\n\r\nfor consistency with the example below (maybe even better to go for something like /my-resource ?",
               "createdAt": "2024-06-28T15:00:34Z",
-              "updatedAt": "2024-06-28T15:05:52Z"
+              "updatedAt": "2024-07-03T12:57:15Z"
             },
             {
               "originalPosition": 83,
@@ -23338,13 +23362,13 @@
       "labels": [],
       "body": "",
       "createdAt": "2024-06-27T23:00:08Z",
-      "updatedAt": "2024-06-28T14:57:40Z",
+      "updatedAt": "2024-07-03T12:55:21Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b734d43439a29e7ae42702bb715c5391895828f5",
       "headRepository": "quicwg/qlog",
       "headRefName": "security-stuff",
-      "headRefOid": "d724107d9e0ae87e5e22a7d365a6cf45dc092560",
+      "headRefOid": "e34779a870ab5bdaec2d1c0cc53cc7c0a6caf258",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -23382,6 +23406,26 @@
               "updatedAt": "2024-06-28T14:57:40Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6Ah6kb",
+          "commit": {
+            "abbreviatedOid": "e34779a"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-03T12:55:21Z",
+          "updatedAt": "2024-07-03T12:55:21Z",
+          "comments": [
+            {
+              "originalPosition": 27,
+              "body": "Discussed in editors' meeting.\r\n\r\nGoal is to talk about data requirements of the loggers (so operators and implementers), NOT data requirements of the entities it might be disclosed. \r\n\r\nRobin: split up two concepts (operators+impl plus entities) somehow maybe? or at least make clearer.\r\n\r\nDry solution: \"The data requirements of the operators/implementers, and definition of entities...\"",
+              "createdAt": "2024-07-03T12:55:21Z",
+              "updatedAt": "2024-07-03T12:55:21Z"
+            }
+          ]
         }
       ]
     },
@@ -23397,19 +23441,222 @@
       "labels": [],
       "body": "This looks like hell to review but a lot of it is moving text around, so a visual diff is probably the most straightforward.\r\n\r\nThe high-level (pun-intended) goal of this PR is to realize the `main-schema` document is not merely a schema. Its the document that defines the core concepts behind its structured logging, methodology, requirements for loggers and tools, AND a few schema. \r\nMoving the document away from referring to its entire self as a schema, makes it easier to isolate the parts we mostly expect people to extend - the event definitions.\r\n\r\nI found it incredibly hard to talk about this with the old terminology of generic event class and specific data. Especially when combined with the concept of \"event definition documents\". That's been reflected into prior attempts at wrangling the extensibility of events. So I've changed that to abstract Event class and concrete event types. I suspect those won't be that popular either but they work for this old OOP survivor. \r\n\r\nThe PR isn't 100% complete but it does implement the schema > category > event structure that we seemed to align on, and ports over a lot more from https://github.com/quicwg/qlog/pull/415. If we think this is a suitable direction, putting the finishing touches like IANA policy and updating QUIC/H3 docs isn't that much more work.",
       "createdAt": "2024-06-29T05:06:18Z",
-      "updatedAt": "2024-06-29T05:06:18Z",
+      "updatedAt": "2024-07-03T18:41:39Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "3a92cd452a1fdd4dfe5ed3746726b24a303a94f1",
       "headRepository": "quicwg/qlog",
       "headRefName": "behold-schema",
-      "headRefOid": "88763cf9bbefb89edda42e33424ff1b8522ad596",
+      "headRefOid": "1178bdceb87a06d20e8b75152b7b50390202fefa",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6AXydy",
+          "commit": {
+            "abbreviatedOid": "88763cf"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "Thanks @LPardue for this effort :) \r\n\r\nI've tried to stick mostly to the main points for my first pass. In general, I like the new approach, and you've bypassed a lot of the minor issues from the previous version in #415. \r\n\r\nIn general, I think my comments here are not blockers or major issues, just things that could do with further refinement / clarification. Let's discuss these tomorrow in the editors' meeting and then I can do a final \"editorial\" pass to fix some consistency/spelling issues later :) ",
+          "createdAt": "2024-07-02T12:54:02Z",
+          "updatedAt": "2024-07-02T14:39:33Z",
+          "comments": [
+            {
+              "originalPosition": 22,
+              "body": "```suggestion\r\nschemas, and two common event schemas. Requirements and guidelines for creating\r\n```\r\nBIKESHED:\r\n\r\n\"main schema\" is a bit weird here in the new setup imo. Better to be a bit more explicit that these are not the \"main\" but rather \"common\" schema, reusable by others (generic and simulation)",
+              "createdAt": "2024-07-02T12:54:03Z",
+              "updatedAt": "2024-07-02T14:39:33Z"
+            },
+            {
+              "originalPosition": 43,
+              "body": "At this point it's very clear that we need to be consistent in how we use `schema` / `schemas`... sometimes it's singular, sometimes it's plural here. Sometimes `schemas` is used explicitly, but often not...\r\n\r\nI'd prefer to consistently use schema = singular, schemas = plural",
+              "createdAt": "2024-07-02T12:59:46Z",
+              "updatedAt": "2024-07-02T14:39:33Z"
+            },
+            {
+              "originalPosition": 452,
+              "body": "This is not entirely how I understood things... categories do not have to be GLOBALLY unique, just within their specific namespace (e.g., you could have  namespaceX:categoryA and also namespaceY:categoryA). As such, the COMBINATION of namespace + category identifier should be globally unique. \r\n\r\nAdditionally: I think it's better to say `Event categories MUST belong to a single event namespace` instead of to a single event `schema`... helps to reinforce the URI structure later. ",
+              "createdAt": "2024-07-02T14:23:20Z",
+              "updatedAt": "2024-07-02T14:39:33Z"
+            },
+            {
+              "originalPosition": 456,
+              "body": "```suggestion\r\nthe form `urn:ietf:params:qlog:<namespace identifier>#<category identifier>`.\r\n```",
+              "createdAt": "2024-07-02T14:24:35Z",
+              "updatedAt": "2024-07-02T14:39:33Z"
+            },
+            {
+              "originalPosition": 444,
+              "body": "```suggestion\r\nEvent schema MUST define a registered non-empty namespace identifier of type `text`.\r\n```",
+              "createdAt": "2024-07-02T14:25:50Z",
+              "updatedAt": "2024-07-02T14:39:33Z"
+            },
+            {
+              "originalPosition": 470,
+              "body": "```suggestion\r\nnon-empty name of type `text`.\r\n```\r\n\r\nsince you later use \"event type identifier\" to indicate just the \"type name\" (second part of the `name`).",
+              "createdAt": "2024-07-02T14:27:28Z",
+              "updatedAt": "2024-07-02T14:39:33Z"
+            },
+            {
+              "originalPosition": 507,
+              "body": "At no point has it been made clear yet how loggers MUST/SHOULD fill the `event_categories` field, nor how tools should handle \"missing\" URIs (i.e., unknown event types). I think this should be explicitly called out. ",
+              "createdAt": "2024-07-02T14:35:06Z",
+              "updatedAt": "2024-07-02T14:39:33Z"
+            },
+            {
+              "originalPosition": 105,
+              "body": "I don't particularly like the \"file schema\" vs \"event schema\" as we currently have it... I understand WHY you're doing it that way, but it seems a bit incongruous/inconsistent (e.g., we don't explain how/why to define new FILE schema, nor have we ways to extend existing FILE schema, in contrast to EVENT schema). \r\n\r\nmaybe this is just me coming from the \"old\" way of using \"schema\", but it doesn't feel completely right semantically to me atm. ",
+              "createdAt": "2024-07-02T14:37:52Z",
+              "updatedAt": "2024-07-02T14:39:33Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6Aas8b",
+          "commit": {
+            "abbreviatedOid": "88763cf"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-02T17:40:32Z",
+          "updatedAt": "2024-07-02T17:40:32Z",
+          "comments": [
+            {
+              "originalPosition": 22,
+              "body": "Yeah it felt to me more lime this is stdlib than `main` but I refrained from changing it since the pr was some huge anyway. I'm open to a different value ",
+              "createdAt": "2024-07-02T17:40:32Z",
+              "updatedAt": "2024-07-02T17:40:32Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6AatLz",
+          "commit": {
+            "abbreviatedOid": "88763cf"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-02T17:41:08Z",
+          "updatedAt": "2024-07-02T17:41:08Z",
+          "comments": [
+            {
+              "originalPosition": 43,
+              "body": "This is mostly me having a blind spot for using the correct term no matter how hard I try :D",
+              "createdAt": "2024-07-02T17:41:08Z",
+              "updatedAt": "2024-07-02T17:41:08Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6Aazsa",
+          "commit": {
+            "abbreviatedOid": "88763cf"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-02T17:52:23Z",
+          "updatedAt": "2024-07-02T17:52:23Z",
+          "comments": [
+            {
+              "originalPosition": 452,
+              "body": "That creates a whole class of problem of ambiguity I'd like to avoid. If events dont self identify the namespace, and we dont make declaration of all schema a MUST, its a recipe for clashes where people add a super generic category like `util` and have an event name like `util:do_common_thing`. \r\n\r\nInstead if we operate the old school C methodology of embedding the unique token in the signature, we don't need to rely on namespace mangling. \r\n\r\nIf we don't want to go this way, that's OK but we need a way to avoid name collisions when the event names could clash",
+              "createdAt": "2024-07-02T17:52:23Z",
+              "updatedAt": "2024-07-02T17:52:23Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6AbcUF",
+          "commit": {
+            "abbreviatedOid": "88763cf"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-02T19:24:11Z",
+          "updatedAt": "2024-07-02T19:24:12Z",
+          "comments": [
+            {
+              "originalPosition": 507,
+              "body": "Very good poont",
+              "createdAt": "2024-07-02T19:24:12Z",
+              "updatedAt": "2024-07-02T19:24:12Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6AhxWT",
+          "commit": {
+            "abbreviatedOid": "88763cf"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-03T12:39:23Z",
+          "updatedAt": "2024-07-03T12:39:23Z",
+          "comments": [
+            {
+              "originalPosition": 452,
+              "body": "Discussed during editors' meeting.\r\n\r\nLucas is in the right here, should be ok as the current text states. Robin was conflating with something else.\r\n\r\nRobin would like us to explicitly call out how things can be extended though:\r\n- CANNOT add new events to existing categories in other documents\r\n- CANNOT create new categories that have the same name as existing categories in other documents (this is basically what the current text above says)\r\n- CAN create new categories in existing NAMESPACES as long as the category names are globally unique\r\n\r\nAnd these should also be supported by a concrete example. \r\n",
+              "createdAt": "2024-07-03T12:39:23Z",
+              "updatedAt": "2024-07-03T12:39:23Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6AhzmS",
+          "commit": {
+            "abbreviatedOid": "88763cf"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-03T12:43:13Z",
+          "updatedAt": "2024-07-03T12:43:13Z",
+          "comments": [
+            {
+              "originalPosition": 105,
+              "body": "Discussed in editors' meeting. \r\n\r\nMake explicit in new `file_schema` field with its own URI namespace and IANA registration. Allows us to also get rid of `qlog_version` (implicit in file_schema now)\r\n\r\nRename `event_categories` to `event_schemas` maybe for consistency with `file_shema`\r\n\r\n```\r\nurn:ietf:params:qlog:file:\r\nurn:ietf:params:qlog:events:\r\n\r\nfile_schema: \"urn:ietf:params:qlog:file:sequential\",\r\nevent_schemas: [\r\n    \"urn:ietf:params:qlog:events:rick#roll\",\r\n    \"urn:ietf:params:qlog:events:rick#astley\",\r\n    \"urn:ietf:params:qlog:events:rick#moranis\",\r\n    \"urn:ietf:params:qlog:events:john#doe\",\r\n    \"urn:ietf:params:qlog:events:john#candy\",\r\n    \"urn:ietf:params:qlog:events:john#goodman\",\r\n    \"https://example.com/032024/pickle.html#pepper\",\r\n    \"https://example.com/032024/pickle.html#lilly\",\r\n    \"https://example.com/032024/pickle.html#rick\",\r\n]\r\n```\r\n",
+              "createdAt": "2024-07-03T12:43:13Z",
+              "updatedAt": "2024-07-03T12:43:13Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6Ah0ow",
+          "commit": {
+            "abbreviatedOid": "88763cf"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-03T12:45:09Z",
+          "updatedAt": "2024-07-03T12:45:09Z",
+          "comments": [
+            {
+              "originalPosition": 22,
+              "body": "Discussed during editors' meeting. Should be `std` as namespace identifier. ",
+              "createdAt": "2024-07-03T12:45:09Z",
+              "updatedAt": "2024-07-03T12:45:09Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
