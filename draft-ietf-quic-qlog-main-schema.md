@@ -259,7 +259,7 @@ LogFile = {
     serialization_format: text
     ? title: text
     ? description: text
-    event_schema: [+text]
+    event_schemas: [+text]
 
     ; can contain any amount of custom fields
     * text => any
