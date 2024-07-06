@@ -66,8 +66,8 @@ qlog provides extensible structured logging for network protocols, allowing for
 easy sharing of data that benefits common debug and analysis methods and
 tooling. This document describes key concepts of qlog: formats, files, traces,
 events, and extension points. In this definition are the high-level log file
-schemas, and main event schema. Requirements and guidelines for creating
-protocol-specific event schema are also presented. All schema are independent of
+schemas, and standard event schema. Requirements and guidelines for creating
+protocol-specific event schema are also presented. All schemas are independent of
 serialization format, allowing logs to be represented in many ways such as JSON,
 CSV, or protobuf.
 
@@ -232,10 +232,10 @@ use case. For example, a QUIC packet being sent or received. This document
 declares an abstract Event class ({{abstract-event}}) containing common fields, which
 all concrete events derive from. Concrete events are defined by event schema
 that declare a namespace, consisting of one or more categories, containing one
-or more related event types. For example, this document defines the `main` event
+or more related event types. For example, this document defines the `std` event
 schema structured as:
 
-* `main` namespace
+* `std` namespace
   * `generic` category
     * `error` event type
     * `warning` event type
@@ -969,7 +969,7 @@ fields are "time" and "data", who are divergent by nature.
 
 Concrete event types are defined in event schema, which declare a namespace
 consisting of one or more categories, each containing related event types. This
-document defines the `main` event schema. Other examples are the `quic`
+document defines the `std` event schema. Other examples are the `quic`
 {{QLOG-QUIC}} and `h3` {{QLOG-H3}} event schema.
 
 Concrete events MAY extend any part of the abstract Event class, including extending the "data" field ({{data-field}}) of adding custom fields.
@@ -1250,10 +1250,10 @@ additional events is typically avoided. Exceptions have been made for common
 events that benefit from being easily identifiable or individually logged (for
 example `packets_acked`).
 
-# Main Event Schema
+# The Standard Event Schema
 
-The main event schema defines categories and event types that are common across
-protocols, applications, and use cases. The schema namespace is "main".
+The standard event schema defines categories and event types that are common across
+protocols, applications, and use cases. The schema namespace is "std".
 
 ## Generic Events
 
@@ -1279,7 +1279,7 @@ The event types are further defined below, their identifier is the heading name.
 ### error
 
 Used to log details of an internal error that might not get reflected on the
-wire. The event indentifier is `error has Core importance level.
+wire. It has Core importance level.
 
 ~~~ cddl
 GenericError = {
