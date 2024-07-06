@@ -1235,16 +1235,19 @@ various programming languages can be found at
             <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-concrete-event-types-and-ev" class="internal xref">Concrete Event Types and Event Schema</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1">
-                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="auto internal xref">8.1</a>.  <a href="#name-extending-the-data-field" class="internal xref">Extending the Data Field</a></p>
+                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="auto internal xref">8.1</a>.  <a href="#name-event-schema-and-event-cate" class="internal xref">Event Schema and Event Category URIs</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
-                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-event-importance-levels" class="internal xref">Event Importance Levels</a></p>
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-extending-the-data-field" class="internal xref">Extending the Data Field</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
-                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-tooling-expectations" class="internal xref">Tooling Expectations</a></p>
+                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-event-importance-levels" class="internal xref">Event Importance Levels</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.4">
-                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="auto internal xref">8.4</a>.  <a href="#name-further-design-guidance" class="internal xref">Further Design Guidance</a></p>
+                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="auto internal xref">8.4</a>.  <a href="#name-tooling-expectations" class="internal xref">Tooling Expectations</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.5">
+                <p id="section-toc.1-1.8.2.5.1"><a href="#section-8.5" class="auto internal xref">8.5</a>.  <a href="#name-further-design-guidance" class="internal xref">Further Design Guidance</a></p>
 </li>
             </ul>
 </li>
@@ -1677,7 +1680,9 @@ log file.<a href="#section-3-3" class="pilcrow">¶</a></p>
 format using a media type <span>[<a href="#RFC2046" class="cite xref">RFC2046</a>]</span>. It is case-insensitive.<a href="#section-3-4" class="pilcrow">¶</a></p>
 <p id="section-3-5">The optional "title" and "description" fields provide additional free-text
 information about the file.<a href="#section-3-5" class="pilcrow">¶</a></p>
-<p id="section-3-6">The required "event_schemas" field is described in <a href="#event-types-and-schema" class="auto internal xref">Section 8</a>.<a href="#section-3-6" class="pilcrow">¶</a></p>
+<p id="section-3-6">The required "event_schemas" field contains event schema URI that identify
+concrete event types recorded in a log. Requirements and guidelines are defined
+in <a href="#event-types-and-schema" class="auto internal xref">Section 8</a>.<a href="#section-3-6" class="pilcrow">¶</a></p>
 <p id="section-3-7">To support adding custom fields in concrete log file schema, the CDDL "group
 socket" "logfile-extensions" is defined. This field acts as a placeholder that
 can later be replaced with newly defined fields by assigning them to the socket
@@ -2121,7 +2126,7 @@ Event = {
         </figcaption></figure>
 </div>
 <p id="section-7-3">Each qlog event <span class="bcp14">MUST</span> contain the mandatory fields: "time"
-(<a href="#time-based-fields" class="auto internal xref">Section 7.1</a>), "name" (<a href="#event-types-and-schema" class="auto internal xref">Section 8</a>), and "data" (<a href="#data-field" class="auto internal xref">Section 8.1</a>).<a href="#section-7-3" class="pilcrow">¶</a></p>
+(<a href="#time-based-fields" class="auto internal xref">Section 7.1</a>), "name" (<a href="#event-types-and-schema" class="auto internal xref">Section 8</a>), and "data" (<a href="#data-field" class="auto internal xref">Section 8.2</a>).<a href="#section-7-3" class="pilcrow">¶</a></p>
 <p id="section-7-4">Each qlog event, is an instance of a concrete event type that derives from the
 abstract Event class; see <a href="#event-types-and-schema" class="auto internal xref">Section 8</a>. They extend it by defining
 the specific values and semantics of common fields, in particular the <code>name</code> and
@@ -2318,7 +2323,7 @@ these "triggers" in a high-level way per-event to get more fine-grained
 information without much additional overhead.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
 <p id="section-7.4-2">In qlog, the optional "trigger" field contains a string value describing
 the reason (if any) for this event instance occurring, see
-<a href="#data-field" class="auto internal xref">Section 8.1</a>. While this "trigger" field could be a property of the
+<a href="#data-field" class="auto internal xref">Section 8.2</a>. While this "trigger" field could be a property of the
 qlog Event itself, it is instead a property of the "data" field instead.
 This choice was made because many event types do not include a trigger
 value, and having the field at the Event-level would cause overhead in
@@ -2557,77 +2562,123 @@ fields are "time" and "data", who are divergent by nature.<a href="#section-7.7-
       <h2 id="name-concrete-event-types-and-ev">
 <a href="#section-8" class="section-number selfRef">8. </a><a href="#name-concrete-event-types-and-ev" class="section-name selfRef">Concrete Event Types and Event Schema</a>
       </h2>
-<p id="section-8-1">Concrete event types are defined in event schema, which declare a namespace
-consisting of one or more categories, each containing related event types. This
-document defines the <code>std</code> event schema; see <a href="#std-event-schema" class="auto internal xref">Section 9</a>. Other
-examples are the <code>quic</code> <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and <code>h3</code> <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span> event schema.<a href="#section-8-1" class="pilcrow">¶</a></p>
-<p id="section-8-2">Concrete events <span class="bcp14">MAY</span> extend any part of the abstract Event class, including extending the "data" field (<a href="#data-field" class="auto internal xref">Section 8.1</a>) of adding custom fields.<a href="#section-8-2" class="pilcrow">¶</a></p>
-<p id="section-8-3">Event schema <span class="bcp14">MUST</span> define a registered non-empty namespace identifier of type <code>text</code>.<a href="#section-8-3" class="pilcrow">¶</a></p>
-<p id="section-8-4">Event categories <span class="bcp14">MUST</span> belong to a single event schema. The <span class="bcp14">MUST</span> have a
+<p id="section-8-1">Concrete event types belong to event categories, both defined by event schema.<a href="#section-8-1" class="pilcrow">¶</a></p>
+<p id="section-8-2">A single event schema can define a new namespace, or extend an existing
+namespace with new categories. New namespaces <span class="bcp14">MUST</span> be registered using a
+non-empty namespace identifier of type <code>text</code>. Namespace are mutable and <span class="bcp14">MAY</span> be
+extended with categories.<a href="#section-8-2" class="pilcrow">¶</a></p>
+<p id="section-8-3">Event categories <span class="bcp14">MUST</span> belong to a single event namespace. They <span class="bcp14">MUST</span> have a
 registered non-empty globally-unique identifier of type <code>text</code> and <span class="bcp14">MUST</span> have a
 single dereferencable URI. That URI <span class="bcp14">MUST</span> be absolute and <span class="bcp14">MUST</span> indicate the
 category identifier using a fragment identifier (characters after a "#" in the
-URI). For event categories in schema defined by RFCs, the URI <span class="bcp14">SHOULD</span> be a URN of
-the form <code>urn:ietf:params:qlog:events:&lt;namespace identifier&gt;#&lt;category identifier&gt;</code>.
-Private or non-standard event categories can use other URI formats. URIs that
-contain a domain name <span class="bcp14">SHOULD</span> also contain a month-date in the form mmyyyy. The
-definition of the category and assignment of the URI <span class="bcp14">MUST</span> have been authorized by
-the owner of the domain name on or very close to that date. (This avoids
-problems when domain names change ownership.)<a href="#section-8-4" class="pilcrow">¶</a></p>
-<p id="section-8-5">The registration requirements for extension schema URIs are detailed in
-<a href="#iana" class="auto internal xref">Section 15</a>.<a href="#section-8-5" class="pilcrow">¶</a></p>
+URI). Event categories are immutable and <span class="bcp14">MUST NOT</span> be extended with events.<a href="#section-8-3" class="pilcrow">¶</a></p>
+<p id="section-8-4">Registration guidance and requirements is provided in <a href="#event-schema-reg" class="auto internal xref">Section 8.1</a>.<a href="#section-8-4" class="pilcrow">¶</a></p>
+<p id="section-8-5">Concrete events <span class="bcp14">MAY</span> extend any part of the abstract Event class, including
+extending the "data" field (<a href="#data-field" class="auto internal xref">Section 8.2</a>) of adding custom fields.<a href="#section-8-5" class="pilcrow">¶</a></p>
 <p id="section-8-6">Concrete event types <span class="bcp14">MUST</span> belong to a single event category and <span class="bcp14">MUST</span> have a
 non-empty name of type <code>text</code>.<a href="#section-8-6" class="pilcrow">¶</a></p>
 <p id="section-8-7">The value of a qlog event <code>name</code> field <span class="bcp14">MUST</span> be the concatenation of category
 identifier, colon (':'), and event type identifier. By virtue of the identifier
-requirements, names are globally-unique. Thus, log files can contain events from
-multiple schemas without the risk of name collisions.<a href="#section-8-7" class="pilcrow">¶</a></p>
-<p id="section-8-8">In the following hypothetical example, a qlog file contains events belonging to
-multiple standard and non-standard categories belonging to different schema
-namespaces rick, john, and pickle. The standard categories use a URN format, the
-non-standard categories use a URI with domain name.<a href="#section-8-8" class="pilcrow">¶</a></p>
+requirements described above, event names are globally-unique. Thus, log files
+can contain events from multiple schemas without the risk of name collisions.<a href="#section-8-7" class="pilcrow">¶</a></p>
+<p id="section-8-8">Implementations that might record concrete events belonging to a category in an
+event schema <span class="bcp14">SHOULD</span> list all category identifiers in use. This is achieved by
+including the appropriate URI in the <code>event_schemas</code> field of the abstract
+LogFile class (<a href="#abstract-logfile" class="auto internal xref">Section 3</a>). The <code>event_schema</code> is a hint to tools
+about the possible event categories (and event types contained therein) that a
+qlog file might contain. The file <span class="bcp14">MAY</span> contain event types that do not belong to
+a listed category identifier. Tools <span class="bcp14">MUST NOT</span> treat this as an error; see
+<a href="#tooling" class="auto internal xref">Section 13</a>.<a href="#section-8-8" class="pilcrow">¶</a></p>
+<p id="section-8-9">In the following hypothetical example, a qlog file contains events belonging to
+the standard event schema (<a href="#std-event-schema" class="auto internal xref">Section 9</a>), an event schema named <code>rick</code>
+specified in a hypothetical RFC, and a private event schema named pickle. The
+standardized categories use a URN format, the private categories use a URI with
+domain name.<a href="#section-8-9" class="pilcrow">¶</a></p>
 <span id="name-example-event_categories-se"></span><div id="event-categories">
 <figure id="figure-26">
-        <div class="alignLeft art-text artwork" id="section-8-9.1">
+        <div class="alignLeft art-text artwork" id="section-8-10.1">
 <pre>
-"event_categories": [
-                      "urn:ietf:params:qlog:rick#roll",
-                      "urn:ietf:params:qlog:rick#astley",
-                      "urn:ietf:params:qlog:rick#moranis",
-                      "urn:ietf:params:qlog:john#doe",
-                      "urn:ietf:params:qlog:john#candy",
-                      "urn:ietf:params:qlog:john#goodman",
-                      "https://example.com/032024/pickle.html#pepper",
-                      "https://example.com/032024/pickle.html#lilly",
-                      "https://example.com/032024/pickle.html#rick",
-                    ]
+"event_schemas": [
+  "urn:ietf:params:qlog:events:std#generic,
+  "urn:ietf:params:qlog:events:std#simulation,
+  "urn:ietf:params:qlog:events:rick#roll",
+  "urn:ietf:params:qlog:events:rick#astley",
+  "urn:ietf:params:qlog:events:rick#moranis",
+  "https://example.com/032024/pickle.html#pepper",
+  "https://example.com/032024/pickle.html#lilly",
+  "https://example.com/032024/pickle.html#rick"
+]
 </pre>
 </div>
 <figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
 <a href="#name-example-event_categories-se" class="selfRef">Example event_categories serialization</a>
         </figcaption></figure>
 </div>
-<div id="data-field">
+<div id="event-schema-reg">
 <section id="section-8.1">
-        <h3 id="name-extending-the-data-field">
-<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-extending-the-data-field" class="section-name selfRef">Extending the Data Field</a>
+        <h3 id="name-event-schema-and-event-cate">
+<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-event-schema-and-event-cate" class="section-name selfRef">Event Schema and Event Category URIs</a>
         </h3>
-<p id="section-8.1-1">An event's "data" field is a generic key-value map (e.g., JSON object). It
+<p id="section-8.1-1">Event schema defined by RFCs <span class="bcp14">MUST</span> register all categories in the "qlog event
+category URIs" registry and <span class="bcp14">SHOULD</span> use a URN of the form
+<code>urn:ietf:params:qlog:events:&lt;namespace identifier&gt;#&lt;category identifier&gt;</code>,
+where <code>&lt;category identifier&gt;</code> is globally unique. For example, this document
+defines the standard event schema (<a href="#std-event-schema" class="auto internal xref">Section 9</a>) that uses the <code>std</code>
+namespace containing the <code>generic</code> and <code>simulation</code> categories. Other examples
+of event schema define the <code>quic</code> <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and <code>h3</code> <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span> namespaces.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.1-2">Private or non-standard event categories can use other URI formats. URIs that
+contain a domain name <span class="bcp14">SHOULD</span> also contain a month-date in the form mmyyyy. The
+definition of the category and assignment of the URI <span class="bcp14">MUST</span> have been authorized
+by the owner of the domain name on or very close to that date. This avoids
+problems when domain names change ownership.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+<p id="section-8.1-3">The "qlog event category URIs" registry operates under the Expert Review policy,
+per <span><a href="https://rfc-editor.org/rfc/rfc8126#section-4.5" class="relref">Section 4.5</a> of [<a href="#RFC8126" class="cite xref">RFC8126</a>]</span>.  When reviewing requests, the expert <span class="bcp14">MUST</span> check
+that the URI is appropriate to the event schema and satisfies the requirements
+in <a href="#event-types-and-schema" class="auto internal xref">Section 8</a> and this section. A request to register a private
+or non-standard log schema URI using a URN of the form
+<code>urn:ietf:params:qlog:event:&lt;namespace identifier&gt;#&lt;category identifier</code> <span class="bcp14">MUST</span> be
+rejected.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.1-4">Registration requests should use the following template:<a href="#section-8.1-4" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-8.1-5">
+          <dt id="section-8.1-5.1">Event Category URI:</dt>
+          <dd style="margin-left: 1.5em" id="section-8.1-5.2">
+            <p id="section-8.1-5.2.1">[the event category identifier]<a href="#section-8.1-5.2.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-8.1-5.3">Description:</dt>
+          <dd style="margin-left: 1.5em" id="section-8.1-5.4">
+            <p id="section-8.1-5.4.1">[a description of the event category]<a href="#section-8.1-5.4.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-8.1-5.5">Reference:</dt>
+          <dd style="margin-left: 1.5em" id="section-8.1-5.6">
+            <p id="section-8.1-5.6.1">[to a specification defining the schema defining the event category]<a href="#section-8.1-5.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="data-field">
+<section id="section-8.2">
+        <h3 id="name-extending-the-data-field">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-extending-the-data-field" class="section-name selfRef">Extending the Data Field</a>
+        </h3>
+<p id="section-8.2-1">An event's "data" field is a generic key-value map (e.g., JSON object). It
 defines the per-event metadata that is to be logged. Its specific subfields and
 their semantics are defined per concrete event type. For example, data field
-definitions for QUIC and HTTP/3 can be found in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span>.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
-<p id="section-8.1-2">In order to keep qlog fully extensible, two separate CDDL extension points
-("sockets" or "plugs") are used to fully define data fields.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
-<p id="section-8.1-3">Firstly, to allow existing data field definitions to be extended (for example by
+definitions for QUIC and HTTP/3 can be found in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span> and <span>[<a href="#QLOG-H3" class="cite xref">QLOG-H3</a>]</span>.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.2-2">In order to keep qlog fully extensible, two separate CDDL extension points
+("sockets" or "plugs") are used to fully define data fields.<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+<p id="section-8.2-3">Firstly, to allow existing data field definitions to be extended (for example by
 adding an additional field needed for a new protocol feature), a CDDL "group
 socket" is used. This takes the form of a subfield with a name of
 <code>* $$CATEGORY-NAME-extension</code>. This field acts as a placeholder that can later be
 replaced with newly defined fields by assigning them to the socket with the
 <code>//=</code> operator. Multiple extensions can be assigned to the same group socket. An
-example is shown in <a href="#groupsocket-extension-example" class="auto internal xref">Figure 27</a>.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
+example is shown in <a href="#groupsocket-extension-example" class="auto internal xref">Figure 27</a>.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
 <span id="name-example-of-using-a-generic-c"></span><div id="groupsocket-extension-example">
 <figure id="figure-27">
-          <div class="alignLeft art-text artwork" id="section-8.1-4.1">
+          <div class="alignLeft art-text artwork" id="section-8.2-4.1">
 <pre>
 ; original definition in document A
 MyCategoryEventX = {
@@ -2660,7 +2711,7 @@ MyCategoryEventX = {
 <a href="#name-example-of-using-a-generic-c" class="selfRef">Example of using a generic CDDL group socket to extend an existing event data definition</a>
           </figcaption></figure>
 </div>
-<p id="section-8.1-5">Secondly, to allow documents to define fully new event data field definitions
+<p id="section-8.2-5">Secondly, to allow documents to define fully new event data field definitions
 (as opposed to extend existing ones), a CDDL "type socket" is used. For this
 purpose, the type of the "data" field in the qlog Event type (see <a href="#event-def" class="auto internal xref">Figure 15</a>)
 is the extensible <code>$ProtocolEventData</code> type. This field acts as an open enum of
@@ -2670,10 +2721,10 @@ field is defined as its own CDDL type and later merged with the existing
 key-value map type can be assigned to <code>$ProtocolEventData</code> (the only common
 "data" subfield defined in this document is the optional <code>trigger</code> field, see
 <a href="#trigger-field" class="auto internal xref">Section 7.4</a>). An example of this setup is shown in
-<a href="#protocoleventdata-def" class="auto internal xref">Figure 28</a>.<a href="#section-8.1-5" class="pilcrow">¶</a></p>
+<a href="#protocoleventdata-def" class="auto internal xref">Figure 28</a>.<a href="#section-8.2-5" class="pilcrow">¶</a></p>
 <span id="name-protocoleventdata-extension"></span><div id="protocoleventdata-def">
 <figure id="figure-28">
-          <div class="alignLeft art-text artwork" id="section-8.1-6.1">
+          <div class="alignLeft art-text artwork" id="section-8.2-6.1">
 <pre>
 ; We define two separate events in a single document
 MyCategoryEvent1 /= {
@@ -2704,16 +2755,16 @@ $ProtocolEventData /= MyCategoryEvent1 / MyCategoryEvent2
 <a href="#name-protocoleventdata-extension" class="selfRef">ProtocolEventData extension</a>
           </figcaption></figure>
 </div>
-<p id="section-8.1-7">Documents defining new qlog events <span class="bcp14">MUST</span> properly extend <code>$ProtocolEventData</code>
+<p id="section-8.2-7">Documents defining new qlog events <span class="bcp14">MUST</span> properly extend <code>$ProtocolEventData</code>
 when defining data fields to enable automated validation of aggregated qlog
 schemas. Furthermore, they <span class="bcp14">SHOULD</span> properly add a <code>* $$CATEGORY-NAME-extension</code>
 extension field to newly defined event data to allow the new events to be
-properly extended by other documents.<a href="#section-8.1-7" class="pilcrow">¶</a></p>
-<p id="section-8.1-8">A combined but purely illustrative example of the use of both extension points
-for a conceptual QUIC "packet_sent" event is shown in <a href="#data-ex" class="auto internal xref">Figure 29</a>:<a href="#section-8.1-8" class="pilcrow">¶</a></p>
+properly extended by other documents.<a href="#section-8.2-7" class="pilcrow">¶</a></p>
+<p id="section-8.2-8">A combined but purely illustrative example of the use of both extension points
+for a conceptual QUIC "packet_sent" event is shown in <a href="#data-ex" class="auto internal xref">Figure 29</a>:<a href="#section-8.2-8" class="pilcrow">¶</a></p>
 <span id="name-example-of-an-extended-data"></span><div id="data-ex">
 <figure id="figure-29">
-          <div class="alignLeft art-text artwork" id="section-8.1-9.1">
+          <div class="alignLeft art-text artwork" id="section-8.2-9.1">
 <pre>
 ; defined in the main QUIC event document
 TransportPacketSent = {
@@ -2772,96 +2823,96 @@ $$transport-packetsent-extension //= (
 </section>
 </div>
 <div id="importance">
-<section id="section-8.2">
+<section id="section-8.3">
         <h3 id="name-event-importance-levels">
-<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-event-importance-levels" class="section-name selfRef">Event Importance Levels</a>
+<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-event-importance-levels" class="section-name selfRef">Event Importance Levels</a>
         </h3>
-<p id="section-8.2-1">Depending on how events are designed, it may be that several events allow the
+<p id="section-8.3-1">Depending on how events are designed, it may be that several events allow the
 logging of similar or overlapping data. For example the separate QUIC
 <code>connection_started</code> event overlaps with the more generic
 <code>connection_state_updated</code>. In these cases, it is not always clear which event
 should be logged or used, and which event should take precedence if e.g., both are
-present and provide conflicting information.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
-<p id="section-8.2-2">To aid in this decision making, qlog defines three event importance levels, in
-decreasing order of importance and expected usage:<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+present and provide conflicting information.<a href="#section-8.3-1" class="pilcrow">¶</a></p>
+<p id="section-8.3-2">To aid in this decision making, qlog defines three event importance levels, in
+decreasing order of importance and expected usage:<a href="#section-8.3-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-8.2-3.1">
-            <p id="section-8.2-3.1.1">Core<a href="#section-8.2-3.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-8.3-3.1">
+            <p id="section-8.3-3.1.1">Core<a href="#section-8.3-3.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-8.2-3.2">
-            <p id="section-8.2-3.2.1">Base<a href="#section-8.2-3.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-8.3-3.2">
+            <p id="section-8.3-3.2.1">Base<a href="#section-8.3-3.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-8.2-3.3">
-            <p id="section-8.2-3.3.1">Extra<a href="#section-8.2-3.3.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-8.3-3.3">
+            <p id="section-8.3-3.3.1">Extra<a href="#section-8.3-3.3.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-8.2-4">Concrete event types <span class="bcp14">SHOULD</span> define an importance level.<a href="#section-8.2-4" class="pilcrow">¶</a></p>
-<p id="section-8.2-5">Core-level events <span class="bcp14">SHOULD</span> be present in all qlog files for a
+<p id="section-8.3-4">Concrete event types <span class="bcp14">SHOULD</span> define an importance level.<a href="#section-8.3-4" class="pilcrow">¶</a></p>
+<p id="section-8.3-5">Core-level events <span class="bcp14">SHOULD</span> be present in all qlog files for a
 given protocol. These are typically tied to basic packet and frame parsing and
 creation, as well as listing basic internal metrics. Tool implementers <span class="bcp14">SHOULD</span>
 expect and add support for these events, though <span class="bcp14">SHOULD NOT</span> expect all Core events
-to be present in each qlog trace.<a href="#section-8.2-5" class="pilcrow">¶</a></p>
-<p id="section-8.2-6">Base-level events add additional debugging options and <span class="bcp14">MAY</span> be present in qlog
+to be present in each qlog trace.<a href="#section-8.3-5" class="pilcrow">¶</a></p>
+<p id="section-8.3-6">Base-level events add additional debugging options and <span class="bcp14">MAY</span> be present in qlog
 files. Most of these can be implicitly inferred from data in Core events (if
 those contain all their properties), but for many it is better to log the events
 explicitly as well, making it clearer how the implementation behaves. These
 events are for example tied to passing data around in buffers, to how internal
 state machines change, and used to help show when decisions are actually made
 based on received data. Tool implementers <span class="bcp14">SHOULD</span> at least add support for
-showing the contents of these events, if they do not handle them explicitly.<a href="#section-8.2-6" class="pilcrow">¶</a></p>
-<p id="section-8.2-7">Extra-level events are considered mostly useful for low-level debugging of the
+showing the contents of these events, if they do not handle them explicitly.<a href="#section-8.3-6" class="pilcrow">¶</a></p>
+<p id="section-8.3-7">Extra-level events are considered mostly useful for low-level debugging of the
 implementation, rather than the protocol. They allow more fine-grained tracking
 of internal behavior. As such, they <span class="bcp14">MAY</span> be present in qlog files and tool
-implementers <span class="bcp14">MAY</span> add support for these, but they are not required to.<a href="#section-8.2-7" class="pilcrow">¶</a></p>
-<p id="section-8.2-8">Note that in some cases, implementers might not want to log for example data
+implementers <span class="bcp14">MAY</span> add support for these, but they are not required to.<a href="#section-8.3-7" class="pilcrow">¶</a></p>
+<p id="section-8.3-8">Note that in some cases, implementers might not want to log for example data
 content details in Core-level events due to performance or privacy considerations.
 In this case, they <span class="bcp14">SHOULD</span> use (a subset of) relevant Base-level events instead to
 ensure usability of the qlog output. As an example, implementations that do not
 log QUIC <code>packet_received</code> events and thus also not which (if any) ACK frames the
-packet contains, <span class="bcp14">SHOULD</span> log <code>packets_acked</code> events instead.<a href="#section-8.2-8" class="pilcrow">¶</a></p>
-<p id="section-8.2-9">Finally, for event types whose data (partially) overlap with other event types'
+packet contains, <span class="bcp14">SHOULD</span> log <code>packets_acked</code> events instead.<a href="#section-8.3-8" class="pilcrow">¶</a></p>
+<p id="section-8.3-9">Finally, for event types whose data (partially) overlap with other event types'
 definitions, where necessary the event definition document should include explicit
-guidance on which to use in specific situations.<a href="#section-8.2-9" class="pilcrow">¶</a></p>
+guidance on which to use in specific situations.<a href="#section-8.3-9" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="tooling-expectations">
-<section id="section-8.3">
+<section id="section-8.4">
         <h3 id="name-tooling-expectations">
-<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-tooling-expectations" class="section-name selfRef">Tooling Expectations</a>
+<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-tooling-expectations" class="section-name selfRef">Tooling Expectations</a>
         </h3>
-<p id="section-8.3-1">qlog is an extensible format and it is expected that new event schema will
+<p id="section-8.4-1">qlog is an extensible format and it is expected that new event schema will
 emerge that define new categories, event types,(e.g., a per-event field
 indicating its privacy properties or
 path_id in multipath protocols), as well as values for the "trigger" property
 within the "data" field, or other member fields of the "data" field, as they see
-fit.<a href="#section-8.3-1" class="pilcrow">¶</a></p>
-<p id="section-8.3-2">It <span class="bcp14">SHOULD NOT</span> be expected that general-purpose tools will recognize or visualize
+fit.<a href="#section-8.4-1" class="pilcrow">¶</a></p>
+<p id="section-8.4-2">It <span class="bcp14">SHOULD NOT</span> be expected that general-purpose tools will recognize or visualize
 all forms of qlog extension. Tools <span class="bcp14">SHOULD</span> allow for the presence of unknown
-event fields and make an effort to visualize even unknown data if possible, otherwise they <span class="bcp14">MUST</span> ignore it.<a href="#section-8.3-2" class="pilcrow">¶</a></p>
+event fields and make an effort to visualize even unknown data if possible, otherwise they <span class="bcp14">MUST</span> ignore it.<a href="#section-8.4-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="further-design-guidance">
-<section id="section-8.4">
+<section id="section-8.5">
         <h3 id="name-further-design-guidance">
-<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-further-design-guidance" class="section-name selfRef">Further Design Guidance</a>
+<a href="#section-8.5" class="section-number selfRef">8.5. </a><a href="#name-further-design-guidance" class="section-name selfRef">Further Design Guidance</a>
         </h3>
-<p id="section-8.4-1">There are several ways of defining concrete event types. In practice, two main types of
+<p id="section-8.5-1">There are several ways of defining concrete event types. In practice, two main types of
 approach have been observed: a) those that map directly to concepts seen in the
 protocols (e.g., <code>packet_sent</code>) and b) those that act as aggregating events that
 combine data from several possible protocol behaviors or code paths into one
 (e.g., <code>parameters_set</code>). The latter are typically used as a means to reduce the
 amount of unique event definitions, as reflecting each possible protocol event
-as a separate qlog entity would cause an explosion of event types.<a href="#section-8.4-1" class="pilcrow">¶</a></p>
-<p id="section-8.4-2">Additionally, logging duplicate data is typically prevented as much as possible.
+as a separate qlog entity would cause an explosion of event types.<a href="#section-8.5-1" class="pilcrow">¶</a></p>
+<p id="section-8.5-2">Additionally, logging duplicate data is typically prevented as much as possible.
 For example, packet header values that remain consistent across many packets are
 split into separate events (for example <code>spin_bit_updated</code> or
-<code>connection_id_updated</code> for QUIC).<a href="#section-8.4-2" class="pilcrow">¶</a></p>
-<p id="section-8.4-3">Finally, when logging additional state change events, those state changes can
+<code>connection_id_updated</code> for QUIC).<a href="#section-8.5-2" class="pilcrow">¶</a></p>
+<p id="section-8.5-3">Finally, when logging additional state change events, those state changes can
 often be directly inferred from data on the wire (for example flow control limit
 changes). As such, if the implementation is bug-free and spec-compliant, logging
 additional events is typically avoided. Exceptions have been made for common
 events that benefit from being easily identifiable or individually logged (for
-example <code>packets_acked</code>).<a href="#section-8.4-3" class="pilcrow">¶</a></p>
+example <code>packets_acked</code>).<a href="#section-8.5-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2932,7 +2983,7 @@ GenericError = {
 <a href="#section-9.1.2" class="section-number selfRef">9.1.2. </a><a href="#name-warning" class="section-name selfRef">warning</a>
           </h4>
 <p id="section-9.1.2-1">Used to log details of an internal warning that might not get reflected on the
-wire. It has Base importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.1.2-1" class="pilcrow">¶</a></p>
+wire. It has Base importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.2-1" class="pilcrow">¶</a></p>
 <span id="name-genericwarning-definition"></span><div id="generic-warning-def">
 <figure id="figure-32">
             <div class="lang-cddl sourcecode" id="section-9.1.2-2.1">
@@ -2958,7 +3009,7 @@ GenericWarning = {
           </h4>
 <p id="section-9.1.3-1">Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.1.3-1" class="pilcrow">¶</a></p>
+has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.3-1" class="pilcrow">¶</a></p>
 <span id="name-genericinfo-definition"></span><div id="generic-info-def">
 <figure id="figure-33">
             <div class="lang-cddl sourcecode" id="section-9.1.3-2.1">
@@ -2983,7 +3034,7 @@ GenericInfo = {
           </h4>
 <p id="section-9.1.4-1">Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.1.4-1" class="pilcrow">¶</a></p>
+has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.4-1" class="pilcrow">¶</a></p>
 <span id="name-genericdebug-definition"></span><div id="generic-debug-def">
 <figure id="figure-34">
             <div class="lang-cddl sourcecode" id="section-9.1.4-2.1">
@@ -3008,7 +3059,7 @@ GenericDebug = {
           </h4>
 <p id="section-9.1.5-1">Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.1.5-1" class="pilcrow">¶</a></p>
+has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.5-1" class="pilcrow">¶</a></p>
 <span id="name-genericverbose-definition"></span><div id="generic-verbose-def">
 <figure id="figure-35">
             <div class="lang-cddl sourcecode" id="section-9.1.5-2.1">
@@ -3062,7 +3113,7 @@ $ProtocolEventData /= SimulationEventData
 <p id="section-9.2.1-1">Used to specify which specific scenario is being tested at this particular
 instance. This supports, for example, aggregation of several simulations into
 one trace (e.g., split by <code>group_id</code>). It has Extra importance level; see
-<a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.2.1-1" class="pilcrow">¶</a></p>
+<a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.2.1-1" class="pilcrow">¶</a></p>
 <span id="name-simulationscenario-definiti"></span><div id="simulation-scenario-def">
 <figure id="figure-37">
             <div class="lang-cddl sourcecode" id="section-9.2.1-2.1">
@@ -3088,7 +3139,7 @@ SimulationScenario = {
           </h4>
 <p id="section-9.2.2-1">Used to indicate when specific emulation conditions are triggered at set times
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered). It has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.2.2-1" class="pilcrow">¶</a></p>
+triggered). It has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.2.2-1" class="pilcrow">¶</a></p>
 <span id="name-simulationmarker-definition"></span><div id="simulation-marker-def">
 <figure id="figure-38">
             <div class="lang-cddl sourcecode" id="section-9.2.2-2.1">
@@ -3640,6 +3691,36 @@ log file schema. It has the following format:<a href="#section-15-3" class="pilc
             <td class="text-left" rowspan="1" colspan="1">
               <a href="#qlog-file-seq-schema" class="auto internal xref">Section 5</a>
 </td>
+          </tr>
+        </tbody>
+      </table>
+<p id="section-15-5">IANA is requested to create the "qlog event category URIs" registry
+at <span><a href="https://www.iana.org/assignments/qlog">https://www.iana.org/assignments/qlog</a></span> for the purpose of registering
+event categories. It has the following format:<a href="#section-15-5" class="pilcrow">¶</a></p>
+<table class="center" id="table-2">
+        <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Event Category URI</th>
+            <th class="text-left" rowspan="1" colspan="1">Description</th>
+            <th class="text-left" rowspan="1" colspan="1">Reference</th>
+            <th class="text-left" rowspan="1" colspan="1"> </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">urn:ietf:params:qlog:events:std#generic</td>
+            <td class="text-left" rowspan="1" colspan="1">Well-known logging levels for free-form text.</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#generic-events" class="auto internal xref">Section 9.1</a>
+</td>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
           </tr>
         </tbody>
       </table>

@@ -96,10 +96,11 @@ Table of Contents
      7.6.  SystemInformation
      7.7.  CommonFields
    8.  Concrete Event Types and Event Schema
-     8.1.  Extending the Data Field
-     8.2.  Event Importance Levels
-     8.3.  Tooling Expectations
-     8.4.  Further Design Guidance
+     8.1.  Event Schema and Event Category URIs
+     8.2.  Extending the Data Field
+     8.3.  Event Importance Levels
+     8.4.  Tooling Expectations
+     8.5.  Further Design Guidance
    9.  The Standard Event Schema
      9.1.  Generic Events
        9.1.1.  error
@@ -371,7 +372,9 @@ Table of Contents
    The optional "title" and "description" fields provide additional
    free-text information about the file.
 
-   The required "event_schemas" field is described in Section 8.
+   The required "event_schemas" field contains event schema URI that
+   identify concrete event types recorded in a log.  Requirements and
+   guidelines are defined in Section 8.
 
    To support adding custom fields in concrete log file schema, the CDDL
    "group socket" "logfile-extensions" is defined.  This field acts as a
@@ -716,7 +719,7 @@ Table of Contents
                         Figure 15: Event definition
 
    Each qlog event MUST contain the mandatory fields: "time"
-   (Section 7.1), "name" (Section 8), and "data" (Section 8.1).
+   (Section 7.1), "name" (Section 8), and "data" (Section 8.2).
 
    Each qlog event, is an instance of a concrete event type that derives
    from the abstract Event class; see Section 8.  They extend it by
@@ -884,7 +887,7 @@ Table of Contents
 
    In qlog, the optional "trigger" field contains a string value
    describing the reason (if any) for this event instance occurring, see
-   Section 8.1.  While this "trigger" field could be a property of the
+   Section 8.2.  While this "trigger" field could be a property of the
    qlog Event itself, it is instead a property of the "data" field
    instead.  This choice was made because many event types do not
    include a trigger value, and having the field at the Event-level
@@ -1084,66 +1087,101 @@ Table of Contents
 
 8.  Concrete Event Types and Event Schema
 
-   Concrete event types are defined in event schema, which declare a
-   namespace consisting of one or more categories, each containing
-   related event types.  This document defines the std event schema; see
-   Section 9.  Other examples are the quic [QLOG-QUIC] and h3 [QLOG-H3]
+   Concrete event types belong to event categories, both defined by
    event schema.
 
+   A single event schema can define a new namespace, or extend an
+   existing namespace with new categories.  New namespaces MUST be
+   registered using a non-empty namespace identifier of type text.
+   Namespace are mutable and MAY be extended with categories.
+
+   Event categories MUST belong to a single event namespace.  They MUST
+   have a registered non-empty globally-unique identifier of type text
+   and MUST have a single dereferencable URI.  That URI MUST be absolute
+   and MUST indicate the category identifier using a fragment identifier
+   (characters after a "#" in the URI).  Event categories are immutable
+   and MUST NOT be extended with events.
+
+   Registration guidance and requirements is provided in Section 8.1.
+
    Concrete events MAY extend any part of the abstract Event class,
-   including extending the "data" field (Section 8.1) of adding custom
+   including extending the "data" field (Section 8.2) of adding custom
    fields.
-
-   Event schema MUST define a registered non-empty namespace identifier
-   of type text.
-
-   Event categories MUST belong to a single event schema.  The MUST have
-   a registered non-empty globally-unique identifier of type text and
-   MUST have a single dereferencable URI.  That URI MUST be absolute and
-   MUST indicate the category identifier using a fragment identifier
-   (characters after a "#" in the URI).  For event categories in schema
-   defined by RFCs, the URI SHOULD be a URN of the form
-   urn:ietf:params:qlog:events:<namespace identifier>#<category
-   identifier>.  Private or non-standard event categories can use other
-   URI formats.  URIs that contain a domain name SHOULD also contain a
-   month-date in the form mmyyyy.  The definition of the category and
-   assignment of the URI MUST have been authorized by the owner of the
-   domain name on or very close to that date.  (This avoids problems
-   when domain names change ownership.)
-
-   The registration requirements for extension schema URIs are detailed
-   in Section 15.
 
    Concrete event types MUST belong to a single event category and MUST
    have a non-empty name of type text.
 
    The value of a qlog event name field MUST be the concatenation of
    category identifier, colon (':'), and event type identifier.  By
-   virtue of the identifier requirements, names are globally-unique.
-   Thus, log files can contain events from multiple schemas without the
-   risk of name collisions.
+   virtue of the identifier requirements described above, event names
+   are globally-unique.  Thus, log files can contain events from
+   multiple schemas without the risk of name collisions.
+
+   Implementations that might record concrete events belonging to a
+   category in an event schema SHOULD list all category identifiers in
+   use.  This is achieved by including the appropriate URI in the
+   event_schemas field of the abstract LogFile class (Section 3).  The
+   event_schema is a hint to tools about the possible event categories
+   (and event types contained therein) that a qlog file might contain.
+   The file MAY contain event types that do not belong to a listed
+   category identifier.  Tools MUST NOT treat this as an error; see
+   Section 13.
 
    In the following hypothetical example, a qlog file contains events
-   belonging to multiple standard and non-standard categories belonging
-   to different schema namespaces rick, john, and pickle.  The standard
-   categories use a URN format, the non-standard categories use a URI
-   with domain name.
+   belonging to the standard event schema (Section 9), an event schema
+   named rick specified in a hypothetical RFC, and a private event
+   schema named pickle.  The standardized categories use a URN format,
+   the private categories use a URI with domain name.
 
-  "event_categories": [
-                        "urn:ietf:params:qlog:rick#roll",
-                        "urn:ietf:params:qlog:rick#astley",
-                        "urn:ietf:params:qlog:rick#moranis",
-                        "urn:ietf:params:qlog:john#doe",
-                        "urn:ietf:params:qlog:john#candy",
-                        "urn:ietf:params:qlog:john#goodman",
-                        "https://example.com/032024/pickle.html#pepper",
-                        "https://example.com/032024/pickle.html#lilly",
-                        "https://example.com/032024/pickle.html#rick",
-                      ]
+   "event_schemas": [
+     "urn:ietf:params:qlog:events:std#generic,
+     "urn:ietf:params:qlog:events:std#simulation,
+     "urn:ietf:params:qlog:events:rick#roll",
+     "urn:ietf:params:qlog:events:rick#astley",
+     "urn:ietf:params:qlog:events:rick#moranis",
+     "https://example.com/032024/pickle.html#pepper",
+     "https://example.com/032024/pickle.html#lilly",
+     "https://example.com/032024/pickle.html#rick"
+   ]
 
-            Figure 26: Example event_categories serialization
+             Figure 26: Example event_categories serialization
 
-8.1.  Extending the Data Field
+8.1.  Event Schema and Event Category URIs
+
+   Event schema defined by RFCs MUST register all categories in the
+   "qlog event category URIs" registry and SHOULD use a URN of the form
+   urn:ietf:params:qlog:events:<namespace identifier>#<category
+   identifier>, where <category identifier> is globally unique.  For
+   example, this document defines the standard event schema (Section 9)
+   that uses the std namespace containing the generic and simulation
+   categories.  Other examples of event schema define the quic
+   [QLOG-QUIC] and h3 [QLOG-H3] namespaces.
+
+   Private or non-standard event categories can use other URI formats.
+   URIs that contain a domain name SHOULD also contain a month-date in
+   the form mmyyyy.  The definition of the category and assignment of
+   the URI MUST have been authorized by the owner of the domain name on
+   or very close to that date.  This avoids problems when domain names
+   change ownership.
+
+   The "qlog event category URIs" registry operates under the Expert
+   Review policy, per Section 4.5 of [RFC8126].  When reviewing
+   requests, the expert MUST check that the URI is appropriate to the
+   event schema and satisfies the requirements in Section 8 and this
+   section.  A request to register a private or non-standard log schema
+   URI using a URN of the form urn:ietf:params:qlog:event:<namespace
+   identifier>#<category identifier MUST be rejected.
+
+   Registration requests should use the following template:
+
+   Event Category URI:  [the event category identifier]
+
+   Description:  [a description of the event category]
+
+   Reference:  [to a specification defining the schema defining the
+      event category]
+
+8.2.  Extending the Data Field
 
    An event's "data" field is a generic key-value map (e.g., JSON
    object).  It defines the per-event metadata that is to be logged.
@@ -1294,7 +1332,7 @@ Table of Contents
       Figure 29: Example of an extended 'data' field for a conceptual
                            QUIC packet_sent event
 
-8.2.  Event Importance Levels
+8.3.  Event Importance Levels
 
    Depending on how events are designed, it may be that several events
    allow the logging of similar or overlapping data.  For example the
@@ -1351,7 +1389,7 @@ Table of Contents
    document should include explicit guidance on which to use in specific
    situations.
 
-8.3.  Tooling Expectations
+8.4.  Tooling Expectations
 
    qlog is an extensible format and it is expected that new event schema
    will emerge that define new categories, event types,(e.g., a per-
@@ -1365,7 +1403,7 @@ Table of Contents
    presence of unknown event fields and make an effort to visualize even
    unknown data if possible, otherwise they MUST ignore it.
 
-8.4.  Further Design Guidance
+8.5.  Further Design Guidance
 
    There are several ways of defining concrete event types.  In
    practice, two main types of approach have been observed: a) those
@@ -1436,7 +1474,7 @@ Table of Contents
 
    Used to log details of an internal warning that might not get
    reflected on the wire.  It has Base importance level; see
-   Section 8.2.
+   Section 8.3.
 
    GenericWarning = {
        ? code: uint64
@@ -1451,7 +1489,7 @@ Table of Contents
 
    Used mainly for implementations that want to use qlog as their one
    and only logging format but still want to support unstructured string
-   messages.  The event has Extra importance level; see Section 8.2.
+   messages.  The event has Extra importance level; see Section 8.3.
 
    GenericInfo = {
        message: text
@@ -1465,7 +1503,7 @@ Table of Contents
 
    Used mainly for implementations that want to use qlog as their one
    and only logging format but still want to support unstructured string
-   messages.  The event has Extra importance level; see Section 8.2.
+   messages.  The event has Extra importance level; see Section 8.3.
 
    GenericDebug = {
        message: text
@@ -1479,7 +1517,7 @@ Table of Contents
 
    Used mainly for implementations that want to use qlog as their one
    and only logging format but still want to support unstructured string
-   messages.  The event has Extra importance level; see Section 8.2.
+   messages.  The event has Extra importance level; see Section 8.3.
 
    GenericVerbose = {
        message: text
@@ -1515,7 +1553,7 @@ Table of Contents
    Used to specify which specific scenario is being tested at this
    particular instance.  This supports, for example, aggregation of
    several simulations into one trace (e.g., split by group_id).  It has
-   Extra importance level; see Section 8.2.
+   Extra importance level; see Section 8.3.
 
    SimulationScenario = {
        ? name: text
@@ -1531,7 +1569,7 @@ Table of Contents
    Used to indicate when specific emulation conditions are triggered at
    set times (e.g., at 3 seconds in 2% packet loss is introduced, at 10s
    a NAT rebind is triggered).  It has Extra importance level; see
-   Section 8.2.
+   Section 8.3.
 
    SimulationMarker = {
        ? type: text
@@ -2049,6 +2087,23 @@ Table of Contents
    +--------------------------------------+----------------+-----------+
 
                                   Table 1
+
+   IANA is requested to create the "qlog event category URIs" registry
+   at https://www.iana.org/assignments/qlog for the purpose of
+   registering event categories.  It has the following format:
+
+   +=========================================+=============+=========++
+   | Event Category URI                      | Description |Reference||
+   +=========================================+=============+=========++
+   +-----------------------------------------+-------------+---------++
+   | urn:ietf:params:qlog:events:std#generic | Well-known  |Section  ||
+   |                                         | logging     |9.1      ||
+   |                                         | levels for  |         ||
+   |                                         | free-form   |         ||
+   |                                         | text.       |         ||
+   +-----------------------------------------+-------------+---------++
+
+                                 Table 2
 
 16.  References
 
