@@ -992,8 +992,8 @@ fields are "time" and "data", who are divergent by nature.
 
 Concrete event types are defined in event schema, which declare a namespace
 consisting of one or more categories, each containing related event types. This
-document defines the `std` event schema. Other examples are the `quic`
-{{QLOG-QUIC}} and `h3` {{QLOG-H3}} event schema.
+document defines the `std` event schema; see {{std-event-schema}}. Other
+examples are the `quic` {{QLOG-QUIC}} and `h3` {{QLOG-H3}} event schema.
 
 Concrete events MAY extend any part of the abstract Event class, including extending the "data" field ({{data-field}}) of adding custom fields.
 
@@ -1273,7 +1273,7 @@ additional events is typically avoided. Exceptions have been made for common
 events that benefit from being easily identifiable or individually logged (for
 example `packets_acked`).
 
-# The Standard Event Schema
+# The Standard Event Schema {#std-event-schema}
 
 The standard event schema defines categories and event types that are common across
 protocols, applications, and use cases. The schema namespace is "std".
