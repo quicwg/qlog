@@ -300,7 +300,9 @@ Concrete log file schemas MUST identify themselves using a URI.
 Log file schemas defined by RFCs MUST register a URI in the "qlog log file
 schema URIs" registry and SHOULD use a URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>`, where `<schema-identifier>` is
-a globally-unique name.
+a globally-unique name. This document registers
+`urn:ietf:params:qlog:file:contained` ({{qlog-file-schema}}) and
+`urn:ietf:params:qlog:file:sequential` ({{qlog-file-seq-schema}}).
 
 Private or non-standard log file schemas MAY register a URI in the "qlog log
 file schema" registry but MUST NOT use a URN of the form
@@ -313,9 +315,9 @@ names change ownership.
 
 The "qlog log file schema URIs" registry operates under the Expert Review
 policy, per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert
-SHOULD check that the URI is appropriate to the concrete log file format and
+MUST check that the URI is appropriate to the concrete log file format and
 satisfies the requirements in this section. A request to register a private or
-non-standard URI using a URN of the form
+non-standard log schema URI using a URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>` MUST be rejected.
 
 Registration requests should use the following template:
@@ -1874,12 +1876,11 @@ IANA Registry Reference:
 
 IANA is requested to create the "qlog log file schema URIs" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
-event extension schema. It has the following format:
+log file schema. It has the following format:
 
 | Log File Schema URI | Description | Reference |
-| urn:ietf:params:qlog:file:contained| Concrete log file format that can contain several traces from multiple vantage points. | This document |
-| urn:ietf:params:qlog:file:sequential| Concrete log file format containing a single trace, optimized for seqential read and write access. | This document |
-
+| urn:ietf:params:qlog:file:contained| Concrete log file format that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
+| urn:ietf:params:qlog:file:sequential| Concrete log file format containing a single trace, optimized for seqential read and write access. | {{qlog-file-seq-schema}} |
 
 --- back
 
