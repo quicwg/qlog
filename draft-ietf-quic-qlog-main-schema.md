@@ -293,20 +293,41 @@ $$logfile-extensions //= (
 ~~~~~~~~
 {: #logfile-groupsocket-extension-example title="Example of using a generic CDDL group socket to extend logfile-extensions"}
 
-## Concrete Log File Schema URI {#schema-uri}
+## Concrete Log File Schema URIs {#schema-uri}
 
 Concrete log file schemas MUST identify themselves using a URI.
 
-Log file schemas defined by RFCs SHOULD be URN of the form
+Log file schemas defined by RFCs MUST register a URI in the "qlog log file
+schema URIs" registry and SHOULD use a URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>`, where `<schema-identifier>` is
-a globally-unique name. URN MUST be registered with IANA; see {{iana}}.
+a globally-unique name.
 
-Private or non-standard log file schemas can use other URI formats. URIs that
-contain a domain name SHOULD also contain a month-date in the form mmyyyy. For
-example, "https://example.org/072024/customfileschema". The definition of the
-file schema and assignment of the URI MUST have been authorized by the owner of
-the domain name on or very close to that date. This avoids problems when domain
-names change ownership. For example,
+Private or non-standard log file schemas MAY register a URI in the "qlog log
+file schema" registry but MUST NOT use a URN of the form
+`urn:ietf:params:qlog:file:<schema-identifier>`. URIs that contain a domain name
+SHOULD also contain a month-date in the form mmyyyy. For example,
+"https://example.org/072024/customfileschema". The definition of the log file
+schema and assignment of the URI MUST have been authorized by the owner of the
+domain name on or very close to that date. This avoids problems when domain
+names change ownership.
+
+The "qlog log file schema URIs" registry operates under the Expert Review
+policy, per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert
+SHOULD check that the URI is appropriate to the concrete log file format and
+satisfies the requirements in this section. A request to register a private or
+non-standard URI using a URN of the form
+`urn:ietf:params:qlog:file:<schema-identifier>` MUST be rejected.
+
+Registration requests should use the following template:
+
+Log File Schema URI:
+: \[the log file schema identifier\]
+
+Description:
+: \[a description of the log file schema\]
+
+Reference:
+: \[to a specification defining the log file schema\]
 
 # QlogFile schema {#qlog-file-schema}
 
@@ -1839,7 +1860,26 @@ inclusion of such fields for all but the most stringent use cases.
 
 # IANA Considerations {#iana}
 
-TODO: file and event schema registration stuff
+IANA is requested to register a new entry in the "IETF URN Sub-namespace for
+Registered Protocol Parameter Identifiers" registry ({{!RFC3553}})":
+
+Registered Parameter Identifier:
+: qlog
+
+Reference:
+: This Document
+
+IANA Registry Reference:
+: [](https://www.iana.org/assignments/qlog){: brackets="angle"}
+
+IANA is requested to create the "qlog log file schema URIs" registry
+at [](https://www.iana.org/assignments/qlog) for the purpose of registering
+event extension schema. It has the following format:
+
+| Log File Schema URI | Description | Reference |
+| urn:ietf:params:qlog:file:contained| Concrete log file format that can contain several traces from multiple vantage points. | This document |
+| urn:ietf:params:qlog:file:sequential| Concrete log file format containing a single trace, optimized for seqential read and write access. | This document |
+
 
 --- back
 
