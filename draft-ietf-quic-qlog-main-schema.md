@@ -256,7 +256,7 @@ defining semantics and any custom fields.
 ~~~ cddl
 LogFile = {
     file_schema: text
-    qlog_serialization_format: text
+    serialization_format: text
     ? title: text
     ? description: text
     event_schema: [+text]
@@ -270,11 +270,11 @@ LogFile = {
 The required "file_schema" field identifies the concrete log file format. It
 MUST have a value that is an absolute URI; see {{schema-uri}} for rules and
 guidance. In order to make it easier to parse and identify qlog files and their
-serialization format, the "file_schema" and "qlog_serialization_format" fields
+serialization format, the "file_schema" and "serialization_format" fields
 and their values SHOULD be in the first 256 characters/bytes of the resulting
 log file.
 
-The required "qlog_serialization_format" field indicates the serialization
+The required "serialization_format" field indicates the serialization
 format using a media type {{!RFC2046}}. It is case-insensitive.
 
 The optional "title" and "description" fields provide additional free-text
@@ -318,7 +318,7 @@ The optional "traces" field contains an array of qlog traces ({{trace}}), each
 of which contain metadata and an array of qlog events ({{abstract-event}}).
 
 The default serialization format is JSON; see {{format-json}} for guidance
-on populating the "qlog_serialization_format" field and other considerations.
+on populating the "serialization_format" field and other considerations.
 Where a qlog file is serialized to a JSON format, one of the downsides is that
 it is inherently a non-streamable format. Put differently, it is not possible to
 simply append new qlog events to a log file without "closing" this file at the
@@ -331,7 +331,7 @@ JSON serialization example:
 ~~~
 {
     "file_schema": "urn:ietf:params:qlog:file:contained",
-    "qlog_serialization_format": "application/qlog+json",
+    "serialization_format": "application/qlog+json",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
     "traces": [...]
@@ -457,7 +457,7 @@ The required "trace" field contains a singular trace metadata. All qlog events
 in the file are related to this trace; see {{traceseq}}.
 
 See {{format-json-seq}} for guidance on populating the
-"qlog_serialization_format" field and other serialization considerations.
+"serialization_format" field and other serialization considerations.
 
 JSON-SEQ serialization example:
 
@@ -469,7 +469,7 @@ JSON-SEQ serialization example:
 
 <RS>{
     "file_schema": "urn:ietf:params:qlog:file:sequential",
-    "qlog_serialization_format": "application/qlog+json-seq",
+    "serialization_format": "application/qlog+json-seq",
     "title": "Name of JSON Text Sequence qlog file (short)",
     "description": "Description for this trace file (long)",
     "trace": {
@@ -1458,7 +1458,7 @@ interoperability considerations for both formats, and {{optimizations}} presents
 potential optimizations.
 
 Serialization formats require appropriate deserializers/parsers. The
-"qlog_serialization_format" field ({{abstract-logfile}}}) is used to indicate the chosen
+"serialization_format" field ({{abstract-logfile}}) is used to indicate the chosen
 serialization format.
 
 ## qlog to JSON mapping {#format-json}
