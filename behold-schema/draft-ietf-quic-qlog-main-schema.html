@@ -1659,8 +1659,7 @@ LogFile = {
     ? description: text
     event_schemas: [+text]
 
-    ; can contain any amount of custom fields
-    * text =&gt; any
+    * $$logfile-extensions
 }
 </pre>
 </div>
@@ -1679,6 +1678,23 @@ format using a media type <span>[<a href="#RFC2046" class="cite xref">RFC2046</a
 <p id="section-3-5">The optional "title" and "description" fields provide additional free-text
 information about the file.<a href="#section-3-5" class="pilcrow">¶</a></p>
 <p id="section-3-6">The required "event_schemas" field is described in <a href="#event-types-and-schema" class="auto internal xref">Section 8</a>.<a href="#section-3-6" class="pilcrow">¶</a></p>
+<p id="section-3-7">To support adding custom fields in concrete log file schema, the CDDL "group
+socket" "logfile-extensions" is defined. This field acts as a placeholder that
+can later be replaced with newly defined fields by assigning them to the socket
+with the //= operator. For example:<a href="#section-3-7" class="pilcrow">¶</a></p>
+<span id="name-example-of-using-a-generic-"></span><div id="logfile-groupsocket-extension-example">
+<figure id="figure-3">
+        <div class="alignLeft art-text artwork" id="section-3-8.1">
+<pre>
+$$logfile-extensions //= (
+  ? custom_logfile_extension: bool
+)
+</pre>
+</div>
+<figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
+<a href="#name-example-of-using-a-generic-" class="selfRef">Example of using a generic CDDL group socket to extend logfile-extensions</a>
+        </figcaption></figure>
+</div>
 <div id="schema-uri">
 <section id="section-3.1">
         <h3 id="name-concrete-log-file-schema-ur">
@@ -1706,24 +1722,27 @@ names change ownership. For example,<a href="#section-3.1-3" class="pilcrow">¶<
 <p id="section-4-1">A qlog using the QlogFile schema can contain several individual traces and logs
 from multiple vantage points that are in some way related. The top-level element
 in this schema defines only a small set of "header" fields and an array of
-component traces, defined in <a href="#qlog-file-def" class="auto internal xref">Figure 3</a> as:<a href="#section-4-1" class="pilcrow">¶</a></p>
+component traces.  defined in <a href="#qlog-file-def" class="auto internal xref">Figure 4</a> as:<a href="#section-4-1" class="pilcrow">¶</a></p>
 <span id="name-qlogfile-definition"></span><div id="qlog-file-def">
-<figure id="figure-3">
+<figure id="figure-4">
         <div class="lang-cddl sourcecode" id="section-4-2.1">
 <pre>
 QlogFile = {
-    ? traces: [+ Trace /
+    $$logfile-extensions //= (
+      ? traces: [+ Trace /
                  TraceError]
+    )
 }
 </pre>
 </div>
-<figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
+<figcaption><a href="#figure-4" class="selfRef">Figure 4</a>:
 <a href="#name-qlogfile-definition" class="selfRef">QlogFile definition</a>
         </figcaption></figure>
 </div>
 <p id="section-4-3">The QlogFile schema URI is <code>urn:ietf:params:qlog:file:contained</code>.<a href="#section-4-3" class="pilcrow">¶</a></p>
-<p id="section-4-4">The optional "traces" field contains an array of qlog traces (<a href="#trace" class="auto internal xref">Section 4.2</a>), each
-of which contain metadata and an array of qlog events (<a href="#abstract-event" class="auto internal xref">Section 7</a>).<a href="#section-4-4" class="pilcrow">¶</a></p>
+<p id="section-4-4">QlogFile extended <code>$$logfile-extensions</code> with the optional "traces" field that
+contains an array of qlog traces (<a href="#trace" class="auto internal xref">Section 4.2</a>), each of which contain metadata and
+an array of qlog events (<a href="#abstract-event" class="auto internal xref">Section 7</a>).<a href="#section-4-4" class="pilcrow">¶</a></p>
 <p id="section-4-5">The default serialization format is JSON; see <a href="#format-json" class="auto internal xref">Section 11.1</a> for guidance
 on populating the "serialization_format" field and other considerations.
 Where a qlog file is serialized to a JSON format, one of the downsides is that
@@ -1734,7 +1753,7 @@ unable to parse the file entirely. The alternative QlogFileSeq
 (<a href="#qlog-file-seq-schema" class="auto internal xref">Section 5</a>) is better suited to streaming.<a href="#section-4-5" class="pilcrow">¶</a></p>
 <p id="section-4-6">JSON serialization example:<a href="#section-4-6" class="pilcrow">¶</a></p>
 <span id="name-qlogfile-example"></span><div id="qlog-file-ex">
-<figure id="figure-4">
+<figure id="figure-5">
         <div class="alignLeft art-text artwork" id="section-4-7.1">
 <pre>
 {
@@ -1746,7 +1765,7 @@ unable to parse the file entirely. The alternative QlogFileSeq
 }
 </pre>
 </div>
-<figcaption><a href="#figure-4" class="selfRef">Figure 4</a>:
+<figcaption><a href="#figure-5" class="selfRef">Figure 5</a>:
 <a href="#name-qlogfile-example" class="selfRef">QlogFile example</a>
         </figcaption></figure>
 </div>
@@ -1779,9 +1798,9 @@ however, a trace is a log of a single data flow collected at a single location
 or vantage point. For example, for QUIC, a single trace only contains events for
 a single logical QUIC connection for either the client or the server.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
 <p id="section-4.2-2">A Trace contains some metadata in addition to qlog events, defined in
-<a href="#trace-def" class="auto internal xref">Figure 5</a> as:<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<a href="#trace-def" class="auto internal xref">Figure 6</a> as:<a href="#section-4.2-2" class="pilcrow">¶</a></p>
 <span id="name-trace-definition"></span><div id="trace-def">
-<figure id="figure-5">
+<figure id="figure-6">
           <div class="lang-cddl sourcecode" id="section-4.2-3.1">
 <pre>
 Trace = {
@@ -1793,7 +1812,7 @@ Trace = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-5" class="selfRef">Figure 5</a>:
+<figcaption><a href="#figure-6" class="selfRef">Figure 6</a>:
 <a href="#name-trace-definition" class="selfRef">Trace definition</a>
           </figcaption></figure>
 </div>
@@ -1805,7 +1824,7 @@ information about the trace.<a href="#section-4.2-4" class="pilcrow">¶</a></p>
 the "common_fields" list and "vantage_point" field.<a href="#section-4.2-7" class="pilcrow">¶</a></p>
 <p id="section-4.2-8">JSON serialization example:<a href="#section-4.2-8" class="pilcrow">¶</a></p>
 <span id="name-trace-example"></span><div id="trace-ex">
-<figure id="figure-6">
+<figure id="figure-7">
           <div class="alignLeft art-text artwork" id="section-4.2-9.1">
 <pre>
 {
@@ -1823,7 +1842,7 @@ the "common_fields" list and "vantage_point" field.<a href="#section-4.2-7" clas
 }
 </pre>
 </div>
-<figcaption><a href="#figure-6" class="selfRef">Figure 6</a>:
+<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
 <a href="#name-trace-example" class="selfRef">Trace example</a>
           </figcaption></figure>
 </div>
@@ -1837,9 +1856,9 @@ the "common_fields" list and "vantage_point" field.<a href="#section-4.2-7" clas
 <p id="section-4.3-1">A TraceError indicates that an attempt to find/convert a file for inclusion in
 the aggregated qlog was made, but there was an error during the process. Rather
 than silently dropping the erroneous file, it can be explicitly included in the
-qlog file as an entry in the "traces" array, defined in <a href="#trace-error-def" class="auto internal xref">Figure 7</a> as:<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+qlog file as an entry in the "traces" array, defined in <a href="#trace-error-def" class="auto internal xref">Figure 8</a> as:<a href="#section-4.3-1" class="pilcrow">¶</a></p>
 <span id="name-traceerror-definition"></span><div id="trace-error-def">
-<figure id="figure-7">
+<figure id="figure-8">
           <div class="lang-cddl sourcecode" id="section-4.3-2.1">
 <pre>
 TraceError = {
@@ -1851,13 +1870,13 @@ TraceError = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
+<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
 <a href="#name-traceerror-definition" class="selfRef">TraceError definition</a>
           </figcaption></figure>
 </div>
 <p id="section-4.3-3">JSON serialization example:<a href="#section-4.3-3" class="pilcrow">¶</a></p>
 <span id="name-traceerror-example"></span><div id="trace-error-ex">
-<figure id="figure-8">
+<figure id="figure-9">
           <div class="alignLeft art-text artwork" id="section-4.3-4.1">
 <pre>
 {
@@ -1867,7 +1886,7 @@ TraceError = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
+<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
 <a href="#name-traceerror-example" class="selfRef">TraceError example</a>
           </figcaption></figure>
 </div>
@@ -1885,28 +1904,31 @@ is through the use of the "group_id" field, discussed in <a href="#group-ids" cl
 <p id="section-5-1">A qlog file using the QlogFileSeq schema can be serialized to a streamable JSON
 format called JSON Text Sequences (JSON-SEQ) (<span>[<a href="#RFC7464" class="cite xref">RFC7464</a>]</span>). The top-level
 element in this schema defines only a small set of "header" fields and an array
-of component traces, defined in <a href="#qlog-file-def" class="auto internal xref">Figure 3</a> as:<a href="#section-5-1" class="pilcrow">¶</a></p>
+of component traces, defined in <a href="#qlog-file-def" class="auto internal xref">Figure 4</a> as:<a href="#section-5-1" class="pilcrow">¶</a></p>
 <span id="name-qlogfileseq-definition"></span><div id="qlog-file-seq-def">
-<figure id="figure-9">
+<figure id="figure-10">
         <div class="lang-cddl sourcecode" id="section-5-2.1">
 <pre>
 QlogFileSeq = {
-    trace: TraceSeq
+    $$logfile-extensions //= (
+      trace: TraceSeq
+    )
 }
 </pre>
 </div>
-<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
+<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
 <a href="#name-qlogfileseq-definition" class="selfRef">QlogFileSeq definition</a>
         </figcaption></figure>
 </div>
 <p id="section-5-3">The QlogFileSeq schema URI is <code>urn:ietf:params:qlog:file:sequential</code>.<a href="#section-5-3" class="pilcrow">¶</a></p>
-<p id="section-5-4">The required "trace" field contains a singular trace metadata. All qlog events
-in the file are related to this trace; see <a href="#traceseq" class="auto internal xref">Section 5.1</a>.<a href="#section-5-4" class="pilcrow">¶</a></p>
+<p id="section-5-4">QlogFileSeq extends <code>$$logfile-extensions</code> with the required "trace" field
+contains a singular trace metadata. All qlog events in the file are related to
+this trace; see <a href="#traceseq" class="auto internal xref">Section 5.1</a>.<a href="#section-5-4" class="pilcrow">¶</a></p>
 <p id="section-5-5">See <a href="#format-json-seq" class="auto internal xref">Section 11.2</a> for guidance on populating the
 "serialization_format" field and other serialization considerations.<a href="#section-5-5" class="pilcrow">¶</a></p>
 <p id="section-5-6">JSON-SEQ serialization example:<a href="#section-5-6" class="pilcrow">¶</a></p>
 <span id="name-top-level-element"></span><div id="json-seq-ex">
-<figure id="figure-10">
+<figure id="figure-11">
         <div class="alignLeft art-text artwork" id="section-5-7.1">
 <pre>
 // list of qlog events, serialized in accordance with RFC 7464,
@@ -1937,7 +1959,7 @@ in the file are related to this trace; see <a href="#traceseq" class="auto inter
 ...
 </pre>
 </div>
-<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
+<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
 <a href="#name-top-level-element" class="selfRef">Top-level element</a>
         </figcaption></figure>
 </div>
@@ -1950,7 +1972,7 @@ in the file are related to this trace; see <a href="#traceseq" class="auto inter
 the exception that qlog events are not contained within it, but rather appended
 after it in a QlogFileSeq.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <span id="name-traceseq-definition"></span><div id="trace-seq-def">
-<figure id="figure-11">
+<figure id="figure-12">
           <div class="lang-cddl sourcecode" id="section-5.1-2.1">
 <pre>
 TraceSeq = {
@@ -1961,7 +1983,7 @@ TraceSeq = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
+<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
 <a href="#name-traceseq-definition" class="selfRef">TraceSeq definition</a>
           </figcaption></figure>
 </div>
@@ -1975,9 +1997,9 @@ TraceSeq = {
 <a href="#section-6" class="section-number selfRef">6. </a><a href="#name-vantagepoint" class="section-name selfRef">VantagePoint</a>
       </h2>
 <p id="section-6-1">A VantagePoint describes the vantage point from which a trace originates,
-defined in <a href="#vantage-point-def" class="auto internal xref">Figure 12</a> as:<a href="#section-6-1" class="pilcrow">¶</a></p>
+defined in <a href="#vantage-point-def" class="auto internal xref">Figure 13</a> as:<a href="#section-6-1" class="pilcrow">¶</a></p>
 <span id="name-vantagepoint-definition"></span><div id="vantage-point-def">
-<figure id="figure-12">
+<figure id="figure-13">
         <div class="lang-cddl sourcecode" id="section-6-2.1">
 <pre>
 VantagePoint = {
@@ -1995,13 +2017,13 @@ VantagePointType = "client" /
                    "unknown"
 </pre>
 </div>
-<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
+<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
 <a href="#name-vantagepoint-definition" class="selfRef">VantagePoint definition</a>
         </figcaption></figure>
 </div>
 <p id="section-6-3">JSON serialization examples:<a href="#section-6-3" class="pilcrow">¶</a></p>
 <span id="name-vantagepoint-example"></span><div id="vantage-point-ex">
-<figure id="figure-13">
+<figure id="figure-14">
         <div class="alignLeft art-text artwork" id="section-6-4.1">
 <pre>
 {
@@ -2016,7 +2038,7 @@ VantagePointType = "client" /
 }
 </pre>
 </div>
-<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
+<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
 <a href="#name-vantagepoint-example" class="selfRef">VantagePoint example</a>
         </figcaption></figure>
 </div>
@@ -2047,7 +2069,7 @@ perspectives manually.<a href="#section-6-7" class="pilcrow">¶</a></p>
 use case. An abstract Event class containing fields common to all events is
 defined.<a href="#section-7-1" class="pilcrow">¶</a></p>
 <span id="name-event-definition"></span><div id="event-def">
-<figure id="figure-14">
+<figure id="figure-15">
         <div class="lang-cddl sourcecode" id="section-7-2.1">
 <pre>
 Event = {
@@ -2065,7 +2087,7 @@ Event = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
 <a href="#name-event-definition" class="selfRef">Event definition</a>
         </figcaption></figure>
 </div>
@@ -2083,7 +2105,7 @@ with identical values. It is possible to optimize out this duplication using
 "common_fields" (<a href="#common-fields" class="auto internal xref">Section 7.7</a>).<a href="#section-7-6" class="pilcrow">¶</a></p>
 <p id="section-7-7">Example qlog event:<a href="#section-7-7" class="pilcrow">¶</a></p>
 <span id="name-event-example"></span><div id="event-ex">
-<figure id="figure-15">
+<figure id="figure-16">
         <div class="alignLeft art-text artwork" id="section-7-8.1">
 <pre>
 {
@@ -2101,7 +2123,7 @@ with identical values. It is possible to optimize out this duplication using
 }
 </pre>
 </div>
-<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
+<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
 <a href="#name-event-example" class="selfRef">Event example</a>
         </figcaption></figure>
 </div>
@@ -2117,7 +2139,7 @@ more succinct timestamps formats to allow reducing file size. The employed forma
 is indicated in the "time_format" field, which allows one of three values:
 "absolute", "delta" or "relative".<a href="#section-7.1-1" class="pilcrow">¶</a></p>
 <span id="name-timeformat-definition"></span><div id="time-format-def">
-<figure id="figure-16">
+<figure id="figure-17">
           <div class="lang-cddl sourcecode" id="section-7.1-2.1">
 <pre>
 TimeFormat = "absolute" /
@@ -2125,7 +2147,7 @@ TimeFormat = "absolute" /
              "relative"
 </pre>
 </div>
-<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
+<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
 <a href="#name-timeformat-definition" class="selfRef">TimeFormat definition</a>
           </figcaption></figure>
 </div>
@@ -2151,9 +2173,9 @@ uses a medium amount of characters.<a href="#section-7.1-3.3.1" class="pilcrow">
 <p id="section-7.1-4">The first option is good for stateless loggers, the second and third for stateful
 loggers. The third option is generally preferred, since it produces smaller files
 while being easier to reason about. An example for each option can be seen in
-<a href="#time-format-ex" class="auto internal xref">Figure 17</a>.<a href="#section-7.1-4" class="pilcrow">¶</a></p>
+<a href="#time-format-ex" class="auto internal xref">Figure 18</a>.<a href="#section-7.1-4" class="pilcrow">¶</a></p>
 <span id="name-three-different-approaches-"></span><div id="time-format-ex">
-<figure id="figure-17">
+<figure id="figure-18">
           <div class="alignLeft art-text artwork" id="section-7.1-5.1">
 <pre>
 The absolute approach will use:
@@ -2167,7 +2189,7 @@ The relative approach will:
 - use: 0, 5, 22, 88
 </pre>
 </div>
-<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
 <a href="#name-three-different-approaches-" class="selfRef">Three different approaches for logging timestamps</a>
           </figcaption></figure>
 </div>
@@ -2205,13 +2227,13 @@ using Multipath features, it is useful to be able to split events across
 multiple (concurrent) paths.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
 <p id="section-7.2-3">Definition:<a href="#section-7.2-3" class="pilcrow">¶</a></p>
 <span id="name-pathid-definition"></span><div id="path-def">
-<figure id="figure-18">
+<figure id="figure-19">
           <div class="lang-cddl sourcecode" id="section-7.2-4.1">
 <pre>
 PathID = text .default ""
 </pre>
 </div>
-<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
 <a href="#name-pathid-definition" class="selfRef">PathID definition</a>
           </figcaption></figure>
 </div>
@@ -2235,7 +2257,7 @@ event to couple the PathID value to a specific path configuration, see
 of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).<a href="#section-7.3-1" class="pilcrow">¶</a></p>
 <span id="name-protocoltypelist-and-protoco"></span><div id="protocol-type-def">
-<figure id="figure-19">
+<figure id="figure-20">
           <div class="lang-cddl sourcecode" id="section-7.3-2.1">
 <pre>
 ProtocolTypeList = [+ $ProtocolType]
@@ -2243,7 +2265,7 @@ ProtocolTypeList = [+ $ProtocolType]
 $ProtocolType /= "UNKNOWN"
 </pre>
 </div>
-<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
+<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
 <a href="#name-protocoltypelist-and-protoco" class="selfRef">ProtocolTypeList and ProtocolType socket definition</a>
           </figcaption></figure>
 </div>
@@ -2276,9 +2298,9 @@ in the form of additional member fields of the "data" field value, yet
 this is highly implementation-specific, as are the trigger field's
 string values.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
 <p id="section-7.4-3">One purely illustrative example of some potential triggers for QUIC's
-"packet_dropped" event is shown in <a href="#trigger-ex" class="auto internal xref">Figure 20</a>:<a href="#section-7.4-3" class="pilcrow">¶</a></p>
+"packet_dropped" event is shown in <a href="#trigger-ex" class="auto internal xref">Figure 21</a>:<a href="#section-7.4-3" class="pilcrow">¶</a></p>
 <span id="name-trigger-example"></span><div id="trigger-ex">
-<figure id="figure-20">
+<figure id="figure-21">
           <div class="alignLeft art-text artwork" id="section-7.4-4.1">
 <pre>
 TransportPacketDropped = {
@@ -2291,7 +2313,7 @@ TransportPacketDropped = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
+<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
 <a href="#name-trigger-example" class="selfRef">Trigger example</a>
           </figcaption></figure>
 </div>
@@ -2320,22 +2342,22 @@ connections, and add a "four_tuple" field.<a href="#section-7.5-2" class="pilcro
 cross-context setups, qlog instead defines the common "group_id" field, which
 contains a string value. Implementations are free to use their preferred string
 serialization for this field, so long as it contains a unique value per logical
-group. Some examples can be seen in <a href="#group-id-ex" class="auto internal xref">Figure 22</a>.<a href="#section-7.5-3" class="pilcrow">¶</a></p>
+group. Some examples can be seen in <a href="#group-id-ex" class="auto internal xref">Figure 23</a>.<a href="#section-7.5-3" class="pilcrow">¶</a></p>
 <span id="name-groupid-definition"></span><div id="group-id-def">
-<figure id="figure-21">
+<figure id="figure-22">
           <div class="lang-cddl sourcecode" id="section-7.5-4.1">
 <pre>
 GroupID = text
 </pre>
 </div>
-<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
+<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
 <a href="#name-groupid-definition" class="selfRef">GroupID definition</a>
           </figcaption></figure>
 </div>
 <p id="section-7.5-5">JSON serialization example for events grouped by four tuples
 and QUIC connection IDs:<a href="#section-7.5-5" class="pilcrow">¶</a></p>
 <span id="name-groupid-example"></span><div id="group-id-ex">
-<figure id="figure-22">
+<figure id="figure-23">
           <div class="alignLeft art-text artwork" id="section-7.5-6.1">
 <pre>
 "events": [
@@ -2357,7 +2379,7 @@ and QUIC connection IDs:<a href="#section-7.5-5" class="pilcrow">¶</a></p>
 ]
 </pre>
 </div>
-<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
+<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
 <a href="#name-groupid-example" class="selfRef">GroupID example</a>
           </figcaption></figure>
 </div>
@@ -2407,9 +2429,9 @@ contains events for a single QUIC connection).<a href="#section-7.7-1" class="pi
 <p id="section-7.7-2">To reduce file size and making logging easier, qlog uses the "common_fields" list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
-event. An example of this is shown in <a href="#common-fields-ex" class="auto internal xref">Figure 23</a>.<a href="#section-7.7-2" class="pilcrow">¶</a></p>
+event. An example of this is shown in <a href="#common-fields-ex" class="auto internal xref">Figure 24</a>.<a href="#section-7.7-2" class="pilcrow">¶</a></p>
 <span id="name-commonfields-example"></span><div id="common-fields-ex">
-<figure id="figure-23">
+<figure id="figure-24">
           <div class="alignLeft art-text artwork" id="section-7.7-3.1">
 <pre>
 JSON serialization with repeated field values
@@ -2462,7 +2484,7 @@ extracted to common_fields:
 }
 </pre>
 </div>
-<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
+<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
 <a href="#name-commonfields-example" class="selfRef">CommonFields example</a>
           </figcaption></figure>
 </div>
@@ -2475,7 +2497,7 @@ error).<a href="#section-7.7-4" class="pilcrow">¶</a></p>
 opposed to as individual fields per event instance) are shown in the listing
 below:<a href="#section-7.7-5" class="pilcrow">¶</a></p>
 <span id="name-commonfields-definition"></span><div id="common-fields-def">
-<figure id="figure-24">
+<figure id="figure-25">
           <div class="lang-cddl sourcecode" id="section-7.7-6.1">
 <pre>
 CommonFields = {
@@ -2488,7 +2510,7 @@ CommonFields = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
+<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
 <a href="#name-commonfields-definition" class="selfRef">CommonFields definition</a>
           </figcaption></figure>
 </div>
@@ -2536,7 +2558,7 @@ multiple standard and non-standard categories belonging to different schema
 namespaces rick, john, and pickle. The standard categories use a URN format, the
 non-standard categories use a URI with domain name.<a href="#section-8-8" class="pilcrow">¶</a></p>
 <span id="name-example-event_categories-se"></span><div id="event-categories">
-<figure id="figure-25">
+<figure id="figure-26">
         <div class="alignLeft art-text artwork" id="section-8-9.1">
 <pre>
 "event_categories": [
@@ -2552,7 +2574,7 @@ non-standard categories use a URI with domain name.<a href="#section-8-8" class=
                     ]
 </pre>
 </div>
-<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
+<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
 <a href="#name-example-event_categories-se" class="selfRef">Example event_categories serialization</a>
         </figcaption></figure>
 </div>
@@ -2573,9 +2595,9 @@ socket" is used. This takes the form of a subfield with a name of
 <code>* $$CATEGORY-NAME-extension</code>. This field acts as a placeholder that can later be
 replaced with newly defined fields by assigning them to the socket with the
 <code>//=</code> operator. Multiple extensions can be assigned to the same group socket. An
-example is shown in <a href="#groupsocket-extension-example" class="auto internal xref">Figure 26</a>.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
-<span id="name-example-of-using-a-generic-"></span><div id="groupsocket-extension-example">
-<figure id="figure-26">
+example is shown in <a href="#groupsocket-extension-example" class="auto internal xref">Figure 27</a>.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
+<span id="name-example-of-using-a-generic-c"></span><div id="groupsocket-extension-example">
+<figure id="figure-27">
           <div class="alignLeft art-text artwork" id="section-8.1-4.1">
 <pre>
 ; original definition in document A
@@ -2605,13 +2627,13 @@ MyCategoryEventX = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
-<a href="#name-example-of-using-a-generic-" class="selfRef">Example of using a generic CDDL group socket to extend an existing event data definition</a>
+<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
+<a href="#name-example-of-using-a-generic-c" class="selfRef">Example of using a generic CDDL group socket to extend an existing event data definition</a>
           </figcaption></figure>
 </div>
 <p id="section-8.1-5">Secondly, to allow documents to define fully new event data field definitions
 (as opposed to extend existing ones), a CDDL "type socket" is used. For this
-purpose, the type of the "data" field in the qlog Event type (see <a href="#event-def" class="auto internal xref">Figure 14</a>)
+purpose, the type of the "data" field in the qlog Event type (see <a href="#event-def" class="auto internal xref">Figure 15</a>)
 is the extensible <code>$ProtocolEventData</code> type. This field acts as an open enum of
 possible types that are allowed for the data field. As such, any new event data
 field is defined as its own CDDL type and later merged with the existing
@@ -2619,9 +2641,9 @@ field is defined as its own CDDL type and later merged with the existing
 key-value map type can be assigned to <code>$ProtocolEventData</code> (the only common
 "data" subfield defined in this document is the optional <code>trigger</code> field, see
 <a href="#trigger-field" class="auto internal xref">Section 7.4</a>). An example of this setup is shown in
-<a href="#protocoleventdata-def" class="auto internal xref">Figure 27</a>.<a href="#section-8.1-5" class="pilcrow">¶</a></p>
+<a href="#protocoleventdata-def" class="auto internal xref">Figure 28</a>.<a href="#section-8.1-5" class="pilcrow">¶</a></p>
 <span id="name-protocoleventdata-extension"></span><div id="protocoleventdata-def">
-<figure id="figure-27">
+<figure id="figure-28">
           <div class="alignLeft art-text artwork" id="section-8.1-6.1">
 <pre>
 ; We define two separate events in a single document
@@ -2649,7 +2671,7 @@ $ProtocolEventData /= MyCategoryEvent1 / MyCategoryEvent2
 ; MyCategoryEvent1 and MyCategoryEvent2
 </pre>
 </div>
-<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
+<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
 <a href="#name-protocoleventdata-extension" class="selfRef">ProtocolEventData extension</a>
           </figcaption></figure>
 </div>
@@ -2659,9 +2681,9 @@ schemas. Furthermore, they <span class="bcp14">SHOULD</span> properly add a <cod
 extension field to newly defined event data to allow the new events to be
 properly extended by other documents.<a href="#section-8.1-7" class="pilcrow">¶</a></p>
 <p id="section-8.1-8">A combined but purely illustrative example of the use of both extension points
-for a conceptual QUIC "packet_sent" event is shown in <a href="#data-ex" class="auto internal xref">Figure 28</a>:<a href="#section-8.1-8" class="pilcrow">¶</a></p>
+for a conceptual QUIC "packet_sent" event is shown in <a href="#data-ex" class="auto internal xref">Figure 29</a>:<a href="#section-8.1-8" class="pilcrow">¶</a></p>
 <span id="name-example-of-an-extended-data"></span><div id="data-ex">
-<figure id="figure-28">
+<figure id="figure-29">
           <div class="alignLeft art-text artwork" id="section-8.1-9.1">
 <pre>
 ; defined in the main QUIC event document
@@ -2714,7 +2736,7 @@ $$transport-packetsent-extension //= (
 }
 </pre>
 </div>
-<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
+<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
 <a href="#name-example-of-an-extended-data" class="selfRef">Example of an extended 'data' field for a conceptual QUIC packet_sent event</a>
           </figcaption></figure>
 </div>
@@ -2834,7 +2856,7 @@ their existing text-based logging by qlog. This is done by providing events to l
 generic strings for the typical well-known logging levels (error, warning, info,
 debug, verbose). The category identifier is "generic".<a href="#section-9.1-1" class="pilcrow">¶</a></p>
 <span id="name-genericeventdata-and-protoc"></span><div id="generic-events-def">
-<figure id="figure-29">
+<figure id="figure-30">
           <div class="lang-cddl sourcecode" id="section-9.1-2.1">
 <pre>
 GenericEventData = GenericError /
@@ -2845,7 +2867,7 @@ GenericEventData = GenericError /
 $ProtocolEventData /= GenericEventData
 </pre>
 </div>
-<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
+<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
 <a href="#name-genericeventdata-and-protoc" class="selfRef">GenericEventData and ProtocolEventData extension</a>
           </figcaption></figure>
 </div>
@@ -2858,7 +2880,7 @@ $ProtocolEventData /= GenericEventData
 <p id="section-9.1.1-1">Used to log details of an internal error that might not get reflected on the
 wire. The event indentifier is `error has Core importance level.<a href="#section-9.1.1-1" class="pilcrow">¶</a></p>
 <span id="name-genericerror-definition"></span><div id="generic-error-def">
-<figure id="figure-30">
+<figure id="figure-31">
             <div class="lang-cddl sourcecode" id="section-9.1.1-2.1">
 <pre>
 GenericError = {
@@ -2869,7 +2891,7 @@ GenericError = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
+<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
 <a href="#name-genericerror-definition" class="selfRef">GenericError definition</a>
             </figcaption></figure>
 </div>
@@ -2883,7 +2905,7 @@ GenericError = {
 <p id="section-9.1.2-1">Used to log details of an internal warning that might not get reflected on the
 wire. It has Base importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.1.2-1" class="pilcrow">¶</a></p>
 <span id="name-genericwarning-definition"></span><div id="generic-warning-def">
-<figure id="figure-31">
+<figure id="figure-32">
             <div class="lang-cddl sourcecode" id="section-9.1.2-2.1">
 <pre>
 GenericWarning = {
@@ -2894,7 +2916,7 @@ GenericWarning = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
+<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
 <a href="#name-genericwarning-definition" class="selfRef">GenericWarning definition</a>
             </figcaption></figure>
 </div>
@@ -2909,7 +2931,7 @@ GenericWarning = {
 logging format but still want to support unstructured string messages. The event
 has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.1.3-1" class="pilcrow">¶</a></p>
 <span id="name-genericinfo-definition"></span><div id="generic-info-def">
-<figure id="figure-32">
+<figure id="figure-33">
             <div class="lang-cddl sourcecode" id="section-9.1.3-2.1">
 <pre>
 GenericInfo = {
@@ -2919,7 +2941,7 @@ GenericInfo = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
+<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
 <a href="#name-genericinfo-definition" class="selfRef">GenericInfo definition</a>
             </figcaption></figure>
 </div>
@@ -2934,7 +2956,7 @@ GenericInfo = {
 logging format but still want to support unstructured string messages. The event
 has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.1.4-1" class="pilcrow">¶</a></p>
 <span id="name-genericdebug-definition"></span><div id="generic-debug-def">
-<figure id="figure-33">
+<figure id="figure-34">
             <div class="lang-cddl sourcecode" id="section-9.1.4-2.1">
 <pre>
 GenericDebug = {
@@ -2944,7 +2966,7 @@ GenericDebug = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
+<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
 <a href="#name-genericdebug-definition" class="selfRef">GenericDebug definition</a>
             </figcaption></figure>
 </div>
@@ -2959,7 +2981,7 @@ GenericDebug = {
 logging format but still want to support unstructured string messages. The event
 has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.1.5-1" class="pilcrow">¶</a></p>
 <span id="name-genericverbose-definition"></span><div id="generic-verbose-def">
-<figure id="figure-34">
+<figure id="figure-35">
             <div class="lang-cddl sourcecode" id="section-9.1.5-2.1">
 <pre>
 GenericVerbose = {
@@ -2969,7 +2991,7 @@ GenericVerbose = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
+<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
 <a href="#name-genericverbose-definition" class="selfRef">GenericVerbose definition</a>
             </figcaption></figure>
 </div>
@@ -2989,7 +3011,7 @@ or the network can be fully disable for a short time. In these setups, it is
 useful to know when exactly these conditions are triggered, to allow for proper
 correlation with other events. The category identifier is "simulation".<a href="#section-9.2-1" class="pilcrow">¶</a></p>
 <span id="name-simulationeventdata-and-pro"></span><div id="sim-events-def">
-<figure id="figure-35">
+<figure id="figure-36">
           <div class="lang-cddl sourcecode" id="section-9.2-2.1">
 <pre>
 SimulationEventData = SimulationScenario /
@@ -2998,7 +3020,7 @@ SimulationEventData = SimulationScenario /
 $ProtocolEventData /= SimulationEventData
 </pre>
 </div>
-<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
+<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
 <a href="#name-simulationeventdata-and-pro" class="selfRef">SimulationEventData and ProtocolEventData extension</a>
           </figcaption></figure>
 </div>
@@ -3013,7 +3035,7 @@ instance. This supports, for example, aggregation of several simulations into
 one trace (e.g., split by <code>group_id</code>). It has Extra importance level; see
 <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.2.1-1" class="pilcrow">¶</a></p>
 <span id="name-simulationscenario-definiti"></span><div id="simulation-scenario-def">
-<figure id="figure-36">
+<figure id="figure-37">
             <div class="lang-cddl sourcecode" id="section-9.2.1-2.1">
 <pre>
 SimulationScenario = {
@@ -3024,7 +3046,7 @@ SimulationScenario = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
+<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
 <a href="#name-simulationscenario-definiti" class="selfRef">SimulationScenario definition</a>
             </figcaption></figure>
 </div>
@@ -3039,7 +3061,7 @@ SimulationScenario = {
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
 triggered). It has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.2</a>.<a href="#section-9.2.2-1" class="pilcrow">¶</a></p>
 <span id="name-simulationmarker-definition"></span><div id="simulation-marker-def">
-<figure id="figure-37">
+<figure id="figure-38">
             <div class="lang-cddl sourcecode" id="section-9.2.2-2.1">
 <pre>
 SimulationMarker = {
@@ -3050,7 +3072,7 @@ SimulationMarker = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
+<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
 <a href="#name-simulationmarker-definition" class="selfRef">SimulationMarker definition</a>
             </figcaption></figure>
 </div>
@@ -3074,7 +3096,7 @@ impact (see <a href="#privacy" class="auto internal xref">Section 14</a>). Where
 separate, optional, field named "raw" of type RawInfo. The exact definition of
 entities, headers, trailers and payloads depend on the protocol used.<a href="#section-10-1" class="pilcrow">¶</a></p>
 <span id="name-rawinfo-definition"></span><div id="raw-info-def">
-<figure id="figure-38">
+<figure id="figure-39">
         <div class="lang-cddl sourcecode" id="section-10-2.1">
 <pre>
 RawInfo = {
@@ -3093,7 +3115,7 @@ RawInfo = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
+<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
 <a href="#name-rawinfo-definition" class="selfRef">RawInfo definition</a>
         </figcaption></figure>
 </div>
@@ -3146,7 +3168,7 @@ serialization format.<a href="#section-11-5" class="pilcrow">¶</a></p>
 <a href="#section-11.1" class="section-number selfRef">11.1. </a><a href="#name-qlog-to-json-mapping" class="section-name selfRef">qlog to JSON mapping</a>
         </h3>
 <p id="section-11.1-1">As described in <a href="#qlog-file-schema" class="auto internal xref">Section 4</a>, JSON is the default qlog serialization.
-When mapping qlog to normal JSON, QlogFile (<a href="#qlog-file-def" class="auto internal xref">Figure 3</a>) is used. The
+When mapping qlog to normal JSON, QlogFile (<a href="#qlog-file-def" class="auto internal xref">Figure 4</a>) is used. The
 Media Type is "application/qlog+json" per <span>[<a href="#RFC6839" class="cite xref">RFC6839</a>]</span>. The file
 extension/suffix <span class="bcp14">SHOULD</span> be ".qlog".<a href="#section-11.1-1" class="pilcrow">¶</a></p>
 <p id="section-11.1-2">In accordance with <span><a href="https://rfc-editor.org/rfc/rfc8259#section-8.1" class="relref">Section 8.1</a> of [<a href="#RFC8259" class="cite xref">RFC8259</a>]</span>, JSON files are required to use
@@ -3183,9 +3205,9 @@ new object to the back of an event stream or log file. Put differently, unlike
 default JSON, it does not require a document to be wrapped as a full object with
 "{ ... }" or "[... ]".<a href="#section-11.2-4" class="pilcrow">¶</a></p>
 <p id="section-11.2-5">This alternative record streaming approach cannot be accommodated by QlogFile
-(<a href="#qlog-file-def" class="auto internal xref">Figure 3</a>). Instead, QlogFileSeq is defined in <a href="#qlog-file-seq-def" class="auto internal xref">Figure 9</a>,
+(<a href="#qlog-file-def" class="auto internal xref">Figure 4</a>). Instead, QlogFileSeq is defined in <a href="#qlog-file-seq-def" class="auto internal xref">Figure 10</a>,
 which notably includes only a single trace (TraceSeq) and omits an explicit
-"events" array. An example is provided in <a href="#json-seq-ex" class="auto internal xref">Figure 10</a>. The "group_id" field
+"events" array. An example is provided in <a href="#json-seq-ex" class="auto internal xref">Figure 11</a>. The "group_id" field
 can still be used on a per-event basis to include events from conceptually
 different sources in a single JSON-SEQ qlog file.<a href="#section-11.2-5" class="pilcrow">¶</a></p>
 <p id="section-11.2-6">When mapping qlog to JSON-SEQ, the Media Type is "application/qlog+json-seq" per
@@ -3257,9 +3279,9 @@ the extra length-indicating field can be left out. As such, tools <span class="b
 be able to deal with this situation and derive the length of the field
 from the raw value if no separate length-indicating field is present.
 The main possible permutations are shown by example in
-<a href="#truncated-values-ex" class="auto internal xref">Figure 39</a>.<a href="#section-11.4-3" class="pilcrow">¶</a></p>
+<a href="#truncated-values-ex" class="auto internal xref">Figure 40</a>.<a href="#section-11.4-3" class="pilcrow">¶</a></p>
 <span id="name-example-for-serializing-tru"></span><div id="truncated-values-ex">
-<figure id="figure-39">
+<figure id="figure-40">
           <div class="alignLeft art-text artwork" id="section-11.4-4.1">
 <pre>
 // both the content's value and its length are present
@@ -3291,7 +3313,7 @@ The main possible permutations are shown by example in
 }
 </pre>
 </div>
-<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
+<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
 <a href="#name-example-for-serializing-tru" class="selfRef">Example for serializing truncated hexstrings</a>
           </figcaption></figure>
 </div>
@@ -3357,9 +3379,9 @@ scheme for the qlog files themselves. The chosen scheme will typically depend on
 the context or protocols used. For example, for QUIC, it is recommended to use the
 Original Destination Connection ID (ODCID), followed by the vantage point type of
 the logging endpoint. Examples of all options for QUIC are shown in
-<a href="#qlogdir-example" class="auto internal xref">Figure 40</a>.<a href="#section-12.1-4" class="pilcrow">¶</a></p>
+<a href="#qlogdir-example" class="auto internal xref">Figure 41</a>.<a href="#section-12.1-4" class="pilcrow">¶</a></p>
 <span id="name-environment-variable-exampl"></span><div id="qlogdir-example">
-<figure id="figure-40">
+<figure id="figure-41">
           <div class="alignLeft art-text artwork" id="section-12.1-5.1">
 <pre>
 Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
@@ -3388,7 +3410,7 @@ this would result in event instances in the qlog file being
 tagged with the "group_id" field with values "abcde" and "12345".
 </pre>
 </div>
-<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
+<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
 <a href="#name-environment-variable-exampl" class="selfRef">Environment variable examples for a QUIC implementation</a>
           </figcaption></figure>
 </div>
