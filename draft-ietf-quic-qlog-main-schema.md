@@ -997,14 +997,14 @@ examples are the `quic` {{QLOG-QUIC}} and `h3` {{QLOG-H3}} event schema.
 
 Concrete events MAY extend any part of the abstract Event class, including extending the "data" field ({{data-field}}) of adding custom fields.
 
-Event schema MUST define a registered non-empty namespace of type `text`.
+Event schema MUST define a registered non-empty namespace identifier of type `text`.
 
 Event categories MUST belong to a single event schema. The MUST have a
 registered non-empty globally-unique identifier of type `text` and MUST have a
 single dereferencable URI. That URI MUST be absolute and MUST indicate the
 category identifier using a fragment identifier (characters after a "#" in the
 URI). For event categories in schema defined by RFCs, the URI SHOULD be a URN of
-the form `urn:ietf:params:qlog:<schema namespace>#<category identifier>`.
+the form `urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`.
 Private or non-standard event categories can use other URI formats. URIs that
 contain a domain name SHOULD also contain a month-date in the form mmyyyy. The
 definition of the category and assignment of the URI MUST have been authorized by
@@ -1015,7 +1015,7 @@ The registration requirements for extension schema URIs are detailed in
 {{iana}}.
 
 Concrete event types MUST belong to a single event category and MUST have a
-non-empty identifier of type `text`.
+non-empty name of type `text`.
 
 The value of a qlog event `name` field MUST be the concatenation of category
 identifier, colon (':'), and event type identifier. By virtue of the identifier
