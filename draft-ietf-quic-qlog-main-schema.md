@@ -280,17 +280,17 @@ format using a media type {{!RFC2046}}. It is case-insensitive.
 The optional "title" and "description" fields provide additional free-text
 information about the file.
 
-The required "event_schema" field is described in {{event-types-and-schema}}.
+The required "event_schemas" field is described in {{event-types-and-schema}}.
 
-## Concrete Schema URI {#schema-uri}
+## Concrete Log File Schema URI {#schema-uri}
 
 Concrete log file schemas MUST identify themselves using a URI.
 
-Log schemas defined by RFCs SHOULD be URN of the form
+Log file schemas defined by RFCs SHOULD be URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>`, where `<schema-identifier>` is
 a globally-unique name. URN MUST be registered with IANA; see {{iana}}.
 
-Private or non-standard event categories can use other URI formats. URIs that
+Private or non-standard log file schemas can use other URI formats. URIs that
 contain a domain name SHOULD also contain a month-date in the form mmyyyy. For
 example, "https://example.org/072024/customfileschema". The definition of the
 file schema and assignment of the URI MUST have been authorized by the owner of
