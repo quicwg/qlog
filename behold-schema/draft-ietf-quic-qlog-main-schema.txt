@@ -79,7 +79,7 @@ Table of Contents
      1.2.  Use of CDDL
    2.  Design Overview
    3.  Abstract LogFile Class
-     3.1.  Concrete Log File Schema URI
+     3.1.  Concrete Log File Schema URIs
    4.  QlogFile schema
      4.1.  Traces
      4.2.  Trace
@@ -385,22 +385,41 @@ Table of Contents
       Figure 3: Example of using a generic CDDL group socket to extend
                             logfile- extensions
 
-3.1.  Concrete Log File Schema URI
+3.1.  Concrete Log File Schema URIs
 
    Concrete log file schemas MUST identify themselves using a URI.
 
-   Log file schemas defined by RFCs SHOULD be URN of the form
+   Log file schemas defined by RFCs MUST register a URI in the "qlog log
+   file schema URIs" registry and SHOULD use a URN of the form
    urn:ietf:params:qlog:file:<schema-identifier>, where <schema-
-   identifier> is a globally-unique name.  URN MUST be registered with
-   IANA; see Section 15.
+   identifier> is a globally-unique name.  This document registers
+   urn:ietf:params:qlog:file:contained (Section 4) and
+   urn:ietf:params:qlog:file:sequential (Section 5).
 
-   Private or non-standard log file schemas can use other URI formats.
-   URIs that contain a domain name SHOULD also contain a month-date in
-   the form mmyyyy.  For example, "https://example.org/072024/
-   customfileschema".  The definition of the file schema and assignment
-   of the URI MUST have been authorized by the owner of the domain name
-   on or very close to that date.  This avoids problems when domain
-   names change ownership.  For example,
+   Private or non-standard log file schemas MAY register a URI in the
+   "qlog log file schema" registry but MUST NOT use a URN of the form
+   urn:ietf:params:qlog:file:<schema-identifier>.  URIs that contain a
+   domain name SHOULD also contain a month-date in the form mmyyyy.  For
+   example, "https://example.org/072024/customfileschema".  The
+   definition of the log file schema and assignment of the URI MUST have
+   been authorized by the owner of the domain name on or very close to
+   that date.  This avoids problems when domain names change ownership.
+
+   The "qlog log file schema URIs" registry operates under the Expert
+   Review policy, per Section 4.5 of [RFC8126].  When reviewing
+   requests, the expert MUST check that the URI is appropriate to the
+   concrete log file format and satisfies the requirements in this
+   section.  A request to register a private or non-standard log schema
+   URI using a URN of the form urn:ietf:params:qlog:file:<schema-
+   identifier> MUST be rejected.
+
+   Registration requests should use the following template:
+
+   Log File Schema URI:  [the log file schema identifier]
+
+   Description:  [a description of the log file schema]
+
+   Reference:  [to a specification defining the log file schema]
 
 4.  QlogFile schema
 
@@ -1992,7 +2011,44 @@ Table of Contents
 
 15.  IANA Considerations
 
-   TODO: file and event schema registration stuff
+   IANA is requested to register a new entry in the "IETF URN Sub-
+   namespace for Registered Protocol Parameter Identifiers" registry
+   ([RFC3553])":
+
+   Registered Parameter Identifier:  qlog
+
+   Reference:  This Document
+
+   IANA Registry Reference:  <https://www.iana.org/assignments/qlog>
+
+   IANA is requested to create the "qlog log file schema URIs" registry
+   at https://www.iana.org/assignments/qlog for the purpose of
+   registering log file schema.  It has the following format:
+
+   +======================================+================+===========+
+   | Log File Schema URI                  | Description    | Reference |
+   +======================================+================+===========+
+   | urn:ietf:params:qlog:file:contained  | Concrete log   | Section 4 |
+   |                                      | file format    |           |
+   |                                      | that can       |           |
+   |                                      | contain        |           |
+   |                                      | several        |           |
+   |                                      | traces from    |           |
+   |                                      | multiple       |           |
+   |                                      | vantage        |           |
+   |                                      | points.        |           |
+   +--------------------------------------+----------------+-----------+
+   | urn:ietf:params:qlog:file:sequential | Concrete log   | Section 5 |
+   |                                      | file format    |           |
+   |                                      | containing a   |           |
+   |                                      | single trace,  |           |
+   |                                      | optimized for  |           |
+   |                                      | seqential      |           |
+   |                                      | read and       |           |
+   |                                      | write access.  |           |
+   +--------------------------------------+----------------+-----------+
+
+                                  Table 1
 
 16.  References
 
@@ -2034,6 +2090,11 @@ Table of Contents
               DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2119>.
 
+   [RFC3553]  Mealling, M., Masinter, L., Hardie, T., and G. Klyne, "An
+              IETF URN Sub-namespace for Registered Protocol
+              Parameters", BCP 73, RFC 3553, DOI 10.17487/RFC3553, June
+              2003, <https://www.rfc-editor.org/rfc/rfc3553>.
+
    [RFC6839]  Hansen, T. and A. Melnikov, "Additional Media Type
               Structured Syntax Suffixes", RFC 6839,
               DOI 10.17487/RFC6839, January 2013,
@@ -2052,6 +2113,11 @@ Table of Contents
    [RFC8091]  Wilde, E., "A Media Type Structured Syntax Suffix for JSON
               Text Sequences", RFC 8091, DOI 10.17487/RFC8091, February
               2017, <https://www.rfc-editor.org/rfc/rfc8091>.
+
+   [RFC8126]  Cotton, M., Leiba, B., and T. Narten, "Guidelines for
+              Writing an IANA Considerations Section in RFCs", BCP 26,
+              RFC 8126, DOI 10.17487/RFC8126, June 2017,
+              <https://www.rfc-editor.org/rfc/rfc8126>.
 
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
