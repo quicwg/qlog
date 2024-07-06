@@ -279,7 +279,9 @@ format using a media type {{!RFC2046}}. It is case-insensitive.
 The optional "title" and "description" fields provide additional free-text
 information about the file.
 
-The required "event_schemas" field is described in {{event-types-and-schema}}.
+The required "event_schemas" field contains event schema URI that identify
+concrete event types recorded in a log. Requirements and guidelines are defined
+in {{event-types-and-schema}}.
 
 To support adding custom fields in concrete log file schema, the CDDL "group
 socket" "logfile-extensions" is defined. This field acts as a placeholder that
@@ -990,57 +992,96 @@ fields are "time" and "data", who are divergent by nature.
 
 # Concrete Event Types and Event Schema {#event-types-and-schema}
 
-Concrete event types are defined in event schema, which declare a namespace
-consisting of one or more categories, each containing related event types. This
-document defines the `std` event schema; see {{std-event-schema}}. Other
-examples are the `quic` {{QLOG-QUIC}} and `h3` {{QLOG-H3}} event schema.
+Concrete event types belong to event categories, both defined by event schema.
 
-Concrete events MAY extend any part of the abstract Event class, including extending the "data" field ({{data-field}}) of adding custom fields.
+A single event schema can define a new namespace, or extend an existing
+namespace with new categories. New namespaces MUST be registered using a
+non-empty namespace identifier of type `text`. Namespace are mutable and MAY be
+extended with categories.
 
-Event schema MUST define a registered non-empty namespace identifier of type `text`.
-
-Event categories MUST belong to a single event schema. The MUST have a
+Event categories MUST belong to a single event namespace. They MUST have a
 registered non-empty globally-unique identifier of type `text` and MUST have a
 single dereferencable URI. That URI MUST be absolute and MUST indicate the
 category identifier using a fragment identifier (characters after a "#" in the
-URI). For event categories in schema defined by RFCs, the URI SHOULD be a URN of
-the form `urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`.
-Private or non-standard event categories can use other URI formats. URIs that
-contain a domain name SHOULD also contain a month-date in the form mmyyyy. The
-definition of the category and assignment of the URI MUST have been authorized by
-the owner of the domain name on or very close to that date. (This avoids
-problems when domain names change ownership.)
+URI). Event categories are immutable and MUST NOT be extended with events.
 
-The registration requirements for extension schema URIs are detailed in
-{{iana}}.
+Registration guidance and requirements is provided in {{event-schema-reg}}.
+
+Concrete events MAY extend any part of the abstract Event class, including
+extending the "data" field ({{data-field}}) of adding custom fields.
 
 Concrete event types MUST belong to a single event category and MUST have a
 non-empty name of type `text`.
 
 The value of a qlog event `name` field MUST be the concatenation of category
 identifier, colon (':'), and event type identifier. By virtue of the identifier
-requirements, names are globally-unique. Thus, log files can contain events from
-multiple schemas without the risk of name collisions.
+requirements described above, event names are globally-unique. Thus, log files
+can contain events from multiple schemas without the risk of name collisions.
+
+Implementations that might record concrete events belonging to a category in an
+event schema SHOULD list all category identifiers in use. This is achieved by
+including the appropriate URI in the `event_schemas` field of the abstract
+LogFile class ({{abstract-logfile}}). The `event_schema` is a hint to tools
+about the possible event categories (and event types contained therein) that a
+qlog file might contain. The file MAY contain event types that do not belong to
+a listed category identifier. Tools MUST NOT treat this as an error; see
+{{tooling}}.
 
 In the following hypothetical example, a qlog file contains events belonging to
-multiple standard and non-standard categories belonging to different schema
-namespaces rick, john, and pickle. The standard categories use a URN format, the
-non-standard categories use a URI with domain name.
+the standard event schema ({{std-event-schema}}), an event schema named `rick`
+specified in a hypothetical RFC, and a private event schema named pickle. The
+standardized categories use a URN format, the private categories use a URI with
+domain name.
 
 ~~~
-"event_categories": [
-                      "urn:ietf:params:qlog:rick#roll",
-                      "urn:ietf:params:qlog:rick#astley",
-                      "urn:ietf:params:qlog:rick#moranis",
-                      "urn:ietf:params:qlog:john#doe",
-                      "urn:ietf:params:qlog:john#candy",
-                      "urn:ietf:params:qlog:john#goodman",
-                      "https://example.com/032024/pickle.html#pepper",
-                      "https://example.com/032024/pickle.html#lilly",
-                      "https://example.com/032024/pickle.html#rick",
-                    ]
+"event_schemas": [
+  "urn:ietf:params:qlog:events:std#generic,
+  "urn:ietf:params:qlog:events:std#simulation,
+  "urn:ietf:params:qlog:events:rick#roll",
+  "urn:ietf:params:qlog:events:rick#astley",
+  "urn:ietf:params:qlog:events:rick#moranis",
+  "https://example.com/032024/pickle.html#pepper",
+  "https://example.com/032024/pickle.html#lilly",
+  "https://example.com/032024/pickle.html#rick"
+]
 ~~~
 {: #event-categories title="Example event_categories serialization"}
+
+## Event Schema and Event Category URIs {#event-schema-reg}
+
+Event schema defined by RFCs MUST register all categories in the "qlog event
+category URIs" registry and SHOULD use a URN of the form
+`urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`,
+where `<category identifier>` is globally unique. For example, this document
+defines the standard event schema ({{std-event-schema}}) that uses the `std`
+namespace containing the `generic` and `simulation` categories. Other examples
+of event schema define the `quic` {{QLOG-QUIC}} and `h3` {{QLOG-H3}} namespaces.
+
+Private or non-standard event categories can use other URI formats. URIs that
+contain a domain name SHOULD also contain a month-date in the form mmyyyy. The
+definition of the category and assignment of the URI MUST have been authorized
+by the owner of the domain name on or very close to that date. This avoids
+problems when domain names change ownership.
+
+The "qlog event category URIs" registry operates under the Expert Review policy,
+per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert MUST check
+that the URI is appropriate to the event schema and satisfies the requirements
+in {{event-types-and-schema}} and this section. A request to register a private
+or non-standard log schema URI using a URN of the form
+`urn:ietf:params:qlog:event:<namespace identifier>#<category identifier` MUST be
+rejected.
+
+Registration requests should use the following template:
+
+Event Category URI:
+: \[the event category identifier\]
+
+Description:
+: \[a description of the event category\]
+
+Reference:
+: \[to a specification defining the schema defining the event category\]
+
 
 ## Extending the Data Field {#data-field}
 
@@ -1879,8 +1920,17 @@ at [](https://www.iana.org/assignments/qlog) for the purpose of registering
 log file schema. It has the following format:
 
 | Log File Schema URI | Description | Reference |
-| urn:ietf:params:qlog:file:contained| Concrete log file format that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
-| urn:ietf:params:qlog:file:sequential| Concrete log file format containing a single trace, optimized for seqential read and write access. | {{qlog-file-seq-schema}} |
+| urn:ietf:params:qlog:file:contained | Concrete log file format that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
+| urn:ietf:params:qlog:file:sequential | Concrete log file format containing a single trace, optimized for seqential read and write access. | {{qlog-file-seq-schema}} |
+
+IANA is requested to create the "qlog event category URIs" registry
+at [](https://www.iana.org/assignments/qlog) for the purpose of registering
+event categories. It has the following format:
+
+| Event Category URI | Description | Reference |
+|||||
+| urn:ietf:params:qlog:events:std#generic | Well-known logging levels for free-form text. | {{generic-events}} |
+
 
 --- back
 
