@@ -50,9 +50,8 @@ informative:
 
 --- abstract
 
-This document describes concrete qlog event definitions and their metadata for
-HTTP/3-related events. These events can then be embedded in the higher
-level schema defined in {{QLOG-MAIN}}.
+This document defines a qlog event schema containing concrete events for the
+core HTTP/3 protocol and selected extensions.
 
 --- note_Note_to_Readers
 
@@ -71,10 +70,31 @@ various programming languages can be found at
 
 # Introduction
 
-This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the HTTP/3 protocol {{RFC9114}} and some
-of extensions (see {{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}}
-and {{!H3-DATAGRAM=RFC9297}}).
+This document defines a qlog event schema ({{Section 8 of QLOG-MAIN}})
+containing concrete events for the core HTTP/3 protocol {{RFC9114}} and selected
+extensions ({{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}}, and
+{{!H3-DATAGRAM=RFC9297}}).
+
+The schema namespace `http` is defined, containing the category `h3`; see
+{{schema-def}}. In this category multiple events derive from the qlog abstract
+Event class ({{Section 7 of QLOG-MAIN}}), each extending the "data" field and
+defining their "name" field and semantics.
+
+{{h3-events}} summarizes the name value of each event type that is defined
+in this specification.
+
+| Name value                | Importance |  Definition |
+|:--------------------------|:-----------|:------------|
+| h3:parameters_set         | Base       | {{h3-parametersset}} |
+| h3:parameters_restored    | Base       | {{h3-parametersrestored}} |
+| h3:stream_type_set        | Base       | {{h3-streamtypeset}} |
+| h3:priority_updated       | Base       | {{h3-priorityupdated}} |
+| h3:frame_created          | Core       | {{h3-framecreated}} |
+| h3:frame_parsed           | Core       | {{h3-frameparsed}} |
+| h3:datagram_created       | Base       | {{h3-datagramcreated}} |
+| h3:datagram_parsed        | Base       | {{h3-datagramparsed}} |
+| h3:push_resolved          | Extra      | {{h3-pushresolved}} |
+{: #h3-events title="HTTP/3 Events"}
 
 ## Notational Conventions
 
@@ -92,62 +112,25 @@ As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
 are intentionally agnostic to serialization formats. The choice of format is an
 implementation decision.
 
-# Overview
+# Event Schema Definition {#schema-def}
 
-This document describes how HTTP/3 can be expressed in qlog using the schema
-defined in {{QLOG-MAIN}}. HTTP/3 events are defined with a category, a name (the
-concatenation of "category" and "event"), an "importance", an optional
-"trigger", and "data" fields.
+This document describes how the core HTTP/3 protocol and selected extensions can
+be expressed in qlog using a newly defined event schema. Per the requirements in
+{{Section 8 of QLOG-MAIN}}, this document registers the `http` namespace and
+`h3` category identifiers. The URI is `urn:ietf:params:qlog:events:http#h3`.
 
-Some data fields use complex datastructures. These are represented as enums or
-re-usable definitions, which are grouped together on the bottom of this document
-for clarity.
+## Draft Event Schema Identification
+{:removeinrfc="true"}
 
-When any event from this document is included in a qlog trace, the
-"protocol_type" qlog array field MUST contain an entry with the value "HTTP3":
+Only implementations of the final, published RFC can use the events belonging to
+the category with the URI `urn:ietf:params:qlog:events:http#h3`. Until such an
+RFC exists, implementations MUST NOT identify themselves using this URI.
 
-~~~ cddl
-$ProtocolType /= "HTTP3"
-~~~
-{: #protocoltype-extension-h3 title="ProtocolType extension for HTTP/3"}
+Implementations of draft versions of the event schema MUST append the string
+"-" and the corresponding draft number to the URI. For example, draft 07 of this
+document is identified using the URI `urn:ietf:params:qlog:events:http#h3-07`.
 
-## Usage with QUIC
-
-The events described in this document can be used with or without logging the
-related QUIC events defined in {{QLOG-QUIC}}. If used with QUIC events, the QUIC
-document takes precedence in terms of recommended filenames and trace separation
-setups.
-
-If used without QUIC events, it is recommended that the implementation assign a
-globally unique identifier to each HTTP/3 connection. This ID can then be used as
-the value of the qlog "group_id" field, as well as the qlog filename or file
-identifier, potentially suffixed by the vantagepoint type (For example,
-abcd1234_server.qlog would contain the server-side trace of the connection with
-GUID abcd1234).
-
-# HTTP/3 Event Overview
-
-This document defines events in two categories, written as lowercase to follow
-convention: h3 ({{h3-ev}}).
-
-As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog "name" field is the
-concatenation of category and type.
-
-{{h3-events}} summarizes the name value of each event type that is defined
-in this specification.
-
-| Name value                  | Importance |  Definition |
-|:----------------------------|:-----------|:------------|
-| h3:parameters_set         | Base       | {{h3-parametersset}} |
-| h3:parameters_restored    | Base       | {{h3-parametersrestored}} |
-| h3:stream_type_set        | Base       | {{h3-streamtypeset}} |
-| h3:priority_updated       | Base       | {{h3-priorityupdated}} |
-| h3:frame_created          | Core       | {{h3-framecreated}} |
-| h3:frame_parsed           | Core       | {{h3-frameparsed}} |
-| h3:datagram_created       | Base       | {{h3-datagramcreated}} |
-| h3:datagram_parsed        | Base       | {{h3-datagramparsed}} |
-| h3:push_resolved          | Extra      | {{h3-pushresolved}} |
-{: #h3-events title="HTTP/3 Events"}
+The category identifier itself is not affected by this requirement.
 
 # HTTP/3 Events {#h3-ev}
 
@@ -711,7 +694,16 @@ document as well.
 
 # IANA Considerations
 
-There are no IANA considerations.
+This document registers a new entry in the "qlog event category URIs" registry.
+
+Event Category URI:
+: urn:ietf:params:qlog:event:http#h3
+
+Description:
+: Event definitions related to the HTTP/3 application protocol.
+
+Reference:
+: This Document
 
 --- back
 
