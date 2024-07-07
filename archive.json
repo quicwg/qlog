@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-07-04T00:51:29.287123+00:00",
+  "timestamp": "2024-07-07T00:56:06.126533+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -8712,6 +8712,22 @@
       "body": "The general structure of section 6 is to walk through the common fields of `Event`. We say:\r\n\r\n> While this \"trigger\" field could be a property of the qlog Event itself, it is instead a property of the \"data\" field instead.\r\n\r\nTherefore, it seems more logical to move it underneath the Data section",
       "createdAt": "2024-06-29T02:38:11Z",
       "updatedAt": "2024-06-29T02:38:20Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 425,
+      "id": "I_kwDOCrLn6M6Oq-B0",
+      "title": "Register application/qlog+json and application/qlog+json-seq media types",
+      "url": "https://github.com/quicwg/qlog/issues/425",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "We already declare that these types exist and should be used but they aren't registered in https://www.iana.org/assignments/media-types/media-types.xhtml#application. We should follow the process described in the notes section at the top of that page. Note, we probably don't want to define `application/qlog` since we are serialization format agnostic and need the suffix to identify the actual format.",
+      "createdAt": "2024-07-06T16:55:35Z",
+      "updatedAt": "2024-07-06T16:55:35Z",
       "closedAt": null,
       "comments": []
     }
@@ -23441,13 +23457,13 @@
       "labels": [],
       "body": "This looks like hell to review but a lot of it is moving text around, so a visual diff is probably the most straightforward.\r\n\r\nThe high-level (pun-intended) goal of this PR is to realize the `main-schema` document is not merely a schema. Its the document that defines the core concepts behind its structured logging, methodology, requirements for loggers and tools, AND a few schema. \r\nMoving the document away from referring to its entire self as a schema, makes it easier to isolate the parts we mostly expect people to extend - the event definitions.\r\n\r\nI found it incredibly hard to talk about this with the old terminology of generic event class and specific data. Especially when combined with the concept of \"event definition documents\". That's been reflected into prior attempts at wrangling the extensibility of events. So I've changed that to abstract Event class and concrete event types. I suspect those won't be that popular either but they work for this old OOP survivor. \r\n\r\nThe PR isn't 100% complete but it does implement the schema > category > event structure that we seemed to align on, and ports over a lot more from https://github.com/quicwg/qlog/pull/415. If we think this is a suitable direction, putting the finishing touches like IANA policy and updating QUIC/H3 docs isn't that much more work.",
       "createdAt": "2024-06-29T05:06:18Z",
-      "updatedAt": "2024-07-03T18:41:39Z",
+      "updatedAt": "2024-07-06T21:37:35Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "3a92cd452a1fdd4dfe5ed3746726b24a303a94f1",
       "headRepository": "quicwg/qlog",
       "headRefName": "behold-schema",
-      "headRefOid": "1178bdceb87a06d20e8b75152b7b50390202fefa",
+      "headRefOid": "8e460553bdbf0b9ffc136bbfa581bd67f3d4bfbc",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -23653,6 +23669,182 @@
               "body": "Discussed during editors' meeting. Should be `std` as namespace identifier. ",
               "createdAt": "2024-07-03T12:45:09Z",
               "updatedAt": "2024-07-03T12:45:09Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6AzxVv",
+          "commit": {
+            "abbreviatedOid": "1178bdc"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "I like the general direction of re-using media types here; feels clean.\r\n\r\nThe rest is also as discussed, minus a few nits which I've listed here, so let's continue in this direction :) ",
+          "createdAt": "2024-07-05T17:19:32Z",
+          "updatedAt": "2024-07-05T17:31:24Z",
+          "comments": [
+            {
+              "originalPosition": 42,
+              "body": "should this be `event_schemas` instead (making it implicitly clear there is 1 `file_schema` but multiple `event_schemaS`?",
+              "createdAt": "2024-07-05T17:19:32Z",
+              "updatedAt": "2024-07-05T17:31:24Z"
+            },
+            {
+              "originalPosition": 45,
+              "body": "You probably know this, but this should be something like `$$logfile-extensions` with CDDL",
+              "createdAt": "2024-07-05T17:20:38Z",
+              "updatedAt": "2024-07-05T17:31:24Z"
+            },
+            {
+              "originalPosition": 39,
+              "body": "I think we can probably just leave this as `serialization_format`, since we don't have the `qlog_` prefix anywhere else anymore :) ",
+              "createdAt": "2024-07-05T17:21:11Z",
+              "updatedAt": "2024-07-05T17:31:24Z"
+            },
+            {
+              "originalPosition": 63,
+              "body": "Give a short description here as well about the goal of this field (just so readers get a high-level overview from this section)",
+              "createdAt": "2024-07-05T17:23:38Z",
+              "updatedAt": "2024-07-05T17:31:24Z"
+            },
+            {
+              "originalPosition": 73,
+              "body": "copy-paste whoopsie :) should be `or non-standard log file schemas`",
+              "createdAt": "2024-07-05T17:24:34Z",
+              "updatedAt": "2024-07-05T17:31:24Z"
+            },
+            {
+              "originalPosition": 71,
+              "body": "Should we mention here again/already that this document registers 2 log file schema URNs?",
+              "createdAt": "2024-07-05T17:28:12Z",
+              "updatedAt": "2024-07-05T17:31:24Z"
+            },
+            {
+              "originalPosition": 69,
+              "body": "Log file schemas",
+              "createdAt": "2024-07-05T17:28:21Z",
+              "updatedAt": "2024-07-05T17:31:24Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6A1l4U",
+          "commit": {
+            "abbreviatedOid": "1178bdc"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-06T13:36:30Z",
+          "updatedAt": "2024-07-06T13:36:30Z",
+          "comments": [
+            {
+              "originalPosition": 39,
+              "body": "agreed, done",
+              "createdAt": "2024-07-06T13:36:30Z",
+              "updatedAt": "2024-07-06T13:36:30Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6A1l9E",
+          "commit": {
+            "abbreviatedOid": "1178bdc"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-06T13:39:41Z",
+          "updatedAt": "2024-07-06T13:39:41Z",
+          "comments": [
+            {
+              "originalPosition": 42,
+              "body": "yep, done",
+              "createdAt": "2024-07-06T13:39:41Z",
+              "updatedAt": "2024-07-06T13:39:41Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6A1mCU",
+          "commit": {
+            "abbreviatedOid": "1178bdc"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-06T13:41:39Z",
+          "updatedAt": "2024-07-06T13:41:39Z",
+          "comments": [
+            {
+              "originalPosition": 69,
+              "body": "fixed",
+              "createdAt": "2024-07-06T13:41:39Z",
+              "updatedAt": "2024-07-06T13:41:39Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6A1mCm",
+          "commit": {
+            "abbreviatedOid": "1178bdc"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-06T13:41:46Z",
+          "updatedAt": "2024-07-06T13:41:46Z",
+          "comments": [
+            {
+              "originalPosition": 73,
+              "body": "fixed",
+              "createdAt": "2024-07-06T13:41:46Z",
+              "updatedAt": "2024-07-06T13:41:46Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6A1mxN",
+          "commit": {
+            "abbreviatedOid": "1178bdc"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-06T14:09:40Z",
+          "updatedAt": "2024-07-06T14:09:41Z",
+          "comments": [
+            {
+              "originalPosition": 45,
+              "body": "Makes sense but then the concrete log files need to extend that right? I gave it a go, PTAL",
+              "createdAt": "2024-07-06T14:09:40Z",
+              "updatedAt": "2024-07-06T14:09:41Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6A135s",
+          "commit": {
+            "abbreviatedOid": "1178bdc"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-07-06T20:09:38Z",
+          "updatedAt": "2024-07-06T20:09:38Z",
+          "comments": [
+            {
+              "originalPosition": 71,
+              "body": "done",
+              "createdAt": "2024-07-06T20:09:38Z",
+              "updatedAt": "2024-07-06T20:09:38Z"
             }
           ]
         }
