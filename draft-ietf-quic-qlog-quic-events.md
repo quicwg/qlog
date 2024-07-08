@@ -44,9 +44,9 @@ informative:
 
 --- abstract
 
-This document describes concrete qlog event definitions and their metadata for
-QUIC events. These events can then be embedded in the higher level schema defined
-in {{QLOG-MAIN}}.
+This document describes a qlog event schema containing concrete qlog event
+definitions and their metadata for the core QUIC protocol and selected
+extensions.
 
 --- note_Note_to_Readers
 
@@ -65,38 +65,19 @@ various programming languages can be found at
 
 # Introduction
 
-This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the QUIC protocol (see
+This document defines a qlog event schema ({{Section 8 of QLOG-MAIN}})
+containing concrete events for the core QUIC protocol (see
 {{!QUIC-TRANSPORT=RFC9000}}, {{!QUIC-RECOVERY=RFC9002}}, and
 {{!QUIC-TLS=RFC9001}}) and some of its extensions (see
 {{!QUIC-DATAGRAM=RFC9221}} and {{!GREASEBIT=RFC9287}}).
 
-## Notational Conventions
-
-{::boilerplate bcp14-tagged}
-
-The event and data structure definitions in ths document are expressed
-in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
-extensions described in {{QLOG-MAIN}}.
-
-The following fields from {{QLOG-MAIN}} are imported and used: name, category,
-type, data, group_id, protocol_type, importance, RawInfo, and time-related
-fields.
-
-As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
-are intentionally agnostic to serialization formats. The choice of format is an
-implementation decision.
-
-# Overview
-
-This document describes how the QUIC protocol can be expressed in qlog using
-the schema defined in {{QLOG-MAIN}}. QUIC protocol events are defined with a
-category, a name (the concatenation of "category" and "event"), an "importance",
-an optional "trigger", and "data" fields.
-
-Some data fields use complex datastructures. These are represented as enums or
-re-usable definitions, which are grouped together on the bottom of this document
-for clarity.
+The schema namespace `quic` is defined, containing the categories:
+`connectivity` ({{conn-ev}}), `security` ({{sec-ev}}), `quic` {{quic-ev}}, and
+`recovery` {{rec-ev}}. Across these categories multiple events derive from the
+qlog abstract Event class ({{Section 7 of QLOG-MAIN}}), each extending the
+"data" field and defining their "name" field and semantics. Some data fields use
+complex datastructures. These are represented as enums or re-usable definitions,
+which are grouped together on the bottom of this document for clarity.
 
 When any event from this document is included in a qlog trace, the
 `protocol_type` qlog array field MUST contain an entry with the value "QUIC":
@@ -105,6 +86,8 @@ When any event from this document is included in a qlog trace, the
 $ProtocolType /= "QUIC"
 ~~~
 {: #protocoltype-extension-quic title="ProtocolType extension for QUIC"}
+
+## Use of group IDs
 
 When the qlog `group_id` field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
@@ -142,15 +125,50 @@ implementation. Some options include:
 * Buffer events until they can be assigned to a connection (for example for
   version negotiation and retry events).
 
+## Notational Conventions
+
+{::boilerplate bcp14-tagged}
+
+The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
+extensions described in {{QLOG-MAIN}}.
+
+The following fields from {{QLOG-MAIN}} are imported and used: name, category,
+type, data, group_id, protocol_type, importance, RawInfo, and time-related
+fields.
+
+As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
+are intentionally agnostic to serialization formats. The choice of format is an
+implementation decision.
+
+# Event Schema Definition {#schema-def}
+
+This document describes how the core QUIC protocol and selected extensions can
+be expressed in qlog using a newly defined event schema. Per the requirements in
+{{Section 8 of QLOG-MAIN}}, this document registers the `quic` namespace and the following category identifiers and URIs.
+
+* `connectivity` - `urn:ietf:params:qlog:events:quic#connectivity`
+* `security` - `urn:ietf:params:qlog:events:quic#security`
+* `quic` - `urn:ietf:params:qlog:events:quic#quic`
+* `recovery` - `urn:ietf:params:qlog:events:quic#recovery`
+
+## Draft Event Schema Identification
+{:removeinrfc="true"}
+
+Only implementations of the final, published RFC can use the events belonging to
+the category with the URI `urn:ietf:params:qlog:events:quic#connectivity`,
+`urn:ietf:params:qlog:events:quic#security`,
+`urn:ietf:params:qlog:events:quic#quic`, and
+`urn:ietf:params:qlog:events:quic#recovery`. Until such an RFC exists,
+implementations MUST NOT identify themselves using this URI.
+
+Implementations of draft versions of the event schema MUST append the string
+"-" and the corresponding draft number to the URI. For example, draft 07 of this
+document is identified using the URI `urn:ietf:params:qlog:events:quic#quic-07`.
+
+The category identifier itself is not affected by this requirement.
+
 # QUIC Event Overview
-
-QUIC connections consist of different phases and interaction events. In order to
-model this, QUIC event types are divided into general categories: connectivity
-({{conn-ev}}), security ({{sec-ev}}), quic {{quic-ev}}, and recovery
-{{rec-ev}}.
-
-As described in {{Section 3.4.2 of QLOG-MAIN}}, the qlog `name` field is the
-concatenation of category and type.
 
 {{quic-events}} summarizes the name value of each event type that is defined in
 this specification.
@@ -2232,7 +2250,43 @@ document as well.
 
 # IANA Considerations
 
-There are no IANA considerations.
+This document registers several new entries in the "qlog event category URIs" registry.
+
+Event Category URI:
+: urn:ietf:params:qlog:event:quic#connectivity
+
+Description:
+: Event definitions related to QUIC connectivity.
+
+Reference:
+: {{conn-ev}}
+
+Event Category URI:
+: urn:ietf:params:qlog:event:quic#security
+
+Description:
+: Event definitions related to QUIC security.
+
+Reference:
+: {{sec-ev}}
+
+Event Category URI:
+: urn:ietf:params:qlog:event:quic#quic
+
+Description:
+: Event definitions related to the QUIC wire image and other concerns.
+
+Reference:
+: {{quic-ev}}
+
+Event Category URI:
+: urn:ietf:params:qlog:event:quic#recovery
+
+Description:
+: Event definitions related to QUIC recovery.
+
+Reference:
+: {{conn-ev}}
 
 --- back
 
