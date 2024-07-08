@@ -293,10 +293,10 @@ a globally-unique name. This document registers
 `urn:ietf:params:qlog:file:sequential` ({{qlog-file-seq-schema}}).
 
 Private or non-standard log file schemas MAY register a URI in the "qlog log
-file schema" registry but MUST NOT use a URN of the form
+file schema URIs" registry but MUST NOT use a URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>`. URIs that contain a domain name
 SHOULD also contain a month-date in the form mmyyyy. For example,
-"https://example.org/072024/customfileschema". The definition of the log file
+"https://example.org/072024/globallyuniquefileschema". The definition of the log file
 schema and assignment of the URI MUST have been authorized by the owner of the
 domain name on or very close to that date. This avoids problems when domain
 names change ownership.
@@ -1043,8 +1043,12 @@ defines the standard event schema ({{generic-event-schema}}) that uses the `gen`
 namespace containing the `loglevel` and `sim` categories. Other examples
 of event schema define the `quic` {{QLOG-QUIC}} and `h3` {{QLOG-H3}} namespaces.
 
-Private or non-standard event categories can use other URI formats. URIs that
-contain a domain name SHOULD also contain a month-date in the form mmyyyy. The
+Private or non-standard event categories MAY be registered in the "qlog event
+category URIs" registry but MUST NOT use a URN of the form
+`urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`. URIs
+that contain a domain name SHOULD also contain a month-date in the form mmyyyy.
+For example,
+"https://example.org/072024/customeventchema#globallyuniquencategory" The
 definition of the category and assignment of the URI MUST have been authorized
 by the owner of the domain name on or very close to that date. This avoids
 problems when domain names change ownership.
@@ -1053,7 +1057,7 @@ The "qlog event category URIs" registry operates under the Expert Review policy,
 per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert MUST check
 that the URI is appropriate to the event schema and satisfies the requirements
 in {{event-types-and-schema}} and this section. A request to register a private
-or non-standard log schema URI using a URN of the form
+or non-standard category URI using a URN of the form
 `urn:ietf:params:qlog:event:<namespace identifier>#<category identifier` MUST be
 rejected.
 
