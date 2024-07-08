@@ -1,5 +1,6 @@
 ---
-title: Main logging schema for qlog
+title: "qlog: Structured Logging for Network Protocols"
+abbrev: qlog
 docname: draft-ietf-quic-qlog-main-schema-latest
 category: std
 
@@ -61,11 +62,13 @@ informative:
 
 --- abstract
 
-This document defines qlog, an extensible high-level schema for a standardized
-logging format. It allows easy sharing of data, benefitting common debug and
-analysis methods and tooling. The high-level schema is independent of protocol;
-separate documents extend qlog for protocol-specific data. The schema is also
-independent of serialization format, allowing logs to be represented in many
+qlog provides extensible structured logging for network protocols, allowing for
+easy sharing of data that benefits common debug and analysis methods and
+tooling. This document describes key concepts of qlog: formats, files, traces,
+events, and extension points. This definition includes the high-level log file
+schemas, and generic event schemas. Requirements and guidelines for creating
+protocol-specific event schemas are also presented. All schemas are defined
+independent of serialization format, allowing logs to be represented in various
 ways such as JSON, CSV, or protobuf.
 
 --- note_Note_to_Readers
@@ -97,32 +100,36 @@ interoperability failure between distinct implementations. A lack of a common
 format impedes the development of common tooling that can be used by all parties
 that have access to logs.
 
-This document defines qlog, an extensible high-level schema and harness that
-provides a shareable, aggregatable and structured logging format. This
-high-level schema is independent of protocol, with logging entries for specific
-protocols and use cases being defined in other documents (see for example
-{{QLOG-QUIC}} for QUIC and {{QLOG-H3}} for HTTP/3-related event definitions).
+qlog is an extensible structured logging for network protocols that allows for
+easy sharing of data that benefits common debug and analysis methods and
+tooling. This document describes key concepts of qlog: formats, files, traces,
+events, and extension points. This definition includes the high-level log file
+schemas, and generic event schemas. Requirements and guidelines for creating
+protocol-specific event schemas are also presented. Accompanying documents
+define event schema for QUIC ({{QLOG-QUIC}}) and HTTP/3 ({{QLOG-H3}}).
 
-The goal of this high-level schema is to provide amenities and default
-characteristics that each logging file should contain (or should be able to
-contain), such that generic and reusable toolsets can be created that can deal
-with logs from a variety of different protocols and use cases.
+The goal of qlog is to provide amenities and default characteristics that each
+logging file should contain (or should be able to contain), such that generic
+and reusable toolsets can be created that can deal with logs from a variety of
+different protocols and use cases.
 
 As such, qlog provides versioning, metadata inclusion, log aggregation, event
 grouping and log file size reduction techniques.
 
-The qlog schema can be serialized in many ways (e.g., JSON, CBOR, protobuf,
+All qlog schemas can be serialized in many ways (e.g., JSON, CBOR, protobuf,
 etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
 {{!I-JSON=RFC7493}}, and its streamable derivative
 {{!JSON-Text-Sequences=RFC7464}}.
 
 
-
-## Notational Conventions {#data_types}
+## Conventions and Terminology
 
 {::boilerplate bcp14-tagged}
 
-### Schema definition
+Serialization examples in this document use JSON ({{!JSON=RFC8259}}) unless
+otherwise indicated.
+
+## Use of CDDL
 
 To define events and data structures, all qlog documents use the Concise Data
 Definition Language {{!CDDL=RFC8610}}. This document uses the basic syntax, the
@@ -191,14 +198,9 @@ logged as `float64` in the millisecond resolution.
 Other qlog documents can define their own CDDL-compatible (struct) types
 (e.g., separately for each Packet type that a protocol supports).
 
-### Serialization examples
+# Design Overview
 
-Serialization examples in this document use JSON ({{!JSON=RFC8259}}) unless
-otherwise indicated.
-
-# Design goals
-
-The main tenets for the qlog schema design are:
+The main tenets for the qlog design are:
 
 * Streamable, event-based logging
 * A flexible format that can reduce log producer overhead, at the cost of
@@ -209,56 +211,159 @@ The main tenets for the qlog schema design are:
   group_ids can be used to tag events to a particular context)
 * Metadata is stored together with event data
 
+This is achieved by a logical logging hierarchy of:
 
-# QlogFile schema {#qlog-file-schema}
+* Log file
+  * Trace(s)
+    * Event(s)
 
-A qlog using the QlogFile schema can contain several individual traces and logs
-from multiple vantage points that are in some way related. The top-level element
-in this schema defines only a small set of "header" fields and an array of
-component traces, defined in {{qlog-file-def}} as:
+An abstract LogFile class is declared ({{abstract-logfile}}), from which all
+concrete log file formats derive using log file schemas. This document defines
+the QLogFile ({{qlog-file-schema}}) and QLogFileSeq ({{qlog-file-seq-schema}})
+log file schemas.
+
+A trace is conceptually fluid but the conventional use case is to group events
+related to a single data flow, such as a single logical QUIC connection, at a
+single vantage point ({{vantage-point}}). Concrete trace definitions relate to
+the log file schemas they are contained in; see ({{traces}}, {{trace}}, and
+{{traceseq}}).
+
+Events are logged at a time instant and convey specific details of the logging
+use case. For example, a network packet being sent or received. This document
+declares an abstract Event class ({{abstract-event}}) containing common fields,
+which all concrete events derive from. Concrete events are defined by event
+schemas that declare a namespace, consisting of one or more categories,
+containing one or more related event types. For example, this document defines
+the generic event schema structured as:
+
+* `gen` namespace
+  * `loglevel` category
+    * `error` event type
+    * `warning` event type
+    * `info` event type
+    * `debug` event type
+    * `verbose` event type
+  * `sim` category
+    * `scenario` event type
+    * `marker` event type
+
+# Abstract LogFile Class {#abstract-logfile}
+
+A Log file is intended to contain a collection of events that are in some way
+related. An abstract LogFile class containing fields common to all log files is
+defined in {{abstract-logfile-def}}. Each concrete log file schema derives from
+this using the CDDL unwrap operator (~) and can extend it by defining semantics
+and any custom fields.
 
 ~~~ cddl
-QlogFile = {
-    qlog_version: text
-    ? qlog_format: text .default "JSON"
+LogFile = {
+    file_schema: text
+    serialization_format: text
     ? title: text
     ? description: text
-    ? traces: [+ Trace /
-                 TraceError]
+    event_schemas: [+text]
 }
 ~~~
-{: #qlog-file-def title="QlogFile definition"}
+{: #abstract-logfile-def title="LogFile definition"}
 
-The required "qlog_version" field MUST have the value "0.4".
+The required "file_schema" field identifies the concrete log file schema. It
+MUST have a value that is an absolute URI; see {{schema-uri}} for rules and
+guidance.
 
-The optional "qlog_format" field indicates the serialization format. Its value
-MUST either be one of the options defined in this document (i.e.,
-{{concrete-formats}}) or the field MUST be omitted entirely. When the field is
-omitted the default value of "JSON" applies.
+The required "serialization_format" field indicates the serialization
+format using a media type {{!RFC2046}}. It is case-insensitive.
+
+In order to make it easier to parse and identify qlog files and their
+serialization format, the "file_schema" and "serialization_format" fields and
+their values SHOULD be in the first 256 characters/bytes of the resulting log
+file.
 
 The optional "title" and "description" fields provide additional free-text
 information about the file.
 
-The optional "traces" field contains an array of qlog traces ({{trace}}), each
-of which contain metadata and an array of qlog events ({{events}}).
+The required "event_schemas" field contains event schema URIs that identify
+concrete event categories and their associated types recorded in a log.
+Requirements and guidelines are defined in {{event-types-and-schema}}.
 
-In order to make it easier to parse and identify qlog files and their
-serialization format, the "qlog_version" and "qlog_format" fields and their
-values SHOULD be in the first 256 characters/bytes of the resulting log file.
+## Concrete Log File Schema URIs {#schema-uri}
 
-Where a qlog file is serialized to a JSON format, one of the downsides is that
-it is inherently a non-streamable format. Put differently, it is not possible to
-simply append new qlog events to a log file without "closing" this file at the
-end by appending "]}]}". Without these closing tags, most JSON parsers will be
-unable to parse the file entirely. The alternative QlogFileSeq
-({{qlog-file-seq-schema}}) is better suited to streaming.
+Concrete log file schemas MUST identify themselves using a URI {{!RFC3986}}.
+
+Log file schemas defined by RFCs MUST register a URI in the "qlog log file
+schema URIs" registry and SHOULD use a URN of the form
+`urn:ietf:params:qlog:file:<schema-identifier>`, where `<schema-identifier>` is
+a globally-unique text name using only characters in the URI unreserved range;
+see {{Section 2.3 of RFC3986}}. This document registers
+`urn:ietf:params:qlog:file:contained` ({{qlog-file-schema}}) and
+`urn:ietf:params:qlog:file:sequential` ({{qlog-file-seq-schema}}).
+
+Private or non-standard log file schemas MAY register a URI in the "qlog log
+file schema URIs" registry but MUST NOT use a URN of the form
+`urn:ietf:params:qlog:file:<schema-identifier>`. URIs that contain a domain name
+SHOULD also contain a month-date in the form mmyyyy. For example,
+"https://example.org/072024/globallyuniquelogfileschema". The definition of the
+log file schema and assignment of the URI MUST have been authorized by the owner
+of the domain name on or very close to that date. This avoids problems when
+domain names change ownership. The URI does not need to be dereferencable,
+allowing for confidential use or to cover the case where the log file schema
+continues to be used after the organization that defined them ceases to exist.
+
+The "qlog log file schema URIs" registry operates under the Expert Review
+policy, per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert
+MUST check that the URI is appropriate to the concrete log file schema and
+satisfies the requirements in this section. A request to register a private or
+non-standard log file schema URI using a URN of the form
+`urn:ietf:params:qlog:file:<schema-identifier>` MUST be rejected.
+
+Registration requests should use the following template:
+
+Log File Schema URI:
+: \[the log file schema identifier\]
+
+Description:
+: \[a description of the log file schema\]
+
+Reference:
+: \[to a specification defining the log file schema\]
+
+# QlogFile schema {#qlog-file-schema}
+
+A qlog file using the QlogFile schema can contain several individual traces and
+logs from multiple vantage points that are in some way related. The top-level
+element in this schema defines only a small set of "header" fields and an array
+of component traces. This is defined in {{qlog-file-def}} as:
+
+~~~ cddl
+QlogFile = {
+    ~LogFile
+    ? traces: [+ Trace /
+                TraceError]
+}
+~~~
+{: #qlog-file-def title="QlogFile definition"}
+
+The QlogFile schema URI is `urn:ietf:params:qlog:file:contained`.
+
+QlogFile extends LogFile using the CDDL unwrap operator (~), which copies the
+fields presented in {{abstract-logfile}}. Additionally, the optional "traces"
+field contains an array of qlog traces ({{trace}}), each of which contain
+metadata and an array of qlog events ({{abstract-event}}).
+
+The default serialization format for QlogFile is JSON; see {{format-json}} for
+guidance on populating the "serialization_format" field and other
+considerations. Where a qlog file is serialized to a JSON format, one of the
+downsides is that it is inherently a non-streamable format. Put differently, it
+is not possible to simply append new qlog events to a log file without "closing"
+this file at the end by appending "]}]}". Without these closing tags, most JSON
+parsers will be unable to parse the file entirely. The alternative QlogFileSeq
+({{qlog-file-seq-schema}}) is better suited to streaming use cases.
 
 JSON serialization example:
 
 ~~~
 {
-    "qlog_version": "0.4",
-    "qlog_format": "JSON",
+    "file_schema": "urn:ietf:params:qlog:file:contained",
+    "serialization_format": "application/qlog+json",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
     "traces": [...]
@@ -369,28 +474,25 @@ is through the use of the "group_id" field, discussed in {{group-ids}}.
 A qlog file using the QlogFileSeq schema can be serialized to a streamable JSON
 format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}). The top-level
 element in this schema defines only a small set of "header" fields and an array
-of component traces, defined in {{qlog-file-def}} as:
+of component traces. This is defined in {{qlog-file-def}} as:
 
 ~~~ cddl
 QlogFileSeq = {
-    qlog_format: "JSON-SEQ"
-    qlog_version: text
-    ? title: text
-    ? description: text
+    ~LogFile
     trace: TraceSeq
 }
 ~~~
 {: #qlog-file-seq-def title="QlogFileSeq definition"}
 
-The required "qlog_format" field MUST have the value "JSON-SEQ".
+The QlogFileSeq schema URI is `urn:ietf:params:qlog:file:sequential`.
 
-The required "qlog_version" field MUST have the value "0.4".
+QlogFile extends LogFile using the CDDL unwrap operator (~), which copies the
+fields presented in {{abstract-logfile}}. Additionally, the required "trace"
+field contains a singular trace ({{trace}}). All qlog events in the file are
+related to this trace; see {{traceseq}}.
 
-The optional "title" and "description" fields provide additional free-text
-information about the file.
-
-The optional "trace" field contains a singular trace metadata. All qlog events
-in the file are related to this trace.
+See {{format-json-seq}} for guidance on populating the "serialization_format"
+field and other serialization considerations.
 
 JSON-SEQ serialization example:
 
@@ -401,8 +503,8 @@ JSON-SEQ serialization example:
 // For display purposes, Record Separators are rendered as <RS>
 
 <RS>{
-    "qlog_version": "0.4",
-    "qlog_format": "JSON-SEQ",
+    "file_schema": "urn:ietf:params:qlog:file:sequential",
+    "serialization_format": "application/qlog+json-seq",
     "title": "Name of JSON Text Sequence qlog file (short)",
     "description": "Description for this trace file (long)",
     "trace": {
@@ -423,8 +525,6 @@ JSON-SEQ serialization example:
 ...
 ~~~~~~~~
 {: #json-seq-ex title="Top-level element"}
-
-For further information about serialization, see {{format-json-seq}}.
 
 ## TraceSeq
 
@@ -499,15 +599,11 @@ protocol-level domain knowledge (e.g., in QUIC, the client always sends the firs
 packet) or give the user the option to switch between client and server
 perspectives manually.
 
-# Events {#events}
+# Abstract Event Class {#abstract-event}
 
-A qlog event is specified as a generic object with a number of member
-fields and their associated data. Depending on the protocol and use case, the
-exact member field names and their formats can differ across implementations. This
-section lists the main, pre-defined and reserved field names with specific
-semantics and expected corresponding value formats.
-
-An Event is defined in {{event-def}} as:
+Events are logged at a time instant and convey specific details of the logging
+use case. An abstract Event class containing fields common to all events is
+defined in {{event-def}}.
 
 ~~~ cddl
 Event = {
@@ -527,7 +623,12 @@ Event = {
 {: #event-def title="Event definition"}
 
 Each qlog event MUST contain the mandatory fields: "time"
-({{time-based-fields}}), "name" ({{name-field}}), and "data" ({{data-field}}).
+({{time-based-fields}}), "name" ({{event-types-and-schema}}), and "data" ({{data-field}}).
+
+Each qlog event is an instance of a concrete event type that derives from the
+abstract Event class; see {{event-types-and-schema}}. They extend it by defining
+the specific values and semantics of common fields, in particular the `name` and
+`data` fields. Furthermore, they can optionally add custom fields.
 
 Each qlog event MAY contain the optional fields: "time_format"
 ({{time-based-fields}}), "protocol_type" ({{protocol-type-field}}), "trigger"
@@ -537,16 +638,7 @@ Multiple events can appear in a Trace or TraceSeq and they might contain fields
 with identical values. It is possible to optimize out this duplication using
 "common_fields" ({{common-fields}}).
 
-The specific values for each of these fields and their semantics are defined in
-separate documents, depending on protocol or use case. For example: event
-definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
-
-Events are intended to be extended with custom fields, therefore they MAY
-contain other fields not defined in this document. Custom fields may be known or
-unknown to tools. Tools SHOULD allow for the presence of unknown event fields,
-but their semantics depend on the context of the log usage.
-
-JSON serialization:
+Example qlog event:
 
 ~~~~~~~~
 {
@@ -630,177 +722,6 @@ Tools SHOULD NOT assume the ability to derive the absolute Unix timestamp from
 qlog traces, nor allow on them to relatively order events across two or more
 separate traces (in this case, clock drift should also be taken into account).
 
-## Names {#name-field}
-
-Events differ mainly in the type of metadata associated with them. The "name"
-field is an identifier that parsers can use to decide how to interpret the event
-metadata contained in the "data" field (see {{data-field}}).
-
-Event names indicate a category and type. The "name" field MUST contain a
-non-empty character sequence representing a category, followed by a colon (':'),
-followed by a non-empty character sequence representing a type.
-
-Category allows a higher-level grouping of events per specific event type. For
-example for QUIC and HTTP/3, the different categories could be "quic", "h3",
-"qpack", and "recovery". Within these categories, the event type provides
-additional granularity. For example for QUIC and HTTP/3, within the "quic"
-category, there would be "packet_sent" and "packet_received" events.
-
-JSON serialization example:
-
-~~~
-{
-    "name": "quic:packet_sent"
-}
-~~~
-{: #name-ex title="An event with category \"quic\" and type \"packet_sent\"."}
-
-## Data {#data-field}
-
-An event's "data" field is a generic key-value map (e.g., JSON object). It
-defines the per-event metadata that is to be logged. Its specific subfields and
-their semantics are defined per specific event type. For example, data field
-definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
-
-In order to keep qlog fully extensible, two separate CDDL extension points
-("sockets" or "plugs") are used to fully define data fields.
-
-Firstly, to allow existing data field definitions to be extended (for example by
-adding an additional field needed for a new protocol feature), a CDDL "group
-socket" is used. This takes the form of a subfield with a name of
-`* $$CATEGORY-NAME-extension`. This field acts as a placeholder that can later be
-replaced with newly defined fields by assigning them to the socket with the
-`//=` operator. Multiple extensions can be assigned to the same group socket. An
-example is shown in {{groupsocket-extension-example}}.
-
-~~~~~~~~
-; original definition in document A
-MyCategoryEventX = {
-    field_a: uint8
-
-    * $$mycategory-eventx-extension
-}
-
-; later extension of EventX in document B
-$$mycategory-eventx-extension //= (
-  ? additional_field_b: bool
-)
-
-; another extension of EventX in document C
-$$mycategory-eventx-extension //= (
-  ? additional_field_c: text
-)
-
-; if document A, B and C are then used in conjunction,
-; the combined MyCategoryEventX CDDL is equivalent to this:
-MyCategoryEventX = {
-    field_a: uint8
-
-    ? additional_field_b: bool
-    ? additional_field_c: text
-}
-~~~~~~~~
-{: #groupsocket-extension-example title="Example of using a generic CDDL group socket to extend an existing event data definition"}
-
-Secondly, to allow documents to define fully new event data field definitions
-(as opposed to extend existing ones), a CDDL "type socket" is used. For this
-purpose, the type of the "data" field in the qlog Event type (see {{event-def}})
-is the extensible `$ProtocolEventData` type. This field acts as an open enum of
-possible types that are allowed for the data field. As such, any new event data
-field is defined as its own CDDL type and later merged with the existing
-`$ProtocolEventData` enum using the `/=` extension operator. Any generic
-key-value map type can be assigned to `$ProtocolEventData` (the only common
-"data" subfield defined in this document is the optional `trigger` field, see
-{{trigger-field}}). An example of this setup is shown in
-{{protocoleventdata-def}}.
-
-~~~~~~~~
-; We define two separate events in a single document
-MyCategoryEvent1 /= {
-    field_1: uint8
-
-    ? trigger: text
-
-    * $$mycategory-event1-extension
-}
-
-MyCategoryEvent2 /= {
-    field_2: bool
-
-    ? trigger: text
-
-    * $$mycategory-event2-extension
-}
-
-; the events are both merged with the existing
-; $ProtocolEventData type enum
-$ProtocolEventData /= MyCategoryEvent1 / MyCategoryEvent2
-
-; the "data" field of a qlog event can now also be of type
-; MyCategoryEvent1 and MyCategoryEvent2
-~~~~~~~~
-{: #protocoleventdata-def title="ProtocolEventData extension"}
-
-Documents defining new qlog events MUST properly extend `$ProtocolEventData`
-when defining data fields to enable automated validation of aggregated qlog
-schemas. Furthermore, they SHOULD properly add a `* $$CATEGORY-NAME-extension`
-extension field to newly defined event data to allow the new events to be
-properly extended by other documents.
-
-A combined but purely illustrative example of the use of both extension points
-for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
-
-~~~~~~~~
-; defined in the main QUIC event document
-TransportPacketSent = {
-    ? packet_size: uint16
-    header: PacketHeader
-    ? frames:[* QuicFrame]
-    ? trigger: "pto_probe" /
-               "retransmit_timeout" /
-               "bandwidth_probe"
-
-    * $$transport-packetsent-extension
-}
-
-; Add the event to the global list of recognized qlog events
-$ProtocolEventData /= TransportPacketSent
-
-; Defined in a separate document that describes a
-; theoretical QUIC protocol extension
-$$transport-packetsent-extension //= (
-  ? additional_field: bool
-)
-
-; If both documents are utilized at the same time,
-; the following JSON serialization would pass an automated
-; CDDL schema validation check:
-
-{
-  "time": 123456,
-  "category": "transport",
-  "name": "packet_sent",
-  "data": {
-      "packet_size": 1280,
-      "header": {
-          "packet_type": "1RTT",
-          "packet_number": 123
-      },
-      "frames": [
-          {
-              "frame_type": "stream",
-              "length": 1000,
-              "offset": 456
-          },
-          {
-              "frame_type": "padding"
-          }
-      ],
-      additional_field: true
-  }
-}
-~~~~~~~~
-{: #data-ex title="Example of an extended 'data' field for a conceptual QUIC packet_sent event"}
 
 ## Path {#path-field}
 
@@ -1062,6 +983,498 @@ trace has a different value for a given field, this field MUST NOT be added to
 common_fields but instead defined on each event individually. Good example of such
 fields are "time" and "data", who are divergent by nature.
 
+# Concrete Event Types and Event Schema {#event-types-and-schema}
+
+Concrete event types belong to event categories, both contained in event schema.
+
+A single event schema can either define a new namespace, or extend an existing
+namespace with new categories. New namespaces MUST be registered using a
+non-empty namespace identifier text identifier using only characters in the
+unreserved range; see {{Section 2.3 of RFC3986}}. Namespace are mutable and MAY
+be extended with categories.
+
+Event categories MUST belong to a single event namespace. They MUST have a
+registered non-empty globally-unique text identifier using only characters in
+the URI unreserved range; see {{Section 2.3 of RFC3986}}. They MUST have a
+single URI {{RFC3986}} that MUST be absolute. The URI MUST include the namespace
+identifier. The URI MUST include the category identifer using a fragment
+identifier (characters after a "#" in the URI). Event categories are immutable
+and MUST NOT be extended with events. Registration guidance and requirement for
+category URIs are provided in {{event-schema-reg}}.
+
+Concrete event types MUST belong to a single event category and MUST have a
+non-empty name of type `text`.
+
+The value of a qlog event `name` field MUST be the concatenation of category
+identifier, colon (':'), and event type identifier. By virtue of the identifier
+requirements described above, event names are globally-unique. Thus, log files
+can contain events from multiple schemas without the risk of name collisions.
+
+Implementations that might record concrete event types belonging to a category
+in an event schema SHOULD list all category identifiers in use. This is achieved
+by including the appropriate URIs in the `event_schemas` field of the abstract
+LogFile class ({{abstract-logfile}}). The `event_schemas` is a hint to tools
+about the possible event categories (and event types contained therein) that a
+qlog file might contain. The file MAY contain event types that do not belong to
+a listed category identifier. Inversely, not all event types associated with a
+category listed in `event_schemas` are guaranteed to be logged in a qlog file.
+Tools MUST NOT treat either of these as an error; see {{tooling}}.
+
+In the following hypothetical example, a qlog file contains events belonging to
+two categories in the generic event schema defined in this document
+({{generic-event-schema}}), to three categories in an event schema named `rick`
+specified in a hypothetical RFC, and to three more categories from a private
+event schema named pickle. The standardized category URIs use a URN format, the
+private categories use a URI with domain name.
+
+~~~
+"event_schemas": [
+  "urn:ietf:params:qlog:events:gen#loglevel",
+  "urn:ietf:params:qlog:events:gen#sim",
+  "urn:ietf:params:qlog:events:rick#roll",
+  "urn:ietf:params:qlog:events:rick#astley",
+  "urn:ietf:params:qlog:events:rick#moranis",
+  "https://example.com/032024/pickle.html#pepper",
+  "https://example.com/032024/pickle.html#lilly",
+  "https://example.com/032024/pickle.html#rick"
+]
+~~~
+{: #event-categories title="Example event_categories serialization"}
+
+## Event Schema and Event Category URIs {#event-schema-reg}
+
+Event schema defined by RFCs MUST register all categories in the "qlog event
+category URIs" registry and SHOULD use a URN of the form
+`urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`,
+where `<category identifier>` is globally unique. For example, this document
+defines the generic event schema ({{generic-event-schema}}) that uses the `gen`
+namespace containing the `loglevel` and `sim` categories. Other examples of
+event schema define the `quic` {{QLOG-QUIC}} and `http` {{QLOG-H3}} namespaces.
+
+Private or non-standard event categories MAY be registered in the "qlog event
+category URIs" registry but MUST NOT use a URN of the form
+`urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`. URIs
+that contain a domain name SHOULD also contain a month-date in the form mmyyyy.
+For example,
+"https://example.org/072024/customeventschema#globallyuniquecategory". The
+definition of the category and assignment of the URI MUST have been authorized
+by the owner of the domain name on or very close to that date. This avoids
+problems when domain names change ownership. The URI does not need to be
+dereferencable, allowing for confidential use or to cover the case where the log
+file schema continues to be used after the organization that defined them ceases
+to exist.
+
+The "qlog event category URIs" registry operates under the Expert Review policy,
+per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert MUST check
+that the URI is appropriate to the event schema and satisfies the requirements
+in {{event-types-and-schema}} and this section. A request to register a private
+or non-standard category URI using a URN of the form
+`urn:ietf:params:qlog:events:<namespace identifier>#<category identifier` MUST be
+rejected.
+
+Registration requests should use the following template:
+
+Event Category URI:
+: \[the event category identifier\]
+
+Description:
+: \[a description of the event category\]
+
+Reference:
+: \[to a specification defining the event schema defining the event category\]
+
+
+## Extending the Data Field {#data-field}
+
+An event's "data" field is a generic key-value map (e.g., JSON object). It
+defines the per-event metadata that is to be logged. Its specific subfields and
+their semantics are defined per concrete event type. For example, data field
+definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
+
+In order to keep qlog fully extensible, two separate CDDL extension points
+("sockets" or "plugs") are used to fully define data fields.
+
+Firstly, to allow existing data field definitions to be extended (for example by
+adding an additional field needed for a new protocol feature), a CDDL "group
+socket" is used. This takes the form of a subfield with a name of
+`* $$CATEGORY-NAME-extension`. This field acts as a placeholder that can later be
+replaced with newly defined fields by assigning them to the socket with the
+`//=` operator. Multiple extensions can be assigned to the same group socket. An
+example is shown in {{groupsocket-extension-example}}.
+
+~~~~~~~~
+; original definition in document A
+MyCategoryEventX = {
+    field_a: uint8
+
+    * $$mycategory-eventx-extension
+}
+
+; later extension of EventX in document B
+$$mycategory-eventx-extension //= (
+  ? additional_field_b: bool
+)
+
+; another extension of EventX in document C
+$$mycategory-eventx-extension //= (
+  ? additional_field_c: text
+)
+
+; if document A, B and C are then used in conjunction,
+; the combined MyCategoryEventX CDDL is equivalent to this:
+MyCategoryEventX = {
+    field_a: uint8
+
+    ? additional_field_b: bool
+    ? additional_field_c: text
+}
+~~~~~~~~
+{: #groupsocket-extension-example title="Example of using a generic CDDL group socket to extend an existing event data definition"}
+
+Secondly, to allow documents to define fully new event data field definitions
+(as opposed to extend existing ones), a CDDL "type socket" is used. For this
+purpose, the type of the "data" field in the qlog Event type (see {{event-def}})
+is the extensible `$ProtocolEventData` type. This field acts as an open enum of
+possible types that are allowed for the data field. As such, any new event data
+field is defined as its own CDDL type and later merged with the existing
+`$ProtocolEventData` enum using the `/=` extension operator. Any generic
+key-value map type can be assigned to `$ProtocolEventData` (the only common
+"data" subfield defined in this document is the optional `trigger` field, see
+{{trigger-field}}). An example of this setup is shown in
+{{protocoleventdata-def}}.
+
+~~~~~~~~
+; We define two separate events in a single document
+MyCategoryEvent1 /= {
+    field_1: uint8
+
+    ? trigger: text
+
+    * $$mycategory-event1-extension
+}
+
+MyCategoryEvent2 /= {
+    field_2: bool
+
+    ? trigger: text
+
+    * $$mycategory-event2-extension
+}
+
+; the events are both merged with the existing
+; $ProtocolEventData type enum
+$ProtocolEventData /= MyCategoryEvent1 / MyCategoryEvent2
+
+; the "data" field of a qlog event can now also be of type
+; MyCategoryEvent1 and MyCategoryEvent2
+~~~~~~~~
+{: #protocoleventdata-def title="ProtocolEventData extension"}
+
+Documents defining new qlog events MUST properly extend `$ProtocolEventData`
+when defining data fields to enable automated validation of aggregated qlog
+schemas. Furthermore, they SHOULD properly add a `* $$CATEGORY-NAME-extension`
+extension field to newly defined event data to allow the new events to be
+properly extended by other documents.
+
+A combined but purely illustrative example of the use of both extension points
+for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
+
+~~~~~~~~
+; defined in the main QUIC event document
+TransportPacketSent = {
+    ? packet_size: uint16
+    header: PacketHeader
+    ? frames:[* QuicFrame]
+    ? trigger: "pto_probe" /
+               "retransmit_timeout" /
+               "bandwidth_probe"
+
+    * $$transport-packetsent-extension
+}
+
+; Add the event to the global list of recognized qlog events
+$ProtocolEventData /= TransportPacketSent
+
+; Defined in a separate document that describes a
+; theoretical QUIC protocol extension
+$$transport-packetsent-extension //= (
+  ? additional_field: bool
+)
+
+; If both documents are utilized at the same time,
+; the following JSON serialization would pass an automated
+; CDDL schema validation check:
+
+{
+  "time": 123456,
+  "category": "transport",
+  "name": "packet_sent",
+  "data": {
+      "packet_size": 1280,
+      "header": {
+          "packet_type": "1RTT",
+          "packet_number": 123
+      },
+      "frames": [
+          {
+              "frame_type": "stream",
+              "length": 1000,
+              "offset": 456
+          },
+          {
+              "frame_type": "padding"
+          }
+      ],
+      additional_field: true
+  }
+}
+~~~~~~~~
+{: #data-ex title="Example of an extended 'data' field for a conceptual QUIC packet_sent event"}
+
+## Event Importance Levels {#importance}
+
+Depending on how events are designed, it may be that several events allow the
+logging of similar or overlapping data. For example the separate QUIC
+`connection_started` event overlaps with the more generic
+`connection_state_updated`. In these cases, it is not always clear which event
+should be logged or used, and which event should take precedence if e.g., both are
+present and provide conflicting information.
+
+To aid in this decision making, qlog defines three event importance levels, in
+decreasing order of importance and expected usage:
+
+* Core
+* Base
+* Extra
+
+Concrete event types SHOULD define an importance level.
+
+Core-level events SHOULD be present in all qlog files for a given protocol.
+These are typically tied to basic packet and frame parsing and creation, as well
+as listing basic internal metrics. Tool implementers SHOULD expect and add
+support for these events, though SHOULD NOT expect all Core events to be present
+in each qlog trace.
+
+Base-level events add additional debugging options and MAY be present in qlog
+files. Most of these can be implicitly inferred from data in Core events (if
+those contain all their properties), but for many it is better to log the events
+explicitly as well, making it clearer how the implementation behaves. These
+events are for example tied to passing data around in buffers, to how internal
+state machines change, and used to help show when decisions are actually made
+based on received data. Tool implementers SHOULD at least add support for
+showing the contents of these events, if they do not handle them explicitly.
+
+Extra-level events are considered mostly useful for low-level debugging of the
+implementation, rather than the protocol. They allow more fine-grained tracking
+of internal behavior. As such, they MAY be present in qlog files and tool
+implementers MAY add support for these, but they are not required to.
+
+Note that in some cases, implementers might not want to log for example data
+content details in Core-level events due to performance or privacy considerations.
+In this case, they SHOULD use (a subset of) relevant Base-level events instead to
+ensure usability of the qlog output. As an example, implementations that do not
+log QUIC `packet_received` events and thus also not which (if any) ACK frames the
+packet contains, SHOULD log `packets_acked` events instead.
+
+Finally, for event types whose data (partially) overlap with other event types'
+definitions, where necessary the event definition document should include explicit
+guidance on which to use in specific situations.
+
+## Tooling Expectations
+
+qlog is an extensible format and it is expected that new event schema will
+emerge that define new categories, event types, event fields (e.g., a field
+indicating an event's privacy properties), as well as values for the "trigger"
+property within the "data" field, or other member fields of the "data" field, as
+they see fit.
+
+It SHOULD NOT be expected that general-purpose tools will recognize or visualize
+all forms of qlog extension. Tools SHOULD allow for the presence of unknown
+event fields and make an effort to visualize even unknown data if possible,
+otherwise they MUST ignore it.
+
+## Further Design Guidance
+
+There are several ways of defining concrete event types. In practice, two main
+types of approach have been observed: a) those that map directly to concepts
+seen in the protocols (e.g., `packet_sent`) and b) those that act as aggregating
+events that combine data from several possible protocol behaviors or code paths
+into one (e.g., `parameters_set`). The latter are typically used as a means to
+reduce the amount of unique event definitions, as reflecting each possible
+protocol event as a separate qlog entity would cause an explosion of event
+types.
+
+Additionally, logging duplicate data is typically prevented as much as possible.
+For example, packet header values that remain consistent across many packets are
+split into separate events (for example `spin_bit_updated` or
+`connection_id_updated` for QUIC).
+
+Finally, when logging additional state change events, those state changes can
+often be directly inferred from data on the wire (for example flow control limit
+changes). As such, if the implementation is bug-free and spec-compliant, logging
+additional events is typically avoided. Exceptions have been made for common
+events that benefit from being easily identifiable or individually logged (for
+example `packets_acked`).
+
+# The Generic Event Schema {#generic-event-schema}
+
+The generic event schema defines categories and event types that are common
+across protocols, applications, and use cases. The schema namespace identifier
+is "gen".
+
+## Log Level Events {#loglevel-events}
+
+In typical logging setups, users utilize a discrete number of well-defined
+logging categories, levels or severities to log freeform (string) data. The log
+level event category replicates this approach to allow implementations to fully
+replace their existing text-based logging by qlog. This is done by providing
+events to log generic strings for the typical well-known logging levels (error,
+warning, info, debug, verbose). The category identifier is "loglevel". The
+category URI is is `urn:ietf:params:qlog:events:gen#loglevel`.
+
+~~~ cddl
+LogLevelEventData = LogLevelError /
+                    LogLevelWarning /
+                    LogLevelInfo /
+                    LogLevelDebug /
+                    LogLevelVerbose
+
+$ProtocolEventData /= LogLevelEventData
+~~~
+{: #loglevel-events-def title="LogLevelEventData and ProtocolEventData extension"}
+
+The event types are further defined below, their identifier is the heading name.
+
+### error
+
+Used to log details of an internal error that might not get reflected on the
+wire. It has Core importance level; see {{importance}}.
+
+~~~ cddl
+LogLevelError = {
+    ? code: uint64
+    ? message: text
+
+    * $$loglevel-error-extension
+}
+~~~
+{: #loglevel-error-def title="LogLevelError definition"}
+
+### warning
+
+Used to log details of an internal warning that might not get reflected on the
+wire. It has Base importance level; see {{importance}}.
+
+~~~ cddl
+LogLevelWarning = {
+    ? code: uint64
+    ? message: text
+
+    * $$loglevel-warning-extension
+}
+~~~
+{: #loglevel-warning-def title="LogLevelWarning definition"}
+
+### info
+
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
+
+~~~ cddl
+LogLevelInfo = {
+    message: text
+
+    * $$loglevel-info-extension
+}
+~~~
+{: #loglevel-info-def title="LogLevelInfo definition"}
+
+### debug
+
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
+
+~~~ cddl
+LogLevelDebug = {
+    message: text
+
+    * $$loglevel-debug-extension
+}
+~~~
+{: #loglevel-debug-def title="LogLevelDebug definition"}
+
+### verbose
+
+Used mainly for implementations that want to use qlog as their one and only
+logging format but still want to support unstructured string messages. The event
+has Extra importance level; see {{importance}}.
+
+~~~ cddl
+LogLevelVerbose = {
+    message: text
+
+    * $$loglevel-verbose-extension
+}
+~~~
+{: #loglevel-verbose-def title="LogLevelVerbose definition"}
+
+## Simulation Events {#sim-events}
+
+When evaluating a protocol implementation, one typically sets up a series of
+interoperability or benchmarking tests, in which the test situations can change
+over time. For example, the network bandwidth or latency can vary during the
+test, or the network can be fully disable for a short time. In these setups, it
+is useful to know when exactly these conditions are triggered, to allow for
+proper correlation with other events. This category defines event types to allow
+logging of such simulation metadata and its identifier is "sim". The category
+URI is `urn:ietf:params:qlog:events:gen#sim`.
+
+~~~ cddl
+SimulationEventData = SimulationScenario /
+                SimulationMarker
+
+$ProtocolEventData /= SimulationEventData
+~~~
+{: #sim-events-def title="SimulationEventData and ProtocolEventData extension"}
+
+The event types are further defined below, their identifier is the heading name.
+
+### scenario
+
+Used to specify which specific scenario is being tested at this particular
+instance. This supports, for example, aggregation of several simulations into
+one trace (e.g., split by `group_id`). It has Extra importance level; see
+{{importance}}.
+
+~~~ cddl
+SimulationScenario = {
+    ? name: text
+    ? details: {* text => any }
+
+    * $$simulation-scenario-extension
+}
+~~~
+{: #simulation-scenario-def title="SimulationScenario definition"}
+
+### marker
+
+Used to indicate when specific emulation conditions are triggered at set times
+(e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
+triggered). It has Extra importance level; see {{importance}}.
+
+~~~ cddl
+SimulationMarker = {
+    ? type: text
+    ? message: text
+
+    * $$simulation-marker-extension
+}
+~~~
+{: #simulation-marker-def title="SimulationMarker definition"}
+
+
 # Raw packet and frame information {#raw-info}
 
 While qlog is a high-level logging format, it also allows the inclusion of most
@@ -1101,256 +1514,6 @@ the payload_length from the length. In protocols with trailers (e.g., QUIC's
 AEAD tag), event definition documents SHOULD define how to support header_length
 calculation.
 
-# Common events and data classes
-
-There are some event types and data classes that are common across protocols,
-applications, and use cases. This section specifies such common definitions.
-
-~~~ cddl
-GenericEventData = GenericError /
-                GenericWarning /
-                GenericInfo /
-                GenericDebug
-
-SimulationEventData = SimulationScenario /
-                SimulationMarker
-
-$ProtocolEventData /= GenericEventData / SimulationEventData
-~~~
-{: #commonevent-integration title="ProtocolEventData extension for common
-events"}
-
-## Generic events
-
-In typical logging setups, users utilize a discrete number of well-defined logging
-categories, levels or severities to log freeform (string) data. This generic
-events category replicates this approach to allow implementations to fully replace
-their existing text-based logging by qlog. This is done by providing events to log
-generic strings for the typical well-known logging levels (error, warning, info,
-debug, verbose).
-
-For the events defined below, the "category" is "generic" and their "type" is the
-name of the heading in lowercase (e.g., the "name" of the error event is
-"generic:error").
-
-### error
-
-Used to log details of an internal error that might not get reflected on the
-wire. It has Core importance level; see {{importance}}.
-
-~~~ cddl
-GenericError = {
-    ? code: uint64
-    ? message: text
-
-    * $$generic-error-extension
-}
-~~~
-{: #generic-error-def title="GenericError definition"}
-
-### warning
-
-Used to log details of an internal warning that might not get reflected on the
-wire. It has Base importance level; see {{importance}}.
-
-~~~ cddl
-GenericWarning = {
-    ? code: uint64
-    ? message: text
-
-    * $$generic-warning-extension
-}
-~~~
-{: #generic-warning-def title="GenericWarning definition"}
-
-### info
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages. The event
-has Extra importance level; see {{importance}}.
-
-~~~ cddl
-GenericInfo = {
-    message: text
-
-    * $$generic-info-extension
-}
-~~~
-{: #generic-info-def title="GenericInfo definition"}
-
-### debug
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages. The event
-has Extra importance level; see {{importance}}.
-
-~~~ cddl
-GenericDebug = {
-    message: text
-
-    * $$generic-debug-extension
-}
-~~~
-{: #generic-debug-def title="GenericDebug definition"}
-
-### verbose
-
-Used mainly for implementations that want to use qlog as their one and only
-logging format but still want to support unstructured string messages. The event
-has Extra importance level; see {{importance}}.
-
-~~~ cddl
-GenericVerbose = {
-    message: text
-
-    * $$generic-verbose-extension
-}
-~~~
-{: #generic-verbose-def title="GenericVerbose definition"}
-
-## Simulation events
-
-When evaluating a protocol implementation, one typically sets up a series of
-interoperability or benchmarking tests, in which the test situations can change
-over time. For example, the network bandwidth or latency can vary during the test,
-or the network can be fully disable for a short time. In these setups, it is
-useful to know when exactly these conditions are triggered, to allow for proper
-correlation with other events.
-
-For the events defined below, the "category" is "simulation" and their "type" is
-the name of the heading in lowercase (e.g., the "name" of the scenario event is
-"simulation:scenario").
-
-### scenario
-
-Used to specify which specific scenario is being tested at this particular
-instance. This supports, for example, aggregation of several simulations into
-one trace (e.g., split by `group_id`). It has Extra importance level; see
-{{importance}}.
-
-~~~ cddl
-SimulationScenario = {
-    ? name: text
-    ? details: {* text => any }
-
-    * $$simulation-scenario-extension
-}
-~~~
-{: #simulation-scenario-def title="SimulationScenario definition"}
-
-### marker
-
-Used to indicate when specific emulation conditions are triggered at set times
-(e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered). It has Extra importance level; see {{importance}}.
-
-~~~ cddl
-SimulationMarker = {
-    ? type: text
-    ? message: text
-
-    * $$simulation-marker-extension
-}
-~~~
-{: #simulation-marker-def title="SimulationMarker definition"}
-
-# Event definition guidelines
-
-This document defines the main schema for the qlog format together with some
-common events, which on their own do not provide much logging utility. It is
-expected that logging is extended with specific, per-protocol event definitions
-that specify the name (category + type) and data needed for each individual
-event. Examples include the QUIC event definitions {{QLOG-QUIC}} and HTTP/3
-event definitions {{QLOG-H3}}.
-
-This section defines some basic annotations and concepts that SHOULD be used by
-event definition documents. Doing so ensures a measure of consistency that makes
-it easier for qlog implementers to support a wide variety of protocols.
-
-## Event design
-
-There are several ways of defining qlog events. In practice, two main types of
-approach have been observed: a) those that map directly to concepts seen in the
-protocols (e.g., `packet_sent`) and b) those that act as aggregating events that
-combine data from several possible protocol behaviors or code paths into one
-(e.g., `parameters_set`). The latter are typically used as a means to reduce the
-amount of unique event definitions, as reflecting each possible protocol event
-as a separate qlog entity would cause an explosion of event types.
-
-Additionally, logging duplicate data is typically prevented as much as possible.
-For example, packet header values that remain consistent across many packets are
-split into separate events (for example `spin_bit_updated` or
-`connection_id_updated` for QUIC).
-
-Finally, when logging additional state change events, those state changes can
-often be directly inferred from data on the wire (for example flow control limit
-changes). As such, if the implementation is bug-free and spec-compliant, logging
-additional events is typically avoided. Exceptions have been made for common
-events that benefit from being easily identifiable or individually logged (for
-example `packets_acked`).
-
-## Event importance levels {#importance}
-
-Depending on how events are designed, it may be that several events allow the
-logging of similar or overlapping data. For example the separate QUIC
-`connection_started` event overlaps with the more generic
-`connection_state_updated`. In these cases, it is not always clear which event
-should be logged or used, and which event should take precedence if e.g., both are
-present and provide conflicting information.
-
-To aid in this decision making, qlog defines three event importance levels, in
-decreasing order of importance and expected usage:
-
-* Core
-* Base
-* Extra
-
-Events definitions SHOULD assign an importance level.
-
-Core-level events SHOULD be present in all qlog files for a
-given protocol. These are typically tied to basic packet and frame parsing and
-creation, as well as listing basic internal metrics. Tool implementers SHOULD
-expect and add support for these events, though SHOULD NOT expect all Core events
-to be present in each qlog trace.
-
-Base-level events add additional debugging options and MAY be present in qlog
-files. Most of these can be implicitly inferred from data in Core events (if
-those contain all their properties), but for many it is better to log the events
-explicitly as well, making it clearer how the implementation behaves. These
-events are for example tied to passing data around in buffers, to how internal
-state machines change, and used to help show when decisions are actually made
-based on received data. Tool implementers SHOULD at least add support for
-showing the contents of these events, if they do not handle them explicitly.
-
-Extra-level events are considered mostly useful for low-level debugging of the
-implementation, rather than the protocol. They allow more fine-grained tracking
-of internal behavior. As such, they MAY be present in qlog files and tool
-implementers MAY add support for these, but they are not required to.
-
-Note that in some cases, implementers might not want to log for example data
-content details in Core-level events due to performance or privacy considerations.
-In this case, they SHOULD use (a subset of) relevant Base-level events instead to
-ensure usability of the qlog output. As an example, implementations that do not
-log QUIC `packet_received` events and thus also not which (if any) ACK frames the
-packet contains, SHOULD log `packets_acked` events instead.
-
-Finally, for event types whose data (partially) overlap with other event types'
-definitions, where necessary the event definition document should include explicit
-guidance on which to use in specific situations.
-
-## Custom fields
-
-Event definition documents are free to define new category and event types,
-top-level fields (e.g., a per-event field indicating its privacy properties or
-path_id in multipath protocols), as well as values for the "trigger" property
-within the "data" field, or other member fields of the "data" field, as they see
-fit.
-
-They however SHOULD NOT expect non-specialized tools to recognize or visualize
-this custom data. However, tools SHOULD make an effort to visualize even unknown
-data if possible in the specific tool's context. If they do not, they MUST ignore
-these unknown fields.
-
 # Serializing qlog {#concrete-formats}
 
 qlog schema definitions in this document are intentionally agnostic to
@@ -1383,16 +1546,15 @@ interoperability considerations for both formats, and {{optimizations}} presents
 potential optimizations.
 
 Serialization formats require appropriate deserializers/parsers. The
-"qlog_format" field ({{qlog-file-schema}}) is used to indicate the chosen
-serialization format.
+"serialization_format" field ({{abstract-logfile}}) is used to indicate the
+chosen serialization format.
 
 ## qlog to JSON mapping {#format-json}
 
-As described in {{qlog-file-schema}}, JSON is the default qlog serialization. When
-mapping qlog to normal JSON, QlogFile ({{qlog-file-def}}) is used and the
-"qlog_format" field MUST have the value "JSON". The file extension/suffix SHOULD
-be ".qlog". The Media Type, if any, SHOULD be "application/qlog+json" per
-{{!RFC6839}}.
+As described in {{qlog-file-schema}}, JSON is the default qlog serialization.
+When mapping qlog to normal JSON, QlogFile ({{qlog-file-def}}) is used. The
+Media Type is "application/qlog+json" per {{!RFC6839}}. The file
+extension/suffix SHOULD be ".qlog".
 
 In accordance with {{Section 8.1 of !RFC8259}}, JSON files are required to use
 UTF-8 both for the file itself and the string values it contains. In addition,
@@ -1435,9 +1597,9 @@ which notably includes only a single trace (TraceSeq) and omits an explicit
 can still be used on a per-event basis to include events from conceptually
 different sources in a single JSON-SEQ qlog file.
 
-When mapping qlog to JSON-SEQ, the "qlog_format" field MUST have the value
-"JSON-SEQ". The file extension/suffix SHOULD be ".sqlog" (for "streaming" qlog).
-The Media Type, if any, SHOULD be "application/qlog+json-seq" per {{!RFC8091}}.
+When mapping qlog to JSON-SEQ, the Media Type is "application/qlog+json-seq" per
+{{!RFC8091}}. The file extension/suffix SHOULD be ".sqlog" (for "streaming"
+qlog).
 
 While not specifically required by the JSON-SEQ specification, all qlog field
 names MUST be lowercase when serialized to JSON-SEQ.
@@ -1754,9 +1916,36 @@ The most sensitive data in qlog is typically contained in RawInfo type fields
 (see {{raw-info}}). Therefore, qlog users should exercise caution and limit the
 inclusion of such fields for all but the most stringent use cases.
 
-# IANA Considerations
+# IANA Considerations {#iana}
 
-There are no IANA considerations.
+IANA is requested to register a new entry in the "IETF URN Sub-namespace for
+Registered Protocol Parameter Identifiers" registry ({{!RFC3553}})":
+
+Registered Parameter Identifier:
+: qlog
+
+Reference:
+: This Document
+
+IANA Registry Reference:
+: [](https://www.iana.org/assignments/qlog){: brackets="angle"}
+
+IANA is requested to create the "qlog log file schema URIs" registry
+at [](https://www.iana.org/assignments/qlog) for the purpose of registering
+log file schema. It has the following format:
+
+| Log File Schema URI | Description | Reference |
+| urn:ietf:params:qlog:file:contained | Concrete log file schema that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
+| urn:ietf:params:qlog:file:sequential | Concrete log file schema containing a single trace, optimized for seqential read and write access. | {{qlog-file-seq-schema}} |
+
+IANA is requested to create the "qlog event category URIs" registry
+at [](https://www.iana.org/assignments/qlog) for the purpose of registering
+event categories. It has the following format:
+
+| Event Category URI | Description | Reference |
+| urn:ietf:params:qlog:events:gen#loglevel | Well-known logging levels for free-form text. | {{loglevel-events}} |
+| urn:ietf:params:qlog:events:gen#sim | Events for simulation testing. | {{sim-events}} |
+
 
 --- back
 
@@ -1768,7 +1957,8 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema and Hugo Landau for their feedback and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau and Jonathan Lennox for their feedback
+and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
