@@ -2528,7 +2528,6 @@ importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft
 QUICPacketSent = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
-    ? is_coalesced: bool .default false
 
     ; only if header.packet_type === "stateless_reset"
     ; is always 128 bits in length.
@@ -2564,8 +2563,8 @@ QUICPacketSent = {
 <p id="section-5.5-3">The <code>encryption_level</code> and <code>packet_number_space</code> are not logged explicitly:
 the <code>header.packet_type</code> specifies this by inference (assuming correct
 implementation)<a href="#section-5.5-3" class="pilcrow">¶</a></p>
-<p id="section-5.5-4">For more details on <code>datagram_id</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>. It is only needed
-when keeping track of packet coalescing.<a href="#section-5.5-4" class="pilcrow">¶</a></p>
+<p id="section-5.5-4">The <code>datagram_id</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.5-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetreceived">
@@ -2582,7 +2581,6 @@ Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/
 QUICPacketReceived = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
-    ? is_coalesced: bool .default false
 
     ; only if header.packet_type === "stateless_reset"
     ; Is always 128 bits in length.
@@ -2608,9 +2606,9 @@ QUICPacketReceived = {
 </div>
 <p id="section-5.6-3">The <code>encryption_level</code> and <code>packet_number_space</code> are not logged explicitly: the
 <code>header.packet_type</code> specifies this by inference (assuming correct
-implementation)<a href="#section-5.6-3" class="pilcrow">¶</a></p>
-<p id="section-5.6-4">For more details on <code>datagram_id</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>. It is only needed
-when keeping track of packet coalescing.<a href="#section-5.6-4" class="pilcrow">¶</a></p>
+implementation).<a href="#section-5.6-3" class="pilcrow">¶</a></p>
+<p id="section-5.6-4">The <code>datagram_id</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.6-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetdropped">
@@ -2684,7 +2682,8 @@ QUICPacketDropped = {
             <p id="section-5.7-5.9.1"><code>general</code>: situations not clearly covered in the other categories<a href="#section-5.7-5.9.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-5.7-6">For more details on <code>datagram_id</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.7-6" class="pilcrow">¶</a></p>
+<p id="section-5.7-6">The <code>datagram_id</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.7-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetbuffered">
@@ -2723,8 +2722,8 @@ QUICPacketBuffered = {
 <a href="#name-quicpacketbuffered-definiti" class="selfRef">QUICPacketBuffered definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.8-3">For more details on <code>datagram_id</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>. It is only needed
-when keeping track of packet coalescing.<a href="#section-5.8-3" class="pilcrow">¶</a></p>
+<p id="section-5.8-3">The <code>datagram_id</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.8-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetsacked">
@@ -2766,9 +2765,10 @@ number space a typical QUIC connection will use.<a href="#section-5.9-4" class="
         <h3 id="name-udp_datagrams_sent">
 <a href="#section-5.10" class="section-number selfRef">5.10. </a><a href="#name-udp_datagrams_sent" class="section-name selfRef">udp_datagrams_sent</a>
         </h3>
-<p id="section-5.10-1">When one or more UDP-level datagrams are passed to the socket. This is useful
-for determining how QUIC packet buffers are drained to the OS. The event has
-Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.10-1" class="pilcrow">¶</a></p>
+<p id="section-5.10-1">The <code>datagrams_sent</code> event indicates when one or more UDP-level datagrams are
+passed to the underlying network socket. This is useful for determining how QUIC
+packet buffers are drained to the OS. The event has Extra importance level; see
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.10-1" class="pilcrow">¶</a></p>
 <span id="name-quicudpdatagramssent-defini"></span><div id="quic-udpdatagramssent-def">
 <figure id="figure-20">
           <div class="lang-cddl sourcecode" id="section-5.10-2.1">
@@ -2798,13 +2798,18 @@ QUICUDPDatagramsSent = {
           </figcaption></figure>
 </div>
 <p id="section-5.10-3">Since QUIC implementations rarely control UDP logic directly, the raw data
-excludes UDP-level headers in all fields.<a href="#section-5.10-3" class="pilcrow">¶</a></p>
-<p id="section-5.10-4">The <code>datagram_id</code> is a qlog-specific concept to allow tracking of QUIC packet
-coalescing inside UDP datagrams. Since QUIC generates many UDP datagrams, unique
-identifiers are required to be able to track them individually in qlog traces.
-However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
-Selecting identifier values is thus left to qlog implementations, which should
-consider how to generate unique values within the scope of their created traces.<a href="#section-5.10-4" class="pilcrow">¶</a></p>
+excludes UDP-level headers in all RawInfo fields.<a href="#section-5.10-3" class="pilcrow">¶</a></p>
+<p id="section-5.10-4">Multiple QUIC packets can be coalesced in a single UDP datagram, especially
+during the handshake (see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-12.2" class="relref">Section 12.2</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>). However, neither
+QUIC nor UDP themselves provide an explicit mechanism to track this behaviour.
+To make it possible for implementations to track coalescing across packet-level
+and datagram-level qlog events, this document defines a qlog-specific mechanism
+for tracking coalescing across packet-level and datagram-level qlog events: a
+"datagram identifier" carried in <code>datagram_id</code> fields. qlog implementations that
+want to track coalescing can use this mechanism, where multiple events sharing
+the same <code>datagram_id</code> indicate they were coalesced in the same UDP datagram.
+The selection of specific and locally-unique <code>datagram_id</code> values is an
+implementation choice.<a href="#section-5.10-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-udpdatagramsreceived">
@@ -2843,7 +2848,8 @@ QUICUDPDatagramsReceived = {
 <a href="#name-quicudpdatagramsreceived-de" class="selfRef">QUICUDPDatagramsReceived definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.11-3">For more details on <code>datagram_ids</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.11-3" class="pilcrow">¶</a></p>
+<p id="section-5.11-3">The <code>datagram_ids</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.11-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-udpdatagramdropped">
