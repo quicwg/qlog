@@ -1650,11 +1650,13 @@ for the wire image {{?RFC8546}}. Logging can reveal aspects of the wire image
 that would ordinarily be protected, creating tension between observability,
 security and privacy, especially if data can be correlated across data sources.
 
-Depending on the observability use case any data could be logged or captured. As
-per {{?RFC6973}}, operators must be aware that such data could be compromised,
-risking the privacy of all participants. Entities that expect protocol
-features to ensure data privacy might unknowingly be subject to broader privacy
-risks, undermining their ability to assess or respond effectively.
+qlog permits logging of a broad and detailed range of data. Operators and
+implementers are responsible for deciding what data is logged to address their
+requirements and constraints. As per {{?RFC6973}}, operators must be aware that
+data could be compromised, risking the privacy of all participants. Where
+entities expect protocol features to ensure data privacy, logging might
+unknowingly be subject to broader privacy risks, undermining their ability to
+assess or respond effectively.
 
 ## Data at risk
 
@@ -1721,10 +1723,16 @@ address some security and privacy risks. However, removing or anonymizing data
 without sufficient care might not enhance privacy or security and
 could diminish the utility of qlog data.
 
+
 Operators and implementers should balance the value of logged data with the
-potential risks of (involuntary) disclosure, which can depend on use cases
-(e.g., research datasets might have different requirements to live operational
-troubleshooting).
+potential risks of voluntary or involuntary disclosure to trusted or untrusted
+entities. Importantly, both the breadth and depth of the data needed to make it
+ useful, as well as the definition of entities depend greatly on the intended
+use cases. For example, a research project might be tightly scoped, time bound,
+and require participants to explicitly opt in to having their data collected
+with the intention for this to be shared in a publication. Conversely, a server
+administrator might desire to collect telemetry, from users whom they have no
+relationship with, for continuing operational needs.
 
 The most extreme form of minimization or anonymization is deleting a field,
 equivalent to not logging it. qlog implementations should offer fine-grained
