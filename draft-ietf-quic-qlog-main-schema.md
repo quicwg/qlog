@@ -232,17 +232,17 @@ use case. For example, a QUIC packet being sent or received. This document
 declares an abstract Event class ({{abstract-event}}) containing common fields, which
 all concrete events derive from. Concrete events are defined by event schema
 that declare a namespace, consisting of one or more categories, containing one
-or more related event types. For example, this document defines the `std` event
+or more related event types. For example, this document defines the generic event
 schema structured as:
 
-* `std` namespace
-  * `generic` category
+* `gen` namespace
+  * `loglevel` category
     * `error` event type
     * `warning` event type
     * `info` event type
     * `debug` event type
     * `verbose` event type
-  * `simulation` category
+  * `sim` category
     * `scenario` event type
     * `marker` event type
 
@@ -1014,15 +1014,15 @@ a listed category identifier. Tools MUST NOT treat this as an error; see
 {{tooling}}.
 
 In the following hypothetical example, a qlog file contains events belonging to
-the standard event schema ({{std-event-schema}}), an event schema named `rick`
+the standard event schema ({{generic-event-schema}}), an event schema named `rick`
 specified in a hypothetical RFC, and a private event schema named pickle. The
 standardized categories use a URN format, the private categories use a URI with
 domain name.
 
 ~~~
 "event_schemas": [
-  "urn:ietf:params:qlog:events:std#generic,
-  "urn:ietf:params:qlog:events:std#simulation,
+  "urn:ietf:params:qlog:events:gen#loglevel,
+  "urn:ietf:params:qlog:events:gen#sim,
   "urn:ietf:params:qlog:events:rick#roll",
   "urn:ietf:params:qlog:events:rick#astley",
   "urn:ietf:params:qlog:events:rick#moranis",
@@ -1039,8 +1039,8 @@ Event schema defined by RFCs MUST register all categories in the "qlog event
 category URIs" registry and SHOULD use a URN of the form
 `urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`,
 where `<category identifier>` is globally unique. For example, this document
-defines the standard event schema ({{std-event-schema}}) that uses the `std`
-namespace containing the `generic` and `simulation` categories. Other examples
+defines the standard event schema ({{generic-event-schema}}) that uses the `gen`
+namespace containing the `loglevel` and `sim` categories. Other examples
 of event schema define the `quic` {{QLOG-QUIC}} and `h3` {{QLOG-H3}} namespaces.
 
 Private or non-standard event categories can use other URI formats. URIs that
@@ -1300,29 +1300,29 @@ additional events is typically avoided. Exceptions have been made for common
 events that benefit from being easily identifiable or individually logged (for
 example `packets_acked`).
 
-# The Standard Event Schema {#std-event-schema}
+# The Generic Event Schema {#generic-event-schema}
 
-The standard event schema defines categories and event types that are common across
-protocols, applications, and use cases. The schema namespace is "std".
+The generic event schema defines categories and event types that are common across
+protocols, applications, and use cases. The schema namespace is "gen".
 
-## Generic Events
+## Log Level Events {#loglevel-events}
 
 In typical logging setups, users utilize a discrete number of well-defined logging
-categories, levels or severities to log freeform (string) data. This generic
-events category replicates this approach to allow implementations to fully replace
+categories, levels or severities to log freeform (string) data. The log level
+event category replicates this approach to allow implementations to fully replace
 their existing text-based logging by qlog. This is done by providing events to log
 generic strings for the typical well-known logging levels (error, warning, info,
-debug, verbose). The category identifier is "generic".
+debug, verbose). The category identifier is "loglevel".
 
 ~~~ cddl
-GenericEventData = GenericError /
-                GenericWarning /
-                GenericInfo /
-                GenericDebug
+LogLevelEventData = LogLevelError /
+                    LogLevelWarning /
+                    LogLevelInfo /
+                    LogLevelDebug
 
-$ProtocolEventData /= GenericEventData
+$ProtocolEventData /= LogLevelEventData
 ~~~
-{: #generic-events-def title="GenericEventData and ProtocolEventData extension"}
+{: #loglevel-events-def title="LogLevelEventData and ProtocolEventData extension"}
 
 The event types are further defined below, their identifier is the heading name.
 
@@ -1332,14 +1332,14 @@ Used to log details of an internal error that might not get reflected on the
 wire. It has Core importance level.
 
 ~~~ cddl
-GenericError = {
+LogLevelError = {
     ? code: uint64
     ? message: text
 
-    * $$generic-error-extension
+    * $$loglevel-error-extension
 }
 ~~~
-{: #generic-error-def title="GenericError definition"}
+{: #loglevel-error-def title="LogLevelError definition"}
 
 ### warning
 
@@ -1347,14 +1347,14 @@ Used to log details of an internal warning that might not get reflected on the
 wire. It has Base importance level; see {{importance}}.
 
 ~~~ cddl
-GenericWarning = {
+LogLevelWarning = {
     ? code: uint64
     ? message: text
 
-    * $$generic-warning-extension
+    * $$loglevel-warning-extension
 }
 ~~~
-{: #generic-warning-def title="GenericWarning definition"}
+{: #loglevel-warning-def title="LogLevelWarning definition"}
 
 ### info
 
@@ -1363,13 +1363,13 @@ logging format but still want to support unstructured string messages. The event
 has Extra importance level; see {{importance}}.
 
 ~~~ cddl
-GenericInfo = {
+LogLevelInfo = {
     message: text
 
-    * $$generic-info-extension
+    * $$loglevel-info-extension
 }
 ~~~
-{: #generic-info-def title="GenericInfo definition"}
+{: #loglevel-info-def title="LogLevelInfo definition"}
 
 ### debug
 
@@ -1378,13 +1378,13 @@ logging format but still want to support unstructured string messages. The event
 has Extra importance level; see {{importance}}.
 
 ~~~ cddl
-GenericDebug = {
+LogLevelDebug = {
     message: text
 
-    * $$generic-debug-extension
+    * $$loglevel-debug-extension
 }
 ~~~
-{: #generic-debug-def title="GenericDebug definition"}
+{: #loglevel-debug-def title="LogLevelDebug definition"}
 
 ### verbose
 
@@ -1393,13 +1393,13 @@ logging format but still want to support unstructured string messages. The event
 has Extra importance level; see {{importance}}.
 
 ~~~ cddl
-GenericVerbose = {
+LogLevelVerbose = {
     message: text
 
-    * $$generic-verbose-extension
+    * $$loglevel-verbose-extension
 }
 ~~~
-{: #generic-verbose-def title="GenericVerbose definition"}
+{: #loglevel-verbose-def title="LogLevelVerbose definition"}
 
 ## Simulation Events
 
@@ -1408,7 +1408,7 @@ interoperability or benchmarking tests, in which the test situations can change
 over time. For example, the network bandwidth or latency can vary during the test,
 or the network can be fully disable for a short time. In these setups, it is
 useful to know when exactly these conditions are triggered, to allow for proper
-correlation with other events. The category identifier is "simulation".
+correlation with other events. The category identifier is "sim".
 
 ~~~ cddl
 SimulationEventData = SimulationScenario /
@@ -1915,7 +1915,8 @@ event categories. It has the following format:
 
 | Event Category URI | Description | Reference |
 |||||
-| urn:ietf:params:qlog:events:std#generic | Well-known logging levels for free-form text. | {{generic-events}} |
+| urn:ietf:params:qlog:events:gen#loglevel | Well-known logging levels for free-form text. | {{loglevel-events}} |
+| urn:ietf:params:qlog:events:gen#sim | Events for simulation testing. | {{loglevel-events}} |
 
 
 --- back
