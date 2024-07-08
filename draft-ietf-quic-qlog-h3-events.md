@@ -80,8 +80,10 @@ The schema namespace `http` is defined, containing the category `h3`; see
 Event class ({{Section 7 of QLOG-MAIN}}), each extending the "data" field and
 defining their "name" field and semantics.
 
-{{h3-events}} summarizes the name value of each event type that is defined
-in this specification.
+{{h3-events}} summarizes the name value of each event type that is defined in
+this specification. Some event data fields use complex datastructures. These are
+represented as enums or re-usable definitions, which are grouped together on the
+bottom of this document for clarity.
 
 | Name value                | Importance |  Definition |
 |:--------------------------|:-----------|:------------|
@@ -95,6 +97,20 @@ in this specification.
 | h3:datagram_parsed        | Base       | {{h3-datagramparsed}} |
 | h3:push_resolved          | Extra      | {{h3-pushresolved}} |
 {: #h3-events title="HTTP/3 Events"}
+
+## Usage with QUIC
+
+The events described in this document can be used with or without logging the
+related QUIC events defined in {{QLOG-QUIC}}. If used with QUIC events, the QUIC
+document takes precedence in terms of recommended filenames and trace separation
+setups.
+
+If used without QUIC events, it is recommended that the implementation assign a
+globally unique identifier to each HTTP/3 connection. This ID can then be used as
+the value of the qlog "group_id" field, as well as the qlog filename or file
+identifier, potentially suffixed by the vantagepoint type (For example,
+abcd1234_server.qlog would contain the server-side trace of the connection with
+GUID abcd1234).
 
 ## Notational Conventions
 
