@@ -886,12 +886,14 @@ excludes UDP-level headers in all RawInfo fields.
 Multiple QUIC packets can be coalesced in a single UDP datagram, especially
 during the handshake (see {{Section 12.2 of QUIC-TRANSPORT}}). However, neither
 QUIC nor UDP themselves provide an explicit mechanism to track this behaviour.
-Implementations willing to track coalescing across packet-level and
-datagram-level qlog events SHOULD thus use the local and qlog-specific concept
-of a "datagram identifier" in the `datagram_id` field. Selecting specific and
-locally unique `datagram_id` values is left to qlog implementations, but in
-general multiple packet-level events sharing the same `datagram_id` SHOULD
-indicate they were coalesced in the same UDP datagram.
+To make it possible for implementations to track coalescing across packet-level
+and datagram-level qlog events, this document defines a qlog-specific mechanism
+for tracking coalescing across packet-level and datagram-level qlog events: a
+"datagram identifier" carried in `datagram_id` fields. qlog implementations that
+want to track coalescing can use this mechanism, where multiple events sharing
+the same `datagram_id` indicate they were coalesced in the same UDP datagram.
+The selection of specific and locally-unique `datagram_id` values is an
+implementation choice.
 
 ## datagrams_received {#quic-datagramsreceived}
 
