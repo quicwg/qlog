@@ -98,6 +98,14 @@ bottom of this document for clarity.
 | h3:push_resolved          | Extra      | {{h3-pushresolved}} |
 {: #h3-events title="HTTP/3 Events"}
 
+When any event from this document is included in a qlog trace, the
+"protocol_type" qlog array field MUST contain an entry with the value "HTTP3":
+
+~~~ cddl
+$ProtocolType /= "HTTP3"
+~~~
+{: #protocoltype-extension-h3 title="ProtocolType extension for HTTP/3"}
+
 ## Usage with QUIC
 
 The events described in this document can be used with or without logging the
