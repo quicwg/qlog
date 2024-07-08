@@ -83,6 +83,10 @@ The following fields from {{QLOG-MAIN}} are imported and used: name, category,
 type, data, group_id, protocol_type, importance, RawInfo, and time-related
 fields.
 
+As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
+are intentionally agnostic to serialization formats. The choice of format is an
+implementation decision.
+
 # Overview
 
 This document describes how the QUIC protocol can be expressed in qlog using
@@ -95,7 +99,12 @@ re-usable definitions, which are grouped together on the bottom of this document
 for clarity.
 
 When any event from this document is included in a qlog trace, the
-`protocol_type` qlog array field MUST contain an entry with the value "QUIC".
+`protocol_type` qlog array field MUST contain an entry with the value "QUIC":
+
+~~~ cddl
+$ProtocolType /= "QUIC"
+~~~
+{: #protocoltype-extension-quic title="ProtocolType extension for QUIC"}
 
 When the qlog `group_id` field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
@@ -108,30 +117,11 @@ trace of the connection with ODCID abcd1234).
 
 ## Raw packet and frame information
 
-QUIC packets always include an AEAD authentication tag at the end.
-In general, the length of the AEAD tag depends on the TLS cipher
-suite, although all cipher suites used in QUIC v1 use a 16 byte tag.
-
-Note:
-
-: As QUIC appends an authentication tag after the packet payload, the packet
-header_lengths can be calculated as:
-
-: header_length = length - payload_length - 16
-
-: For UDP datagrams, the calculation is simpler:
-
-: header_length = length - payload_length
-
-Note:
-
-: In some cases, the length fields are also explicitly reflected inside of packet
-headers. For example, the QUIC STREAM frame has a `length` field indicating its
-payload size. Similarly, the QUIC Long Header has a `length` field which is equal
-to the payload length plus the packet number length. In these cases, those fields
-are intentionally preserved in the event definitions. Even though this can lead to
-duplicate data when the full RawInfo is logged, it allows a more direct mapping of
-the QUIC specifications to qlog, making it easier for users to interpret.
+QUIC packets always include an AEAD authentication tag at the end. In general,
+the length of the AEAD tag depends on the TLS cipher suite, although all cipher
+suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
+lengths in fields of type RawInfo (as defined in {{QLOG-MAIN}}) related to QUIC
+packets, the AEAD tag is regarded as a trailer.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
@@ -173,6 +163,7 @@ this specification.
 | connectivity:connection_id_updated    | Base       | {{connectivity-connectionidupdated}} |
 | connectivity:spin_bit_updated         | Base       | {{connectivity-spinbitupdated}} |
 | connectivity:connection_state_updated | Base       | {{connectivity-connectionstateupdated}} |
+| connectivity:path_assigned            | Base       | {{connectivity-pathassigned}} |
 | connectivity:mtu_updated              | Extra      | {{connectivity-mtuupdated}} |
 | quic:version_information         | Core       | {{quic-versioninformation}} |
 | quic:alpn_information            | Core       | {{quic-alpninformation}} |
@@ -183,13 +174,14 @@ this specification.
 | quic:packet_dropped              | Base       | {{quic-packetdropped}} |
 | quic:packet_buffered             | Base       | {{quic-packetbuffered}} |
 | quic:packets_acked               | Extra      | {{quic-packetsacked}} |
-| quic:datagrams_sent              | Extra      | {{quic-datagramssent}} |
-| quic:datagrams_received          | Extra      | {{quic-datagramsreceived}} |
-| quic:datagram_dropped            | Extra      | {{quic-datagramdropped}} |
+| quic:udp_datagrams_sent              | Extra      | {{quic-udpdatagramssent}} |
+| quic:udp_datagrams_received          | Extra      | {{quic-udpdatagramsreceived}} |
+| quic:udp_datagram_dropped            | Extra      | {{quic-udpdatagramdropped}} |
 | quic:stream_state_updated        | Base       | {{quic-streamstateupdated}} |
 | quic:frames_processed            | Extra      | {{quic-framesprocessed}} |
 | quic:stream_data_moved                | Base       | {{quic-streamdatamoved}} |
 | quic:datagram_data_moved              | Base       | {{quic-datagramdatamoved}} |
+| quic:migration_state_updated          | Extra      | {{quic-migrationstateupdated}} |
 | security:key_updated                  | Base       | {{security-keyupdated}} |
 | security:key_discarded                | Base       | {{security-keydiscarded}} |
 | recovery:parameters_set               | Base       | {{recovery-parametersset}} |
@@ -202,7 +194,9 @@ this specification.
 {: #quic-events title="QUIC Events"}
 
 QUIC events extend the `$ProtocolEventData` extension point defined in
-{{QLOG-MAIN}}.
+{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+per-event extension points via the `$$` CDDL "group socket" syntax, as also
+described in {{QLOG-MAIN}}.
 
 ~~~ cddl
 QuicEventData = ConnectivityServerListening /
@@ -211,6 +205,7 @@ QuicEventData = ConnectivityServerListening /
                 ConnectivityConnectionIDUpdated /
                 ConnectivitySpinBitUpdated /
                 ConnectivityConnectionStateUpdated /
+                ConnectivityPathAssigned /
                 ConnectivityMTUUpdated /
                 SecurityKeyUpdated /
                 SecurityKeyDiscarded /
@@ -223,9 +218,9 @@ QuicEventData = ConnectivityServerListening /
                 QUICPacketDropped /
                 QUICPacketBuffered /
                 QUICPacketsAcked /
-                QUICDatagramsSent /
-                QUICDatagramsReceived /
-                QUICDatagramDropped /
+                QUICUDPDatagramsSent /
+                QUICUDPDatagramsReceived /
+                QUICUDPDatagramDropped /
                 QUICStreamStateUpdated /
                 QUICFramesProcessed /
                 QUICStreamDataMoved /
@@ -258,6 +253,8 @@ ConnectivityServerListening = {
     ; the server will always answer client initials with a retry
     ; (no 1-RTT connection setups by choice)
     ? retry_required: bool
+
+    * $$connectivity-serverlistening-extension
 }
 ~~~
 {: #connectivity-serverlistening-def title="ConnectivityServerListening definition"}
@@ -285,6 +282,8 @@ ConnectivityConnectionStarted = {
     ? dst_port: uint16
     ? src_cid: ConnectionID
     ? dst_cid: ConnectionID
+
+    * $$connectivity-connectionstarted-extension
 }
 ~~~
 {: #connectivity-connectionstarted-def title="ConnectivityConnectionStarted definition"}
@@ -316,7 +315,7 @@ ConnectivityConnectionClosed = {
 
     ; which side closed the connection
     ? owner: Owner
-    ? connection_code: TransportError /
+    ? connection_code: $TransportError /
                        CryptoError /
                        uint32
     ? application_code: $ApplicationError /
@@ -333,6 +332,8 @@ ConnectivityConnectionClosed = {
         "version_mismatch" /
         ; for example HTTP/3's GOAWAY frame
         "application"
+
+    * $$connectivity-connectionclosed-extension
 }
 ~~~
 {: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
@@ -348,14 +349,16 @@ importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 The `connection_id_updated` event is viewed from the perspective of the endpoint
 applying the new ID. As such, when the endpoint receives a new connection ID
-from the peer, it will see the dst_ fields are set. When the endpoint updates
-its own connection ID (e.g., NEW_CONNECTION_ID frame), it logs the src_ fields.
+from the peer, the owner field will be "remote". When the endpoint updates its
+own connection ID, the owner field will be "local".
 
 ~~~ cddl
 ConnectivityConnectionIDUpdated = {
     owner: Owner
     ? old: ConnectionID
     ? new: ConnectionID
+
+    * $$connectivity-connectionidupdated-extension
 }
 ~~~
 {: #connectivity-connectionidupdated-def title="ConnectivityConnectionIDUpdated definition"}
@@ -371,6 +374,8 @@ QLOG-MAIN}}.
 ~~~ cddl
 ConnectivitySpinBitUpdated = {
     state: bool
+
+    * $$connectivity-spinbitupdated-extension
 }
 ~~~
 {: #connectivity-spinbitupdated-def title="ConnectivitySpinBitUpdated definition"}
@@ -381,91 +386,127 @@ The `connection_state_updated` event is used to track progress through QUIC's
 complex handshake and connection close procedures. It has Base importance
 level; see {{Section 9.2 of QLOG-MAIN}}.
 
-It is intended to provide exhaustive options to log each state individually, but
-also provides a more basic, simpler set for implementations less interested in
-tracking each smaller state transition. As such, users should not expect to see
-all these states reflected in all qlogs and implementers should focus on support
-for the SimpleConnectionState set.
+{{!QUIC-TRANSPORT}} does not contain an exhaustive flow diagram with possible
+connection states nor their transitions (though some are explicitly mentioned,
+like the 'closing' and 'draining' states). As such, this document
+**non-exhaustively** defines those states that are most likely to be useful for
+debugging QUIC connections.
+
+QUIC implementations SHOULD mainly log the simplified BaseConnectionStates,
+adding the more fine-grained GranularConnectionStates when more in-depth
+debugging is required. Tools SHOULD be able to deal with both types equally.
 
 ~~~ cddl
 ConnectivityConnectionStateUpdated = {
-    ? old: ConnectionState /
-           SimpleConnectionState
-    new: ConnectionState /
-         SimpleConnectionState
+    ? old: $ConnectionState
+    new: $ConnectionState
+
+    * $$connectivity-connectionstateupdated-extension
 }
 
-ConnectionState =
-    ; initial sent/received
+BaseConnectionStates =
+    ; Initial packet sent/received
     "attempted" /
-    ; peer address validated by: client sent Handshake packet OR
-    ; client used CONNID chosen by the server.
-    ; RFC 9000 Section 8.1
-    "peer_validated" /
+
+    ; Handshake packet sent/received
     "handshake_started" /
-    ; 1 RTT can be sent, but handshake isn't done yet
-    "early_write" /
-    ; TLS handshake complete: Finished received and sent
+
+    ; Both sent a TLS Finished message and verified the peer's TLS Finished message
+    ; 1-RTT packets can be sent
     ; RFC 9001 Section 4.1.1
     "handshake_complete" /
-    ; HANDSHAKE_DONE sent/received (connection is now "active", 1RTT
-    ; can be sent). RFC 9001 Section 4.1.2
-    "handshake_confirmed" /
-    "closing" /
-    ; connection_close sent/received
-    "draining" /
-    ; draining period done, connection state discarded
+
+    ; CONNECTION_CLOSE sent/received, stateless reset received or idle timeout
     "closed"
 
-SimpleConnectionState =
-    "attempted" /
-    "handshake_started" /
+GranularConnectionStates =
+    ; RFC 9000 Section 8.1
+    ; client sent Handshake packet OR
+    ; client used connection ID chosen by the server OR
+    ; client used valid address validation token
+    "peer_validated" /
+
+    ; 1-RTT data can be sent by the server, but handshake is not done yet
+    ; (server has sent TLS Finished; sometimes called 0.5 RTT data)
+    "early_write" /
+
+    ; HANDSHAKE_DONE sent/received.
+    ; RFC 9001 Section 4.1.2
     "handshake_confirmed" /
+
+    ; CONNECTION_CLOSE sent
+    "closing" /
+
+    ; CONNECTION_CLOSE received
+    "draining" /
+
+    ; draining or closing period done, connection state discarded
     "closed"
+
+$ConnectionState /= BaseConnectionStates / GranularConnectionStates
 ~~~
 {: #connectivity-connectionstateupdated-def title="ConnectivityConnectionStateUpdated definition"}
 
-These states correspond to the following transitions for both client and server:
+The `connection_state_changed` event has some overlap with the
+`connection_closed` and `connection_started` events, and the handling of various
+frames (for example in a `packet_received` event). Still, it can be useful to
+log these logical state transitions separately, especially if they map to an
+internal implementation state machine, to explicitly track progress. As such,
+implementations are allowed to use other ConnectionState values that adhere more
+closely to their internal logic. Tools SHOULD be able to deal with these custom
+states in a similar way to the pre-defined states in this document.
 
-**Client:**
+## path_assigned {#connectivity-pathassigned}
+Importance: Base
 
-- send initial
-    - state = attempted
-- get initial
-    - state = validated _(not really "needed" at the client, but somewhat useful to indicate progress nonetheless)_
-- get first Handshake packet
-    - state = handshake_started
-- get Handshake packet containing ServerFinished
-    - state = handshake_complete
-- send ClientFinished
-    - state = early_write
-    (1RTT can now be sent)
-- get HANDSHAKE_DONE
-    - state = handshake_confirmed
+This event is used to associate a single PathID's value with other parameters
+that describe a unique network path.
 
-**Server:**
+As described in {{QLOG-MAIN}}, each qlog event can be linked to a single network
+path by means of the top-level "path" field, whose value is a PathID. However,
+since it can be cumbersome to encode additional path metadata (such as IP
+addresses or Connection IDs) directly into the PathID, this event allows such an
+association to happen separately. As such, PathIDs can be short and unique, and
+can even be updated to be associated with new metadata as the connection's state
+evolves.
 
-- get initial
-    - state = attempted
-- send initial _(TODO don't think this needs a separate state, since some handshake will always be sent in the same flight as this?)_
-- send handshake EE, CERT, CV, ...
-    - state = handshake_started
-- send ServerFinished
-    - state = early_write
-    (1RTT can now be sent)
-- get first handshake packet / something using a server-issued CID of min length
-    - state = validated
-- get handshake packet containing ClientFinished
-    - state = handshake_complete
-- send HANDSHAKE_DONE
-    - state = handshake_confirmed
+Definition:
 
-Note:
+~~~ cddl
+ConnectivityPathAssigned = {
+    path_id: PathID
 
-: `connection_state_changed` with a new state of `attempted` is the same
-conceptual event as the `connection_started`` event above from the client's
-perspective. Similarly, a state of `closing` or `draining` corresponds to the
-`connection_closed` event.
+    ; the information for traffic going towards the remote receiver
+    ? path_remote: PathEndpointInfo
+
+    ; the information for traffic coming in at the local endpoint
+    ? path_local: PathEndpointInfo
+
+    * $$connectivity-pathassigned-extension
+}
+~~~
+{: #connectivity-pathassigned-def title="ConnectivityPathAssigned definition"}
+
+Choosing the different `path_id` values is left up to the implementation. Some
+options include using a uniquely incrementing integer, using the (first)
+Destination Connection ID associated with a path (or its sequence number), or
+using (a hash of) the two endpoint IP addresses.
+
+It is important to note that the empty string ("") is a valid PathID and that it
+is the default assigned to events that do not explicitly set a "path" field. Put
+differently, the initial path of a QUIC connection on which the handshake occurs
+(see also {{connectivity-connectionstarted}}) is implicitly associated with the
+PathID with value "". Associating metadata with this default path is possible by
+logging the ConnectivityPathAssigned event with a value of "" for the `path_id`
+field.
+
+As paths and their metadata can evolve over time, multiple
+ConnectivityPathAssigned events can be emitted for each unique PathID. The
+latest event contains the most up-to-date information for that PathID. As such,
+the first time a PathID is seen in a ConnectivityPathAssigned event, it is an
+indication that the path is created. Subsequent occurrences indicate the path is
+updated, while a final occurrence with both `path_local` and `path_remote`
+fields omitted implicitly indicates the path has been abandoned.
 
 ## mtu_updated {#connectivity-mtuupdated}
 
@@ -475,12 +516,14 @@ level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 ConnectivityMTUUpdated = {
-  ? old: uint32
-  new: uint32
+    ? old: uint32
+    new: uint32
 
-  ; at some point, MTU discovery stops, as a "good enough"
-  ; packet size has been found
-  ? done: bool .default false
+    ; at some point, MTU discovery stops, as a "good enough"
+    ; packet size has been found
+    ? done: bool .default false
+
+    * $$connectivity-mtuupdated-extension
 }
 ~~~
 {: #connectivity-mtuupdated-def title="ConnectivityMTUUpdated definition"}
@@ -506,6 +549,8 @@ QUICVersionInformation = {
     ? server_versions: [+ QuicVersion]
     ? client_versions: [+ QuicVersion]
     ? chosen_version: QuicVersion
+
+    * $$quic-versioninformation-extension
 }
 ~~~
 {: #quic-versioninformation-def title="QUICVersionInformation definition"}
@@ -545,6 +590,8 @@ QUICALPNInformation = {
     ? server_alpns: [* ALPNIdentifier]
     ? client_alpns: [* ALPNIdentifier]
     ? chosen_alpn: ALPNIdentifier
+
+    * $$quic-alpninformation-extension
 }
 
 ALPNIdentifier = {
@@ -574,9 +621,9 @@ minimize the amount of events and to decouple conceptual setting impacts from
 their underlying mechanism for easier high-level reasoning. The event has Core
 importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
-All these settings are typically set once and never change. However, they are
-typically set at different times during the connection, so there will typically be
-several instances of this event with different fields set.
+Most of these settings are typically set once and never change. However, they
+are usually set at different times during the connection, so there will
+regularly be several instances of this event with different fields set.
 
 Note that some settings have two variations (one set locally, one requested by the
 remote peer). This is reflected in the `owner` field. As such, this field MUST be
@@ -627,6 +674,8 @@ QUICParametersSet = {
     ; RFC9287
     ; true if present, absent or false if extension not negotiated
     ? grease_quic_bit: bool
+
+    * $$quic-parametersset-extension
 }
 
 PreferredAddress = {
@@ -639,10 +688,6 @@ PreferredAddress = {
 }
 ~~~
 {: #quic-parametersset-def title="QUICParametersSet definition"}
-
-Additionally, this event can contain any number of unspecified fields. This is
-to reflect setting of, for example, unknown (greased) transport parameters or
-custom extensions.
 
 ## parameters_restored {#quic-parametersrestored}
 
@@ -668,12 +713,11 @@ QUICParametersRestored = {
     ? initial_max_stream_data_uni: uint64
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
+
+    * $$quic-parametersrestored-extension
 }
 ~~~
 {: #quic-parametersrestored-def title="QUICParametersRestored definition"}
-
-Note that, like the `parameters_set` event, this event can contain any number of
-unspecified fields to allow for additional/custom parameters.
 
 ## packet_sent {#quic-packetsent}
 
@@ -707,6 +751,8 @@ QUICPacketSent = {
       ; needed for some CCs to figure out bandwidth allocations
       ; when there are no normal sends
       "cc_bandwidth_probe"
+
+    * $$quic-packetsent-extension
 }
 ~~~
 {: #quic-packetsent-def title="QUICPacketSent definition"}
@@ -716,7 +762,7 @@ the `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
 The `datagram_id` field is used to track packet coalescing, see
-{{quic-datagramssent}}.
+{{quic-udpdatagramssent}}.
 
 ## packet_received {#quic-packetreceived}
 
@@ -741,6 +787,8 @@ QUICPacketReceived = {
         ; if packet was buffered because it couldn't be
         ; decrypted before
         "keys_available"
+
+    * $$quic-packetreceived-extension
 }
 ~~~
 {: #quic-packetreceived-def title="QUICPacketReceived definition"}
@@ -750,7 +798,7 @@ The `encryption_level` and `packet_number_space` are not logged explicitly: the
 implementation).
 
 The `datagram_id` field is used to track packet coalescing, see
-{{quic-datagramssent}}.
+{{quic-udpdatagramssent}}.
 
 ## packet_dropped {#quic-packetdropped}
 
@@ -780,6 +828,8 @@ QUICPacketDropped = {
         "decryption_failure" /
         "key_unavailable" /
         "general"
+
+    * $$quic-packetdropped-extension
 }
 ~~~
 {: #quic-packetdropped-def title="QUICPacketDropped definition"}
@@ -797,7 +847,7 @@ Some example situations for each of the trigger categories include:
 - `general`: situations not clearly covered in the other categories
 
 The `datagram_id` field is used to track packet coalescing, see
-{{quic-datagramssent}}.
+{{quic-udpdatagramssent}}.
 
 ## packet_buffered {#quic-packetbuffered}
 
@@ -822,12 +872,14 @@ QUICPacketBuffered = {
         ; if packet cannot be decrypted because the proper keys were
         ; not yet available
         "keys_unavailable"
+
+    * $$quic-packetbuffered-extension
 }
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
 The `datagram_id` field is used to track packet coalescing, see
-{{quic-datagramssent}}.
+{{quic-udpdatagramssent}}.
 
 ## packets_acked {#quic-packetsacked}
 
@@ -843,8 +895,10 @@ implementations that do not log frame contents.
 
 ~~~ cddl
 QUICPacketsAcked = {
-    ? packet_number_space: PacketNumberSpace
+    ? packet_number_space: $PacketNumberSpace
     ? packet_numbers: [+ uint64]
+
+    * $$quic-packetsacked-extension
 }
 ~~~
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
@@ -853,7 +907,7 @@ If `packet_number_space` is omitted, it assumes the default value of
 `application_data`, as this is by far the most prevalent packet
 number space a typical QUIC connection will use.
 
-## datagrams_sent {#quic-datagramssent}
+## udp_datagrams_sent {#quic-udpdatagramssent}
 
 The `datagrams_sent` event indicates when one or more UDP-level datagrams are
 passed to the underlying network socket. This is useful for determining how QUIC
@@ -861,7 +915,7 @@ packet buffers are drained to the OS. The event has Extra importance level; see
 {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
-QUICDatagramsSent = {
+QUICUDPDatagramsSent = {
 
     ; to support passing multiple at once
     ? count: uint16
@@ -876,9 +930,11 @@ QUICDatagramsSent = {
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
+
+    * $$quic-udpdatagramssent-extension
 }
 ~~~
-{: #quic-datagramssent-def title="QUICDatagramsSent definition"}
+{: #quic-udpdatagramssent-def title="QUICUDPDatagramsSent definition"}
 
 Since QUIC implementations rarely control UDP logic directly, the raw data
 excludes UDP-level headers in all RawInfo fields.
@@ -895,14 +951,14 @@ the same `datagram_id` indicate they were coalesced in the same UDP datagram.
 The selection of specific and locally-unique `datagram_id` values is an
 implementation choice.
 
-## datagrams_received {#quic-datagramsreceived}
+## udp_datagrams_received {#quic-udpdatagramsreceived}
 
 When one or more UDP-level datagrams are received from the socket. This is
 useful for determining how datagrams are passed to the user space stack from the
 OS. The event has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
-QUICDatagramsReceived = {
+QUICUDPDatagramsReceived = {
 
     ; to support passing multiple at once
     ? count: uint16
@@ -917,14 +973,16 @@ QUICDatagramsReceived = {
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
+
+    * $$quic-udpdatagramsreceived-extension
 }
 ~~~
-{: #quic-datagramsreceived-def title="QUICDatagramsReceived definition"}
+{: #quic-udpdatagramsreceived-def title="QUICUDPDatagramsReceived definition"}
 
 The `datagram_ids` field is used to track packet coalescing, see
-{{quic-datagramssent}}.
+{{quic-udpdatagramssent}}.
 
-## datagram_dropped {#quic-datagramdropped}
+## udp_datagram_dropped {#quic-udpdatagramdropped}
 
 When a UDP-level datagram is dropped. This is typically done if it does not
 contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
@@ -933,14 +991,16 @@ used instead. The event has Extra importance level; see {{Section 9.2 of
 QLOG-MAIN}}.
 
 ~~~ cddl
-QUICDatagramDropped = {
+QUICUDPDatagramDropped = {
 
     ; The RawInfo fields do not include the UDP headers,
     ; only the UDP payload
     ? raw: RawInfo
+
+    * $$quic-udpdatagramdropped-extension
 }
 ~~~
-{: #quic-datagramdropped-def title="QUICDatagramDropped definition"}
+{: #quic-udpdatagramdropped-def title="QUICUDPDatagramDropped definition"}
 
 ## stream_state_updated {#quic-streamstateupdated}
 
@@ -959,19 +1019,22 @@ QUICStreamStateUpdated = {
 
     ; mainly useful when opening the stream
     ? stream_type: StreamType
-    ? old: StreamState
-    new: StreamState
+    ? old: $StreamState
+    new: $StreamState
     ? stream_side: "sending" /
                    "receiving"
+
+    * $$quic-streamstateupdated-extension
 }
 
-StreamState =
+BaseStreamStates =  "idle" /
+                    "open" /
+                    "closed"
+
+GranularStreamStates =
     ; bidirectional stream states, RFC 9000 Section 3.4.
-    "idle" /
-    "open" /
     "half_closed_local" /
     "half_closed_remote" /
-    "closed" /
     ; sending-side stream states, RFC 9000 Section 3.1.
     "ready" /
     "send" /
@@ -985,17 +1048,17 @@ StreamState =
     "reset_read" /
     ; both-side states
     "data_received" /
-    ; qlog-defined:
-    ; memory actually freed
+    ; qlog-defined: memory actually freed
     "destroyed"
+
+$StreamState /= BaseStreamStates / GranularStreamStates
 ~~~
 {: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
-QUIC implementations SHOULD mainly log the simplified bidirectional
-(HTTP/2-alike) stream states (e.g., `idle`, `open`, `closed`) instead of the more
-fine-grained stream states (e.g., `data_sent`, `reset_received`). These latter ones are
-mainly for more in-depth debugging. Tools SHOULD be able to deal with both types
-equally.
+QUIC implementations SHOULD mainly log the simplified (HTTP/2-alike)
+BaseStreamStates instead of the more fine-grained GranularStreamStates. These
+latter ones are mainly for more in-depth debugging. Tools SHOULD be able to deal
+with both types equally.
 
 ## frames_processed {#quic-framesprocessed}
 
@@ -1039,6 +1102,8 @@ corresponding packet number at the same index.
 QUICFramesProcessed = {
     frames: [* $QuicFrame]
     ? packet_numbers: [* uint64]
+
+    * $$quic-framesprocessed-extension
 }
 ~~~
 {: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
@@ -1080,6 +1145,14 @@ processed first and afterwards the application layer reads from the streams with
 newly available data). This can help identify bottlenecks, flow control issues,
 or scheduling problems.
 
+The `additional_info` field supports optional logging of information
+related to the stream state. For example, an application layer that moves data
+into transport and simultaneously ends the stream, can log `fin_set`. As
+another example, a transport layer that has received an instruction to reset a
+stream can indicate this to the application layer using `reset_stream`.
+In both cases, the length-carrying fields (`length` or `raw`) can be
+omitted or contain zero values.
+
 This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
 see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
 
@@ -1090,21 +1163,26 @@ QUICStreamDataMoved = {
 
     ; byte length of the moved data
     ? length: uint64
-    ? from: "user" /
-            "application" /
-            "transport" /
-            "network" /
-            text
-    ? to: "user" /
-          "application" /
-          "transport" /
-          "network" /
-          text
+
+    ? from: $DataLocation
+    ? to: $DataLocation
+
+    ? additional_info: $DataMovedAdditionalInfo
+
     ? raw: RawInfo
+
+    * $$quic-streamdatamoved-extension
 }
+
+$DataLocation /=  "user" /
+                  "application" /
+                  "transport" /
+                  "network"
+
+$DataMovedAdditionalInfo /= "fin_set" /
+                            "stream_reset"
 ~~~
 {: #quic-streamdatamoved-def title="QUICStreamDataMoved definition"}
-
 
 ## datagram_data_moved {#quic-datagramdatamoved}
 
@@ -1132,20 +1210,71 @@ see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
 QUICDatagramDataMoved = {
     ; byte length of the moved data
     ? length: uint64
-    ? from: "user" /
-            "application" /
-            "transport" /
-            "network" /
-            text
-    ? to: "user" /
-          "application" /
-          "transport" /
-          "network" /
-          text
+    ? from: $DataLocation
+    ? to: $DataLocation
     ? raw: RawInfo
+
+    * $$quic-datagramdatamoved-extension
 }
 ~~~
 {: #quic-datagramdatamoved-def title="QUICDatagramDataMoved definition"}
+
+## migration_state_updated {#quic-migrationstateupdated}
+Importance: Extra
+
+Use to provide additional information when attempting (client-side) connection
+migration. While most details of the QUIC connection migration process can be
+inferred by observing the PATH_CHALLENGE and PATH_RESPONSE frames, in
+combination with the ConnectivityPathAssigned event, it can be useful to
+explicitly log the progression of the migration and potentially made decisions
+in a single location/event.
+
+Generally speaking, connection migration goes through two phases: a probing
+phase (which is not always needed/present), and a migration phase (which can be
+abandoned upon error).
+
+Implementations that log per-path information in a QUICMigrationStateUpdated,
+SHOULD also emit QUICPathAssigned events, to serve as a ground-truth source of
+information.
+
+Definition:
+
+~~~ cddl
+QUICMigrationStateUpdated = {
+    ? old: MigrationState
+    new: MigrationState
+
+    ? path_id: PathID
+
+    ; the information for traffic going towards the remote receiver
+    ? path_remote: PathEndpointInfo
+
+    ; the information for traffic coming in at the local endpoint
+    ? path_local: PathEndpointInfo
+
+    * $$quic-migrationstateupdated-extension
+}
+
+; Note that MigrationState does not describe a full state machine
+; These entries are not necessarily chronological,
+; nor will they always all appear during
+; a connection migration attempt.
+MigrationState =
+    ; probing packets are sent, migration not initiated yet
+    "probing_started" /
+    ; did not get reply to probing packets,
+    ; discarding path as an option
+    "probing_abandoned" /
+    ; received reply to probing packets, path is migration candidate
+    "probing_successful" /
+    ; non-probing packets are sent, attempting migration
+    "migration_started" /
+    ; something went wrong during the migration, abandoning attempt
+    "migration_abandoned" /
+    ; new path is now fully used, old path is discarded
+    "migration_complete"
+~~~
+{: #quic-migrationstateupdated-def title="QUICMigrationStateUpdated definition"}
 
 # Security Events {#sec-ev}
 
@@ -1155,7 +1284,7 @@ The `key_updated` event has Base importance level; see {{Section 9.2 of QLOG-MAI
 
 ~~~ cddl
 SecurityKeyUpdated = {
-    key_type: KeyType
+    key_type: $KeyType
     ? old: hexstring
     ? new: hexstring
 
@@ -1167,6 +1296,8 @@ SecurityKeyUpdated = {
         "tls" /
         "remote_update" /
         "local_update"
+
+    * $$quic-keyupdated-extension
 }
 ~~~
 {: #security-keyupdated-def title="SecurityKeyUpdated definition"}
@@ -1182,7 +1313,7 @@ QLOG-MAIN}}.
 
 ~~~ cddl
 SecurityKeyDiscarded = {
-    key_type: KeyType
+    key_type: $KeyType
     ? key: hexstring
 
     ; needed for 1RTT key updates
@@ -1193,6 +1324,8 @@ SecurityKeyDiscarded = {
         "tls" /
         "remote_update" /
         "local_update"
+
+    * $$quic-keydiscarded-extension
 }
 ~~~
 {: #security-keydiscarded-def title="SecurityKeyDiscarded definition"}
@@ -1244,6 +1377,8 @@ RecoveryParametersSet = {
 
     ; as PTO multiplier
     ? persistent_congestion_threshold: uint16
+
+    * $$recovery-parametersset-extension
 }
 ~~~
 {: #recovery-parametersset-def title="RecoveryParametersSet definition"}
@@ -1288,6 +1423,8 @@ RecoveryMetricsUpdated = {
 
     ; in bits per second
     ? pacing_rate: uint64
+
+    * $$recovery-metricsupdated-extension
 }
 ~~~
 {: #recovery-metricsupdated-def title="RecoveryMetricsUpdated definition"}
@@ -1302,33 +1439,34 @@ different recovery approaches.
 
 ## congestion_state_updated {#recovery-congestionstateupdated}
 
-The `congestion_state_updated` event signifies when the congestion controller
+The `congestion_state_updated` event indicates when the congestion controller
 enters a significant new state and changes its behaviour. It has Base importance
 level; see {{Section 9.2 of QLOG-MAIN}}.
 
-The event is generic to support different Congestion Control algorithms. For
-example, for the algorithm defined in the Recovery draft ("enhanced" New Reno),
-the following states are defined:
-
-* slow_start
-* congestion_avoidance
-* application_limited
-* recovery
+The values of the event's fields are intentionally unspecified here in order to
+support different Congestion Control algorithms, as these typically have
+different states and even different implementations of these states across
+stacks. For example, for the algorithm defined in the Recovery draft ("enhanced"
+New Reno), the following states are used: Slow Start, Congestion Avoidance,
+Application Limited and Recovery. Similarly, states can be triggered by a
+variety of events, including detection of Persistent Congestion or receipt of
+ECN markings.
 
 ~~~ cddl
 RecoveryCongestionStateUpdated = {
     ? old: text
     new: text
-    ? trigger:
-        "persistent_congestion" /
-        "ECN"
+    ? trigger: text
+
+    * $$recovery-congestionstateupdated-extension
 }
 ~~~
 {: #recovery-congestionstateupdated-def title="RecoveryCongestionStateUpdated definition"}
 
-The `trigger` field SHOULD be logged if there are multiple ways in which a state change
-can occur but MAY be omitted if a given state can only be due to a single event
-occurring (e.g., slow start is exited only when ssthresh is exceeded).
+The `trigger` field SHOULD be logged if there are multiple ways in which a state
+change can occur but MAY be omitted if a given state can only be due to a single
+event occurring (for example Slow Start is often exited only when ssthresh is
+exceeded).
 
 ## loss_timer_updated {#recovery-losstimerupdated}
 
@@ -1350,7 +1488,7 @@ RecoveryLossTimerUpdated = {
     ; called "mode" in RFC 9002 A.9.
     ? timer_type: "ack" /
                   "pto"
-    ? packet_number_space: PacketNumberSpace
+    ? packet_number_space: $PacketNumberSpace
     event_type: "set" /
                 "expired" /
                 "cancelled"
@@ -1358,6 +1496,8 @@ RecoveryLossTimerUpdated = {
     ; if event_type === "set": delta time is in ms from
     ; this event's timestamp until when the timer will trigger
     ? delta: float32
+
+    * $$recovery-losstimerupdated-extension
 }
 ~~~
 {: #recovery-losstimerupdated-def title="RecoveryLossTimerUpdated definition"}
@@ -1385,6 +1525,8 @@ RecoveryPacketLost = {
         "time_threshold" /
         ; RFC 9002 Section 6.2.4 paragraph 6, MAY
         "pto_expired"
+
+    * $$recovery-packetlost-extension
 }
 ~~~
 {: #recovery-packetlost-def title="RecoveryPacketLost definition"}
@@ -1415,6 +1557,8 @@ when data was retransmitted).
 ~~~ cddl
 RecoveryMarkedForRetransmit = {
     frames: [+ $QuicFrame]
+
+    * $$recovery-markedforretransmit-extension
 }
 ~~~
 {: #recovery-markedforretransmit-def title="RecoveryMarkedForRetransmit definition"}
@@ -1429,6 +1573,8 @@ level; see {{Section 9.2 of QLOG-MAIN}}.
 ECNStateUpdated = {
    ? old: ECNState
     new: ECNState
+
+    * $$recovery-ecnstateupdated-extension
 }
 
 ECNState =
@@ -1476,7 +1622,9 @@ Owner = "local" /
 ; an IPAddress can either be a "human readable" form
 ; (e.g., "127.0.0.1" for v4 or
 ; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
-; use a raw byte-form (as the string forms can be ambiguous)
+; use a raw byte-form (as the string forms can be ambiguous).
+; Additionally, a hash-based or redacted representation
+; can be used if needed for privacy or security reasons.
 IPAddress = text /
             hexstring
 ~~~
@@ -1488,26 +1636,54 @@ IPVersion = "v4" /
 ~~~
 {: #ipversion-def title="IPVersion definition"}
 
+## PathEndpointInfo
+
+PathEndpointInfo indicates a single half/direction of a path. A full path is
+comprised of two halves. Firstly: the server sends to the remote client IP
++ port using a specific destination Connection ID. Secondly: the client sends to
+the remote server IP + port using a different destination Connection ID.
+
+As such, structures logging path information SHOULD include two different
+PathEndpointInfo instances, one for each half of the path.
+
+~~~ cddl
+PathEndpointInfo = {
+    ? ip_v4: IPAddress
+    ? ip_v6: IPAddress
+    ? port_v4: uint16
+    ? port_v6: uint16
+
+    ; Even though usually only a single ConnectionID
+    ; is associated with a given path at a time,
+    ; there are situations where there can be an overlap
+    ; or a need to keep track of previous ConnectionIDs
+    ? connection_ids: [+ ConnectionID]
+
+    * $$quic-pathendpointinfo-extension
+}
+~~~
+{: #pathendpointinfo-def title="PathEndpointInfo definition"}
+
 ## PacketType
 
 ~~~ cddl
-PacketType = "initial" /
-             "handshake" /
-             "0RTT" /
-             "1RTT" /
-             "retry" /
-             "version_negotiation" /
-             "stateless_reset" /
-             "unknown"
+$PacketType /=  "initial" /
+                "handshake" /
+                "0RTT" /
+                "1RTT" /
+                "retry" /
+                "version_negotiation" /
+                "stateless_reset" /
+                "unknown"
 ~~~
 {: #packettype-def title="PacketType definition"}
 
 ## PacketNumberSpace
 
 ~~~ cddl
-PacketNumberSpace = "initial" /
-                    "handshake" /
-                    "application_data"
+$PacketNumberSpace /= "initial" /
+                      "handshake" /
+                      "application_data"
 ~~~
 {: #packetnumberspace-def title="PacketNumberSpace definition"}
 
@@ -1516,7 +1692,7 @@ PacketNumberSpace = "initial" /
 ~~~ cddl
 PacketHeader = {
     ? quic_bit: bool .default true
-    packet_type: PacketType
+    packet_type: $PacketType
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
@@ -1542,6 +1718,8 @@ PacketHeader = {
     ? dcil: uint8
     ? scid: ConnectionID
     ? dcid: ConnectionID
+
+    * $$quic-packetheader-extension
 }
 ~~~
 {: #packetheader-def title="PacketHeader definition"}
@@ -1550,8 +1728,7 @@ PacketHeader = {
 
 ~~~ cddl
 Token = {
-    ? type: "retry" /
-            "resumption"
+    ? type: $TokenType
 
     ; decoded fields included in the token
     ; (typically: peer's IP address, creation time)
@@ -1559,7 +1736,12 @@ Token = {
       * text => any
     }
     ? raw: RawInfo
+
+    * $$quic-token-extension
 }
+
+$TokenType /= "retry" /
+              "resumption"
 ~~~
 {: #token-def title="Token definition"}
 
@@ -1583,14 +1765,14 @@ parameters and in NEW_CONNECTION_ID frames.
 ## KeyType
 
 ~~~ cddl
-KeyType = "server_initial_secret" /
-          "client_initial_secret" /
-          "server_handshake_secret" /
-          "client_handshake_secret" /
-          "server_0rtt_secret" /
-          "client_0rtt_secret" /
-          "server_1rtt_secret" /
-          "client_1rtt_secret"
+$KeyType /= "server_initial_secret" /
+            "client_initial_secret" /
+            "server_handshake_secret" /
+            "client_handshake_secret" /
+            "server_0rtt_secret" /
+            "client_0rtt_secret" /
+            "server_1rtt_secret" /
+            "client_1rtt_secret"
 ~~~
 {: #keytype-def title="KeyType definition"}
 
@@ -1604,21 +1786,21 @@ The ECN bits carried in the IP header.
 
 ## QUIC Frames
 
-The generic `$QuicFrame` is defined here as a CDDL extension point (a "socket"
-or "plug"). It can be extended to support additional QUIC frame types.
+The generic `$QuicFrame` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional QUIC frame types.
 
-~~~ cddl
+~~~~~~
 ; The QuicFrame is any key-value map (e.g., JSON object)
 $QuicFrame /= {
     * text => any
 }
-~~~
-{: #quicframe-def title="QuicFrame plug definition"}
+~~~~~~
+{: #quicframe-def title="QuicFrame type socket definition"}
 
 The QUIC frame types defined in this document are as follows:
 
 ~~~ cddl
-QuicBaseFrames /= PaddingFrame /
+QuicBaseFrames =  PaddingFrame /
                   PingFrame /
                   AckFrame /
                   ResetStreamFrame /
@@ -1922,6 +2104,12 @@ error. For known frame types, the appropriate string value is used. For unknown
 frame types, the numerical value without variable-length integer encoding is
 used.
 
+The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
+sequence is presentable as UTF-8, in which case it can be logged in the `reason`
+field. The `reason_bytes` field supports logging the raw bytes, which can be useful
+when the value is not UTF-8 or when an endpoint does not want to decode it.
+Implementations SHOULD log at least one format, but MAY log both or none.
+
 ~~~ cddl
 ErrorSpace = "transport" /
              "application"
@@ -1929,11 +2117,12 @@ ErrorSpace = "transport" /
 ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
-    ? error_code: TransportError /
+    ? error_code: $TransportError /
                   CryptoError /
                   $ApplicationError /
                   uint64
     ? reason: text
+    ? reason_bytes: hexstring
 
     ; when error_space === "transport"
     ? trigger_frame_type: uint64 /
@@ -1953,12 +2142,13 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
-The frame_type_value field is the numerical value without VLIE encoding.
+The frame_type_bytes field is the numerical value without variable-length
+integer encoding.
 
 ~~~ cddl
 UnknownFrame = {
     frame_type: "unknown"
-    frame_type_value: uint64
+    frame_type_bytes: uint64
     ? raw: RawInfo
 }
 ~~~
@@ -1979,8 +2169,11 @@ DatagramFrame = {
 
 ### TransportError
 
+The generic `$TransportError` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional Transport errors.
+
 ~~~ cddl
-TransportError = "no_error" /
+$TransportError /= "no_error" /
                  "internal_error" /
                  "connection_refused" /
                  "flow_control_error" /
@@ -2007,15 +2200,16 @@ TransportError = "no_error" /
 By definition, an application error is defined by the application-level
 protocol running on top of QUIC (e.g., HTTP/3).
 
-As such, it cannot be defined here directly. Applications MAY use the provided
-extension point through the use of the CDDL "socket" mechanism.
+As such, it cannot be defined here directly. It is instead defined as an empty
+CDDL "type socket" extension point.
 
-Application-level qlog definitions that wish to define new ApplicationError strings MUST do so by extending the $ApplicationError socket as such:
+Application-level qlog definitions that wish to define new ApplicationError
+strings MUST do so by extending the $ApplicationError socket as such:
 
-~~~
+~~~~~~
 $ApplicationError /= "new_error_name" /
                      "another_new_error_name"
-~~~
+~~~~~~
 
 ### CryptoError
 
@@ -2053,10 +2247,24 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, and Christian Huitema for their feedback and suggestions.
+Yamamoto, Christian Huitema and Hugo Landau for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
+
+## Since draft-ietf-qlog-quic-events-06:
+{:numbered="false"}
+
+* Added PathAssigned and MigrationStateUpdated events (#336)
+* Added extension points to parameters_set and parameters_restored (#400)
+* Removed error_code_value from connection_closed (#386, #392)
+* Renamed generation to key_phase for key_updated and key_discarded (#390)
+* Removed retry_token from packet_sent and packet_received (#389)
+* Updated ALPN handling (#385)
+* Added key_unavailable trigger to packet_dropped (#381)
+* Updated several uint32 to uint64
+* ProtocolEventBody is now called ProtocolEventData (#352)
+* Editorial changes (#402, #404, #394, #393)
 
 ## Since draft-ietf-qlog-quic-events-05:
 {:numbered="false"}

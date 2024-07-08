@@ -124,12 +124,11 @@ etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
 
 ### Schema definition
 
-To define events and data structures, all qlog documents use the Concise
-Data Definition Language {{!CDDL=RFC8610}}. This document uses the basic
-syntax, the specific `text`, `uint`, `float32`, `float64`, `bool`, and
-`any` types, as well as the `.default`, `.size`, and `.regexp` control
-operators, the `~` unwrapping operator, and the `$` extension point
-syntax from {{CDDL}}.
+To define events and data structures, all qlog documents use the Concise Data
+Definition Language {{!CDDL=RFC8610}}. This document uses the basic syntax, the
+specific `text`, `uint`, `float32`, `float64`, `bool`, and `any` types, as well
+as the `.default`, `.size`, and `.regexp` control operators, the `~` unwrapping
+operator, and the `$` and `$$` extension points syntax from {{CDDL}}.
 
 Additionally, this document defines the following custom types for
 clarity:
@@ -156,6 +155,13 @@ logged as `float64` in the millisecond resolution.
 
 Other qlog documents can define their own CDDL-compatible (struct) types
 (e.g., separately for each Packet type that a protocol supports).
+
+The ordering of member fields in qlog CDDL type definitions is not significant.
+The ordering of member fields in the serialization formats defined in this
+document, JSON ({{format-json}}) and JSON Text Sequences ({{format-json-seq}}),
+is not significant and qlog tools MUST NOT assume so. Other qlog serialization
+formats MAY define field order significance, if they do they MUST define
+requirements for qlog tools supporting those formats.
 
 > Note to RFC editor: Please remove the following text in this section before
 publication.
@@ -508,8 +514,9 @@ Event = {
     time: float64
     name: text
     data: $ProtocolEventData
+    ? path: PathID
     ? time_format: TimeFormat
-    ? protocol_type: ProtocolType
+    ? protocol_type: ProtocolTypeList
     ? group_id: GroupID
     ? system_info: SystemInformation
 
@@ -650,39 +657,101 @@ JSON serialization example:
 
 ## Data {#data-field}
 
-An event's "data" field is a generic object. It contains the per-event metadata and its
-form and semantics are defined per specific sort of event. For example, data
-field value definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and
-{{QLOG-H3}}.
+An event's "data" field is a generic key-value map (e.g., JSON object). It
+defines the per-event metadata that is to be logged. Its specific subfields and
+their semantics are defined per specific event type. For example, data field
+definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
 
-This field is defined here as a CDDL extension point (a "socket" or
-"plug") named `$ProtocolEventData`. Other documents MUST properly extend
-this extension point when defining new data field content options to
-enable automated validation of aggregated qlog schemas.
+In order to keep qlog fully extensible, two separate CDDL extension points
+("sockets" or "plugs") are used to fully define data fields.
 
-The only common field defined for the data field is the `trigger` field,
-which is discussed in {{trigger-field}}.
-
-~~~ cddl
-; The ProtocolEventData is any key-value map (e.g., JSON object)
-; only the optional trigger field is defined in this document
-$ProtocolEventData /= {
-    ? trigger: text
-    * text => any
-}
-; event documents are intended to extend this socket by using:
-; NewProtocolEventData = EventType1 /
-;                        EventType2 /
-;                        ... /
-;                        EventTypeN
-; $ProtocolEventData /= NewProtocolEventData
-~~~
-{: #protocoleventdata-def title="ProtocolEventData definition"}
-
-One purely illustrative example for a QUIC "packet_sent" event is shown in
-{{data-ex}}:
+Firstly, to allow existing data field definitions to be extended (for example by
+adding an additional field needed for a new protocol feature), a CDDL "group
+socket" is used. This takes the form of a subfield with a name of
+`* $$CATEGORY-NAME-extension`. This field acts as a placeholder that can later be
+replaced with newly defined fields by assigning them to the socket with the
+`//=` operator. Multiple extensions can be assigned to the same group socket. An
+example is shown in {{groupsocket-extension-example}}.
 
 ~~~~~~~~
+; original definition in document A
+MyCategoryEventX = {
+    field_a: uint8
+
+    * $$mycategory-eventx-extension
+}
+
+; later extension of EventX in document B
+$$mycategory-eventx-extension //= (
+  ? additional_field_b: bool
+)
+
+; another extension of EventX in document C
+$$mycategory-eventx-extension //= (
+  ? additional_field_c: text
+)
+
+; if document A, B and C are then used in conjunction,
+; the combined MyCategoryEventX CDDL is equivalent to this:
+MyCategoryEventX = {
+    field_a: uint8
+
+    ? additional_field_b: bool
+    ? additional_field_c: text
+}
+~~~~~~~~
+{: #groupsocket-extension-example title="Example of using a generic CDDL group socket to extend an existing event data definition"}
+
+Secondly, to allow documents to define fully new event data field definitions
+(as opposed to extend existing ones), a CDDL "type socket" is used. For this
+purpose, the type of the "data" field in the qlog Event type (see {{event-def}})
+is the extensible `$ProtocolEventData` type. This field acts as an open enum of
+possible types that are allowed for the data field. As such, any new event data
+field is defined as its own CDDL type and later merged with the existing
+`$ProtocolEventData` enum using the `/=` extension operator. Any generic
+key-value map type can be assigned to `$ProtocolEventData` (the only common
+"data" subfield defined in this document is the optional `trigger` field, see
+{{trigger-field}}). An example of this setup is shown in
+{{protocoleventdata-def}}.
+
+~~~~~~~~
+; We define two separate events in a single document
+MyCategoryEvent1 /= {
+    field_1: uint8
+
+    ? trigger: text
+
+    * $$mycategory-event1-extension
+}
+
+MyCategoryEvent2 /= {
+    field_2: bool
+
+    ? trigger: text
+
+    * $$mycategory-event2-extension
+}
+
+; the events are both merged with the existing
+; $ProtocolEventData type enum
+$ProtocolEventData /= MyCategoryEvent1 / MyCategoryEvent2
+
+; the "data" field of a qlog event can now also be of type
+; MyCategoryEvent1 and MyCategoryEvent2
+~~~~~~~~
+{: #protocoleventdata-def title="ProtocolEventData extension"}
+
+Documents defining new qlog events MUST properly extend `$ProtocolEventData`
+when defining data fields to enable automated validation of aggregated qlog
+schemas. Furthermore, they SHOULD properly add a `* $$CATEGORY-NAME-extension`
+extension field to newly defined event data to allow the new events to be
+properly extended by other documents.
+
+A combined but purely illustrative example of the use of both extension points
+for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
+
+~~~~~~~~
+; defined in the main QUIC event document
 TransportPacketSent = {
     ? packet_size: uint16
     header: PacketHeader
@@ -690,31 +759,80 @@ TransportPacketSent = {
     ? trigger: "pto_probe" /
                "retransmit_timeout" /
                "bandwidth_probe"
+
+    * $$transport-packetsent-extension
 }
 
-could be serialized as
+; Add the event to the global list of recognized qlog events
+$ProtocolEventData /= TransportPacketSent
+
+; Defined in a separate document that describes a
+; theoretical QUIC protocol extension
+$$transport-packetsent-extension //= (
+  ? additional_field: bool
+)
+
+; If both documents are utilized at the same time,
+; the following JSON serialization would pass an automated
+; CDDL schema validation check:
 
 {
-    "packet_size": 1280,
-    "header": {
-        "packet_type": "1RTT",
-        "packet_number": 123
-    },
-    "frames": [
-        {
-            "frame_type": "stream",
-            "length": 1000,
-            "offset": 456
-        },
-        {
-            "frame_type": "padding"
-        }
-    ]
+  "time": 123456,
+  "category": "transport",
+  "name": "packet_sent",
+  "data": {
+      "packet_size": 1280,
+      "header": {
+          "packet_type": "1RTT",
+          "packet_number": 123
+      },
+      "frames": [
+          {
+              "frame_type": "stream",
+              "length": 1000,
+              "offset": 456
+          },
+          {
+              "frame_type": "padding"
+          }
+      ],
+      additional_field: true
+  }
 }
 ~~~~~~~~
-{: #data-ex title="Example of the 'data' field for a QUIC packet_sent event"}
+{: #data-ex title="Example of an extended 'data' field for a conceptual QUIC packet_sent event"}
 
-## ProtocolType {#protocol-type-field}
+## Path {#path-field}
+
+A qlog event can be associated with a single "network path" (usually, but not
+always, identified by a 4-tuple of IP addresses and ports). In many cases, the
+path will be the same for all events in a given trace, and does not need to be
+logged explicitly with each event. In this case, the "path" field can be omitted
+(in which case the default value of "" is assumed) or reflected in
+"common_fields" instead (see {{common-fields}}).
+
+However, in some situations, such as during QUIC's Connection Migration or when
+using Multipath features, it is useful to be able to split events across
+multiple (concurrent) paths.
+
+Definition:
+
+~~~ cddl
+PathID = text .default ""
+~~~
+{: #path-def title="PathID definition"}
+
+
+The "path" field is an identifier that is associated with a single network path.
+This document intentionally does not define further how to choose this
+identifier's value per-path or how to potentially log other parameters that can
+be associated with such a path. This is left for other documents. Implementers
+are free to encode path information directly into the PathID or to log
+associated info in a separate event. For example, QUIC has the "path_assigned"
+event to couple the PathID value to a specific path configuration, see
+{{QLOG-QUIC}}.
+
+## ProtocolTypeList and ProtocolType {#protocol-type-field}
 
 An event's "protocol_type" array field indicates to which protocols (or protocol
 "stacks") this event belongs. This allows a single qlog file to aggregate traces
@@ -722,9 +840,11 @@ of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).
 
 ~~~ cddl
-ProtocolType = [+ text]
+ProtocolTypeList = [+ $ProtocolType]
+
+$ProtocolType /= "UNKNOWN"
 ~~~
-{: #protocol-type-def title="ProtocolType definition"}
+{: #protocol-type-def title="ProtocolTypeList and ProtocolType socket definition"}
 
 For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
 entry values, see {{QLOG-QUIC}} and {{QLOG-H3}}.
@@ -926,9 +1046,10 @@ below:
 
 ~~~ cddl
 CommonFields = {
+    ? path: PathID
     ? time_format: TimeFormat
     ? reference_time: float64
-    ? protocol_type: ProtocolType
+    ? protocol_type: ProtocolTypeList
     ? group_id: GroupID
     * text => any
 }
@@ -985,6 +1106,20 @@ calculation.
 There are some event types and data classes that are common across protocols,
 applications, and use cases. This section specifies such common definitions.
 
+~~~ cddl
+GenericEventData = GenericError /
+                GenericWarning /
+                GenericInfo /
+                GenericDebug
+
+SimulationEventData = SimulationScenario /
+                SimulationMarker
+
+$ProtocolEventData /= GenericEventData / SimulationEventData
+~~~
+{: #commonevent-integration title="ProtocolEventData extension for common
+events"}
+
 ## Generic events
 
 In typical logging setups, users utilize a discrete number of well-defined logging
@@ -1007,6 +1142,8 @@ wire. It has Core importance level; see {{importance}}.
 GenericError = {
     ? code: uint64
     ? message: text
+
+    * $$generic-error-extension
 }
 ~~~
 {: #generic-error-def title="GenericError definition"}
@@ -1020,6 +1157,8 @@ wire. It has Base importance level; see {{importance}}.
 GenericWarning = {
     ? code: uint64
     ? message: text
+
+    * $$generic-warning-extension
 }
 ~~~
 {: #generic-warning-def title="GenericWarning definition"}
@@ -1033,6 +1172,8 @@ has Extra importance level; see {{importance}}.
 ~~~ cddl
 GenericInfo = {
     message: text
+
+    * $$generic-info-extension
 }
 ~~~
 {: #generic-info-def title="GenericInfo definition"}
@@ -1046,6 +1187,8 @@ has Extra importance level; see {{importance}}.
 ~~~ cddl
 GenericDebug = {
     message: text
+
+    * $$generic-debug-extension
 }
 ~~~
 {: #generic-debug-def title="GenericDebug definition"}
@@ -1059,6 +1202,8 @@ has Extra importance level; see {{importance}}.
 ~~~ cddl
 GenericVerbose = {
     message: text
+
+    * $$generic-verbose-extension
 }
 ~~~
 {: #generic-verbose-def title="GenericVerbose definition"}
@@ -1087,6 +1232,8 @@ one trace (e.g., split by `group_id`). It has Extra importance level; see
 SimulationScenario = {
     ? name: text
     ? details: {* text => any }
+
+    * $$simulation-scenario-extension
 }
 ~~~
 {: #simulation-scenario-def title="SimulationScenario definition"}
@@ -1101,6 +1248,8 @@ triggered). It has Extra importance level; see {{importance}}.
 SimulationMarker = {
     ? type: text
     ? message: text
+
+    * $$simulation-marker-extension
 }
 ~~~
 {: #simulation-marker-def title="SimulationMarker definition"}
@@ -1204,21 +1353,26 @@ these unknown fields.
 
 # Serializing qlog {#concrete-formats}
 
-qlog schema definitions in this document, {{QLOG-QUIC}} and {{QLOG-H3}} are
-intentionally agnostic to serialization formats. The choice of format is an
-implementation decision. Some examples of possible formats are JSON, CBOR, CSV,
-protocol buffers, flatbuffers, etc.
+qlog schema definitions in this document are intentionally agnostic to
+serialization formats. The choice of format is an implementation decision.
+
+Other documents related to qlog (for example event definitions for specific
+protocols), SHOULD be similarly agnostic to the employed serialization format
+and SHOULD clearly indicate this. If not, they MUST include an explanation on
+which serialization formats are supported and on how to employ them correctly.
 
 Serialization formats make certain tradeoffs between usability, flexibility,
 interoperability, and efficiency. Implementations should take these into
-consideration when choosing a format. For instance, a textual format like JSON
-can be more flexible than a binary format but more verbose, typically making it
-less efficient than a binary format. A plaintext readable (yet relatively large)
-format like JSON is potentially more usable for users operating on the logs
-directly, while a more optimized yet restricted format can better suit the
-constraints of a large scale operation. A custom or restricted format could be
-more efficient for analysis with custom tooling but might not be interoperable
-with general-purpose qlog tools.
+consideration when choosing a format. Some examples of possible formats are
+JSON, CBOR, CSV, protocol buffers, flatbuffers, etc. which each have their own
+characteristics. For instance, a textual format like JSON can be more flexible
+than a binary format but more verbose, typically making it less efficient than a
+binary format. A plaintext readable (yet relatively large) format like JSON is
+potentially more usable for users operating on the logs directly, while a more
+optimized yet restricted format can better suit the constraints of a large scale
+operation. A custom or restricted format could be more efficient for analysis
+with custom tooling but might not be interoperable with general-purpose qlog
+tools.
 
 Considering these tradeoffs, JSON-based serialization formats provide features
 that make them a good starting point for qlog flexibility and interoperability.
@@ -1605,11 +1759,19 @@ Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
 Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
-Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, and Jeremy Lainé for
-their feedback and suggestions.
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
+Yamamoto, Christian Huitema and Hugo Landau for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
+
+## Since draft-ietf-quic-qlog-main-schema-07:
+{:numbered="false"}
+
+* Added path and PathID (#336)
+* Removed custom definition of uint64 type (#360, #388)
+* ProtocolEventBody is now called ProtocolEventData (#352)
+* Editorial changes (#364, #289, #353, #361, #362)
 
 ## Since draft-ietf-quic-qlog-main-schema-06:
 {:numbered="false"}
