@@ -1723,14 +1723,16 @@ address some security and privacy risks. However, removing or anonymizing data
 without sufficient care might not enhance privacy or security and
 could diminish the utility of qlog data.
 
+
 Operators and implementers should balance the value of logged data with the
 potential risks of voluntary or involuntary disclosure to trusted or untrusted
-entities. The data requirements and definition of entities depends greatly on
-the intended use cases. For example, a research project might be tightly scoped,
-time bound, and require participants to explicitly opt in to having their data
-collected with the intention for this to be shared in a publication. Conversely, a
-server administrator might desire to collect telemetry, from users whom they have
-no relationship with, for continuing operational needs.
+entities. Importantly, both the breadth and depth of the data needed to make it
+ useful, as well as the definition of entities depend greatly on the intended
+use cases. For example, a research project might be tightly scoped, time bound,
+and require participants to explicitly opt in to having their data collected
+with the intention for this to be shared in a publication. Conversely, a server
+administrator might desire to collect telemetry, from users whom they have no
+relationship with, for continuing operational needs.
 
 The most extreme form of minimization or anonymization is deleting a field,
 equivalent to not logging it. qlog implementations should offer fine-grained
