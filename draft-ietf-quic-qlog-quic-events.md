@@ -347,7 +347,7 @@ ConnectivityConnectionClosed = {
 ~~~
 {: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
 
-Loggers should use the most descriptive trigger for a `connection_closed` event
+Loggers SHOULD use the most descriptive trigger for a `connection_closed` event
 that they are able to deduce. This is often clear at the peer closing the
 connection (and sending the CONNECTION_CLOSE), but can sometimes be more opaque
 at the receiving end.
