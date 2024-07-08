@@ -101,8 +101,8 @@ Table of Contents
      8.3.  Event Importance Levels
      8.4.  Tooling Expectations
      8.5.  Further Design Guidance
-   9.  The Standard Event Schema
-     9.1.  Generic Events
+   9.  The Generic Event Schema
+     9.1.  Log Level Events
        9.1.1.  error
        9.1.2.  warning
        9.1.3.  info
@@ -316,12 +316,12 @@ Table of Contents
    containing common fields, which all concrete events derive from.
    Concrete events are defined by event schema that declare a namespace,
    consisting of one or more categories, containing one or more related
-   event types.  For example, this document defines the std event schema
-   structured as:
+   event types.  For example, this document defines the generic event
+   schema structured as:
 
-   *  std namespace
+   *  gen namespace
 
-      -  generic category
+      -  loglevel category
 
          o  error event type
 
@@ -333,7 +333,7 @@ Table of Contents
 
          o  verbose event type
 
-      -  simulation category
+      -  sim category
 
          o  scenario event type
 
@@ -1121,8 +1121,8 @@ Table of Contents
    the private categories use a URI with domain name.
 
    "event_schemas": [
-     "urn:ietf:params:qlog:events:std#generic,
-     "urn:ietf:params:qlog:events:std#simulation,
+     "urn:ietf:params:qlog:events:gen#loglevel,
+     "urn:ietf:params:qlog:events:gen#sim,
      "urn:ietf:params:qlog:events:rick#roll",
      "urn:ietf:params:qlog:events:rick#astley",
      "urn:ietf:params:qlog:events:rick#moranis",
@@ -1140,7 +1140,7 @@ Table of Contents
    urn:ietf:params:qlog:events:<namespace identifier>#<category
    identifier>, where <category identifier> is globally unique.  For
    example, this document defines the standard event schema (Section 9)
-   that uses the std namespace containing the generic and simulation
+   that uses the gen namespace containing the loglevel and sim
    categories.  Other examples of event schema define the quic
    [QLOG-QUIC] and h3 [QLOG-H3] namespaces.
 
@@ -1415,30 +1415,30 @@ Table of Contents
    benefit from being easily identifiable or individually logged (for
    example packets_acked).
 
-9.  The Standard Event Schema
+9.  The Generic Event Schema
 
-   The standard event schema defines categories and event types that are
+   The generic event schema defines categories and event types that are
    common across protocols, applications, and use cases.  The schema
-   namespace is "std".
+   namespace is "gen".
 
-9.1.  Generic Events
+9.1.  Log Level Events
 
    In typical logging setups, users utilize a discrete number of well-
    defined logging categories, levels or severities to log freeform
-   (string) data.  This generic events category replicates this approach
+   (string) data.  The log level event category replicates this approach
    to allow implementations to fully replace their existing text-based
    logging by qlog.  This is done by providing events to log generic
    strings for the typical well-known logging levels (error, warning,
-   info, debug, verbose).  The category identifier is "generic".
+   info, debug, verbose).  The category identifier is "loglevel".
 
-   GenericEventData = GenericError /
-                   GenericWarning /
-                   GenericInfo /
-                   GenericDebug
+   LogLevelEventData = LogLevelError /
+                       LogLevelWarning /
+                       LogLevelInfo /
+                       LogLevelDebug
 
-   $ProtocolEventData /= GenericEventData
+   $ProtocolEventData /= LogLevelEventData
 
-        Figure 29: GenericEventData and ProtocolEventData extension
+        Figure 29: LogLevelEventData and ProtocolEventData extension
 
    The event types are further defined below, their identifier is the
    heading name.
@@ -1448,14 +1448,14 @@ Table of Contents
    Used to log details of an internal error that might not get reflected
    on the wire.  It has Core importance level.
 
-   GenericError = {
+   LogLevelError = {
        ? code: uint64
        ? message: text
 
-       * $$generic-error-extension
+       * $$loglevel-error-extension
    }
 
-                     Figure 30: GenericError definition
+                    Figure 30: LogLevelError definition
 
 9.1.2.  warning
 
@@ -1463,14 +1463,14 @@ Table of Contents
    reflected on the wire.  It has Base importance level; see
    Section 8.3.
 
-   GenericWarning = {
+   LogLevelWarning = {
        ? code: uint64
        ? message: text
 
-       * $$generic-warning-extension
+       * $$loglevel-warning-extension
    }
 
-                    Figure 31: GenericWarning definition
+                   Figure 31: LogLevelWarning definition
 
 9.1.3.  info
 
@@ -1478,13 +1478,13 @@ Table of Contents
    and only logging format but still want to support unstructured string
    messages.  The event has Extra importance level; see Section 8.3.
 
-   GenericInfo = {
+   LogLevelInfo = {
        message: text
 
-       * $$generic-info-extension
+       * $$loglevel-info-extension
    }
 
-                     Figure 32: GenericInfo definition
+                     Figure 32: LogLevelInfo definition
 
 9.1.4.  debug
 
@@ -1492,13 +1492,13 @@ Table of Contents
    and only logging format but still want to support unstructured string
    messages.  The event has Extra importance level; see Section 8.3.
 
-   GenericDebug = {
+   LogLevelDebug = {
        message: text
 
-       * $$generic-debug-extension
+       * $$loglevel-debug-extension
    }
 
-                     Figure 33: GenericDebug definition
+                    Figure 33: LogLevelDebug definition
 
 9.1.5.  verbose
 
@@ -1506,13 +1506,13 @@ Table of Contents
    and only logging format but still want to support unstructured string
    messages.  The event has Extra importance level; see Section 8.3.
 
-   GenericVerbose = {
+   LogLevelVerbose = {
        message: text
 
-       * $$generic-verbose-extension
+       * $$loglevel-verbose-extension
    }
 
-                    Figure 34: GenericVerbose definition
+                   Figure 34: LogLevelVerbose definition
 
 9.2.  Simulation Events
 
@@ -1522,8 +1522,7 @@ Table of Contents
    or latency can vary during the test, or the network can be fully
    disable for a short time.  In these setups, it is useful to know when
    exactly these conditions are triggered, to allow for proper
-   correlation with other events.  The category identifier is
-   "simulation".
+   correlation with other events.  The category identifier is "sim".
 
    SimulationEventData = SimulationScenario /
                    SimulationMarker
@@ -2079,18 +2078,22 @@ Table of Contents
    at https://www.iana.org/assignments/qlog for the purpose of
    registering event categories.  It has the following format:
 
-   +=========================================+=============+=========++
-   | Event Category URI                      | Description |Reference||
-   +=========================================+=============+=========++
-   +-----------------------------------------+-------------+---------++
-   | urn:ietf:params:qlog:events:std#generic | Well-known  |Section  ||
-   |                                         | logging     |9.1      ||
-   |                                         | levels for  |         ||
-   |                                         | free-form   |         ||
-   |                                         | text.       |         ||
-   +-----------------------------------------+-------------+---------++
+    +==========================================+===========+=========++
+    | Event Category URI                       |Description|Reference||
+    +==========================================+===========+=========++
+    +------------------------------------------+-----------+---------++
+    | urn:ietf:params:qlog:events:gen#loglevel |Well-known |Section  ||
+    |                                          |logging    |9.1      ||
+    |                                          |levels for |         ||
+    |                                          |free-form  |         ||
+    |                                          |text.      |         ||
+    +------------------------------------------+-----------+---------++
+    | urn:ietf:params:qlog:events:gen#sim      |Events for |Section  ||
+    |                                          |simulation |9.1      ||
+    |                                          |testing.   |         ||
+    +------------------------------------------+-----------+---------++
 
-                                 Table 2
+                                  Table 2
 
 16.  References
 
