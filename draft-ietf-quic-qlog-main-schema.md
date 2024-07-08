@@ -250,8 +250,8 @@ schema structured as:
 
 A Log file is intended to contain a collection of events that are in some way
 related. An abstract LogFile class containing fields common to all log files is
-defined. Each concrete log file format derives from this, extending it by
-defining semantics and any custom fields.
+defined. Each concrete log file format derives from this using the CDDL unwrap
+operator (~) and extending it by defining semantics and any custom fields.
 
 ~~~ cddl
 LogFile = {
@@ -260,8 +260,6 @@ LogFile = {
     ? title: text
     ? description: text
     event_schemas: [+text]
-
-    * $$logfile-extensions
 }
 ~~~
 {: #abstract-logfile-def title="LogFile definition"}
@@ -282,18 +280,6 @@ information about the file.
 The required "event_schemas" field contains event schema URI that identify
 concrete event types recorded in a log. Requirements and guidelines are defined
 in {{event-types-and-schema}}.
-
-To support adding custom fields in concrete log file schema, the CDDL "group
-socket" "logfile-extensions" is defined. This field acts as a placeholder that
-can later be replaced with newly defined fields by assigning them to the socket
-with the //= operator. For example:
-
-~~~~~~~~
-$$logfile-extensions //= (
-  ? custom_logfile_extension: bool
-)
-~~~~~~~~
-{: #logfile-groupsocket-extension-example title="Example of using a generic CDDL group socket to extend logfile-extensions"}
 
 ## Concrete Log File Schema URIs {#schema-uri}
 
@@ -342,19 +328,19 @@ component traces.  defined in {{qlog-file-def}} as:
 
 ~~~ cddl
 QlogFile = {
-    $$logfile-extensions //= (
-      ? traces: [+ Trace /
-                 TraceError]
-    )
+    ~LogFile
+    ? traces: [+ Trace /
+                TraceError]
 }
 ~~~
 {: #qlog-file-def title="QlogFile definition"}
 
 The QlogFile schema URI is `urn:ietf:params:qlog:file:contained`.
 
-QlogFile extended `$$logfile-extensions` with the optional "traces" field that
-contains an array of qlog traces ({{trace}}), each of which contain metadata and
-an array of qlog events ({{abstract-event}}).
+QlogFile extends LogFile using the CDDL unwrap operator (~), which copies the
+fields presented in {{abstract-logfile}}. Additionally, the optional "traces"
+field contains an array of qlog traces ({{trace}}), each of which contain
+metadata and an array of qlog events ({{abstract-event}}).
 
 The default serialization format is JSON; see {{format-json}} for guidance
 on populating the "serialization_format" field and other considerations.
@@ -485,18 +471,18 @@ of component traces, defined in {{qlog-file-def}} as:
 
 ~~~ cddl
 QlogFileSeq = {
-    $$logfile-extensions //= (
-      trace: TraceSeq
-    )
+    ~LogFile
+    trace: TraceSeq
 }
 ~~~
 {: #qlog-file-seq-def title="QlogFileSeq definition"}
 
 The QlogFileSeq schema URI is `urn:ietf:params:qlog:file:sequential`.
 
-QlogFileSeq extends `$$logfile-extensions` with the required "trace" field
-contains a singular trace metadata. All qlog events in the file are related to
-this trace; see {{traceseq}}.
+QlogFile extends LogFile using the CDDL unwrap operator (~), which copies the
+fields presented in {{abstract-logfile}}. Additionally, the required "trace"
+field contains a singular trace metadata. All qlog events in the file are
+related to this trace; see {{traceseq}}.
 
 See {{format-json-seq}} for guidance on populating the
 "serialization_format" field and other serialization considerations.
