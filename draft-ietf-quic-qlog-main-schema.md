@@ -65,11 +65,11 @@ informative:
 qlog provides extensible structured logging for network protocols, allowing for
 easy sharing of data that benefits common debug and analysis methods and
 tooling. This document describes key concepts of qlog: formats, files, traces,
-events, and extension points. In this definition are the high-level log file
-schemas, and standard event schema. Requirements and guidelines for creating
-protocol-specific event schema are also presented. All schemas are independent of
-serialization format, allowing logs to be represented in many ways such as JSON,
-CSV, or protobuf.
+events, and extension points. This definition includes the high-level log file
+schemas, and generic event schemas. Requirements and guidelines for creating
+protocol-specific event schemas are also presented. All schemas are defined
+independent of serialization format, allowing logs to be represented in various
+ways such as JSON, CSV, or protobuf.
 
 --- note_Note_to_Readers
 
@@ -103,9 +103,10 @@ that have access to logs.
 qlog is an extensible structured logging for network protocols that allows for
 easy sharing of data that benefits common debug and analysis methods and
 tooling. This document describes key concepts of qlog: formats, files, traces,
-events, and extension points. In this definition are the high-level log file
-schemas, and main event schema. Requirements and guidelines for creating
-protocol-specific event schema are also presented. Accompanying documents define event schema for QUIC ({{QLOG-QUIC}}) and HTTP/3 ({{QLOG-H3}}).
+events, and extension points. This definition includes the high-level log file
+schemas, and generic event schemas. Requirements and guidelines for creating
+protocol-specific event schemas are also presented. Accompanying documents
+define event schema for QUIC ({{QLOG-QUIC}}) and HTTP/3 ({{QLOG-H3}}).
 
 The goal of qlog is to provide amenities and default characteristics that each
 logging file should contain (or should be able to contain), such that generic
@@ -115,7 +116,7 @@ different protocols and use cases.
 As such, qlog provides versioning, metadata inclusion, log aggregation, event
 grouping and log file size reduction techniques.
 
-All qlog schema can be serialized in many ways (e.g., JSON, CBOR, protobuf,
+All qlog schemas can be serialized in many ways (e.g., JSON, CBOR, protobuf,
 etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
 {{!I-JSON=RFC7493}}, and its streamable derivative
 {{!JSON-Text-Sequences=RFC7464}}.
@@ -219,7 +220,7 @@ This is achieved by a logical logging hierarchy of:
 An abstract LogFile class is declared ({{abstract-logfile}}), from which all
 concrete log file formats derive using log file schemas. This document defines
 the QLogFile ({{qlog-file-schema}}) and QLogFileSeq ({{qlog-file-seq-schema}})
-schemas.
+log file schemas.
 
 A trace is conceptually fluid but the conventional use case is to group events
 related to a single data flow, such as a single logical QUIC connection, at a
@@ -228,12 +229,12 @@ the log file schemas they are contained in; see ({{traces}}, {{trace}}, and
 {{traceseq}}).
 
 Events are logged at a time instant and convey specific details of the logging
-use case. For example, a QUIC packet being sent or received. This document
-declares an abstract Event class ({{abstract-event}}) containing common fields, which
-all concrete events derive from. Concrete events are defined by event schema
-that declare a namespace, consisting of one or more categories, containing one
-or more related event types. For example, this document defines the generic event
-schema structured as:
+use case. For example, a network packet being sent or received. This document
+declares an abstract Event class ({{abstract-event}}) containing common fields,
+which all concrete events derive from. Concrete events are defined by event
+schemas that declare a namespace, consisting of one or more categories,
+containing one or more related event types. For example, this document defines
+the generic event schema structured as:
 
 * `gen` namespace
   * `loglevel` category
@@ -250,8 +251,9 @@ schema structured as:
 
 A Log file is intended to contain a collection of events that are in some way
 related. An abstract LogFile class containing fields common to all log files is
-defined. Each concrete log file format derives from this using the CDDL unwrap
-operator (~) and extending it by defining semantics and any custom fields.
+defined in {{abstract-logfile-def}}. Each concrete log file schema derives from
+this using the CDDL unwrap operator (~) and can extend it by defining semantics
+and any custom fields.
 
 ~~~ cddl
 LogFile = {
@@ -264,22 +266,24 @@ LogFile = {
 ~~~
 {: #abstract-logfile-def title="LogFile definition"}
 
-The required "file_schema" field identifies the concrete log file format. It
+The required "file_schema" field identifies the concrete log file schema. It
 MUST have a value that is an absolute URI; see {{schema-uri}} for rules and
-guidance. In order to make it easier to parse and identify qlog files and their
-serialization format, the "file_schema" and "serialization_format" fields
-and their values SHOULD be in the first 256 characters/bytes of the resulting
-log file.
+guidance.
 
 The required "serialization_format" field indicates the serialization
 format using a media type {{!RFC2046}}. It is case-insensitive.
 
+In order to make it easier to parse and identify qlog files and their
+serialization format, the "file_schema" and "serialization_format" fields and
+their values SHOULD be in the first 256 characters/bytes of the resulting log
+file.
+
 The optional "title" and "description" fields provide additional free-text
 information about the file.
 
-The required "event_schemas" field contains event schema URI that identify
-concrete event types recorded in a log. Requirements and guidelines are defined
-in {{event-types-and-schema}}.
+The required "event_schemas" field contains event schema URIs that identify
+concrete event categories and their associated types recorded in a log.
+Requirements and guidelines are defined in {{event-types-and-schema}}.
 
 ## Concrete Log File Schema URIs {#schema-uri}
 
@@ -297,18 +301,18 @@ Private or non-standard log file schemas MAY register a URI in the "qlog log
 file schema URIs" registry but MUST NOT use a URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>`. URIs that contain a domain name
 SHOULD also contain a month-date in the form mmyyyy. For example,
-"https://example.org/072024/globallyuniquefileschema". The definition of the log
-file schema and assignment of the URI MUST have been authorized by the owner of
-the domain name on or very close to that date. This avoids problems when domain
-names change ownership. The URI does not need to be dereferencable, allowing for
-confidential use or to cover the case where the log file schema continues to be
-used after the organization that defined them ceases to exist.
+"https://example.org/072024/globallyuniquelogfileschema". The definition of the
+log file schema and assignment of the URI MUST have been authorized by the owner
+of the domain name on or very close to that date. This avoids problems when
+domain names change ownership. The URI does not need to be dereferencable,
+allowing for confidential use or to cover the case where the log file schema
+continues to be used after the organization that defined them ceases to exist.
 
 The "qlog log file schema URIs" registry operates under the Expert Review
 policy, per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert
-MUST check that the URI is appropriate to the concrete log file format and
+MUST check that the URI is appropriate to the concrete log file schema and
 satisfies the requirements in this section. A request to register a private or
-non-standard log schema URI using a URN of the form
+non-standard log file schema URI using a URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>` MUST be rejected.
 
 Registration requests should use the following template:
@@ -324,10 +328,10 @@ Reference:
 
 # QlogFile schema {#qlog-file-schema}
 
-A qlog using the QlogFile schema can contain several individual traces and logs
-from multiple vantage points that are in some way related. The top-level element
-in this schema defines only a small set of "header" fields and an array of
-component traces.  defined in {{qlog-file-def}} as:
+A qlog file using the QlogFile schema can contain several individual traces and
+logs from multiple vantage points that are in some way related. The top-level
+element in this schema defines only a small set of "header" fields and an array
+of component traces. This is defined in {{qlog-file-def}} as:
 
 ~~~ cddl
 QlogFile = {
@@ -345,14 +349,14 @@ fields presented in {{abstract-logfile}}. Additionally, the optional "traces"
 field contains an array of qlog traces ({{trace}}), each of which contain
 metadata and an array of qlog events ({{abstract-event}}).
 
-The default serialization format is JSON; see {{format-json}} for guidance
-on populating the "serialization_format" field and other considerations.
-Where a qlog file is serialized to a JSON format, one of the downsides is that
-it is inherently a non-streamable format. Put differently, it is not possible to
-simply append new qlog events to a log file without "closing" this file at the
-end by appending "]}]}". Without these closing tags, most JSON parsers will be
-unable to parse the file entirely. The alternative QlogFileSeq
-({{qlog-file-seq-schema}}) is better suited to streaming.
+The default serialization format for QlogFile is JSON; see {{format-json}} for
+guidance on populating the "serialization_format" field and other
+considerations. Where a qlog file is serialized to a JSON format, one of the
+downsides is that it is inherently a non-streamable format. Put differently, it
+is not possible to simply append new qlog events to a log file without "closing"
+this file at the end by appending "]}]}". Without these closing tags, most JSON
+parsers will be unable to parse the file entirely. The alternative QlogFileSeq
+({{qlog-file-seq-schema}}) is better suited to streaming use cases.
 
 JSON serialization example:
 
@@ -470,7 +474,7 @@ is through the use of the "group_id" field, discussed in {{group-ids}}.
 A qlog file using the QlogFileSeq schema can be serialized to a streamable JSON
 format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}). The top-level
 element in this schema defines only a small set of "header" fields and an array
-of component traces, defined in {{qlog-file-def}} as:
+of component traces. This is defined in {{qlog-file-def}} as:
 
 ~~~ cddl
 QlogFileSeq = {
@@ -484,11 +488,11 @@ The QlogFileSeq schema URI is `urn:ietf:params:qlog:file:sequential`.
 
 QlogFile extends LogFile using the CDDL unwrap operator (~), which copies the
 fields presented in {{abstract-logfile}}. Additionally, the required "trace"
-field contains a singular trace metadata. All qlog events in the file are
+field contains a singular trace ({{trace}}). All qlog events in the file are
 related to this trace; see {{traceseq}}.
 
-See {{format-json-seq}} for guidance on populating the
-"serialization_format" field and other serialization considerations.
+See {{format-json-seq}} for guidance on populating the "serialization_format"
+field and other serialization considerations.
 
 JSON-SEQ serialization example:
 
@@ -599,7 +603,7 @@ perspectives manually.
 
 Events are logged at a time instant and convey specific details of the logging
 use case. An abstract Event class containing fields common to all events is
-defined.
+defined in {{event-def}}.
 
 ~~~ cddl
 Event = {
@@ -621,7 +625,7 @@ Event = {
 Each qlog event MUST contain the mandatory fields: "time"
 ({{time-based-fields}}), "name" ({{event-types-and-schema}}), and "data" ({{data-field}}).
 
-Each qlog event, is an instance of a concrete event type that derives from the
+Each qlog event is an instance of a concrete event type that derives from the
 abstract Event class; see {{event-types-and-schema}}. They extend it by defining
 the specific values and semantics of common fields, in particular the `name` and
 `data` fields. Furthermore, they can optionally add custom fields.
@@ -981,26 +985,22 @@ fields are "time" and "data", who are divergent by nature.
 
 # Concrete Event Types and Event Schema {#event-types-and-schema}
 
-Concrete event types belong to event categories, both defined by event schema.
+Concrete event types belong to event categories, both contained in event schema.
 
-A single event schema can define a new namespace, or extend an existing
+A single event schema can either define a new namespace, or extend an existing
 namespace with new categories. New namespaces MUST be registered using a
 non-empty namespace identifier text identifier using only characters in the
 unreserved range; see {{Section 2.3 of RFC3986}}. Namespace are mutable and MAY
 be extended with categories.
 
 Event categories MUST belong to a single event namespace. They MUST have a
-registered non-empty globally-unique text identifier only characters in the
-URI unreserved range; see {{Section 2.3 of RFC3986}}. They MUST have a single URI
-{{RFC3986}} that MUST be absolute. The URI MUST include the namespace
+registered non-empty globally-unique text identifier using only characters in
+the URI unreserved range; see {{Section 2.3 of RFC3986}}. They MUST have a
+single URI {{RFC3986}} that MUST be absolute. The URI MUST include the namespace
 identifier. The URI MUST include the category identifer using a fragment
 identifier (characters after a "#" in the URI). Event categories are immutable
-and MUST NOT be extended with events.
-
-Registration guidance and requirements is provided in {{event-schema-reg}}.
-
-Concrete events MAY extend any part of the abstract Event class, including
-extending the "data" field ({{data-field}}) of adding custom fields.
+and MUST NOT be extended with events. Registration guidance and requirement for
+category URIs are provided in {{event-schema-reg}}.
 
 Concrete event types MUST belong to a single event category and MUST have a
 non-empty name of type `text`.
@@ -1010,25 +1010,27 @@ identifier, colon (':'), and event type identifier. By virtue of the identifier
 requirements described above, event names are globally-unique. Thus, log files
 can contain events from multiple schemas without the risk of name collisions.
 
-Implementations that might record concrete events belonging to a category in an
-event schema SHOULD list all category identifiers in use. This is achieved by
-including the appropriate URI in the `event_schemas` field of the abstract
-LogFile class ({{abstract-logfile}}). The `event_schema` is a hint to tools
+Implementations that might record concrete event types belonging to a category
+in an event schema SHOULD list all category identifiers in use. This is achieved
+by including the appropriate URIs in the `event_schemas` field of the abstract
+LogFile class ({{abstract-logfile}}). The `event_schemas` is a hint to tools
 about the possible event categories (and event types contained therein) that a
 qlog file might contain. The file MAY contain event types that do not belong to
-a listed category identifier. Tools MUST NOT treat this as an error; see
-{{tooling}}.
+a listed category identifier. Inversely, not all event types associated with a
+category listed in `event_schemas` are guaranteed to be logged in a qlog file.
+Tools MUST NOT treat either of these as an error; see {{tooling}}.
 
 In the following hypothetical example, a qlog file contains events belonging to
-the standard event schema ({{generic-event-schema}}), an event schema named `rick`
-specified in a hypothetical RFC, and a private event schema named pickle. The
-standardized categories use a URN format, the private categories use a URI with
-domain name.
+two categories in the generic event schema defined in this document
+({{generic-event-schema}}), to three categories in an event schema named `rick`
+specified in a hypothetical RFC, and to three more categories from a private
+event schema named pickle. The standardized category URIs use a URN format, the
+private categories use a URI with domain name.
 
 ~~~
 "event_schemas": [
-  "urn:ietf:params:qlog:events:gen#loglevel,
-  "urn:ietf:params:qlog:events:gen#sim,
+  "urn:ietf:params:qlog:events:gen#loglevel",
+  "urn:ietf:params:qlog:events:gen#sim",
   "urn:ietf:params:qlog:events:rick#roll",
   "urn:ietf:params:qlog:events:rick#astley",
   "urn:ietf:params:qlog:events:rick#moranis",
@@ -1045,16 +1047,16 @@ Event schema defined by RFCs MUST register all categories in the "qlog event
 category URIs" registry and SHOULD use a URN of the form
 `urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`,
 where `<category identifier>` is globally unique. For example, this document
-defines the standard event schema ({{generic-event-schema}}) that uses the `gen`
-namespace containing the `loglevel` and `sim` categories. Other examples
-of event schema define the `quic` {{QLOG-QUIC}} and `h3` {{QLOG-H3}} namespaces.
+defines the generic event schema ({{generic-event-schema}}) that uses the `gen`
+namespace containing the `loglevel` and `sim` categories. Other examples of
+event schema define the `quic` {{QLOG-QUIC}} and `http` {{QLOG-H3}} namespaces.
 
 Private or non-standard event categories MAY be registered in the "qlog event
 category URIs" registry but MUST NOT use a URN of the form
 `urn:ietf:params:qlog:events:<namespace identifier>#<category identifier>`. URIs
 that contain a domain name SHOULD also contain a month-date in the form mmyyyy.
 For example,
-"https://example.org/072024/customeventchema#globallyuniquencategory" The
+"https://example.org/072024/customeventschema#globallyuniquecategory". The
 definition of the category and assignment of the URI MUST have been authorized
 by the owner of the domain name on or very close to that date. This avoids
 problems when domain names change ownership. The URI does not need to be
@@ -1067,7 +1069,7 @@ per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert MUST check
 that the URI is appropriate to the event schema and satisfies the requirements
 in {{event-types-and-schema}} and this section. A request to register a private
 or non-standard category URI using a URN of the form
-`urn:ietf:params:qlog:event:<namespace identifier>#<category identifier` MUST be
+`urn:ietf:params:qlog:events:<namespace identifier>#<category identifier` MUST be
 rejected.
 
 Registration requests should use the following template:
@@ -1079,7 +1081,7 @@ Description:
 : \[a description of the event category\]
 
 Reference:
-: \[to a specification defining the schema defining the event category\]
+: \[to a specification defining the event schema defining the event category\]
 
 
 ## Extending the Data Field {#data-field}
@@ -1247,11 +1249,11 @@ decreasing order of importance and expected usage:
 
 Concrete event types SHOULD define an importance level.
 
-Core-level events SHOULD be present in all qlog files for a
-given protocol. These are typically tied to basic packet and frame parsing and
-creation, as well as listing basic internal metrics. Tool implementers SHOULD
-expect and add support for these events, though SHOULD NOT expect all Core events
-to be present in each qlog trace.
+Core-level events SHOULD be present in all qlog files for a given protocol.
+These are typically tied to basic packet and frame parsing and creation, as well
+as listing basic internal metrics. Tool implementers SHOULD expect and add
+support for these events, though SHOULD NOT expect all Core events to be present
+in each qlog trace.
 
 Base-level events add additional debugging options and MAY be present in qlog
 files. Most of these can be implicitly inferred from data in Core events (if
@@ -1281,25 +1283,26 @@ guidance on which to use in specific situations.
 ## Tooling Expectations
 
 qlog is an extensible format and it is expected that new event schema will
-emerge that define new categories, event types,(e.g., a per-event field
-indicating its privacy properties or
-path_id in multipath protocols), as well as values for the "trigger" property
-within the "data" field, or other member fields of the "data" field, as they see
-fit.
+emerge that define new categories, event types, event fields (e.g., a field
+indicating an event's privacy properties), as well as values for the "trigger"
+property within the "data" field, or other member fields of the "data" field, as
+they see fit.
 
 It SHOULD NOT be expected that general-purpose tools will recognize or visualize
 all forms of qlog extension. Tools SHOULD allow for the presence of unknown
-event fields and make an effort to visualize even unknown data if possible, otherwise they MUST ignore it.
+event fields and make an effort to visualize even unknown data if possible,
+otherwise they MUST ignore it.
 
 ## Further Design Guidance
 
-There are several ways of defining concrete event types. In practice, two main types of
-approach have been observed: a) those that map directly to concepts seen in the
-protocols (e.g., `packet_sent`) and b) those that act as aggregating events that
-combine data from several possible protocol behaviors or code paths into one
-(e.g., `parameters_set`). The latter are typically used as a means to reduce the
-amount of unique event definitions, as reflecting each possible protocol event
-as a separate qlog entity would cause an explosion of event types.
+There are several ways of defining concrete event types. In practice, two main
+types of approach have been observed: a) those that map directly to concepts
+seen in the protocols (e.g., `packet_sent`) and b) those that act as aggregating
+events that combine data from several possible protocol behaviors or code paths
+into one (e.g., `parameters_set`). The latter are typically used as a means to
+reduce the amount of unique event definitions, as reflecting each possible
+protocol event as a separate qlog entity would cause an explosion of event
+types.
 
 Additionally, logging duplicate data is typically prevented as much as possible.
 For example, packet header values that remain consistent across many packets are
@@ -1315,23 +1318,26 @@ example `packets_acked`).
 
 # The Generic Event Schema {#generic-event-schema}
 
-The generic event schema defines categories and event types that are common across
-protocols, applications, and use cases. The schema namespace is "gen".
+The generic event schema defines categories and event types that are common
+across protocols, applications, and use cases. The schema namespace identifier
+is "gen".
 
 ## Log Level Events {#loglevel-events}
 
-In typical logging setups, users utilize a discrete number of well-defined logging
-categories, levels or severities to log freeform (string) data. The log level
-event category replicates this approach to allow implementations to fully replace
-their existing text-based logging by qlog. This is done by providing events to log
-generic strings for the typical well-known logging levels (error, warning, info,
-debug, verbose). The category identifier is "loglevel".
+In typical logging setups, users utilize a discrete number of well-defined
+logging categories, levels or severities to log freeform (string) data. The log
+level event category replicates this approach to allow implementations to fully
+replace their existing text-based logging by qlog. This is done by providing
+events to log generic strings for the typical well-known logging levels (error,
+warning, info, debug, verbose). The category identifier is "loglevel". The
+category URI is is `urn:ietf:params:qlog:events:gen#loglevel`.
 
 ~~~ cddl
 LogLevelEventData = LogLevelError /
                     LogLevelWarning /
                     LogLevelInfo /
-                    LogLevelDebug
+                    LogLevelDebug /
+                    LogLevelVerbose
 
 $ProtocolEventData /= LogLevelEventData
 ~~~
@@ -1342,7 +1348,7 @@ The event types are further defined below, their identifier is the heading name.
 ### error
 
 Used to log details of an internal error that might not get reflected on the
-wire. It has Core importance level.
+wire. It has Core importance level; see {{importance}}.
 
 ~~~ cddl
 LogLevelError = {
@@ -1414,14 +1420,16 @@ LogLevelVerbose = {
 ~~~
 {: #loglevel-verbose-def title="LogLevelVerbose definition"}
 
-## Simulation Events
+## Simulation Events {#sim-events}
 
 When evaluating a protocol implementation, one typically sets up a series of
 interoperability or benchmarking tests, in which the test situations can change
-over time. For example, the network bandwidth or latency can vary during the test,
-or the network can be fully disable for a short time. In these setups, it is
-useful to know when exactly these conditions are triggered, to allow for proper
-correlation with other events. The category identifier is "sim".
+over time. For example, the network bandwidth or latency can vary during the
+test, or the network can be fully disable for a short time. In these setups, it
+is useful to know when exactly these conditions are triggered, to allow for
+proper correlation with other events. This category defines event types to allow
+logging of such simulation metadata and its identifier is "sim". The category
+URI is `urn:ietf:params:qlog:events:gen#sim`.
 
 ~~~ cddl
 SimulationEventData = SimulationScenario /
@@ -1538,8 +1546,8 @@ interoperability considerations for both formats, and {{optimizations}} presents
 potential optimizations.
 
 Serialization formats require appropriate deserializers/parsers. The
-"serialization_format" field ({{abstract-logfile}}) is used to indicate the chosen
-serialization format.
+"serialization_format" field ({{abstract-logfile}}) is used to indicate the
+chosen serialization format.
 
 ## qlog to JSON mapping {#format-json}
 
@@ -1919,17 +1927,16 @@ at [](https://www.iana.org/assignments/qlog) for the purpose of registering
 log file schema. It has the following format:
 
 | Log File Schema URI | Description | Reference |
-| urn:ietf:params:qlog:file:contained | Concrete log file format that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
-| urn:ietf:params:qlog:file:sequential | Concrete log file format containing a single trace, optimized for seqential read and write access. | {{qlog-file-seq-schema}} |
+| urn:ietf:params:qlog:file:contained | Concrete log file schema that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
+| urn:ietf:params:qlog:file:sequential | Concrete log file schema containing a single trace, optimized for seqential read and write access. | {{qlog-file-seq-schema}} |
 
 IANA is requested to create the "qlog event category URIs" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
 event categories. It has the following format:
 
 | Event Category URI | Description | Reference |
-|||||
 | urn:ietf:params:qlog:events:gen#loglevel | Well-known logging levels for free-form text. | {{loglevel-events}} |
-| urn:ietf:params:qlog:events:gen#sim | Events for simulation testing. | {{loglevel-events}} |
+| urn:ietf:params:qlog:events:gen#sim | Events for simulation testing. | {{sim-events}} |
 
 
 --- back

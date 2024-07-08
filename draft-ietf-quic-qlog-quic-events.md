@@ -71,13 +71,14 @@ containing concrete events for the core QUIC protocol (see
 {{!QUIC-TLS=RFC9001}}) and some of its extensions (see
 {{!QUIC-DATAGRAM=RFC9221}} and {{!GREASEBIT=RFC9287}}).
 
-The schema namespace `quic` is defined, containing the categories:
+The event schema namespace `quic` is defined, containing the categories:
 `connectivity` ({{conn-ev}}), `security` ({{sec-ev}}), `quic` {{quic-ev}}, and
 `recovery` {{rec-ev}}. Across these categories multiple events derive from the
 qlog abstract Event class ({{Section 7 of QLOG-MAIN}}), each extending the
-"data" field and defining their "name" field and semantics. Some data fields use
-complex datastructures. These are represented as enums or re-usable definitions,
-which are grouped together on the bottom of this document for clarity.
+"data" field and defining their "name" field values and semantics. Some data
+fields use complex datastructures. These are represented as enums or re-usable
+definitions, which are grouped together on the bottom of this document for
+clarity.
 
 When any event from this document is included in a qlog trace, the
 `protocol_type` qlog array field MUST contain an entry with the value "QUIC":
@@ -145,7 +146,8 @@ implementation decision.
 
 This document describes how the core QUIC protocol and selected extensions can
 be expressed in qlog using a newly defined event schema. Per the requirements in
-{{Section 8 of QLOG-MAIN}}, this document registers the `quic` namespace and the following category identifiers and URIs.
+{{Section 8 of QLOG-MAIN}}, this document registers the `quic` namespace and the
+following category identifiers and URIs.
 
 * `connectivity` - `urn:ietf:params:qlog:events:quic#connectivity`
 * `security` - `urn:ietf:params:qlog:events:quic#security`
@@ -156,7 +158,7 @@ be expressed in qlog using a newly defined event schema. Per the requirements in
 {:removeinrfc="true"}
 
 Only implementations of the final, published RFC can use the events belonging to
-the category with the URI `urn:ietf:params:qlog:events:quic#connectivity`,
+the category with the URIs `urn:ietf:params:qlog:events:quic#connectivity`,
 `urn:ietf:params:qlog:events:quic#security`,
 `urn:ietf:params:qlog:events:quic#quic`, and
 `urn:ietf:params:qlog:events:quic#recovery`. Until such an RFC exists,
@@ -2250,10 +2252,11 @@ document as well.
 
 # IANA Considerations
 
-This document registers several new entries in the "qlog event category URIs" registry.
+This document registers several new entries in the "qlog event category URIs"
+registry.
 
 Event Category URI:
-: urn:ietf:params:qlog:event:quic#connectivity
+: urn:ietf:params:qlog:events:quic#connectivity
 
 Description:
 : Event definitions related to QUIC connectivity.
@@ -2262,7 +2265,7 @@ Reference:
 : {{conn-ev}}
 
 Event Category URI:
-: urn:ietf:params:qlog:event:quic#security
+: urn:ietf:params:qlog:events:quic#security
 
 Description:
 : Event definitions related to QUIC security.
@@ -2271,7 +2274,7 @@ Reference:
 : {{sec-ev}}
 
 Event Category URI:
-: urn:ietf:params:qlog:event:quic#quic
+: urn:ietf:params:qlog:events:quic#quic
 
 Description:
 : Event definitions related to the QUIC wire image and other concerns.
@@ -2280,7 +2283,7 @@ Reference:
 : {{quic-ev}}
 
 Event Category URI:
-: urn:ietf:params:qlog:event:quic#recovery
+: urn:ietf:params:qlog:events:quic#recovery
 
 Description:
 : Event definitions related to QUIC recovery.

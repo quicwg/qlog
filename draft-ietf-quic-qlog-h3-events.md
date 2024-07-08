@@ -75,10 +75,10 @@ containing concrete events for the core HTTP/3 protocol {{RFC9114}} and selected
 extensions ({{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}}, and
 {{!H3-DATAGRAM=RFC9297}}).
 
-The schema namespace `http` is defined, containing the category `h3`; see
+The event schema namespace `http` is defined, containing the category `h3`; see
 {{schema-def}}. In this category multiple events derive from the qlog abstract
-Event class ({{Section 7 of QLOG-MAIN}}), each extending the "data" field and
-defining their "name" field and semantics.
+Event class ({{Section 7 of QLOG-MAIN}}),  each extending the "data" field and
+defining their "name" field values and semantics
 
 {{h3-events}} summarizes the name value of each event type that is defined in
 this specification. Some event data fields use complex datastructures. These are
@@ -721,7 +721,7 @@ document as well.
 This document registers a new entry in the "qlog event category URIs" registry.
 
 Event Category URI:
-: urn:ietf:params:qlog:event:http#h3
+: urn:ietf:params:qlog:events:http#h3
 
 Description:
 : Event definitions related to the HTTP/3 application protocol.
