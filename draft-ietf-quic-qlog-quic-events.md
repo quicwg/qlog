@@ -304,6 +304,16 @@ deployments, it can be useful to have a single event representing a
 provide more information. Furthermore, it is useful to log closures due to
 timeouts, which are difficult to reflect using the other options.
 
+The `connection_closed` event is intended to be logged either when the local
+endpoint silently discards the connection due to an idle timeout, when a
+CONNECTION_CLOSE frame is sent (the connection enters the 'closing' state on the
+sender side), when a CONNECTION_CLOSE frame is received (the connection enters
+the 'draining' state on the receiver side) or when a Stateless Reset packet is
+received (the connection is discarded at the receiver side).
+Connectivity-related updates after this point (e.g., exiting a 'closing' or
+'draining' state), should be logged using the `connection_state_updated` event
+instead.
+
 In QUIC there are two main connection-closing error categories: connection and
 application errors. They have well-defined error codes and semantics. Next to
 these however, there can be internal errors that occur that may or may not get
@@ -323,20 +333,24 @@ ConnectivityConnectionClosed = {
     ? internal_code: uint32
     ? reason: text
     ? trigger:
-        "clean" /
-        "handshake_timeout" /
         "idle_timeout" /
-        ; this is called the "immediate close" in the QUIC RFC
+        "application" /
         "error" /
-        "stateless_reset" /
         "version_mismatch" /
-        ; for example HTTP/3's GOAWAY frame
-        "application"
+        ; when received from peer
+        "stateless_reset" /
+        ; when it is unclear what triggered the CONNECTION_CLOSE
+        "unspecified"
 
     * $$connectivity-connectionclosed-extension
 }
 ~~~
 {: #connectivity-connectionclosed-def title="ConnectivityConnectionClosed definition"}
+
+Loggers SHOULD use the most descriptive trigger for a `connection_closed` event
+that they are able to deduce. This is often clear at the peer closing the
+connection (and sending the CONNECTION_CLOSE), but can sometimes be more opaque
+at the receiving end.
 
 
 ## connection_id_updated {#connectivity-connectionidupdated}
