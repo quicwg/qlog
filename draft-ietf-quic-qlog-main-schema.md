@@ -283,12 +283,13 @@ in {{event-types-and-schema}}.
 
 ## Concrete Log File Schema URIs {#schema-uri}
 
-Concrete log file schemas MUST identify themselves using a URI.
+Concrete log file schemas MUST identify themselves using a URI {{!RFC3986}}.
 
 Log file schemas defined by RFCs MUST register a URI in the "qlog log file
 schema URIs" registry and SHOULD use a URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>`, where `<schema-identifier>` is
-a globally-unique name. This document registers
+a globally-unique text name using only characters in the URI unreserved range;
+see {{Section 2.3 of RFC3986}}. This document registers
 `urn:ietf:params:qlog:file:contained` ({{qlog-file-schema}}) and
 `urn:ietf:params:qlog:file:sequential` ({{qlog-file-seq-schema}}).
 
@@ -296,10 +297,12 @@ Private or non-standard log file schemas MAY register a URI in the "qlog log
 file schema URIs" registry but MUST NOT use a URN of the form
 `urn:ietf:params:qlog:file:<schema-identifier>`. URIs that contain a domain name
 SHOULD also contain a month-date in the form mmyyyy. For example,
-"https://example.org/072024/globallyuniquefileschema". The definition of the log file
-schema and assignment of the URI MUST have been authorized by the owner of the
-domain name on or very close to that date. This avoids problems when domain
-names change ownership.
+"https://example.org/072024/globallyuniquefileschema". The definition of the log
+file schema and assignment of the URI MUST have been authorized by the owner of
+the domain name on or very close to that date. This avoids problems when domain
+names change ownership. The URI does not need to be dereferencable, allowing for
+confidential use or to cover the case where the log file schema continues to be
+used after the organization that defined them ceases to exist.
 
 The "qlog log file schema URIs" registry operates under the Expert Review
 policy, per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert
@@ -982,14 +985,17 @@ Concrete event types belong to event categories, both defined by event schema.
 
 A single event schema can define a new namespace, or extend an existing
 namespace with new categories. New namespaces MUST be registered using a
-non-empty namespace identifier of type `text`. Namespace are mutable and MAY be
-extended with categories.
+non-empty namespace identifier text identifier using only characters in the
+unreserved range; see {{Section 2.3 of RFC3986}}. Namespace are mutable and MAY
+be extended with categories.
 
 Event categories MUST belong to a single event namespace. They MUST have a
-registered non-empty globally-unique identifier of type `text` and MUST have a
-single dereferencable URI. That URI MUST be absolute and MUST indicate the
-category identifier using a fragment identifier (characters after a "#" in the
-URI). Event categories are immutable and MUST NOT be extended with events.
+registered non-empty globally-unique text identifier only characters in the
+URI unreserved range; see {{Section 2.3 of RFC3986}}. They MUST have a single URI
+{{RFC3986}} that MUST be absolute. The URI MUST include the namespace
+identifier. The URI MUST include the category identifer using a fragment
+identifier (characters after a "#" in the URI). Event categories are immutable
+and MUST NOT be extended with events.
 
 Registration guidance and requirements is provided in {{event-schema-reg}}.
 
@@ -1051,7 +1057,10 @@ For example,
 "https://example.org/072024/customeventchema#globallyuniquencategory" The
 definition of the category and assignment of the URI MUST have been authorized
 by the owner of the domain name on or very close to that date. This avoids
-problems when domain names change ownership.
+problems when domain names change ownership. The URI does not need to be
+dereferencable, allowing for confidential use or to cover the case where the log
+file schema continues to be used after the organization that defined them ceases
+to exist.
 
 The "qlog event category URIs" registry operates under the Expert Review policy,
 per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert MUST check
