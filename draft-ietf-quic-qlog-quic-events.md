@@ -742,7 +742,6 @@ importance level; see {{Section 9.2 of QLOG-MAIN}}.
 QUICPacketSent = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
-    ? is_coalesced: bool .default false
 
     ; only if header.packet_type === "stateless_reset"
     ; is always 128 bits in length.
@@ -776,8 +775,8 @@ The `encryption_level` and `packet_number_space` are not logged explicitly:
 the `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
-For more details on `datagram_id`, see {{quic-udpdatagramssent}}. It is only needed
-when keeping track of packet coalescing.
+The `datagram_id` field is used to track packet coalescing, see
+{{quic-udpdatagramssent}}.
 
 ## packet_received {#quic-packetreceived}
 
@@ -788,7 +787,6 @@ Core importance level; see {{Section 9.2 of QLOG-MAIN}}.
 QUICPacketReceived = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
-    ? is_coalesced: bool .default false
 
     ; only if header.packet_type === "stateless_reset"
     ; Is always 128 bits in length.
@@ -811,10 +809,10 @@ QUICPacketReceived = {
 
 The `encryption_level` and `packet_number_space` are not logged explicitly: the
 `header.packet_type` specifies this by inference (assuming correct
-implementation)
+implementation).
 
-For more details on `datagram_id`, see {{quic-udpdatagramssent}}. It is only needed
-when keeping track of packet coalescing.
+The `datagram_id` field is used to track packet coalescing, see
+{{quic-udpdatagramssent}}.
 
 ## packet_dropped {#quic-packetdropped}
 
@@ -862,7 +860,8 @@ Some example situations for each of the trigger categories include:
 - `key_unavailable`: decryption key was unavailable
 - `general`: situations not clearly covered in the other categories
 
-For more details on `datagram_id`, see {{quic-udpdatagramssent}}.
+The `datagram_id` field is used to track packet coalescing, see
+{{quic-udpdatagramssent}}.
 
 ## packet_buffered {#quic-packetbuffered}
 
@@ -893,8 +892,8 @@ QUICPacketBuffered = {
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
-For more details on `datagram_id`, see {{quic-udpdatagramssent}}. It is only needed
-when keeping track of packet coalescing.
+The `datagram_id` field is used to track packet coalescing, see
+{{quic-udpdatagramssent}}.
 
 ## packets_acked {#quic-packetsacked}
 
@@ -924,9 +923,10 @@ number space a typical QUIC connection will use.
 
 ## udp_datagrams_sent {#quic-udpdatagramssent}
 
-When one or more UDP-level datagrams are passed to the socket. This is useful
-for determining how QUIC packet buffers are drained to the OS. The event has
-Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
+The `datagrams_sent` event indicates when one or more UDP-level datagrams are
+passed to the underlying network socket. This is useful for determining how QUIC
+packet buffers are drained to the OS. The event has Extra importance level; see
+{{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 QUICUDPDatagramsSent = {
@@ -951,14 +951,19 @@ QUICUDPDatagramsSent = {
 {: #quic-udpdatagramssent-def title="QUICUDPDatagramsSent definition"}
 
 Since QUIC implementations rarely control UDP logic directly, the raw data
-excludes UDP-level headers in all fields.
+excludes UDP-level headers in all RawInfo fields.
 
-The `datagram_id` is a qlog-specific concept to allow tracking of QUIC packet
-coalescing inside UDP datagrams. Since QUIC generates many UDP datagrams, unique
-identifiers are required to be able to track them individually in qlog traces.
-However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
-Selecting identifier values is thus left to qlog implementations, which should
-consider how to generate unique values within the scope of their created traces.
+Multiple QUIC packets can be coalesced in a single UDP datagram, especially
+during the handshake (see {{Section 12.2 of QUIC-TRANSPORT}}). However, neither
+QUIC nor UDP themselves provide an explicit mechanism to track this behaviour.
+To make it possible for implementations to track coalescing across packet-level
+and datagram-level qlog events, this document defines a qlog-specific mechanism
+for tracking coalescing across packet-level and datagram-level qlog events: a
+"datagram identifier" carried in `datagram_id` fields. qlog implementations that
+want to track coalescing can use this mechanism, where multiple events sharing
+the same `datagram_id` indicate they were coalesced in the same UDP datagram.
+The selection of specific and locally-unique `datagram_id` values is an
+implementation choice.
 
 ## udp_datagrams_received {#quic-udpdatagramsreceived}
 
@@ -988,7 +993,8 @@ QUICUDPDatagramsReceived = {
 ~~~
 {: #quic-udpdatagramsreceived-def title="QUICUDPDatagramsReceived definition"}
 
-For more details on `datagram_ids`, see {{quic-udpdatagramssent}}.
+The `datagram_ids` field is used to track packet coalescing, see
+{{quic-udpdatagramssent}}.
 
 ## udp_datagram_dropped {#quic-udpdatagramdropped}
 
