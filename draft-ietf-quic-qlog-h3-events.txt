@@ -18,9 +18,8 @@ Expires: 9 January 2025                                             Meta
 
 Abstract
 
-   This document describes concrete qlog event definitions and their
-   metadata for HTTP/3-related events.  These events can then be
-   embedded in the higher level schema defined in [QLOG-MAIN].
+   This document defines a qlog event schema containing concrete events
+   for the core HTTP/3 protocol and selected extensions.
 
 Note to Readers
 
@@ -69,38 +68,38 @@ Copyright Notice
 Table of Contents
 
    1.  Introduction
-     1.1.  Notational Conventions
-   2.  Overview
-     2.1.  Usage with QUIC
-   3.  HTTP/3 Event Overview
-   4.  HTTP/3 Events
-     4.1.  parameters_set
-     4.2.  parameters_restored
-     4.3.  stream_type_set
-     4.4.  priority_updated
-     4.5.  frame_created
-     4.6.  frame_parsed
-     4.7.  datagram_created
-     4.8.  datagram_parsed
-     4.9.  push_resolved
-   5.  HTTP/3 Data Field Definitions
-     5.1.  Owner
-     5.2.  H3Frame
-     5.3.  H3Datagram
-       5.3.1.  H3DataFrame
-       5.3.2.  H3HeadersFrame
-       5.3.3.  H3CancelPushFrame
-       5.3.4.  H3SettingsFrame
-       5.3.5.  H3PushPromiseFrame
-       5.3.6.  H3GoAwayFrame
-       5.3.7.  H3MaxPushIDFrame
-       5.3.8.  H3PriorityUpdateFrame
-       5.3.9.  H3ReservedFrame
-       5.3.10. H3UnknownFrame
-       5.3.11. H3ApplicationError
-   6.  Security and Privacy Considerations
-   7.  IANA Considerations
-   8.  Normative References
+     1.1.  Usage with QUIC
+     1.2.  Notational Conventions
+   2.  Event Schema Definition
+     2.1.  Draft Event Schema Identification
+   3.  HTTP/3 Events
+     3.1.  parameters_set
+     3.2.  parameters_restored
+     3.3.  stream_type_set
+     3.4.  priority_updated
+     3.5.  frame_created
+     3.6.  frame_parsed
+     3.7.  datagram_created
+     3.8.  datagram_parsed
+     3.9.  push_resolved
+   4.  HTTP/3 Data Field Definitions
+     4.1.  Owner
+     4.2.  H3Frame
+     4.3.  H3Datagram
+       4.3.1.  H3DataFrame
+       4.3.2.  H3HeadersFrame
+       4.3.3.  H3CancelPushFrame
+       4.3.4.  H3SettingsFrame
+       4.3.5.  H3PushPromiseFrame
+       4.3.6.  H3GoAwayFrame
+       4.3.7.  H3MaxPushIDFrame
+       4.3.8.  H3PriorityUpdateFrame
+       4.3.9.  H3ReservedFrame
+       4.3.10. H3UnknownFrame
+       4.3.11. H3ApplicationError
+   5.  Security and Privacy Considerations
+   6.  IANA Considerations
+   7.  Normative References
    Acknowledgements
    Change Log
      Since draft-ietf-quic-qlog-h3-events-06:
@@ -117,12 +116,70 @@ Table of Contents
 
 1.  Introduction
 
-   This document describes the values of the qlog name ("category" +
-   "event") and "data" fields and their semantics for the HTTP/3
-   protocol [HTTP/3] and some of extensions (see [EXTENDED-CONNECT],
-   [H3_PRIORITIZATION] and [H3-DATAGRAM]).
+   This document defines a qlog event schema (Section 8 of [QLOG-MAIN])
+   containing concrete events for the core HTTP/3 protocol [HTTP/3] and
+   selected extensions ([EXTENDED-CONNECT], [H3_PRIORITIZATION], and
+   [H3-DATAGRAM]).
 
-1.1.  Notational Conventions
+   The event schema namespace http is defined, containing the category
+   h3; see Section 2.  In this category multiple events derive from the
+   qlog abstract Event class (Section 7 of [QLOG-MAIN]), each extending
+   the "data" field and defining their "name" field values and semantics
+
+   Table 1 summarizes the name value of each event type that is defined
+   in this specification.  Some event data fields use complex
+   datastructures.  These are represented as enums or re-usable
+   definitions, which are grouped together on the bottom of this
+   document for clarity.
+
+           +========================+============+=============+
+           | Name value             | Importance | Definition  |
+           +========================+============+=============+
+           | h3:parameters_set      | Base       | Section 3.1 |
+           +------------------------+------------+-------------+
+           | h3:parameters_restored | Base       | Section 3.2 |
+           +------------------------+------------+-------------+
+           | h3:stream_type_set     | Base       | Section 3.3 |
+           +------------------------+------------+-------------+
+           | h3:priority_updated    | Base       | Section 3.4 |
+           +------------------------+------------+-------------+
+           | h3:frame_created       | Core       | Section 3.5 |
+           +------------------------+------------+-------------+
+           | h3:frame_parsed        | Core       | Section 3.6 |
+           +------------------------+------------+-------------+
+           | h3:datagram_created    | Base       | Section 3.7 |
+           +------------------------+------------+-------------+
+           | h3:datagram_parsed     | Base       | Section 3.8 |
+           +------------------------+------------+-------------+
+           | h3:push_resolved       | Extra      | Section 3.9 |
+           +------------------------+------------+-------------+
+
+                           Table 1: HTTP/3 Events
+
+   When any event from this document is included in a qlog trace, the
+   "protocol_type" qlog array field MUST contain an entry with the value
+   "HTTP3":
+
+   $ProtocolType /= "HTTP3"
+
+                Figure 1: ProtocolType extension for HTTP/3
+
+1.1.  Usage with QUIC
+
+   The events described in this document can be used with or without
+   logging the related QUIC events defined in [QLOG-QUIC].  If used with
+   QUIC events, the QUIC document takes precedence in terms of
+   recommended filenames and trace separation setups.
+
+   If used without QUIC events, it is recommended that the
+   implementation assign a globally unique identifier to each HTTP/3
+   connection.  This ID can then be used as the value of the qlog
+   "group_id" field, as well as the qlog filename or file identifier,
+   potentially suffixed by the vantagepoint type (For example,
+   abcd1234_server.qlog would contain the server-side trace of the
+   connection with GUID abcd1234).
+
+1.2.  Notational Conventions
 
    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
    "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
@@ -142,76 +199,31 @@ Table of Contents
    document are intentionally agnostic to serialization formats.  The
    choice of format is an implementation decision.
 
-2.  Overview
+2.  Event Schema Definition
 
-   This document describes how HTTP/3 can be expressed in qlog using the
-   schema defined in [QLOG-MAIN].  HTTP/3 events are defined with a
-   category, a name (the concatenation of "category" and "event"), an
-   "importance", an optional "trigger", and "data" fields.
+   This document describes how the core HTTP/3 protocol and selected
+   extensions can be expressed in qlog using a newly defined event
+   schema.  Per the requirements in Section 8 of [QLOG-MAIN], this
+   document registers the http namespace and h3 category identifiers.
+   The URI is urn:ietf:params:qlog:events:http#h3.
 
-   Some data fields use complex datastructures.  These are represented
-   as enums or re-usable definitions, which are grouped together on the
-   bottom of this document for clarity.
+2.1.  Draft Event Schema Identification
 
-   When any event from this document is included in a qlog trace, the
-   "protocol_type" qlog array field MUST contain an entry with the value
-   "HTTP3":
+   This section is to be removed before publishing as an RFC.
 
-   $ProtocolType /= "HTTP3"
+   Only implementations of the final, published RFC can use the events
+   belonging to the category with the URI
+   urn:ietf:params:qlog:events:http#h3.  Until such an RFC exists,
+   implementations MUST NOT identify themselves using this URI.
 
-                Figure 1: ProtocolType extension for HTTP/3
+   Implementations of draft versions of the event schema MUST append the
+   string "-" and the corresponding draft number to the URI.  For
+   example, draft 07 of this document is identified using the URI
+   urn:ietf:params:qlog:events:http#h3-07.
 
-2.1.  Usage with QUIC
+   The category identifier itself is not affected by this requirement.
 
-   The events described in this document can be used with or without
-   logging the related QUIC events defined in [QLOG-QUIC].  If used with
-   QUIC events, the QUIC document takes precedence in terms of
-   recommended filenames and trace separation setups.
-
-   If used without QUIC events, it is recommended that the
-   implementation assign a globally unique identifier to each HTTP/3
-   connection.  This ID can then be used as the value of the qlog
-   "group_id" field, as well as the qlog filename or file identifier,
-   potentially suffixed by the vantagepoint type (For example,
-   abcd1234_server.qlog would contain the server-side trace of the
-   connection with GUID abcd1234).
-
-3.  HTTP/3 Event Overview
-
-   This document defines events in two categories, written as lowercase
-   to follow convention: h3 (Section 4).
-
-   As described in Section 3.4.2 of [QLOG-MAIN], the qlog "name" field
-   is the concatenation of category and type.
-
-   Table 1 summarizes the name value of each event type that is defined
-   in this specification.
-
-           +========================+============+=============+
-           | Name value             | Importance | Definition  |
-           +========================+============+=============+
-           | h3:parameters_set      | Base       | Section 4.1 |
-           +------------------------+------------+-------------+
-           | h3:parameters_restored | Base       | Section 4.2 |
-           +------------------------+------------+-------------+
-           | h3:stream_type_set     | Base       | Section 4.3 |
-           +------------------------+------------+-------------+
-           | h3:priority_updated    | Base       | Section 4.4 |
-           +------------------------+------------+-------------+
-           | h3:frame_created       | Core       | Section 4.5 |
-           +------------------------+------------+-------------+
-           | h3:frame_parsed        | Core       | Section 4.6 |
-           +------------------------+------------+-------------+
-           | h3:datagram_created    | Base       | Section 4.7 |
-           +------------------------+------------+-------------+
-           | h3:datagram_parsed     | Base       | Section 4.8 |
-           +------------------------+------------+-------------+
-           | h3:push_resolved       | Extra      | Section 4.9 |
-           +------------------------+------------+-------------+
-
-                           Table 1: HTTP/3 Events
-
-4.  HTTP/3 Events
+3.  HTTP/3 Events
 
    HTTP/3 events extend the $ProtocolEventData extension point defined
    in [QLOG-MAIN].  Additionally, they allow for direct extensibility by
@@ -242,13 +254,13 @@ Table of Contents
    span multiple QUIC packets.  Some implementations might send a single
    large frame, rather than a sequence of smaller frames, in order to
    amortize frame header overhead.  HTTP/3 frame headers are represented
-   by the frame_created (Section 4.5) and frame_parsed (Section 4.6)
+   by the frame_created (Section 3.5) and frame_parsed (Section 3.6)
    events.  Subsequent frame payload data transfer is indicated by
    stream_data_moved events.  Furthermore, stream_data_moved events can
    appear before frame_parsed events because implementations need to
    read data from a stream in order to parse the frame header.
 
-4.1.  parameters_set
+3.1.  parameters_set
 
    The parameters_set event contains HTTP/3 and QPACK-level settings,
    mostly those received from the HTTP/3 SETTINGS frame.  It has Base
@@ -294,7 +306,7 @@ Table of Contents
    GREASE) or ad-hoc support for extension settings that do not have a
    related qlog schema definition.
 
-4.2.  parameters_restored
+3.2.  parameters_restored
 
    When using QUIC 0-RTT, HTTP/3 clients are expected to remember and
    reuse the server's SETTINGs from the previous connection.  The
@@ -321,7 +333,7 @@ Table of Contents
 
                  Figure 4: H3ParametersRestored definition
 
-4.3.  stream_type_set
+3.3.  stream_type_set
 
    The stream_type_set event conveys when a HTTP/3 stream type becomes
    known; see Sections 6.1 and 6.2 of [HTTP/3].  It has Base importance
@@ -365,7 +377,7 @@ Table of Contents
 
                     Figure 5: H3StreamTypeSet definition
 
-4.4.  priority_updated
+3.4.  priority_updated
 
    Emitted when the priority of a request stream or push stream is
    initialized or updated through mechanisms defined in [RFC9218].  For
@@ -389,7 +401,7 @@ Table of Contents
 
                    Figure 6: H3PriorityUpdated definition
 
-4.5.  frame_created
+3.5.  frame_created
 
    The frame_created event is emitted when the HTTP/3 framing actually
    happens.  It has Core importance level; see Section 9.2 of
@@ -410,7 +422,7 @@ Table of Contents
 
                     Figure 7: H3FrameCreated definition
 
-4.6.  frame_parsed
+3.6.  frame_parsed
 
    The frame_parsed event is emitted when the HTTP/3 frame is parsed.
    It has Core importance level; see Section 9.2 of [QLOG-MAIN].
@@ -430,7 +442,7 @@ Table of Contents
 
                      Figure 8: H3FrameParsed definition
 
-4.7.  datagram_created
+3.7.  datagram_created
 
    The datagram_created event is emitted when an HTTP/3 Datagram is
    created (see [RFC9297]).  It has Base importance level; see
@@ -450,7 +462,7 @@ Table of Contents
 
                    Figure 9: H3DatagramCreated definition
 
-4.8.  datagram_parsed
+3.8.  datagram_parsed
 
    The datagram_parsed event is emitted when the HTTP/3 Datagram is
    parsed (see [RFC9297]).  It has Base importance level; see
@@ -470,7 +482,7 @@ Table of Contents
 
                    Figure 10: H3DatagramParsed definition
 
-4.9.  push_resolved
+3.9.  push_resolved
 
    The push_resolved event is emitted when a pushed resource
    (Section 4.6 of [HTTP/3]) is successfully claimed (used) or,
@@ -495,18 +507,18 @@ Table of Contents
 
                     Figure 11: H3PushResolved definition
 
-5.  HTTP/3 Data Field Definitions
+4.  HTTP/3 Data Field Definitions
 
    The following data field definitions can be used in HTTP/3 events.
 
-5.1.  Owner
+4.1.  Owner
 
    Owner = "local" /
            "remote"
 
                         Figure 12: Owner definition
 
-5.2.  H3Frame
+4.2.  H3Frame
 
    The generic $H3Frame is defined here as a CDDL "type socket"
    extension point.  It can be extended to support additional HTTP/3
@@ -535,7 +547,7 @@ Table of Contents
 
                      Figure 14: H3BaseFrames definition
 
-5.3.  H3Datagram
+4.3.  H3Datagram
 
    The generic $H3Datagram is defined here as a CDDL "type socket"
    extension point.  It can be extended to support additional HTTP/3
@@ -549,7 +561,7 @@ Table of Contents
 
                 Figure 15: H3Datagram type socket definition
 
-5.3.1.  H3DataFrame
+4.3.1.  H3DataFrame
 
    H3DataFrame = {
        frame_type: "data"
@@ -558,7 +570,7 @@ Table of Contents
 
                      Figure 16: H3DataFrame definition
 
-5.3.2.  H3HeadersFrame
+4.3.2.  H3HeadersFrame
 
    The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an
    HTTP field section; see Section 7.2.2 of [HTTP/3].  H3HeaderFrame, in
@@ -622,7 +634,7 @@ Table of Contents
    name_bytes field and MAY include both.  An H3HTTPField MAY include a
    value or value_bytes field or neither.
 
-5.3.3.  H3CancelPushFrame
+4.3.3.  H3CancelPushFrame
 
    H3CancelPushFrame = {
        frame_type: "cancel_push"
@@ -631,7 +643,7 @@ Table of Contents
 
                   Figure 20: H3CancelPushFrame definition
 
-5.3.4.  H3SettingsFrame
+4.3.4.  H3SettingsFrame
 
    The settings field can contain zero or more entries.  Each setting
    has a name field, which corresponds to Setting Name as defined (or as
@@ -667,7 +679,7 @@ Table of Contents
 
                    Figure 21: H3SettingsFrame definition
 
-5.3.5.  H3PushPromiseFrame
+4.3.5.  H3PushPromiseFrame
 
    H3PushPromiseFrame = {
        frame_type: "push_promise"
@@ -677,7 +689,7 @@ Table of Contents
 
                   Figure 22: H3PushPromiseFrame definition
 
-5.3.6.  H3GoAwayFrame
+4.3.6.  H3GoAwayFrame
 
    H3GoawayFrame = {
        frame_type: "goaway"
@@ -689,7 +701,7 @@ Table of Contents
 
                     Figure 23: H3GoawayFrame definition
 
-5.3.7.  H3MaxPushIDFrame
+4.3.7.  H3MaxPushIDFrame
 
    H3MaxPushIDFrame = {
        frame_type: "max_push_id"
@@ -698,7 +710,7 @@ Table of Contents
 
                    Figure 24: H3MaxPushIDFrame definition
 
-5.3.8.  H3PriorityUpdateFrame
+4.3.8.  H3PriorityUpdateFrame
 
    The PRIORITY_UPDATE frame is defined in [RFC9218].
 
@@ -720,7 +732,7 @@ Table of Contents
 
                 Figure 25: h3priorityupdateframe definition
 
-5.3.9.  H3ReservedFrame
+4.3.9.  H3ReservedFrame
 
    H3ReservedFrame = {
        frame_type: "reserved"
@@ -729,7 +741,7 @@ Table of Contents
 
                    Figure 26: H3ReservedFrame definition
 
-5.3.10.  H3UnknownFrame
+4.3.10.  H3UnknownFrame
 
    The frame_type_bytes field is the numerical value without variable-
    length integer encoding.
@@ -742,7 +754,7 @@ Table of Contents
 
                      Figure 27: UnknownFrame definition
 
-5.3.11.  H3ApplicationError
+4.3.11.  H3ApplicationError
 
    H3ApplicationError = "http_no_error" /
                           "http_general_protocol_error" /
@@ -771,16 +783,24 @@ Table of Contents
    ; e.g., QUIC's ConnectionClose Frame
    $ApplicationError /= H3ApplicationError
 
-6.  Security and Privacy Considerations
+5.  Security and Privacy Considerations
 
    The security and privacy considerations discussed in [QLOG-MAIN]
    apply to this document as well.
 
-7.  IANA Considerations
+6.  IANA Considerations
 
-   There are no IANA considerations.
+   This document registers a new entry in the "qlog event category URIs"
+   registry.
 
-8.  Normative References
+   Event Category URI:  urn:ietf:params:qlog:events:http#h3
+
+   Description:  Event definitions related to the HTTP/3 application
+      protocol.
+
+   Reference:  This Document
+
+7.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -849,8 +869,8 @@ Acknowledgements
 
    Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
    Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind,
-   Jeremy Lainé, Kazu Yamamoto, Christian Huitema and Hugo Landau for
-   their feedback and suggestions.
+   Jeremy Lainé, Kazu Yamamoto, Christian Huitema, Hugo Landau and
+   Jonathan Lennox for their feedback and suggestions.
 
 Change Log
 

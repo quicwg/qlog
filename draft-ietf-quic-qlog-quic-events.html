@@ -10,9 +10,9 @@
 <meta content="Marten Seemann" name="author">
 <meta content="Lucas Pardue" name="author">
 <meta content="
-       This document describes concrete qlog event definitions and their metadata for
-QUIC events. These events can then be embedded in the higher level schema defined
-in  . 
+       This document describes a qlog event schema containing concrete qlog event
+definitions and their metadata for the core QUIC protocol and selected
+extensions. 
     " name="description">
 <meta content="xml2rfc 3.22.0" name="generator">
 <meta content="Internet-Draft" name="keyword">
@@ -1079,9 +1079,9 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <h1 id="title">QUIC event definitions for qlog</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document describes concrete qlog event definitions and their metadata for
-QUIC events. These events can then be embedded in the higher level schema defined
-in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document describes a qlog event schema containing concrete qlog event
+definitions and their metadata for the core QUIC protocol and selected
+extensions.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 </section>
 <section class="note" id="section-note.1">
       <h2 id="name-note-to-readers">
@@ -1149,21 +1149,27 @@ various programming languages can be found at
         </h2>
 <nav class="toc"><ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
-            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
-                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-notational-conventions" class="internal xref">Notational Conventions</a></p>
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-use-of-group-ids" class="internal xref">Use of group IDs</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2">
+                <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-raw-packet-and-frame-inform" class="internal xref">Raw packet and frame information</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3">
+                <p id="section-toc.1-1.1.2.3.1" class="keepWithNext"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-events-not-belonging-to-a-s" class="internal xref">Events not belonging to a single connection</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4">
+                <p id="section-toc.1-1.1.2.4.1"><a href="#section-1.4" class="auto internal xref">1.4</a>.  <a href="#name-notational-conventions" class="internal xref">Notational Conventions</a></p>
 </li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
-            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-overview" class="internal xref">Overview</a></p>
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-event-schema-definition" class="internal xref">Event Schema Definition</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
-                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-raw-packet-and-frame-inform" class="internal xref">Raw packet and frame information</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
-                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-events-not-belonging-to-a-s" class="internal xref">Events not belonging to a single connection</a></p>
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-draft-event-schema-identifi" class="internal xref">Draft Event Schema Identification</a></p>
 </li>
             </ul>
 </li>
@@ -1480,50 +1486,24 @@ various programming languages can be found at
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the QUIC protocol (see
+<p id="section-1-1">This document defines a qlog event schema (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-8" class="relref">Section 8</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>)
+containing concrete events for the core QUIC protocol (see
 <span>[<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>, <span>[<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span>, and
 <span>[<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>) and some of its extensions (see
 <span>[<a href="#QUIC-DATAGRAM" class="cite xref">QUIC-DATAGRAM</a>]</span> and <span>[<a href="#GREASEBIT" class="cite xref">GREASEBIT</a>]</span>).<a href="#section-1-1" class="pilcrow">¶</a></p>
-<div id="notational-conventions">
-<section id="section-1.1">
-        <h3 id="name-notational-conventions">
-<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-notational-conventions" class="section-name selfRef">Notational Conventions</a>
-        </h3>
-<p id="section-1.1-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
-"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
-described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
-appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
-<p id="section-1.1-2">The event and data structure definitions in ths document are expressed
-in the Concise Data Definition Language <span>[<a href="#CDDL" class="cite xref">CDDL</a>]</span> and its
-extensions described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
-<p id="section-1.1-3">The following fields from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> are imported and used: name, category,
-type, data, group_id, protocol_type, importance, RawInfo, and time-related
-fields.<a href="#section-1.1-3" class="pilcrow">¶</a></p>
-<p id="section-1.1-4">As is the case for <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog schema definitions in this document
-are intentionally agnostic to serialization formats. The choice of format is an
-implementation decision.<a href="#section-1.1-4" class="pilcrow">¶</a></p>
-</section>
-</div>
-</section>
-</div>
-<div id="overview">
-<section id="section-2">
-      <h2 id="name-overview">
-<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-overview" class="section-name selfRef">Overview</a>
-      </h2>
-<p id="section-2-1">This document describes how the QUIC protocol can be expressed in qlog using
-the schema defined in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>. QUIC protocol events are defined with a
-category, a name (the concatenation of "category" and "event"), an "importance",
-an optional "trigger", and "data" fields.<a href="#section-2-1" class="pilcrow">¶</a></p>
-<p id="section-2-2">Some data fields use complex datastructures. These are represented as enums or
-re-usable definitions, which are grouped together on the bottom of this document
-for clarity.<a href="#section-2-2" class="pilcrow">¶</a></p>
-<p id="section-2-3">When any event from this document is included in a qlog trace, the
-<code>protocol_type</code> qlog array field <span class="bcp14">MUST</span> contain an entry with the value "QUIC":<a href="#section-2-3" class="pilcrow">¶</a></p>
+<p id="section-1-2">The event schema namespace <code>quic</code> is defined, containing the categories:
+<code>connectivity</code> (<a href="#conn-ev" class="auto internal xref">Section 4</a>), <code>security</code> (<a href="#sec-ev" class="auto internal xref">Section 6</a>), <code>quic</code> <a href="#quic-ev" class="auto internal xref">Section 5</a>, and
+<code>recovery</code> <a href="#rec-ev" class="auto internal xref">Section 7</a>. Across these categories multiple events derive from the
+qlog abstract Event class (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-7" class="relref">Section 7</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>), each extending the
+"data" field and defining their "name" field values and semantics. Some data
+fields use complex datastructures. These are represented as enums or re-usable
+definitions, which are grouped together on the bottom of this document for
+clarity.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">When any event from this document is included in a qlog trace, the
+<code>protocol_type</code> qlog array field <span class="bcp14">MUST</span> contain an entry with the value "QUIC":<a href="#section-1-3" class="pilcrow">¶</a></p>
 <span id="name-protocoltype-extension-for-"></span><div id="protocoltype-extension-quic">
 <figure id="figure-1">
-        <div class="lang-cddl sourcecode" id="section-2-4.1">
+        <div class="lang-cddl sourcecode" id="section-1-4.1">
 <pre>
 $ProtocolType /= "QUIC"
 </pre>
@@ -1532,55 +1512,125 @@ $ProtocolType /= "QUIC"
 <a href="#name-protocoltype-extension-for-" class="selfRef">ProtocolType extension for QUIC</a>
         </figcaption></figure>
 </div>
-<p id="section-2-5">When the qlog <code>group_id</code> field is used, it is recommended to use QUIC's Original
+<div id="use-of-group-ids">
+<section id="section-1.1">
+        <h3 id="name-use-of-group-ids">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-use-of-group-ids" class="section-name selfRef">Use of group IDs</a>
+        </h3>
+<p id="section-1.1-1">When the qlog <code>group_id</code> field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
 contacting the server), as this is the only value that does not change over the
 course of the connection and can be used to link more advanced QUIC packets (e.g.,
 Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
 used as the qlog filename or file identifier, potentially suffixed by the
 vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
-trace of the connection with ODCID abcd1234).<a href="#section-2-5" class="pilcrow">¶</a></p>
+trace of the connection with ODCID abcd1234).<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
 <div id="raw-packet-and-frame-information">
-<section id="section-2.1">
+<section id="section-1.2">
         <h3 id="name-raw-packet-and-frame-inform">
-<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-raw-packet-and-frame-inform" class="section-name selfRef">Raw packet and frame information</a>
+<a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-raw-packet-and-frame-inform" class="section-name selfRef">Raw packet and frame information</a>
         </h3>
-<p id="section-2.1-1">QUIC packets always include an AEAD authentication tag at the end. In general,
+<p id="section-1.2-1">QUIC packets always include an AEAD authentication tag at the end. In general,
 the length of the AEAD tag depends on the TLS cipher suite, although all cipher
 suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
 lengths in fields of type RawInfo (as defined in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>) related to QUIC
-packets, the AEAD tag is regarded as a trailer.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+packets, the AEAD tag is regarded as a trailer.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="handling-unknown-connections">
-<section id="section-2.2">
+<section id="section-1.3">
         <h3 id="name-events-not-belonging-to-a-s">
-<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-events-not-belonging-to-a-s" class="section-name selfRef">Events not belonging to a single connection</a>
+<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-events-not-belonging-to-a-s" class="section-name selfRef">Events not belonging to a single connection</a>
         </h3>
-<p id="section-2.2-1">A single qlog event trace is typically associated with a single QUIC connection.
+<p id="section-1.3-1">A single qlog event trace is typically associated with a single QUIC connection.
 However, for several types of events (for example, a <a href="#quic-packetdropped" class="auto internal xref">Section 5.7</a>
 event with trigger value of <code>connection_unknown</code>), it can be impossible to tie
-them to a specific QUIC connection, especially on the server.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
-<p id="section-2.2-2">There are various ways to handle these events, each making certain tradeoffs
+them to a specific QUIC connection, especially on the server.<a href="#section-1.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.3-2">There are various ways to handle these events, each making certain tradeoffs
 between file size overhead, flexibility, ease of use, or ease of
-implementation. Some options include:<a href="#section-2.2-2" class="pilcrow">¶</a></p>
+implementation. Some options include:<a href="#section-1.3-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-2.2-3.1">
-            <p id="section-2.2-3.1.1">Log them in a separate endpoint-wide trace (or use a special <code>group_id</code> value)
-not associated with a single connection.<a href="#section-2.2-3.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-1.3-3.1">
+            <p id="section-1.3-3.1.1">Log them in a separate endpoint-wide trace (or use a special <code>group_id</code> value)
+not associated with a single connection.<a href="#section-1.3-3.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.2">
-            <p id="section-2.2-3.2.1">Log them in the most recently used trace.<a href="#section-2.2-3.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-1.3-3.2">
+            <p id="section-1.3-3.2.1">Log them in the most recently used trace.<a href="#section-1.3-3.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.3">
-            <p id="section-2.2-3.3.1">Use additional heuristics for connection identification (for example use the
-four-tuple in addition to the Connection ID).<a href="#section-2.2-3.3.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-1.3-3.3">
+            <p id="section-1.3-3.3.1">Use additional heuristics for connection identification (for example use the
+four-tuple in addition to the Connection ID).<a href="#section-1.3-3.3.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.4">
-            <p id="section-2.2-3.4.1">Buffer events until they can be assigned to a connection (for example for
-version negotiation and retry events).<a href="#section-2.2-3.4.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-1.3-3.4">
+            <p id="section-1.3-3.4.1">Buffer events until they can be assigned to a connection (for example for
+version negotiation and retry events).<a href="#section-1.3-3.4.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
+</section>
+</div>
+<div id="notational-conventions">
+<section id="section-1.4">
+        <h3 id="name-notational-conventions">
+<a href="#section-1.4" class="section-number selfRef">1.4. </a><a href="#name-notational-conventions" class="section-name selfRef">Notational Conventions</a>
+        </h3>
+<p id="section-1.4-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
+"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
+described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
+appear in all capitals, as shown here.<a href="#section-1.4-1" class="pilcrow">¶</a></p>
+<p id="section-1.4-2">The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language <span>[<a href="#CDDL" class="cite xref">CDDL</a>]</span> and its
+extensions described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.4-2" class="pilcrow">¶</a></p>
+<p id="section-1.4-3">The following fields from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> are imported and used: name, category,
+type, data, group_id, protocol_type, importance, RawInfo, and time-related
+fields.<a href="#section-1.4-3" class="pilcrow">¶</a></p>
+<p id="section-1.4-4">As is the case for <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog schema definitions in this document
+are intentionally agnostic to serialization formats. The choice of format is an
+implementation decision.<a href="#section-1.4-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="schema-def">
+<section id="section-2">
+      <h2 id="name-event-schema-definition">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-event-schema-definition" class="section-name selfRef">Event Schema Definition</a>
+      </h2>
+<p id="section-2-1">This document describes how the core QUIC protocol and selected extensions can
+be expressed in qlog using a newly defined event schema. Per the requirements in
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-8" class="relref">Section 8</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, this document registers the <code>quic</code> namespace and the
+following category identifiers and URIs.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2-2.1">
+          <p id="section-2-2.1.1"><code>connectivity</code> - <code>urn:ietf:params:qlog:events:quic#connectivity</code><a href="#section-2-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-2.2">
+          <p id="section-2-2.2.1"><code>security</code> - <code>urn:ietf:params:qlog:events:quic#security</code><a href="#section-2-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-2.3">
+          <p id="section-2-2.3.1"><code>quic</code> - <code>urn:ietf:params:qlog:events:quic#quic</code><a href="#section-2-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-2.4">
+          <p id="section-2-2.4.1"><code>recovery</code> - <code>urn:ietf:params:qlog:events:quic#recovery</code><a href="#section-2-2.4.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<div id="draft-event-schema-identification">
+<section id="section-2.1">
+        <h3 id="name-draft-event-schema-identifi">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-draft-event-schema-identifi" class="section-name selfRef">Draft Event Schema Identification</a>
+        </h3>
+<p id="section-2.1-1">This section is to be removed before publishing as an RFC.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-2">Only implementations of the final, published RFC can use the events belonging to
+the category with the URIs <code>urn:ietf:params:qlog:events:quic#connectivity</code>,
+<code>urn:ietf:params:qlog:events:quic#security</code>,
+<code>urn:ietf:params:qlog:events:quic#quic</code>, and
+<code>urn:ietf:params:qlog:events:quic#recovery</code>. Until such an RFC exists,
+implementations <span class="bcp14">MUST NOT</span> identify themselves using this URI.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">Implementations of draft versions of the event schema <span class="bcp14">MUST</span> append the string
+"-" and the corresponding draft number to the URI. For example, draft 07 of this
+document is identified using the URI <code>urn:ietf:params:qlog:events:quic#quic-07</code>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-4">The category identifier itself is not affected by this requirement.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1590,14 +1640,8 @@ version negotiation and retry events).<a href="#section-2.2-3.4.1" class="pilcro
       <h2 id="name-quic-event-overview">
 <a href="#section-3" class="section-number selfRef">3. </a><a href="#name-quic-event-overview" class="section-name selfRef">QUIC Event Overview</a>
       </h2>
-<p id="section-3-1">QUIC connections consist of different phases and interaction events. In order to
-model this, QUIC event types are divided into general categories: connectivity
-(<a href="#conn-ev" class="auto internal xref">Section 4</a>), security (<a href="#sec-ev" class="auto internal xref">Section 6</a>), quic <a href="#quic-ev" class="auto internal xref">Section 5</a>, and recovery
-<a href="#rec-ev" class="auto internal xref">Section 7</a>.<a href="#section-3-1" class="pilcrow">¶</a></p>
-<p id="section-3-2">As described in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-3.4.2" class="relref">Section 3.4.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog <code>name</code> field is the
-concatenation of category and type.<a href="#section-3-2" class="pilcrow">¶</a></p>
-<p id="section-3-3"><a href="#quic-events" class="auto internal xref">Table 1</a> summarizes the name value of each event type that is defined in
-this specification.<a href="#section-3-3" class="pilcrow">¶</a></p>
+<p id="section-3-1"><a href="#quic-events" class="auto internal xref">Table 1</a> summarizes the name value of each event type that is defined in
+this specification.<a href="#section-3-1" class="pilcrow">¶</a></p>
 <span id="name-quic-events"></span><div id="quic-events">
 <table class="center" id="table-1">
         <caption>
@@ -1853,13 +1897,13 @@ this specification.<a href="#section-3-3" class="pilcrow">¶</a></p>
         </tbody>
       </table>
 </div>
-<p id="section-3-5">QUIC events extend the <code>$ProtocolEventData</code> extension point defined in
+<p id="section-3-3">QUIC events extend the <code>$ProtocolEventData</code> extension point defined in
 <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>. Additionally, they allow for direct extensibility by their use of
 per-event extension points via the <code>$$</code> CDDL "group socket" syntax, as also
-described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3-5" class="pilcrow">¶</a></p>
+described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3-3" class="pilcrow">¶</a></p>
 <span id="name-quiceventdata-definition-an"></span><div id="quicevent-data-def">
 <figure id="figure-2">
-        <div class="lang-cddl sourcecode" id="section-3-6.1">
+        <div class="lang-cddl sourcecode" id="section-3-4.1">
 <pre>
 QuicEventData = ConnectivityServerListening /
                 ConnectivityConnectionStarted /
@@ -2661,7 +2705,7 @@ QUICPacketDropped = {
             <p id="section-5.7-5.2.1"><code>rejected</code>: limits reached, DDoS protection, unwilling to track more paths, duplicate packet<a href="#section-5.7-5.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.7-5.3">
-            <p id="section-5.7-5.3.1"><code>unsupported</code>: unknown or unsupported version. See also <a href="#handling-unknown-connections" class="auto internal xref">Section 2.2</a>.<a href="#section-5.7-5.3.1" class="pilcrow">¶</a></p>
+            <p id="section-5.7-5.3.1"><code>unsupported</code>: unknown or unsupported version. See also <a href="#handling-unknown-connections" class="auto internal xref">Section 1.3</a>.<a href="#section-5.7-5.3.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.7-5.4">
             <p id="section-5.7-5.4.1"><code>invalid</code>: packet parsing or validation error<a href="#section-5.7-5.4.1" class="pilcrow">¶</a></p>
@@ -4655,7 +4699,70 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
       <h2 id="name-iana-considerations">
 <a href="#section-10" class="section-number selfRef">10. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
       </h2>
-<p id="section-10-1">There are no IANA considerations.<a href="#section-10-1" class="pilcrow">¶</a></p>
+<p id="section-10-1">This document registers several new entries in the "qlog event category URIs"
+registry.<a href="#section-10-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-10-2">
+        <dt id="section-10-2.1">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.2">
+          <p id="section-10-2.2.1">urn:ietf:params:qlog:events:quic#connectivity<a href="#section-10-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.3">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.4">
+          <p id="section-10-2.4.1">Event definitions related to QUIC connectivity.<a href="#section-10-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.5">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.6">
+          <p id="section-10-2.6.1"><a href="#conn-ev" class="auto internal xref">Section 4</a><a href="#section-10-2.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.7">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.8">
+          <p id="section-10-2.8.1">urn:ietf:params:qlog:events:quic#security<a href="#section-10-2.8.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.9">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.10">
+          <p id="section-10-2.10.1">Event definitions related to QUIC security.<a href="#section-10-2.10.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.11">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.12">
+          <p id="section-10-2.12.1"><a href="#sec-ev" class="auto internal xref">Section 6</a><a href="#section-10-2.12.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.13">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.14">
+          <p id="section-10-2.14.1">urn:ietf:params:qlog:events:quic#quic<a href="#section-10-2.14.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.15">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.16">
+          <p id="section-10-2.16.1">Event definitions related to the QUIC wire image and other concerns.<a href="#section-10-2.16.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.17">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.18">
+          <p id="section-10-2.18.1"><a href="#quic-ev" class="auto internal xref">Section 5</a><a href="#section-10-2.18.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.19">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.20">
+          <p id="section-10-2.20.1">urn:ietf:params:qlog:events:quic#recovery<a href="#section-10-2.20.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.21">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.22">
+          <p id="section-10-2.22.1">Event definitions related to QUIC recovery.<a href="#section-10-2.22.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.23">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.24">
+          <p id="section-10-2.24.1"><a href="#conn-ev" class="auto internal xref">Section 4</a><a href="#section-10-2.24.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
 </section>
 </div>
 <section id="section-11">
@@ -4734,7 +4841,8 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
 Universities.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
 <p id="appendix-A-2">Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema and Hugo Landau for their feedback and suggestions.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
+Yamamoto, Christian Huitema, Hugo Landau and Jonathan Lennox for their feedback
+and suggestions.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="change-log">
