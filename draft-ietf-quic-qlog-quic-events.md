@@ -81,7 +81,7 @@ definitions, which are grouped together on the bottom of this document for
 clarity.
 
 When any event from this document is included in a qlog trace, the
-`protocol_type` qlog array field MUST contain an entry with the value "QUIC":
+`protocol_types` qlog array field MUST contain an entry with the value "QUIC":
 
 ~~~ cddl
 $ProtocolType /= "QUIC"
@@ -135,7 +135,7 @@ in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, category,
-type, data, group_id, protocol_type, importance, RawInfo, and time-related
+type, data, group_id, protocol_types, importance, RawInfo, and time-related
 fields.
 
 As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
