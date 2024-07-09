@@ -101,10 +101,10 @@ bottom of this document for clarity.
 {: #h3-events title="HTTP/3 Events"}
 
 When any event from this document is included in a qlog trace, the
-"protocol_types" qlog array field MUST contain an entry with the value "HTTP3":
+"protocol_types" qlog array field MUST contain an entry with the value "HTTP/3":
 
 ~~~ cddl
-$ProtocolType /= "HTTP3"
+$ProtocolType /= "HTTP/3"
 ~~~
 {: #protocoltype-extension-h3 title="ProtocolType extension for HTTP/3"}
 

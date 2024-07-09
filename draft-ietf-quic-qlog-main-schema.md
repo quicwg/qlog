@@ -509,7 +509,7 @@ JSON-SEQ serialization example:
     "description": "Description for this trace file (long)",
     "trace": {
       "common_fields": {
-        "protocol_types": ["QUIC","HTTP3"],
+        "protocol_types": ["QUIC","HTTP/3"],
         "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
         "time_format":"relative",
         "reference_time": 1553986553572
@@ -647,7 +647,7 @@ Example qlog event:
     "name": "quic:packet_sent",
     "data": { ... },
 
-    "protocol_types":  ["QUIC","HTTP3"],
+    "protocol_types":  ["QUIC","HTTP/3"],
     "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
     "time_format": "absolute",
@@ -767,7 +767,7 @@ $ProtocolType /= "UNKNOWN"
 ~~~
 {: #protocol-type-def title="ProtocolTypeList and ProtocolType socket definition"}
 
-For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3" protocol_type
+For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP/3" protocol_type
 entry values, see {{QLOG-QUIC}} and {{QLOG-H3}}.
 
 Typically however, all events in a single trace are of the same few protocols, and
@@ -817,7 +817,7 @@ and QUIC connection IDs:
     },
     {
         "time": 1553986553581,
-        "protocol_types": ["QUIC","HTTP3"],
+        "protocol_types": ["QUIC","HTTP/3"],
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
         "name": "quic:packet_sent",
         "data": { ... }
@@ -874,7 +874,7 @@ per-event instance:
 {
     "events": [{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_types": ["QUIC","HTTP3"],
+            "protocol_types": ["QUIC","HTTP/3"],
             "time_format": "relative",
             "reference_time": 1553986553572,
 
@@ -883,7 +883,7 @@ per-event instance:
             "data": { ... }
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_types": ["QUIC","HTTP3"],
+            "protocol_types": ["QUIC","HTTP/3"],
             "time_format": "relative",
             "reference_time": 1553986553572,
 
@@ -900,7 +900,7 @@ extracted to common_fields:
 {
     "common_fields": {
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "protocol_types": ["QUIC","HTTP3"],
+        "protocol_types": ["QUIC","HTTP/3"],
         "time_format": "relative",
         "reference_time": 1553986553572
     },
