@@ -509,7 +509,7 @@ JSON-SEQ serialization example:
     "description": "Description for this trace file (long)",
     "trace": {
       "common_fields": {
-        "protocol_type": ["QUIC","HTTP3"],
+        "protocol_types": ["QUIC","HTTP3"],
         "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
         "time_format":"relative",
         "reference_time": 1553986553572
@@ -612,7 +612,7 @@ Event = {
     data: $ProtocolEventData
     ? path: PathID
     ? time_format: TimeFormat
-    ? protocol_type: ProtocolTypeList
+    ? protocol_types: ProtocolTypeList
     ? group_id: GroupID
     ? system_info: SystemInformation
 
@@ -631,7 +631,7 @@ the specific values and semantics of common fields, in particular the `name` and
 `data` fields. Furthermore, they can optionally add custom fields.
 
 Each qlog event MAY contain the optional fields: "time_format"
-({{time-based-fields}}), "protocol_type" ({{protocol-type-field}}), "trigger"
+({{time-based-fields}}), "protocol_types" ({{protocol-type-field}}), "trigger"
 ({{trigger-field}}), and "group_id" ({{group-ids}}).
 
 Multiple events can appear in a Trace or TraceSeq and they might contain fields
@@ -647,7 +647,7 @@ Example qlog event:
     "name": "quic:packet_sent",
     "data": { ... },
 
-    "protocol_type":  ["QUIC","HTTP3"],
+    "protocol_types":  ["QUIC","HTTP3"],
     "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
     "time_format": "absolute",
@@ -755,7 +755,7 @@ event to couple the PathID value to a specific path configuration, see
 
 ## ProtocolTypeList and ProtocolType {#protocol-type-field}
 
-An event's "protocol_type" array field indicates to which protocols (or protocol
+An event's "protocol_types" array field indicates to which protocols (or protocol
 "stacks") this event belongs. This allows a single qlog file to aggregate traces
 of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).
@@ -845,7 +845,7 @@ and QUIC connection IDs:
 "events": [
     {
         "time": 1553986553579,
-        "protocol_type": ["TCP", "TLS", "HTTP2"],
+        "protocol_types": ["TCP", "TLS", "HTTP2"],
         "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
                    ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
         "name": "quic:packet_received",
@@ -853,7 +853,7 @@ and QUIC connection IDs:
     },
     {
         "time": 1553986553581,
-        "protocol_type": ["QUIC","HTTP3"],
+        "protocol_types": ["QUIC","HTTP3"],
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
         "name": "quic:packet_sent",
         "data": { ... }
@@ -893,7 +893,7 @@ SystemInformation = {
 As discussed in the previous sections, information for a typical qlog event varies
 in three main fields: "time", "name" and associated data. Additionally, there are
 also several more advanced fields that allow mixing events from different
-protocols and contexts inside of the same trace (for example "protocol_type" and
+protocols and contexts inside of the same trace (for example "protocol_types" and
 "group_id"). In most "normal" use cases however, the values of these advanced
 fields are consistent for each event instance (for example, a single trace
 contains events for a single QUIC connection).
@@ -910,7 +910,7 @@ per-event instance:
 {
     "events": [{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_type": ["QUIC","HTTP3"],
+            "protocol_types": ["QUIC","HTTP3"],
             "time_format": "relative",
             "reference_time": 1553986553572,
 
@@ -919,7 +919,7 @@ per-event instance:
             "data": { ... }
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_type": ["QUIC","HTTP3"],
+            "protocol_types": ["QUIC","HTTP3"],
             "time_format": "relative",
             "reference_time": 1553986553572,
 
@@ -936,7 +936,7 @@ extracted to common_fields:
 {
     "common_fields": {
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "protocol_type": ["QUIC","HTTP3"],
+        "protocol_types": ["QUIC","HTTP3"],
         "time_format": "relative",
         "reference_time": 1553986553572
     },
@@ -970,7 +970,7 @@ CommonFields = {
     ? path: PathID
     ? time_format: TimeFormat
     ? reference_time: float64
-    ? protocol_type: ProtocolTypeList
+    ? protocol_types: ProtocolTypeList
     ? group_id: GroupID
     * text => any
 }
