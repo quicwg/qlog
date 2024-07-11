@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-07-09T00:51:57.727902+00:00",
+  "timestamp": "2024-07-11T00:52:37.797783+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -7439,7 +7439,7 @@
       "labels": [],
       "body": "I am wondering if the new H3PriorityUpdated event (see #312) needs some specified `trigger` field values.\r\n\r\nConceptually, you can get the necessary context from other events surrounding this event (e.g., if you get a H3FrameParsed with a HEADERS containing a `priority` field preceding this, that's a clear indicator that's the trigger). However, there are cases where this is less clear (e.g., default initialization to a value different from the spec, local override due to configuration or other logic, merging of client and server-sent priorities for the same stream, ...)\r\n\r\nWe don't NEED to define any triggers here (`trigger` is always defined on event data, just not necessarily specced in qlog), but I'm wondering if some default values would be useful here @LPardue?\r\n\r\ne.g., \r\n```\r\n? trigger: \"client_directive\" / \"server_directive\" / \"local_override\" / \"local_default\" / \"merge\" / \"merge_override\"\r\n```",
       "createdAt": "2023-07-06T10:51:06Z",
-      "updatedAt": "2024-06-27T19:00:08Z",
+      "updatedAt": "2024-07-09T22:36:21Z",
       "closedAt": null,
       "comments": [
         {
@@ -7455,6 +7455,13 @@
           "body": "@LPardue any update on your opinion on this? I still think this would be useful in general, even if quiche can't pass it :) and i still like the values I proposed above. Are you opposed to a PR for this? ",
           "createdAt": "2024-03-01T16:09:56Z",
           "updatedAt": "2024-03-01T16:09:56Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I can live with it if you want to add it. But I'd like a better description of how the \"trigger\" field is a part of event data; see #429",
+          "createdAt": "2024-07-09T22:36:21Z",
+          "updatedAt": "2024-07-09T22:36:21Z"
         }
       ]
     },
@@ -8758,6 +8765,46 @@
       "body": "We seem to like to pluralize field names where the value is an array, so this seem inconsistent\r\n\r\n> ? protocol_type: ProtocolTypeList",
       "createdAt": "2024-07-07T22:48:41Z",
       "updatedAt": "2024-07-07T22:48:41Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 429,
+      "id": "I_kwDOCrLn6M6PAt_n",
+      "title": "How is \"trigger\" a common subfield of \"data\"?",
+      "url": "https://github.com/quicwg/qlog/issues/429",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "In https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-8.2-5 we say:\r\n\r\nAny generic key-value map type can be assigned to $ProtocolEventData (the only common \"data\" subfield defined in this document is the optional trigger field, see [Section 7.4](https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#trigger-field)).\r\n\r\nI don't quite understand how this is a common field, since there is no CDDL for it. Should we be defining `$ProtocolEventData` with the actual optional `?trigger` field? Or is is more like \"common by convention\" or some other magic. \r\n\r\nOr is it actually the case that \"trigger\" is a design pattern that concrete event definitions can adopt but that they must explicitly declare the trigger field in their event definition?",
+      "createdAt": "2024-07-09T22:25:37Z",
+      "updatedAt": "2024-07-09T22:41:42Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "FWIW: Of this 40 events we define for QUIC and H3, only 10 of them currently define a trigger field.",
+          "createdAt": "2024-07-09T22:41:42Z",
+          "updatedAt": "2024-07-09T22:41:42Z"
+        }
+      ]
+    },
+    {
+      "number": 431,
+      "id": "I_kwDOCrLn6M6PBMtO",
+      "title": "is parameters_restored missing fields defined in parameters_set?",
+      "url": "https://github.com/quicwg/qlog/issues/431",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "e.g. max_datagram_frame_size and grease_quic_bit",
+      "createdAt": "2024-07-10T00:17:36Z",
+      "updatedAt": "2024-07-10T00:17:36Z",
       "closedAt": null,
       "comments": []
     }
@@ -24043,6 +24090,84 @@
           ]
         }
       ]
+    },
+    {
+      "number": 427,
+      "id": "PR_kwDOCrLn6M502-EZ",
+      "title": "s/protocol_event/protocol_events",
+      "url": "https://github.com/quicwg/qlog/pull/427",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #426\r\n",
+      "createdAt": "2024-07-09T16:34:11Z",
+      "updatedAt": "2024-07-09T16:34:12Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "4eefbcf7ff239d297c24141caa031cd4667ed1bb",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "protocol_types",
+      "headRefOid": "e94bdc647960ff7d605033fff120fa4784c7520d",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 428,
+      "id": "PR_kwDOCrLn6M504uTb",
+      "title": "Use the common name for HTTP/3 in protocol_type",
+      "url": "https://github.com/quicwg/qlog/pull/428",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "It's not clear to me why we would want to use an incommon string like \"HTTP3\" instead of \"HTTP/3\", there's no issues with slashes I can think of and saving a single character doesn't seem important",
+      "createdAt": "2024-07-09T21:14:21Z",
+      "updatedAt": "2024-07-09T21:14:22Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "4eefbcf7ff239d297c24141caa031cd4667ed1bb",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "h3-with-a-slash",
+      "headRefOid": "d632b9111c5b57c9ce05e27703807b45068646e9",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 430,
+      "id": "PR_kwDOCrLn6M505H55",
+      "title": "Move trigger section under concrete data field section",
+      "url": "https://github.com/quicwg/qlog/pull/430",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "I'm still a bit confused by triggers, hence opening https://github.com/quicwg/qlog/issues/429. \r\n\r\nHowever, all this PR does is moves text as proposed in https://github.com/quicwg/qlog/issues/423.\r\n\r\nCloses https://github.com/quicwg/qlog/issues/423",
+      "createdAt": "2024-07-09T22:34:35Z",
+      "updatedAt": "2024-07-09T22:34:35Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "4eefbcf7ff239d297c24141caa031cd4667ed1bb",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "triggers-wtf",
+      "headRefOid": "b4df08759934f18a2016b634175c6f4beefcf2d2",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
