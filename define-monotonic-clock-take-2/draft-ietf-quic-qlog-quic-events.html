@@ -10,15 +10,15 @@
 <meta content="Marten Seemann" name="author">
 <meta content="Lucas Pardue" name="author">
 <meta content="
-       This document describes concrete qlog event definitions and their metadata for
-QUIC events. These events can then be embedded in the higher level schema defined
-in  . 
+       This document describes a qlog event schema containing concrete qlog event
+definitions and their metadata for the core QUIC protocol and selected
+extensions. 
     " name="description">
-<meta content="xml2rfc 3.21.0" name="generator">
+<meta content="xml2rfc 3.22.0" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-ietf-quic-qlog-quic-events-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.21.0
+  xml2rfc 3.22.0
     Python 3.12.3
     ConfigArgParse 1.7
     google-i18n-address 3.1.0
@@ -28,9 +28,8 @@ in  .
     platformdirs 4.2.2
     pycountry 22.3.5
     PyYAML 6.0.1
-    requests 2.31.0
+    requests 2.32.3
     setuptools 69.5.1
-    six 1.16.0
     wcwidth 0.2.13
 -->
 <link href="draft-ietf-quic-qlog-quic-events.xml" rel="alternate" type="application/rfc+xml">
@@ -1030,11 +1029,11 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">QUIC event definitions for qlog</td>
-<td class="right">June 2024</td>
+<td class="right">July 2024</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 29 December 2024</td>
+<td class="center">Expires 31 January 2025</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1047,12 +1046,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2024-06-27" class="published">27 June 2024</time>
+<time datetime="2024-07-30" class="published">30 July 2024</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2024-12-29">29 December 2024</time></dd>
+<dd class="expires"><time datetime="2025-01-31">31 January 2025</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1080,9 +1079,9 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <h1 id="title">QUIC event definitions for qlog</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">This document describes concrete qlog event definitions and their metadata for
-QUIC events. These events can then be embedded in the higher level schema defined
-in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">This document describes a qlog event schema containing concrete qlog event
+definitions and their metadata for the core QUIC protocol and selected
+extensions.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
 </section>
 <section class="note" id="section-note.1">
       <h2 id="name-note-to-readers">
@@ -1120,7 +1119,7 @@ various programming languages can be found at
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 29 December 2024.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 31 January 2025.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1150,21 +1149,27 @@ various programming languages can be found at
         </h2>
 <nav class="toc"><ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
-            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
-                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-notational-conventions" class="internal xref">Notational Conventions</a></p>
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-use-of-group-ids" class="internal xref">Use of group IDs</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2">
+                <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-raw-packet-and-frame-inform" class="internal xref">Raw packet and frame information</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3">
+                <p id="section-toc.1-1.1.2.3.1" class="keepWithNext"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-events-not-belonging-to-a-s" class="internal xref">Events not belonging to a single connection</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4">
+                <p id="section-toc.1-1.1.2.4.1"><a href="#section-1.4" class="auto internal xref">1.4</a>.  <a href="#name-notational-conventions" class="internal xref">Notational Conventions</a></p>
 </li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
-            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-overview" class="internal xref">Overview</a></p>
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-event-schema-definition" class="internal xref">Event Schema Definition</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
-                <p id="section-toc.1-1.2.2.1.1" class="keepWithNext"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-raw-packet-and-frame-inform" class="internal xref">Raw packet and frame information</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.2">
-                <p id="section-toc.1-1.2.2.2.1"><a href="#section-2.2" class="auto internal xref">2.2</a>.  <a href="#name-events-not-belonging-to-a-s" class="internal xref">Events not belonging to a single connection</a></p>
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-draft-event-schema-identifi" class="internal xref">Draft Event Schema Identification</a></p>
 </li>
             </ul>
 </li>
@@ -1481,50 +1486,24 @@ various programming languages can be found at
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">This document describes the values of the qlog name ("category" + "event") and
-"data" fields and their semantics for the QUIC protocol (see
+<p id="section-1-1">This document defines a qlog event schema (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-8" class="relref">Section 8</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>)
+containing concrete events for the core QUIC protocol (see
 <span>[<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>, <span>[<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span>, and
 <span>[<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>) and some of its extensions (see
 <span>[<a href="#QUIC-DATAGRAM" class="cite xref">QUIC-DATAGRAM</a>]</span> and <span>[<a href="#GREASEBIT" class="cite xref">GREASEBIT</a>]</span>).<a href="#section-1-1" class="pilcrow">¶</a></p>
-<div id="notational-conventions">
-<section id="section-1.1">
-        <h3 id="name-notational-conventions">
-<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-notational-conventions" class="section-name selfRef">Notational Conventions</a>
-        </h3>
-<p id="section-1.1-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
-"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
-described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
-appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
-<p id="section-1.1-2">The event and data structure definitions in ths document are expressed
-in the Concise Data Definition Language <span>[<a href="#CDDL" class="cite xref">CDDL</a>]</span> and its
-extensions described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
-<p id="section-1.1-3">The following fields from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> are imported and used: name, category,
-type, data, group_id, protocol_type, importance, RawInfo, and time-related
-fields.<a href="#section-1.1-3" class="pilcrow">¶</a></p>
-<p id="section-1.1-4">As is the case for <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog schema definitions in this document
-are intentionally agnostic to serialization formats. The choice of format is an
-implementation decision.<a href="#section-1.1-4" class="pilcrow">¶</a></p>
-</section>
-</div>
-</section>
-</div>
-<div id="overview">
-<section id="section-2">
-      <h2 id="name-overview">
-<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-overview" class="section-name selfRef">Overview</a>
-      </h2>
-<p id="section-2-1">This document describes how the QUIC protocol can be expressed in qlog using
-the schema defined in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>. QUIC protocol events are defined with a
-category, a name (the concatenation of "category" and "event"), an "importance",
-an optional "trigger", and "data" fields.<a href="#section-2-1" class="pilcrow">¶</a></p>
-<p id="section-2-2">Some data fields use complex datastructures. These are represented as enums or
-re-usable definitions, which are grouped together on the bottom of this document
-for clarity.<a href="#section-2-2" class="pilcrow">¶</a></p>
-<p id="section-2-3">When any event from this document is included in a qlog trace, the
-<code>protocol_type</code> qlog array field <span class="bcp14">MUST</span> contain an entry with the value "QUIC":<a href="#section-2-3" class="pilcrow">¶</a></p>
+<p id="section-1-2">The event schema namespace <code>quic</code> is defined, containing the categories:
+<code>connectivity</code> (<a href="#conn-ev" class="auto internal xref">Section 4</a>), <code>security</code> (<a href="#sec-ev" class="auto internal xref">Section 6</a>), <code>quic</code> <a href="#quic-ev" class="auto internal xref">Section 5</a>, and
+<code>recovery</code> <a href="#rec-ev" class="auto internal xref">Section 7</a>. Across these categories multiple events derive from the
+qlog abstract Event class (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-7" class="relref">Section 7</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>), each extending the
+"data" field and defining their "name" field values and semantics. Some data
+fields use complex datastructures. These are represented as enums or re-usable
+definitions, which are grouped together on the bottom of this document for
+clarity.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">When any event from this document is included in a qlog trace, the
+<code>protocol_type</code> qlog array field <span class="bcp14">MUST</span> contain an entry with the value "QUIC":<a href="#section-1-3" class="pilcrow">¶</a></p>
 <span id="name-protocoltype-extension-for-"></span><div id="protocoltype-extension-quic">
 <figure id="figure-1">
-        <div class="lang-cddl sourcecode" id="section-2-4.1">
+        <div class="lang-cddl sourcecode" id="section-1-4.1">
 <pre>
 $ProtocolType /= "QUIC"
 </pre>
@@ -1533,55 +1512,125 @@ $ProtocolType /= "QUIC"
 <a href="#name-protocoltype-extension-for-" class="selfRef">ProtocolType extension for QUIC</a>
         </figcaption></figure>
 </div>
-<p id="section-2-5">When the qlog <code>group_id</code> field is used, it is recommended to use QUIC's Original
+<div id="use-of-group-ids">
+<section id="section-1.1">
+        <h3 id="name-use-of-group-ids">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-use-of-group-ids" class="section-name selfRef">Use of group IDs</a>
+        </h3>
+<p id="section-1.1-1">When the qlog <code>group_id</code> field is used, it is recommended to use QUIC's Original
 Destination Connection ID (ODCID, the CID chosen by the client when first
 contacting the server), as this is the only value that does not change over the
 course of the connection and can be used to link more advanced QUIC packets (e.g.,
 Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
 used as the qlog filename or file identifier, potentially suffixed by the
 vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
-trace of the connection with ODCID abcd1234).<a href="#section-2-5" class="pilcrow">¶</a></p>
+trace of the connection with ODCID abcd1234).<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
 <div id="raw-packet-and-frame-information">
-<section id="section-2.1">
+<section id="section-1.2">
         <h3 id="name-raw-packet-and-frame-inform">
-<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-raw-packet-and-frame-inform" class="section-name selfRef">Raw packet and frame information</a>
+<a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-raw-packet-and-frame-inform" class="section-name selfRef">Raw packet and frame information</a>
         </h3>
-<p id="section-2.1-1">QUIC packets always include an AEAD authentication tag at the end. In general,
+<p id="section-1.2-1">QUIC packets always include an AEAD authentication tag at the end. In general,
 the length of the AEAD tag depends on the TLS cipher suite, although all cipher
 suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
 lengths in fields of type RawInfo (as defined in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>) related to QUIC
-packets, the AEAD tag is regarded as a trailer.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+packets, the AEAD tag is regarded as a trailer.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="handling-unknown-connections">
-<section id="section-2.2">
+<section id="section-1.3">
         <h3 id="name-events-not-belonging-to-a-s">
-<a href="#section-2.2" class="section-number selfRef">2.2. </a><a href="#name-events-not-belonging-to-a-s" class="section-name selfRef">Events not belonging to a single connection</a>
+<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-events-not-belonging-to-a-s" class="section-name selfRef">Events not belonging to a single connection</a>
         </h3>
-<p id="section-2.2-1">A single qlog event trace is typically associated with a single QUIC connection.
+<p id="section-1.3-1">A single qlog event trace is typically associated with a single QUIC connection.
 However, for several types of events (for example, a <a href="#quic-packetdropped" class="auto internal xref">Section 5.7</a>
 event with trigger value of <code>connection_unknown</code>), it can be impossible to tie
-them to a specific QUIC connection, especially on the server.<a href="#section-2.2-1" class="pilcrow">¶</a></p>
-<p id="section-2.2-2">There are various ways to handle these events, each making certain tradeoffs
+them to a specific QUIC connection, especially on the server.<a href="#section-1.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.3-2">There are various ways to handle these events, each making certain tradeoffs
 between file size overhead, flexibility, ease of use, or ease of
-implementation. Some options include:<a href="#section-2.2-2" class="pilcrow">¶</a></p>
+implementation. Some options include:<a href="#section-1.3-2" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-2.2-3.1">
-            <p id="section-2.2-3.1.1">Log them in a separate endpoint-wide trace (or use a special <code>group_id</code> value)
-not associated with a single connection.<a href="#section-2.2-3.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-1.3-3.1">
+            <p id="section-1.3-3.1.1">Log them in a separate endpoint-wide trace (or use a special <code>group_id</code> value)
+not associated with a single connection.<a href="#section-1.3-3.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.2">
-            <p id="section-2.2-3.2.1">Log them in the most recently used trace.<a href="#section-2.2-3.2.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-1.3-3.2">
+            <p id="section-1.3-3.2.1">Log them in the most recently used trace.<a href="#section-1.3-3.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.3">
-            <p id="section-2.2-3.3.1">Use additional heuristics for connection identification (for example use the
-four-tuple in addition to the Connection ID).<a href="#section-2.2-3.3.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-1.3-3.3">
+            <p id="section-1.3-3.3.1">Use additional heuristics for connection identification (for example use the
+four-tuple in addition to the Connection ID).<a href="#section-1.3-3.3.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-2.2-3.4">
-            <p id="section-2.2-3.4.1">Buffer events until they can be assigned to a connection (for example for
-version negotiation and retry events).<a href="#section-2.2-3.4.1" class="pilcrow">¶</a></p>
+          <li class="normal" id="section-1.3-3.4">
+            <p id="section-1.3-3.4.1">Buffer events until they can be assigned to a connection (for example for
+version negotiation and retry events).<a href="#section-1.3-3.4.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
+</section>
+</div>
+<div id="notational-conventions">
+<section id="section-1.4">
+        <h3 id="name-notational-conventions">
+<a href="#section-1.4" class="section-number selfRef">1.4. </a><a href="#name-notational-conventions" class="section-name selfRef">Notational Conventions</a>
+        </h3>
+<p id="section-1.4-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
+"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
+described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
+appear in all capitals, as shown here.<a href="#section-1.4-1" class="pilcrow">¶</a></p>
+<p id="section-1.4-2">The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language <span>[<a href="#CDDL" class="cite xref">CDDL</a>]</span> and its
+extensions described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.4-2" class="pilcrow">¶</a></p>
+<p id="section-1.4-3">The following fields from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> are imported and used: name, category,
+type, data, group_id, protocol_type, importance, RawInfo, and time-related
+fields.<a href="#section-1.4-3" class="pilcrow">¶</a></p>
+<p id="section-1.4-4">As is the case for <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog schema definitions in this document
+are intentionally agnostic to serialization formats. The choice of format is an
+implementation decision.<a href="#section-1.4-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="schema-def">
+<section id="section-2">
+      <h2 id="name-event-schema-definition">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-event-schema-definition" class="section-name selfRef">Event Schema Definition</a>
+      </h2>
+<p id="section-2-1">This document describes how the core QUIC protocol and selected extensions can
+be expressed in qlog using a newly defined event schema. Per the requirements in
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-8" class="relref">Section 8</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, this document registers the <code>quic</code> namespace and the
+following category identifiers and URIs.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-2-2.1">
+          <p id="section-2-2.1.1"><code>connectivity</code> - <code>urn:ietf:params:qlog:events:quic#connectivity</code><a href="#section-2-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-2.2">
+          <p id="section-2-2.2.1"><code>security</code> - <code>urn:ietf:params:qlog:events:quic#security</code><a href="#section-2-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-2.3">
+          <p id="section-2-2.3.1"><code>quic</code> - <code>urn:ietf:params:qlog:events:quic#quic</code><a href="#section-2-2.3.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-2-2.4">
+          <p id="section-2-2.4.1"><code>recovery</code> - <code>urn:ietf:params:qlog:events:quic#recovery</code><a href="#section-2-2.4.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<div id="draft-event-schema-identification">
+<section id="section-2.1">
+        <h3 id="name-draft-event-schema-identifi">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-draft-event-schema-identifi" class="section-name selfRef">Draft Event Schema Identification</a>
+        </h3>
+<p id="section-2.1-1">This section is to be removed before publishing as an RFC.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-2">Only implementations of the final, published RFC can use the events belonging to
+the category with the URIs <code>urn:ietf:params:qlog:events:quic#connectivity</code>,
+<code>urn:ietf:params:qlog:events:quic#security</code>,
+<code>urn:ietf:params:qlog:events:quic#quic</code>, and
+<code>urn:ietf:params:qlog:events:quic#recovery</code>. Until such an RFC exists,
+implementations <span class="bcp14">MUST NOT</span> identify themselves using this URI.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">Implementations of draft versions of the event schema <span class="bcp14">MUST</span> append the string
+"-" and the corresponding draft number to the URI. For example, draft 07 of this
+document is identified using the URI <code>urn:ietf:params:qlog:events:quic#quic-07</code>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-4">The category identifier itself is not affected by this requirement.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -1591,14 +1640,8 @@ version negotiation and retry events).<a href="#section-2.2-3.4.1" class="pilcro
       <h2 id="name-quic-event-overview">
 <a href="#section-3" class="section-number selfRef">3. </a><a href="#name-quic-event-overview" class="section-name selfRef">QUIC Event Overview</a>
       </h2>
-<p id="section-3-1">QUIC connections consist of different phases and interaction events. In order to
-model this, QUIC event types are divided into general categories: connectivity
-(<a href="#conn-ev" class="auto internal xref">Section 4</a>), security (<a href="#sec-ev" class="auto internal xref">Section 6</a>), quic <a href="#quic-ev" class="auto internal xref">Section 5</a>, and recovery
-<a href="#rec-ev" class="auto internal xref">Section 7</a>.<a href="#section-3-1" class="pilcrow">¶</a></p>
-<p id="section-3-2">As described in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-3.4.2" class="relref">Section 3.4.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog <code>name</code> field is the
-concatenation of category and type.<a href="#section-3-2" class="pilcrow">¶</a></p>
-<p id="section-3-3"><a href="#quic-events" class="auto internal xref">Table 1</a> summarizes the name value of each event type that is defined in
-this specification.<a href="#section-3-3" class="pilcrow">¶</a></p>
+<p id="section-3-1"><a href="#quic-events" class="auto internal xref">Table 1</a> summarizes the name value of each event type that is defined in
+this specification.<a href="#section-3-1" class="pilcrow">¶</a></p>
 <span id="name-quic-events"></span><div id="quic-events">
 <table class="center" id="table-1">
         <caption>
@@ -1854,13 +1897,13 @@ this specification.<a href="#section-3-3" class="pilcrow">¶</a></p>
         </tbody>
       </table>
 </div>
-<p id="section-3-5">QUIC events extend the <code>$ProtocolEventData</code> extension point defined in
+<p id="section-3-3">QUIC events extend the <code>$ProtocolEventData</code> extension point defined in
 <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>. Additionally, they allow for direct extensibility by their use of
 per-event extension points via the <code>$$</code> CDDL "group socket" syntax, as also
-described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3-5" class="pilcrow">¶</a></p>
+described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3-3" class="pilcrow">¶</a></p>
 <span id="name-quiceventdata-definition-an"></span><div id="quicevent-data-def">
 <figure id="figure-2">
-        <div class="lang-cddl sourcecode" id="section-3-6.1">
+        <div class="lang-cddl sourcecode" id="section-3-4.1">
 <pre>
 QuicEventData = ConnectivityServerListening /
                 ConnectivityConnectionStarted /
@@ -1914,7 +1957,7 @@ $ProtocolEventData /= QuicEventData
 <a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-server_listening" class="section-name selfRef">server_listening</a>
         </h3>
 <p id="section-4.1-1">Emitted when the server starts accepting connections. It has Extra importance
-level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
 <span id="name-connectivityserverlistening"></span><div id="connectivity-serverlistening-def">
 <figure id="figure-3">
           <div class="lang-cddl sourcecode" id="section-4.1-2.1">
@@ -1950,7 +1993,7 @@ IP and/or port information.<a href="#section-4.1-3" class="pilcrow">¶</a></p>
 and accepting (server-perspective) new connections. Note that while there is
 overlap with the <code>connection_state_updated</code> event, this event is separate event
 in order to capture additional data that can be useful to log. It has Base
-importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
 <span id="name-connectivityconnectionstart"></span><div id="connectivity-connectionstarted-def">
 <figure id="figure-4">
           <div class="lang-cddl sourcecode" id="section-4.2-2.1">
@@ -1986,21 +2029,30 @@ IP and/or port information.<a href="#section-4.2-3" class="pilcrow">¶</a></p>
         </h3>
 <p id="section-4.3-1">The <code>connection_closed</code> event is used for logging when a connection was closed,
 typically when an error or timeout occurred. It has Base importance level; see
-<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
 <p id="section-4.3-2">Note that this event has overlap with the <code>connection_state_updated</code> event, as
 well as the CONNECTION_CLOSE frame. However, in practice, when analyzing large
 deployments, it can be useful to have a single event representing a
 <code>connection_closed</code> event, which also includes an additional reason field to
 provide more information. Furthermore, it is useful to log closures due to
 timeouts, which are difficult to reflect using the other options.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
-<p id="section-4.3-3">In QUIC there are two main connection-closing error categories: connection and
+<p id="section-4.3-3">The <code>connection_closed</code> event is intended to be logged either when the local
+endpoint silently discards the connection due to an idle timeout, when a
+CONNECTION_CLOSE frame is sent (the connection enters the 'closing' state on the
+sender side), when a CONNECTION_CLOSE frame is received (the connection enters
+the 'draining' state on the receiver side) or when a Stateless Reset packet is
+received (the connection is discarded at the receiver side).
+Connectivity-related updates after this point (e.g., exiting a 'closing' or
+'draining' state), should be logged using the <code>connection_state_updated</code> event
+instead.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
+<p id="section-4.3-4">In QUIC there are two main connection-closing error categories: connection and
 application errors. They have well-defined error codes and semantics. Next to
 these however, there can be internal errors that occur that may or may not get
 mapped to the official error codes in implementation-specific ways. As such,
-multiple error codes can be set on the same event to reflect this.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
+multiple error codes can be set on the same event to reflect this.<a href="#section-4.3-4" class="pilcrow">¶</a></p>
 <span id="name-connectivityconnectionclose"></span><div id="connectivity-connectionclosed-def">
 <figure id="figure-5">
-          <div class="lang-cddl sourcecode" id="section-4.3-4.1">
+          <div class="lang-cddl sourcecode" id="section-4.3-5.1">
 <pre>
 ConnectivityConnectionClosed = {
 
@@ -2014,15 +2066,14 @@ ConnectivityConnectionClosed = {
     ? internal_code: uint32
     ? reason: text
     ? trigger:
-        "clean" /
-        "handshake_timeout" /
         "idle_timeout" /
-        ; this is called the "immediate close" in the QUIC RFC
+        "application" /
         "error" /
-        "stateless_reset" /
         "version_mismatch" /
-        ; for example HTTP/3's GOAWAY frame
-        "application"
+        ; when received from peer
+        "stateless_reset" /
+        ; when it is unclear what triggered the CONNECTION_CLOSE
+        "unspecified"
 
     * $$connectivity-connectionclosed-extension
 }
@@ -2032,6 +2083,10 @@ ConnectivityConnectionClosed = {
 <a href="#name-connectivityconnectionclose" class="selfRef">ConnectivityConnectionClosed definition</a>
           </figcaption></figure>
 </div>
+<p id="section-4.3-6">Loggers <span class="bcp14">SHOULD</span> use the most descriptive trigger for a <code>connection_closed</code> event
+that they are able to deduce. This is often clear at the peer closing the
+connection (and sending the CONNECTION_CLOSE), but can sometimes be more opaque
+at the receiving end.<a href="#section-4.3-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="connectivity-connectionidupdated">
@@ -2043,7 +2098,7 @@ ConnectivityConnectionClosed = {
 current Connection ID. As this typically happens only sparingly over the course
 of a connection, using this event is more efficient than logging the observed
 CID with each and every <code>packet_sent</code> or <code>packet_received</code> events. It has Base
-importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
 <p id="section-4.4-2">The <code>connection_id_updated</code> event is viewed from the perspective of the endpoint
 applying the new ID. As such, when the endpoint receives a new connection ID
 from the peer, the owner field will be "remote". When the endpoint updates its
@@ -2075,7 +2130,7 @@ ConnectivityConnectionIDUpdated = {
 <p id="section-4.5-1">The <code>spin_bit_updated</code> event conveys information about the QUIC latency spin
 bit; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-17.4" class="relref">Section 17.4</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. The event is emitted when the spin
 bit changes value, it <span class="bcp14">SHOULD NOT</span> be emitted if the spin bit is set without
-changing its value. It has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.5-1" class="pilcrow">¶</a></p>
+changing its value. It has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.5-1" class="pilcrow">¶</a></p>
 <span id="name-connectivityspinbitupdated-"></span><div id="connectivity-spinbitupdated-def">
 <figure id="figure-7">
           <div class="lang-cddl sourcecode" id="section-4.5-2.1">
@@ -2100,7 +2155,7 @@ ConnectivitySpinBitUpdated = {
         </h3>
 <p id="section-4.6-1">The <code>connection_state_updated</code> event is used to track progress through QUIC's
 complex handshake and connection close procedures. It has Base importance
-level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.6-1" class="pilcrow">¶</a></p>
+level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.6-1" class="pilcrow">¶</a></p>
 <p id="section-4.6-2"><span>[<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span> does not contain an exhaustive flow diagram with possible
 connection states nor their transitions (though some are explicitly mentioned,
 like the 'closing' and 'draining' states). As such, this document
@@ -2240,7 +2295,7 @@ fields omitted implicitly indicates the path has been abandoned.<a href="#sectio
         </h3>
 <p id="section-4.8-1">The <code>mtu_updated</code> event indicates that the estimated Path MTU was updated. This
 happens as part of the Path MTU discovery process. It has Extra importance
-level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.8-1" class="pilcrow">¶</a></p>
+level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-4.8-1" class="pilcrow">¶</a></p>
 <span id="name-connectivitymtuupdated-defi"></span><div id="connectivity-mtuupdated-def">
 <figure id="figure-10">
           <div class="lang-cddl sourcecode" id="section-4.8-2.1">
@@ -2275,7 +2330,7 @@ ConnectivityMTUUpdated = {
         <h3 id="name-version_information">
 <a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-version_information" class="section-name selfRef">version_information</a>
         </h3>
-<p id="section-5.1-1">The <code>version_information</code> event supports QUIC version negotiation; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-6" class="relref">Section 6</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<p id="section-5.1-1">The <code>version_information</code> event supports QUIC version negotiation; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-6" class="relref">Section 6</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <p id="section-5.1-2">QUIC endpoints each have their own list of QUIC versions they support. The
 client uses the most likely version in their first initial. If the server does
 not support that version, it replies with a Version Negotiation packet, which
@@ -2333,7 +2388,7 @@ logged without the <code>chosen_version</code> set<a href="#section-5.1-5.4.1" c
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-alpn_information" class="section-name selfRef">alpn_information</a>
         </h3>
 <p id="section-5.2-1">The <code>alpn_information</code> event supports Application-Layer Protocol Negotiation
-(ALPN) over the QUIC transport; see <span>[<a href="#RFC7301" class="cite xref">RFC7301</a>]</span> and <span><a href="https://rfc-editor.org/rfc/rfc9000#section-7.4" class="relref">Section 7.4</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+(ALPN) over the QUIC transport; see <span>[<a href="#RFC7301" class="cite xref">RFC7301</a>]</span> and <span><a href="https://rfc-editor.org/rfc/rfc9000#section-7.4" class="relref">Section 7.4</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
 <p id="section-5.2-2">QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 <p id="section-5.2-3">ALPN identifiers are byte sequences, that may be possible to present as UTF-8.
 The <code>ALPNIdentifier</code>` type supports either format. Implementations <span class="bcp14">SHOULD</span> log at
@@ -2391,7 +2446,7 @@ and <code>chosen_alpn</code> set.<a href="#section-5.2-6.4.1" class="pilcrow">¶
 (transport parameters, TLS ciphers, etc.) into a single event. This is done to
 minimize the amount of events and to decouple conceptual setting impacts from
 their underlying mechanism for easier high-level reasoning. The event has Core
-importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
 <p id="section-5.3-2">Most of these settings are typically set once and never change. However, they
 are usually set at different times during the connection, so there will
 regularly be several instances of this event with different fields set.<a href="#section-5.3-2" class="pilcrow">¶</a></p>
@@ -2473,7 +2528,7 @@ PreferredAddress = {
 <p id="section-5.4-1">When using QUIC 0-RTT, clients are expected to remember and restore the server's
 transport parameters from the previous connection. The <code>parameters_restored</code>
 event is used to indicate which parameters were restored and to which values
-when utilizing 0-RTT. It has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.4-1" class="pilcrow">¶</a></p>
+when utilizing 0-RTT. It has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.4-1" class="pilcrow">¶</a></p>
 <p id="section-5.4-2">Note that not all transport parameters should be restored (many are even
 prohibited from being re-utilized). The ones listed here are the ones expected
 to be useful for correct 0-RTT usage.<a href="#section-5.4-2" class="pilcrow">¶</a></p>
@@ -2509,7 +2564,7 @@ QUICParametersRestored = {
 <a href="#section-5.5" class="section-number selfRef">5.5. </a><a href="#name-packet_sent" class="section-name selfRef">packet_sent</a>
         </h3>
 <p id="section-5.5-1">The <code>packet_sent</code> event indicates a QUIC-level packet was sent. It has Core
-importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.5-1" class="pilcrow">¶</a></p>
+importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.5-1" class="pilcrow">¶</a></p>
 <span id="name-quicpacketsent-definition"></span><div id="quic-packetsent-def">
 <figure id="figure-15">
           <div class="lang-cddl sourcecode" id="section-5.5-2.1">
@@ -2517,7 +2572,6 @@ importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft
 QUICPacketSent = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
-    ? is_coalesced: bool .default false
 
     ; only if header.packet_type === "stateless_reset"
     ; is always 128 bits in length.
@@ -2553,8 +2607,8 @@ QUICPacketSent = {
 <p id="section-5.5-3">The <code>encryption_level</code> and <code>packet_number_space</code> are not logged explicitly:
 the <code>header.packet_type</code> specifies this by inference (assuming correct
 implementation)<a href="#section-5.5-3" class="pilcrow">¶</a></p>
-<p id="section-5.5-4">For more details on <code>datagram_id</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>. It is only needed
-when keeping track of packet coalescing.<a href="#section-5.5-4" class="pilcrow">¶</a></p>
+<p id="section-5.5-4">The <code>datagram_id</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.5-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetreceived">
@@ -2563,7 +2617,7 @@ when keeping track of packet coalescing.<a href="#section-5.5-4" class="pilcrow"
 <a href="#section-5.6" class="section-number selfRef">5.6. </a><a href="#name-packet_received" class="section-name selfRef">packet_received</a>
         </h3>
 <p id="section-5.6-1">The <code>packet_received</code> event indicates a QUIC-level packet was received. It has
-Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.6-1" class="pilcrow">¶</a></p>
+Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.6-1" class="pilcrow">¶</a></p>
 <span id="name-quicpacketreceived-definiti"></span><div id="quic-packetreceived-def">
 <figure id="figure-16">
           <div class="lang-cddl sourcecode" id="section-5.6-2.1">
@@ -2571,7 +2625,6 @@ Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/
 QUICPacketReceived = {
     header: PacketHeader
     ? frames: [* $QuicFrame]
-    ? is_coalesced: bool .default false
 
     ; only if header.packet_type === "stateless_reset"
     ; Is always 128 bits in length.
@@ -2597,9 +2650,9 @@ QUICPacketReceived = {
 </div>
 <p id="section-5.6-3">The <code>encryption_level</code> and <code>packet_number_space</code> are not logged explicitly: the
 <code>header.packet_type</code> specifies this by inference (assuming correct
-implementation)<a href="#section-5.6-3" class="pilcrow">¶</a></p>
-<p id="section-5.6-4">For more details on <code>datagram_id</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>. It is only needed
-when keeping track of packet coalescing.<a href="#section-5.6-4" class="pilcrow">¶</a></p>
+implementation).<a href="#section-5.6-3" class="pilcrow">¶</a></p>
+<p id="section-5.6-4">The <code>datagram_id</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.6-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetdropped">
@@ -2608,7 +2661,7 @@ when keeping track of packet coalescing.<a href="#section-5.6-4" class="pilcrow"
 <a href="#section-5.7" class="section-number selfRef">5.7. </a><a href="#name-packet_dropped" class="section-name selfRef">packet_dropped</a>
         </h3>
 <p id="section-5.7-1">The <code>packet_dropped</code> event indicates a QUIC-level packet was dropped. It has
-Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.7-1" class="pilcrow">¶</a></p>
+Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.7-1" class="pilcrow">¶</a></p>
 <p id="section-5.7-2">The trigger field indicates a general reason category for dropping the packet,
 while the details field can contain additional implementation-specific
 information.<a href="#section-5.7-2" class="pilcrow">¶</a></p>
@@ -2652,7 +2705,7 @@ QUICPacketDropped = {
             <p id="section-5.7-5.2.1"><code>rejected</code>: limits reached, DDoS protection, unwilling to track more paths, duplicate packet<a href="#section-5.7-5.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.7-5.3">
-            <p id="section-5.7-5.3.1"><code>unsupported</code>: unknown or unsupported version. See also <a href="#handling-unknown-connections" class="auto internal xref">Section 2.2</a>.<a href="#section-5.7-5.3.1" class="pilcrow">¶</a></p>
+            <p id="section-5.7-5.3.1"><code>unsupported</code>: unknown or unsupported version. See also <a href="#handling-unknown-connections" class="auto internal xref">Section 1.3</a>.<a href="#section-5.7-5.3.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-5.7-5.4">
             <p id="section-5.7-5.4.1"><code>invalid</code>: packet parsing or validation error<a href="#section-5.7-5.4.1" class="pilcrow">¶</a></p>
@@ -2673,7 +2726,8 @@ QUICPacketDropped = {
             <p id="section-5.7-5.9.1"><code>general</code>: situations not clearly covered in the other categories<a href="#section-5.7-5.9.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-5.7-6">For more details on <code>datagram_id</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.7-6" class="pilcrow">¶</a></p>
+<p id="section-5.7-6">The <code>datagram_id</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.7-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetbuffered">
@@ -2684,7 +2738,7 @@ QUICPacketDropped = {
 <p id="section-5.8-1">The <code>packet_buffered</code> event is emitted when a packet is buffered because it
 cannot be processed yet. Typically, this is because the packet cannot be parsed
 yet, and thus only the full packet contents can be logged when it was parsed in
-a <code>packet_received</code> event. The event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.8-1" class="pilcrow">¶</a></p>
+a <code>packet_received</code> event. The event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.8-1" class="pilcrow">¶</a></p>
 <span id="name-quicpacketbuffered-definiti"></span><div id="quic-packetbuffered-def">
 <figure id="figure-18">
           <div class="lang-cddl sourcecode" id="section-5.8-2.1">
@@ -2712,8 +2766,8 @@ QUICPacketBuffered = {
 <a href="#name-quicpacketbuffered-definiti" class="selfRef">QUICPacketBuffered definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.8-3">For more details on <code>datagram_id</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>. It is only needed
-when keeping track of packet coalescing.<a href="#section-5.8-3" class="pilcrow">¶</a></p>
+<p id="section-5.8-3">The <code>datagram_id</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.8-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetsacked">
@@ -2723,7 +2777,7 @@ when keeping track of packet coalescing.<a href="#section-5.8-3" class="pilcrow"
         </h3>
 <p id="section-5.9-1">The <code>packets_acked</code> event is emitted when a (group of) sent packet(s) is
 acknowledged by the remote peer <em>for the first time</em>. It has Extra importance
-level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.9-1" class="pilcrow">¶</a></p>
+level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.9-1" class="pilcrow">¶</a></p>
 <p id="section-5.9-2">This information could also be deduced from the contents of received ACK frames.
 However, ACK frames require additional processing logic to determine when a
 given packet is acknowledged for the first time, as QUIC uses ACK ranges which
@@ -2755,9 +2809,10 @@ number space a typical QUIC connection will use.<a href="#section-5.9-4" class="
         <h3 id="name-udp_datagrams_sent">
 <a href="#section-5.10" class="section-number selfRef">5.10. </a><a href="#name-udp_datagrams_sent" class="section-name selfRef">udp_datagrams_sent</a>
         </h3>
-<p id="section-5.10-1">When one or more UDP-level datagrams are passed to the socket. This is useful
-for determining how QUIC packet buffers are drained to the OS. The event has
-Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.10-1" class="pilcrow">¶</a></p>
+<p id="section-5.10-1">The <code>datagrams_sent</code> event indicates when one or more UDP-level datagrams are
+passed to the underlying network socket. This is useful for determining how QUIC
+packet buffers are drained to the OS. The event has Extra importance level; see
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.10-1" class="pilcrow">¶</a></p>
 <span id="name-quicudpdatagramssent-defini"></span><div id="quic-udpdatagramssent-def">
 <figure id="figure-20">
           <div class="lang-cddl sourcecode" id="section-5.10-2.1">
@@ -2787,13 +2842,18 @@ QUICUDPDatagramsSent = {
           </figcaption></figure>
 </div>
 <p id="section-5.10-3">Since QUIC implementations rarely control UDP logic directly, the raw data
-excludes UDP-level headers in all fields.<a href="#section-5.10-3" class="pilcrow">¶</a></p>
-<p id="section-5.10-4">The <code>datagram_id</code> is a qlog-specific concept to allow tracking of QUIC packet
-coalescing inside UDP datagrams. Since QUIC generates many UDP datagrams, unique
-identifiers are required to be able to track them individually in qlog traces.
-However, neither UDP nor QUIC exchanges datagram identifiers on the wire.
-Selecting identifier values is thus left to qlog implementations, which should
-consider how to generate unique values within the scope of their created traces.<a href="#section-5.10-4" class="pilcrow">¶</a></p>
+excludes UDP-level headers in all RawInfo fields.<a href="#section-5.10-3" class="pilcrow">¶</a></p>
+<p id="section-5.10-4">Multiple QUIC packets can be coalesced in a single UDP datagram, especially
+during the handshake (see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-12.2" class="relref">Section 12.2</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>). However, neither
+QUIC nor UDP themselves provide an explicit mechanism to track this behaviour.
+To make it possible for implementations to track coalescing across packet-level
+and datagram-level qlog events, this document defines a qlog-specific mechanism
+for tracking coalescing across packet-level and datagram-level qlog events: a
+"datagram identifier" carried in <code>datagram_id</code> fields. qlog implementations that
+want to track coalescing can use this mechanism, where multiple events sharing
+the same <code>datagram_id</code> indicate they were coalesced in the same UDP datagram.
+The selection of specific and locally-unique <code>datagram_id</code> values is an
+implementation choice.<a href="#section-5.10-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-udpdatagramsreceived">
@@ -2803,7 +2863,7 @@ consider how to generate unique values within the scope of their created traces.
         </h3>
 <p id="section-5.11-1">When one or more UDP-level datagrams are received from the socket. This is
 useful for determining how datagrams are passed to the user space stack from the
-OS. The event has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.11-1" class="pilcrow">¶</a></p>
+OS. The event has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.11-1" class="pilcrow">¶</a></p>
 <span id="name-quicudpdatagramsreceived-de"></span><div id="quic-udpdatagramsreceived-def">
 <figure id="figure-21">
           <div class="lang-cddl sourcecode" id="section-5.11-2.1">
@@ -2832,7 +2892,8 @@ QUICUDPDatagramsReceived = {
 <a href="#name-quicudpdatagramsreceived-de" class="selfRef">QUICUDPDatagramsReceived definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.11-3">For more details on <code>datagram_ids</code>, see <a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.11-3" class="pilcrow">¶</a></p>
+<p id="section-5.11-3">The <code>datagram_ids</code> field is used to track packet coalescing, see
+<a href="#quic-udpdatagramssent" class="auto internal xref">Section 5.10</a>.<a href="#section-5.11-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-udpdatagramdropped">
@@ -2843,7 +2904,7 @@ QUICUDPDatagramsReceived = {
 <p id="section-5.12-1">When a UDP-level datagram is dropped. This is typically done if it does not
 contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
 other reasons, the <code>packet_dropped</code> event (<a href="#quic-packetdropped" class="auto internal xref">Section 5.7</a>) should be
-used instead. The event has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.12-1" class="pilcrow">¶</a></p>
+used instead. The event has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.12-1" class="pilcrow">¶</a></p>
 <span id="name-quicudpdatagramdropped-defi"></span><div id="quic-udpdatagramdropped-def">
 <figure id="figure-22">
           <div class="lang-cddl sourcecode" id="section-5.12-2.1">
@@ -2873,7 +2934,7 @@ QUICUDPDatagramDropped = {
 QUIC stream is updated; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-3" class="relref">Section 3</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. Most of this can be
 inferred from several types of frames going over the wire, but it's much easier
 to have explicit signals for these state changes. The event has Base importance
-level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.13-1" class="pilcrow">¶</a></p>
+level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.13-1" class="pilcrow">¶</a></p>
 <span id="name-quicstreamstateupdated-defi"></span><div id="quic-streamstateupdated-def">
 <figure id="figure-23">
           <div class="lang-cddl sourcecode" id="section-5.13-2.1">
@@ -2938,7 +2999,7 @@ with both types equally.<a href="#section-5.13-3" class="pilcrow">¶</a></p>
         </h3>
 <p id="section-5.14-1">The <code>frame_processed</code> event is intended to prevent a large proliferation of
 specific purpose events (e.g., <code>packets_acknowledged</code>, <code>flow_control_updated</code>,
-<code>stream_data_received</code>). It has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.14-1" class="pilcrow">¶</a></p>
+<code>stream_data_received</code>). It has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.14-1" class="pilcrow">¶</a></p>
 <p id="section-5.14-2">Implementations have the opportunity to (selectively) log this type of
 signal without having to log packet-level details (e.g., in <code>packet_received</code>).
 Since for almost all cases, the effects of applying a frame to the internal state
@@ -3009,7 +3070,7 @@ STREAM frames received over two packets would have the fields serialized as:<a h
 <p id="section-5.15-1">The <code>stream_data_moved</code> event is used to indicate when QUIC stream data moves
 between the different layers. This helps make clear the flow of data, how long
 data remains in various buffers, and the overheads introduced by individual
-layers. The event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.15-1" class="pilcrow">¶</a></p>
+layers. The event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.15-1" class="pilcrow">¶</a></p>
 <p id="section-5.15-2">For example, it can be useful to understand when when data moves from an
 application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
 Similarly, when data moves from the application protocol layer into a
@@ -3020,11 +3081,18 @@ received packet) or in larger batches (for example, all QUIC packets are
 processed first and afterwards the application layer reads from the streams with
 newly available data). This can help identify bottlenecks, flow control issues,
 or scheduling problems.<a href="#section-5.15-3" class="pilcrow">¶</a></p>
-<p id="section-5.15-4">This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
-see the <code>datagram_data_moved</code> event defined in <a href="#quic-datagramdatamoved" class="auto internal xref">Section 5.16</a>.<a href="#section-5.15-4" class="pilcrow">¶</a></p>
+<p id="section-5.15-4">The <code>additional_info</code> field supports optional logging of information
+related to the stream state. For example, an application layer that moves data
+into transport and simultaneously ends the stream, can log <code>fin_set</code>. As
+another example, a transport layer that has received an instruction to reset a
+stream can indicate this to the application layer using <code>reset_stream</code>.
+In both cases, the length-carrying fields (<code>length</code> or <code>raw</code>) can be
+omitted or contain zero values.<a href="#section-5.15-4" class="pilcrow">¶</a></p>
+<p id="section-5.15-5">This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
+see the <code>datagram_data_moved</code> event defined in <a href="#quic-datagramdatamoved" class="auto internal xref">Section 5.16</a>.<a href="#section-5.15-5" class="pilcrow">¶</a></p>
 <span id="name-quicstreamdatamoved-definit"></span><div id="quic-streamdatamoved-def">
 <figure id="figure-25">
-          <div class="lang-cddl sourcecode" id="section-5.15-5.1">
+          <div class="lang-cddl sourcecode" id="section-5.15-6.1">
 <pre>
 QUICStreamDataMoved = {
     ? stream_id: uint64
@@ -3032,8 +3100,12 @@ QUICStreamDataMoved = {
 
     ; byte length of the moved data
     ? length: uint64
+
     ? from: $DataLocation
     ? to: $DataLocation
+
+    ? additional_info: $DataMovedAdditionalInfo
+
     ? raw: RawInfo
 
     * $$quic-streamdatamoved-extension
@@ -3043,6 +3115,9 @@ $DataLocation /=  "user" /
                   "application" /
                   "transport" /
                   "network"
+
+$DataMovedAdditionalInfo /= "fin_set" /
+                            "stream_reset"
 </pre>
 </div>
 <figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
@@ -3060,7 +3135,7 @@ $DataLocation /=  "user" /
 data (see <span>[<a href="#RFC9221" class="cite xref">RFC9221</a>]</span>) moves between the different layers. This helps make
 clear the flow of data, how long data remains in various buffers, and the
 overheads introduced by individual layers. The event has Base importance level;
-see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.16-1" class="pilcrow">¶</a></p>
+see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.16-1" class="pilcrow">¶</a></p>
 <p id="section-5.16-2">For example, passing from the application protocol (e.g., WebTransport) to QUIC
 Datagram Frame buffers and vice versa. Similarly, when data moves from the
 application protocol layer into a user-facing application such as a web browser.<a href="#section-5.16-2" class="pilcrow">¶</a></p>
@@ -3169,7 +3244,7 @@ MigrationState =
         <h3 id="name-key_updated">
 <a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-key_updated" class="section-name selfRef">key_updated</a>
         </h3>
-<p id="section-6.1-1">The <code>key_updated</code> event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<p id="section-6.1-1">The <code>key_updated</code> event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
 <span id="name-securitykeyupdated-definiti"></span><div id="security-keyupdated-def">
 <figure id="figure-28">
           <div class="lang-cddl sourcecode" id="section-6.1-2.1">
@@ -3206,7 +3281,7 @@ the packet header is the least significant bit of the key phase.<a href="#sectio
         <h3 id="name-key_discarded">
 <a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-key_discarded" class="section-name selfRef">key_discarded</a>
         </h3>
-<p id="section-6.2-1">The <code>key_discarded</code> event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-1">The <code>key_discarded</code> event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
 <span id="name-securitykeydiscarded-defini"></span><div id="security-keydiscarded-def">
 <figure id="figure-29">
           <div class="lang-cddl sourcecode" id="section-6.2-2.1">
@@ -3252,7 +3327,7 @@ recovery approaches and various congestion control algorithms. Tool creators
         </h3>
 <p id="section-7.1-1">The <code>parameters_set</code> event groups initial parameters from both loss detection
 and congestion control into a single event. It has Base importance level; see
-<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
 <p id="section-7.1-2">All these settings are typically set once and never change. Implementation that
 do, for some reason, change these parameters during execution, <span class="bcp14">MAY</span> emit the
 <code>parameters_set</code> event more than once.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
@@ -3308,7 +3383,7 @@ different recovery approaches.<a href="#section-7.1-4" class="pilcrow">¶</a></p
 <a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-metrics_updated" class="section-name selfRef">metrics_updated</a>
         </h3>
 <p id="section-7.2-1">The <code>metrics_updated</code> event is emitted when one or more of the observable
-recovery metrics changes value. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+recovery metrics changes value. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
 <p id="section-7.2-2">This event <span class="bcp14">SHOULD</span> group all possible metric updates that happen at or around the
 same time in a single event (e.g., if <code>min_rtt</code> and <code>smoothed_rtt</code> change at the
 same time, they should be bundled in a single <code>metrics_updated</code> entry, rather
@@ -3366,7 +3441,7 @@ different recovery approaches.<a href="#section-7.2-5" class="pilcrow">¶</a></p
         </h3>
 <p id="section-7.3-1">The <code>congestion_state_updated</code> event indicates when the congestion controller
 enters a significant new state and changes its behaviour. It has Base importance
-level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
 <p id="section-7.3-2">The values of the event's fields are intentionally unspecified here in order to
 support different Congestion Control algorithms, as these typically have
 different states and even different implementations of these states across
@@ -3404,7 +3479,7 @@ exceeded).<a href="#section-7.3-4" class="pilcrow">¶</a></p>
 <a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-loss_timer_updated" class="section-name selfRef">loss_timer_updated</a>
         </h3>
 <p id="section-7.4-1">The <code>loss_timer_updated</code> event is emitted when a recovery loss timer changes
-state. It has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+state. It has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
 <p id="section-7.4-2">The three main event types are:<a href="#section-7.4-2" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-7.4-3.1">
@@ -3453,7 +3528,7 @@ RecoveryLossTimerUpdated = {
 <a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-packet_lost" class="section-name selfRef">packet_lost</a>
         </h3>
 <p id="section-7.5-1">The <code>packet_lost</code> event is emitted when a packet is deemed lost by loss
-detection. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
+detection. It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
 <p id="section-7.5-2">It is <span class="bcp14">RECOMMENDED</span> to populate the optional <code>trigger</code> field in order to help
 disambiguate among the various possible causes of a loss declaration.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
 <span id="name-recoverypacketlost-definiti"></span><div id="recovery-packetlost-def">
@@ -3492,7 +3567,7 @@ RecoveryPacketLost = {
         </h3>
 <p id="section-7.6-1">The <code>marked_for_retransmit</code> event indicates which data was marked for
 retransmission upon detection of packet loss (see <code>packet_lost</code>). It has Extra
-importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.6-1" class="pilcrow">¶</a></p>
+importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.6-1" class="pilcrow">¶</a></p>
 <p id="section-7.6-2">Similar to the reasoning for the <code>frames_processed</code> event,
 in order to keep the amount of different events low, this signal is grouped into
 in a single event based on existing QUIC frame definitions for all types of
@@ -3531,7 +3606,7 @@ RecoveryMarkedForRetransmit = {
         </h3>
 <p id="section-7.7-1">The <code>ecn_state_updated</code> event indicates a progression in the ECN state machine
 as described in section A.4 of <span>[<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It has Extra importance
-level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.7-1" class="pilcrow">¶</a></p>
+level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-7.7-1" class="pilcrow">¶</a></p>
 <span id="name-ecnstateupdated-definition"></span><div id="recovery-ecnstateupdated-def">
 <figure id="figure-36">
           <div class="lang-cddl sourcecode" id="section-7.7-2.1">
@@ -4624,9 +4699,73 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
       <h2 id="name-iana-considerations">
 <a href="#section-10" class="section-number selfRef">10. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
       </h2>
-<p id="section-10-1">There are no IANA considerations.<a href="#section-10-1" class="pilcrow">¶</a></p>
+<p id="section-10-1">This document registers several new entries in the "qlog event category URIs"
+registry.<a href="#section-10-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-10-2">
+        <dt id="section-10-2.1">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.2">
+          <p id="section-10-2.2.1">urn:ietf:params:qlog:events:quic#connectivity<a href="#section-10-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.3">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.4">
+          <p id="section-10-2.4.1">Event definitions related to QUIC connectivity.<a href="#section-10-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.5">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.6">
+          <p id="section-10-2.6.1"><a href="#conn-ev" class="auto internal xref">Section 4</a><a href="#section-10-2.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.7">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.8">
+          <p id="section-10-2.8.1">urn:ietf:params:qlog:events:quic#security<a href="#section-10-2.8.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.9">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.10">
+          <p id="section-10-2.10.1">Event definitions related to QUIC security.<a href="#section-10-2.10.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.11">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.12">
+          <p id="section-10-2.12.1"><a href="#sec-ev" class="auto internal xref">Section 6</a><a href="#section-10-2.12.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.13">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.14">
+          <p id="section-10-2.14.1">urn:ietf:params:qlog:events:quic#quic<a href="#section-10-2.14.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.15">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.16">
+          <p id="section-10-2.16.1">Event definitions related to the QUIC wire image and other concerns.<a href="#section-10-2.16.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.17">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.18">
+          <p id="section-10-2.18.1"><a href="#quic-ev" class="auto internal xref">Section 5</a><a href="#section-10-2.18.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.19">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.20">
+          <p id="section-10-2.20.1">urn:ietf:params:qlog:events:quic#recovery<a href="#section-10-2.20.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.21">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.22">
+          <p id="section-10-2.22.1">Event definitions related to QUIC recovery.<a href="#section-10-2.22.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-10-2.23">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-10-2.24">
+          <p id="section-10-2.24.1"><a href="#conn-ev" class="auto internal xref">Section 4</a><a href="#section-10-2.24.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
 </section>
 </div>
+<div id="sec-combined-references">
 <section id="section-11">
       <h2 id="name-references">
 <a href="#section-11" class="section-number selfRef">11. </a><a href="#name-references" class="section-name selfRef">References</a>
@@ -4647,7 +4786,7 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
 <dd class="break"></dd>
 <dt id="QLOG-MAIN">[QLOG-MAIN]</dt>
         <dd>
-<span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Main logging schema for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-main-schema-08</span>, <time datetime="2024-03-04" class="refDate">4 March 2024</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-08</a>&gt;</span>. </dd>
+<span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"qlog: Structured Logging for Network Protocols"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-main-schema-09</span>, <time datetime="2024-07-08" class="refDate">8 July 2024</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QUIC-DATAGRAM">[QUIC-DATAGRAM]</dt>
         <dd>
@@ -4694,6 +4833,7 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
+</div>
 <div id="acknowledgements">
 <section id="appendix-A">
       <h2 id="name-acknowledgements">
@@ -4703,7 +4843,8 @@ document as well.<a href="#section-9-1" class="pilcrow">¶</a></p>
 Universities.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
 <p id="appendix-A-2">Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema and Hugo Landau for their feedback and suggestions.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
+Yamamoto, Christian Huitema, Hugo Landau and Jonathan Lennox for their feedback
+and suggestions.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="change-log">
