@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-07-30T00:52:58.669060+00:00",
+  "timestamp": "2024-08-01T00:57:31.068961+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -6192,7 +6192,7 @@
       "labels": [],
       "body": "We had a question about quiche's logging on https://github.com/cloudflare/quiche/issues/1197 this got me thinking some more about representations of time in qlog.\r\n\r\nIn quiche, we use a monotonic non-decreasing clock. When a trace is started, we store a monotonic start time internally and don't put that in the qlog. As events are created, we calculate a relative time since the start and record that.\r\n\r\nI've now realised this behaviour seems to differ from what the qlog draft states in https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#name-timestamps\r\n\r\n> Relative: Specify a full \"reference_time\" timestamp (typically this is done up-front in \"common_fields\", see [Section 3.4.7](https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#common-fields)) and include only relatively-encoded values based on this reference_time with each event. The \"reference_time\" value is typically the first absolute timestamp. This approach uses a medium amount of characters.\r\n\r\nThe problem is that clock drift can occur. The spec mentions this briefly but I wonder if the problem is larger than people give consideration to. For the relative and base time formats, you'd potentially end up smaller or negative values, which might break qlog tooling.\r\n\r\nI don't have much insight into solving clock drift problems but could we consider adding a monotonic time format type in addition?",
       "createdAt": "2022-03-19T15:31:19Z",
-      "updatedAt": "2024-07-25T20:03:48Z",
+      "updatedAt": "2024-07-31T15:50:17Z",
       "closedAt": null,
       "comments": [
         {
@@ -6208,6 +6208,13 @@
           "body": "If all we care about is the duration of events, why not log the first event at time zero and go from there? Then we avoid any synchronization issues. The frequency control should be 10ppm or better just about everywhere so there's not any real sync issues with any monotonic clock.  ",
           "createdAt": "2024-07-25T20:03:46Z",
           "updatedAt": "2024-07-25T20:03:46Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "The use case for timestamps varies. I believe some folks like the ability to log a timestamp value that can, on its own, be converted into a full date. Whereas for quiche, we already do everything using a monotonic clock, so using a timestamp relative to log start time is useful. With the changes proposed on https://github.com/quicwg/qlog/pull/433 I think we can more accurately support all use cases.",
+          "createdAt": "2024-07-31T15:50:16Z",
+          "updatedAt": "2024-07-31T15:50:16Z"
         }
       ]
     },
@@ -24199,6 +24206,32 @@
       "headRepository": "quicwg/qlog",
       "headRefName": "triggers-wtf",
       "headRefOid": "b4df08759934f18a2016b634175c6f4beefcf2d2",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 433,
+      "id": "PR_kwDOCrLn6M524SMW",
+      "title": "Its about time",
+      "url": "https://github.com/quicwg/qlog/pull/433",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Don't look too deeply into the commits on this PR, its basically forking off https://github.com/quicwg/qlog/pull/290 and doing a bunch of changes to reflect one of the suggestions made at IETF 120. \r\n\r\nMore concretely, the observation I made on the flight home is that _all_ of the timestamps are a duration relative to something. Where we use the term \"absolute\" timestamp, it might be reasonable to assume that the value is actually an absolute timestamp, not the millis elapsed since some point in the past that may or may not be unix. So this PR goes nuclear and changes the TimeFormat values to relative_to_epoch, relative_to_epoch_elapsed, and relative_to_last_event. We can bikeshed on these of course.\r\n\r\nWhat I've taken from past discussion and the 120 meeting is the suggestion to declare the used epoch in the log format, together with a human friendly \"wall clock time\" that would be something like an iso 8601 format (but I was offline on the plane so couldn't cite it or give proper examples). \r\n\r\nMonotonic folks can declare a \"monotonic\" epoch, and then relative times to that are completely opaque thing. Its up to the loggers to decide how far off the monotonic epoch they want their times to be. Its recommended they use a wall clock time to help give an indication of when things occurred.",
+      "createdAt": "2024-07-30T13:44:22Z",
+      "updatedAt": "2024-07-30T13:44:23Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "4eefbcf7ff239d297c24141caa031cd4667ed1bb",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "define-monotonic-clock-take-2",
+      "headRefOid": "73cfac570214a7c491f99661d0be0125c5d3014c",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
