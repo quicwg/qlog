@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-08-01T00:57:31.068961+00:00",
+  "timestamp": "2024-08-04T00:57:07.394080+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -8837,6 +8837,180 @@
       "updatedAt": "2024-07-15T11:27:42Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 434,
+      "id": "I_kwDOCrLn6M6RoHrG",
+      "title": "JSON-SEQ is painful",
+      "url": "https://github.com/quicwg/qlog/issues/434",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "When we switched to JSON-SEQ a while back (https://github.com/quicwg/qlog/issues/172), we assumed that using record separators instead of newline-delimited JSON wouldn't cause too much pain. I think it's time to reevaluate this assumption.\r\n\r\n## vim\r\n\r\nIt also turns out that existing software is not that great at handling record record separators. Here's a screenshot of `vim` messing up the line character count (note that last line, where it usually tells you the cursor position, and it now displays 12-13).\r\n![image](https://github.com/user-attachments/assets/1bfa7d6f-c354-43dc-950e-73df0aad951d)\r\n\r\n## jq\r\n\r\n`jq` is actually the tool that's the most compatible with JSONSEQ. However, one MUST use the `--seq` flag, using standard `jq` results in the following error, which is not very helpful for the user:\r\n```\r\njq: parse error: Invalid numeric literal at line 1, column 2\r\n```\r\nI had to use a search engine to figure out how to convince `jq` to use record separators. Definitely not the end of the world, but a subpar developer experience nonetheless.\r\n\r\n## grep\r\n\r\nAnother example is `grep`. Try to extract the `transport:connection_started` event from this qlog file using `grep`:\r\n\r\n```\r\n\u001e{\r\n    \"qlog_format\":\"JSON-SEQ\",\r\n    \"qlog_version\":\"draft-03\",\r\n    \"title\":\"quic-go qlog\",\r\n    \"configuration\":{\"code_version\":\"(devel)\"},\r\n    \"trace\":{\r\n        \"vantage_point\":{\"type\":\"client\"},\r\n        \"common_fields\":{\"ODCID\":\"65b480747721258697d6\",\"group_id\":\"65b480747721258697d6\",\"reference_time\":1722494434168.3032,\"time_format\":\"relative\"},\r\n    },\r\n}\r\n\u001e{\r\n    \"time\":0.038458,\r\n    \"name\":\"transport:connection_started\",\r\n    \"data\":{\"ip_version\":\"ipv6\",\"src_ip\":\"::\",\"src_port\":55464,\"dst_ip\":\"127.0.0.1\",\"dst_port\":6121,\"src_cid\":\"36ff0294\",\"dst_cid\":\"65b480747721258697d6\"},\r\n}\r\n```\r\n\r\nFirst of all, note how GitHub renders the record separator here: \ufffd (I love seeing this character on my screen!).\r\n\r\nBut back to `grep`: I haven't figured out a way to grep for the `transport:connection_started` event, and [apparently](https://superuser.com/questions/140965/grep-changing-the-delimiter) it's not easy to change the record separator.\r\n\r\n`grep`ing is **very important** when debugging, I often find myself filtering a qlog file for the event type(s) that I'm interested in.",
+      "createdAt": "2024-08-01T19:11:44Z",
+      "updatedAt": "2024-08-02T13:17:32Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "francoismichel",
+          "authorAssociation": "NONE",
+          "body": "I've been using and parsing QLOG quite extensively for my research and I can see how it can become painful especially for debugging purposes (sometimes you just have to browse through a file to find the exact problem that triggers some weird behaviour that appears during one run out of 1000). Not sure how my use-case is representative of real-world scenarios though, but I had to do that a lot. It is probably close to what implementers like @marten-seemann sometimes have to do.\r\n\r\nIf it actually really messes up with existing tools that worked fined with the previous format (I think it was close to, if not exactly [jsonlines](https://jsonlines.org/), which seems [quite popular](https://jsonlines.org/on_the_web) ?), I guess it makes sense to at least discuss that ?\r\n\r\nThat being said, developing a simple converter from json-seq to jsonlines for debugging use-cases that require grep, vim & co may be a good middleground solution, without necessarily having to change the spec.",
+          "createdAt": "2024-08-01T20:03:21Z",
+          "updatedAt": "2024-08-02T08:28:46Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Personally I've had no issues with the JSON-SEQ format. The [RFC 7464](https://datatracker.ietf.org/doc/html/rfc7464) is clear on various edge cases that might arise when parsing truncated logs. There is no equivalent IETF standard that exists for just a single line. The default serialization format for the QLogFile is JSON, which also allows \"pretty-printing\" styles to include newlines too, so I don't see the grep argument as too strong (although I do understand it). The majority of time I just print each event on a single line. But I do have use cases where qlogs are meant to be eyeballed by a human, and having pretty printing does actually help those. \r\n\r\nVS code deals with the record separator character just fine:\r\n\r\n![image](https://github.com/user-attachments/assets/8b4271ac-d5ce-43d0-9af9-69ed2d858de0)\r\n\r\n\r\nThere are users of quiche's standalone qlog crate, and users of quiche for client and server. I have heard them having no issue with JSON-SEQ over a single line. We also provide a very simple [reader class](https://github.com/cloudflare/quiche/blob/master/qlog/src/reader.rs) that seems to work ok, albeit it could probably be hardened by following more advice from RFC 7464.",
+          "createdAt": "2024-08-01T20:08:17Z",
+          "updatedAt": "2024-08-01T20:08:17Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "A middleground might be to subset JSON-SEQ and state something along the lines of \"In addition to the formatting rules defined in JSON-SEQ, it is RECOMMENDED that loggers do not embed new lines inside of serialized events, this makes it easier for general-purpose, line-oriented tools, to consume them.\"\r\n\r\n@marten-seemann might argue for a `MUST` level requirement here - but the failure scenario is trivally recoverable by some preprocessing, In the case where I find embedded newlines useful (and to be consumed by my own tooling), I'd ignore the MUST anyway. But it would mean other tools can't necessarily interop with me then, which is a little sad.",
+          "createdAt": "2024-08-01T20:31:25Z",
+          "updatedAt": "2024-08-01T20:31:25Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Maybe an interesting point is that xquic logs to slog/clog and then converts to json via python: https://github.com/alibaba/xquic/blob/main/scripts/qlog_parser.py\r\n\r\nAnd tangentially there's an issue on msquic for translation from their preferred format to qlog - https://github.com/microsoft/msquic/issues/1158",
+          "createdAt": "2024-08-01T21:47:46Z",
+          "updatedAt": "2024-08-01T21:47:46Z"
+        },
+        {
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "body": "@LPardue makes a good point. What QLog defines is an interchange format between tools, not the format that your tools are supposed to log natively. People have the freedom to log in the format they like, then convert that to QLog. FWIW, quicly has taken the same approach.\r\n\r\nThat said, I think I agree with @marten-seemann and @francoismichel regarding if there is a reason to endorse a serialization format that has edges compared to JSONL.\r\n\r\nKnowing that JSONL is not standardized, one option we have is stop short of declaring how we concatenate the events. The idea is that while it is paramount to have the definition of how each event is being serialized, it is not that important to agree on one way of concatenating the events. IMO, it can either be JSONL, JSON-SEQ, or one JSON array.\r\n\r\nIf most people prefer JSONL, we will end up consolidating on JSONL.\r\n\r\nDoes that sound like a better strategy compared to naming JSON-SEQ in a normative manner?",
+          "createdAt": "2024-08-01T23:40:11Z",
+          "updatedAt": "2024-08-01T23:40:11Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Speaking personally with no hats, I don't think we should spend QUIC WG time relitigating all of the finer details of JSON encoding and parsing, for some newline delineated format. Leaving it wooly defined, doesn't seem acceptable to me. The spec is targetted towards tool makers too, selling them short risks interop failures of the *structured* logging nature of qlog. That doesn't seem like a fair tradeoff when tools working on unstructured lines data can work fine if each event is contained on a line.",
+          "createdAt": "2024-08-02T00:32:06Z",
+          "updatedAt": "2024-08-02T00:32:06Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "As a very boring example - what media type would a handrolled ndjson use? Right now we have proposed to piggy back off of the existing `json-seq` suffix to use `qlog+json-seq`. Defining a new suffix would be a lot of work and maybe not event viable.",
+          "createdAt": "2024-08-02T00:53:22Z",
+          "updatedAt": "2024-08-02T00:53:22Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I might be blissfully ignorant regarding the edge cases of JSON serialization, but in my mind, NLJSON is trivially simple to define: \r\n```\r\nEvery line in and of itself is a valid JSON object.\r\n```\r\nThat's it.\r\n\r\n> As a very boring example - what media type would a handrolled ndjson use? \r\n\r\nI'm not convinced that adding a MIME type to the file itself was the right thing to do, see #435. If we remove this field, we might not need to specify anything. \r\n\r\n--- \r\n\r\nAs a general point, what we should optimize for is (new) developers / researchers handling qlogs. It should be dead simple to take a bunch of qlogs from different implementations, and use them to debug a QUIC transfer. \r\n\r\nOf course the file format doesn't matter if you're only using tools that understand the intricacies of qlog, like qvis. But analysis often involves using standard unix tools. Simple example: count how many times a particular event happened: `grep <event name> <file.qlog> | wc`. We're just creating unnecessary frustration if simple stuff like this doesn't work.\r\n\r\nI do realize that this might make it harder to push the spec through the IETF process. This is unfortunate, and certainly annoying for us as editors, and the QUIC WG chairs. But in the end, we're not writing a spec so that it fits neatly into the set of existing RFCs. We're writing a spec, so we have a neat serialization format that's maximally useful for devs and researchers.",
+          "createdAt": "2024-08-02T04:28:01Z",
+          "updatedAt": "2024-08-02T04:28:01Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "[client-1928a4431b958983545fe79a00fcf7a670f39d8e.zip](https://github.com/user-attachments/files/16465771/client-1928a4431b958983545fe79a00fcf7a670f39d8e.zip) unzips to client-1928a4431b958983545fe79a00fcf7a670f39d8e.sqlog, which is a JSON-SEQ file that includes some pretty printing e.g.\r\n\r\n```\r\n\u001e{\"qlog_version\":\"0.3\",\"qlog_format\":\"JSON-SEQ\",\"title\":\"quiche-client qlog\",\"description\":\"quiche-client qlog id=1928a4431b958983545fe79a00fcf7a670f39d8e\",\"trace\":{\"vantage_point\":{\"type\":\"client\"},\"title\":\"quiche-client qlog\",\"description\":\"quiche-client qlog id=1928a4431b958983545fe79a00fcf7a670f39d8e\",\"configuration\":{\"time_offset\":0.0}}}\r\n\u001e{\r\n  \"time\": 0.0,\r\n  \"name\": \"transport:parameters_set\",\r\n  \"data\": {\r\n    \"owner\": \"local\",\r\n    \"tls_cipher\": \"None\",\r\n    \"disable_active_migration\": true,\r\n    \"max_idle_timeout\": 30000,\r\n    \"max_udp_payload_size\": 1350,\r\n    \"ack_delay_exponent\": 3,\r\n    \"max_ack_delay\": 25,\r\n    \"active_connection_id_limit\": 2,\r\n    \"initial_max_data\": 10000000,\r\n    \"initial_max_stream_data_bidi_local\": 1000000,\r\n    \"initial_max_stream_data_bidi_remote\": 1000000,\r\n    \"initial_max_stream_data_uni\": 1000000,\r\n    \"initial_max_streams_bidi\": 100,\r\n    \"initial_max_streams_uni\": 100\r\n  }\r\n}\r\n```\r\n\r\n\r\n> Simple example: count how many times a particular event happened: grep <event name> <file.qlog> | wc. We're just creating unnecessary frustration if simple stuff like this doesn't work.\r\n\r\nIt works:\r\n\r\n```\r\n$ grep \"transport:packet_sent\" client-1928a4431b958983545fe79a00fcf7a670f39d8e.sq\r\nlog | wc -l\r\n     17\r\n```\r\n\r\nor \r\n\r\n```\r\n$ jq -c --seq 'select(.name==\"transport:packet_sent\")' client-1928a4431b958983545fe79a00fcf7a670f39d8e.sqlog | wc -l\r\n     17\r\n```\r\n\r\nor even\r\n\r\n```\r\n$ jq -c --seq  . client-1928a4431b958983545fe79a00fcf7a670f39d8e.sqlog | grep \"transport:packet_sent\" qlogs/client-1928a4431b958983545fe79a00fcf7a670f39d8e.sqlog | wc -l\r\n     17\r\n```\r\n\r\nthat last one is even has a fragment you can use to seemlessly convert to line-delimited for you own needs, e.g. here's the output of \r\n\r\n```\r\n$ jq -c --seq  . client-1928a4431b958983545fe79a00fcf7a670f39d8e.sqlog | head\r\n{\"qlog_version\":\"0.3\",\"qlog_format\":\"JSON-SEQ\",\"title\":\"quiche-client qlog\",\"description\":\"quiche-client qlog id=1928a4431b958983545fe79a00fcf7a670f39d8e\",\"trace\":{\"vantage_point\":{\"type\":\"client\"},\"title\":\"quiche-client qlog\",\"description\":\"quiche-client qlog id=1928a4431b958983545fe79a00fcf7a670f39d8e\",\"configuration\":{\"time_offset\":0}}}\r\n{\"time\":0,\"name\":\"transport:parameters_set\",\"data\":{\"owner\":\"local\",\"tls_cipher\":\"None\",\"disable_active_migration\":true,\"max_idle_timeout\":30000,\"max_udp_payload_size\":1350,\"ack_delay_exponent\":3,\"max_ack_delay\":25,\"active_connection_id_limit\":2,\"initial_max_data\":10000000,\"initial_max_stream_data_bidi_local\":1000000,\"initial_max_stream_data_bidi_remote\":1000000,\"initial_max_stream_data_uni\":1000000,\"initial_max_streams_bidi\":100,\"initial_max_streams_uni\":100}}\r\n{\"time\":0.078191,\"name\":\"transport:packet_sent\",\"data\":{\"header\":{\"packet_type\":\"initial\",\"packet_number\":0,\"version\":\"babababa\",\"scil\":20,\"dcil\":16,\"scid\":\"1928a4431b958983545fe79a00fcf7a670f39d8e\",\"dcid\":\"6c5443b5ef7ebae8d7830638c8f9dbf5\"},\"raw\":{\"length\":338,\"payload_length\":275},\"send_at_time\":0.078191,\"frames\":[{\"frame_type\":\"crypto\",\"offset\":0,\"length\":271}]}}\r\n{\"time\":0.078191,\"name\":\"recovery:metrics_updated\",\"data\":{\"smoothed_rtt\":333,\"rtt_variance\":166.5,\"congestion_window\":13500,\"bytes_in_flight\":338,\"ssthresh\":18446744073709552000}}\r\n{\"time\":10.191873,\"name\":\"transport:packet_sent\",\"data\":{\"header\":{\"packet_type\":\"initial\",\"packet_number\":1,\"version\":\"1\",\"scil\":20,\"dcil\":16,\"scid\":\"1928a4431b958983545fe79a00fcf7a670f39d8e\",\"dcid\":\"6c5443b5ef7ebae8d7830638c8f9dbf5\"},\"raw\":{\"length\":338,\"payload_length\":275},\"send_at_time\":10.191873,\"frames\":[{\"frame_type\":\"crypto\",\"offset\":0,\"length\":271}]}}\r\n{\"time\":28.821796,\"name\":\"transport:packet_received\",\"data\":{\"header\":{\"packet_type\":\"initial\",\"packet_number\":0,\"version\":\"1\",\"scil\":20,\"dcil\":20,\"scid\":\"01f9ec51e1be075788faf55113ec16fe80aeda58\",\"dcid\":\"1928a4431b958983545fe79a00fcf7a670f39d8e\"},\"raw\":{\"length\":1200,\"payload_length\":117},\"frames\":[{\"frame_type\":\"ack\",\"ack_delay\":0.109,\"acked_ranges\":[[1,1]]},{\"frame_type\":\"crypto\",\"offset\":0,\"length\":90}]}}\r\n{\"time\":28.821796,\"name\":\"recovery:metrics_updated\",\"data\":{\"min_rtt\":18.629923,\"smoothed_rtt\":18.629923,\"latest_rtt\":18.629923,\"rtt_variance\":9.3149605,\"bytes_in_flight\":0}}\r\n{\"time\":29.419956,\"name\":\"transport:packet_received\",\"data\":{\"header\":{\"packet_type\":\"handshake\",\"packet_number\":0,\"version\":\"1\",\"scil\":20,\"dcil\":20,\"scid\":\"01f9ec51e1be075788faf55113ec16fe80aeda58\",\"dcid\":\"1928a4431b958983545fe79a00fcf7a670f39d8e\"},\"raw\":{\"length\":1033,\"payload_length\":984},\"frames\":[{\"frame_type\":\"crypto\",\"offset\":0,\"length\":963}]}}\r\n{\"time\":29.551624,\"name\":\"transport:packet_received\",\"data\":{\"header\":{\"packet_type\":\"handshake\",\"packet_number\":1,\"version\":\"1\",\"scil\":20,\"dcil\":20,\"scid\":\"01f9ec51e1be075788faf55113ec16fe80aeda58\",\"dcid\":\"1928a4431b958983545fe79a00fcf7a670f39d8e\"},\"raw\":{\"length\":689,\"payload_length\":640},\"frames\":[{\"frame_type\":\"crypto\",\"offset\":963,\"length\":618}]}}\r\n{\"time\":29.551624,\"name\":\"transport:parameters_set\",\"data\":{\"owner\":\"remote\",\"tls_cipher\":\"Some(AES128_GCM)\",\"original_destination_connection_id\":\"6c5443b5ef7ebae8d7830638c8f9dbf5\",\"disable_active_migration\":false,\"max_idle_timeout\":0,\"max_udp_payload_size\":65527,\"ack_delay_exponent\":3,\"max_ack_delay\":25,\"active_connection_id_limit\":2,\"initial_max_data\":10000000,\"initial_max_stream_data_bidi_local\":10000000,\"initial_max_stream_data_bidi_remote\":10000000,\"initial_max_stream_data_uni\":10000000,\"initial_max_streams_bidi\":100,\"initial_max_streams_uni\":100}}\r\n```\r\n\r\nHonestly, for anyone wrangling JSON, `jq` is ubiquitous and provides a out-of-box capability to filter and convert a standardized canonical format into a multitude of formats, or pipes to other tools.\r\n\r\n",
+          "createdAt": "2024-08-02T05:35:02Z",
+          "updatedAt": "2024-08-02T05:35:02Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Media types were defined in response to https://github.com/quicwg/qlog/issues/158, where @kazuho said\r\n\r\n> At the moment, we use a custom ndjson format, but if we are to use qlog, there has to be a media-type.",
+          "createdAt": "2024-08-02T05:38:09Z",
+          "updatedAt": "2024-08-02T05:38:09Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> > Simple example: count how many times a particular event happened: grep  <file.qlog> | wc. We're just creating unnecessary frustration if simple stuff like this doesn't work.\r\n> \r\n> It works:\r\n\r\nIt works because you picked an example that's so simple that JSON-SEQ doesn't break it. Unfortunately, that doesn't apply to the vast majority of things you might want to do. For example, try counting the number of packets sent that counted a MAX_STREAM_DATA frame. You'd need something like `grep packet_sent <file.qlog> | grep max_stream_data | wc`. This breaks as soon as the event is not in one line.\r\n\r\nSure, you can use `jq` for that (once you've figured out that you need to use `--seq`, yet another annoyance for new developers). It's definitely more powerful than standard bash tools, but then I also have to ask ChatGPT to figure out selectors and filters every time...\r\n",
+          "createdAt": "2024-08-02T05:46:47Z",
+          "updatedAt": "2024-08-02T05:46:47Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "wrt to vim, this is expected behaviour as described in https://vimdoc.sourceforge.net/htmldoc/options.html#%27ruler%27\r\nbecause it chooses to render record separator as `^^`\r\n\r\n> If the number of characters displayed is different from the number of bytes in the text (e.g., for a TAB or a [multi-byte](https://vimdoc.sourceforge.net/htmldoc/mbyte.html#multi-byte) character), both the text column (byte number) and the screen column are shown, separated with a dash. For an empty line \"0-1\" is shown. For an empty buffer the line number will also be zero: \"0,0-1\".\r\n\r\nAnyone that likes to program with TAB would already be used to this\r\n\r\n![image](https://github.com/user-attachments/assets/3808f053-6c2f-47da-bba9-a2faaedff552)\r\n",
+          "createdAt": "2024-08-02T05:48:53Z",
+          "updatedAt": "2024-08-02T05:48:53Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> You'd need something like grep packet_sent <file.qlog> | grep max_stream_data | wc. This breaks as soon as the event is not in one line.\r\n\r\nAdding `jq -c --seq  . |` prefix is not hard to do and satisfies this requirement if people don't want to learn jq syntax.",
+          "createdAt": "2024-08-02T05:52:16Z",
+          "updatedAt": "2024-08-02T05:52:16Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "### As an individual without hats:\r\n\r\nI fully agree with @marten-seemann here... I think standards should reflect how people actually use stuff and the JSON-SEQ thing is plain annoying, even if things like jq have support for it (and we can \"work around\" it by having transformers and whatnot. My time at a larger company has taught me the absolute value of \"sensible defaults\" and \"predictability through familiarity\").\r\n\r\nIt really annoyed me having to switch from NDJSON to JSON-SEQ when we did just because NDJSON doesn't have an (IETF) RFC (even if I understand the arguments).\r\n\r\n---\r\n\r\n### As an editor with too many years on this already:\r\n\r\nI have **zero (0)** appetite to try and switch this again at this stage and especially trying to push it through the (eventual) IESG/whatever process needed to finally get these out the door. \r\n\r\nWith the recent extensibility changes, we can easily write an extension draft that defines how to still use NDJSON, it just won't be part of the default/first set of documents (Oh RFC 9218, have we learned nothing). \r\n\r\nI'm also perfectly fine with keeping support for NDJSON in qvis for example. \r\n\r\n",
+          "createdAt": "2024-08-02T13:17:31Z",
+          "updatedAt": "2024-08-02T13:17:31Z"
+        }
+      ]
+    },
+    {
+      "number": 435,
+      "id": "I_kwDOCrLn6M6RqQVc",
+      "title": "parsing the `serialization_format` field requires prior knowledge of the serialization format",
+      "url": "https://github.com/quicwg/qlog/issues/435",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "From section 5:\r\n```json\r\n<RS>{\r\n     \"file_schema\": \"urn:ietf:params:qlog:file:sequential\",\r\n     \"serialization_format\": \"application/qlog+json-seq\",\r\n     \"title\": \"Name of JSON Text Sequence qlog file (short)\",\r\n     \"description\": \"Description for this trace file (long)\",\r\n     \"trace\": {\r\n       \"common_fields\": {\r\n         \"protocol_type\": [\"QUIC\",\"HTTP3\"],\r\n         \"group_id\":\"127ecc830d98f9d54a42c4f0842aa87e181a\",\r\n         \"time_format\":\"relative\",\r\n         \"reference_time\": 1553986553572\r\n       },\r\n       \"vantage_point\": {\r\n         \"name\":\"backend-67\",\r\n         \"type\":\"server\"\r\n       }\r\n    }\r\n}\r\n```\r\n\r\nIf I don't know that the file is serialized as JSON-SEQ, I won't be able to parse the header that tells me that it's serialized as JSON-SEQ.\r\n\r\nWhat would we lose by not including the `serialization_format`?",
+      "createdAt": "2024-08-02T01:12:50Z",
+      "updatedAt": "2024-08-02T22:24:47Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "The text states \r\n\r\n> In order to make it easier to parse and identify qlog files and their serialization format, the \"file_schema\" and \"serialization_format\" fields and their values SHOULD be in the first 256 characters/bytes of the resulting log file.\r\n\r\nSo in theory, a tool could try to regex match or magic number match for a binary format, based on these things.\r\n\r\nIt is a bit of a chicken and egg thing though. Currently, my parser just looks at the file extension and then does some trial decode and a fallback.",
+          "createdAt": "2024-08-02T01:29:45Z",
+          "updatedAt": "2024-08-02T01:29:45Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, to an extent you're right @marten-seemann, you need some idea of what you're dealing with (i.e., binary vs plaintext vs something like JSON). However, only basing this on for example file extension is too naive (especially since people use .json EVERYWHERE).\r\n\r\nThe [current code in qvis](https://github.com/quiclog/qvis/blob/master/visualizations/src/components/filemanager/data/FileLoader.ts#L211) imo shows this well, since I want to support both netlog files (also annoyingly .json) and various JSON-based qlog variants (normal JSON, JSON-SEQ, NDJSON). \r\n\r\nI don't want to have to \"trial parse\" each of those options, since the parsers might be somewhat expensive to initialize / don't necessarily work in a streaming fashion/might even have to be offloaded to the backend. Having the `serialization_format` in the first x chars helps me make a very educated decision using a simple string lookup on how to handle the file without having to involve a complete parser yet. \r\n\r\nWhile I agree it's not ideal, it's a good practical solution that I'd like to keep. The recent switch to making it equivalent with the media types I feel is elegant and clear and consistent in ways that the previous `qlog_format` wasn't. \r\n\r\n",
+          "createdAt": "2024-08-02T13:25:22Z",
+          "updatedAt": "2024-08-02T13:25:22Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> The [current code in qvis](https://github.com/quiclog/qvis/blob/master/visualizations/src/components/filemanager/data/FileLoader.ts#L211) imo shows this well, since I want to support both netlog files (also annoyingly .json) and various JSON-based qlog variants (normal JSON, JSON-SEQ, NDJSON).\r\n> \r\n> I don't want to have to \"trial parse\" each of those options, since the parsers might be somewhat expensive to initialize / don't necessarily work in a streaming fashion/might even have to be offloaded to the backend. Having the `serialization_format` in the first x chars helps me make a very educated decision using a simple string lookup on how to handle the file without having to involve a complete parser yet.\r\n\r\nI totally get that, though I'd argue that this is not the situation we should optimize for:\r\n* supporting netlog in addition to qlog seems pretty qvis-specific\r\n* telling different draft versions apart won't be necessary once we ship an RFC\r\n",
+          "createdAt": "2024-08-02T16:48:46Z",
+          "updatedAt": "2024-08-02T16:48:46Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "My tool also supports netlog json.\r\n\r\nNew documents could define new log formats or serialization formats. \r\n\r\nThe peeking code that Robin suggests is a simple way to accomodate for a range of future possibilities.",
+          "createdAt": "2024-08-02T19:42:21Z",
+          "updatedAt": "2024-08-02T19:42:21Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Is there precedent for this kind of peeking logic in other IETF serialization formats, or other data formats outside of the IETF? This seems extremely hacky to me. ",
+          "createdAt": "2024-08-02T21:16:09Z",
+          "updatedAt": "2024-08-02T21:16:09Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Yes, this is typically referred to as \"content sniffing\" or \"MIME sniffing\" - it has drawbacks (that we should document further if we are keeping the text) but to my knowledge is commonly used to work around imperfect or incorrect metadata. \r\n\r\nWikipedia highlights that the unix `file` command is such a sniffer. See https://www.darwinsys.com/file/ and https://github.com/file/file. This relies on libmagic, which is commonly distrubted with a database of entries (e.g. at /usr/share/misc/magic.mgc). For example I can do this:\r\n\r\n```\r\n$ file pcap.pcap\r\npcap.pcap: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 1500)\r\n```\r\n\r\nand \r\n\r\n```\r\n$ file pcap_no_extension \r\npcap_no_extension: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 1500)\r\n```\r\n\r\nAs far as I understand, they accept new contributions, so it's entirely feasible we could add this for qlog serialization formats. In future, a binary encoding format could define some additional [magic numbers](https://en.wikipedia.org/wiki/List_of_file_signatures) to aid such sniffing. Registration requests for media types, [use this template](https://www.rfc-editor.org/rfc/rfc6838.html#section-4.12), which includes an optional Magic Numbers part.\r\n\r\nBeyond `file`, other mentions of sniffing include example https://www.rfc-editor.org/rfc/rfc9110.html#section-8.3, which has some text about how to deal with content and `Content-Type` headers,  stating:\r\n\r\n> In practice, resource owners do not always properly configure their origin server to provide the correct Content-Type for a given representation. Some user agents examine the content and, in certain cases, override the received type (for example, see [[Sniffing](https://www.rfc-editor.org/rfc/rfc9110.html#Sniffing)]). This \"MIME sniffing\" risks drawing incorrect conclusions about the data, which might expose the user to additional security risks (e.g., \"privilege escalation\"). Furthermore, distinct media types often share a common data format, differing only in how the data is intended to be processed, which is impossible to distinguish by inspecting the data alone. When sniffing is implemented, implementers are encouraged to provide a means for the user to disable it.\r\n\r\nThe [MIME sniffing doc ](https://mimesniff.spec.whatwg.org/) itself is very detailed. To pick some relevant parts, there's\r\nhttps://mimesniff.spec.whatwg.org/#identifying-a-resource-with-an-unknown-mime-type that describes a matching algorithm, which is run over the resource header, defined in https://mimesniff.spec.whatwg.org/#reading-the-resource-header. As a snippet:\r\n\r\n> To read the resource header, perform the following steps:\r\n> \r\n> Let buffer be a [byte sequence](https://infra.spec.whatwg.org/#byte-sequence).\r\n> Read [bytes](https://infra.spec.whatwg.org/#byte) of the [resource](https://mimesniff.spec.whatwg.org/#resource) into buffer until one of the following conditions is met:\r\n> the end of the [resource](https://mimesniff.spec.whatwg.org/#resource) is reached.\r\n> the number of [bytes](https://infra.spec.whatwg.org/#byte) in buffer is greater than or equal to 1445.\r\n> a reasonable amount of time has elapsed, as determined by the user agent.\r\n\r\nThere looks to have been an attempt to write something up in an I-D but it seems it wasn't adopted https://datatracker.ietf.org/doc/html/draft-abarth-mime-sniff-06. Not sure why, maybe someone more familiar with the history knows. But AFAIK web content sniffing is commonplace.",
+          "createdAt": "2024-08-02T22:24:45Z",
+          "updatedAt": "2024-08-02T22:24:45Z"
+        }
+      ]
     }
   ],
   "pulls": [
