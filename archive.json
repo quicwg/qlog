@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-08-04T00:57:07.394080+00:00",
+  "timestamp": "2024-08-06T00:53:18.196687+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -8965,7 +8965,7 @@
       "labels": [],
       "body": "From section 5:\r\n```json\r\n<RS>{\r\n     \"file_schema\": \"urn:ietf:params:qlog:file:sequential\",\r\n     \"serialization_format\": \"application/qlog+json-seq\",\r\n     \"title\": \"Name of JSON Text Sequence qlog file (short)\",\r\n     \"description\": \"Description for this trace file (long)\",\r\n     \"trace\": {\r\n       \"common_fields\": {\r\n         \"protocol_type\": [\"QUIC\",\"HTTP3\"],\r\n         \"group_id\":\"127ecc830d98f9d54a42c4f0842aa87e181a\",\r\n         \"time_format\":\"relative\",\r\n         \"reference_time\": 1553986553572\r\n       },\r\n       \"vantage_point\": {\r\n         \"name\":\"backend-67\",\r\n         \"type\":\"server\"\r\n       }\r\n    }\r\n}\r\n```\r\n\r\nIf I don't know that the file is serialized as JSON-SEQ, I won't be able to parse the header that tells me that it's serialized as JSON-SEQ.\r\n\r\nWhat would we lose by not including the `serialization_format`?",
       "createdAt": "2024-08-02T01:12:50Z",
-      "updatedAt": "2024-08-02T22:24:47Z",
+      "updatedAt": "2024-08-04T23:16:58Z",
       "closedAt": null,
       "comments": [
         {
@@ -9009,6 +9009,13 @@
           "body": "Yes, this is typically referred to as \"content sniffing\" or \"MIME sniffing\" - it has drawbacks (that we should document further if we are keeping the text) but to my knowledge is commonly used to work around imperfect or incorrect metadata. \r\n\r\nWikipedia highlights that the unix `file` command is such a sniffer. See https://www.darwinsys.com/file/ and https://github.com/file/file. This relies on libmagic, which is commonly distrubted with a database of entries (e.g. at /usr/share/misc/magic.mgc). For example I can do this:\r\n\r\n```\r\n$ file pcap.pcap\r\npcap.pcap: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 1500)\r\n```\r\n\r\nand \r\n\r\n```\r\n$ file pcap_no_extension \r\npcap_no_extension: pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 1500)\r\n```\r\n\r\nAs far as I understand, they accept new contributions, so it's entirely feasible we could add this for qlog serialization formats. In future, a binary encoding format could define some additional [magic numbers](https://en.wikipedia.org/wiki/List_of_file_signatures) to aid such sniffing. Registration requests for media types, [use this template](https://www.rfc-editor.org/rfc/rfc6838.html#section-4.12), which includes an optional Magic Numbers part.\r\n\r\nBeyond `file`, other mentions of sniffing include example https://www.rfc-editor.org/rfc/rfc9110.html#section-8.3, which has some text about how to deal with content and `Content-Type` headers,  stating:\r\n\r\n> In practice, resource owners do not always properly configure their origin server to provide the correct Content-Type for a given representation. Some user agents examine the content and, in certain cases, override the received type (for example, see [[Sniffing](https://www.rfc-editor.org/rfc/rfc9110.html#Sniffing)]). This \"MIME sniffing\" risks drawing incorrect conclusions about the data, which might expose the user to additional security risks (e.g., \"privilege escalation\"). Furthermore, distinct media types often share a common data format, differing only in how the data is intended to be processed, which is impossible to distinguish by inspecting the data alone. When sniffing is implemented, implementers are encouraged to provide a means for the user to disable it.\r\n\r\nThe [MIME sniffing doc ](https://mimesniff.spec.whatwg.org/) itself is very detailed. To pick some relevant parts, there's\r\nhttps://mimesniff.spec.whatwg.org/#identifying-a-resource-with-an-unknown-mime-type that describes a matching algorithm, which is run over the resource header, defined in https://mimesniff.spec.whatwg.org/#reading-the-resource-header. As a snippet:\r\n\r\n> To read the resource header, perform the following steps:\r\n> \r\n> Let buffer be a [byte sequence](https://infra.spec.whatwg.org/#byte-sequence).\r\n> Read [bytes](https://infra.spec.whatwg.org/#byte) of the [resource](https://mimesniff.spec.whatwg.org/#resource) into buffer until one of the following conditions is met:\r\n> the end of the [resource](https://mimesniff.spec.whatwg.org/#resource) is reached.\r\n> the number of [bytes](https://infra.spec.whatwg.org/#byte) in buffer is greater than or equal to 1445.\r\n> a reasonable amount of time has elapsed, as determined by the user agent.\r\n\r\nThere looks to have been an attempt to write something up in an I-D but it seems it wasn't adopted https://datatracker.ietf.org/doc/html/draft-abarth-mime-sniff-06. Not sure why, maybe someone more familiar with the history knows. But AFAIK web content sniffing is commonplace.",
           "createdAt": "2024-08-02T22:24:45Z",
           "updatedAt": "2024-08-02T22:24:45Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Very interesting, thank you for researching this @LPardue! It's kind of sad that we don't have a better of way of determining the file type, but it seems like we're not doing something that's outrageously out of line here.",
+          "createdAt": "2024-08-04T23:16:57Z",
+          "updatedAt": "2024-08-04T23:16:57Z"
         }
       ]
     }
