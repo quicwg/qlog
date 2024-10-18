@@ -670,6 +670,11 @@ They are later updated with the server's reply. In these cases, utilize the
 separate `parameters_restored` event to indicate the initial values, and this
 event to indicate the updated values, as normal.
 
+Implementations are not required to recognize every setting received in all situations.
+For example, QUIC implementations MUST discard transport parameters that they do not
+understand {{Section 7.4.2 of QUIC-TRANSPORT}}. `unknown_parameters` MAY be used to store
+the parameters from a peer that an implementation does not recognize, process or support.
+
 ~~~ cddl
 QUICParametersSet = {
     ? owner: Owner
@@ -709,6 +714,10 @@ QUICParametersSet = {
     ; true if present, absent or false if extension not negotiated
     ? grease_quic_bit: bool
 
+    ; RFC9000
+    ; parameters unknown or unsupported by an implementation
+    ? unknown_parameters: [* QUICUnknownParameter]
+
     * $$quic-parametersset-extension
 }
 
@@ -719,6 +728,12 @@ PreferredAddress = {
     port_v6: uint16
     connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
+}
+
+QUICUnknownParameter = {
+    id: uint64
+    length: uint64
+    ? value: hexstring
 }
 ~~~
 {: #quic-parametersset-def title="QUICParametersSet definition"}
@@ -735,6 +750,9 @@ Note that not all transport parameters should be restored (many are even
 prohibited from being re-utilized). The ones listed here are the ones expected
 to be useful for correct 0-RTT usage.
 
+Parameters restored from a previous connection during 0-RTT that an implementation
+does not recognize MAY be stored in `unknown_parameters`.
+
 ~~~ cddl
 QUICParametersRestored = {
     ? disable_active_migration: bool
@@ -747,6 +765,8 @@ QUICParametersRestored = {
     ? initial_max_stream_data_uni: uint64
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
+
+    ? unknown_parameters: [* QUICUnknownParameter]
 
     * $$quic-parametersrestored-extension
 }
@@ -1379,9 +1399,12 @@ The `parameters_set` event groups initial parameters from both loss detection
 and congestion control into a single event. It has Base importance level; see
 {{Section 9.2 of QLOG-MAIN}}.
 
-All these settings are typically set once and never change. Implementation that
+All these settings are typically set once and never change. Implementations that
 do, for some reason, change these parameters during execution, MAY emit the
-`parameters_set` event more than once.
+`parameters_set` events more than once.
+
+Parameters from loss detection and congestion control that are not recognized
+MAY be stored in `unknown_parameters`.
 
 ~~~ cddl
 RecoveryParametersSet = {
@@ -1413,6 +1436,8 @@ RecoveryParametersSet = {
 
     ; as PTO multiplier
     ? persistent_congestion_threshold: uint16
+
+    ? unknown_parameters: [* QUICUnknownParameter]
 
     * $$recovery-parametersset-extension
 }
