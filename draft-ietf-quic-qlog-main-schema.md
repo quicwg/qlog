@@ -631,7 +631,7 @@ the specific values and semantics of common fields, in particular the `name` and
 `data` fields. Furthermore, they can optionally add custom fields.
 
 Each qlog event MAY contain the optional fields: "time_format"
-({{time-based-fields}}), "protocol_types" ({{protocol-type-field}}), "trigger"
+({{time-based-fields}}), "protocol_type" ({{protocol-type-field}}), "trigger"
 ({{trigger-field}}), and "group_id" ({{group-ids}}).
 
 Multiple events can appear in a Trace or TraceSeq and they might contain fields
@@ -772,42 +772,6 @@ entry values, see {{QLOG-QUIC}} and {{QLOG-H3}}.
 
 Typically however, all events in a single trace are of the same few protocols, and
 this array field is logged once in "common_fields", see {{common-fields}}.
-
-## Triggers {#trigger-field}
-
-Sometimes, additional information is needed in the case where a single event can
-be caused by a variety of other events. In the normal case, the context of the
-surrounding log messages gives a hint as to which of these other events was the
-cause. However, in highly-parallel and optimized implementations, corresponding
-log messages might separated in time. Another option is to explicitly indicate
-these "triggers" in a high-level way per-event to get more fine-grained
-information without much additional overhead.
-
-In qlog, the optional "trigger" field contains a string value describing
-the reason (if any) for this event instance occurring, see
-{{data-field}}. While this "trigger" field could be a property of the
-qlog Event itself, it is instead a property of the "data" field instead.
-This choice was made because many event types do not include a trigger
-value, and having the field at the Event-level would cause overhead in
-some serializations. Additional information on the trigger can be added
-in the form of additional member fields of the "data" field value, yet
-this is highly implementation-specific, as are the trigger field's
-string values.
-
-One purely illustrative example of some potential triggers for QUIC's
-"packet_dropped" event is shown in {{trigger-ex}}:
-
-~~~~~~~~
-TransportPacketDropped = {
-    ? packet_type: PacketType
-    ? raw_length: uint16
-    ? trigger: "key_unavailable" /
-               "unknown_connection_id" /
-               "decrypt_error" /
-               "unsupported_version"
-}
-~~~~~~~~
-{: #trigger-ex title="Trigger example"}
 
 ## Grouping {#group-ids}
 
@@ -1083,7 +1047,6 @@ Description:
 Reference:
 : \[to a specification defining the event schema defining the event category\]
 
-
 ## Extending the Data Field {#data-field}
 
 An event's "data" field is a generic key-value map (e.g., JSON object). It
@@ -1230,6 +1193,42 @@ $$transport-packetsent-extension //= (
 }
 ~~~~~~~~
 {: #data-ex title="Example of an extended 'data' field for a conceptual QUIC packet_sent event"}
+
+### Triggers {#trigger-field}
+
+Sometimes, additional information is needed in the case where a single event can
+be caused by a variety of other events. In the normal case, the context of the
+surrounding log messages gives a hint as to which of these other events was the
+cause. However, in highly-parallel and optimized implementations, corresponding
+log messages might separated in time. Another option is to explicitly indicate
+these "triggers" in a high-level way per-event to get more fine-grained
+information without much additional overhead.
+
+In qlog, the optional "trigger" field contains a string value describing
+the reason (if any) for this event instance occurring, see
+{{data-field}}. While this "trigger" field could be a property of the
+qlog Event itself, it is instead a property of the "data" field instead.
+This choice was made because many event types do not include a trigger
+value, and having the field at the Event-level would cause overhead in
+some serializations. Additional information on the trigger can be added
+in the form of additional member fields of the "data" field value, yet
+this is highly implementation-specific, as are the trigger field's
+string values.
+
+One purely illustrative example of some potential triggers for QUIC's
+"packet_dropped" event is shown in {{trigger-ex}}:
+
+~~~~~~~~
+TransportPacketDropped = {
+    ? packet_type: PacketType
+    ? raw_length: uint16
+    ? trigger: "key_unavailable" /
+               "unknown_connection_id" /
+               "decrypt_error" /
+               "unsupported_version"
+}
+~~~~~~~~
+{: #trigger-ex title="Trigger example"}
 
 ## Event Importance Levels {#importance}
 
