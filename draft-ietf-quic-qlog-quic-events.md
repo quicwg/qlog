@@ -664,6 +664,10 @@ remote peer). This is reflected in the `owner` field. As such, this field MUST b
 correct for all settings included a single event instance. If you need to log
 settings from two sides, you MUST emit two separate event instances.
 
+The `unknown_parameters` field can be used to log the raw values of any unknown
+transport parameters (e.g., GREASE, private extensions, peer-side
+experimentation).
+
 In the case of connection resumption and 0-RTT, some of the server's parameters
 are stored up-front at the client and used for the initial connection startup.
 They are later updated with the server's reply. In these cases, utilize the
@@ -709,6 +713,8 @@ QUICParametersSet = {
     ; true if present, absent or false if extension not negotiated
     ? grease_quic_bit: bool
 
+    ? unknown_parameters: [* UnknownTransportParameter]
+
     * $$quic-parametersset-extension
 }
 
@@ -719,6 +725,11 @@ PreferredAddress = {
     port_v6: uint16
     connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
+}
+
+UnknownTransportParameter = {
+    id: uint64
+    ? value: hexstring
 }
 ~~~
 {: #quic-parametersset-def title="QUICParametersSet definition"}
