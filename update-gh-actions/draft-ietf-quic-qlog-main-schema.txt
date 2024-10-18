@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 10 January 2025                                            Meta
+Expires: 21 April 2025                                              Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             9 July 2024
+                                                         18 October 2024
 
 
              qlog: Structured Logging for Network Protocols
@@ -56,7 +56,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 10 January 2025.
+   This Internet-Draft will expire on 21 April 2025.
 
 Copyright Notice
 
@@ -603,7 +603,7 @@ Table of Contents
        "description": "Description for this trace file (long)",
        "trace": {
          "common_fields": {
-           "protocol_type": ["QUIC","HTTP/3"],
+           "protocol_types": ["QUIC","HTTP3"],
            "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
            "time_format":"relative",
            "reference_time": 1553986553572
@@ -703,7 +703,7 @@ Table of Contents
        data: $ProtocolEventData
        ? path: PathID
        ? time_format: TimeFormat
-       ? protocol_type: ProtocolTypeList
+       ? protocol_types: ProtocolTypeList
        ? group_id: GroupID
        ? system_info: SystemInformation
 
@@ -723,7 +723,7 @@ Table of Contents
    optionally add custom fields.
 
    Each qlog event MAY contain the optional fields: "time_format"
-   (Section 7.1), "protocol_type" (Section 7.3), "trigger"
+   (Section 7.1), "protocol_types" (Section 7.3), "trigger"
    (Section 7.4), and "group_id" (Section 7.5).
 
    Multiple events can appear in a Trace or TraceSeq and they might
@@ -738,7 +738,7 @@ Table of Contents
        "name": "quic:packet_sent",
        "data": { ... },
 
-       "protocol_type":  ["QUIC","HTTP/3"],
+       "protocol_types":  ["QUIC","HTTP3"],
        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
        "time_format": "absolute",
@@ -851,7 +851,7 @@ Table of Contents
 
 7.3.  ProtocolTypeList and ProtocolType
 
-   An event's "protocol_type" array field indicates to which protocols
+   An event's "protocol_types" array field indicates to which protocols
    (or protocol "stacks") this event belongs.  This allows a single qlog
    file to aggregate traces of different protocols (e.g., a web server
    offering both TCP+HTTP/2 and QUIC+HTTP/3 connections).
@@ -862,7 +862,7 @@ Table of Contents
 
        Figure 19: ProtocolTypeList and ProtocolType socket definition
 
-   For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP/3"
+   For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP3"
    protocol_type entry values, see [QLOG-QUIC] and [QLOG-H3].
 
    Typically however, all events in a single trace are of the same few
@@ -942,7 +942,7 @@ Table of Contents
    "events": [
        {
            "time": 1553986553579,
-           "protocol_type": ["TCP", "TLS", "HTTP2"],
+           "protocol_types": ["TCP", "TLS", "HTTP2"],
            "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
                       ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
            "name": "quic:packet_received",
@@ -950,7 +950,7 @@ Table of Contents
        },
        {
            "time": 1553986553581,
-           "protocol_type": ["QUIC","HTTP/3"],
+           "protocol_types": ["QUIC","HTTP3"],
            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
            "name": "quic:packet_sent",
            "data": { ... }
@@ -990,9 +990,9 @@ Table of Contents
    event varies in three main fields: "time", "name" and associated
    data.  Additionally, there are also several more advanced fields that
    allow mixing events from different protocols and contexts inside of
-   the same trace (for example "protocol_type" and "group_id").  In most
-   "normal" use cases however, the values of these advanced fields are
-   consistent for each event instance (for example, a single trace
+   the same trace (for example "protocol_types" and "group_id").  In
+   most "normal" use cases however, the values of these advanced fields
+   are consistent for each event instance (for example, a single trace
    contains events for a single QUIC connection).
 
    To reduce file size and making logging easier, qlog uses the
@@ -1007,7 +1007,7 @@ Table of Contents
    {
        "events": [{
                "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-               "protocol_type": ["QUIC","HTTP/3"],
+               "protocol_types": ["QUIC","HTTP3"],
                "time_format": "relative",
                "reference_time": 1553986553572,
 
@@ -1016,7 +1016,7 @@ Table of Contents
                "data": { ... }
            },{
                "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-               "protocol_type": ["QUIC","HTTP/3"],
+               "protocol_types": ["QUIC","HTTP3"],
                "time_format": "relative",
                "reference_time": 1553986553572,
 
@@ -1033,7 +1033,7 @@ Table of Contents
    {
        "common_fields": {
            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-           "protocol_type": ["QUIC","HTTP/3"],
+           "protocol_types": ["QUIC","HTTP3"],
            "time_format": "relative",
            "reference_time": 1553986553572
        },
@@ -1066,7 +1066,7 @@ Table of Contents
        ? path: PathID
        ? time_format: TimeFormat
        ? reference_time: float64
-       ? protocol_type: ProtocolTypeList
+       ? protocol_types: ProtocolTypeList
        ? group_id: GroupID
        * text => any
    }
