@@ -1167,10 +1167,11 @@ between the different layers. This helps make clear the flow of data, how long
 data remains in various buffers, and the overheads introduced by individual
 layers. The event has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
-For example, it can be useful to understand when when data moves from an
+This event relates to stream data only. There are no packet or frame headers and
+length values in the `length` or `raw` fields MUST reflect that.
+
+For example, it can be useful to understand when data moves from an
 application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
-Similarly, when data moves from the application protocol layer into a
-user-facing application such as a web browser.
 
 The `stream_data_moved` event can provide insight into whether received data on
 a QUIC stream is moved to the application protocol immediately (for example per
@@ -1208,8 +1209,7 @@ QUICStreamDataMoved = {
     * $$quic-streamdatamoved-extension
 }
 
-$DataLocation /=  "user" /
-                  "application" /
+$DataLocation /=  "application" /
                   "transport" /
                   "network"
 
@@ -1226,9 +1226,11 @@ clear the flow of data, how long data remains in various buffers, and the
 overheads introduced by individual layers. The event has Base importance level;
 see {{Section 9.2 of QLOG-MAIN}}.
 
+This event relates to datagram data only. There are no packet or frame headers and
+length values in the `length` or `raw` fields MUST reflect that.
+
 For example, passing from the application protocol (e.g., WebTransport) to QUIC
-Datagram Frame buffers and vice versa. Similarly, when data moves from the
-application protocol layer into a user-facing application such as a web browser.
+Datagram Frame buffers and vice versa.
 
 The `datagram_data_moved` event can provide insight into whether received data
 in a QUIC Datagram Frame is moved to the application protocol immediately (for
