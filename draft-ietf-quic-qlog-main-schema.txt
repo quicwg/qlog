@@ -91,13 +91,13 @@ Table of Contents
      7.1.  Timestamps
      7.2.  Path
      7.3.  ProtocolTypeList and ProtocolType
-     7.4.  Triggers
-     7.5.  Grouping
-     7.6.  SystemInformation
-     7.7.  CommonFields
+     7.4.  Grouping
+     7.5.  SystemInformation
+     7.6.  CommonFields
    8.  Concrete Event Types and Event Schema
      8.1.  Event Schema and Event Category URIs
      8.2.  Extending the Data Field
+       8.2.1.  Triggers
      8.3.  Event Importance Levels
      8.4.  Tooling Expectations
      8.5.  Further Design Guidance
@@ -507,7 +507,7 @@ Table of Contents
    The optional "title" and "description" fields provide additional
    free-text information about the trace.
 
-   The optional "common_fields" field is described in Section 7.7.
+   The optional "common_fields" field is described in Section 7.6.
 
    The optional "vantage_point" field is described in Section 6.
 
@@ -562,7 +562,7 @@ Table of Contents
 
    Note that another way to combine events of different traces in a
    single qlog file is through the use of the "group_id" field,
-   discussed in Section 7.5.
+   discussed in Section 7.4.
 
 5.  QlogFileSeq schema
 
@@ -723,12 +723,12 @@ Table of Contents
    optionally add custom fields.
 
    Each qlog event MAY contain the optional fields: "time_format"
-   (Section 7.1), "protocol_types" (Section 7.3), "trigger"
-   (Section 7.4), and "group_id" (Section 7.5).
+   (Section 7.1), "protocol_type" (Section 7.3), "trigger"
+   (Section 8.2.1), and "group_id" (Section 7.4).
 
    Multiple events can appear in a Trace or TraceSeq and they might
    contain fields with identical values.  It is possible to optimize out
-   this duplication using "common_fields" (Section 7.7).
+   this duplication using "common_fields" (Section 7.6).
 
    Example qlog event:
 
@@ -774,7 +774,7 @@ Table of Contents
       characters.
 
    *  Relative: Specify a full "reference_time" timestamp (typically
-      this is done up-front in "common_fields", see Section 7.7) and
+      this is done up-front in "common_fields", see Section 7.6) and
       include only relatively-encoded values based on this
       reference_time with each event.  The "reference_time" value is
       typically the first absolute timestamp.  This approach uses a
@@ -827,7 +827,7 @@ Table of Contents
    trace, and does not need to be logged explicitly with each event.  In
    this case, the "path" field can be omitted (in which case the default
    value of "" is assumed) or reflected in "common_fields" instead (see
-   Section 7.7).
+   Section 7.6).
 
    However, in some situations, such as during QUIC's Connection
    Migration or when using Multipath features, it is useful to be able
@@ -867,45 +867,9 @@ Table of Contents
 
    Typically however, all events in a single trace are of the same few
    protocols, and this array field is logged once in "common_fields",
-   see Section 7.7.
+   see Section 7.6.
 
-7.4.  Triggers
-
-   Sometimes, additional information is needed in the case where a
-   single event can be caused by a variety of other events.  In the
-   normal case, the context of the surrounding log messages gives a hint
-   as to which of these other events was the cause.  However, in highly-
-   parallel and optimized implementations, corresponding log messages
-   might separated in time.  Another option is to explicitly indicate
-   these "triggers" in a high-level way per-event to get more fine-
-   grained information without much additional overhead.
-
-   In qlog, the optional "trigger" field contains a string value
-   describing the reason (if any) for this event instance occurring, see
-   Section 8.2.  While this "trigger" field could be a property of the
-   qlog Event itself, it is instead a property of the "data" field
-   instead.  This choice was made because many event types do not
-   include a trigger value, and having the field at the Event-level
-   would cause overhead in some serializations.  Additional information
-   on the trigger can be added in the form of additional member fields
-   of the "data" field value, yet this is highly implementation-
-   specific, as are the trigger field's string values.
-
-   One purely illustrative example of some potential triggers for QUIC's
-   "packet_dropped" event is shown in Figure 20:
-
-   TransportPacketDropped = {
-       ? packet_type: PacketType
-       ? raw_length: uint16
-       ? trigger: "key_unavailable" /
-                  "unknown_connection_id" /
-                  "decrypt_error" /
-                  "unsupported_version"
-   }
-
-                         Figure 20: Trigger example
-
-7.5.  Grouping
+7.4.  Grouping
 
    As discussed in Section 4.2, a single qlog file can contain several
    traces taken from different vantage points.  However, a single trace
@@ -930,11 +894,11 @@ Table of Contents
    field, which contains a string value.  Implementations are free to
    use their preferred string serialization for this field, so long as
    it contains a unique value per logical group.  Some examples can be
-   seen in Figure 22.
+   seen in Figure 21.
 
    GroupID = text
 
-                       Figure 21: GroupID definition
+                       Figure 20: GroupID definition
 
    JSON serialization example for events grouped by four tuples and QUIC
    connection IDs:
@@ -957,7 +921,7 @@ Table of Contents
        }
    ]
 
-                         Figure 22: GroupID example
+                         Figure 21: GroupID example
 
    Note that in some contexts (for example a Multipath transport
    protocol) it might make sense to add additional contextual per-event
@@ -968,9 +932,9 @@ Table of Contents
    belonging to a single logical group (for example, an individual QUIC
    connection).  As such, instead of logging the "group_id" field with
    an identical value for each event instance, this field is typically
-   logged once in "common_fields", see Section 7.7.
+   logged once in "common_fields", see Section 7.6.
 
-7.6.  SystemInformation
+7.5.  SystemInformation
 
    The "system_info" field can be used to record system-specific details
    related to an event.  This is useful, for instance, where an
@@ -984,7 +948,7 @@ Table of Contents
      ? thread_id: uint32
    }
 
-7.7.  CommonFields
+7.6.  CommonFields
 
    As discussed in the previous sections, information for a typical qlog
    event varies in three main fields: "time", "name" and associated
@@ -999,7 +963,7 @@ Table of Contents
    "common_fields" list to indicate those fields and their values that
    are shared by all events in this component trace.  This prevents
    these fields from being logged for each individual event.  An example
-   of this is shown in Figure 23.
+   of this is shown in Figure 22.
 
    JSON serialization with repeated field values
    per-event instance:
@@ -1050,7 +1014,7 @@ Table of Contents
        ]
    }
 
-                      Figure 23: CommonFields example
+                      Figure 22: CommonFields example
 
    An event's "common_fields" field is a generic dictionary of key-value
    pairs, where the key is always a string and the value can be of any
@@ -1071,7 +1035,7 @@ Table of Contents
        * text => any
    }
 
-                     Figure 24: CommonFields definition
+                     Figure 23: CommonFields definition
 
    Tools MUST be able to deal with these fields being defined either on
    each event individually or combined in common_fields.  Note that if
@@ -1142,7 +1106,7 @@ Table of Contents
      "https://example.com/032024/pickle.html#rick"
    ]
 
-             Figure 25: Example event_categories serialization
+             Figure 24: Example event_categories serialization
 
 8.1.  Event Schema and Event Category URIs
 
@@ -1204,7 +1168,7 @@ Table of Contents
    as a placeholder that can later be replaced with newly defined fields
    by assigning them to the socket with the //= operator.  Multiple
    extensions can be assigned to the same group socket.  An example is
-   shown in Figure 26.
+   shown in Figure 25.
 
    ; original definition in document A
    MyCategoryEventX = {
@@ -1232,7 +1196,7 @@ Table of Contents
        ? additional_field_c: text
    }
 
-     Figure 26: Example of using a generic CDDL group socket to extend
+     Figure 25: Example of using a generic CDDL group socket to extend
                      an existing event data definition
 
    Secondly, to allow documents to define fully new event data field
@@ -1245,8 +1209,8 @@ Table of Contents
    existing $ProtocolEventData enum using the /= extension operator.
    Any generic key-value map type can be assigned to $ProtocolEventData
    (the only common "data" subfield defined in this document is the
-   optional trigger field, see Section 7.4).  An example of this setup
-   is shown in Figure 27.
+   optional trigger field, see Section 8.2.1).  An example of this setup
+   is shown in Figure 26.
 
    ; We define two separate events in a single document
    MyCategoryEvent1 /= {
@@ -1272,7 +1236,7 @@ Table of Contents
    ; the "data" field of a qlog event can now also be of type
    ; MyCategoryEvent1 and MyCategoryEvent2
 
-                   Figure 27: ProtocolEventData extension
+                   Figure 26: ProtocolEventData extension
 
    Documents defining new qlog events MUST properly extend
    $ProtocolEventData when defining data fields to enable automated
@@ -1283,7 +1247,7 @@ Table of Contents
 
    A combined but purely illustrative example of the use of both
    extension points for a conceptual QUIC "packet_sent" event is shown
-   in Figure 28:
+   in Figure 27:
 
    ; defined in the main QUIC event document
    TransportPacketSent = {
@@ -1334,8 +1298,44 @@ Table of Contents
      }
    }
 
-      Figure 28: Example of an extended 'data' field for a conceptual
+      Figure 27: Example of an extended 'data' field for a conceptual
                            QUIC packet_sent event
+
+8.2.1.  Triggers
+
+   Sometimes, additional information is needed in the case where a
+   single event can be caused by a variety of other events.  In the
+   normal case, the context of the surrounding log messages gives a hint
+   as to which of these other events was the cause.  However, in highly-
+   parallel and optimized implementations, corresponding log messages
+   might separated in time.  Another option is to explicitly indicate
+   these "triggers" in a high-level way per-event to get more fine-
+   grained information without much additional overhead.
+
+   In qlog, the optional "trigger" field contains a string value
+   describing the reason (if any) for this event instance occurring, see
+   Section 8.2.  While this "trigger" field could be a property of the
+   qlog Event itself, it is instead a property of the "data" field
+   instead.  This choice was made because many event types do not
+   include a trigger value, and having the field at the Event-level
+   would cause overhead in some serializations.  Additional information
+   on the trigger can be added in the form of additional member fields
+   of the "data" field value, yet this is highly implementation-
+   specific, as are the trigger field's string values.
+
+   One purely illustrative example of some potential triggers for QUIC's
+   "packet_dropped" event is shown in Figure 28:
+
+   TransportPacketDropped = {
+       ? packet_type: PacketType
+       ? raw_length: uint16
+       ? trigger: "key_unavailable" /
+                  "unknown_connection_id" /
+                  "decrypt_error" /
+                  "unsupported_version"
+   }
+
+                         Figure 28: Trigger example
 
 8.3.  Event Importance Levels
 
@@ -1868,7 +1868,7 @@ Table of Contents
    the case for a QUIC server implementation that logs each QUIC
    connection in a separate qlog file.  An alternative that uses
    QLOGFILE would be a QUIC server that logs all connections in a single
-   file and uses the "group_id" field (Section 7.5) to allow post-hoc
+   file and uses the "group_id" field (Section 7.4) to allow post-hoc
    separation of events.
 
    Implementations SHOULD provide support for QLOGDIR and MAY provide
