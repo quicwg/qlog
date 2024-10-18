@@ -85,7 +85,7 @@ Table of Contents
      4.6.  connection_state_updated
      4.7.  path_assigned
      4.8.  mtu_updated
-   5.  QUIC events
+   5.  Transport events
      5.1.  version_information
      5.2.  alpn_information
      5.3.  parameters_set
@@ -107,14 +107,14 @@ Table of Contents
      6.1.  key_updated
      6.2.  key_discarded
    7.  Recovery events
-     7.1.  parameters_set
-     7.2.  metrics_updated
+     7.1.  recovery_parameters_set
+     7.2.  recovery_metrics_updated
      7.3.  congestion_state_updated
      7.4.  loss_timer_updated
      7.5.  packet_lost
      7.6.  marked_for_retransmit
      7.7.  ecn_state_updated
-   8.  QUIC data field definitions
+   8.  QUIC data type definitions
      8.1.  QuicVersion
      8.2.  ConnectionID
      8.3.  Owner
@@ -179,14 +179,12 @@ Table of Contents
    [QUIC-TRANSPORT], [QUIC-RECOVERY], and [QUIC-TLS]) and some of its
    extensions (see [QUIC-DATAGRAM] and [GREASEBIT]).
 
-   The event schema namespace quic is defined, containing the
-   categories: connectivity (Section 4), security (Section 6), quic
-   Section 5, and recovery Section 7.  Across these categories multiple
-   events derive from the qlog abstract Event class (Section 7 of
-   [QLOG-MAIN]), each extending the "data" field and defining their
-   "name" field values and semantics.  Some data fields use complex
-   datastructures.  These are represented as enums or re-usable
-   definitions, which are grouped together on the bottom of this
+   The event namespace with identifier http3 is defined; see Section 2.
+   In this namespace multiple events derive from the qlog abstract Event
+   class (Section 7 of [QLOG-MAIN]), each extending the "data" field and
+   defining their "name" field values and semantics.  Some event data
+   fields use complex data types.  These are represented as enums or re-
+   usable definitions, which are grouped together on the bottom of this
    document for clarity.
 
    When any event from this document is included in a qlog trace, the
@@ -254,7 +252,7 @@ Table of Contents
    extensions described in [QLOG-MAIN].
 
    The following fields from [QLOG-MAIN] are imported and used: name,
-   category, type, data, group_id, protocol_types, importance, RawInfo,
+   namespace, type, data, group_id, protocol_types, importance, RawInfo,
    and time-related fields.
 
    As is the case for [QLOG-MAIN], the qlog schema definitions in this
@@ -266,120 +264,101 @@ Table of Contents
    This document describes how the core QUIC protocol and selected
    extensions can be expressed in qlog using a newly defined event
    schema.  Per the requirements in Section 8 of [QLOG-MAIN], this
-   document registers the quic namespace and the following category
-   identifiers and URIs.
-
-   *  connectivity - urn:ietf:params:qlog:events:quic#connectivity
-
-   *  security - urn:ietf:params:qlog:events:quic#security
-
-   *  quic - urn:ietf:params:qlog:events:quic#quic
-
-   *  recovery - urn:ietf:params:qlog:events:quic#recovery
+   document registers the quic namespace.  The event schema URI is
+   urn:ietf:params:qlog:events:quic.
 
 2.1.  Draft Event Schema Identification
 
    This section is to be removed before publishing as an RFC.
 
    Only implementations of the final, published RFC can use the events
-   belonging to the category with the URIs
-   urn:ietf:params:qlog:events:quic#connectivity,
-   urn:ietf:params:qlog:events:quic#security,
-   urn:ietf:params:qlog:events:quic#quic, and
-   urn:ietf:params:qlog:events:quic#recovery.  Until such an RFC exists,
+   belonging to the event schema with the URI
+   urn:ietf:params:qlog:events:quic.  Until such an RFC exists,
    implementations MUST NOT identify themselves using this URI.
 
    Implementations of draft versions of the event schema MUST append the
    string "-" and the corresponding draft number to the URI.  For
    example, draft 07 of this document is identified using the URI
-   urn:ietf:params:qlog:events:quic#quic-07.
+   urn:ietf:params:qlog:events:quic-07.
 
-   The category identifier itself is not affected by this requirement.
+   The namespace identifier itself is not affected by this requirement.
 
 3.  QUIC Event Overview
 
    Table 1 summarizes the name value of each event type that is defined
    in this specification.
 
-   +=======================================+============+==============+
-   | Name value                            | Importance | Definition   |
-   +=======================================+============+==============+
-   | connectivity:server_listening         | Extra      | Section 4.1  |
-   +---------------------------------------+------------+--------------+
-   | connectivity:connection_started       | Base       | Section 4.2  |
-   +---------------------------------------+------------+--------------+
-   | connectivity:connection_closed        | Base       | Section 4.3  |
-   +---------------------------------------+------------+--------------+
-   | connectivity:connection_id_updated    | Base       | Section 4.4  |
-   +---------------------------------------+------------+--------------+
-   | connectivity:spin_bit_updated         | Base       | Section 4.5  |
-   +---------------------------------------+------------+--------------+
-   | connectivity:connection_state_updated | Base       | Section 4.6  |
-   +---------------------------------------+------------+--------------+
-   | connectivity:path_assigned            | Base       | Section 4.7  |
-   +---------------------------------------+------------+--------------+
-   | connectivity:mtu_updated              | Extra      | Section 4.8  |
-   +---------------------------------------+------------+--------------+
-   | quic:version_information              | Core       | Section 5.1  |
-   +---------------------------------------+------------+--------------+
-   | quic:alpn_information                 | Core       | Section 5.2  |
-   +---------------------------------------+------------+--------------+
-   | quic:parameters_set                   | Core       | Section 5.3  |
-   +---------------------------------------+------------+--------------+
-   | quic:parameters_restored              | Base       | Section 5.4  |
-   +---------------------------------------+------------+--------------+
-   | quic:packet_sent                      | Core       | Section 5.5  |
-   +---------------------------------------+------------+--------------+
-   | quic:packet_received                  | Core       | Section 5.6  |
-   +---------------------------------------+------------+--------------+
-   | quic:packet_dropped                   | Base       | Section 5.7  |
-   +---------------------------------------+------------+--------------+
-   | quic:packet_buffered                  | Base       | Section 5.8  |
-   +---------------------------------------+------------+--------------+
-   | quic:packets_acked                    | Extra      | Section 5.9  |
-   +---------------------------------------+------------+--------------+
-   | quic:udp_datagrams_sent               | Extra      | Section      |
-   |                                       |            | 5.10         |
-   +---------------------------------------+------------+--------------+
-   | quic:udp_datagrams_received           | Extra      | Section      |
-   |                                       |            | 5.11         |
-   +---------------------------------------+------------+--------------+
-   | quic:udp_datagram_dropped             | Extra      | Section      |
-   |                                       |            | 5.12         |
-   +---------------------------------------+------------+--------------+
-   | quic:stream_state_updated             | Base       | Section      |
-   |                                       |            | 5.13         |
-   +---------------------------------------+------------+--------------+
-   | quic:frames_processed                 | Extra      | Section      |
-   |                                       |            | 5.14         |
-   +---------------------------------------+------------+--------------+
-   | quic:stream_data_moved                | Base       | Section      |
-   |                                       |            | 5.15         |
-   +---------------------------------------+------------+--------------+
-   | quic:datagram_data_moved              | Base       | Section      |
-   |                                       |            | 5.16         |
-   +---------------------------------------+------------+--------------+
-   | quic:migration_state_updated          | Extra      | Section      |
-   |                                       |            | 5.17         |
-   +---------------------------------------+------------+--------------+
-   | security:key_updated                  | Base       | Section 6.1  |
-   +---------------------------------------+------------+--------------+
-   | security:key_discarded                | Base       | Section 6.2  |
-   +---------------------------------------+------------+--------------+
-   | recovery:parameters_set               | Base       | Section 7.1  |
-   +---------------------------------------+------------+--------------+
-   | recovery:metrics_updated              | Core       | Section 7.2  |
-   +---------------------------------------+------------+--------------+
-   | recovery:congestion_state_updated     | Base       | Section 7.3  |
-   +---------------------------------------+------------+--------------+
-   | recovery:loss_timer_updated           | Extra      | Section 7.4  |
-   +---------------------------------------+------------+--------------+
-   | recovery:packet_lost                  | Core       | Section 7.5  |
-   +---------------------------------------+------------+--------------+
-   | recovery:marked_for_retransmit        | Extra      | Section 7.6  |
-   +---------------------------------------+------------+--------------+
-   | recovery:ecn_state_updated            | Extra      | Section 7.7  |
-   +---------------------------------------+------------+--------------+
+       +===============================+============+==============+
+       | Name value                    | Importance | Definition   |
+       +===============================+============+==============+
+       | quic:server_listening         | Extra      | Section 4.1  |
+       +-------------------------------+------------+--------------+
+       | quic:connection_started       | Base       | Section 4.2  |
+       +-------------------------------+------------+--------------+
+       | quic:connection_closed        | Base       | Section 4.3  |
+       +-------------------------------+------------+--------------+
+       | quic:connection_id_updated    | Base       | Section 4.4  |
+       +-------------------------------+------------+--------------+
+       | quic:spin_bit_updated         | Base       | Section 4.5  |
+       +-------------------------------+------------+--------------+
+       | quic:connection_state_updated | Base       | Section 4.6  |
+       +-------------------------------+------------+--------------+
+       | quic:path_assigned            | Base       | Section 4.7  |
+       +-------------------------------+------------+--------------+
+       | quic:mtu_updated              | Extra      | Section 4.8  |
+       +-------------------------------+------------+--------------+
+       | quic:version_information      | Core       | Section 5.1  |
+       +-------------------------------+------------+--------------+
+       | quic:alpn_information         | Core       | Section 5.2  |
+       +-------------------------------+------------+--------------+
+       | quic:parameters_set           | Core       | Section 5.3  |
+       +-------------------------------+------------+--------------+
+       | quic:parameters_restored      | Base       | Section 5.4  |
+       +-------------------------------+------------+--------------+
+       | quic:packet_sent              | Core       | Section 5.5  |
+       +-------------------------------+------------+--------------+
+       | quic:packet_received          | Core       | Section 5.6  |
+       +-------------------------------+------------+--------------+
+       | quic:packet_dropped           | Base       | Section 5.7  |
+       +-------------------------------+------------+--------------+
+       | quic:packet_buffered          | Base       | Section 5.8  |
+       +-------------------------------+------------+--------------+
+       | quic:packets_acked            | Extra      | Section 5.9  |
+       +-------------------------------+------------+--------------+
+       | quic:udp_datagrams_sent       | Extra      | Section 5.10 |
+       +-------------------------------+------------+--------------+
+       | quic:udp_datagrams_received   | Extra      | Section 5.11 |
+       +-------------------------------+------------+--------------+
+       | quic:udp_datagram_dropped     | Extra      | Section 5.12 |
+       +-------------------------------+------------+--------------+
+       | quic:stream_state_updated     | Base       | Section 5.13 |
+       +-------------------------------+------------+--------------+
+       | quic:frames_processed         | Extra      | Section 5.14 |
+       +-------------------------------+------------+--------------+
+       | quic:stream_data_moved        | Base       | Section 5.15 |
+       +-------------------------------+------------+--------------+
+       | quic:datagram_data_moved      | Base       | Section 5.16 |
+       +-------------------------------+------------+--------------+
+       | quic:migration_state_updated  | Extra      | Section 5.17 |
+       +-------------------------------+------------+--------------+
+       | quic:key_updated              | Base       | Section 6.1  |
+       +-------------------------------+------------+--------------+
+       | quic:key_discarded            | Base       | Section 6.2  |
+       +-------------------------------+------------+--------------+
+       | quic:recovery_parameters_set  | Base       | Section 7.1  |
+       +-------------------------------+------------+--------------+
+       | quic:recovery_metrics_updated | Core       | Section 7.2  |
+       +-------------------------------+------------+--------------+
+       | quic:congestion_state_updated | Base       | Section 7.3  |
+       +-------------------------------+------------+--------------+
+       | quic:loss_timer_updated       | Extra      | Section 7.4  |
+       +-------------------------------+------------+--------------+
+       | quic:packet_lost              | Core       | Section 7.5  |
+       +-------------------------------+------------+--------------+
+       | quic:marked_for_retransmit    | Extra      | Section 7.6  |
+       +-------------------------------+------------+--------------+
+       | quic:ecn_state_updated        | Extra      | Section 7.7  |
+       +-------------------------------+------------+--------------+
 
                             Table 1: QUIC Events
 
@@ -388,16 +367,16 @@ Table of Contents
    their use of per-event extension points via the $$ CDDL "group
    socket" syntax, as also described in [QLOG-MAIN].
 
-   QuicEventData = ConnectivityServerListening /
-                   ConnectivityConnectionStarted /
-                   ConnectivityConnectionClosed /
-                   ConnectivityConnectionIDUpdated /
-                   ConnectivitySpinBitUpdated /
-                   ConnectivityConnectionStateUpdated /
-                   ConnectivityPathAssigned /
-                   ConnectivityMTUUpdated /
-                   SecurityKeyUpdated /
-                   SecurityKeyDiscarded /
+   QuicEventData = QUICServerListening /
+                   QUICConnectionStarted /
+                   QUICConnectionClosed /
+                   QUICConnectionIDUpdated /
+                   QUICSpinBitUpdated /
+                   QUICConnectionStateUpdated /
+                   QUICPathAssigned /
+                   QUICMTUUpdated /
+                   QUICKeyUpdated /
+                   QUICKeyDiscarded /
                    QUICVersionInformation /
                    QUICALPNInformation /
                    QUICParametersSet /
@@ -414,15 +393,20 @@ Table of Contents
                    QUICFramesProcessed /
                    QUICStreamDataMoved /
                    QUICDatagramDataMoved /
-                   RecoveryParametersSet /
-                   RecoveryMetricsUpdated /
-                   RecoveryCongestionStateUpdated /
-                   RecoveryLossTimerUpdated /
-                   RecoveryPacketLost
+                   QUICRecoveryParametersSet /
+                   QUICRecoveryMetricsUpdated /
+                   QUICCongestionStateUpdated /
+                   QUICLossTimerUpdated /
+                   QUICPacketLost
 
    $ProtocolEventData /= QuicEventData
 
      Figure 2: QuicEventData definition and ProtocolEventData extension
+
+   The concrete QUIC event types are further defined below, their type
+   identifier is the heading name.  The subdivisions in sections on
+   Connectivity, Security, Transport and Recovery are purely for
+   readability.
 
 4.  Connectivity events
 
@@ -431,7 +415,7 @@ Table of Contents
    Emitted when the server starts accepting connections.  It has Extra
    importance level; see Section 9.2 of [QLOG-MAIN].
 
-   ConnectivityServerListening = {
+   QUICServerListening = {
        ? ip_v4: IPAddress
        ? ip_v6: IPAddress
        ? port_v4: uint16
@@ -441,10 +425,10 @@ Table of Contents
        ; (no 1-RTT connection setups by choice)
        ? retry_required: bool
 
-       * $$connectivity-serverlistening-extension
+       * $$quic-serverlistening-extension
    }
 
-              Figure 3: ConnectivityServerListening definition
+                  Figure 3: QUICServerListening definition
 
    Some QUIC stacks do not handle sockets directly and are thus unable
    to log IP and/or port information.
@@ -458,7 +442,7 @@ Table of Contents
    data that can be useful to log.  It has Base importance level; see
    Section 9.2 of [QLOG-MAIN].
 
-   ConnectivityConnectionStarted = {
+   QUICConnectionStarted = {
        ? ip_version: IPVersion
        src_ip: IPAddress
        dst_ip: IPAddress
@@ -470,10 +454,10 @@ Table of Contents
        ? src_cid: ConnectionID
        ? dst_cid: ConnectionID
 
-       * $$connectivity-connectionstarted-extension
+       * $$quic-connectionstarted-extension
    }
 
-             Figure 4: ConnectivityConnectionStarted definition
+                 Figure 4: QUICConnectionStarted definition
 
    Some QUIC stacks do not handle sockets directly and are thus unable
    to log IP and/or port information.
@@ -510,7 +494,7 @@ Table of Contents
    error codes in implementation-specific ways.  As such, multiple error
    codes can be set on the same event to reflect this.
 
-   ConnectivityConnectionClosed = {
+   QUICConnectionClosed = {
 
        ; which side closed the connection
        ? owner: Owner
@@ -531,10 +515,10 @@ Table of Contents
            ; when it is unclear what triggered the CONNECTION_CLOSE
            "unspecified"
 
-       * $$connectivity-connectionclosed-extension
+       * $$quic-connectionclosed-extension
    }
 
-             Figure 5: ConnectivityConnectionClosed definition
+                 Figure 5: QUICConnectionClosed definition
 
    Loggers SHOULD use the most descriptive trigger for a
    connection_closed event that they are able to deduce.  This is often
@@ -557,15 +541,15 @@ Table of Contents
    When the endpoint updates its own connection ID, the owner field will
    be "local".
 
-   ConnectivityConnectionIDUpdated = {
+   QUICConnectionIDUpdated = {
        owner: Owner
        ? old: ConnectionID
        ? new: ConnectionID
 
-       * $$connectivity-connectionidupdated-extension
+       * $$quic-connectionidupdated-extension
    }
 
-            Figure 6: ConnectivityConnectionIDUpdated definition
+                Figure 6: QUICConnectionIDUpdated definition
 
 4.5.  spin_bit_updated
 
@@ -575,13 +559,13 @@ Table of Contents
    bit is set without changing its value.  It has Base importance level;
    see Section 9.2 of [QLOG-MAIN].
 
-   ConnectivitySpinBitUpdated = {
+   QUICSpinBitUpdated = {
        state: bool
 
-       * $$connectivity-spinbitupdated-extension
+       * $$quic-spinbitupdated-extension
    }
 
-              Figure 7: ConnectivitySpinBitUpdated definition
+                  Figure 7: QUICSpinBitUpdated definition
 
 4.6.  connection_state_updated
 
@@ -600,11 +584,11 @@ Table of Contents
    GranularConnectionStates when more in-depth debugging is required.
    Tools SHOULD be able to deal with both types equally.
 
-   ConnectivityConnectionStateUpdated = {
+   QUICConnectionStateUpdated = {
        ? old: $ConnectionState
        new: $ConnectionState
 
-       * $$connectivity-connectionstateupdated-extension
+       * $$quic-connectionstateupdated-extension
    }
 
    BaseConnectionStates =
@@ -614,12 +598,14 @@ Table of Contents
        ; Handshake packet sent/received
        "handshake_started" /
 
-       ; Both sent a TLS Finished message and verified the peer's TLS Finished message
+       ; Both sent a TLS Finished message
+       ; and verified the peer's TLS Finished message
        ; 1-RTT packets can be sent
        ; RFC 9001 Section 4.1.1
        "handshake_complete" /
 
-       ; CONNECTION_CLOSE sent/received, stateless reset received or idle timeout
+       ; CONNECTION_CLOSE sent/received,
+       ; stateless reset received or idle timeout
        "closed"
 
    GranularConnectionStates =
@@ -629,7 +615,8 @@ Table of Contents
        ; client used valid address validation token
        "peer_validated" /
 
-       ; 1-RTT data can be sent by the server, but handshake is not done yet
+       ; 1-RTT data can be sent by the server,
+       ; but handshake is not done yet
        ; (server has sent TLS Finished; sometimes called 0.5 RTT data)
        "early_write" /
 
@@ -648,7 +635,7 @@ Table of Contents
 
    $ConnectionState /= BaseConnectionStates / GranularConnectionStates
 
-          Figure 8: ConnectivityConnectionStateUpdated definition
+              Figure 8: QUICConnectionStateUpdated definition
 
    The connection_state_changed event has some overlap with the
    connection_closed and connection_started events, and the handling of
@@ -678,7 +665,7 @@ Table of Contents
 
    Definition:
 
-   ConnectivityPathAssigned = {
+   QUICPathAssigned = {
        path_id: PathID
 
        ; the information for traffic going towards the remote receiver
@@ -687,10 +674,10 @@ Table of Contents
        ; the information for traffic coming in at the local endpoint
        ? path_local: PathEndpointInfo
 
-       * $$connectivity-pathassigned-extension
+       * $$quic-pathassigned-extension
    }
 
-               Figure 9: ConnectivityPathAssigned definition
+                   Figure 9: QUICPathAssigned definition
 
    Choosing the different path_id values is left up to the
    implementation.  Some options include using a uniquely incrementing
@@ -704,17 +691,16 @@ Table of Contents
    connection on which the handshake occurs (see also Section 4.2) is
    implicitly associated with the PathID with value "".  Associating
    metadata with this default path is possible by logging the
-   ConnectivityPathAssigned event with a value of "" for the path_id
-   field.
+   QUICPathAssigned event with a value of "" for the path_id field.
 
    As paths and their metadata can evolve over time, multiple
-   ConnectivityPathAssigned events can be emitted for each unique
-   PathID.  The latest event contains the most up-to-date information
-   for that PathID.  As such, the first time a PathID is seen in a
-   ConnectivityPathAssigned event, it is an indication that the path is
-   created.  Subsequent occurrences indicate the path is updated, while
-   a final occurrence with both path_local and path_remote fields
-   omitted implicitly indicates the path has been abandoned.
+   QUICPathAssigned events can be emitted for each unique PathID.  The
+   latest event contains the most up-to-date information for that
+   PathID.  As such, the first time a PathID is seen in a
+   QUICPathAssigned event, it is an indication that the path is created.
+   Subsequent occurrences indicate the path is updated, while a final
+   occurrence with both path_local and path_remote fields omitted
+   implicitly indicates the path has been abandoned.
 
 4.8.  mtu_updated
 
@@ -722,7 +708,7 @@ Table of Contents
    updated.  This happens as part of the Path MTU discovery process.  It
    has Extra importance level; see Section 9.2 of [QLOG-MAIN].
 
-   ConnectivityMTUUpdated = {
+   QUICMTUUpdated = {
        ? old: uint32
        new: uint32
 
@@ -730,12 +716,12 @@ Table of Contents
        ; packet size has been found
        ? done: bool .default false
 
-       * $$connectivity-mtuupdated-extension
+       * $$quic-mtuupdated-extension
    }
 
-                Figure 10: ConnectivityMTUUpdated definition
+                    Figure 10: QUICMTUUpdated definition
 
-5.  QUIC events
+5.  Transport events
 
 5.1.  version_information
 
@@ -1457,15 +1443,13 @@ Table of Contents
 
 5.17.  migration_state_updated
 
-   Importance: Extra
-
    Use to provide additional information when attempting (client-side)
    connection migration.  While most details of the QUIC connection
    migration process can be inferred by observing the PATH_CHALLENGE and
-   PATH_RESPONSE frames, in combination with the
-   ConnectivityPathAssigned event, it can be useful to explicitly log
-   the progression of the migration and potentially made decisions in a
-   single location/event.
+   PATH_RESPONSE frames, in combination with the QUICPathAssigned event,
+   it can be useful to explicitly log the progression of the migration
+   and potentially made decisions in a single location/event.  The event
+   has Extra importance level; see Section 9.2 of [QLOG-MAIN].
 
    Generally speaking, connection migration goes through two phases: a
    probing phase (which is not always needed/present), and a migration
@@ -1520,7 +1504,7 @@ Table of Contents
    The key_updated event has Base importance level; see Section 9.2 of
    [QLOG-MAIN].
 
-   SecurityKeyUpdated = {
+   QUICKeyUpdated = {
        key_type: $KeyType
        ? old: hexstring
        ? new: hexstring
@@ -1537,7 +1521,7 @@ Table of Contents
        * $$quic-keyupdated-extension
    }
 
-                  Figure 28: SecurityKeyUpdated definition
+                    Figure 28: QUICKeyUpdated definition
 
    Note that the key_phase is the full value of the key phase (as
    indicated by @M and @N in Figure 9 of [QUIC-TLS]).  The key phase bit
@@ -1549,7 +1533,7 @@ Table of Contents
    The key_discarded event has Base importance level; see Section 9.2 of
    [QLOG-MAIN].
 
-   SecurityKeyDiscarded = {
+   QUICKeyDiscarded = {
        key_type: $KeyType
        ? key: hexstring
 
@@ -1565,7 +1549,7 @@ Table of Contents
        * $$quic-keydiscarded-extension
    }
 
-                 Figure 29: SecurityKeyDiscarded definition
+                   Figure 29: QUICKeyDiscarded definition
 
 7.  Recovery events
 
@@ -1575,17 +1559,18 @@ Table of Contents
    visualize even unknown data in these events (e.g., plot unknown
    congestion states by name on a timeline visualization).
 
-7.1.  parameters_set
+7.1.  recovery_parameters_set
 
-   The parameters_set event groups initial parameters from both loss
-   detection and congestion control into a single event.  It has Base
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   The recovery_parameters_set event groups initial parameters from both
+   loss detection and congestion control into a single event.  It has
+   Base importance level; see Section 9.2 of [QLOG-MAIN].
 
    All these settings are typically set once and never change.
    Implementation that do, for some reason, change these parameters
-   during execution, MAY emit the parameters_set event more than once.
+   during execution, MAY emit the recovery_parameters_set event more
+   than once.
 
-   RecoveryParametersSet = {
+   QUICRecoveryParametersSet = {
 
        ; Loss detection, see RFC 9002 Appendix A.2
        ; in amount of packets
@@ -1615,28 +1600,28 @@ Table of Contents
        ; as PTO multiplier
        ? persistent_congestion_threshold: uint16
 
-       * $$recovery-parametersset-extension
+       * $$quic-recoveryparametersset-extension
    }
 
-                Figure 30: RecoveryParametersSet definition
+              Figure 30: QUICRecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
 
-7.2.  metrics_updated
+7.2.  recovery_metrics_updated
 
-   The metrics_updated event is emitted when one or more of the
+   The recovery_metrics_updated event is emitted when one or more of the
    observable recovery metrics changes value.  It has Core importance
    level; see Section 9.2 of [QLOG-MAIN].
 
    This event SHOULD group all possible metric updates that happen at or
    around the same time in a single event (e.g., if min_rtt and
    smoothed_rtt change at the same time, they should be bundled in a
-   single metrics_updated entry, rather than split out into two).
-   Consequently, a metrics_updated event is only guaranteed to contain
-   at least one of the listed metrics.
+   single recovery_metrics_updated entry, rather than split out into
+   two).  Consequently, a recovery_metrics_updated event is only
+   guaranteed to contain at least one of the listed metrics.
 
-   RecoveryMetricsUpdated = {
+   QUICRecoveryMetricsUpdated = {
 
        ; Loss detection, see RFC 9002 Appendix A.3
        ; all following rtt fields are expressed in ms
@@ -1661,19 +1646,20 @@ Table of Contents
        ; in bits per second
        ? pacing_rate: uint64
 
-       * $$recovery-metricsupdated-extension
+       * $$quic-recoverymetricsupdated-extension
    }
 
-                Figure 31: RecoveryMetricsUpdated definition
+              Figure 31: QUICRecoveryMetricsUpdated definition
 
    In order to make logging easier, implementations MAY log values even
    if they are the same as previously reported values (e.g., two
-   subsequent RecoveryMetricsUpdated entries can both report the exact
-   same value for min_rtt).  However, applications SHOULD try to log
-   only actual updates to values.
+   subsequent QUICRecoveryMetricsUpdated entries can both report the
+   exact same value for min_rtt).  However, applications SHOULD try to
+   log only actual updates to values.
 
-   Additionally, the metrics_updated event can contain any number of
-   unspecified fields to support different recovery approaches.
+   Additionally, the recovery_metrics_updated event can contain any
+   number of unspecified fields to support different recovery
+   approaches.
 
 7.3.  congestion_state_updated
 
@@ -1685,21 +1671,21 @@ Table of Contents
    in order to support different Congestion Control algorithms, as these
    typically have different states and even different implementations of
    these states across stacks.  For example, for the algorithm defined
-   in the Recovery draft ("enhanced" New Reno), the following states are
-   used: Slow Start, Congestion Avoidance, Application Limited and
+   in the QUIC Recovery RFC ("enhanced" New Reno), the following states
+   are used: Slow Start, Congestion Avoidance, Application Limited and
    Recovery.  Similarly, states can be triggered by a variety of events,
    including detection of Persistent Congestion or receipt of ECN
    markings.
 
-   RecoveryCongestionStateUpdated = {
+   QUICCongestionStateUpdated = {
        ? old: text
        new: text
        ? trigger: text
 
-       * $$recovery-congestionstateupdated-extension
+       * $$quic-congestionstateupdated-extension
    }
 
-            Figure 32: RecoveryCongestionStateUpdated definition
+              Figure 32: QUICCongestionStateUpdated definition
 
    The trigger field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
@@ -1726,7 +1712,7 @@ Table of Contents
    In order to indicate an active timer's timeout update, a new set
    event is used.
 
-   RecoveryLossTimerUpdated = {
+   QUICLossTimerUpdated = {
 
        ; called "mode" in RFC 9002 A.9.
        ? timer_type: "ack" /
@@ -1740,10 +1726,10 @@ Table of Contents
        ; this event's timestamp until when the timer will trigger
        ? delta: float32
 
-       * $$recovery-losstimerupdated-extension
+       * $$quic-losstimerupdated-extension
    }
 
-               Figure 33: RecoveryLossTimerUpdated definition
+                 Figure 33: QUICLossTimerUpdated definition
 
 7.5.  packet_lost
 
@@ -1755,7 +1741,7 @@ Table of Contents
    help disambiguate among the various possible causes of a loss
    declaration.
 
-   RecoveryPacketLost = {
+   QUICPacketLost = {
 
        ; should include at least the packet_type and packet_number
        ? header: PacketHeader
@@ -1770,10 +1756,10 @@ Table of Contents
            ; RFC 9002 Section 6.2.4 paragraph 6, MAY
            "pto_expired"
 
-       * $$recovery-packetlost-extension
+       * $$quic-packetlost-extension
    }
 
-                  Figure 34: RecoveryPacketLost definition
+                    Figure 34: QUICPacketLost definition
 
 7.6.  marked_for_retransmit
 
@@ -1800,13 +1786,13 @@ Table of Contents
    events (e.g., looking at overlapping stream data offsets and length,
    one can determine when data was retransmitted).
 
-   RecoveryMarkedForRetransmit = {
+   QUICMarkedForRetransmit = {
        frames: [+ $QuicFrame]
 
-       * $$recovery-markedforretransmit-extension
+       * $$quic-markedforretransmit-extension
    }
 
-             Figure 35: RecoveryMarkedForRetransmit definition
+               Figure 35: QUICMarkedForRetransmit definition
 
 7.7.  ecn_state_updated
 
@@ -1814,11 +1800,11 @@ Table of Contents
    machine as described in section A.4 of [QUIC-TRANSPORT].  It has
    Extra importance level; see Section 9.2 of [QLOG-MAIN].
 
-   ECNStateUpdated = {
+   QUICECNStateUpdated = {
       ? old: ECNState
        new: ECNState
 
-       * $$recovery-ecnstateupdated-extension
+       * $$quic-ecnstateupdated-extension
    }
 
    ECNState =
@@ -1833,9 +1819,9 @@ Table of Contents
      ; sends packets with ECT(0) marking
      "capable"
 
-                   Figure 36: ECNStateUpdated definition
+                 Figure 36: QUICECNStateUpdated definition
 
-8.  QUIC data field definitions
+8.  QUIC data type definitions
 
 8.1.  QuicVersion
 
@@ -2451,33 +2437,19 @@ Table of Contents
 
 10.  IANA Considerations
 
-   This document registers several new entries in the "qlog event
-   category URIs" registry.
+   This document registers a new entry in the "qlog event schema URIs"
+   registry:
 
-   Event Category URI:  urn:ietf:params:qlog:events:quic#connectivity
+   Event schema URI:  urn:ietf:params:qlog:events:quic
 
-   Description:  Event definitions related to QUIC connectivity.
+   Namespace  quic
 
-   Reference:  Section 4
+   Event Types  TODO ROBIN
 
-   Event Category URI:  urn:ietf:params:qlog:events:quic#security
+   Description:  Event definitions related to the QUIC transport
+      protocol.
 
-   Description:  Event definitions related to QUIC security.
-
-   Reference:  Section 6
-
-   Event Category URI:  urn:ietf:params:qlog:events:quic#quic
-
-   Description:  Event definitions related to the QUIC wire image and
-      other concerns.
-
-   Reference:  Section 5
-
-   Event Category URI:  urn:ietf:params:qlog:events:quic#recovery
-
-   Description:  Event definitions related to QUIC recovery.
-
-   Reference:  Section 4
+   Reference:  This Document
 
 11.  References
 
