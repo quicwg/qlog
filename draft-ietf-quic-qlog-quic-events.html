@@ -3071,28 +3071,28 @@ STREAM frames received over two packets would have the fields serialized as:<a h
 between the different layers. This helps make clear the flow of data, how long
 data remains in various buffers, and the overheads introduced by individual
 layers. The event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.15-1" class="pilcrow">¶</a></p>
-<p id="section-5.15-2">For example, it can be useful to understand when when data moves from an
-application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
-Similarly, when data moves from the application protocol layer into a
-user-facing application such as a web browser.<a href="#section-5.15-2" class="pilcrow">¶</a></p>
-<p id="section-5.15-3">The <code>stream_data_moved</code> event can provide insight into whether received data on
+<p id="section-5.15-2">This event relates to stream data only. There are no packet or frame headers and
+length values in the <code>length</code> or <code>raw</code> fields <span class="bcp14">MUST</span> reflect that.<a href="#section-5.15-2" class="pilcrow">¶</a></p>
+<p id="section-5.15-3">For example, it can be useful to understand when data moves from an
+application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.<a href="#section-5.15-3" class="pilcrow">¶</a></p>
+<p id="section-5.15-4">The <code>stream_data_moved</code> event can provide insight into whether received data on
 a QUIC stream is moved to the application protocol immediately (for example per
 received packet) or in larger batches (for example, all QUIC packets are
 processed first and afterwards the application layer reads from the streams with
 newly available data). This can help identify bottlenecks, flow control issues,
-or scheduling problems.<a href="#section-5.15-3" class="pilcrow">¶</a></p>
-<p id="section-5.15-4">The <code>additional_info</code> field supports optional logging of information
+or scheduling problems.<a href="#section-5.15-4" class="pilcrow">¶</a></p>
+<p id="section-5.15-5">The <code>additional_info</code> field supports optional logging of information
 related to the stream state. For example, an application layer that moves data
 into transport and simultaneously ends the stream, can log <code>fin_set</code>. As
 another example, a transport layer that has received an instruction to reset a
 stream can indicate this to the application layer using <code>reset_stream</code>.
 In both cases, the length-carrying fields (<code>length</code> or <code>raw</code>) can be
-omitted or contain zero values.<a href="#section-5.15-4" class="pilcrow">¶</a></p>
-<p id="section-5.15-5">This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
-see the <code>datagram_data_moved</code> event defined in <a href="#quic-datagramdatamoved" class="auto internal xref">Section 5.16</a>.<a href="#section-5.15-5" class="pilcrow">¶</a></p>
+omitted or contain zero values.<a href="#section-5.15-5" class="pilcrow">¶</a></p>
+<p id="section-5.15-6">This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
+see the <code>datagram_data_moved</code> event defined in <a href="#quic-datagramdatamoved" class="auto internal xref">Section 5.16</a>.<a href="#section-5.15-6" class="pilcrow">¶</a></p>
 <span id="name-quicstreamdatamoved-definit"></span><div id="quic-streamdatamoved-def">
 <figure id="figure-25">
-          <div class="lang-cddl sourcecode" id="section-5.15-6.1">
+          <div class="lang-cddl sourcecode" id="section-5.15-7.1">
 <pre>
 QUICStreamDataMoved = {
     ? stream_id: uint64
@@ -3111,8 +3111,7 @@ QUICStreamDataMoved = {
     * $$quic-streamdatamoved-extension
 }
 
-$DataLocation /=  "user" /
-                  "application" /
+$DataLocation /=  "application" /
                   "transport" /
                   "network"
 
@@ -3136,20 +3135,21 @@ data (see <span>[<a href="#RFC9221" class="cite xref">RFC9221</a>]</span>) moves
 clear the flow of data, how long data remains in various buffers, and the
 overheads introduced by individual layers. The event has Base importance level;
 see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-5.16-1" class="pilcrow">¶</a></p>
-<p id="section-5.16-2">For example, passing from the application protocol (e.g., WebTransport) to QUIC
-Datagram Frame buffers and vice versa. Similarly, when data moves from the
-application protocol layer into a user-facing application such as a web browser.<a href="#section-5.16-2" class="pilcrow">¶</a></p>
-<p id="section-5.16-3">The <code>datagram_data_moved</code> event can provide insight into whether received data
+<p id="section-5.16-2">This event relates to datagram data only. There are no packet or frame headers and
+length values in the <code>length</code> or <code>raw</code> fields <span class="bcp14">MUST</span> reflect that.<a href="#section-5.16-2" class="pilcrow">¶</a></p>
+<p id="section-5.16-3">For example, passing from the application protocol (e.g., WebTransport) to QUIC
+Datagram Frame buffers and vice versa.<a href="#section-5.16-3" class="pilcrow">¶</a></p>
+<p id="section-5.16-4">The <code>datagram_data_moved</code> event can provide insight into whether received data
 in a QUIC Datagram Frame is moved to the application protocol immediately (for
 example per received packet) or in larger batches (for example, all QUIC packets
 are processed first and afterwards the application layer reads all Datagrams at
 once). This can help identify bottlenecks, flow control issues, or scheduling
-problems.<a href="#section-5.16-3" class="pilcrow">¶</a></p>
-<p id="section-5.16-4">This event is only for data in QUIC Datagram Frames. For data in QUIC streams,
-see the <code>stream_data_moved</code> event defined in <a href="#quic-streamdatamoved" class="auto internal xref">Section 5.15</a>.<a href="#section-5.16-4" class="pilcrow">¶</a></p>
+problems.<a href="#section-5.16-4" class="pilcrow">¶</a></p>
+<p id="section-5.16-5">This event is only for data in QUIC Datagram Frames. For data in QUIC streams,
+see the <code>stream_data_moved</code> event defined in <a href="#quic-streamdatamoved" class="auto internal xref">Section 5.15</a>.<a href="#section-5.16-5" class="pilcrow">¶</a></p>
 <span id="name-quicdatagramdatamoved-defin"></span><div id="quic-datagramdatamoved-def">
 <figure id="figure-26">
-          <div class="lang-cddl sourcecode" id="section-5.16-5.1">
+          <div class="lang-cddl sourcecode" id="section-5.16-6.1">
 <pre>
 QUICDatagramDataMoved = {
     ; byte length of the moved data
