@@ -747,6 +747,8 @@ to be useful for correct 0-RTT usage.
 
 ~~~ cddl
 QUICParametersRestored = {
+
+    ; RFC9000
     ? disable_active_migration: bool
     ? max_idle_timeout: uint64
     ? max_udp_payload_size: uint32
@@ -757,6 +759,14 @@ QUICParametersRestored = {
     ? initial_max_stream_data_uni: uint64
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
+
+    ; RFC9221
+    ? max_datagram_frame_size: uint64
+
+    ; RFC9287
+    ; can only be restored at the client.
+    ; servers MUST NOT restore this parameter!
+    ? grease_quic_bit: bool
 
     * $$quic-parametersrestored-extension
 }
