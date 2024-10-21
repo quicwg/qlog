@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 21 April 2025                                              Meta
+Expires: 24 April 2025                                              Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         18 October 2024
+                                                         21 October 2024
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 21 April 2025.
+   This Internet-Draft will expire on 24 April 2025.
 
 Copyright Notice
 
@@ -854,6 +854,14 @@ Table of Contents
    single event instance.  If you need to log settings from two sides,
    you MUST emit two separate event instances.
 
+   Implementations are not required to recognize, process or support
+   every setting/parameter received in all situations.  For example,
+   QUIC implementations MUST discard transport parameters that they do
+   not understand Section 7.4.2 of [QUIC-TRANSPORT].  The
+   unknown_parameters field can be used to log the raw values of any
+   unknown parameters (e.g., GREASE, private extensions, peer-side
+   experimentation).
+
    In the case of connection resumption and 0-RTT, some of the server's
    parameters are stored up-front at the client and used for the initial
    connection startup.  They are later updated with the server's reply.
@@ -891,6 +899,7 @@ Table of Contents
        ? initial_max_streams_bidi: uint64
        ? initial_max_streams_uni: uint64
        ? preferred_address: PreferredAddress
+       ? unknown_parameters: [* UnknownParameter]
 
        ; RFC9221
        ? max_datagram_frame_size: uint64
@@ -909,6 +918,11 @@ Table of Contents
        port_v6: uint16
        connection_id: ConnectionID
        stateless_reset_token: StatelessResetToken
+   }
+
+   UnknownParameter = {
+       id: uint64
+       ? value: hexstring
    }
 
                   Figure 13: QUICParametersSet definition
