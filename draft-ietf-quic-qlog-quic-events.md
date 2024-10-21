@@ -72,7 +72,7 @@ containing concrete events for the core QUIC protocol (see
 {{!QUIC-DATAGRAM=RFC9221}} and {{!GREASEBIT=RFC9287}}).
 
 
-The event namespace with identifier `http3` is defined; see {{schema-def}}. In
+The event namespace with identifier `quic` is defined; see {{schema-def}}. In
 this namespace multiple events derive from the qlog abstract Event class
 ({{Section 7 of QLOG-MAIN}}), each extending the "data" field and defining their
 "name" field values and semantics. Some event data fields use complex data

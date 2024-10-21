@@ -930,11 +930,15 @@ fields are "time" and "data", who are divergent by nature.
 
 # Concrete Event Types and Event Schema {#event-types-and-schema}
 
-Concrete event types (for example: packet_sent), as well as related data types
-(for example: QUICPacketHeader), are grouped in event namespaces (for example:
-quic) which in turn are defined in one or multiple event schemas (for example:
-urn:ietf:params:qlog:events:quic and
-urn:ietf:params:qlog:events:quic#extension1).
+Concrete event types, as well as related data types, are grouped in event
+namespaces which in turn are defined in one or multiple event schemas.
+
+As an example, the `QUICPacketSent` and `QUICPacketHeader` event and data types
+would be part of the `quic` namespace, which is defined in an event schema with
+URI `urn:ietf:params:qlog:events:quic`. A later extension that adds a new QUIC
+frame `QUICNewFrame` would also be part of the `quic` namespace, but defined in
+a new event schema with URI
+`urn:ietf:params:qlog:events:quic#new-frame-extension`.
 
 Concrete event types MUST belong to a single event namespace and MUST have a
 registered non-empty identifier of type `text`.
@@ -1011,7 +1015,7 @@ Event schema that define a new namespace SHOULD use a URN of the form
 `urn:ietf:params:qlog:events:<namespace identifier>`, where `<namespace
 identifier>` is globally unique. For example, this document defines two event
 schemas ({{generic-event-schema}}) for two namespaces: `loglevel` and `sim`.
-Other examples of event schema define the `quic` {{QLOG-QUIC}} and `http`
+Other examples of event schema define the `quic` {{QLOG-QUIC}} and `http3`
 {{QLOG-H3}} namespaces.
 
 Event schema that extend an existing namespace SHOULD use a URN of the form
