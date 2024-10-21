@@ -779,6 +779,18 @@ and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-h3-events-08:
+{:numbered="false"}
+
+* Removed individual categories and put every event in the single `http3` event
+  schema namespace. Major change (#439)
+* Changed protocol id from `HTTP3` to `HTTP/3` (#428)
+
+## Since draft-ietf-quic-qlog-h3-events-07:
+{:numbered="false"}
+
+* TODO (we forgot...)
+
 ## Since draft-ietf-quic-qlog-h3-events-06:
 {:numbered="false"}
 

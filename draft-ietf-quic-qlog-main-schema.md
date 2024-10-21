@@ -2143,6 +2143,20 @@ their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-main-schema-09:
+{:numbered="false"}
+
+* Renamed `protocol_type` to `protocol_types` (#427)
+* Moved Trigger section. Purely editorial (#430)
+* Removed the concept of categories and updated extension and event schema logic
+  to match. Major change (#439)
+* Reworked completely how we handle timestamps and clocks. Major change (#433)
+
+## Since draft-ietf-quic-qlog-main-schema-08:
+{:numbered="false"}
+
+* TODO (we forgot...)
+
 ## Since draft-ietf-quic-qlog-main-schema-07:
 {:numbered="false"}
 

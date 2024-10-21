@@ -2325,6 +2325,22 @@ their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+
+## Since draft-ietf-qlog-quic-events-08:
+{:numbered="false"}
+
+* Removed individual categories and put every event in the single `quic` event
+  schema namespace. Major change (#439)
+* Renamed `recovery:metrics_updated` to `quic:recovery_metrics_updated` and
+  `recovery:parameters_set` to `quic:recovery_parameters_set` (#439)
+* Added `unknown_parameters` field to `parameters_set` (#438)
+* Added extra parameters to `parameters_restored` (#441)
+
+## Since draft-ietf-qlog-quic-events-07:
+{:numbered="false"}
+
+* TODO (we forgot...)
+
 ## Since draft-ietf-qlog-quic-events-06:
 {:numbered="false"}
 
