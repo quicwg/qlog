@@ -1,0 +1,2739 @@
+<!DOCTYPE html>
+<html lang="en" class="Internet-Draft">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>HTTP/3 qlog event definitions</title>
+<meta content="Robin Marx" name="author">
+<meta content="Luca Niccolini" name="author">
+<meta content="Marten Seemann" name="author">
+<meta content="Lucas Pardue" name="author">
+<meta content="
+       This document defines a qlog event schema containing concrete events for the
+core HTTP/3 protocol and selected extensions. 
+    " name="description">
+<meta content="xml2rfc 3.23.2" name="generator">
+<meta content="Internet-Draft" name="keyword">
+<meta content="draft-ietf-quic-qlog-h3-events-latest" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.23.2
+    Python 3.12.7
+    ConfigArgParse 1.7
+    google-i18n-address 3.1.1
+    intervaltree 3.1.0
+    Jinja2 3.1.4
+    lxml 4.9.4
+    platformdirs 4.3.6
+    pycountry 22.3.5
+    PyYAML 6.0.1
+    requests 2.32.3
+    setuptools 70.3.0
+    wcwidth 0.2.13
+-->
+<link href="draft-ietf-quic-qlog-h3-events.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Italic'), local('Lora-Italic'), url('https://martinthomson.github.io/rfc-css/fonts/lora-italic-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Lora Regular'), local('Lora-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/lora-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-cyrillic.woff2') format('woff2');
+  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local('Lora Bold'), local('Lora-Bold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-bold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Lora SemiBold'), local('Lora-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/lora-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-vietnamese.woff2') format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Cabin Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: local('Cabin Condensed SemiBold'), local('CabinCondensed-SemiBold'), url('https://martinthomson.github.io/rfc-css/fonts/cabincondensed-semibold-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Oxygen Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Oxygen Mono'), local('OxygenMono-Regular'), url('https://martinthomson.github.io/rfc-css/fonts/oxygenmono-regular-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light dark;
+  --background-color: #fff;
+  --text-color: #222;
+  --title-color: #191919;
+  --link-color: #2a6496;
+  --highlight-color: #f9f9f9;
+  --line-color: #eee;
+  --pilcrow-weak: #ddd;
+  --pilcrow-strong: #bbb;
+  --small-font-size: 14.5px;
+  --font-mono: 'Oxygen Mono', monospace;
+  scrollbar-color: #bbb #eee;
+}
+body {
+  max-width: 600px;
+  margin: 75px auto;
+  padding: 0 5px;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  font: 16px/22px "Lora", serif;
+  scroll-behavior: smooth;
+}
+
+.ears {
+  display: none;
+}
+
+/* headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Cabin Condensed", sans-serif;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  font-size-adjust: 0.5;
+  color: var(--title-color);
+}
+h1#title {
+  font-size: 32px;
+  line-height: 40px;
+  clear: both;
+}
+h1#title, h1#rfcnum {
+  margin: 1.5em 0 0.2em;
+}
+h1#rfcnum + h1#title {
+  margin: 0.2em 0;
+}
+
+h1, h2, h3 {
+  font-size: 22px;
+  line-height: 27px;
+}
+h4, h5, h6 {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* general structure */
+.author {
+  padding-bottom: 0.3em;
+}
+#abstract+p {
+  font-size: 18px;
+  line-height: 24px;
+}
+#abstract+p code, #abstract+p samp, #abstract+p tt {
+  font-size: 16px;
+  line-height: 0;
+}
+
+p {
+  padding: 0;
+  margin: 0.5em 0;
+  text-align: left;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+/* font-family isn't space-separated, but =~ will have to do */
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: var(--highlight-color);
+  border: 1px solid var(--line-color);
+  border-radius: 3px;
+  padding: 0.5em 1em 0;
+  margin-bottom: 0.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+  width: auto;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  border: none;
+  /* this isn't optimal, but it's an existence proof.  PrinceXML doesn't
+     support flexbox yet.
+  */
+  display: table;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 0.5em 2em;
+}
+:is(ol, ul) :is(ol, ul) {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+:is(ul, ol).compact, .ulCompact, .olCompact {
+  line-height: 1;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+  clear: left;
+  --indent: 3ch;
+  /* --indent: attr(indent ch); not supported in any browser, but we can dream */
+}
+dl.olPercent {
+  --indent: 5ch;
+}
+dl > dt {
+  float: left;
+  margin-right: 2ch;
+  min-width: 8ch;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+dl > dd {
+  margin-bottom: .8em;
+  margin-left: var(--indent) !important; /* stupid element overrides */
+  min-height: 2ex;
+}
+dl.olPercent > dt {
+  min-width: calc(var(--indent) - 2ch);
+}
+:is(dl.compact, .dlCompact) > dd {
+  margin-bottom: 0;
+}
+:is(dl.compact, .dlCompact) > dd > :is(:first-child, .break:first-child + *) {
+  margin-top: 0;
+}
+:is(dl.compact, .dlCompact) > dd > :is(:last-child) {
+  margin-bottom: 0;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+}
+:is(dd, span).break {
+  display: none;
+}
+
+/* links */
+a, a[href].selfRef:hover {
+  text-decoration: none;
+}
+a[href] {
+  color: var(--link-color);
+}
+a[href].selfRef, .iref + a[href].internal {
+  color: var(--text-color);
+}
+a[href]:hover {
+  text-decoration: underline;
+}
+a[href].selfRef:hover {
+  background-color: var(--highlight-color);
+}
+a.xref:is(.cite, .auto), :is(#status-of-memo, #copyright) a {
+  white-space: nowrap;
+}
+
+/* Figures */
+tt, code, pre {
+  background-color: var(--highlight-color);
+  font: 14px/22px var(--font-mono);
+}
+tt, code {
+  /* changing the font for inline elements leads to different ascender
+     and descender heights; as we want to retain baseline alignment,
+     remove leading to avoid altering the final height of lines
+     note: this fails if these blocks take an entire line,
+     a different solution would be great */
+  line-height: 0;
+}
+:is(h1, h2, h3, h4, h5, h6) :is(tt, code) {
+  font-size: 84%;
+}
+pre {
+  border: 1px solid var(--line-color);
+  font-size: 13.5px;
+  line-height: 16px;
+  letter-spacing: -0.2px;
+  margin: 5px;
+  padding: 5px;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0.5em 0;
+  padding: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption, caption {
+  font-style: italic;
+  margin: 0.5em 1.5em;
+  text-align: left;
+}
+@media screen {
+  /* Auto-collapse boilerplate. */
+  :is(#status-of-memo, #copyright) p {
+    margin: -2px 0;
+    max-height: 0;
+    transition: max-height 2s ease, margin 0.5s ease 0.5s;
+    overflow: hidden;
+  }
+  :is(#status-of-memo, #copyright):hover p,
+  :is(#status-of-memo, #copyright) h2:target ~ p {
+    margin: 0.5em 0;
+    max-height: 500px;
+    overflow: auto;
+  }
+  pre, svg {
+    display: inline-block;
+    overflow-x: auto;
+  }
+  pre {
+    max-width: 100%;
+    width: calc(100% - 22px - 1em);
+  }
+  svg {
+    max-width: calc(100% - 22px - 1em);
+  }
+  figure pre {
+    display: block;
+    width: calc(100% - 25px);
+  }
+  :is(pre, svg) + .pilcrow {
+    display: inline-block;
+    vertical-align: text-bottom;
+    padding-bottom: 8px;
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 0 2em;
+  font-style: italic;
+}
+blockquote {
+  margin: 1em 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+
+/* tables */
+table {
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+}
+table.right {
+  margin-left: auto;
+}
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+table.left {
+  margin-right: auto;
+}
+thead, tbody {
+  border: 1px solid var(--line-color);
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 5px 10px;
+}
+th {
+  background-color: var(--line-color);
+}
+:is(tr:nth-child(2n), thead+tbody > tr:nth-child(2n+1)) > td {
+  background-color: var(--background-color);
+}
+:is(tr:nth-child(2n+1), thead+tbody > tr:nth-child(2n)) > td {
+  background-color: var(--highlight-color);
+}
+table caption {
+  margin: 0;
+  padding: 3px 0 3px 1em;
+}
+table p {
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  margin-left: 3px;
+  opacity: 0.2;
+  user-select: none;
+}
+a.pilcrow[href] { color: var(--pilcrow-weak); }
+a.pilcrow[href]:hover { text-decoration: none; }
+@media not print {
+  :hover > a.pilcrow {
+    opacity: 1;
+  }
+  a.pilcrow[href]:hover {
+    color: var(--pilcrow-strong);
+    background-color: transparent;
+  }
+}
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid var(--line-color);
+}
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: 600;
+  font-size: var(--small-font-size);
+}
+.role {
+  font-variant: all-small-caps;
+}
+sub, sup {
+  line-height: 1;
+  font-size: 80%;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: var(--small-font-size);
+  line-height: 18px;
+  --identifier-width: 15ch;
+}
+#identifiers dt {
+  width: var(--identifier-width);
+  min-width: var(--identifier-width);
+  clear: left;
+  float: left;
+  text-align: right;
+  margin-right: 1ch;
+}
+#identifiers dd {
+  margin: 0;
+  margin-left: calc(1em + var(--identifier-width)) !important;
+  min-width: 5em;
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #999;
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+#toc nav ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+#toc nav li {
+  line-height: 1.3em;
+  margin: 2px 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+#toc a.xref {
+  white-space: normal;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 10ch;
+  margin-right: 1.5ch;
+}
+.references dt:target::before {
+  content: "⇒";
+  width: 15px;
+  margin: 0 10px 0 -25px;
+}
+.references dd {
+  margin-left: 12ch !important;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+#rfc\.index\.index + ul {
+  margin-left: 0;
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+@media (min-width: 500px) {
+  #authors-addresses > section {
+    column-count: 2;
+    column-gap: 20px;
+  }
+  #authors-addresses > section > h2 {
+    column-span: all;
+  }
+  /* hack for break-inside: avoid-column */
+  #authors-addresses address {
+    display: inline-block;
+    break-inside: avoid-column;
+  }
+}
+
+.rfcEditorRemove p:first-of-type {
+  font-style: italic;
+}
+.cref {
+  background-color: rgba(249, 232, 105, 0.3);
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 929px) {
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 1px 0 0 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+    opacity: 0.6;
+  }
+  #toc.active {
+      opacity: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 2px 0 2px 6px;
+    padding-right: 1em;
+    font-size: 18px;
+    line-height: 24px;
+    min-width: 190px;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 8px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    background-color: var(--background-color);
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+  #toc.active nav {
+    display: block;
+  }
+  /* Make the collapsed ToC header render white on gray also when it's a link */
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+  #toc a.toplink {
+    margin-top: 2px;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 930px) {
+  body {
+    padding-right: 360px;
+    padding-right: calc(min(180px + 20%, 500px));
+  }
+  #toc {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    right: calc(50vw - 480px);
+    width: 312px;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+  }
+  #toc h2 {
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 2em;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  #toc nav > ul  {
+    margin-bottom: 2em;
+  }
+  #toc ul {
+    margin: 0 0 0 4px;
+    font-size: var(--small-font-size);
+  }
+  #toc ul :is(p, li) {
+    margin: 2px 0;
+    line-height: 22px;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre, .vcard {
+    page-break-inside: avoid;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  :is(h2, h3, h4, h5, h6)+*, dd {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+  .toplink {
+    display: none;
+  }
+}
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+}
+
+/* Changes introduced to fix issues found during implementation */
+
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin: 8px 0.5em 0;
+}
+
+/* Provide styling for table cell text alignment */
+table .text-left {
+  text-align: left;
+}
+table .text-center {
+  text-align: center;
+}
+table .text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 20em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Dark mode. */
+@media (prefers-color-scheme: dark) {
+:root {
+  --background-color: #121212;
+  --text-color: #f0f0f0;
+  --title-color: #fff;
+  --link-color: #4da4f0;
+  --highlight-color: #282828;
+  --line-color: #444;
+  --pilcrow-weak: #444;
+  --pilcrow-strong: #666;
+  scrollbar-color: #777 #333;
+}
+}
+
+/* SVG Trick: a prefix match works because only black and white are allowed */
+svg :is([stroke="black"], [stroke^="#000"]) {
+  stroke: var(--text-color);
+}
+svg :is([stroke="white"], [stroke^="#fff"]) {
+  stroke: var(--background-color);
+}
+svg :is([fill="black"], [fill^="#000"], :not([fill])) {
+  fill: var(--text-color);
+}
+svg :is([fill="white"], [fill^="#fff"]) {
+  fill: var(--background-color);
+}
+</style>
+
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">HTTP/3 qlog event definitions</td>
+<td class="right">October 2024</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Marx, et al.</td>
+<td class="center">Expires 24 April 2025</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">QUIC</dd>
+<dt class="label-internet-draft">Internet-Draft:</dt>
+<dd class="internet-draft">draft-ietf-quic-qlog-h3-events-latest</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2024-10-21" class="published">21 October 2024</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Standards Track</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2025-04-24">24 April 2025</time></dd>
+<dt class="label-authors">Authors:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">R. Marx, <span class="editor">Ed.</span>
+</div>
+<div class="org">Akamai</div>
+</div>
+<div class="author">
+      <div class="author-name">L. Niccolini, <span class="editor">Ed.</span>
+</div>
+<div class="org">Meta</div>
+</div>
+<div class="author">
+      <div class="author-name">M. Seemann, <span class="editor">Ed.</span>
+</div>
+</div>
+<div class="author">
+      <div class="author-name">L. Pardue, <span class="editor">Ed.</span>
+</div>
+<div class="org">Cloudflare</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">HTTP/3 qlog event definitions</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">This document defines a qlog event schema containing concrete events for the
+core HTTP/3 protocol and selected extensions.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+</section>
+<section class="note" id="section-note.1">
+      <h2 id="name-note-to-readers">
+<a href="#name-note-to-readers" class="section-name selfRef">Note to Readers</a>
+      </h2>
+<ul class="normal note ulEmpty">
+<li class="normal note ulEmpty" id="section-note.1-1.1">
+          <p id="section-note.1-1.1.1">Note to RFC editor: Please remove this section before publication.<a href="#section-note.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
+<p id="section-note.1-2">Feedback and discussion are welcome at
+<a href="https://github.com/quicwg/qlog">https://github.com/quicwg/qlog</a>. Readers are
+advised to refer to the "editor's draft" at that URL for an up-to-date version
+of this document.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+<p id="section-note.1-3">Concrete examples of integrations of this schema in
+various programming languages can be found at
+<a href="https://github.com/quiclog/qlog/">https://github.com/quiclog/qlog/</a>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 24 April 2025.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2024 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document. Code Components extracted from this
+            document must include Revised BSD License text as described in
+            Section 4.e of the Trust Legal Provisions and are provided without
+            warranty as described in the Revised BSD License.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1" class="keepWithNext"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-usage-with-quic" class="internal xref">Usage with QUIC</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2">
+                <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-notational-conventions" class="internal xref">Notational Conventions</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-event-schema-definition" class="internal xref">Event Schema Definition</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2.2.1">
+                <p id="section-toc.1-1.2.2.1.1"><a href="#section-2.1" class="auto internal xref">2.1</a>.  <a href="#name-draft-event-schema-identifi" class="internal xref">Draft Event Schema Identification</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-http-3-events-2" class="internal xref">HTTP/3 Events</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-parameters_set" class="internal xref">parameters_set</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-parameters_restored" class="internal xref">parameters_restored</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="auto internal xref">3.3</a>.  <a href="#name-stream_type_set" class="internal xref">stream_type_set</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4">
+                <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="auto internal xref">3.4</a>.  <a href="#name-priority_updated" class="internal xref">priority_updated</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5">
+                <p id="section-toc.1-1.3.2.5.1"><a href="#section-3.5" class="auto internal xref">3.5</a>.  <a href="#name-frame_created" class="internal xref">frame_created</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.6">
+                <p id="section-toc.1-1.3.2.6.1"><a href="#section-3.6" class="auto internal xref">3.6</a>.  <a href="#name-frame_parsed" class="internal xref">frame_parsed</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.7">
+                <p id="section-toc.1-1.3.2.7.1"><a href="#section-3.7" class="auto internal xref">3.7</a>.  <a href="#name-datagram_created" class="internal xref">datagram_created</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.8">
+                <p id="section-toc.1-1.3.2.8.1"><a href="#section-3.8" class="auto internal xref">3.8</a>.  <a href="#name-datagram_parsed" class="internal xref">datagram_parsed</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.9">
+                <p id="section-toc.1-1.3.2.9.1"><a href="#section-3.9" class="auto internal xref">3.9</a>.  <a href="#name-push_resolved" class="internal xref">push_resolved</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-http-3-data-field-definitio" class="internal xref">HTTP/3 Data Field Definitions</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-owner" class="internal xref">Owner</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-h3frame" class="internal xref">H3Frame</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="auto internal xref">4.3</a>.  <a href="#name-h3datagram" class="internal xref">H3Datagram</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.1">
+                    <p id="section-toc.1-1.4.2.3.2.1.1"><a href="#section-4.3.1" class="auto internal xref">4.3.1</a>.  <a href="#name-h3dataframe" class="internal xref">H3DataFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.2">
+                    <p id="section-toc.1-1.4.2.3.2.2.1"><a href="#section-4.3.2" class="auto internal xref">4.3.2</a>.  <a href="#name-h3headersframe" class="internal xref">H3HeadersFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.3">
+                    <p id="section-toc.1-1.4.2.3.2.3.1"><a href="#section-4.3.3" class="auto internal xref">4.3.3</a>.  <a href="#name-h3cancelpushframe" class="internal xref">H3CancelPushFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.4">
+                    <p id="section-toc.1-1.4.2.3.2.4.1"><a href="#section-4.3.4" class="auto internal xref">4.3.4</a>.  <a href="#name-h3settingsframe" class="internal xref">H3SettingsFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.5">
+                    <p id="section-toc.1-1.4.2.3.2.5.1"><a href="#section-4.3.5" class="auto internal xref">4.3.5</a>.  <a href="#name-h3pushpromiseframe" class="internal xref">H3PushPromiseFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.6">
+                    <p id="section-toc.1-1.4.2.3.2.6.1"><a href="#section-4.3.6" class="auto internal xref">4.3.6</a>.  <a href="#name-h3goawayframe" class="internal xref">H3GoAwayFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.7">
+                    <p id="section-toc.1-1.4.2.3.2.7.1"><a href="#section-4.3.7" class="auto internal xref">4.3.7</a>.  <a href="#name-h3maxpushidframe" class="internal xref">H3MaxPushIDFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.8">
+                    <p id="section-toc.1-1.4.2.3.2.8.1"><a href="#section-4.3.8" class="auto internal xref">4.3.8</a>.  <a href="#name-h3priorityupdateframe" class="internal xref">H3PriorityUpdateFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.9">
+                    <p id="section-toc.1-1.4.2.3.2.9.1"><a href="#section-4.3.9" class="auto internal xref">4.3.9</a>.  <a href="#name-h3reservedframe" class="internal xref">H3ReservedFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.10">
+                    <p id="section-toc.1-1.4.2.3.2.10.1"><a href="#section-4.3.10" class="auto internal xref">4.3.10</a>. <a href="#name-h3unknownframe" class="internal xref">H3UnknownFrame</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3.2.11">
+                    <p id="section-toc.1-1.4.2.3.2.11.1"><a href="#section-4.3.11" class="auto internal xref">4.3.11</a>. <a href="#name-h3applicationerror" class="internal xref">H3ApplicationError</a></p>
+</li>
+                </ul>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-security-and-privacy-consid" class="internal xref">Security and Privacy Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgements" class="internal xref">Acknowledgements</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-change-log" class="internal xref">Change Log</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.1">
+                <p id="section-toc.1-1.9.2.1.1"><a href="#appendix-B.1" class="auto internal xref"></a><a href="#name-since-draft-ietf-quic-qlog-" class="internal xref">Since draft-ietf-quic-qlog-h3-events-06:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.2">
+                <p id="section-toc.1-1.9.2.2.1"><a href="#appendix-B.2" class="auto internal xref"></a><a href="#name-since-draft-ietf-quic-qlog-h" class="internal xref">Since draft-ietf-quic-qlog-h3-events-05:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.3">
+                <p id="section-toc.1-1.9.2.3.1"><a href="#appendix-B.3" class="auto internal xref"></a><a href="#name-since-draft-ietf-quic-qlog-h3" class="internal xref">Since draft-ietf-quic-qlog-h3-events-04:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.4">
+                <p id="section-toc.1-1.9.2.4.1"><a href="#appendix-B.4" class="auto internal xref"></a><a href="#name-since-draft-ietf-quic-qlog-h3-" class="internal xref">Since draft-ietf-quic-qlog-h3-events-03:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.5">
+                <p id="section-toc.1-1.9.2.5.1"><a href="#appendix-B.5" class="auto internal xref"></a><a href="#name-since-draft-ietf-quic-qlog-h3-e" class="internal xref">Since draft-ietf-quic-qlog-h3-events-02:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.6">
+                <p id="section-toc.1-1.9.2.6.1"><a href="#appendix-B.6" class="auto internal xref"></a><a href="#name-since-draft-ietf-quic-qlog-h3-ev" class="internal xref">Since draft-ietf-quic-qlog-h3-events-01:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.7">
+                <p id="section-toc.1-1.9.2.7.1"><a href="#appendix-B.7" class="auto internal xref"></a><a href="#name-since-draft-ietf-quic-qlog-h3-eve" class="internal xref">Since draft-ietf-quic-qlog-h3-events-00:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.8">
+                <p id="section-toc.1-1.9.2.8.1"><a href="#appendix-B.8" class="auto internal xref"></a><a href="#name-since-draft-marx-qlog-event" class="internal xref">Since draft-marx-qlog-event-definitions-quic-h3-02:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.9">
+                <p id="section-toc.1-1.9.2.9.1"><a href="#appendix-B.9" class="auto internal xref"></a><a href="#name-since-draft-marx-qlog-event-" class="internal xref">Since draft-marx-qlog-event-definitions-quic-h3-01:</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9.2.10">
+                <p id="section-toc.1-1.9.2.10.1"><a href="#appendix-B.10" class="auto internal xref"></a><a href="#name-since-draft-marx-qlog-event-d" class="internal xref">Since draft-marx-qlog-event-definitions-quic-h3-00:</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#appendix-C" class="auto internal xref"></a><a href="#name-authors-addresses" class="internal xref">Authors' Addresses</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">This document defines a qlog event schema (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-8" class="relref">Section 8</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>)
+containing concrete events for the core HTTP/3 protocol <span>[<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span> and selected
+extensions (<span>[<a href="#EXTENDED-CONNECT" class="cite xref">EXTENDED-CONNECT</a>]</span>, <span>[<a href="#H3_PRIORITIZATION" class="cite xref">H3_PRIORITIZATION</a>]</span>, and
+<span>[<a href="#H3-DATAGRAM" class="cite xref">H3-DATAGRAM</a>]</span>).<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">The event schema namespace <code>http</code> is defined, containing the category <code>h3</code>; see
+<a href="#schema-def" class="auto internal xref">Section 2</a>. In this category multiple events derive from the qlog abstract
+Event class (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-7" class="relref">Section 7</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>),  each extending the "data" field and
+defining their "name" field values and semantics<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3"><a href="#h3-events" class="auto internal xref">Table 1</a> summarizes the name value of each event type that is defined in
+this specification. Some event data fields use complex datastructures. These are
+represented as enums or re-usable definitions, which are grouped together on the
+bottom of this document for clarity.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<span id="name-http-3-events"></span><div id="h3-events">
+<table class="center" id="table-1">
+        <caption>
+<a href="#table-1" class="selfRef">Table 1</a>:
+<a href="#name-http-3-events" class="selfRef">HTTP/3 Events</a>
+        </caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Name value</th>
+            <th class="text-left" rowspan="1" colspan="1">Importance</th>
+            <th class="text-left" rowspan="1" colspan="1">Definition</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:parameters_set</td>
+            <td class="text-left" rowspan="1" colspan="1">Base</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-parametersset" class="auto internal xref">Section 3.1</a>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:parameters_restored</td>
+            <td class="text-left" rowspan="1" colspan="1">Base</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-parametersrestored" class="auto internal xref">Section 3.2</a>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:stream_type_set</td>
+            <td class="text-left" rowspan="1" colspan="1">Base</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-streamtypeset" class="auto internal xref">Section 3.3</a>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:priority_updated</td>
+            <td class="text-left" rowspan="1" colspan="1">Base</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-priorityupdated" class="auto internal xref">Section 3.4</a>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:frame_created</td>
+            <td class="text-left" rowspan="1" colspan="1">Core</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-framecreated" class="auto internal xref">Section 3.5</a>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:frame_parsed</td>
+            <td class="text-left" rowspan="1" colspan="1">Core</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-frameparsed" class="auto internal xref">Section 3.6</a>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:datagram_created</td>
+            <td class="text-left" rowspan="1" colspan="1">Base</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-datagramcreated" class="auto internal xref">Section 3.7</a>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:datagram_parsed</td>
+            <td class="text-left" rowspan="1" colspan="1">Base</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-datagramparsed" class="auto internal xref">Section 3.8</a>
+</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">h3:push_resolved</td>
+            <td class="text-left" rowspan="1" colspan="1">Extra</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <a href="#h3-pushresolved" class="auto internal xref">Section 3.9</a>
+</td>
+          </tr>
+        </tbody>
+      </table>
+</div>
+<p id="section-1-5">When any event from this document is included in a qlog trace, the
+"protocol_types" qlog array field <span class="bcp14">MUST</span> contain an entry with the value "HTTP/3":<a href="#section-1-5" class="pilcrow">¶</a></p>
+<span id="name-protocoltype-extension-for-"></span><div id="protocoltype-extension-h3">
+<figure id="figure-1">
+        <div class="lang-cddl sourcecode" id="section-1-6.1">
+<pre>
+$ProtocolType /= "HTTP/3"
+</pre>
+</div>
+<figcaption><a href="#figure-1" class="selfRef">Figure 1</a>:
+<a href="#name-protocoltype-extension-for-" class="selfRef">ProtocolType extension for HTTP/3</a>
+        </figcaption></figure>
+</div>
+<div id="usage-with-quic">
+<section id="section-1.1">
+        <h3 id="name-usage-with-quic">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-usage-with-quic" class="section-name selfRef">Usage with QUIC</a>
+        </h3>
+<p id="section-1.1-1">The events described in this document can be used with or without logging the
+related QUIC events defined in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>. If used with QUIC events, the QUIC
+document takes precedence in terms of recommended filenames and trace separation
+setups.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.1-2">If used without QUIC events, it is recommended that the implementation assign a
+globally unique identifier to each HTTP/3 connection. This ID can then be used as
+the value of the qlog "group_id" field, as well as the qlog filename or file
+identifier, potentially suffixed by the vantagepoint type (For example,
+abcd1234_server.qlog would contain the server-side trace of the connection with
+GUID abcd1234).<a href="#section-1.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="notational-conventions">
+<section id="section-1.2">
+        <h3 id="name-notational-conventions">
+<a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-notational-conventions" class="section-name selfRef">Notational Conventions</a>
+        </h3>
+<p id="section-1.2-1">The key words "<span class="bcp14">MUST</span>", "<span class="bcp14">MUST NOT</span>", "<span class="bcp14">REQUIRED</span>", "<span class="bcp14">SHALL</span>", "<span class="bcp14">SHALL NOT</span>", "<span class="bcp14">SHOULD</span>", "<span class="bcp14">SHOULD NOT</span>", "<span class="bcp14">RECOMMENDED</span>", "<span class="bcp14">NOT RECOMMENDED</span>",
+"<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
+described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
+appear in all capitals, as shown here.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
+<p id="section-1.2-2">The event and data structure definitions in ths document are expressed
+in the Concise Data Definition Language <span>[<a href="#CDDL" class="cite xref">CDDL</a>]</span> and its
+extensions described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.2-2" class="pilcrow">¶</a></p>
+<p id="section-1.2-3">The following fields from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> are imported and used: name, category,
+type, data, group_id, protocol_types, importance, RawInfo, and time-related
+fields.<a href="#section-1.2-3" class="pilcrow">¶</a></p>
+<p id="section-1.2-4">As is the case for <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog schema definitions in this document
+are intentionally agnostic to serialization formats. The choice of format is an
+implementation decision.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="schema-def">
+<section id="section-2">
+      <h2 id="name-event-schema-definition">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-event-schema-definition" class="section-name selfRef">Event Schema Definition</a>
+      </h2>
+<p id="section-2-1">This document describes how the core HTTP/3 protocol and selected extensions can
+be expressed in qlog using a newly defined event schema. Per the requirements in
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-8" class="relref">Section 8</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, this document registers the <code>http</code> namespace and
+<code>h3</code> category identifiers. The URI is <code>urn:ietf:params:qlog:events:http#h3</code>.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<div id="draft-event-schema-identification">
+<section id="section-2.1">
+        <h3 id="name-draft-event-schema-identifi">
+<a href="#section-2.1" class="section-number selfRef">2.1. </a><a href="#name-draft-event-schema-identifi" class="section-name selfRef">Draft Event Schema Identification</a>
+        </h3>
+<p id="section-2.1-1">This section is to be removed before publishing as an RFC.<a href="#section-2.1-1" class="pilcrow">¶</a></p>
+<p id="section-2.1-2">Only implementations of the final, published RFC can use the events belonging to
+the category with the URI <code>urn:ietf:params:qlog:events:http#h3</code>. Until such an
+RFC exists, implementations <span class="bcp14">MUST NOT</span> identify themselves using this URI.<a href="#section-2.1-2" class="pilcrow">¶</a></p>
+<p id="section-2.1-3">Implementations of draft versions of the event schema <span class="bcp14">MUST</span> append the string
+"-" and the corresponding draft number to the URI. For example, draft 07 of this
+document is identified using the URI <code>urn:ietf:params:qlog:events:http#h3-07</code>.<a href="#section-2.1-3" class="pilcrow">¶</a></p>
+<p id="section-2.1-4">The category identifier itself is not affected by this requirement.<a href="#section-2.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="h3-ev">
+<section id="section-3">
+      <h2 id="name-http-3-events-2">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-http-3-events-2" class="section-name selfRef">HTTP/3 Events</a>
+      </h2>
+<p id="section-3-1">HTTP/3 events extend the <code>$ProtocolEventData</code> extension point defined in
+<span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>. Additionally, they allow for direct extensibility by their use of
+per-event extension points via the <code>$$</code> CDDL "group socket" syntax, as also
+described in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<span id="name-h3eventdata-definition-and-"></span><div id="h3-events-def">
+<figure id="figure-2">
+        <div class="lang-cddl sourcecode" id="section-3-2.1">
+<pre>
+H3EventData = H3ParametersSet /
+              H3ParametersRestored /
+              H3StreamTypeSet /
+              H3PriorityUpdated /
+              H3FrameCreated /
+              H3FrameParsed /
+              H3DatagramCreated /
+              H3DatagramParsed /
+              H3PushResolved
+
+$ProtocolEventData /= H3EventData
+</pre>
+</div>
+<figcaption><a href="#figure-2" class="selfRef">Figure 2</a>:
+<a href="#name-h3eventdata-definition-and-" class="selfRef">H3EventData definition and ProtocolEventData extension</a>
+        </figcaption></figure>
+</div>
+<p id="section-3-3">HTTP events are logged when a certain condition happens at the application
+layer, and there isn't always a one to one mapping between HTTP and QUIC events.
+The exchange of data between the HTTP and QUIC layer is logged via the
+"stream_data_moved" and "datagram_data_moved" events in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3-3" class="pilcrow">¶</a></p>
+<p id="section-3-4">HTTP/3 frames are transmitted on QUIC streams, which allows them to span
+multiple QUIC packets. Some implementations might send a single large frame,
+rather than a sequence of smaller frames, in order to amortize frame header
+overhead. HTTP/3 frame headers are represented by the frame_created
+(<a href="#h3-framecreated" class="auto internal xref">Section 3.5</a>) and frame_parsed (<a href="#h3-frameparsed" class="auto internal xref">Section 3.6</a>) events. Subsequent
+frame payload data transfer is indicated by stream_data_moved events.
+Furthermore, stream_data_moved events can appear before frame_parsed events
+because implementations need to read data from a stream in order to parse the
+frame header.<a href="#section-3-4" class="pilcrow">¶</a></p>
+<div id="h3-parametersset">
+<section id="section-3.1">
+        <h3 id="name-parameters_set">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-parameters_set" class="section-name selfRef">parameters_set</a>
+        </h3>
+<p id="section-3.1-1">The <code>parameters_set</code> event contains HTTP/3 and QPACK-level settings, mostly
+those received from the HTTP/3 SETTINGS frame. It has Base importance level; see
+<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<p id="section-3.1-2">All these parameters are typically set once and never change. However, they
+might be set at different times during the connection, therefore a qlog can have
+multiple instances of <code>parameters_set</code> with different fields set.<a href="#section-3.1-2" class="pilcrow">¶</a></p>
+<p id="section-3.1-3">The "owner" field reflects how Settings are exchanged on a connection. Sent
+settings have the value "local" and received settings have the value
+"received".<a href="#section-3.1-3" class="pilcrow">¶</a></p>
+<span id="name-h3parametersset-definition"></span><div id="h3-parametersset-def">
+<figure id="figure-3">
+          <div class="lang-cddl sourcecode" id="section-3.1-4.1">
+<pre>
+H3ParametersSet = {
+    ? owner: Owner
+
+    ; RFC9114
+    ? max_field_section_size: uint64
+
+    ; RFC9204
+    ? max_table_capacity: uint64
+    ? blocked_streams_count: uint64
+
+    ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
+    ? extended_connect: uint16
+
+    ; RFC9297 (SETTINGS_H3_DATAGRAM)
+    ? h3_datagram: uint16
+
+    ; qlog-specific
+    ; indicates whether this implementation waits for a SETTINGS
+    ; frame before processing requests
+    ? waits_for_settings: bool
+
+    * $$h3-parametersset-extension
+}
+</pre>
+</div>
+<figcaption><a href="#figure-3" class="selfRef">Figure 3</a>:
+<a href="#name-h3parametersset-definition" class="selfRef">H3ParametersSet definition</a>
+          </figcaption></figure>
+</div>
+<p id="section-3.1-5">The <code>parameters_set</code> event can contain any number of unspecified fields. This
+allows for representation of reserved settings (aka GREASE) or ad-hoc support
+for extension settings that do not have a related qlog schema definition.<a href="#section-3.1-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="h3-parametersrestored">
+<section id="section-3.2">
+        <h3 id="name-parameters_restored">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-parameters_restored" class="section-name selfRef">parameters_restored</a>
+        </h3>
+<p id="section-3.2-1">When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
+server's SETTINGs from the previous connection. The <code>parameters_restored</code> event
+is used to indicate which HTTP/3 settings were restored and to which values when
+utilizing 0-RTT. It has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<span id="name-h3parametersrestored-defini"></span><div id="h3-parametersrestored-def">
+<figure id="figure-4">
+          <div class="lang-cddl sourcecode" id="section-3.2-2.1">
+<pre>
+H3ParametersRestored = {
+    ; RFC9114
+    ? max_field_section_size: uint64
+
+    ; RFC9204
+    ? max_table_capacity: uint64
+    ? blocked_streams_count: uint64
+
+    ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
+    ? extended_connect: uint16
+
+    ; RFC9297 (SETTINGS_H3_DATAGRAM)
+    ? h3_datagram: uint16
+
+    * $$h3-parametersrestored-extension
+}
+</pre>
+</div>
+<figcaption><a href="#figure-4" class="selfRef">Figure 4</a>:
+<a href="#name-h3parametersrestored-defini" class="selfRef">H3ParametersRestored definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3-streamtypeset">
+<section id="section-3.3">
+        <h3 id="name-stream_type_set">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-stream_type_set" class="section-name selfRef">stream_type_set</a>
+        </h3>
+<p id="section-3.3-1">The <code>stream_type_set</code> event conveys when a HTTP/3 stream type becomes known; see
+Sections <a href="https://rfc-editor.org/rfc/rfc9114#section-6.1" class="relref">6.1</a> and <a href="https://rfc-editor.org/rfc/rfc9114#section-6.2" class="relref">6.2</a> of <span>[<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>. It has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">Client bidirectional streams always have a stream_type value of "request".
+Server bidirectional streams have no defined use, although extensions could
+change that.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+<p id="section-3.3-3">Unidirectional streams in either direction begin with with a variable-length
+integer type. Where the type is not known, the stream_type value of "unknown"
+type can be used and the value captured in the stream_type_bytes field; a
+numerical value without variable-length integer encoding.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
+<p id="section-3.3-4">The generic <code>$H3StreamType</code> is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional HTTP/3 stream types.<a href="#section-3.3-4" class="pilcrow">¶</a></p>
+<span id="name-h3streamtypeset-definition"></span><div id="h3-streamtypeset-def">
+<figure id="figure-5">
+          <div class="lang-cddl sourcecode" id="section-3.3-5.1">
+<pre>
+H3StreamTypeSet = {
+    ? owner: Owner
+    stream_id: uint64
+    stream_type: $H3StreamType
+
+    ; only when stream_type === "unknown"
+    ? stream_type_bytes: uint64
+
+    ; only when stream_type === "push"
+    ? associated_push_id: uint64
+
+    * $$h3-streamtypeset-extension
+}
+
+$H3StreamType /=  "request" /
+                  "control" /
+                  "push" /
+                  "reserved" /
+                  "unknown" /
+                  "qpack_encode" /
+                  "qpack_decode"
+</pre>
+</div>
+<figcaption><a href="#figure-5" class="selfRef">Figure 5</a>:
+<a href="#name-h3streamtypeset-definition" class="selfRef">H3StreamTypeSet definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3-priorityupdated">
+<section id="section-3.4">
+        <h3 id="name-priority_updated">
+<a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-priority_updated" class="section-name selfRef">priority_updated</a>
+        </h3>
+<p id="section-3.4-1">Emitted when the priority of a request stream or push stream is initialized or
+updated through mechanisms defined in <span>[<a href="#RFC9218" class="cite xref">RFC9218</a>]</span>. For example, the priority
+can be updated through signals received from client and/or server (e.g., in
+HTTP/3 HEADERS or PRIORITY_UPDATE frames) or it can be changed or overridden due
+to local policies. The event has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<span id="name-h3priorityupdated-definitio"></span><div id="h3-priorityupdated-def">
+<figure id="figure-6">
+          <div class="lang-cddl sourcecode" id="section-3.4-2.1">
+<pre>
+H3PriorityUpdated = {
+    ; if the prioritized element is a request stream
+    ? stream_id: uint64
+
+    ; if the prioritized element is a push stream
+    ? push_id: uint64
+
+    ? old: H3Priority
+    new: H3Priority
+
+    * $$h3-priorityupdated-extension
+}
+</pre>
+</div>
+<figcaption><a href="#figure-6" class="selfRef">Figure 6</a>:
+<a href="#name-h3priorityupdated-definitio" class="selfRef">H3PriorityUpdated definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3-framecreated">
+<section id="section-3.5">
+        <h3 id="name-frame_created">
+<a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-frame_created" class="section-name selfRef">frame_created</a>
+        </h3>
+<p id="section-3.5-1">The <code>frame_created</code> event is emitted when the HTTP/3 framing actually happens.
+It has Core importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.5-2">This event does not necessarily coincide with HTTP/3 data getting passed to the
+QUIC layer. For that, see the <code>stream_data_moved</code> event in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.5-2" class="pilcrow">¶</a></p>
+<span id="name-h3framecreated-definition"></span><div id="h3-framecreated-def">
+<figure id="figure-7">
+          <div class="lang-cddl sourcecode" id="section-3.5-3.1">
+<pre>
+H3FrameCreated = {
+    stream_id: uint64
+    ? length: uint64
+    frame: $H3Frame
+    ? raw: RawInfo
+
+    * $$h3-framecreated-extension
+}
+</pre>
+</div>
+<figcaption><a href="#figure-7" class="selfRef">Figure 7</a>:
+<a href="#name-h3framecreated-definition" class="selfRef">H3FrameCreated definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3-frameparsed">
+<section id="section-3.6">
+        <h3 id="name-frame_parsed">
+<a href="#section-3.6" class="section-number selfRef">3.6. </a><a href="#name-frame_parsed" class="section-name selfRef">frame_parsed</a>
+        </h3>
+<p id="section-3.6-1">The <code>frame_parsed</code> event is emitted when the HTTP/3 frame is parsed. It has Core
+importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.6-1" class="pilcrow">¶</a></p>
+<p id="section-3.6-2">This event is not necessarily the same as when the HTTP/3 data is actually
+received on the QUIC layer. For that, see the <code>stream_data_moved</code> event in
+<span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.6-2" class="pilcrow">¶</a></p>
+<span id="name-h3frameparsed-definition"></span><div id="h3-frameparsed-def">
+<figure id="figure-8">
+          <div class="lang-cddl sourcecode" id="section-3.6-3.1">
+<pre>
+H3FrameParsed = {
+    stream_id: uint64
+    ? length: uint64
+    frame: $H3Frame
+    ? raw: RawInfo
+
+    * $$h3-frameparsed-extension
+}
+</pre>
+</div>
+<figcaption><a href="#figure-8" class="selfRef">Figure 8</a>:
+<a href="#name-h3frameparsed-definition" class="selfRef">H3FrameParsed definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3-datagramcreated">
+<section id="section-3.7">
+        <h3 id="name-datagram_created">
+<a href="#section-3.7" class="section-number selfRef">3.7. </a><a href="#name-datagram_created" class="section-name selfRef">datagram_created</a>
+        </h3>
+<p id="section-3.7-1">The <code>datagram_created</code> event is emitted when an HTTP/3 Datagram is created (see
+<span>[<a href="#RFC9297" class="cite xref">RFC9297</a>]</span>). It has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.7-1" class="pilcrow">¶</a></p>
+<p id="section-3.7-2">This event does not necessarily coincide with the HTTP/3 Datagram getting passed
+to the QUIC layer. For that, see the <code>datagram_data_moved</code> event in
+<span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.7-2" class="pilcrow">¶</a></p>
+<span id="name-h3datagramcreated-definitio"></span><div id="h3-datagramcreated-def">
+<figure id="figure-9">
+          <div class="lang-cddl sourcecode" id="section-3.7-3.1">
+<pre>
+H3DatagramCreated = {
+    quarter_stream_id: uint64
+    ? datagram: $H3Datagram
+    ? raw: RawInfo
+
+    * $$h3-datagramcreated-extension
+}
+</pre>
+</div>
+<figcaption><a href="#figure-9" class="selfRef">Figure 9</a>:
+<a href="#name-h3datagramcreated-definitio" class="selfRef">H3DatagramCreated definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3-datagramparsed">
+<section id="section-3.8">
+        <h3 id="name-datagram_parsed">
+<a href="#section-3.8" class="section-number selfRef">3.8. </a><a href="#name-datagram_parsed" class="section-name selfRef">datagram_parsed</a>
+        </h3>
+<p id="section-3.8-1">The <code>datagram_parsed</code> event is emitted when the HTTP/3 Datagram is parsed (see
+<span>[<a href="#RFC9297" class="cite xref">RFC9297</a>]</span>). It has Base importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.8-1" class="pilcrow">¶</a></p>
+<p id="section-3.8-2">This event is not necessarily the same as when the HTTP/3 Datagram is actually
+received on the QUIC layer. For that, see the <code>datagram_data_moved</code> event in
+<span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.8-2" class="pilcrow">¶</a></p>
+<span id="name-h3datagramparsed-definition"></span><div id="h3-datagramparsed-def">
+<figure id="figure-10">
+          <div class="lang-cddl sourcecode" id="section-3.8-3.1">
+<pre>
+H3DatagramParsed = {
+    quarter_stream_id: uint64
+    ? datagram: $H3Datagram
+    ? raw: RawInfo
+
+    * $$h3-datagramparsed-extension
+}
+</pre>
+</div>
+<figcaption><a href="#figure-10" class="selfRef">Figure 10</a>:
+<a href="#name-h3datagramparsed-definition" class="selfRef">H3DatagramParsed definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3-pushresolved">
+<section id="section-3.9">
+        <h3 id="name-push_resolved">
+<a href="#section-3.9" class="section-number selfRef">3.9. </a><a href="#name-push_resolved" class="section-name selfRef">push_resolved</a>
+        </h3>
+<p id="section-3.9-1">The <code>push_resolved</code> event is emitted when a pushed resource (<span><a href="https://rfc-editor.org/rfc/rfc9114#section-4.6" class="relref">Section 4.6</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>) is successfully claimed (used) or, conversely, abandoned (rejected)
+by the application on top of HTTP/3 (e.g., the web browser). This event provides
+additional context that can is aid debugging issues related to server push. It
+has Extra importance level; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09#section-9.2" class="relref">Section 9.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-3.9-1" class="pilcrow">¶</a></p>
+<span id="name-h3pushresolved-definition"></span><div id="h3-pushresolved-def">
+<figure id="figure-11">
+          <div class="lang-cddl sourcecode" id="section-3.9-2.1">
+<pre>
+H3PushResolved = {
+    ? push_id: uint64
+
+    ; in case this is logged from a place that does not have access
+    ; to the push_id
+    ? stream_id: uint64
+    decision: H3PushDecision
+
+    * $$h3-pushresolved-extension
+}
+
+H3PushDecision = "claimed" /
+                 "abandoned"
+</pre>
+</div>
+<figcaption><a href="#figure-11" class="selfRef">Figure 11</a>:
+<a href="#name-h3pushresolved-definition" class="selfRef">H3PushResolved definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="http3-data-field-definitions">
+<section id="section-4">
+      <h2 id="name-http-3-data-field-definitio">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-http-3-data-field-definitio" class="section-name selfRef">HTTP/3 Data Field Definitions</a>
+      </h2>
+<p id="section-4-1">The following data field definitions can be used in HTTP/3 events.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<div id="owner">
+<section id="section-4.1">
+        <h3 id="name-owner">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-owner" class="section-name selfRef">Owner</a>
+        </h3>
+<span id="name-owner-definition"></span><div id="owner-def">
+<figure id="figure-12">
+          <div class="lang-cddl sourcecode" id="section-4.1-1.1">
+<pre>
+Owner = "local" /
+        "remote"
+</pre>
+</div>
+<figcaption><a href="#figure-12" class="selfRef">Figure 12</a>:
+<a href="#name-owner-definition" class="selfRef">Owner definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3frame">
+<section id="section-4.2">
+        <h3 id="name-h3frame">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-h3frame" class="section-name selfRef">H3Frame</a>
+        </h3>
+<p id="section-4.2-1">The generic <code>$H3Frame</code> is defined here as a CDDL "type socket" extension point.
+It can be extended to support additional HTTP/3 frame types.<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<span id="name-h3frame-type-socket-definit"></span><div id="h3-frame-def">
+<figure id="figure-13">
+          <div class="alignLeft art-text artwork" id="section-4.2-2.1">
+<pre>
+; The H3Frame is any key-value map (e.g., JSON object)
+$H3Frame /= {
+    * text =&gt; any
+}
+</pre>
+</div>
+<figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
+<a href="#name-h3frame-type-socket-definit" class="selfRef">H3Frame type socket definition</a>
+          </figcaption></figure>
+</div>
+<p id="section-4.2-3">The HTTP/3 frame types defined in this document are as follows:<a href="#section-4.2-3" class="pilcrow">¶</a></p>
+<span id="name-h3baseframes-definition"></span><div id="h3baseframe-def">
+<figure id="figure-14">
+          <div class="lang-cddl sourcecode" id="section-4.2-4.1">
+<pre>
+H3BaseFrames = H3DataFrame /
+               H3HeadersFrame /
+               H3CancelPushFrame /
+               H3SettingsFrame /
+               H3PushPromiseFrame /
+               H3GoawayFrame /
+               H3MaxPushIDFrame /
+               H3ReservedFrame /
+               H3UnknownFrame
+
+$H3Frame /= H3BaseFrames
+</pre>
+</div>
+<figcaption><a href="#figure-14" class="selfRef">Figure 14</a>:
+<a href="#name-h3baseframes-definition" class="selfRef">H3BaseFrames definition</a>
+          </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3datagram">
+<section id="section-4.3">
+        <h3 id="name-h3datagram">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-h3datagram" class="section-name selfRef">H3Datagram</a>
+        </h3>
+<p id="section-4.3-1">The generic <code>$H3Datagram</code> is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional HTTP/3 datagram types. This
+document intentionally does not define any specific qlog schemas for specific
+HTTP/3 Datagram types.<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+<span id="name-h3datagram-type-socket-defi"></span><div id="h3-datagram-def">
+<figure id="figure-15">
+          <div class="alignLeft art-text artwork" id="section-4.3-2.1">
+<pre>
+; The H3Datagram is any key-value map (e.g., JSON object)
+$H3Datagram /= {
+    * text =&gt; any
+}
+</pre>
+</div>
+<figcaption><a href="#figure-15" class="selfRef">Figure 15</a>:
+<a href="#name-h3datagram-type-socket-defi" class="selfRef">H3Datagram type socket definition</a>
+          </figcaption></figure>
+</div>
+<div id="h3dataframe">
+<section id="section-4.3.1">
+          <h4 id="name-h3dataframe">
+<a href="#section-4.3.1" class="section-number selfRef">4.3.1. </a><a href="#name-h3dataframe" class="section-name selfRef">H3DataFrame</a>
+          </h4>
+<span id="name-h3dataframe-definition"></span><div id="h3dataframe-def">
+<figure id="figure-16">
+            <div class="lang-cddl sourcecode" id="section-4.3.1-1.1">
+<pre>
+H3DataFrame = {
+    frame_type: "data"
+    ? raw: RawInfo
+}
+</pre>
+</div>
+<figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
+<a href="#name-h3dataframe-definition" class="selfRef">H3DataFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3headersframe">
+<section id="section-4.3.2">
+          <h4 id="name-h3headersframe">
+<a href="#section-4.3.2" class="section-number selfRef">4.3.2. </a><a href="#name-h3headersframe" class="section-name selfRef">H3HeadersFrame</a>
+          </h4>
+<p id="section-4.3.2-1">The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an HTTP field
+section; see <span><a href="https://rfc-editor.org/rfc/rfc9114#section-7.2.2" class="relref">Section 7.2.2</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>. <code>H3HeaderFrame</code>, in contrast,
+contains the HTTP field section without QPACK encoding.<a href="#section-4.3.2-1" class="pilcrow">¶</a></p>
+<span id="name-h3httpfield-definition"></span><div id="h3field-def">
+<figure id="figure-17">
+            <div class="lang-cddl sourcecode" id="section-4.3.2-2.1">
+<pre>
+H3HTTPField = {
+    ? name: text
+    ? name_bytes: hexstring
+    ? value: text
+    ? value_bytes: hexstring
+}
+</pre>
+</div>
+<figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
+<a href="#name-h3httpfield-definition" class="selfRef">H3HTTPField definition</a>
+            </figcaption></figure>
+</div>
+<span id="name-h3headersframe-definition"></span><div id="h3-headersframe-def">
+<figure id="figure-18">
+            <div class="lang-cddl sourcecode" id="section-4.3.2-3.1">
+<pre>
+H3HeadersFrame = {
+    frame_type: "headers"
+    headers: [* H3HTTPField]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<a href="#name-h3headersframe-definition" class="selfRef">H3HeadersFrame definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-4.3.2-4">For example, the HTTP field section<a href="#section-4.3.2-4" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-4.3.2-5">
+<pre>
+:path: /index.html
+:method: GET
+:authority: example.org
+:scheme: https
+</pre><a href="#section-4.3.2-5" class="pilcrow">¶</a>
+</div>
+<p id="section-4.3.2-6">would be represented in a JSON serialization as:<a href="#section-4.3.2-6" class="pilcrow">¶</a></p>
+<span id="name-h3headersframe-example"></span><div id="h3-headersframe-ex">
+<figure id="figure-19">
+            <div class="alignLeft art-text artwork" id="section-4.3.2-7.1">
+<pre>
+headers: [
+  {
+    "name": ":path",
+    "value": "/"
+  },
+  {
+    "name": ":method",
+    "value": "GET"
+  },
+  {
+    "name": ":authority",
+    "value": "example.org"
+  },
+  {
+    "name": ":scheme",
+    "value": "https"
+  }
+]
+</pre>
+</div>
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
+<a href="#name-h3headersframe-example" class="selfRef">H3HeadersFrame example</a>
+            </figcaption></figure>
+</div>
+<p id="section-4.3.2-8"><span><a href="https://rfc-editor.org/rfc/rfc9114#section-4.2" class="relref">Section 4.2</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span> and <span><a href="https://rfc-editor.org/rfc/rfc9110#section-5.1" class="relref">Section 5.1</a> of [<a href="#RFC9110" class="cite xref">HTTP</a>]</span> define rules for the
+characters used in HTTP field sections names and values. Characters outside the
+range are invalid and result in the message being treated as malformed. It can however be useful to also log these invalid HTTP fields.
+Characters in the
+allowed range can be safely logged by the text type used in the <code>name</code> and
+<code>value</code> fields of <code>H3HTTPField</code>. Characters outside the range are unsafe for the
+text type and need to be logged using the <code>name_bytes</code> and <code>value_bytes</code> field.
+An instance of <code>H3HTTPField</code> <span class="bcp14">MUST</span> include either the <code>name</code> or <code>name_bytes</code>
+field and <span class="bcp14">MAY</span> include both. An <code>H3HTTPField</code> <span class="bcp14">MAY</span> include a <code>value</code> or
+<code>value_bytes</code> field or neither.<a href="#section-4.3.2-8" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="h3cancelpushframe">
+<section id="section-4.3.3">
+          <h4 id="name-h3cancelpushframe">
+<a href="#section-4.3.3" class="section-number selfRef">4.3.3. </a><a href="#name-h3cancelpushframe" class="section-name selfRef">H3CancelPushFrame</a>
+          </h4>
+<span id="name-h3cancelpushframe-definitio"></span><div id="h3-cancelpushframe-def">
+<figure id="figure-20">
+            <div class="lang-cddl sourcecode" id="section-4.3.3-1.1">
+<pre>
+H3CancelPushFrame = {
+    frame_type: "cancel_push"
+    push_id: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
+<a href="#name-h3cancelpushframe-definitio" class="selfRef">H3CancelPushFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3settingsframe">
+<section id="section-4.3.4">
+          <h4 id="name-h3settingsframe">
+<a href="#section-4.3.4" class="section-number selfRef">4.3.4. </a><a href="#name-h3settingsframe" class="section-name selfRef">H3SettingsFrame</a>
+          </h4>
+<p id="section-4.3.4-1">The settings field can contain zero or more entries. Each setting has a name
+field, which corresponds to Setting Name as defined (or as would be defined if
+registered) in the "HTTP/3 Settings" registry maintained at
+<a href="https://www.iana.org/assignments/http3-parameters">https://www.iana.org/assignments/http3-parameters</a>.<a href="#section-4.3.4-1" class="pilcrow">¶</a></p>
+<p id="section-4.3.4-2">An endpoint that receives unknown settings is not able to log a specific name.
+Instead, the name value of "unknown" can be used and the value captured in the
+<code>name_bytes</code> field; a numerical value without variable-length integer encoding.<a href="#section-4.3.4-2" class="pilcrow">¶</a></p>
+<span id="name-h3settingsframe-definition"></span><div id="h3settingsframe-def">
+<figure id="figure-21">
+            <div class="lang-cddl sourcecode" id="section-4.3.4-3.1">
+<pre>
+H3SettingsFrame = {
+    frame_type: "settings"
+    settings: [* H3Setting]
+}
+
+H3Setting = {
+    ? name: $H3SettingsName
+    ; only when name === "unknown"
+    ? name_bytes: uint64
+
+    value: uint64
+}
+
+$H3SettingsName /= "settings_qpack_max_table_capacity" /
+                   "settings_max_field_section_size" /
+                   "settings_qpack_blocked_streams" /
+                   "settings_enable_connect_protocol" /
+                   "settings_h3_datagram" /
+                   "reserved" /
+                   "unknown"
+</pre>
+</div>
+<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
+<a href="#name-h3settingsframe-definition" class="selfRef">H3SettingsFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3pushpromiseframe">
+<section id="section-4.3.5">
+          <h4 id="name-h3pushpromiseframe">
+<a href="#section-4.3.5" class="section-number selfRef">4.3.5. </a><a href="#name-h3pushpromiseframe" class="section-name selfRef">H3PushPromiseFrame</a>
+          </h4>
+<span id="name-h3pushpromiseframe-definiti"></span><div id="h3pushpromiseframe-def">
+<figure id="figure-22">
+            <div class="lang-cddl sourcecode" id="section-4.3.5-1.1">
+<pre>
+H3PushPromiseFrame = {
+    frame_type: "push_promise"
+    push_id: uint64
+    headers: [* H3HTTPField]
+}
+</pre>
+</div>
+<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
+<a href="#name-h3pushpromiseframe-definiti" class="selfRef">H3PushPromiseFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3goawayframe">
+<section id="section-4.3.6">
+          <h4 id="name-h3goawayframe">
+<a href="#section-4.3.6" class="section-number selfRef">4.3.6. </a><a href="#name-h3goawayframe" class="section-name selfRef">H3GoAwayFrame</a>
+          </h4>
+<span id="name-h3goawayframe-definition"></span><div id="h3goawayframe-def">
+<figure id="figure-23">
+            <div class="lang-cddl sourcecode" id="section-4.3.6-1.1">
+<pre>
+H3GoawayFrame = {
+    frame_type: "goaway"
+
+    ; Either stream_id or push_id.
+    ; This is implicit from the sender of the frame
+    id: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
+<a href="#name-h3goawayframe-definition" class="selfRef">H3GoawayFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3maxpushidframe">
+<section id="section-4.3.7">
+          <h4 id="name-h3maxpushidframe">
+<a href="#section-4.3.7" class="section-number selfRef">4.3.7. </a><a href="#name-h3maxpushidframe" class="section-name selfRef">H3MaxPushIDFrame</a>
+          </h4>
+<span id="name-h3maxpushidframe-definition"></span><div id="h3maxpushidframe-def">
+<figure id="figure-24">
+            <div class="lang-cddl sourcecode" id="section-4.3.7-1.1">
+<pre>
+H3MaxPushIDFrame = {
+    frame_type: "max_push_id"
+    push_id: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
+<a href="#name-h3maxpushidframe-definition" class="selfRef">H3MaxPushIDFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3priorityupdateframe">
+<section id="section-4.3.8">
+          <h4 id="name-h3priorityupdateframe">
+<a href="#section-4.3.8" class="section-number selfRef">4.3.8. </a><a href="#name-h3priorityupdateframe" class="section-name selfRef">H3PriorityUpdateFrame</a>
+          </h4>
+<p id="section-4.3.8-1">The PRIORITY_UPDATE frame is defined in <span>[<a href="#RFC9218" class="cite xref">RFC9218</a>]</span>.<a href="#section-4.3.8-1" class="pilcrow">¶</a></p>
+<span id="name-h3priorityupdateframe-defin"></span><div id="h3priorityupdateframe-def">
+<figure id="figure-25">
+            <div class="lang-cddl sourcecode" id="section-4.3.8-2.1">
+<pre>
+H3PriorityUpdateFrame = {
+    frame_type: "priority_update"
+
+    ; if the prioritized element is a request stream
+    ? stream_id: uint64
+
+    ; if the prioritized element is a push stream
+    ? push_id: uint64
+
+    priority_field_value: H3Priority
+}
+
+; The priority value in ASCII text, encoded using Structured Fields
+; Example: u=5, i
+H3Priority = text
+</pre>
+</div>
+<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
+<a href="#name-h3priorityupdateframe-defin" class="selfRef">h3priorityupdateframe definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3reservedframe">
+<section id="section-4.3.9">
+          <h4 id="name-h3reservedframe">
+<a href="#section-4.3.9" class="section-number selfRef">4.3.9. </a><a href="#name-h3reservedframe" class="section-name selfRef">H3ReservedFrame</a>
+          </h4>
+<span id="name-h3reservedframe-definition"></span><div id="h3reservedframe-def">
+<figure id="figure-26">
+            <div class="lang-cddl sourcecode" id="section-4.3.9-1.1">
+<pre>
+H3ReservedFrame = {
+    frame_type: "reserved"
+    ? length: uint64
+}
+</pre>
+</div>
+<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
+<a href="#name-h3reservedframe-definition" class="selfRef">H3ReservedFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3unknownframe">
+<section id="section-4.3.10">
+          <h4 id="name-h3unknownframe">
+<a href="#section-4.3.10" class="section-number selfRef">4.3.10. </a><a href="#name-h3unknownframe" class="section-name selfRef">H3UnknownFrame</a>
+          </h4>
+<p id="section-4.3.10-1">The frame_type_bytes field is the numerical value without variable-length
+integer encoding.<a href="#section-4.3.10-1" class="pilcrow">¶</a></p>
+<span id="name-unknownframe-definition"></span><div id="h3unknownframe-def">
+<figure id="figure-27">
+            <div class="lang-cddl sourcecode" id="section-4.3.10-2.1">
+<pre>
+H3UnknownFrame = {
+    frame_type: "unknown"
+    frame_type_bytes: uint64
+    ? raw: RawInfo
+}
+</pre>
+</div>
+<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
+<a href="#name-unknownframe-definition" class="selfRef">UnknownFrame definition</a>
+            </figcaption></figure>
+</div>
+</section>
+</div>
+<div id="h3applicationerror">
+<section id="section-4.3.11">
+          <h4 id="name-h3applicationerror">
+<a href="#section-4.3.11" class="section-number selfRef">4.3.11. </a><a href="#name-h3applicationerror" class="section-name selfRef">H3ApplicationError</a>
+          </h4>
+<span id="name-h3applicationerror-definiti"></span><div id="h3-applicationerror-def">
+<figure id="figure-28">
+            <div class="lang-cddl sourcecode" id="section-4.3.11-1.1">
+<pre>
+H3ApplicationError = "http_no_error" /
+                       "http_general_protocol_error" /
+                       "http_internal_error" /
+                       "http_stream_creation_error" /
+                       "http_closed_critical_stream" /
+                       "http_frame_unexpected" /
+                       "http_frame_error" /
+                       "http_excessive_load" /
+                       "http_id_error" /
+                       "http_settings_error" /
+                       "http_missing_settings" /
+                       "http_request_rejected" /
+                       "http_request_cancelled" /
+                       "http_request_incomplete" /
+                       "http_early_response" /
+                       "http_connect_error" /
+                       "http_version_fallback"
+</pre>
+</div>
+<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
+<a href="#name-h3applicationerror-definiti" class="selfRef">H3ApplicationError definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-4.3.11-2">The H3ApplicationError extends the general $ApplicationError
+definition in the qlog QUIC document, see <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-4.3.11-2" class="pilcrow">¶</a></p>
+<div class="lang-cddl sourcecode" id="section-4.3.11-3">
+<pre>
+; ensure HTTP errors are properly validated in QUIC events as well
+; e.g., QUIC's ConnectionClose Frame
+$ApplicationError /= H3ApplicationError
+</pre><a href="#section-4.3.11-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="security-and-privacy-considerations">
+<section id="section-5">
+      <h2 id="name-security-and-privacy-consid">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-security-and-privacy-consid" class="section-name selfRef">Security and Privacy Considerations</a>
+      </h2>
+<p id="section-5-1">The security and privacy considerations discussed in <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> apply to this
+document as well.<a href="#section-5-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="iana-considerations">
+<section id="section-6">
+      <h2 id="name-iana-considerations">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-6-1">This document registers a new entry in the "qlog event category URIs" registry.<a href="#section-6-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-6-2">
+        <dt id="section-6-2.1">Event Category URI:</dt>
+        <dd style="margin-left: 1.5em" id="section-6-2.2">
+          <p id="section-6-2.2.1">urn:ietf:params:qlog:events:http#h3<a href="#section-6-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-6-2.3">Description:</dt>
+        <dd style="margin-left: 1.5em" id="section-6-2.4">
+          <p id="section-6-2.4.1">Event definitions related to the HTTP/3 application protocol.<a href="#section-6-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-6-2.5">Reference:</dt>
+        <dd style="margin-left: 1.5em" id="section-6-2.6">
+          <p id="section-6-2.6.1">This Document<a href="#section-6-2.6.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="sec-normative-references">
+<section id="section-7">
+      <h2 id="name-normative-references">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      </h2>
+<dl class="references">
+<dt id="CDDL">[CDDL]</dt>
+      <dd>
+<span class="refAuthor">Birkholz, H.</span>, <span class="refAuthor">Vigano, C.</span>, and <span class="refAuthor">C. Bormann</span>, <span class="refTitle">"Concise Data Definition Language (CDDL): A Notational Convention to Express Concise Binary Object Representation (CBOR) and JSON Data Structures"</span>, <span class="seriesInfo">RFC 8610</span>, <span class="seriesInfo">DOI 10.17487/RFC8610</span>, <time datetime="2019-06" class="refDate">June 2019</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8610">https://www.rfc-editor.org/rfc/rfc8610</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="EXTENDED-CONNECT">[EXTENDED-CONNECT]</dt>
+      <dd>
+<span class="refAuthor">Hamilton, R.</span>, <span class="refTitle">"Bootstrapping WebSockets with HTTP/3"</span>, <span class="seriesInfo">RFC 9220</span>, <span class="seriesInfo">DOI 10.17487/RFC9220</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9220">https://www.rfc-editor.org/rfc/rfc9220</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="H3-DATAGRAM">[H3-DATAGRAM]</dt>
+      <dd>
+<span class="refAuthor">Schinazi, D.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"HTTP Datagrams and the Capsule Protocol"</span>, <span class="seriesInfo">RFC 9297</span>, <span class="seriesInfo">DOI 10.17487/RFC9297</span>, <time datetime="2022-08" class="refDate">August 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9297">https://www.rfc-editor.org/rfc/rfc9297</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="H3_PRIORITIZATION">[H3_PRIORITIZATION]</dt>
+      <dd>
+<span class="refAuthor">Oku, K.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Extensible Prioritization Scheme for HTTP"</span>, <span class="seriesInfo">RFC 9218</span>, <span class="seriesInfo">DOI 10.17487/RFC9218</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9218">https://www.rfc-editor.org/rfc/rfc9218</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9110">[HTTP]</dt>
+      <dd>
+<span class="refAuthor">Fielding, R., Ed.</span>, <span class="refAuthor">Nottingham, M., Ed.</span>, and <span class="refAuthor">J. Reschke, Ed.</span>, <span class="refTitle">"HTTP Semantics"</span>, <span class="seriesInfo">STD 97</span>, <span class="seriesInfo">RFC 9110</span>, <span class="seriesInfo">DOI 10.17487/RFC9110</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9110">https://www.rfc-editor.org/rfc/rfc9110</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9114">[HTTP/3]</dt>
+      <dd>
+<span class="refAuthor">Bishop, M., Ed.</span>, <span class="refTitle">"HTTP/3"</span>, <span class="seriesInfo">RFC 9114</span>, <span class="seriesInfo">DOI 10.17487/RFC9114</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9114">https://www.rfc-editor.org/rfc/rfc9114</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="QLOG-MAIN">[QLOG-MAIN]</dt>
+      <dd>
+<span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"qlog: Structured Logging for Network Protocols"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-main-schema-09</span>, <time datetime="2024-07-08" class="refDate">8 July 2024</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-09</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="QLOG-QUIC">[QLOG-QUIC]</dt>
+      <dd>
+<span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"QUIC event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-quic-events-08</span>, <time datetime="2024-07-08" class="refDate">8 July 2024</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-08">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-08</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC2119">[RFC2119]</dt>
+      <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+      <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9218">[RFC9218]</dt>
+      <dd>
+<span class="refAuthor">Oku, K.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"Extensible Prioritization Scheme for HTTP"</span>, <span class="seriesInfo">RFC 9218</span>, <span class="seriesInfo">DOI 10.17487/RFC9218</span>, <time datetime="2022-06" class="refDate">June 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9218">https://www.rfc-editor.org/rfc/rfc9218</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9297">[RFC9297]</dt>
+    <dd>
+<span class="refAuthor">Schinazi, D.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"HTTP Datagrams and the Capsule Protocol"</span>, <span class="seriesInfo">RFC 9297</span>, <span class="seriesInfo">DOI 10.17487/RFC9297</span>, <time datetime="2022-08" class="refDate">August 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9297">https://www.rfc-editor.org/rfc/rfc9297</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="acknowledgements">
+<section id="appendix-A">
+      <h2 id="name-acknowledgements">
+<a href="#name-acknowledgements" class="section-name selfRef">Acknowledgements</a>
+      </h2>
+<p id="appendix-A-1">Much of the initial work by Robin Marx was done at the Hasselt and KU Leuven
+Universities.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+<p id="appendix-A-2">Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
+Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
+Yamamoto, Christian Huitema, Hugo Landau and Jonathan Lennox for their feedback
+and suggestions.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="change-log">
+<section id="appendix-B">
+      <h2 id="name-change-log">
+<a href="#name-change-log" class="section-name selfRef">Change Log</a>
+      </h2>
+<p id="appendix-B-1">This section is to be removed before publishing as an RFC.<a href="#appendix-B-1" class="pilcrow">¶</a></p>
+<div id="since-draft-ietf-quic-qlog-h3-events-06">
+<section id="appendix-B.1">
+        <h3 id="name-since-draft-ietf-quic-qlog-">
+<a href="#name-since-draft-ietf-quic-qlog-" class="section-name selfRef">Since draft-ietf-quic-qlog-h3-events-06:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.1-1.1">
+            <p id="appendix-B.1-1.1.1">ProtocolEventBody is now called ProtocolEventData (#352)<a href="#appendix-B.1-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.1-1.2">
+            <p id="appendix-B.1-1.2.1">Editorial changes (#402)<a href="#appendix-B.1-1.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-ietf-quic-qlog-h3-events-05">
+<section id="appendix-B.2">
+        <h3 id="name-since-draft-ietf-quic-qlog-h">
+<a href="#name-since-draft-ietf-quic-qlog-h" class="section-name selfRef">Since draft-ietf-quic-qlog-h3-events-05:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.2-1.1">
+            <p id="appendix-B.2-1.1.1">Removed all qpack event definitions (#335)<a href="#appendix-B.2-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.2-1.2">
+            <p id="appendix-B.2-1.2.1">Various editorial changes<a href="#appendix-B.2-1.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-ietf-quic-qlog-h3-events-04">
+<section id="appendix-B.3">
+        <h3 id="name-since-draft-ietf-quic-qlog-h3">
+<a href="#name-since-draft-ietf-quic-qlog-h3" class="section-name selfRef">Since draft-ietf-quic-qlog-h3-events-04:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.3-1.1">
+            <p id="appendix-B.3-1.1.1">Renamed 'http' category to 'h3' (#300)<a href="#appendix-B.3-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.3-1.2">
+            <p id="appendix-B.3-1.2.1">H3HTTPField.value is now optional (#296)<a href="#appendix-B.3-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.3-1.3">
+            <p id="appendix-B.3-1.3.1">Added definitions for RFC9297 (HTTP/3 Datagram extension) (#310)<a href="#appendix-B.3-1.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.3-1.4">
+            <p id="appendix-B.3-1.4.1">Added definitions for RFC9218 (HTTP Extensible Prioritizations extension) (#312)<a href="#appendix-B.3-1.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.3-1.5">
+            <p id="appendix-B.3-1.5.1">Added definitions for RFC9220 (Extended Connect extension) (#325)<a href="#appendix-B.3-1.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.3-1.6">
+            <p id="appendix-B.3-1.6.1">Editorial and formatting changes (#298, #258, #299, #304, #327)<a href="#appendix-B.3-1.6.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-ietf-quic-qlog-h3-events-03">
+<section id="appendix-B.4">
+        <h3 id="name-since-draft-ietf-quic-qlog-h3-">
+<a href="#name-since-draft-ietf-quic-qlog-h3-" class="section-name selfRef">Since draft-ietf-quic-qlog-h3-events-03:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.4-1.1">
+            <p id="appendix-B.4-1.1.1">Ensured consistent use of RawInfo to indicate raw wire bytes (#243)<a href="#appendix-B.4-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.4-1.2">
+            <p id="appendix-B.4-1.2.1">Changed HTTPStreamTypeSet:raw_stream_type to stream_type_value (#54)<a href="#appendix-B.4-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.4-1.3">
+            <p id="appendix-B.4-1.3.1">Changed HTTPUnknownFrame:raw_frame_type to frame_type_value (#54)<a href="#appendix-B.4-1.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.4-1.4">
+            <p id="appendix-B.4-1.4.1">Renamed max_header_list_size to max_field_section_size (#282)<a href="#appendix-B.4-1.4.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-ietf-quic-qlog-h3-events-02">
+<section id="appendix-B.5">
+        <h3 id="name-since-draft-ietf-quic-qlog-h3-e">
+<a href="#name-since-draft-ietf-quic-qlog-h3-e" class="section-name selfRef">Since draft-ietf-quic-qlog-h3-events-02:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.5-1.1">
+            <p id="appendix-B.5-1.1.1">Renamed HTTPStreamType data to request (#222)<a href="#appendix-B.5-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.5-1.2">
+            <p id="appendix-B.5-1.2.1">Added HTTPStreamType value unknown (#227)<a href="#appendix-B.5-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.5-1.3">
+            <p id="appendix-B.5-1.3.1">Added HTTPUnknownFrame (#224)<a href="#appendix-B.5-1.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.5-1.4">
+            <p id="appendix-B.5-1.4.1">Replaced old and new fields with stream_type in HTTPStreamTypeSet (#240)<a href="#appendix-B.5-1.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.5-1.5">
+            <p id="appendix-B.5-1.5.1">Changed HTTPFrame to a CDDL plug type (#257)<a href="#appendix-B.5-1.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.5-1.6">
+            <p id="appendix-B.5-1.6.1">Moved data definitions out of the appendix into separate sections<a href="#appendix-B.5-1.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.5-1.7">
+            <p id="appendix-B.5-1.7.1">Added overview Table of Contents<a href="#appendix-B.5-1.7.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-ietf-quic-qlog-h3-events-01">
+<section id="appendix-B.6">
+        <h3 id="name-since-draft-ietf-quic-qlog-h3-ev">
+<a href="#name-since-draft-ietf-quic-qlog-h3-ev" class="section-name selfRef">Since draft-ietf-quic-qlog-h3-events-01:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.6-1.1">
+            <p id="appendix-B.6-1.1.1">No changes - new draft to prevent expiration<a href="#appendix-B.6-1.1.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-ietf-quic-qlog-h3-events-00">
+<section id="appendix-B.7">
+        <h3 id="name-since-draft-ietf-quic-qlog-h3-eve">
+<a href="#name-since-draft-ietf-quic-qlog-h3-eve" class="section-name selfRef">Since draft-ietf-quic-qlog-h3-events-00:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.7-1.1">
+            <p id="appendix-B.7-1.1.1">Change the data definition language from TypeScript to CDDL (#143)<a href="#appendix-B.7-1.1.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-marx-qlog-event-definitions-quic-h3-02">
+<section id="appendix-B.8">
+        <h3 id="name-since-draft-marx-qlog-event">
+<a href="#name-since-draft-marx-qlog-event" class="section-name selfRef">Since draft-marx-qlog-event-definitions-quic-h3-02:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.8-1.1">
+            <p id="appendix-B.8-1.1.1">These changes were done in preparation of the adoption of the drafts by the QUIC
+working group (#137)<a href="#appendix-B.8-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.8-1.2">
+            <p id="appendix-B.8-1.2.1">Split QUIC and HTTP/3 events into two separate documents<a href="#appendix-B.8-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.8-1.3">
+            <p id="appendix-B.8-1.3.1">Moved RawInfo, Importance, Generic events and Simulation events to the main
+schema document.<a href="#appendix-B.8-1.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-marx-qlog-event-definitions-quic-h3-01">
+<section id="appendix-B.9">
+        <h3 id="name-since-draft-marx-qlog-event-">
+<a href="#name-since-draft-marx-qlog-event-" class="section-name selfRef">Since draft-marx-qlog-event-definitions-quic-h3-01:</a>
+        </h3>
+<p id="appendix-B.9-1">Major changes:<a href="#appendix-B.9-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="appendix-B.9-2.1">
+            <p id="appendix-B.9-2.1.1">Moved data_moved from http to transport. Also made the "from" and "to" fields
+flexible strings instead of an enum (#111,#65)<a href="#appendix-B.9-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-2.2">
+            <p id="appendix-B.9-2.2.1">Moved packet_type fields to PacketHeader. Moved packet_size field out of
+PacketHeader to RawInfo:length (#40)<a href="#appendix-B.9-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-2.3">
+            <p id="appendix-B.9-2.3.1">Made events that need to log packet_type and packet_number use a header field
+instead of logging these fields individually<a href="#appendix-B.9-2.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-2.4">
+            <p id="appendix-B.9-2.4.1">Added support for logging retry, stateless reset and initial tokens (#94,#86,#117)<a href="#appendix-B.9-2.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-2.5">
+            <p id="appendix-B.9-2.5.1">Moved separate general event categories into a single category "generic" (#47)<a href="#appendix-B.9-2.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-2.6">
+            <p id="appendix-B.9-2.6.1">Added "transport:connection_closed" event (#43,#85,#78,#49)<a href="#appendix-B.9-2.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-2.7">
+            <p id="appendix-B.9-2.7.1">Added version_information and alpn_information events (#85,#75,#28)<a href="#appendix-B.9-2.7.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-2.8">
+            <p id="appendix-B.9-2.8.1">Added parameters_restored events to help clarify 0-RTT behaviour (#88)<a href="#appendix-B.9-2.8.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="appendix-B.9-3">Smaller changes:<a href="#appendix-B.9-3" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="appendix-B.9-4.1">
+            <p id="appendix-B.9-4.1.1">Merged loss_timer events into one loss_timer_updated event<a href="#appendix-B.9-4.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.2">
+            <p id="appendix-B.9-4.2.1">Field data types are now strongly defined (#10,#39,#36,#115)<a href="#appendix-B.9-4.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.3">
+            <p id="appendix-B.9-4.3.1">Renamed qpack instruction_received and instruction_sent to instruction_created
+and instruction_parsed (#114)<a href="#appendix-B.9-4.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.4">
+            <p id="appendix-B.9-4.4.1">Updated qpack:dynamic_table_updated.update_type. It now has the value "inserted"
+instead of "added" (#113)<a href="#appendix-B.9-4.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.5">
+            <p id="appendix-B.9-4.5.1">Updated qpack:dynamic_table_updated. It now has an "owner" field to
+differentiate encoder vs decoder state (#112)<a href="#appendix-B.9-4.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.6">
+            <p id="appendix-B.9-4.6.1">Removed push_allowed from http:parameters_set (#110)<a href="#appendix-B.9-4.6.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.7">
+            <p id="appendix-B.9-4.7.1">Removed explicit trigger field indications from events, since this was moved to
+be a generic property of the "data" field (#80)<a href="#appendix-B.9-4.7.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.8">
+            <p id="appendix-B.9-4.8.1">Updated transport:connection_id_updated to be more in line with other similar
+events. Also dropped importance from Core to Base (#45)<a href="#appendix-B.9-4.8.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.9">
+            <p id="appendix-B.9-4.9.1">Added length property to PaddingFrame (#34)<a href="#appendix-B.9-4.9.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.10">
+            <p id="appendix-B.9-4.10.1">Added packet_number field to transport:frames_processed (#74)<a href="#appendix-B.9-4.10.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.11">
+            <p id="appendix-B.9-4.11.1">Added a way to generically log packet header flags (first 8 bits) to
+PacketHeader<a href="#appendix-B.9-4.11.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.12">
+            <p id="appendix-B.9-4.12.1">Added additional guidance on which events to log in which situations (#53)<a href="#appendix-B.9-4.12.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.13">
+            <p id="appendix-B.9-4.13.1">Added "simulation:scenario" event to help indicate simulation details<a href="#appendix-B.9-4.13.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.14">
+            <p id="appendix-B.9-4.14.1">Added "packets_acked" event (#107)<a href="#appendix-B.9-4.14.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.15">
+            <p id="appendix-B.9-4.15.1">Added "datagram_ids" to the datagram_X and packet_X events to allow tracking of
+coalesced QUIC packets (#91)<a href="#appendix-B.9-4.15.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.9-4.16">
+            <p id="appendix-B.9-4.16.1">Extended connection_state_updated with more fine-grained states (#49)<a href="#appendix-B.9-4.16.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+<div id="since-draft-marx-qlog-event-definitions-quic-h3-00">
+<section id="appendix-B.10">
+        <h3 id="name-since-draft-marx-qlog-event-d">
+<a href="#name-since-draft-marx-qlog-event-d" class="section-name selfRef">Since draft-marx-qlog-event-definitions-quic-h3-00:</a>
+        </h3>
+<ul class="normal">
+<li class="normal" id="appendix-B.10-1.1">
+            <p id="appendix-B.10-1.1.1">Event and category names are now all lowercase<a href="#appendix-B.10-1.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.10-1.2">
+            <p id="appendix-B.10-1.2.1">Added many new events and their definitions<a href="#appendix-B.10-1.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.10-1.3">
+            <p id="appendix-B.10-1.3.1">"type" fields have been made more specific (especially important for PacketType
+fields, which are now called packet_type instead of type)<a href="#appendix-B.10-1.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.10-1.4">
+            <p id="appendix-B.10-1.4.1">Events are given an importance indicator (issue #22)<a href="#appendix-B.10-1.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.10-1.5">
+            <p id="appendix-B.10-1.5.1">Event names are more consistent and use past tense (issue #21)<a href="#appendix-B.10-1.5.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="appendix-B.10-1.6">
+            <p id="appendix-B.10-1.6.1">Triggers have been redefined as properties of the "data" field and updated for most events (issue #23)<a href="#appendix-B.10-1.6.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+</section>
+</div>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-C">
+      <h2 id="name-authors-addresses">
+<a href="#name-authors-addresses" class="section-name selfRef">Authors' Addresses</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Robin Marx (<span class="role">editor</span>)</span></div>
+<div dir="auto" class="left"><span class="org">Akamai</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:rmarx@akamai.com" class="email">rmarx@akamai.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Luca Niccolini (<span class="role">editor</span>)</span></div>
+<div dir="auto" class="left"><span class="org">Meta</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:lniccolini@meta.com" class="email">lniccolini@meta.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Marten Seemann (<span class="role">editor</span>)</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:martenseemann@gmail.com" class="email">martenseemann@gmail.com</a>
+</div>
+</address>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Lucas Pardue (<span class="role">editor</span>)</span></div>
+<div dir="auto" class="left"><span class="org">Cloudflare</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:lucas@lucaspardue.com" class="email">lucas@lucaspardue.com</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
