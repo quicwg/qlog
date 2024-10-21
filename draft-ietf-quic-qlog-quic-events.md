@@ -767,7 +767,7 @@ QUICParametersRestored = {
     ? max_datagram_frame_size: uint64
 
     ; RFC9287
-    ; can only be restored at the CLIENT!
+    ; can only be restored at the client.
     ; servers MUST NOT restore this parameter!
     ? grease_quic_bit: bool
 
