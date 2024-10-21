@@ -407,7 +407,11 @@ JSON serialization example:
     "description": "Description for this trace (long)",
     "common_fields": {
         "ODCID": "abcde1234",
-        "time_format": "absolute"
+        "time_format": "relative_to_epoch",
+        "reference_time": {
+            "clock_type": "system",
+            "epoch": "1970-01-01T00:00:00.000Z"
+        },
     },
     "vantage_point": {
         "name": "backend-67",
@@ -492,8 +496,11 @@ JSON-SEQ serialization example:
       "common_fields": {
         "protocol_types": ["QUIC","HTTP/3"],
         "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
-        "time_format":"relative",
-        "reference_time": 1553986553572
+        "time_format": "relative_to_epoch",
+        "reference_time": {
+            "clock_type": "system",
+            "epoch": "1970-01-01T00:00:00.000Z"
+        },
       },
       "vantage_point": {
         "name":"backend-67",
@@ -631,7 +638,7 @@ Example qlog event:
     "protocol_types":  ["QUIC","HTTP/3"],
     "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
-    "time_format": "absolute",
+    "time_format": "relative_to_epoch",
 
     "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a"
 }
@@ -640,68 +647,183 @@ Example qlog event:
 
 ## Timestamps {#time-based-fields}
 
-An event's "time" field indicates the timestamp at which the event occurred. Its value is
-typically the Unix timestamp since the 1970 epoch (number of milliseconds since
-midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports two
-more succinct timestamps formats to allow reducing file size. The employed format
-is indicated in the "time_format" field, which allows one of three values:
-"absolute", "delta" or "relative".
+Each event MUST include a "time" field to indicate the timestamp that it
+occurred. It is a duration measured from some point in time; its units depend on the type of clock chosen and system used. Typically however, a millisecond resolution is employed.
+There are several options for generating and logging timestamps, these are
+governed by the ReferenceTime type (optionally included in the "reference_time"
+field contained in a trace's "common_fields" ({{common-fields}})) and TimeFormat
+type (optionally included in the "time_format" field contained in the event
+itself, or a trace's "common_fields").
+
+There is no requirement that events in the same trace use the same time format.
+However, using a single time format for related events can make them easier to
+analyze.
+
+The reference time governs from which point in time the "time" field values are measured and is defined as:
 
 ~~~ cddl
-TimeFormat = "absolute" /
-             "delta" /
-             "relative"
+ReferenceTime = {
+    clock_type: "system" / "monotonic" / text .default "system"
+    epoch: RFC3339DateTime / "unknown" .default "1970-01-01T00:00:00.000Z"
+
+    ? wall_clock_time: RFC3339DateTime
+}
+
+RFC3339DateTime = text
+~~~
+{: #reference-time-def title="ReferenceTime definition"}
+
+The required "clock_type" field represents the type of clock used for time
+measurements. The value "system" represents a clock that uses system time,
+commonly measured against a chosen or well-known epoch. However, depending on the system, System time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value "monotonic" represents such a clock.
+
+The required "epoch" field is the start of the ReferenceTime. When using the
+"system" clock type, the epoch field SHOULD have a date/time value using the
+format defined in {{!RFC3339}}. However, the value "unknown" MAY be used.
+
+When using the "monotonic" clock type, the epoch field MUST have the value
+"unknown".
+
+The optional "wall_clock_time" field can be used to provide an approximate
+date/time value that logging commenced at if the epoch value is "unknown". It uses
+the format defined in {{!RFC3339}}. Note that conversion of timestamps to
+calendar time based on wall clock times cannot be safely relied on.
+
+The time format details how "time" values are encoded relative to the reference time and is defined as:
+
+~~~ cddl
+TimeFormat = "relative_to_epoch" /
+             "relative_to_previous_event" .default "relative_to_epoch"
 ~~~
 {: #time-format-def title="TimeFormat definition"}
 
-* Absolute: Include the full absolute timestamp with each event. This approach
-  uses the largest amount of characters. This is also the default value of the
-  "time_format" field.
-* Delta: Delta-encode each time value on the previously logged value. The first
-  event in a trace typically logs the full absolute timestamp. This approach uses
-  the least amount of characters.
-* Relative: Specify a full "reference_time" timestamp (typically this is done
-  up-front in "common_fields", see {{common-fields}}) and include only
-  relatively-encoded values based on this reference_time with each event. The
-  "reference_time" value is typically the first absolute timestamp. This approach
-  uses a medium amount of characters.
+relative_to_epoch:
+: A duration relative to the ReferenceTime "epoch" field. This approach uses the
+  largest amount of characters. It is good for stateless loggers. This is the default value of the "time_format" field.
 
-The first option is good for stateless loggers, the second and third for stateful
-loggers. The third option is generally preferred, since it produces smaller files
-while being easier to reason about. An example for each option can be seen in
-{{time-format-ex}}.
-
-~~~~~~~~
-The absolute approach will use:
-1500, 1505, 1522, 1588
-
-The delta approach will use:
-1500, 5, 17, 66
-
-The relative approach will:
-- set the reference_time to 1500 in "common_fields"
-- use: 0, 5, 22, 88
-~~~~~~~~
-{: #time-format-ex title="Three different approaches for logging timestamps"}
-
-One of these options is typically chosen for the entire trace (put differently:
-each event has the same value for the "time_format" field). Each event MUST
-include a timestamp in the "time" field.
+relative_to_previous_event:
+: A delta-encoded value, based on the previously logged value. The first event
+  in a trace is always relative to the ReferenceTime. This approach uses the
+  least amount of characters. It is suitable for stateful loggers.
 
 Events in each individual trace SHOULD be logged in strictly ascending timestamp
-order (though not necessarily absolute value, for the "delta" format). Tools MAY
-sort all events on the timestamp before processing them, though are not required
-to (as this could impose a significant processing overhead). This can be a problem
-especially for multi-threaded and/or streaming loggers, who could consider using a
-separate post-processor to order qlog events in time if a tool do not provide this
-feature.
+order (though not necessarily absolute value, for the "relative_to_previous_event"
+format). Tools MAY sort all events on the timestamp before processing them,
+though are not required to (as this could impose a significant processing
+overhead). This can be a problem especially for multi-threaded and/or streaming
+loggers, who could consider using a separate post-processor to order qlog events
+in time if a tool do not provide this feature.
 
-Timestamps do not have to use the UNIX epoch timestamp as their reference. For
-example for privacy considerations, any initial reference timestamps (for example
-"endpoint uptime in ms" or "time since connection start in ms") can be chosen.
-Tools SHOULD NOT assume the ability to derive the absolute Unix timestamp from
-qlog traces, nor allow on them to relatively order events across two or more
-separate traces (in this case, clock drift should also be taken into account).
+Tools SHOULD NOT assume the ability to derive the absolute calendar timestamp of an event
+from qlog traces. Tools should not rely on timestamps to be consistent across
+traces, even those generated by the same logging endpoint. For reasons of
+privacy, the reference time MAY have minimization or anonymization applied.
+
+Example of a log using the relative_to_epoch format:
+
+~~~
+"common_fields": {
+    "time_format": "relative_to_epoch",
+    "reference_time": {
+          "clock_type": "system",
+          "epoch": "1970-01-01T00:00:00.000Z"
+    },
+},
+"events": [
+  {
+    "time": 1553986553572,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 1553986553577,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 1553986553587,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 1553986553597,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+]
+~~~
+{: #rel-epoch-time-ex title="Relative to epoch timestamps"}
+
+Example of a log using the relative_to_previous_event format:
+
+~~~
+"common_fields": {
+    "time_format": "relative_to_previous_event",
+    "reference_time": {
+          "clock_type": "system",
+          "epoch": "1970-01-01T00:00:00.000Z"
+    },
+},
+"events": [
+  {
+    "time": 1553986553572,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 5,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 10,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 10,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+]
+~~~
+{: #rel-last-event-time-ex title="Relative-to-previous-event timestamps"}
+
+Example of a monotonic log using the relative_to_epoch format:
+
+~~~
+"common_fields": {
+    "time_format": "relative_to_epoch",
+    "reference_time": {
+          "clock_type": "monotonic",
+          "epoch": "unknown",
+          "wall_clock_time": "2024-10-10T10:10:10.000Z"
+    },
+},
+"events": [
+  {
+    "time": 0,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 5,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 15,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 25,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+]
+~~~
+{: #mono-time-ex title="Monotonic timestamps"}
 
 
 ## Path {#path-field}
@@ -855,18 +977,24 @@ per-event instance:
 {
     "events": [{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_types": ["QUIC","HTTP/3"],
-            "time_format": "relative",
-            "reference_time": 1553986553572,
+            "protocol_type": ["QUIC","HTTP/3"],
+            "time_format": "relative_to_epoch",
+            "reference_time": {
+              "clock_type": "system",
+              "epoch": "2019-03-29T:22:55:53.572Z"
+            },
 
             "time": 2,
             "name": "quic:packet_received",
             "data": { ... }
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_types": ["QUIC","HTTP/3"],
-            "time_format": "relative",
-            "reference_time": 1553986553572,
+            "protocol_type": ["QUIC","HTTP/3"],
+            "time_format": "relative_to_epoch",
+            "reference_time": {
+              "clock_type": "system",
+              "epoch": "2019-03-29T:22:55:53.572Z"
+            },
 
             "time": 7,
             "name": "http:frame_parsed",
@@ -881,9 +1009,12 @@ extracted to common_fields:
 {
     "common_fields": {
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "protocol_types": ["QUIC","HTTP/3"],
-        "time_format": "relative",
-        "reference_time": 1553986553572
+        "protocol_type": ["QUIC","HTTP/3"],
+        "time_format": "relative_to_epoch",
+        "reference_time": {
+            "clock_type": "system",
+            "epoch": "2019-03-29T:22:55:53.572Z"
+        },
     },
     "events": [
         {
@@ -914,7 +1045,7 @@ below:
 CommonFields = {
     ? path: PathID
     ? time_format: TimeFormat
-    ? reference_time: float64
+    ? reference_time: ReferenceTime
     ? protocol_types: ProtocolTypeList
     ? group_id: GroupID
     * text => any
