@@ -407,7 +407,11 @@ JSON serialization example:
     "description": "Description for this trace (long)",
     "common_fields": {
         "ODCID": "abcde1234",
-        "time_format": "absolute"
+        "time_format": "relative_to_epoch",
+        "reference_time": {
+            "clock_type": "system",
+            "epoch": "1970-01-01T00:00:00.000Z"
+        },
     },
     "vantage_point": {
         "name": "backend-67",
@@ -492,8 +496,11 @@ JSON-SEQ serialization example:
       "common_fields": {
         "protocol_types": ["QUIC","HTTP/3"],
         "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
-        "time_format":"relative",
-        "reference_time": 1553986553572
+        "time_format": "relative_to_epoch",
+        "reference_time": {
+            "clock_type": "system",
+            "epoch": "1970-01-01T00:00:00.000Z"
+        },
       },
       "vantage_point": {
         "name":"backend-67",
@@ -641,12 +648,12 @@ Example qlog event:
 ## Timestamps {#time-based-fields}
 
 Each event MUST include a "time" field to indicate the timestamp that it
-occurred. It is a duration measured from some point in time, in millisecond
-resolution. There are several options for generating and logging timestamps,
-these are governed by the ReferenceTime type (optionally included in the
-"reference_time" field contained in a trace's "common_fields"
-({{common-fields}})) and TimeFormat type (optionally included "time_format"
-field contained in the event itself, or a trace's "common_fields").
+occurred. It is a duration measured from some point in time, in units of ???.
+There are several options for generating and logging timestamps, these are
+governed by the ReferenceTime type (optionally included in the "reference_time"
+field contained in a trace's "common_fields" ({{common-fields}})) and TimeFormat
+type (optionally included in the "time_format" field contained in the event
+itself, or a trace's "common_fields").
 
 There is no requirement that events in the same trace use the same time format.
 However, using a single time format for related events can make them easier to
@@ -656,44 +663,54 @@ The reference time is defined as:
 
 ~~~ cddl
 ReferenceTime = {
-    epoch: text
-    ? elapsed_time: float64
-    ? wall_clock_time: text
+    clock_type: "system" / "monotonic" / text .default "system"
+    epoch: RFC3339DateTime / "unknown" .default "1970-01-01T00:00:00.000Z"
+
+    ? wall_clock_time: RFC3339DateTime
 }
+
+RFC3339DateTime = text
 ~~~
 {: #reference-time-def title="ReferenceTime definition"}
 
-The required "epoch" field states the name of an epoch, such as "unix" for the
-Unix epoch. The optional "elapsed_time" is a duration in milliseconds since the
-"epoch", this allows the log to declare a fixed reference point anchored on the
-epoch. The optional "wall_clock_time" field can be used to provide a
-human-readable version of the reference time.
+The required "clock_type" field represents the type of clock used for time
+measurements. The value "system" represents a clock that uses system time,
+commonly measured against a chosen or well-known epoch. System time can jump
+forward or back. The value "monotonic" represents a clock that uses monotonic
+time, measured against an arbitrary and opaque epoch. Monotonic time is
+generally guaranteed to never go backwards.
+
+The required "epoch" field is the start of the ReferenceTime. When using the
+"system" clock type, the epoch field SHOULD have a date/time value using the
+format defined in {{!RFC3339}}. However, the value "unknown" MAY be used.
+
+When using the "monotonic" clock type, the epoch field MUST have the value
+"unknown".
+
+The optional "wall_clock_time" field can be used to provide an approximate
+date/time value that logging commenced if the epoch value is "unknown". It uses
+the format defined in {{!RFC3339}}. Note that conversion of timestamps to
+calendar time based on wall clock times cannot be safely relied on.
 
 The time format is defined as:
 
 ~~~ cddl
 TimeFormat = "relative_to_epoch" /
-             "relative_to_epoch_elapsed" /
-             "relative_to_last_event" .default "relative_to_epoch"
+             "relative_to_previous_event" .default "relative_to_epoch"
 ~~~
 {: #time-format-def title="TimeFormat definition"}
 
 relative_to_epoch:
 : A duration relative to the ReferenceTime "epoch" field. This approach uses the
-  largest amount of characters. This is the default value of the "time_format"
-  field.
+  largest amount of characters. It is good for stateless loggers. This is the default value of the "time_format" field.
 
-relative_to_epoch_elapsed:
-: A duration relative to the ReferenceTime "epoch" field plus the "elapsed_time"
-  field. This approach uses a medium amount of characters.
-
-relative_to_last_event:
+relative_to_previous_event:
 : A delta-encoded value, based on the previously logged value. The first event
   in a trace is always relative to the ReferenceTime. This approach uses the
-  least amount of characters.
+  least amount of characters. It is suitable for stateful loggers.
 
 Events in each individual trace SHOULD be logged in strictly ascending timestamp
-order (though not necessarily absolute value, for the "relative_to_last_event"
+order (though not necessarily absolute value, for the "relative_to_previous_event"
 format). Tools MAY sort all events on the timestamp before processing them,
 though are not required to (as this could impose a significant processing
 overhead). This can be a problem especially for multi-threaded and/or streaming
@@ -705,24 +722,14 @@ from qlog traces. Tools should not rely on timestamps to be consistent across
 traces, even those generated by the same logging endpoint. For reasons of
 privacy, the reference time MAY have minimization or anonymization applied.
 
-The "relative_to_epoch" format is good for stateless loggers. The other formats suit
-stateful loggers.
-
-Some loggers rely on the use of an opaque monotonically non-decreasing clock for
-timestamps, which have no commonly shared epoch and cannot be meaningfully
-interpreted beyond the system that instantiated it. To accommodate these, there
-MUST be ReferenceTime with an "epoch" field set to "monotonic" and the
-"epoch_elapsed" field MUST NOT be set. The "wall_clock_time" can be used to
-provide a loose reference time for the start of the log. However, conversion of
-monotonic times into wall clock times cannot be safely relied on. For instance,
-
 Example of a log using the relative_to_epoch format:
 
 ~~~
 "common_fields": {
     "time_format": "relative_to_epoch",
     "reference_time": {
-          "epoch": "unix"
+          "clock_type": "system",
+          "epoch": "1970-01-01T00:00:00.000Z"
     },
 },
 "events": [
@@ -750,48 +757,14 @@ Example of a log using the relative_to_epoch format:
 ~~~
 {: #rel-epoch-time-ex title="Relative to epoch timestamps"}
 
-Example of the same event times using the relative_to_epoch_elapsed format:
+Example of a log using the relative_to_previous_event format:
 
 ~~~
 "common_fields": {
-    "time_format": "relative_to_epoch",
+    "time_format": "relative_to_previous_event",
     "reference_time": {
-          "epoch": "unix"
-          "elapsed_time": 1553986553572,
-    },
-},
-"events": [
-  {
-    "time": 0,
-    "name": "quic:packet_received",
-    "data": { ... },
-  },
-  {
-    "time": 5,
-    "name": "quic:packet_received",
-    "data": { ... },
-  },
-  {
-    "time": 15,
-    "name": "quic:packet_received",
-    "data": { ... },
-  },
-  {
-    "time": 25,
-    "name": "quic:packet_received",
-    "data": { ... },
-  },
-]
-~~~
-{: rel-epoch-elapsed-time-ex title="Relative to epoch plus elapsed timestamps"}
-
-Example of a log using the relative_to_last_event format:
-
-~~~
-"common_fields": {
-    "time_format": "relative_to_last_event",
-    "reference_time": {
-          "epoch": "unix"
+          "clock_type": "system",
+          "epoch": "1970-01-01T00:00:00.000Z"
     },
 },
 "events": [
@@ -817,7 +790,7 @@ Example of a log using the relative_to_last_event format:
   },
 ]
 ~~~
-{: #rel-last-event-time-ex title="Relative-to-last-event timestamps"}
+{: #rel-last-event-time-ex title="Relative-to-previous-event timestamps"}
 
 Example of a monotonic log using the relative_to_epoch format:
 
@@ -825,8 +798,9 @@ Example of a monotonic log using the relative_to_epoch format:
 "common_fields": {
     "time_format": "relative_to_epoch",
     "reference_time": {
-          "epoch": "monotonic"
-          "wall_clock_time": "TODO"
+          "clock_type": monotonic,
+          "epoch": "unknown",
+          "wall_clock_time": "2024-10-10T10:10:10.000Z"
     },
 },
 "events": [
@@ -1007,10 +981,10 @@ per-event instance:
     "events": [{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
             "protocol_type": ["QUIC","HTTP/3"],
-            "time_format": "relative_to_epoch_elapsed",
+            "time_format": "relative_to_epoch",
             "reference_time": {
-              "epoch": "unix"
-              "elapsed_time": 1553986553572,
+              "clock_type": "system",
+              "epoch": "2019-03-39T:22:55:53.572Z"
             },
 
             "time": 2,
@@ -1019,10 +993,10 @@ per-event instance:
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
             "protocol_type": ["QUIC","HTTP/3"],
-            "time_format": "relative_to_epoch_elapsed",
+            "time_format": "relative_to_epoch",
             "reference_time": {
-              "epoch": "unix"
-              "elapsed_time": 1553986553572,
+              "clock_type": "system",
+              "epoch": "2019-03-39T:22:55:53.572Z"
             },
 
             "time": 7,
@@ -1039,10 +1013,10 @@ extracted to common_fields:
     "common_fields": {
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
         "protocol_type": ["QUIC","HTTP/3"],
-        "time_format": "relative_to_epoch_elapsed",
+        "time_format": "relative_to_epoch",
         "reference_time": {
-              "epoch": "unix"
-              "elapsed_time": 1553986553572,
+            "clock_type": "system",
+            "epoch": "2019-03-39T:22:55:53.572Z"
         },
     },
     "events": [
