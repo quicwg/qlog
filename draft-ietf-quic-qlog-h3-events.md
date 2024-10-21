@@ -77,27 +77,27 @@ containing concrete events for the core HTTP/3 protocol {{RFC9114}} and selected
 extensions ({{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}}, and
 {{!H3-DATAGRAM=RFC9297}}).
 
-The event schema namespace `http` is defined, containing the category `h3`; see
-{{schema-def}}. In this category multiple events derive from the qlog abstract
-Event class ({{Section 7 of QLOG-MAIN}}),  each extending the "data" field and
-defining their "name" field values and semantics
+The event namespace with identifier `http3` is defined; see {{schema-def}}. In
+this namespace multiple events derive from the qlog abstract Event class
+({{Section 7 of QLOG-MAIN}}), each extending the "data" field and defining
+their "name" field values and semantics.
 
 {{h3-events}} summarizes the name value of each event type that is defined in
-this specification. Some event data fields use complex datastructures. These are
+this specification. Some event data fields use complex data types. These are
 represented as enums or re-usable definitions, which are grouped together on the
 bottom of this document for clarity.
 
-| Name value                | Importance |  Definition |
-|:--------------------------|:-----------|:------------|
-| h3:parameters_set         | Base       | {{h3-parametersset}} |
-| h3:parameters_restored    | Base       | {{h3-parametersrestored}} |
-| h3:stream_type_set        | Base       | {{h3-streamtypeset}} |
-| h3:priority_updated       | Base       | {{h3-priorityupdated}} |
-| h3:frame_created          | Core       | {{h3-framecreated}} |
-| h3:frame_parsed           | Core       | {{h3-frameparsed}} |
-| h3:datagram_created       | Base       | {{h3-datagramcreated}} |
-| h3:datagram_parsed        | Base       | {{h3-datagramparsed}} |
-| h3:push_resolved          | Extra      | {{h3-pushresolved}} |
+| Name value                   | Importance |  Definition |
+|:-----------------------------|:-----------|:------------|
+| http3:parameters_set         | Base       | {{h3-parametersset}} |
+| http3:parameters_restored    | Base       | {{h3-parametersrestored}} |
+| http3:stream_type_set        | Base       | {{h3-streamtypeset}} |
+| http3:priority_updated       | Base       | {{h3-priorityupdated}} |
+| http3:frame_created          | Core       | {{h3-framecreated}} |
+| http3:frame_parsed           | Core       | {{h3-frameparsed}} |
+| http3:datagram_created       | Base       | {{h3-datagramcreated}} |
+| http3:datagram_parsed        | Base       | {{h3-datagramparsed}} |
+| http3:push_resolved          | Extra      | {{h3-pushresolved}} |
 {: #h3-events title="HTTP/3 Events"}
 
 When any event from this document is included in a qlog trace, the
@@ -130,7 +130,7 @@ The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
-The following fields from {{QLOG-MAIN}} are imported and used: name, category,
+The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
 type, data, group_id, protocol_types, importance, RawInfo, and time-related
 fields.
 
@@ -142,21 +142,21 @@ implementation decision.
 
 This document describes how the core HTTP/3 protocol and selected extensions can
 be expressed in qlog using a newly defined event schema. Per the requirements in
-{{Section 8 of QLOG-MAIN}}, this document registers the `http` namespace and
-`h3` category identifiers. The URI is `urn:ietf:params:qlog:events:http#h3`.
+{{Section 8 of QLOG-MAIN}}, this document registers the `http3` namespace. The
+event schema URI is `urn:ietf:params:qlog:events:http3`.
 
 ## Draft Event Schema Identification
 {:removeinrfc="true"}
 
 Only implementations of the final, published RFC can use the events belonging to
-the category with the URI `urn:ietf:params:qlog:events:http#h3`. Until such an
+the event schema with the URI `urn:ietf:params:qlog:events:http3`. Until such an
 RFC exists, implementations MUST NOT identify themselves using this URI.
 
 Implementations of draft versions of the event schema MUST append the string
 "-" and the corresponding draft number to the URI. For example, draft 07 of this
-document is identified using the URI `urn:ietf:params:qlog:events:http#h3-07`.
+document is identified using the URI `urn:ietf:params:qlog:events:http3-07`.
 
-The category identifier itself is not affected by this requirement.
+The namespace identifier itself is not affected by this requirement.
 
 # HTTP/3 Events {#h3-ev}
 
@@ -166,19 +166,19 @@ per-event extension points via the `$$` CDDL "group socket" syntax, as also
 described in {{QLOG-MAIN}}.
 
 ~~~ cddl
-H3EventData = H3ParametersSet /
-              H3ParametersRestored /
-              H3StreamTypeSet /
-              H3PriorityUpdated /
-              H3FrameCreated /
-              H3FrameParsed /
-              H3DatagramCreated /
-              H3DatagramParsed /
-              H3PushResolved
+HTTP3EventData = HTTP3ParametersSet /
+              HTTP3ParametersRestored /
+              HTTP3StreamTypeSet /
+              HTTP3PriorityUpdated /
+              HTTP3FrameCreated /
+              HTTP3FrameParsed /
+              HTTP3DatagramCreated /
+              HTTP3DatagramParsed /
+              HTTP3PushResolved
 
-$ProtocolEventData /= H3EventData
+$ProtocolEventData /= HTTP3EventData
 ~~~
-{: #h3-events-def title="H3EventData definition and ProtocolEventData
+{: #h3-events-def title="HTTP3EventData definition and ProtocolEventData
 extension"}
 
 HTTP events are logged when a certain condition happens at the application
@@ -196,6 +196,9 @@ Furthermore, stream_data_moved events can appear before frame_parsed events
 because implementations need to read data from a stream in order to parse the
 frame header.
 
+The concrete HTTP/3 event types are further defined below, their type identifier
+is the heading name.
+
 ## parameters_set {#h3-parametersset}
 
 The `parameters_set` event contains HTTP/3 and QPACK-level settings, mostly
@@ -211,7 +214,7 @@ settings have the value "local" and received settings have the value
 "received".
 
 ~~~ cddl
-H3ParametersSet = {
+HTTP3ParametersSet = {
     ? owner: Owner
 
     ; RFC9114
@@ -232,10 +235,10 @@ H3ParametersSet = {
     ; frame before processing requests
     ? waits_for_settings: bool
 
-    * $$h3-parametersset-extension
+    * $$http3-parametersset-extension
 }
 ~~~
-{: #h3-parametersset-def title="H3ParametersSet definition"}
+{: #h3-parametersset-def title="HTTP3ParametersSet definition"}
 
 The `parameters_set` event can contain any number of unspecified fields. This
 allows for representation of reserved settings (aka GREASE) or ad-hoc support
@@ -249,7 +252,7 @@ is used to indicate which HTTP/3 settings were restored and to which values when
 utilizing 0-RTT. It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
-H3ParametersRestored = {
+HTTP3ParametersRestored = {
     ; RFC9114
     ? max_field_section_size: uint64
 
@@ -263,10 +266,10 @@ H3ParametersRestored = {
     ; RFC9297 (SETTINGS_H3_DATAGRAM)
     ? h3_datagram: uint16
 
-    * $$h3-parametersrestored-extension
+    * $$http3-parametersrestored-extension
 }
 ~~~
-{: #h3-parametersrestored-def title="H3ParametersRestored definition"}
+{: #h3-parametersrestored-def title="HTTP3ParametersRestored definition"}
 
 ## stream_type_set {#h3-streamtypeset}
 
@@ -283,14 +286,14 @@ integer type. Where the type is not known, the stream_type value of "unknown"
 type can be used and the value captured in the stream_type_bytes field; a
 numerical value without variable-length integer encoding.
 
-The generic `$H3StreamType` is defined here as a CDDL "type socket" extension
+The generic `$HTTP3StreamType` is defined here as a CDDL "type socket" extension
 point. It can be extended to support additional HTTP/3 stream types.
 
 ~~~ cddl
-H3StreamTypeSet = {
+HTTP3StreamTypeSet = {
     ? owner: Owner
     stream_id: uint64
-    stream_type: $H3StreamType
+    stream_type: $HTTP3StreamType
 
     ; only when stream_type === "unknown"
     ? stream_type_bytes: uint64
@@ -298,18 +301,18 @@ H3StreamTypeSet = {
     ; only when stream_type === "push"
     ? associated_push_id: uint64
 
-    * $$h3-streamtypeset-extension
+    * $$http3-streamtypeset-extension
 }
 
-$H3StreamType /=  "request" /
-                  "control" /
-                  "push" /
-                  "reserved" /
-                  "unknown" /
-                  "qpack_encode" /
-                  "qpack_decode"
+$HTTP3StreamType /=   "request" /
+                      "control" /
+                      "push" /
+                      "reserved" /
+                      "unknown" /
+                      "qpack_encode" /
+                      "qpack_decode"
 ~~~
-{: #h3-streamtypeset-def title="H3StreamTypeSet definition"}
+{: #h3-streamtypeset-def title="HTTP3StreamTypeSet definition"}
 
 ## priority_updated {#h3-priorityupdated}
 
@@ -321,20 +324,20 @@ to local policies. The event has Base importance level; see {{Section 9.2 of
 QLOG-MAIN}}.
 
 ~~~ cddl
-H3PriorityUpdated = {
+HTTP3PriorityUpdated = {
     ; if the prioritized element is a request stream
     ? stream_id: uint64
 
     ; if the prioritized element is a push stream
     ? push_id: uint64
 
-    ? old: H3Priority
-    new: H3Priority
+    ? old: HTTP3Priority
+    new: HTTP3Priority
 
-    * $$h3-priorityupdated-extension
+    * $$http3-priorityupdated-extension
 }
 ~~~
-{: #h3-priorityupdated-def title="H3PriorityUpdated definition"}
+{: #h3-priorityupdated-def title="HTTP3PriorityUpdated definition"}
 
 ## frame_created {#h3-framecreated}
 
@@ -345,16 +348,16 @@ This event does not necessarily coincide with HTTP/3 data getting passed to the
 QUIC layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 
 ~~~ cddl
-H3FrameCreated = {
+HTTP3FrameCreated = {
     stream_id: uint64
     ? length: uint64
-    frame: $H3Frame
+    frame: $HTTP3Frame
     ? raw: RawInfo
 
-    * $$h3-framecreated-extension
+    * $$http3-framecreated-extension
 }
 ~~~
-{: #h3-framecreated-def title="H3FrameCreated definition"}
+{: #h3-framecreated-def title="HTTP3FrameCreated definition"}
 
 ## frame_parsed {#h3-frameparsed}
 
@@ -366,16 +369,16 @@ received on the QUIC layer. For that, see the `stream_data_moved` event in
 {{QLOG-QUIC}}.
 
 ~~~ cddl
-H3FrameParsed = {
+HTTP3FrameParsed = {
     stream_id: uint64
     ? length: uint64
-    frame: $H3Frame
+    frame: $HTTP3Frame
     ? raw: RawInfo
 
     * $$h3-frameparsed-extension
 }
 ~~~
-{: #h3-frameparsed-def title="H3FrameParsed definition"}
+{: #h3-frameparsed-def title="HTTP3FrameParsed definition"}
 
 
 ## datagram_created {#h3-datagramcreated}
@@ -388,15 +391,15 @@ to the QUIC layer. For that, see the `datagram_data_moved` event in
 {{QLOG-QUIC}}.
 
 ~~~ cddl
-H3DatagramCreated = {
+HTTP3DatagramCreated = {
     quarter_stream_id: uint64
-    ? datagram: $H3Datagram
+    ? datagram: $HTTP3Datagram
     ? raw: RawInfo
 
-    * $$h3-datagramcreated-extension
+    * $$http3-datagramcreated-extension
 }
 ~~~
-{: #h3-datagramcreated-def title="H3DatagramCreated definition"}
+{: #h3-datagramcreated-def title="HTTP3DatagramCreated definition"}
 
 ## datagram_parsed {#h3-datagramparsed}
 
@@ -408,15 +411,15 @@ received on the QUIC layer. For that, see the `datagram_data_moved` event in
 {{QLOG-QUIC}}.
 
 ~~~ cddl
-H3DatagramParsed = {
+HTTP3DatagramParsed = {
     quarter_stream_id: uint64
-    ? datagram: $H3Datagram
+    ? datagram: $HTTP3Datagram
     ? raw: RawInfo
 
-    * $$h3-datagramparsed-extension
+    * $$http3-datagramparsed-extension
 }
 ~~~
-{: #h3-datagramparsed-def title="H3DatagramParsed definition"}
+{: #h3-datagramparsed-def title="HTTP3DatagramParsed definition"}
 
 ## push_resolved {#h3-pushresolved}
 
@@ -427,25 +430,25 @@ additional context that can is aid debugging issues related to server push. It
 has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
-H3PushResolved = {
+HTTP3PushResolved = {
     ? push_id: uint64
 
     ; in case this is logged from a place that does not have access
     ; to the push_id
     ? stream_id: uint64
-    decision: H3PushDecision
+    decision: HTTP3PushDecision
 
-    * $$h3-pushresolved-extension
+    * $$http3-pushresolved-extension
 }
 
-H3PushDecision = "claimed" /
+HTTP3PushDecision = "claimed" /
                  "abandoned"
 ~~~
-{: #h3-pushresolved-def title="H3PushResolved definition"}
+{: #h3-pushresolved-def title="HTTP3PushResolved definition"}
 
-# HTTP/3 Data Field Definitions
+# HTTP/3 Data Type Definitions
 
-The following data field definitions can be used in HTTP/3 events.
+The following data type definitions can be used in HTTP/3 events.
 
 ## Owner
 
@@ -455,84 +458,84 @@ Owner = "local" /
 ~~~
 {: #owner-def title="Owner definition"}
 
-## H3Frame
+## HTTP3Frame
 
-The generic `$H3Frame` is defined here as a CDDL "type socket" extension point.
+The generic `$HTTP3Frame` is defined here as a CDDL "type socket" extension point.
 It can be extended to support additional HTTP/3 frame types.
 
 ~~~~~~
-; The H3Frame is any key-value map (e.g., JSON object)
-$H3Frame /= {
+; The HTTP3Frame is any key-value map (e.g., JSON object)
+$HTTP3Frame /= {
     * text => any
 }
 ~~~~~~
-{: #h3-frame-def title="H3Frame type socket definition"}
+{: #h3-frame-def title="HTTP3Frame type socket definition"}
 
 The HTTP/3 frame types defined in this document are as follows:
 
 ~~~ cddl
-H3BaseFrames = H3DataFrame /
-               H3HeadersFrame /
-               H3CancelPushFrame /
-               H3SettingsFrame /
-               H3PushPromiseFrame /
-               H3GoawayFrame /
-               H3MaxPushIDFrame /
-               H3ReservedFrame /
-               H3UnknownFrame
+HTTP3BaseFrames = HTTP3DataFrame /
+                  HTTP3HeadersFrame /
+                  HTTP3CancelPushFrame /
+                  HTTP3SettingsFrame /
+                  HTTP3PushPromiseFrame /
+                  HTTP3GoawayFrame /
+                  HTTP3MaxPushIDFrame /
+                  HTTP3ReservedFrame /
+                  HTTP3UnknownFrame
 
-$H3Frame /= H3BaseFrames
+$HTTP3Frame /= HTTP3BaseFrames
 ~~~
-{: #h3baseframe-def title="H3BaseFrames definition"}
+{: #h3baseframe-def title="HTTP3BaseFrames definition"}
 
-## H3Datagram
+## HTTP3Datagram
 
-The generic `$H3Datagram` is defined here as a CDDL "type socket" extension
+The generic `$HTTP3Datagram` is defined here as a CDDL "type socket" extension
 point. It can be extended to support additional HTTP/3 datagram types. This
 document intentionally does not define any specific qlog schemas for specific
 HTTP/3 Datagram types.
 
 ~~~~~~
-; The H3Datagram is any key-value map (e.g., JSON object)
-$H3Datagram /= {
+; The HTTP3Datagram is any key-value map (e.g., JSON object)
+$HTTP3Datagram /= {
     * text => any
 }
 ~~~~~~
-{: #h3-datagram-def title="H3Datagram type socket definition"}
+{: #h3-datagram-def title="HTTP3Datagram type socket definition"}
 
-### H3DataFrame
+### HTTP3DataFrame
 
 ~~~ cddl
-H3DataFrame = {
+HTTP3DataFrame = {
     frame_type: "data"
     ? raw: RawInfo
 }
 ~~~
-{: #h3dataframe-def title="H3DataFrame definition"}
+{: #h3dataframe-def title="HTTP3DataFrame definition"}
 
-### H3HeadersFrame
+### HTTP3HeadersFrame
 
 The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an HTTP field
-section; see {{Section 7.2.2 of RFC9114}}. `H3HeaderFrame`, in contrast,
+section; see {{Section 7.2.2 of RFC9114}}. `HTTP3HeaderFrame`, in contrast,
 contains the HTTP field section without QPACK encoding.
 
 ~~~ cddl
-H3HTTPField = {
+HTTP3HTTPField = {
     ? name: text
     ? name_bytes: hexstring
     ? value: text
     ? value_bytes: hexstring
 }
 ~~~
-{: #h3field-def title="H3HTTPField definition"}
+{: #h3field-def title="HTTP3HTTPField definition"}
 
 ~~~ cddl
-H3HeadersFrame = {
+HTTP3HeadersFrame = {
     frame_type: "headers"
-    headers: [* H3HTTPField]
+    headers: [* HTTP3HTTPField]
 }
 ~~~
-{: #h3-headersframe-def title="H3HeadersFrame definition"}
+{: #h3-headersframe-def title="HTTP3HeadersFrame definition"}
 
 For example, the HTTP field section
 
@@ -565,30 +568,30 @@ headers: [
   }
 ]
 ~~~
-{: #h3-headersframe-ex title="H3HeadersFrame example"}
+{: #h3-headersframe-ex title="HTTP3HeadersFrame example"}
 
 {{Section 4.2 of RFC9114}} and {{Section 5.1 of RFC9110}} define rules for the
 characters used in HTTP field sections names and values. Characters outside the
-range are invalid and result in the message being treated as malformed. It can however be useful to also log these invalid HTTP fields.
-Characters in the
+range are invalid and result in the message being treated as malformed. It can
+however be useful to also log these invalid HTTP fields. Characters in the
 allowed range can be safely logged by the text type used in the `name` and
-`value` fields of `H3HTTPField`. Characters outside the range are unsafe for the
+`value` fields of `HTTP3HTTPField`. Characters outside the range are unsafe for the
 text type and need to be logged using the `name_bytes` and `value_bytes` field.
-An instance of `H3HTTPField` MUST include either the `name` or `name_bytes`
-field and MAY include both. An `H3HTTPField` MAY include a `value` or
+An instance of `HTTP3HTTPField` MUST include either the `name` or `name_bytes`
+field and MAY include both. An `HTTP3HTTPField` MAY include a `value` or
 `value_bytes` field or neither.
 
-### H3CancelPushFrame
+### HTTP3CancelPushFrame
 
 ~~~ cddl
-H3CancelPushFrame = {
+HTTP3CancelPushFrame = {
     frame_type: "cancel_push"
     push_id: uint64
 }
 ~~~
-{: #h3-cancelpushframe-def title="H3CancelPushFrame definition"}
+{: #h3-cancelpushframe-def title="HTTP3CancelPushFrame definition"}
 
-### H3SettingsFrame
+### HTTP3SettingsFrame
 
 The settings field can contain zero or more entries. Each setting has a name
 field, which corresponds to Setting Name as defined (or as would be defined if
@@ -600,20 +603,20 @@ Instead, the name value of "unknown" can be used and the value captured in the
 `name_bytes` field; a numerical value without variable-length integer encoding.
 
 ~~~ cddl
-H3SettingsFrame = {
+HTTP3SettingsFrame = {
     frame_type: "settings"
-    settings: [* H3Setting]
+    settings: [* HTTP3Setting]
 }
 
-H3Setting = {
-    ? name: $H3SettingsName
+HTTP3Setting = {
+    ? name: $HTTP3SettingsName
     ; only when name === "unknown"
     ? name_bytes: uint64
 
     value: uint64
 }
 
-$H3SettingsName /= "settings_qpack_max_table_capacity" /
+$HTTP3SettingsName /= "settings_qpack_max_table_capacity" /
                    "settings_max_field_section_size" /
                    "settings_qpack_blocked_streams" /
                    "settings_enable_connect_protocol" /
@@ -621,23 +624,23 @@ $H3SettingsName /= "settings_qpack_max_table_capacity" /
                    "reserved" /
                    "unknown"
 ~~~
-{: #h3settingsframe-def title="H3SettingsFrame definition"}
+{: #h3settingsframe-def title="HTTP3SettingsFrame definition"}
 
-### H3PushPromiseFrame
+### HTTP3PushPromiseFrame
 
 ~~~ cddl
-H3PushPromiseFrame = {
+HTTP3PushPromiseFrame = {
     frame_type: "push_promise"
     push_id: uint64
-    headers: [* H3HTTPField]
+    headers: [* HTTP3HTTPField]
 }
 ~~~
-{: #h3pushpromiseframe-def title="H3PushPromiseFrame definition"}
+{: #h3pushpromiseframe-def title="HTTP3PushPromiseFrame definition"}
 
-### H3GoAwayFrame
+### HTTP3GoAwayFrame
 
 ~~~ cddl
-H3GoawayFrame = {
+HTTP3GoawayFrame = {
     frame_type: "goaway"
 
     ; Either stream_id or push_id.
@@ -645,24 +648,24 @@ H3GoawayFrame = {
     id: uint64
 }
 ~~~
-{: #h3goawayframe-def title="H3GoawayFrame definition"}
+{: #h3goawayframe-def title="HTTP3GoawayFrame definition"}
 
-### H3MaxPushIDFrame
+### HTTP3MaxPushIDFrame
 
 ~~~ cddl
-H3MaxPushIDFrame = {
+HTTP3MaxPushIDFrame = {
     frame_type: "max_push_id"
     push_id: uint64
 }
 ~~~
-{: #h3maxpushidframe-def title="H3MaxPushIDFrame definition"}
+{: #h3maxpushidframe-def title="HTTP3MaxPushIDFrame definition"}
 
-### H3PriorityUpdateFrame
+### HTTP3PriorityUpdateFrame
 
 The PRIORITY_UPDATE frame is defined in {{!RFC9218}}.
 
 ~~~ cddl
-H3PriorityUpdateFrame = {
+HTTP3PriorityUpdateFrame = {
     frame_type: "priority_update"
 
     ; if the prioritized element is a request stream
@@ -671,43 +674,43 @@ H3PriorityUpdateFrame = {
     ; if the prioritized element is a push stream
     ? push_id: uint64
 
-    priority_field_value: H3Priority
+    priority_field_value: HTTP3Priority
 }
 
 ; The priority value in ASCII text, encoded using Structured Fields
 ; Example: u=5, i
-H3Priority = text
+HTTP3Priority = text
 ~~~
-{: #h3priorityupdateframe-def title="h3priorityupdateframe definition"}
+{: #h3priorityupdateframe-def title="HTTP3PriorityUpdateFrame definition"}
 
-### H3ReservedFrame
+### HTTP3ReservedFrame
 
 ~~~ cddl
-H3ReservedFrame = {
+HTTP3ReservedFrame = {
     frame_type: "reserved"
     ? length: uint64
 }
 ~~~
-{: #h3reservedframe-def title="H3ReservedFrame definition"}
+{: #h3reservedframe-def title="HTTP3ReservedFrame definition"}
 
-### H3UnknownFrame
+### HTTP3UnknownFrame
 
 The frame_type_bytes field is the numerical value without variable-length
 integer encoding.
 
 ~~~ cddl
-H3UnknownFrame = {
+HTTP3UnknownFrame = {
     frame_type: "unknown"
     frame_type_bytes: uint64
     ? raw: RawInfo
 }
 ~~~
-{: #h3unknownframe-def title="UnknownFrame definition"}
+{: #h3unknownframe-def title="HTTP3UnknownFrame definition"}
 
-### H3ApplicationError
+### HTTP3ApplicationError
 
 ~~~ cddl
-H3ApplicationError = "http_no_error" /
+HTTP3ApplicationError = "http_no_error" /
                        "http_general_protocol_error" /
                        "http_internal_error" /
                        "http_stream_creation_error" /
@@ -725,15 +728,15 @@ H3ApplicationError = "http_no_error" /
                        "http_connect_error" /
                        "http_version_fallback"
 ~~~
-{: #h3-applicationerror-def title="H3ApplicationError definition"}
+{: #h3-applicationerror-def title="HTTP3ApplicationError definition"}
 
-The H3ApplicationError extends the general $ApplicationError
+The HTTP3ApplicationError extends the general $ApplicationError
 definition in the qlog QUIC document, see {{QLOG-QUIC}}.
 
 ~~~ cddl
 ; ensure HTTP errors are properly validated in QUIC events as well
 ; e.g., QUIC's ConnectionClose Frame
-$ApplicationError /= H3ApplicationError
+$ApplicationError /= HTTP3ApplicationError
 ~~~
 
 # Security and Privacy Considerations
@@ -743,10 +746,16 @@ document as well.
 
 # IANA Considerations
 
-This document registers a new entry in the "qlog event category URIs" registry.
+This document registers a new entry in the "qlog event schema URIs" registry.
 
-Event Category URI:
-: urn:ietf:params:qlog:events:http#h3
+Event schema URI:
+: urn:ietf:params:qlog:events:http3
+
+Namespace
+: http3
+
+Event Types
+: parameters_set,parameters_restored,stream_type_set,priority_updated,frame_created,frame_parsed,datagram_created,datagram_parsed,push_resolved
 
 Description:
 : Event definitions related to the HTTP/3 application protocol.
