@@ -664,6 +664,13 @@ remote peer). This is reflected in the `owner` field. As such, this field MUST b
 correct for all settings included a single event instance. If you need to log
 settings from two sides, you MUST emit two separate event instances.
 
+Implementations are not required to recognize, process or support every
+setting/parameter received in all situations. For example, QUIC implementations
+MUST discard transport parameters that they do not understand {{Section 7.4.2 of
+QUIC-TRANSPORT}}. The `unknown_parameters` field can be used to log the raw
+values of any unknown parameters (e.g., GREASE, private extensions, peer-side
+experimentation).
+
 In the case of connection resumption and 0-RTT, some of the server's parameters
 are stored up-front at the client and used for the initial connection startup.
 They are later updated with the server's reply. In these cases, utilize the
@@ -701,6 +708,7 @@ QUICParametersSet = {
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
     ? preferred_address: PreferredAddress
+    ? unknown_parameters: [* UnknownParameter]
 
     ; RFC9221
     ? max_datagram_frame_size: uint64
@@ -719,6 +727,11 @@ PreferredAddress = {
     port_v6: uint16
     connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
+}
+
+UnknownParameter = {
+    id: uint64
+    ? value: hexstring
 }
 ~~~
 {: #quic-parametersset-def title="QUICParametersSet definition"}
