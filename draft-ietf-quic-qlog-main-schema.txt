@@ -495,7 +495,11 @@ Table of Contents
        "description": "Description for this trace (long)",
        "common_fields": {
            "ODCID": "abcde1234",
-           "time_format": "absolute"
+           "time_format": "relative_to_epoch",
+           "reference_time": {
+               "clock_type": "system",
+               "epoch": "1970-01-01T00:00:00.000Z"
+           },
        },
        "vantage_point": {
            "name": "backend-67",
@@ -579,8 +583,11 @@ Table of Contents
          "common_fields": {
            "protocol_types": ["QUIC","HTTP/3"],
            "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
-           "time_format":"relative",
-           "reference_time": 1553986553572
+           "time_format": "relative_to_epoch",
+           "reference_time": {
+               "clock_type": "system",
+               "epoch": "1970-01-01T00:00:00.000Z"
+           },
          },
          "vantage_point": {
            "name":"backend-67",
@@ -715,7 +722,7 @@ Table of Contents
        "protocol_types":  ["QUIC","HTTP/3"],
        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
-       "time_format": "absolute",
+       "time_format": "relative_to_epoch",
 
        "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a"
    }
@@ -724,74 +731,191 @@ Table of Contents
 
 7.1.  Timestamps
 
-   An event's "time" field indicates the timestamp at which the event
-   occurred.  Its value is typically the Unix timestamp since the 1970
-   epoch (number of milliseconds since midnight UTC, January 1, 1970,
-   ignoring leap seconds).  However, qlog supports two more succinct
-   timestamps formats to allow reducing file size.  The employed format
-   is indicated in the "time_format" field, which allows one of three
-   values: "absolute", "delta" or "relative".
+   Each event MUST include a "time" field to indicate the timestamp that
+   it occurred.  It is a duration measured from some point in time; its
+   units depend on the type of clock chosen and system used.  Typically
+   however, a millisecond resolution is employed.  There are several
+   options for generating and logging timestamps, these are governed by
+   the ReferenceTime type (optionally included in the "reference_time"
+   field contained in a trace's "common_fields" (Section 7.6)) and
+   TimeFormat type (optionally included in the "time_format" field
+   contained in the event itself, or a trace's "common_fields").
 
-   TimeFormat = "absolute" /
-                "delta" /
-                "relative"
+   There is no requirement that events in the same trace use the same
+   time format.  However, using a single time format for related events
+   can make them easier to analyze.
 
-                      Figure 16: TimeFormat definition
+   The reference time governs from which point in time the "time" field
+   values are measured and is defined as:
 
-   *  Absolute: Include the full absolute timestamp with each event.
-      This approach uses the largest amount of characters.  This is also
-      the default value of the "time_format" field.
+   ReferenceTime = {
+       clock_type: "system" / "monotonic" / text .default "system"
+       epoch: RFC3339DateTime / "unknown" .default "1970-01-01T00:00:00.000Z"
 
-   *  Delta: Delta-encode each time value on the previously logged
-      value.  The first event in a trace typically logs the full
-      absolute timestamp.  This approach uses the least amount of
-      characters.
+       ? wall_clock_time: RFC3339DateTime
+   }
 
-   *  Relative: Specify a full "reference_time" timestamp (typically
-      this is done up-front in "common_fields", see Section 7.6) and
-      include only relatively-encoded values based on this
-      reference_time with each event.  The "reference_time" value is
-      typically the first absolute timestamp.  This approach uses a
-      medium amount of characters.
+   RFC3339DateTime = text
 
-   The first option is good for stateless loggers, the second and third
-   for stateful loggers.  The third option is generally preferred, since
-   it produces smaller files while being easier to reason about.  An
-   example for each option can be seen in Figure 17.
+                    Figure 16: ReferenceTime definition
 
-   The absolute approach will use:
-   1500, 1505, 1522, 1588
+   The required "clock_type" field represents the type of clock used for
+   time measurements.  The value "system" represents a clock that uses
+   system time, commonly measured against a chosen or well-known epoch.
+   However, depending on the system, System time can potentially jump
+   forward or back.  In contrast, a clock using monotonic time is
+   generally guaranteed to never go backwards.  The value "monotonic"
+   represents such a clock.
 
-   The delta approach will use:
-   1500, 5, 17, 66
+   The required "epoch" field is the start of the ReferenceTime.  When
+   using the "system" clock type, the epoch field SHOULD have a date/
+   time value using the format defined in [RFC3339].  However, the value
+   "unknown" MAY be used.
 
-   The relative approach will:
-   - set the reference_time to 1500 in "common_fields"
-   - use: 0, 5, 22, 88
+   When using the "monotonic" clock type, the epoch field MUST have the
+   value "unknown".
 
-        Figure 17: Three different approaches for logging timestamps
+   The optional "wall_clock_time" field can be used to provide an
+   approximate date/time value that logging commenced at if the epoch
+   value is "unknown".  It uses the format defined in [RFC3339].  Note
+   that conversion of timestamps to calendar time based on wall clock
+   times cannot be safely relied on.
 
-   One of these options is typically chosen for the entire trace (put
-   differently: each event has the same value for the "time_format"
-   field).  Each event MUST include a timestamp in the "time" field.
+   The time format details how "time" values are encoded relative to the
+   reference time and is defined as:
+
+   TimeFormat = "relative_to_epoch" /
+                "relative_to_previous_event" .default "relative_to_epoch"
+
+                      Figure 17: TimeFormat definition
+
+   relative_to_epoch:  A duration relative to the ReferenceTime "epoch"
+      field.  This approach uses the largest amount of characters.  It
+      is good for stateless loggers.  This is the default value of the
+      "time_format" field.
+
+   relative_to_previous_event:  A delta-encoded value, based on the
+      previously logged value.  The first event in a trace is always
+      relative to the ReferenceTime.  This approach uses the least
+      amount of characters.  It is suitable for stateful loggers.
 
    Events in each individual trace SHOULD be logged in strictly
    ascending timestamp order (though not necessarily absolute value, for
-   the "delta" format).  Tools MAY sort all events on the timestamp
-   before processing them, though are not required to (as this could
-   impose a significant processing overhead).  This can be a problem
-   especially for multi-threaded and/or streaming loggers, who could
-   consider using a separate post-processor to order qlog events in time
-   if a tool do not provide this feature.
+   the "relative_to_previous_event" format).  Tools MAY sort all events
+   on the timestamp before processing them, though are not required to
+   (as this could impose a significant processing overhead).  This can
+   be a problem especially for multi-threaded and/or streaming loggers,
+   who could consider using a separate post-processor to order qlog
+   events in time if a tool do not provide this feature.
 
-   Timestamps do not have to use the UNIX epoch timestamp as their
-   reference.  For example for privacy considerations, any initial
-   reference timestamps (for example "endpoint uptime in ms" or "time
-   since connection start in ms") can be chosen.  Tools SHOULD NOT
-   assume the ability to derive the absolute Unix timestamp from qlog
-   traces, nor allow on them to relatively order events across two or
-   more separate traces (in this case, clock drift should also be taken
-   into account).
+   Tools SHOULD NOT assume the ability to derive the absolute calendar
+   timestamp of an event from qlog traces.  Tools should not rely on
+   timestamps to be consistent across traces, even those generated by
+   the same logging endpoint.  For reasons of privacy, the reference
+   time MAY have minimization or anonymization applied.
+
+   Example of a log using the relative_to_epoch format:
+
+   "common_fields": {
+       "time_format": "relative_to_epoch",
+       "reference_time": {
+             "clock_type": "system",
+             "epoch": "1970-01-01T00:00:00.000Z"
+       },
+   },
+   "events": [
+     {
+       "time": 1553986553572,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 1553986553577,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 1553986553587,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 1553986553597,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+   ]
+
+                  Figure 18: Relative to epoch timestamps
+
+   Example of a log using the relative_to_previous_event format:
+
+   "common_fields": {
+       "time_format": "relative_to_previous_event",
+       "reference_time": {
+             "clock_type": "system",
+             "epoch": "1970-01-01T00:00:00.000Z"
+       },
+   },
+   "events": [
+     {
+       "time": 1553986553572,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 5,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 10,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 10,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+   ]
+
+              Figure 19: Relative-to-previous-event timestamps
+
+   Example of a monotonic log using the relative_to_epoch format:
+
+   "common_fields": {
+       "time_format": "relative_to_epoch",
+       "reference_time": {
+             "clock_type": "monotonic",
+             "epoch": "unknown",
+             "wall_clock_time": "2024-10-10T10:10:10.000Z"
+       },
+   },
+   "events": [
+     {
+       "time": 0,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 5,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 15,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+     {
+       "time": 25,
+       "name": "quic:packet_received",
+       "data": { ... },
+     },
+   ]
+
+                      Figure 20: Monotonic timestamps
 
 7.2.  Path
 
@@ -811,7 +935,7 @@ Table of Contents
 
    PathID = text .default ""
 
-                        Figure 18: PathID definition
+                        Figure 21: PathID definition
 
    The "path" field is an identifier that is associated with a single
    network path.  This document intentionally does not define further
@@ -834,7 +958,7 @@ Table of Contents
 
    $ProtocolType /= "UNKNOWN"
 
-       Figure 19: ProtocolTypeList and ProtocolType socket definition
+       Figure 22: ProtocolTypeList and ProtocolType socket definition
 
    For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP/3"
    protocol_type entry values, see [QLOG-QUIC] and [QLOG-H3].
@@ -868,11 +992,11 @@ Table of Contents
    field, which contains a string value.  Implementations are free to
    use their preferred string serialization for this field, so long as
    it contains a unique value per logical group.  Some examples can be
-   seen in Figure 21.
+   seen in Figure 24.
 
    GroupID = text
 
-                       Figure 20: GroupID definition
+                       Figure 23: GroupID definition
 
    JSON serialization example for events grouped by four tuples and QUIC
    connection IDs:
@@ -895,7 +1019,7 @@ Table of Contents
        }
    ]
 
-                         Figure 21: GroupID example
+                         Figure 24: GroupID example
 
    Note that in some contexts (for example a Multipath transport
    protocol) it might make sense to add additional contextual per-event
@@ -937,7 +1061,7 @@ Table of Contents
    "common_fields" list to indicate those fields and their values that
    are shared by all events in this component trace.  This prevents
    these fields from being logged for each individual event.  An example
-   of this is shown in Figure 22.
+   of this is shown in Figure 25.
 
    JSON serialization with repeated field values
    per-event instance:
@@ -945,18 +1069,24 @@ Table of Contents
    {
        "events": [{
                "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-               "protocol_types": ["QUIC","HTTP/3"],
-               "time_format": "relative",
-               "reference_time": 1553986553572,
+               "protocol_type": ["QUIC","HTTP/3"],
+               "time_format": "relative_to_epoch",
+               "reference_time": {
+                 "clock_type": "system",
+                 "epoch": "2019-03-29T:22:55:53.572Z"
+               },
 
                "time": 2,
                "name": "quic:packet_received",
                "data": { ... }
            },{
                "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-               "protocol_types": ["QUIC","HTTP/3"],
-               "time_format": "relative",
-               "reference_time": 1553986553572,
+               "protocol_type": ["QUIC","HTTP/3"],
+               "time_format": "relative_to_epoch",
+               "reference_time": {
+                 "clock_type": "system",
+                 "epoch": "2019-03-29T:22:55:53.572Z"
+               },
 
                "time": 7,
                "name": "http:frame_parsed",
@@ -971,9 +1101,12 @@ Table of Contents
    {
        "common_fields": {
            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-           "protocol_types": ["QUIC","HTTP/3"],
-           "time_format": "relative",
-           "reference_time": 1553986553572
+           "protocol_type": ["QUIC","HTTP/3"],
+           "time_format": "relative_to_epoch",
+           "reference_time": {
+               "clock_type": "system",
+               "epoch": "2019-03-29T:22:55:53.572Z"
+           },
        },
        "events": [
            {
@@ -988,7 +1121,7 @@ Table of Contents
        ]
    }
 
-                      Figure 22: CommonFields example
+                      Figure 25: CommonFields example
 
    An event's "common_fields" field is a generic dictionary of key-value
    pairs, where the key is always a string and the value can be of any
@@ -1003,13 +1136,13 @@ Table of Contents
    CommonFields = {
        ? path: PathID
        ? time_format: TimeFormat
-       ? reference_time: float64
+       ? reference_time: ReferenceTime
        ? protocol_types: ProtocolTypeList
        ? group_id: GroupID
        * text => any
    }
 
-                     Figure 23: CommonFields definition
+                     Figure 26: CommonFields definition
 
    Tools MUST be able to deal with these fields being defined either on
    each event individually or combined in common_fields.  Note that if
@@ -1097,7 +1230,7 @@ Table of Contents
      "https://example.com/032025/cucumber.html"
    ]
 
-               Figure 24: Example event_schemas serialization
+               Figure 27: Example event_schemas serialization
 
 8.1.  Event Schema URIs
 
@@ -1157,7 +1290,7 @@ Table of Contents
    field acts as a placeholder that can later be replaced with newly
    defined fields by assigning them to the socket with the //= operator.
    Multiple extensions can be assigned to the same group socket.  An
-   example is shown in Figure 25.
+   example is shown in Figure 28.
 
    ; original definition in event schema A
    MyNSEventX = {
@@ -1185,7 +1318,7 @@ Table of Contents
        ? additional_field_c: text
    }
 
-     Figure 25: Example of using a generic CDDL group socket to extend
+     Figure 28: Example of using a generic CDDL group socket to extend
                      an existing event data definition
 
    Secondly, to allow documents to define fully new event data field
@@ -1199,7 +1332,7 @@ Table of Contents
    Any generic key-value map type can be assigned to $ProtocolEventData
    (the only common "data" subfield defined in this document is the
    optional trigger field, see Section 8.2.1).  An example of this setup
-   is shown in Figure 26.
+   is shown in Figure 29.
 
    ; We define two new concrete events in a new event schema
    MyNSEvent1 /= {
@@ -1225,7 +1358,7 @@ Table of Contents
    ; the "data" field of a qlog event can now also be of type
    ; MyNSEvent1 and MyNSEvent2
 
-                   Figure 26: ProtocolEventData extension
+                   Figure 29: ProtocolEventData extension
 
    Event schema defining new qlog events MUST properly extend
    $ProtocolEventData when defining data fields to enable automated
@@ -1236,7 +1369,7 @@ Table of Contents
 
    A combined but purely illustrative example of the use of both
    extension points for a conceptual QUIC "packet_sent" event is shown
-   in Figure 27:
+   in Figure 30:
 
    ; defined in the main QUIC event schema
    QUICPacketSent = {
@@ -1283,7 +1416,7 @@ Table of Contents
      }
    }
 
-      Figure 27: Example of an extended 'data' field for a conceptual
+      Figure 30: Example of an extended 'data' field for a conceptual
                            QUIC packet_sent event
 
 8.2.1.  Triggers
@@ -1309,7 +1442,7 @@ Table of Contents
    specific, as are the trigger field's string values.
 
    One purely illustrative example of some potential triggers for QUIC's
-   "packet_dropped" event is shown in Figure 28:
+   "packet_dropped" event is shown in Figure 31:
 
    TransportPacketDropped = {
        ? packet_type: PacketType
@@ -1320,7 +1453,7 @@ Table of Contents
                   "unsupported_version"
    }
 
-                         Figure 28: Trigger example
+                         Figure 31: Trigger example
 
 8.3.  Event Importance Levels
 
@@ -1442,7 +1575,7 @@ Table of Contents
 
    $ProtocolEventData /= LogLevelEventData
 
-        Figure 29: LogLevelEventData and ProtocolEventData extension
+        Figure 32: LogLevelEventData and ProtocolEventData extension
 
    The event types are further defined below, their identifier is the
    heading name.
@@ -1459,7 +1592,7 @@ Table of Contents
        * $$loglevel-error-extension
    }
 
-                    Figure 30: LogLevelError definition
+                    Figure 33: LogLevelError definition
 
 9.1.2.  warning
 
@@ -1474,7 +1607,7 @@ Table of Contents
        * $$loglevel-warning-extension
    }
 
-                   Figure 31: LogLevelWarning definition
+                   Figure 34: LogLevelWarning definition
 
 9.1.3.  info
 
@@ -1488,7 +1621,7 @@ Table of Contents
        * $$loglevel-info-extension
    }
 
-                     Figure 32: LogLevelInfo definition
+                     Figure 35: LogLevelInfo definition
 
 9.1.4.  debug
 
@@ -1502,7 +1635,7 @@ Table of Contents
        * $$loglevel-debug-extension
    }
 
-                    Figure 33: LogLevelDebug definition
+                    Figure 36: LogLevelDebug definition
 
 9.1.5.  verbose
 
@@ -1516,7 +1649,7 @@ Table of Contents
        * $$loglevel-verbose-extension
    }
 
-                   Figure 34: LogLevelVerbose definition
+                   Figure 37: LogLevelVerbose definition
 
 9.2.  Simulation Events
 
@@ -1536,7 +1669,7 @@ Table of Contents
 
    $ProtocolEventData /= SimulationEventData
 
-       Figure 35: SimulationEventData and ProtocolEventData extension
+       Figure 38: SimulationEventData and ProtocolEventData extension
 
    The event types are further defined below, their identifier is the
    heading name.
@@ -1555,7 +1688,7 @@ Table of Contents
        * $$simulation-scenario-extension
    }
 
-                  Figure 36: SimulationScenario definition
+                  Figure 39: SimulationScenario definition
 
 9.2.2.  marker
 
@@ -1571,7 +1704,7 @@ Table of Contents
        * $$simulation-marker-extension
    }
 
-                   Figure 37: SimulationMarker definition
+                   Figure 40: SimulationMarker definition
 
 10.  Raw packet and frame information
 
@@ -1601,7 +1734,7 @@ Table of Contents
        ? data: hexstring
    }
 
-                       Figure 38: RawInfo definition
+                       Figure 41: RawInfo definition
 
    The RawInfo:data field can be truncated for privacy or security
    purposes, see Section 11.4.  In this case, the length and
@@ -1772,7 +1905,7 @@ Table of Contents
    tools MUST be able to deal with this situation and derive the length
    of the field from the raw value if no separate length-indicating
    field is present.  The main possible permutations are shown by
-   example in Figure 39.
+   example in Figure 42.
 
    // both the content's value and its length are present
    // (length is redundant)
@@ -1802,7 +1935,7 @@ Table of Contents
        "content": "051428"
    }
 
-          Figure 39: Example for serializing truncated hexstrings
+          Figure 42: Example for serializing truncated hexstrings
 
 11.5.  Optimization of serialized data
 
@@ -1866,7 +1999,7 @@ Table of Contents
    example, for QUIC, it is recommended to use the Original Destination
    Connection ID (ODCID), followed by the vantage point type of the
    logging endpoint.  Examples of all options for QUIC are shown in
-   Figure 40.
+   Figure 43.
 
    Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
 
@@ -1893,7 +2026,7 @@ Table of Contents
    this would result in event instances in the qlog file being
    tagged with the "group_id" field with values "abcde" and "12345".
 
-     Figure 40: Environment variable examples for a QUIC implementation
+     Figure 43: Environment variable examples for a QUIC implementation
 
 13.  Tooling requirements
 
@@ -2178,6 +2311,10 @@ Table of Contents
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2119>.
+
+   [RFC3339]  Klyne, G. and C. Newman, "Date and Time on the Internet:
+              Timestamps", RFC 3339, DOI 10.17487/RFC3339, July 2002,
+              <https://www.rfc-editor.org/rfc/rfc3339>.
 
    [RFC3553]  Mealling, M., Masinter, L., Hardie, T., and G. Klyne, "An
               IETF URN Sub-namespace for Registered Protocol

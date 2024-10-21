@@ -1801,7 +1801,11 @@ the "common_fields" list and "vantage_point" field.<a href="#section-4.2-7" clas
     "description": "Description for this trace (long)",
     "common_fields": {
         "ODCID": "abcde1234",
-        "time_format": "absolute"
+        "time_format": "relative_to_epoch",
+        "reference_time": {
+            "clock_type": "system",
+            "epoch": "1970-01-01T00:00:00.000Z"
+        },
     },
     "vantage_point": {
         "name": "backend-67",
@@ -1914,8 +1918,11 @@ field and other serialization considerations.<a href="#section-5-5" class="pilcr
       "common_fields": {
         "protocol_types": ["QUIC","HTTP/3"],
         "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
-        "time_format":"relative",
-        "reference_time": 1553986553572
+        "time_format": "relative_to_epoch",
+        "reference_time": {
+            "clock_type": "system",
+            "epoch": "1970-01-01T00:00:00.000Z"
+        },
       },
       "vantage_point": {
         "name":"backend-67",
@@ -2086,7 +2093,7 @@ with identical values. It is possible to optimize out this duplication using
     "protocol_types":  ["QUIC","HTTP/3"],
     "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
-    "time_format": "absolute",
+    "time_format": "relative_to_epoch",
 
     "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a"
 }
@@ -2101,83 +2108,207 @@ with identical values. It is possible to optimize out this duplication using
         <h3 id="name-timestamps">
 <a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-timestamps" class="section-name selfRef">Timestamps</a>
         </h3>
-<p id="section-7.1-1">An event's "time" field indicates the timestamp at which the event occurred. Its value is
-typically the Unix timestamp since the 1970 epoch (number of milliseconds since
-midnight UTC, January 1, 1970, ignoring leap seconds). However, qlog supports two
-more succinct timestamps formats to allow reducing file size. The employed format
-is indicated in the "time_format" field, which allows one of three values:
-"absolute", "delta" or "relative".<a href="#section-7.1-1" class="pilcrow">¶</a></p>
-<span id="name-timeformat-definition"></span><div id="time-format-def">
+<p id="section-7.1-1">Each event <span class="bcp14">MUST</span> include a "time" field to indicate the timestamp that it
+occurred. It is a duration measured from some point in time; its units depend on the type of clock chosen and system used. Typically however, a millisecond resolution is employed.
+There are several options for generating and logging timestamps, these are
+governed by the ReferenceTime type (optionally included in the "reference_time"
+field contained in a trace's "common_fields" (<a href="#common-fields" class="auto internal xref">Section 7.6</a>)) and TimeFormat
+type (optionally included in the "time_format" field contained in the event
+itself, or a trace's "common_fields").<a href="#section-7.1-1" class="pilcrow">¶</a></p>
+<p id="section-7.1-2">There is no requirement that events in the same trace use the same time format.
+However, using a single time format for related events can make them easier to
+analyze.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
+<p id="section-7.1-3">The reference time governs from which point in time the "time" field values are measured and is defined as:<a href="#section-7.1-3" class="pilcrow">¶</a></p>
+<span id="name-referencetime-definition"></span><div id="reference-time-def">
 <figure id="figure-16">
-          <div class="lang-cddl sourcecode" id="section-7.1-2.1">
+          <div class="lang-cddl sourcecode" id="section-7.1-4.1">
 <pre>
-TimeFormat = "absolute" /
-             "delta" /
-             "relative"
+ReferenceTime = {
+    clock_type: "system" / "monotonic" / text .default "system"
+    epoch: RFC3339DateTime / "unknown" .default "1970-01-01T00:00:00.000Z"
+
+    ? wall_clock_time: RFC3339DateTime
+}
+
+RFC3339DateTime = text
 </pre>
 </div>
 <figcaption><a href="#figure-16" class="selfRef">Figure 16</a>:
-<a href="#name-timeformat-definition" class="selfRef">TimeFormat definition</a>
+<a href="#name-referencetime-definition" class="selfRef">ReferenceTime definition</a>
           </figcaption></figure>
 </div>
-<ul class="normal">
-<li class="normal" id="section-7.1-3.1">
-            <p id="section-7.1-3.1.1">Absolute: Include the full absolute timestamp with each event. This approach
-uses the largest amount of characters. This is also the default value of the
-"time_format" field.<a href="#section-7.1-3.1.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-7.1-3.2">
-            <p id="section-7.1-3.2.1">Delta: Delta-encode each time value on the previously logged value. The first
-event in a trace typically logs the full absolute timestamp. This approach uses
-the least amount of characters.<a href="#section-7.1-3.2.1" class="pilcrow">¶</a></p>
-</li>
-          <li class="normal" id="section-7.1-3.3">
-            <p id="section-7.1-3.3.1">Relative: Specify a full "reference_time" timestamp (typically this is done
-up-front in "common_fields", see <a href="#common-fields" class="auto internal xref">Section 7.6</a>) and include only
-relatively-encoded values based on this reference_time with each event. The
-"reference_time" value is typically the first absolute timestamp. This approach
-uses a medium amount of characters.<a href="#section-7.1-3.3.1" class="pilcrow">¶</a></p>
-</li>
-        </ul>
-<p id="section-7.1-4">The first option is good for stateless loggers, the second and third for stateful
-loggers. The third option is generally preferred, since it produces smaller files
-while being easier to reason about. An example for each option can be seen in
-<a href="#time-format-ex" class="auto internal xref">Figure 17</a>.<a href="#section-7.1-4" class="pilcrow">¶</a></p>
-<span id="name-three-different-approaches-"></span><div id="time-format-ex">
+<p id="section-7.1-5">The required "clock_type" field represents the type of clock used for time
+measurements. The value "system" represents a clock that uses system time,
+commonly measured against a chosen or well-known epoch. However, depending on the system, System time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value "monotonic" represents such a clock.<a href="#section-7.1-5" class="pilcrow">¶</a></p>
+<p id="section-7.1-6">The required "epoch" field is the start of the ReferenceTime. When using the
+"system" clock type, the epoch field <span class="bcp14">SHOULD</span> have a date/time value using the
+format defined in <span>[<a href="#RFC3339" class="cite xref">RFC3339</a>]</span>. However, the value "unknown" <span class="bcp14">MAY</span> be used.<a href="#section-7.1-6" class="pilcrow">¶</a></p>
+<p id="section-7.1-7">When using the "monotonic" clock type, the epoch field <span class="bcp14">MUST</span> have the value
+"unknown".<a href="#section-7.1-7" class="pilcrow">¶</a></p>
+<p id="section-7.1-8">The optional "wall_clock_time" field can be used to provide an approximate
+date/time value that logging commenced at if the epoch value is "unknown". It uses
+the format defined in <span>[<a href="#RFC3339" class="cite xref">RFC3339</a>]</span>. Note that conversion of timestamps to
+calendar time based on wall clock times cannot be safely relied on.<a href="#section-7.1-8" class="pilcrow">¶</a></p>
+<p id="section-7.1-9">The time format details how "time" values are encoded relative to the reference time and is defined as:<a href="#section-7.1-9" class="pilcrow">¶</a></p>
+<span id="name-timeformat-definition"></span><div id="time-format-def">
 <figure id="figure-17">
-          <div class="alignLeft art-text artwork" id="section-7.1-5.1">
+          <div class="lang-cddl sourcecode" id="section-7.1-10.1">
 <pre>
-The absolute approach will use:
-1500, 1505, 1522, 1588
-
-The delta approach will use:
-1500, 5, 17, 66
-
-The relative approach will:
-- set the reference_time to 1500 in "common_fields"
-- use: 0, 5, 22, 88
+TimeFormat = "relative_to_epoch" /
+             "relative_to_previous_event" .default "relative_to_epoch"
 </pre>
 </div>
 <figcaption><a href="#figure-17" class="selfRef">Figure 17</a>:
-<a href="#name-three-different-approaches-" class="selfRef">Three different approaches for logging timestamps</a>
+<a href="#name-timeformat-definition" class="selfRef">TimeFormat definition</a>
           </figcaption></figure>
 </div>
-<p id="section-7.1-6">One of these options is typically chosen for the entire trace (put differently:
-each event has the same value for the "time_format" field). Each event <span class="bcp14">MUST</span>
-include a timestamp in the "time" field.<a href="#section-7.1-6" class="pilcrow">¶</a></p>
-<p id="section-7.1-7">Events in each individual trace <span class="bcp14">SHOULD</span> be logged in strictly ascending timestamp
-order (though not necessarily absolute value, for the "delta" format). Tools <span class="bcp14">MAY</span>
-sort all events on the timestamp before processing them, though are not required
-to (as this could impose a significant processing overhead). This can be a problem
-especially for multi-threaded and/or streaming loggers, who could consider using a
-separate post-processor to order qlog events in time if a tool do not provide this
-feature.<a href="#section-7.1-7" class="pilcrow">¶</a></p>
-<p id="section-7.1-8">Timestamps do not have to use the UNIX epoch timestamp as their reference. For
-example for privacy considerations, any initial reference timestamps (for example
-"endpoint uptime in ms" or "time since connection start in ms") can be chosen.
-Tools <span class="bcp14">SHOULD NOT</span> assume the ability to derive the absolute Unix timestamp from
-qlog traces, nor allow on them to relatively order events across two or more
-separate traces (in this case, clock drift should also be taken into account).<a href="#section-7.1-8" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-7.1-11">
+          <dt id="section-7.1-11.1">relative_to_epoch:</dt>
+          <dd style="margin-left: 1.5em" id="section-7.1-11.2">
+            <p id="section-7.1-11.2.1">A duration relative to the ReferenceTime "epoch" field. This approach uses the
+largest amount of characters. It is good for stateless loggers. This is the default value of the "time_format" field.<a href="#section-7.1-11.2.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-7.1-11.3">relative_to_previous_event:</dt>
+          <dd style="margin-left: 1.5em" id="section-7.1-11.4">
+            <p id="section-7.1-11.4.1">A delta-encoded value, based on the previously logged value. The first event
+in a trace is always relative to the ReferenceTime. This approach uses the
+least amount of characters. It is suitable for stateful loggers.<a href="#section-7.1-11.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+</dl>
+<p id="section-7.1-12">Events in each individual trace <span class="bcp14">SHOULD</span> be logged in strictly ascending timestamp
+order (though not necessarily absolute value, for the "relative_to_previous_event"
+format). Tools <span class="bcp14">MAY</span> sort all events on the timestamp before processing them,
+though are not required to (as this could impose a significant processing
+overhead). This can be a problem especially for multi-threaded and/or streaming
+loggers, who could consider using a separate post-processor to order qlog events
+in time if a tool do not provide this feature.<a href="#section-7.1-12" class="pilcrow">¶</a></p>
+<p id="section-7.1-13">Tools <span class="bcp14">SHOULD NOT</span> assume the ability to derive the absolute calendar timestamp of an event
+from qlog traces. Tools should not rely on timestamps to be consistent across
+traces, even those generated by the same logging endpoint. For reasons of
+privacy, the reference time <span class="bcp14">MAY</span> have minimization or anonymization applied.<a href="#section-7.1-13" class="pilcrow">¶</a></p>
+<p id="section-7.1-14">Example of a log using the relative_to_epoch format:<a href="#section-7.1-14" class="pilcrow">¶</a></p>
+<span id="name-relative-to-epoch-timestamp"></span><div id="rel-epoch-time-ex">
+<figure id="figure-18">
+          <div class="alignLeft art-text artwork" id="section-7.1-15.1">
+<pre>
+"common_fields": {
+    "time_format": "relative_to_epoch",
+    "reference_time": {
+          "clock_type": "system",
+          "epoch": "1970-01-01T00:00:00.000Z"
+    },
+},
+"events": [
+  {
+    "time": 1553986553572,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 1553986553577,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 1553986553587,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 1553986553597,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+]
+</pre>
+</div>
+<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<a href="#name-relative-to-epoch-timestamp" class="selfRef">Relative to epoch timestamps</a>
+          </figcaption></figure>
+</div>
+<p id="section-7.1-16">Example of a log using the relative_to_previous_event format:<a href="#section-7.1-16" class="pilcrow">¶</a></p>
+<span id="name-relative-to-previous-event-"></span><div id="rel-last-event-time-ex">
+<figure id="figure-19">
+          <div class="alignLeft art-text artwork" id="section-7.1-17.1">
+<pre>
+"common_fields": {
+    "time_format": "relative_to_previous_event",
+    "reference_time": {
+          "clock_type": "system",
+          "epoch": "1970-01-01T00:00:00.000Z"
+    },
+},
+"events": [
+  {
+    "time": 1553986553572,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 5,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 10,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 10,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+]
+</pre>
+</div>
+<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
+<a href="#name-relative-to-previous-event-" class="selfRef">Relative-to-previous-event timestamps</a>
+          </figcaption></figure>
+</div>
+<p id="section-7.1-18">Example of a monotonic log using the relative_to_epoch format:<a href="#section-7.1-18" class="pilcrow">¶</a></p>
+<span id="name-monotonic-timestamps"></span><div id="mono-time-ex">
+<figure id="figure-20">
+          <div class="alignLeft art-text artwork" id="section-7.1-19.1">
+<pre>
+"common_fields": {
+    "time_format": "relative_to_epoch",
+    "reference_time": {
+          "clock_type": "monotonic",
+          "epoch": "unknown",
+          "wall_clock_time": "2024-10-10T10:10:10.000Z"
+    },
+},
+"events": [
+  {
+    "time": 0,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 5,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 15,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+  {
+    "time": 25,
+    "name": "quic:packet_received",
+    "data": { ... },
+  },
+]
+</pre>
+</div>
+<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
+<a href="#name-monotonic-timestamps" class="selfRef">Monotonic timestamps</a>
+          </figcaption></figure>
+</div>
 </section>
 </div>
 <div id="path-field">
@@ -2196,13 +2327,13 @@ using Multipath features, it is useful to be able to split events across
 multiple (concurrent) paths.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
 <p id="section-7.2-3">Definition:<a href="#section-7.2-3" class="pilcrow">¶</a></p>
 <span id="name-pathid-definition"></span><div id="path-def">
-<figure id="figure-18">
+<figure id="figure-21">
           <div class="lang-cddl sourcecode" id="section-7.2-4.1">
 <pre>
 PathID = text .default ""
 </pre>
 </div>
-<figcaption><a href="#figure-18" class="selfRef">Figure 18</a>:
+<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
 <a href="#name-pathid-definition" class="selfRef">PathID definition</a>
           </figcaption></figure>
 </div>
@@ -2226,7 +2357,7 @@ event to couple the PathID value to a specific path configuration, see
 of different protocols (e.g., a web server offering both TCP+HTTP/2 and
 QUIC+HTTP/3 connections).<a href="#section-7.3-1" class="pilcrow">¶</a></p>
 <span id="name-protocoltypelist-and-protoco"></span><div id="protocol-type-def">
-<figure id="figure-19">
+<figure id="figure-22">
           <div class="lang-cddl sourcecode" id="section-7.3-2.1">
 <pre>
 ProtocolTypeList = [+ $ProtocolType]
@@ -2234,7 +2365,7 @@ ProtocolTypeList = [+ $ProtocolType]
 $ProtocolType /= "UNKNOWN"
 </pre>
 </div>
-<figcaption><a href="#figure-19" class="selfRef">Figure 19</a>:
+<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
 <a href="#name-protocoltypelist-and-protoco" class="selfRef">ProtocolTypeList and ProtocolType socket definition</a>
           </figcaption></figure>
 </div>
@@ -2267,22 +2398,22 @@ connections, and add a "four_tuple" field.<a href="#section-7.4-2" class="pilcro
 cross-context setups, qlog instead defines the common "group_id" field, which
 contains a string value. Implementations are free to use their preferred string
 serialization for this field, so long as it contains a unique value per logical
-group. Some examples can be seen in <a href="#group-id-ex" class="auto internal xref">Figure 21</a>.<a href="#section-7.4-3" class="pilcrow">¶</a></p>
+group. Some examples can be seen in <a href="#group-id-ex" class="auto internal xref">Figure 24</a>.<a href="#section-7.4-3" class="pilcrow">¶</a></p>
 <span id="name-groupid-definition"></span><div id="group-id-def">
-<figure id="figure-20">
+<figure id="figure-23">
           <div class="lang-cddl sourcecode" id="section-7.4-4.1">
 <pre>
 GroupID = text
 </pre>
 </div>
-<figcaption><a href="#figure-20" class="selfRef">Figure 20</a>:
+<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
 <a href="#name-groupid-definition" class="selfRef">GroupID definition</a>
           </figcaption></figure>
 </div>
 <p id="section-7.4-5">JSON serialization example for events grouped by four tuples
 and QUIC connection IDs:<a href="#section-7.4-5" class="pilcrow">¶</a></p>
 <span id="name-groupid-example"></span><div id="group-id-ex">
-<figure id="figure-21">
+<figure id="figure-24">
           <div class="alignLeft art-text artwork" id="section-7.4-6.1">
 <pre>
 "events": [
@@ -2304,7 +2435,7 @@ and QUIC connection IDs:<a href="#section-7.4-5" class="pilcrow">¶</a></p>
 ]
 </pre>
 </div>
-<figcaption><a href="#figure-21" class="selfRef">Figure 21</a>:
+<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
 <a href="#name-groupid-example" class="selfRef">GroupID example</a>
           </figcaption></figure>
 </div>
@@ -2354,9 +2485,9 @@ contains events for a single QUIC connection).<a href="#section-7.6-1" class="pi
 <p id="section-7.6-2">To reduce file size and making logging easier, qlog uses the "common_fields" list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
-event. An example of this is shown in <a href="#common-fields-ex" class="auto internal xref">Figure 22</a>.<a href="#section-7.6-2" class="pilcrow">¶</a></p>
+event. An example of this is shown in <a href="#common-fields-ex" class="auto internal xref">Figure 25</a>.<a href="#section-7.6-2" class="pilcrow">¶</a></p>
 <span id="name-commonfields-example"></span><div id="common-fields-ex">
-<figure id="figure-22">
+<figure id="figure-25">
           <div class="alignLeft art-text artwork" id="section-7.6-3.1">
 <pre>
 JSON serialization with repeated field values
@@ -2365,18 +2496,24 @@ per-event instance:
 {
     "events": [{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_types": ["QUIC","HTTP/3"],
-            "time_format": "relative",
-            "reference_time": 1553986553572,
+            "protocol_type": ["QUIC","HTTP/3"],
+            "time_format": "relative_to_epoch",
+            "reference_time": {
+              "clock_type": "system",
+              "epoch": "2019-03-29T:22:55:53.572Z"
+            },
 
             "time": 2,
             "name": "quic:packet_received",
             "data": { ... }
         },{
             "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-            "protocol_types": ["QUIC","HTTP/3"],
-            "time_format": "relative",
-            "reference_time": 1553986553572,
+            "protocol_type": ["QUIC","HTTP/3"],
+            "time_format": "relative_to_epoch",
+            "reference_time": {
+              "clock_type": "system",
+              "epoch": "2019-03-29T:22:55:53.572Z"
+            },
 
             "time": 7,
             "name": "http:frame_parsed",
@@ -2391,9 +2528,12 @@ extracted to common_fields:
 {
     "common_fields": {
         "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-        "protocol_types": ["QUIC","HTTP/3"],
-        "time_format": "relative",
-        "reference_time": 1553986553572
+        "protocol_type": ["QUIC","HTTP/3"],
+        "time_format": "relative_to_epoch",
+        "reference_time": {
+            "clock_type": "system",
+            "epoch": "2019-03-29T:22:55:53.572Z"
+        },
     },
     "events": [
         {
@@ -2409,7 +2549,7 @@ extracted to common_fields:
 }
 </pre>
 </div>
-<figcaption><a href="#figure-22" class="selfRef">Figure 22</a>:
+<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
 <a href="#name-commonfields-example" class="selfRef">CommonFields example</a>
           </figcaption></figure>
 </div>
@@ -2422,20 +2562,20 @@ error).<a href="#section-7.6-4" class="pilcrow">¶</a></p>
 opposed to as individual fields per event instance) are shown in the listing
 below:<a href="#section-7.6-5" class="pilcrow">¶</a></p>
 <span id="name-commonfields-definition"></span><div id="common-fields-def">
-<figure id="figure-23">
+<figure id="figure-26">
           <div class="lang-cddl sourcecode" id="section-7.6-6.1">
 <pre>
 CommonFields = {
     ? path: PathID
     ? time_format: TimeFormat
-    ? reference_time: float64
+    ? reference_time: ReferenceTime
     ? protocol_types: ProtocolTypeList
     ? group_id: GroupID
     * text =&gt; any
 }
 </pre>
 </div>
-<figcaption><a href="#figure-23" class="selfRef">Figure 23</a>:
+<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
 <a href="#name-commonfields-definition" class="selfRef">CommonFields definition</a>
           </figcaption></figure>
 </div>
@@ -2504,7 +2644,7 @@ either of these as an error; see <a href="#tooling" class="auto internal xref">S
 <p id="section-8-11">The standardized schema URIs use a URN format, the private schemas use a URI
 with domain name.<a href="#section-8-11" class="pilcrow">¶</a></p>
 <span id="name-example-event_schemas-seria"></span><div id="event-schemas">
-<figure id="figure-24">
+<figure id="figure-27">
         <div class="alignLeft art-text artwork" id="section-8-12.1">
 <pre>
 "event_schemas": [
@@ -2519,7 +2659,7 @@ with domain name.<a href="#section-8-11" class="pilcrow">¶</a></p>
 ]
 </pre>
 </div>
-<figcaption><a href="#figure-24" class="selfRef">Figure 24</a>:
+<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
 <a href="#name-example-event_schemas-seria" class="selfRef">Example event_schemas serialization</a>
         </figcaption></figure>
 </div>
@@ -2576,9 +2716,9 @@ socket" is used. This takes the form of a subfield with a name of <code>*
 $$NAMESPACE-EVENTTYPE-extension</code>. This field acts as a placeholder that can
 later be replaced with newly defined fields by assigning them to the socket with
 the <code>//=</code> operator. Multiple extensions can be assigned to the same group
-socket. An example is shown in <a href="#groupsocket-extension-example" class="auto internal xref">Figure 25</a>.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
+socket. An example is shown in <a href="#groupsocket-extension-example" class="auto internal xref">Figure 28</a>.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
 <span id="name-example-of-using-a-generic-"></span><div id="groupsocket-extension-example">
-<figure id="figure-25">
+<figure id="figure-28">
           <div class="alignLeft art-text artwork" id="section-8.2-4.1">
 <pre>
 ; original definition in event schema A
@@ -2608,7 +2748,7 @@ MyNSEventX = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-25" class="selfRef">Figure 25</a>:
+<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
 <a href="#name-example-of-using-a-generic-" class="selfRef">Example of using a generic CDDL group socket to extend an existing event data definition</a>
           </figcaption></figure>
 </div>
@@ -2622,9 +2762,9 @@ field is defined as its own CDDL type and later merged with the existing
 key-value map type can be assigned to <code>$ProtocolEventData</code> (the only common
 "data" subfield defined in this document is the optional <code>trigger</code> field, see
 <a href="#trigger-field" class="auto internal xref">Section 8.2.1</a>). An example of this setup is shown in
-<a href="#protocoleventdata-def" class="auto internal xref">Figure 26</a>.<a href="#section-8.2-5" class="pilcrow">¶</a></p>
+<a href="#protocoleventdata-def" class="auto internal xref">Figure 29</a>.<a href="#section-8.2-5" class="pilcrow">¶</a></p>
 <span id="name-protocoleventdata-extension"></span><div id="protocoleventdata-def">
-<figure id="figure-26">
+<figure id="figure-29">
           <div class="alignLeft art-text artwork" id="section-8.2-6.1">
 <pre>
 ; We define two new concrete events in a new event schema
@@ -2652,7 +2792,7 @@ $ProtocolEventData /= MyNSEvent1 / MyNSEvent2
 ; MyNSEvent1 and MyNSEvent2
 </pre>
 </div>
-<figcaption><a href="#figure-26" class="selfRef">Figure 26</a>:
+<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
 <a href="#name-protocoleventdata-extension" class="selfRef">ProtocolEventData extension</a>
           </figcaption></figure>
 </div>
@@ -2662,9 +2802,9 @@ schemas. Furthermore, they <span class="bcp14">SHOULD</span> add a <code>* $$NAM
 extension field to newly defined event data to allow the new events to be
 properly extended by other event schema.<a href="#section-8.2-7" class="pilcrow">¶</a></p>
 <p id="section-8.2-8">A combined but purely illustrative example of the use of both extension points
-for a conceptual QUIC "packet_sent" event is shown in <a href="#data-ex" class="auto internal xref">Figure 27</a>:<a href="#section-8.2-8" class="pilcrow">¶</a></p>
+for a conceptual QUIC "packet_sent" event is shown in <a href="#data-ex" class="auto internal xref">Figure 30</a>:<a href="#section-8.2-8" class="pilcrow">¶</a></p>
 <span id="name-example-of-an-extended-data"></span><div id="data-ex">
-<figure id="figure-27">
+<figure id="figure-30">
           <div class="alignLeft art-text artwork" id="section-8.2-9.1">
 <pre>
 ; defined in the main QUIC event schema
@@ -2713,7 +2853,7 @@ $$quic-packetsent-extension //= (
 }
 </pre>
 </div>
-<figcaption><a href="#figure-27" class="selfRef">Figure 27</a>:
+<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
 <a href="#name-example-of-an-extended-data" class="selfRef">Example of an extended 'data' field for a conceptual QUIC packet_sent event</a>
           </figcaption></figure>
 </div>
@@ -2740,9 +2880,9 @@ in the form of additional member fields of the "data" field value, yet
 this is highly implementation-specific, as are the trigger field's
 string values.<a href="#section-8.2.1-2" class="pilcrow">¶</a></p>
 <p id="section-8.2.1-3">One purely illustrative example of some potential triggers for QUIC's
-"packet_dropped" event is shown in <a href="#trigger-ex" class="auto internal xref">Figure 28</a>:<a href="#section-8.2.1-3" class="pilcrow">¶</a></p>
+"packet_dropped" event is shown in <a href="#trigger-ex" class="auto internal xref">Figure 31</a>:<a href="#section-8.2.1-3" class="pilcrow">¶</a></p>
 <span id="name-trigger-example"></span><div id="trigger-ex">
-<figure id="figure-28">
+<figure id="figure-31">
             <div class="alignLeft art-text artwork" id="section-8.2.1-4.1">
 <pre>
 TransportPacketDropped = {
@@ -2755,7 +2895,7 @@ TransportPacketDropped = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-28" class="selfRef">Figure 28</a>:
+<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
 <a href="#name-trigger-example" class="selfRef">Trigger example</a>
             </figcaption></figure>
 </div>
@@ -2880,7 +3020,7 @@ providing events to log generic strings for the typical well-known logging
 levels (error, warning, info, debug, verbose). The namespace identifier is
 "loglevel". The event schema URI is <code>urn:ietf:params:qlog:events:loglevel</code>.<a href="#section-9.1-1" class="pilcrow">¶</a></p>
 <span id="name-logleveleventdata-and-proto"></span><div id="loglevel-events-def">
-<figure id="figure-29">
+<figure id="figure-32">
           <div class="lang-cddl sourcecode" id="section-9.1-2.1">
 <pre>
 LogLevelEventData = LogLevelError /
@@ -2892,7 +3032,7 @@ LogLevelEventData = LogLevelError /
 $ProtocolEventData /= LogLevelEventData
 </pre>
 </div>
-<figcaption><a href="#figure-29" class="selfRef">Figure 29</a>:
+<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
 <a href="#name-logleveleventdata-and-proto" class="selfRef">LogLevelEventData and ProtocolEventData extension</a>
           </figcaption></figure>
 </div>
@@ -2905,7 +3045,7 @@ $ProtocolEventData /= LogLevelEventData
 <p id="section-9.1.1-1">Used to log details of an internal error that might not get reflected on the
 wire. It has Core importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.1-1" class="pilcrow">¶</a></p>
 <span id="name-loglevelerror-definition"></span><div id="loglevel-error-def">
-<figure id="figure-30">
+<figure id="figure-33">
             <div class="lang-cddl sourcecode" id="section-9.1.1-2.1">
 <pre>
 LogLevelError = {
@@ -2916,7 +3056,7 @@ LogLevelError = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-30" class="selfRef">Figure 30</a>:
+<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
 <a href="#name-loglevelerror-definition" class="selfRef">LogLevelError definition</a>
             </figcaption></figure>
 </div>
@@ -2930,7 +3070,7 @@ LogLevelError = {
 <p id="section-9.1.2-1">Used to log details of an internal warning that might not get reflected on the
 wire. It has Base importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.2-1" class="pilcrow">¶</a></p>
 <span id="name-loglevelwarning-definition"></span><div id="loglevel-warning-def">
-<figure id="figure-31">
+<figure id="figure-34">
             <div class="lang-cddl sourcecode" id="section-9.1.2-2.1">
 <pre>
 LogLevelWarning = {
@@ -2941,7 +3081,7 @@ LogLevelWarning = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-31" class="selfRef">Figure 31</a>:
+<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
 <a href="#name-loglevelwarning-definition" class="selfRef">LogLevelWarning definition</a>
             </figcaption></figure>
 </div>
@@ -2956,7 +3096,7 @@ LogLevelWarning = {
 logging format but still want to support unstructured string messages. The event
 has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.3-1" class="pilcrow">¶</a></p>
 <span id="name-loglevelinfo-definition"></span><div id="loglevel-info-def">
-<figure id="figure-32">
+<figure id="figure-35">
             <div class="lang-cddl sourcecode" id="section-9.1.3-2.1">
 <pre>
 LogLevelInfo = {
@@ -2966,7 +3106,7 @@ LogLevelInfo = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-32" class="selfRef">Figure 32</a>:
+<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
 <a href="#name-loglevelinfo-definition" class="selfRef">LogLevelInfo definition</a>
             </figcaption></figure>
 </div>
@@ -2981,7 +3121,7 @@ LogLevelInfo = {
 logging format but still want to support unstructured string messages. The event
 has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.4-1" class="pilcrow">¶</a></p>
 <span id="name-logleveldebug-definition"></span><div id="loglevel-debug-def">
-<figure id="figure-33">
+<figure id="figure-36">
             <div class="lang-cddl sourcecode" id="section-9.1.4-2.1">
 <pre>
 LogLevelDebug = {
@@ -2991,7 +3131,7 @@ LogLevelDebug = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-33" class="selfRef">Figure 33</a>:
+<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
 <a href="#name-logleveldebug-definition" class="selfRef">LogLevelDebug definition</a>
             </figcaption></figure>
 </div>
@@ -3006,7 +3146,7 @@ LogLevelDebug = {
 logging format but still want to support unstructured string messages. The event
 has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.5-1" class="pilcrow">¶</a></p>
 <span id="name-loglevelverbose-definition"></span><div id="loglevel-verbose-def">
-<figure id="figure-34">
+<figure id="figure-37">
             <div class="lang-cddl sourcecode" id="section-9.1.5-2.1">
 <pre>
 LogLevelVerbose = {
@@ -3016,7 +3156,7 @@ LogLevelVerbose = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-34" class="selfRef">Figure 34</a>:
+<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
 <a href="#name-loglevelverbose-definition" class="selfRef">LogLevelVerbose definition</a>
             </figcaption></figure>
 </div>
@@ -3038,7 +3178,7 @@ proper correlation with other events. This namespace defines event types to
 allow logging of such simulation metadata and its identifier is "simulation".
 The event schema URI is <code>urn:ietf:params:qlog:events:simulation</code>.<a href="#section-9.2-1" class="pilcrow">¶</a></p>
 <span id="name-simulationeventdata-and-pro"></span><div id="sim-events-def">
-<figure id="figure-35">
+<figure id="figure-38">
           <div class="lang-cddl sourcecode" id="section-9.2-2.1">
 <pre>
 SimulationEventData = SimulationScenario /
@@ -3047,7 +3187,7 @@ SimulationEventData = SimulationScenario /
 $ProtocolEventData /= SimulationEventData
 </pre>
 </div>
-<figcaption><a href="#figure-35" class="selfRef">Figure 35</a>:
+<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
 <a href="#name-simulationeventdata-and-pro" class="selfRef">SimulationEventData and ProtocolEventData extension</a>
           </figcaption></figure>
 </div>
@@ -3062,7 +3202,7 @@ instance. This supports, for example, aggregation of several simulations into
 one trace (e.g., split by <code>group_id</code>). It has Extra importance level; see
 <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.2.1-1" class="pilcrow">¶</a></p>
 <span id="name-simulationscenario-definiti"></span><div id="simulation-scenario-def">
-<figure id="figure-36">
+<figure id="figure-39">
             <div class="lang-cddl sourcecode" id="section-9.2.1-2.1">
 <pre>
 SimulationScenario = {
@@ -3073,7 +3213,7 @@ SimulationScenario = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-36" class="selfRef">Figure 36</a>:
+<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
 <a href="#name-simulationscenario-definiti" class="selfRef">SimulationScenario definition</a>
             </figcaption></figure>
 </div>
@@ -3088,7 +3228,7 @@ SimulationScenario = {
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
 triggered). It has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.2.2-1" class="pilcrow">¶</a></p>
 <span id="name-simulationmarker-definition"></span><div id="simulation-marker-def">
-<figure id="figure-37">
+<figure id="figure-40">
             <div class="lang-cddl sourcecode" id="section-9.2.2-2.1">
 <pre>
 SimulationMarker = {
@@ -3099,7 +3239,7 @@ SimulationMarker = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-37" class="selfRef">Figure 37</a>:
+<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
 <a href="#name-simulationmarker-definition" class="selfRef">SimulationMarker definition</a>
             </figcaption></figure>
 </div>
@@ -3123,7 +3263,7 @@ impact (see <a href="#privacy" class="auto internal xref">Section 14</a>). Where
 separate, optional, field named "raw" of type RawInfo. The exact definition of
 entities, headers, trailers and payloads depend on the protocol used.<a href="#section-10-1" class="pilcrow">¶</a></p>
 <span id="name-rawinfo-definition"></span><div id="raw-info-def">
-<figure id="figure-38">
+<figure id="figure-41">
         <div class="lang-cddl sourcecode" id="section-10-2.1">
 <pre>
 RawInfo = {
@@ -3142,7 +3282,7 @@ RawInfo = {
 }
 </pre>
 </div>
-<figcaption><a href="#figure-38" class="selfRef">Figure 38</a>:
+<figcaption><a href="#figure-41" class="selfRef">Figure 41</a>:
 <a href="#name-rawinfo-definition" class="selfRef">RawInfo definition</a>
         </figcaption></figure>
 </div>
@@ -3306,9 +3446,9 @@ the extra length-indicating field can be left out. As such, tools <span class="b
 be able to deal with this situation and derive the length of the field
 from the raw value if no separate length-indicating field is present.
 The main possible permutations are shown by example in
-<a href="#truncated-values-ex" class="auto internal xref">Figure 39</a>.<a href="#section-11.4-3" class="pilcrow">¶</a></p>
+<a href="#truncated-values-ex" class="auto internal xref">Figure 42</a>.<a href="#section-11.4-3" class="pilcrow">¶</a></p>
 <span id="name-example-for-serializing-tru"></span><div id="truncated-values-ex">
-<figure id="figure-39">
+<figure id="figure-42">
           <div class="alignLeft art-text artwork" id="section-11.4-4.1">
 <pre>
 // both the content's value and its length are present
@@ -3340,7 +3480,7 @@ The main possible permutations are shown by example in
 }
 </pre>
 </div>
-<figcaption><a href="#figure-39" class="selfRef">Figure 39</a>:
+<figcaption><a href="#figure-42" class="selfRef">Figure 42</a>:
 <a href="#name-example-for-serializing-tru" class="selfRef">Example for serializing truncated hexstrings</a>
           </figcaption></figure>
 </div>
@@ -3406,9 +3546,9 @@ scheme for the qlog files themselves. The chosen scheme will typically depend on
 the context or protocols used. For example, for QUIC, it is recommended to use the
 Original Destination Connection ID (ODCID), followed by the vantage point type of
 the logging endpoint. Examples of all options for QUIC are shown in
-<a href="#qlogdir-example" class="auto internal xref">Figure 40</a>.<a href="#section-12.1-4" class="pilcrow">¶</a></p>
+<a href="#qlogdir-example" class="auto internal xref">Figure 43</a>.<a href="#section-12.1-4" class="pilcrow">¶</a></p>
 <span id="name-environment-variable-exampl"></span><div id="qlogdir-example">
-<figure id="figure-40">
+<figure id="figure-43">
           <div class="alignLeft art-text artwork" id="section-12.1-5.1">
 <pre>
 Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
@@ -3437,7 +3577,7 @@ this would result in event instances in the qlog file being
 tagged with the "group_id" field with values "abcde" and "12345".
 </pre>
 </div>
-<figcaption><a href="#figure-40" class="selfRef">Figure 40</a>:
+<figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
 <a href="#name-environment-variable-exampl" class="selfRef">Environment variable examples for a QUIC implementation</a>
           </figcaption></figure>
 </div>
@@ -3792,6 +3932,10 @@ schema URIs" registry:<a href="#section-15-9" class="pilcrow">¶</a></p>
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC3339">[RFC3339]</dt>
+        <dd>
+<span class="refAuthor">Klyne, G.</span> and <span class="refAuthor">C. Newman</span>, <span class="refTitle">"Date and Time on the Internet: Timestamps"</span>, <span class="seriesInfo">RFC 3339</span>, <span class="seriesInfo">DOI 10.17487/RFC3339</span>, <time datetime="2002-07" class="refDate">July 2002</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc3339">https://www.rfc-editor.org/rfc/rfc3339</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC3553">[RFC3553]</dt>
         <dd>
