@@ -675,7 +675,7 @@ RFC3339DateTime = text
 
 The required "clock_type" field represents the type of clock used for time
 measurements. The value "system" represents a clock that uses system time,
-commonly measured against a chosen or well-known epoch. However, depending on the system, System time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value "monotonic" represents such a clock. 
+commonly measured against a chosen or well-known epoch. However, depending on the system, System time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value "monotonic" represents such a clock.
 
 The required "epoch" field is the start of the ReferenceTime. When using the
 "system" clock type, the epoch field SHOULD have a date/time value using the
