@@ -648,7 +648,7 @@ Example qlog event:
 ## Timestamps {#time-based-fields}
 
 Each event MUST include a "time" field to indicate the timestamp that it
-occurred. It is a duration measured from some point in time, in units of ???.
+occurred. It is a duration measured from some point in time; its units depend on the type of clock chosen and system used. Typically however, a millisecond resolution is employed.
 There are several options for generating and logging timestamps, these are
 governed by the ReferenceTime type (optionally included in the "reference_time"
 field contained in a trace's "common_fields" ({{common-fields}})) and TimeFormat
