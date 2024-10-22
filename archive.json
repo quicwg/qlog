@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-10-20T01:05:00.301887+00:00",
+  "timestamp": "2024-10-22T01:00:31.624233+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -700,7 +700,7 @@
       ],
       "body": "using transport.parameters_set there are two parameters to signal 0-RTT:\r\n- resumption_allowed\r\n- early_data_enabled\r\n\r\nAs pointed out by @jlaine, these are a bit ambiguous, as 0-RTT can either be used for the current connection or enabled for a future connection.\r\n\r\nSolution 1:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new events: session_ticket_sent/received (with early_data_enabled?:boolean member)\r\n\r\nSolution 2:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new parameters: resumption_offered and early_data_offered",
       "createdAt": "2019-10-15T09:03:47Z",
-      "updatedAt": "2021-10-04T14:27:01Z",
+      "updatedAt": "2024-10-21T09:15:22Z",
       "closedAt": null,
       "comments": [
         {
@@ -709,6 +709,13 @@
           "body": "I'm not sure I agree that there's an ambiguity here, as TLS 1.3 clearly defines how the `early_data` extension is used. However, we currently can't log when 0-RTT is accepted / rejected (although you _could_ infer that by observing what values TLS sends).\r\nMaybe we should have separate events that indicate if resumption (with or without 0-RTT) was offered (on the client side), and on the server side, if it was accepted or rejected (for rejections, the reason might be interesting to log).",
           "createdAt": "2021-10-04T14:27:01Z",
           "updatedAt": "2021-10-04T14:27:01Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Revisiting this issue. I still believe that splitting up the event is the right thing to do: `parameters_set` should **only** be used for QUIC transport parameters. We should probably have a field to indicate where these parameters came from (i.e. newly received vs. restored).\r\n\r\nThis means that we'll need to define new events for TLS session resumption / 0-RTT. As I suggested 3 years ago, this could be achieved with a `resumption_offered` and a `resumption_accepted` / `resumption_rejected` event.",
+          "createdAt": "2024-10-21T09:15:20Z",
+          "updatedAt": "2024-10-21T09:15:20Z"
         }
       ]
     },
@@ -1802,9 +1809,17 @@
       ],
       "body": "Currently, we have few options for logging a lot of TLS related data (e.g., cipher suites, supported groups, (E)SNI, ...). \r\n\r\nNeed to figure out a generic form for TLS (extensions) data so it can be logged using qlog as well. \r\n\r\nNote: this is getting in the \"new TCP+TLS+HTTP/2 schema\" territory ",
       "createdAt": "2020-02-26T11:37:15Z",
-      "updatedAt": "2024-06-24T15:25:03Z",
+      "updatedAt": "2024-10-21T09:16:59Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Note that #27 suggests to add some resumption and 0-RTT events, which arguably are TLS-specific. They do however (at least 0-RTT does) change how the QUIC stack behaves, in pretty fundamental ways (namely sending and processing 0-RTT data, restoring transport parameters, etc.), which is a good justification for including these (but not other) events.",
+          "createdAt": "2024-10-21T09:16:58Z",
+          "updatedAt": "2024-10-21T09:16:58Z"
+        }
+      ]
     },
     {
       "number": 60,
@@ -4618,7 +4633,7 @@
       ],
       "body": "I didn't think of this back when we defined the triggers for `connection_closed`, but this is happening **a lot** in production: When dialing a new peer, libp2p races connections to that peer on all advertised addresses and transports, and uses whichever connection returns first. All the other connection attempts are canceled.\r\n\r\nIt would be nice if there was a trigger \"the user aborted this connection attempt before handshake completion\".",
       "createdAt": "2021-04-06T13:32:43Z",
-      "updatedAt": "2024-03-04T14:51:51Z",
+      "updatedAt": "2024-10-21T09:21:18Z",
       "closedAt": null,
       "comments": [
         {
@@ -4641,6 +4656,13 @@
           "body": "So, I'm still of the opinion that a trigger `aborted` or `lost_race` on `connection_closed` is sufficient here. \r\n\r\nWrt to logging the \"other\" connection, a `connection_started` event can be used for the winning connection (also supports indicating they were other protocols like TCP). \r\n\r\nSo for example, at the client, you might have 2 `connection_started` events (1 for TCP ipv4 and 1 for QUIC ipv4) and then 1 `connection_closed` with trigger `aborted` or `lost_race` for either of these to indicate the other was chosen implicitly. Alternatively, you could log 1 `connection_started` for the one that won, and 1 `connection_closed` for the loser (though I'd prefer the other option ;)).\r\n\r\nLet me know what you think @marten-seemann @LPardue. With no further feedback, I'll add both the `aborted` and `lost_race` triggers to `connection_closed` with a PR and call it a day. ",
           "createdAt": "2024-03-04T14:51:49Z",
           "updatedAt": "2024-03-04T14:51:49Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think the `aborted` trigger is fine. I'm not sure if we need a `lost_race` trigger at all.\r\n\r\nHow would an application log more details though? I could image that an application might want to add some more details, like \"lost the race to connection XXX\", but I don't think that's something that we need to standardize.",
+          "createdAt": "2024-10-21T09:21:16Z",
+          "updatedAt": "2024-10-21T09:21:16Z"
         }
       ]
     },
@@ -6183,7 +6205,7 @@
       "id": "I_kwDOCrLn6M5F_kBC",
       "title": "Logging events and dealing with clock drift",
       "url": "https://github.com/quicwg/qlog/issues/198",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -6192,8 +6214,8 @@
       "labels": [],
       "body": "We had a question about quiche's logging on https://github.com/cloudflare/quiche/issues/1197 this got me thinking some more about representations of time in qlog.\r\n\r\nIn quiche, we use a monotonic non-decreasing clock. When a trace is started, we store a monotonic start time internally and don't put that in the qlog. As events are created, we calculate a relative time since the start and record that.\r\n\r\nI've now realised this behaviour seems to differ from what the qlog draft states in https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#name-timestamps\r\n\r\n> Relative: Specify a full \"reference_time\" timestamp (typically this is done up-front in \"common_fields\", see [Section 3.4.7](https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#common-fields)) and include only relatively-encoded values based on this reference_time with each event. The \"reference_time\" value is typically the first absolute timestamp. This approach uses a medium amount of characters.\r\n\r\nThe problem is that clock drift can occur. The spec mentions this briefly but I wonder if the problem is larger than people give consideration to. For the relative and base time formats, you'd potentially end up smaller or negative values, which might break qlog tooling.\r\n\r\nI don't have much insight into solving clock drift problems but could we consider adding a monotonic time format type in addition?",
       "createdAt": "2022-03-19T15:31:19Z",
-      "updatedAt": "2024-07-31T15:50:17Z",
-      "closedAt": null,
+      "updatedAt": "2024-10-21T19:48:20Z",
+      "closedAt": "2024-10-21T19:48:19Z",
       "comments": [
         {
           "author": "LPardue",
@@ -6215,6 +6237,13 @@
           "body": "The use case for timestamps varies. I believe some folks like the ability to log a timestamp value that can, on its own, be converted into a full date. Whereas for quiche, we already do everything using a monotonic clock, so using a timestamp relative to log start time is useful. With the changes proposed on https://github.com/quicwg/qlog/pull/433 I think we can more accurately support all use cases.",
           "createdAt": "2024-07-31T15:50:16Z",
           "updatedAt": "2024-07-31T15:50:16Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "With #433 merged, I'm closing this issue as completed.",
+          "createdAt": "2024-10-21T19:48:19Z",
+          "updatedAt": "2024-10-21T19:48:19Z"
         }
       ]
     },
@@ -7453,7 +7482,7 @@
       "labels": [],
       "body": "I am wondering if the new H3PriorityUpdated event (see #312) needs some specified `trigger` field values.\r\n\r\nConceptually, you can get the necessary context from other events surrounding this event (e.g., if you get a H3FrameParsed with a HEADERS containing a `priority` field preceding this, that's a clear indicator that's the trigger). However, there are cases where this is less clear (e.g., default initialization to a value different from the spec, local override due to configuration or other logic, merging of client and server-sent priorities for the same stream, ...)\r\n\r\nWe don't NEED to define any triggers here (`trigger` is always defined on event data, just not necessarily specced in qlog), but I'm wondering if some default values would be useful here @LPardue?\r\n\r\ne.g., \r\n```\r\n? trigger: \"client_directive\" / \"server_directive\" / \"local_override\" / \"local_default\" / \"merge\" / \"merge_override\"\r\n```",
       "createdAt": "2023-07-06T10:51:06Z",
-      "updatedAt": "2024-07-09T22:36:21Z",
+      "updatedAt": "2024-10-21T14:41:14Z",
       "closedAt": null,
       "comments": [
         {
@@ -7476,6 +7505,13 @@
           "body": "I can live with it if you want to add it. But I'd like a better description of how the \"trigger\" field is a part of event data; see #429",
           "createdAt": "2024-07-09T22:36:21Z",
           "updatedAt": "2024-07-09T22:36:21Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Thinking on this some more, I don't think the values in the OP are actually a trigger. They are a result of applying the guidance in https://www.rfc-editor.org/rfc/rfc9218.html#name-merging-client-and-server-d. In other words, how the value of `new` was arrived upon. The client always sends a signal, the server always has to make a decision, including ignoring the client.\r\n\r\nSo I think what maybe what you want is an optional `reason` field that can be used to explain _how_. That might just contain values `client_signal_only, client_server_merged, local_policy\".\r\n\r\nThen if you want a `trigger`, it should track _why_ the update happened e.g. a client PRIORITY_UPDATE, some spontaneous server-local decision, so perhaps just `client_signal, local_decision, other`. For example, I have a Priority extension for changing on a byte schedule. I might extends the trigger field to have a \"schedule\" value, and still use a reason \"local_policy\".",
+          "createdAt": "2024-10-21T14:41:13Z",
+          "updatedAt": "2024-10-21T14:41:13Z"
         }
       ]
     },
@@ -8794,7 +8830,7 @@
       "labels": [],
       "body": "In https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-8.2-5 we say:\r\n\r\nAny generic key-value map type can be assigned to $ProtocolEventData (the only common \"data\" subfield defined in this document is the optional trigger field, see [Section 7.4](https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#trigger-field)).\r\n\r\nI don't quite understand how this is a common field, since there is no CDDL for it. Should we be defining `$ProtocolEventData` with the actual optional `?trigger` field? Or is is more like \"common by convention\" or some other magic. \r\n\r\nOr is it actually the case that \"trigger\" is a design pattern that concrete event definitions can adopt but that they must explicitly declare the trigger field in their event definition?",
       "createdAt": "2024-07-09T22:25:37Z",
-      "updatedAt": "2024-07-09T22:41:42Z",
+      "updatedAt": "2024-10-21T14:21:57Z",
       "closedAt": null,
       "comments": [
         {
@@ -8803,6 +8839,20 @@
           "body": "FWIW: Of this 40 events we define for QUIC and H3, only 10 of them currently define a trigger field.",
           "createdAt": "2024-07-09T22:41:42Z",
           "updatedAt": "2024-07-09T22:41:42Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "It's impossible to add the trigger field to `$ProtocolEventData` since new events aren't really inheriting from `$ProtocolEventData` but rather just adding themselves to it as a list of all possible events that can be used (put differently: `$ProtocolEventData` is an extensible ENUM, not a base class).\r\n\r\nWe don't really have a base class for events at this point, and so trigger is left as a bit of a loosely defined thing (more like as you say \"a design pattern that concrete event definitions can adopt but that they must explicitly declare the trigger field in their event definition\").\r\n\r\nGiven that we only have the one `trigger` field that would be common and that it's optional and not super-widespread, I personally think this is fine? \r\n",
+          "createdAt": "2024-10-21T08:27:20Z",
+          "updatedAt": "2024-10-21T08:27:20Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Thanks for the explanation, that makes more sense. I think we can probably wordsmith the text on triggers a bit. I just reread section 8.2 and 8.2.1 and its seems a bit verbose. I think we can probably simplify this to something along the lines of \"if its useful for an event to include a trigger, then it is RECOMMENDED that the event data contains an optional field named `trigger` that has a string value.\"",
+          "createdAt": "2024-10-21T14:21:55Z",
+          "updatedAt": "2024-10-21T14:21:55Z"
         }
       ]
     },
@@ -8811,31 +8861,39 @@
       "id": "I_kwDOCrLn6M6PBMtO",
       "title": "is parameters_restored missing fields defined in parameters_set?",
       "url": "https://github.com/quicwg/qlog/issues/431",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "e.g. max_datagram_frame_size and grease_quic_bit",
       "createdAt": "2024-07-10T00:17:36Z",
-      "updatedAt": "2024-07-10T00:17:36Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2024-10-21T19:42:23Z",
+      "closedAt": "2024-10-21T19:42:23Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Yeah, seems like I forgot to add those... opened #441, PTAL!",
+          "createdAt": "2024-10-21T08:43:00Z",
+          "updatedAt": "2024-10-21T08:43:00Z"
+        }
+      ]
     },
     {
       "number": 432,
       "id": "I_kwDOCrLn6M6PjsfV",
       "title": "Extensions to events can not be indicated by schema",
       "url": "https://github.com/quicwg/qlog/issues/432",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Here's a summary of what qlog already permits\r\n\r\n* Define new event schema\r\n  * Define new namespaces, if desired \r\n* Define new categories\r\n  * In existing namespaces, if desired \r\n* Define new event types in new categories\r\n  * Existing categories cannot be extended\r\n* Extend any event that allows it with new fields\r\n\r\nFor example, the QUIC packet_sent event is extensible. Cloudflare has a custom field called send_at_time that we use (see https://github.com/quicwg/qlog/issues/297 for background). If I want to formally define that extension point with a schema, the current event_schemas mechanism doesn't quite work well. While I could define a new namespace, category ID and event type - that's a lot of overhead for adding just a single field to an existing event. This also makes it hard to compose extensions together.\r\n\r\nProposal: define a new type of schema that is scoped to cover only extensions to existing event types, which is indicated by a value in the URI e.g., where we have `urn:ietf:params:qlog:events:gen#loglevel` a standardized extension `foo` could be identified by `urn:ietf:params:qlog:event_ext:extension_foo`, a private extension could be identified by `https://example.com/032024/event_ext/extension_foo.html`\r\n",
       "createdAt": "2024-07-15T11:27:42Z",
-      "updatedAt": "2024-10-18T08:45:13Z",
-      "closedAt": null,
+      "updatedAt": "2024-10-21T19:45:51Z",
+      "closedAt": "2024-10-21T19:45:51Z",
       "comments": [
         {
           "author": "rmarx",
@@ -8843,6 +8901,13 @@
           "body": "Mulling this over for a long time, I don't see an immediate better/alternative solution than indeed going with an additional type of URN for the `event_ext` here... (see alternatives I've tried on the bottom of this comment).\r\n\r\nHowever, this does have some annoyingness:\r\n\r\nFor the \"I just want to extend an existing event's Data field with new fields\" use case, this works just fine. You'd put the following in :\r\n\r\n```\r\nIn `urn:ietf:params:qlog:event_ext:more_packet_sent_fields`:\r\n$$packet-sent-extension //= (\r\n  ? additional_field_b: bool\r\n)\r\n\r\nWhere the original document `urn:ietf:params:qlog:events:quic#quic` would have:\r\nQUICPacketSent = {\r\n    field_a: uint8\r\n\r\n    * $$quic-packetsent-extension\r\n}\r\n```\r\n\r\nHOWEVER, in the case where you actually define new events/data types and then **add them to an existing enum/CDDL \"type socket\",** you get an annoying choice: \r\n\r\n1. either split up the definition of the new event into its own URN and the existing type socket extension in another `event_ext` URN\r\n2. just keep the type socket extension in the new event URN as well\r\n\r\n2 feels more logical, but is asymmetric with the above (i.e., extending event Data fields directly requires a new `events_ext` URN while adding new events/types to a type socket does NOT). 1 is more symmetric, but seems like annoying busy work. Examples below:\r\n\r\nOption 1:\r\n\r\n```\r\nIn urn:ietf:params:qlog:events:new_frame#rogerrabbit:\r\n\r\nRogerRabbitFrame = {\r\n     type: \"Roger\"\r\n     ? who: text\r\n}\r\n\r\nIn urn:ietf:params:qlog:events_ext:rogerrabbit:\r\n\r\n$H3Frame /= RogerRabbitFrames\r\n\r\n(where $H3Frame is defined in urn:ietf:params:qlog:events:h3#h3 of course)\r\n```\r\n\r\nOption 2 would just have both under the same URN\r\n\r\n```\r\nIn urn:ietf:params:qlog:events:new_frame#rogerrabbit:\r\n\r\nRogerRabbitFrame = {\r\n     type: \"Roger\"\r\n     ? who: text\r\n}\r\n\r\n$H3Frame /= RogerRabbitFrames\r\n```\r\n\r\nNote that in Option 1, both URNs can of course still be defined in the same document, it's just annoying to have to split them up separately (although, you could make the argument **it's a bit cleaner/more explicit** that way as well). \r\n\r\nAnother remark is that above, I've extended just `$H3Frame` which is NOT an event, but the proposed URNs for extensions is currently `event_ext`. So **I'd bikeshed that to just `extensions` instead**!\r\n\r\n---\r\n\r\nAppendix: alternatives considered\r\n\r\nA. decoupling event categories from the events URN. This would allow us to just do something like `urn:ietf:params:qlog:definitions:MyNamespace` and the namespace could contain anything! No need for new URN types or anything! However, since we need categories to be globally unique, having them in the URN somehow seems like a good way to automatically enforce that...\r\n\r\nB. Allowing extension of existing categories and URNs. For example, when extending QUICPacketSent above, you'd have something like `urn:ietf:params:qlog:events:quic#quic?packet-sent-ext-1`. However, this feels wrong for multiple reasons: you'd basically re-use a URN defined in document A as prefix in document B, C, D,.. which makes it hard to track, you'd only be able to do this to add EXTENSIONS to the existing events in a category but NOT add new events to that category (since we disallow that currently). It's all a bit of a mess...   \r\n\r\n",
           "createdAt": "2024-10-18T08:45:12Z",
           "updatedAt": "2024-10-18T08:45:12Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "After my long comment above and thinking about it some more + a long discussion with Lucas, we decided it would make most sense to just remove categories from qlog altogether.\r\n\r\nI originally used categories because I thought events would be re-usable across protocols, but in practice, this was a pipe dream anyway. They just made extensibility and naming (and even implementations) more difficult while adding little to no value. \r\n\r\n#439 removes categories and consequently makes it possible to be more flexible in how we extend qlog, including with new documents that just extend existing events in existing namespaces, and it thus also closes this issue as solved. ",
+          "createdAt": "2024-10-21T19:45:51Z",
+          "updatedAt": "2024-10-21T19:45:51Z"
         }
       ]
     },
@@ -9060,15 +9125,15 @@
       "id": "I_kwDOCrLn6M6aO4zn",
       "title": "Logging unknown TransportParameters",
       "url": "https://github.com/quicwg/qlog/issues/436",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Back in https://github.com/quicwg/qlog/issues/176 I said \r\n\r\n> The spec would be improved by having a well-defined \"extension bucket\" field that TPs can go in, an array of integers tuples would be fine, for example.\r\n\r\nand we addressed that with a structured solution using group sockets in https://github.com/quicwg/qlog/pull/417.\r\n\r\nHowever, I think one original problem still stands. As a receiver, if I receive an unknown TP, there's not a standard way to log the codepoint and value. H3 already has a solution to this via the SETTINGS frame but QUIC TPs are different and it isn't so straightforward. \r\n\r\n@hawkinsw has this problem right now. He is doing research on the Accurate ECN extension and very kindly proposed some [en/decode to quiche](https://github.com/cloudflare/quiche/pull/1860). And while a small patch, adding code for an I-D we don't implement (and might want to track all I-D revisions that change the code point) adds overhead. So it got me wondering could we use qlog instead and require zero changes, leading back here.\r\n\r\nFor example, by extending parameters_set as below, we could easily externalise the code that checks supported TPs to log tooling\r\n\r\n```\r\nQUICParametersSet = {\r\n  // all the existing stuff\r\n  \r\n  unknown_parameters: [* UnknownTransportParameter]\r\n  \r\n}\r\n\r\nUnknownTransportParameter= {\r\n    id: uint64,\r\n    value: uint64\r\n}\r\n```",
       "createdAt": "2024-10-15T04:24:38Z",
-      "updatedAt": "2024-10-18T18:55:22Z",
-      "closedAt": null,
+      "updatedAt": "2024-10-21T07:50:15Z",
+      "closedAt": "2024-10-21T07:50:15Z",
       "comments": [
         {
           "author": "hawkinsw",
@@ -9120,6 +9185,22 @@
           "updatedAt": "2024-10-18T18:55:21Z"
         }
       ]
+    },
+    {
+      "number": 442,
+      "id": "I_kwDOCrLn6M6bI62J",
+      "title": "Time units ",
+      "url": "https://github.com/quicwg/qlog/issues/442",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Its still ambiguous what units the logged time field uses. Issue spun off from the other clock updates in the PR below\r\n\r\n              I don't understand this bit. If I have a float64 field, and I decide to use it to log \"1.5\" to mean one and a half seconds, but the logger tool thinks I meant one and a half milliseconds, then there's an interop issue. So I think we need to pick one form of \"units of x with fractional Y\", or add a field to articulate the concrete units and precision.\r\n\r\n_Originally posted by @LPardue in https://github.com/quicwg/qlog/pull/433#discussion_r1808864215_\r\n            ",
+      "createdAt": "2024-10-21T14:52:08Z",
+      "updatedAt": "2024-10-21T14:52:08Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -16260,21 +16341,21 @@
       "id": "PR_kwDOCrLn6M5IWoVt",
       "title": "Rework the Timestamps section, add monotonic",
       "url": "https://github.com/quicwg/qlog/pull/290",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Most of what was in here is good but we can tighten it up a bit.\r\n\r\nAfter tightening up, it makes it easier to introduce another TimeFormat\r\n- monotonic - that doesn't use an explicit reference_time.\r\n\r\nAddress the monotic request made in #198 but doesn't resolve the issue completely it because the discussion on clock drift is not expanded. I can add that if we like this direction.\r\n",
       "createdAt": "2023-01-23T19:04:33Z",
-      "updatedAt": "2023-05-31T19:55:32Z",
+      "updatedAt": "2024-10-21T14:22:53Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "148d91306aa96ee6af6e08554cecb6c0e7277b0f",
       "headRepository": "quicwg/qlog",
       "headRefName": "define-monotonic-clock",
       "headRefOid": "a2b9d04fa9f32e5cb051511d27635f2f65f530f8",
-      "closedAt": null,
+      "closedAt": "2024-10-21T14:22:53Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -16292,6 +16373,13 @@
           "body": "As disscussed on the issue and at IETF 116, we'll probably go a different way than this PR. Keeping it open for my own reference but don't merge",
           "createdAt": "2023-05-31T19:55:31Z",
           "updatedAt": "2023-05-31T19:55:31Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Retiring this in favor of #433 ",
+          "createdAt": "2024-10-21T14:22:53Z",
+          "updatedAt": "2024-10-21T14:22:53Z"
         }
       ],
       "reviews": [
@@ -24577,24 +24665,26 @@
       "id": "PR_kwDOCrLn6M524SMW",
       "title": "Its about time",
       "url": "https://github.com/quicwg/qlog/pull/433",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Don't look too deeply into the commits on this PR, its basically forking off https://github.com/quicwg/qlog/pull/290 and doing a bunch of changes to reflect one of the suggestions made at IETF 120. \r\n\r\nMore concretely, the observation I made on the flight home is that _all_ of the timestamps are a duration relative to something. Where we use the term \"absolute\" timestamp, it might be reasonable to assume that the value is actually an absolute timestamp, not the millis elapsed since some point in the past that may or may not be unix. So this PR goes nuclear and changes the TimeFormat values to relative_to_epoch, relative_to_epoch_elapsed, and relative_to_last_event. We can bikeshed on these of course.\r\n\r\nWhat I've taken from past discussion and the 120 meeting is the suggestion to declare the used epoch in the log format, together with a human friendly \"wall clock time\" that would be something like an iso 8601 format (but I was offline on the plane so couldn't cite it or give proper examples). \r\n\r\nMonotonic folks can declare a \"monotonic\" epoch, and then relative times to that are completely opaque thing. Its up to the loggers to decide how far off the monotonic epoch they want their times to be. Its recommended they use a wall clock time to help give an indication of when things occurred.",
       "createdAt": "2024-07-30T13:44:22Z",
-      "updatedAt": "2024-10-12T20:32:06Z",
+      "updatedAt": "2024-10-21T19:45:54Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "4eefbcf7ff239d297c24141caa031cd4667ed1bb",
+      "baseRefOid": "860ecee350c1d910aee9810b5dd607f310530f2a",
       "headRepository": "quicwg/qlog",
       "headRefName": "define-monotonic-clock-take-2",
-      "headRefOid": "73cfac570214a7c491f99661d0be0125c5d3014c",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "1d28a5a17882fb8e632dfdf0b34bfa47c6dd6490",
+      "closedAt": "2024-10-21T19:45:48Z",
+      "mergedAt": "2024-10-21T19:45:48Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "bedb7916fcc2c32a023e96eff6a9cbc44d3e07ae"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -24602,9 +24692,137 @@
           "body": "So, having read this and the previous issues (mainly #198) etc. I'm wondering if this can just be simplified considerably, as such:\r\n\r\n```\r\nReferenceTime = {\r\n    start: ISO8601Time / \"unknown\" .default \"1970-01-01T00:00:00.000Z\"\r\n    clock_type: \"system\" / \"monotonic\" / text .default \"system\"\r\n    ? wall_clock_time: text\r\n}\r\n\r\n; ISO8601 UTC string at millisecond resolution. i.e., YYYY-MM-DDTHH:mm:ss.sssZ\r\nISO8601Time = string\r\n\r\nTimeFormat = \"relative_to_start\" / \r\n             \"relative_to_previous_event\" .default \"relative_to_start\"\r\n```\r\n\r\nIIUC, the main issue you're trying to solve is that things like [`rust:Instant`](https://doc.rust-lang.org/std/time/struct.Instant.html) and monotonic clocks in general don't necessarily neatly map to \"real time\" and thus can't be transformed into \"clear\" timestamps that can be compared across traces/systems/...\r\n\r\nAnother good point in #198 is that it's not possible to define another epoch besides the Unix epoch against which to start values. \r\n\r\nI believe the above solves both.\r\n\r\n---\r\n\r\nThe current text somewhat conflates what an epoch is in my opinion (i.e., \"monotonic\" doesn't make much sense for an epoch... it's more a `clock_type` than an epoch. A monotonic clock would have an epoch of `unknown` or pedantically `dont_care`). The original intent also wasn't to define an epoch as such, just to identify what the `absolute` and `delta` and `reference_time` timestamps were relative to, and the UNIX epoch was a simple thing to use. \r\n\r\nAs such, I'd rather have a `start` time instead of `epoch`, which also allows us to do away with the `elapsed_time` field and simplifies the `TimeFormat`. If you would have the UNIX epoch in 1970 with an `elapsed_time` of 30 years, you'd just log the ISO8601 timestamp for 2000 in `start` (I don't see much reason not to have the qlogger put the proper ISO8601 timestamp in there while generating the file, rather than having the tools reconstruct it later from epoch + elapsed). If you then have a monotonic clock, or you just don't know the start time, or want to obfuscate it, you just say \"unknown\" (and potentially fill in the `wall_clock_time` text if you do want to give a hint).\r\n\r\n--- \r\n\r\nI would of course still keep in the discussion on monotonic clocks and how to take care when using those. I would also have the new `clock_type` field for people who want to make explicitly clear this is a special kind of clock vs the \"normal\" system timer. But while I feel that's important to discuss in the prose, I don't think that should be key to how the format deals with time.\r\n\r\n---\r\n\r\nA few remarks on the current text (probably better done as direct comments...):\r\n\r\n1. millisecond resolution\r\n\r\n> It is a duration measured from some point in time, in millisecond resolution.\r\n\r\nI'm not sure how this works with the monotonic clocks? with the [rust Instant example](https://doc.rust-lang.org/std/time/struct.Instant.html), it says \r\n\r\n> \"instants are not guaranteed to be steady. In other words, each tick of the underlying clock might not be the same length (e.g. some seconds may be longer than others)\"\r\n\r\nso those milliseconds aren't \"really\" milliseconds? but they ARE ms resolution (probably)? So I don't think this sentence holds for monotonic clocks and should be nuanced?\r\n\r\n2. Structure\r\n\r\nSome of the prose should be grouped/ordered differently in my opinion, but we can discuss that once we have consensus on the general approach. \r\n\r\n\r\nLet's discuss this on Wednesday :) \r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n",
           "createdAt": "2024-10-12T20:32:04Z",
           "updatedAt": "2024-10-12T20:32:04Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Treating you comment in order, I've pushed a commit that\r\n\r\n1. Takes the idea of using an explicit date/time value, but chosen RFC 3339 as an IETF profile of ISO8601.\r\n2. Add the clock_type field as suggested\r\n3. I've kept the term epoch, since that is a term of art for any fixed date/time for use as a reference. It also helps disambiguate it from anything else in scope of a qlog start (like the qlog start :laughing: ).\r\n4. Reduced the timeformat to two types as suggested\r\n5. Highlighted that the time field units are ???\r\n  - The field type is float64, how are people actually supposed to use this? In my implementation I log the duration elapsed between two arbitrary times, using https://doc.rust-lang.org/std/time/struct.Duration.html#method.as_secs_f64, which is seconds with fractional nanoseconds. Yet a lot of the old examples used milliseconds with no fractional component. In section 1.2 the document states \"All timestamps and time-related values (e.g., offsets) in qlog are logged as `float64` in the millisecond resolution.\" - should that just be moved here where its most relevant? I think this might address your open questions about the resolution. \r\n\r\nWhile your remark about the implementation detail of the monotoic clock is technically direct, I think its not super relevant for this PR. Depending how we answer (4), the timestamp can represent time in units to the resolution of milliseconds (or even nanos?), whether an implementation used that accurately is tangential. Windows is famous for having a timer resolution of ~16ms  - see https://randomascii.wordpress.com/2020/10/04/windows-timer-resolution-the-great-rule-change/. If you ever looked at logs from these platforms and noticed weird batching, its because the timer resolution != logging time field resolution.\r\n\r\n\r\n",
+          "createdAt": "2024-10-21T02:25:43Z",
+          "updatedAt": "2024-10-21T02:25:43Z"
         }
       ],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6N7s2C",
+          "commit": {
+            "abbreviatedOid": "1e3e3b0"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "In general, this looks good :) \r\n\r\nI took a stab at the \"millisecond resolution\" part, but feel free to rework that a bit more if you feel it's needed.\r\n\r\nMost comments here are nits/clarifications; in general this looks ready to! It's about time too ;) \r\n",
+          "createdAt": "2024-10-21T08:01:19Z",
+          "updatedAt": "2024-10-21T08:15:34Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "```suggestion\r\noccurred. It is a duration measured from some point in time; its units depend on the type of clock chosen and system used. Typically however, a millisecond resolution is employed.\r\n```",
+              "createdAt": "2024-10-21T08:01:19Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 71,
+              "body": "```suggestion\r\n; RFC 3339 UTC string at millisecond resolution. i.e., YYYY-MM-DDTHH:mm:ss.sssZ\r\nRFC3339DateTime = text\r\n```",
+              "createdAt": "2024-10-21T08:01:52Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 97,
+              "body": "```suggestion\r\ncommonly measured against a chosen or well-known epoch. However, depending on the system, System time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value \"monotonic\" represents such a clock. \r\n```",
+              "createdAt": "2024-10-21T08:04:19Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 117,
+              "body": "```suggestion\r\ndate/time value that logging commenced at if the epoch value is \"unknown\". It uses\r\n```",
+              "createdAt": "2024-10-21T08:05:11Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 58,
+              "body": "```suggestion\r\nThe reference time governs from which point in time the \"time\" field values are measured and is defined as:\r\n```",
+              "createdAt": "2024-10-21T08:07:22Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 121,
+              "body": "```suggestion\r\nThe time format details how \"time\" values are encoded relative to the reference time and is defined as:\r\n```",
+              "createdAt": "2024-10-21T08:07:59Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 155,
+              "body": "```suggestion\r\nTools SHOULD NOT assume the ability to derive the absolute calendar timestamp of an event\r\n```",
+              "createdAt": "2024-10-21T08:11:16Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 242,
+              "body": "```suggestion\r\n          \"clock_type\": \"monotonic\",\r\n```",
+              "createdAt": "2024-10-21T08:12:06Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 285,
+              "body": "```suggestion\r\n              \"epoch\": \"2019-03-29T:22:55:53.572Z\"\r\n```",
+              "createdAt": "2024-10-21T08:13:01Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 300,
+              "body": "```suggestion\r\n              \"epoch\": \"2019-03-29T:22:55:53.572Z\"\r\n```",
+              "createdAt": "2024-10-21T08:13:08Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            },
+            {
+              "originalPosition": 316,
+              "body": "```suggestion\r\n            \"epoch\": \"2019-03-29T:22:55:53.572Z\"\r\n```",
+              "createdAt": "2024-10-21T08:13:14Z",
+              "updatedAt": "2024-10-21T08:15:34Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N_Lnh",
+          "commit": {
+            "abbreviatedOid": "1e3e3b0"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-21T13:39:40Z",
+          "updatedAt": "2024-10-21T13:39:40Z",
+          "comments": [
+            {
+              "originalPosition": 71,
+              "body": "I don't think we need this, its profiling the RFC even further, which means we need even more text that I don't think helps this document. ",
+              "createdAt": "2024-10-21T13:39:40Z",
+              "updatedAt": "2024-10-21T13:40:40Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N_SM3",
+          "commit": {
+            "abbreviatedOid": "1e3e3b0"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-21T13:48:50Z",
+          "updatedAt": "2024-10-21T13:48:50Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "I don't understand this bit. If I have a float64 field, and I decide to use it to log \"1.5\" to mean one and a half seconds, but the logger tool thinks I meant one and a half milliseconds, then there's an interop issue. So I think we need to pick one form of \"units of x with fractional Y\", or add a field to articulate the concrete units and precision. ",
+              "createdAt": "2024-10-21T13:48:50Z",
+              "updatedAt": "2024-10-21T13:48:50Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 437,
@@ -24639,24 +24857,26 @@
       "id": "PR_kwDOCrLn6M5_GCKe",
       "title": "Add unknown_parameters field",
       "url": "https://github.com/quicwg/qlog/pull/438",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Closes #436 \r\n\r\nI decided not add something similar to `h3:parameters_set` since it makes more sense to just log it as H3Settings there, and that's already possible. ",
       "createdAt": "2024-10-18T11:54:03Z",
-      "updatedAt": "2024-10-18T18:57:24Z",
+      "updatedAt": "2024-10-21T07:50:14Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "65c9758f20ef1cf485990cd2db39941820071e21",
       "headRepository": "quicwg/qlog",
       "headRefName": "unknown-tp",
-      "headRefOid": "43a78786cd16ecab70c7970918c6fde431b9bf58",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "d526617a310ac6dccba9d4a553b4205de0f9cafa",
+      "closedAt": "2024-10-21T07:50:14Z",
+      "mergedAt": "2024-10-21T07:50:14Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "3be48be12256ef4258e739e3b6c27d6d9ed76eb4"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -24694,24 +24914,26 @@
       "id": "PR_kwDOCrLn6M5_G1bE",
       "title": "Remove categories",
       "url": "https://github.com/quicwg/qlog/pull/439",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "As discussed during today's editors meeting with @LPardue, I feel it would be better and simpler overall to just remove the notion of event categories and only have event `namespaces` to group event types by. \r\n\r\nThis simplifies handling extensions and schema URIs considerably, while also allowing us to more easily extend existing namespaces with new events (e.g., QUIC extensions can be properly tagged as `quic:my_new_event` instead of `my_quic_extension:my_new_event` which would otherwise have been needed).\r\n\r\nCategories were originally needed because I had the vision of reusable event types across protocols (hence stuff in the `connectivity` or `security` categories would be re-usable across both TPC and QUIC for example). In practice, this has turned out to be a pipe dream and the QUIC document has also moved away from that in all but name (and the HTTP/3 document just had a single category anyway). \r\n\r\n(note: Friday 18 oct 4PM CEST: not fully ready yet; still need to remove the categories notion from QUIC and H3 docs, but the main doc text should be ready for review already)\r\n\r\n",
       "createdAt": "2024-10-18T13:49:10Z",
-      "updatedAt": "2024-10-18T15:05:51Z",
+      "updatedAt": "2024-10-21T19:38:25Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "65c9758f20ef1cf485990cd2db39941820071e21",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-categories",
-      "headRefOid": "4b73791829dab358c0797a04c52dfaecc4b5c453",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "6471bd78a0e1db59a9ea3f27bf824c0f59c4dc54",
+      "closedAt": "2024-10-21T19:37:48Z",
+      "mergedAt": "2024-10-21T19:37:48Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "aa0080ada8654b316b478262d1743c7b0adb9ca2"
+      },
       "comments": [
         {
           "author": "rmarx",
@@ -24719,6 +24941,20 @@
           "body": "This PR is now 99% ready (I just need to add the full list of QUIC events to the IANA registration in the QUIC document), so also ready for full review. ",
           "createdAt": "2024-10-18T15:05:30Z",
           "updatedAt": "2024-10-18T15:05:30Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I tried an implementation of this, it reduced code and made it more logical to call. I support the change.\r\n\r\nThe one question I have, is #432 resolved by this? An event schema that only extends existing event types with new fields, will have an empty `Event Types` column in the IANA registration. Should we think about adding a column to make it explicit what the new fields are? That seems a bit tedious to manage, especially since we have many extension points through the documents. \r\n\r\nI think this PR finds the right balance of allowing extension schema identification, while avoiding having to import every detail to IANA.",
+          "createdAt": "2024-10-20T20:02:35Z",
+          "updatedAt": "2024-10-20T20:02:35Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@LPardue thanks for trying it out in actual implementation! Good to know this actually works as intended :) \r\n\r\nI do think this solves #432, as you'd just register the new schema without any concrete Event Types. The reason why the Event Types are now also in IANA is because we can now extend existing namespaces with new events, so we need to make sure new events don't collide with older events of the same name (put differently: now only the concatenation of `namespace:event_type` is globally unique across documents). Since extensions to existing events/data types can't collide with previous definitions, they don't need to be in IANA (imo). \r\n\r\nAs such, I also think this approach indeed strike the right balance between ensuring interop and practicality.\r\n\r\nI've resolved your comments above + added the event_types list in the IANA section. PTAL and let me know if this is ready to merge later today :) \r\n\r\n@marten-seemann if you get a moment today, it would be good to have 1 extra pair of eyes on this, since it's a pretty substantial departure from the previous setup. \r\n\r\n",
+          "createdAt": "2024-10-21T07:35:09Z",
+          "updatedAt": "2024-10-21T07:35:09Z"
         }
       ],
       "reviews": [
@@ -24741,6 +24977,139 @@
               "updatedAt": "2024-10-18T13:59:28Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N2yqT",
+          "commit": {
+            "abbreviatedOid": "4b73791"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-20T02:51:13Z",
+          "updatedAt": "2024-10-20T02:51:14Z",
+          "comments": [
+            {
+              "originalPosition": 13,
+              "body": "```suggestion\r\nThe event namespace with identifier `quic` is defined; see {{schema-def}}. In\r\n```",
+              "createdAt": "2024-10-20T02:51:13Z",
+              "updatedAt": "2024-10-20T02:51:14Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N5f9A",
+          "commit": {
+            "abbreviatedOid": "4b73791"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-20T19:38:46Z",
+          "updatedAt": "2024-10-20T19:38:47Z",
+          "comments": [
+            {
+              "originalPosition": 204,
+              "body": "```suggestion\r\nOther examples of event schema define the `quic` {{QLOG-QUIC}} and `http3`\r\n```",
+              "createdAt": "2024-10-20T19:38:46Z",
+              "updatedAt": "2024-10-20T19:38:47Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N_iB7",
+          "commit": {
+            "abbreviatedOid": "6471bd7"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-21T14:09:41Z",
+          "updatedAt": "2024-10-21T14:09:42Z",
+          "comments": [
+            {
+              "originalPosition": 677,
+              "body": "missing the `Description` field",
+              "createdAt": "2024-10-21T14:09:41Z",
+              "updatedAt": "2024-10-21T14:09:42Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N_isy",
+          "commit": {
+            "abbreviatedOid": "6471bd7"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-21T14:10:35Z",
+          "updatedAt": "2024-10-21T14:10:35Z",
+          "comments": [
+            {
+              "originalPosition": 677,
+              "body": "oh it was below, resolved",
+              "createdAt": "2024-10-21T14:10:35Z",
+              "updatedAt": "2024-10-21T14:10:35Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N_kT0",
+          "commit": {
+            "abbreviatedOid": "6471bd7"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-21T14:12:52Z",
+          "updatedAt": "2024-10-21T14:12:52Z",
+          "comments": [
+            {
+              "originalPosition": 779,
+              "body": "This format is hard to eyeball. I suspect we might need to revisit it later but I don't want to block this PR on that. Lets see how IANA or others feel when we go through wider document review.",
+              "createdAt": "2024-10-21T14:12:52Z",
+              "updatedAt": "2024-10-21T14:12:53Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N_kkn",
+          "commit": {
+            "abbreviatedOid": "6471bd7"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "Ship it!",
+          "createdAt": "2024-10-21T14:13:15Z",
+          "updatedAt": "2024-10-21T14:13:15Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6ODA-E",
+          "commit": {
+            "abbreviatedOid": "6471bd7"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-21T19:38:25Z",
+          "updatedAt": "2024-10-21T19:38:25Z",
+          "comments": [
+            {
+              "originalPosition": 779,
+              "body": "Agreed, it's not ideal, but I'm not sure what a typical/better approach is for this type of thing with IANA. Plenty willing to change if there's a better alternative :) ",
+              "createdAt": "2024-10-21T19:38:25Z",
+              "updatedAt": "2024-10-21T19:38:25Z"
+            }
+          ]
         }
       ]
     },
@@ -24749,26 +25118,116 @@
       "id": "PR_kwDOCrLn6M5_Iu2w",
       "title": "Add support for logging unknown parameters",
       "url": "https://github.com/quicwg/qlog/pull/440",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "hawkinsw",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "Add support for logging unknown parameters (including parameters set during connection recovery and parameters restored during 0-RTT).\r\n\r\nCloses #436.",
       "createdAt": "2024-10-18T18:54:41Z",
-      "updatedAt": "2024-10-18T18:54:42Z",
+      "updatedAt": "2024-10-21T07:49:37Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "47c49c346f0c15864f8154c570e0139a3dfd8a49",
       "headRepository": "hawkinsw/qlog",
       "headRefName": "main",
       "headRefOid": "03fb0f883aceccc1cac066c1a0263da37e3a53b0",
-      "closedAt": null,
+      "closedAt": "2024-10-21T07:49:37Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "@hawkinsw thanks for this! As you saw, I had already made a stab at this at #438. Yours had some good things in it, so I merged them in my PR and will close this one. \r\n\r\nI also did drop a few things from this though, mostly due to how we do qlog in general + the logic behind restored parameters:\r\n- in qlog, length fields are implicit if the value is logged. So for UnknownParameter, I just have the value as a hexstring, not the separate length field\r\n- Unknown parameters are unlikely (or even impossible?) to restore either as part of 0-RTT or congestion control, seeing as we don't know what to do with them locally and restoration is only for local logic (restored parameters are not communicated to the other endpoint, just used to bootstrap the local one pending updates from the other). So I don't have these in the two events you proposed. \r\n\r\nThanks again for your help on this!",
+          "createdAt": "2024-10-21T07:49:37Z",
+          "updatedAt": "2024-10-21T07:49:37Z"
+        }
+      ],
       "reviews": []
+    },
+    {
+      "number": 441,
+      "id": "PR_kwDOCrLn6M5_SJJZ",
+      "title": "Add additional fields to parameters_restored",
+      "url": "https://github.com/quicwg/qlog/pull/441",
+      "state": "MERGED",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #431 ",
+      "createdAt": "2024-10-21T08:42:41Z",
+      "updatedAt": "2024-10-21T19:42:22Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "6ffb5ab9f1aff210b08b925788a9771db8833673",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "restore-more",
+      "headRefOid": "f6698291d629cd739315f573d8e34336cc228e8d",
+      "closedAt": "2024-10-21T19:42:22Z",
+      "mergedAt": "2024-10-21T19:42:22Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "860ecee350c1d910aee9810b5dd607f310530f2a"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6N8VNE",
+          "commit": {
+            "abbreviatedOid": "70a5938"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-10-21T09:07:52Z",
+          "updatedAt": "2024-10-21T09:07:58Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "Why is client capitalized?",
+              "createdAt": "2024-10-21T09:07:52Z",
+              "updatedAt": "2024-10-21T09:07:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6N_dXH",
+          "commit": {
+            "abbreviatedOid": "70a5938"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2024-10-21T14:03:39Z",
+          "updatedAt": "2024-10-21T14:03:39Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6ODCEP",
+          "commit": {
+            "abbreviatedOid": "70a5938"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2024-10-21T19:41:09Z",
+          "updatedAt": "2024-10-21T19:41:09Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "Because I'm stupid :) changed.",
+              "createdAt": "2024-10-21T19:41:09Z",
+              "updatedAt": "2024-10-21T19:41:10Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
