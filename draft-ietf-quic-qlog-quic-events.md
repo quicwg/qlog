@@ -1200,6 +1200,12 @@ processed first and afterwards the application layer reads from the streams with
 newly available data). This can help identify bottlenecks, flow control issues,
 or scheduling problems.
 
+The `blocked_reason` field supports optional logging of information related to
+stream writes getting blocked, either in full or in part. For example, if an
+application intended to write data to a stream but was blocked from sending
+anything due to congestion control, it can log the `congestion_control` reason
+and omit the length field.
+
 The `additional_info` field supports optional logging of information
 related to the stream state. For example, an application layer that moves data
 into transport and simultaneously ends the stream, can log `fin_set`. As
@@ -1222,6 +1228,8 @@ QUICStreamDataMoved = {
     ? from: $DataLocation
     ? to: $DataLocation
 
+    ? blocked_reason: $BlockedReason
+
     ? additional_info: $DataMovedAdditionalInfo
 
     ? raw: RawInfo
@@ -1232,6 +1240,15 @@ QUICStreamDataMoved = {
 $DataLocation /=  "application" /
                   "transport" /
                   "network"
+
+$BlockedReason /= "scheduling" /
+                  "pacing" /
+                  "amplification_protection" /
+                  "congestion_control" /
+                  "connection_flow_control" /
+                  "stream_flow_control" /
+                  "stream_id" /
+                  "application"
 
 $DataMovedAdditionalInfo /= "fin_set" /
                             "stream_reset"
@@ -1259,6 +1276,12 @@ are processed first and afterwards the application layer reads all Datagrams at
 once). This can help identify bottlenecks, flow control issues, or scheduling
 problems.
 
+The `blocked_reason` field supports optional logging of information related to
+stream writes getting blocked, either in full or in part. For example, if an
+application intended to write data to a stream but was blocked from sending
+anything due to congestion control, it can log the `congestion_control` reason
+and omit the length field.
+
 This event is only for data in QUIC Datagram Frames. For data in QUIC streams,
 see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
 
@@ -1269,6 +1292,8 @@ QUICDatagramDataMoved = {
     ? from: $DataLocation
     ? to: $DataLocation
     ? raw: RawInfo
+
+    ? blocked_reason: $BlockedReason
 
     * $$quic-datagramdatamoved-extension
 }
