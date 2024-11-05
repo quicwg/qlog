@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-11-03T01:04:31.017057+00:00",
+  "timestamp": "2024-11-05T00:58:41.523081+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -2244,9 +2244,17 @@
       ],
       "body": "Now that this is a bit more mature, it should be added to draft-02.\r\n\r\nVia @marten-seemann:\r\n> So I would assume that would best be modeled using a `path_probed` event (which has ips, ports, CID), and then a `path_confirmed` and a `path_abandoned` event\r\n\r\nSomewhat ties into #49 and #78 (and all other connectivity events really...).\r\nAlso look into how this is modeled in qlog for multipath by UCL (@mpiraux)",
       "createdAt": "2020-04-12T12:13:33Z",
-      "updatedAt": "2024-06-24T15:24:46Z",
+      "updatedAt": "2024-11-04T15:59:05Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "@rmarx was this fixed by https://github.com/quicwg/qlog/pull/336?",
+          "createdAt": "2024-11-04T15:58:58Z",
+          "updatedAt": "2024-11-04T15:59:05Z"
+        }
+      ]
     },
     {
       "number": 80,
@@ -5982,7 +5990,7 @@
       ],
       "body": "Once data for a stream is sent in a packet, it has to remain in some form of retransmission buffer (either a separate buffer or as ranges in the main stream buffer or ...) until the data is ACKed as received, only then can it be discarded completely. \r\n\r\nAt this time, there is no way to track how much sent-but-unacked data is outstanding for a given stream. \r\n\r\nThe most organic way to do this seems to be to add a new target to the `data_moved` event. We currently have `\"user\",\"application\",\"transport\",\"network\"`, where we might regard \"network\" as being \"sent but unacked\", but then we still lack a \"discarded\" state. \r\n\r\nBikeshedding is possible on the name: \"discarded\", \"resolved\", \"acknowledged\", ... as conceptually we could even replace the \"user\" target with this one as well, and saying that indicates the data has left the \"network protocol stack\" (either on the sender or receiver side), terming it as \"handled\"/\"resolved\" would make sense there.\r\n\r\ncc @LPardue ",
       "createdAt": "2022-02-11T08:39:33Z",
-      "updatedAt": "2024-06-24T15:22:53Z",
+      "updatedAt": "2024-11-04T16:51:35Z",
       "closedAt": null,
       "comments": [
         {
@@ -6005,6 +6013,13 @@
           "body": "Some final thoughts on this @LPardue or I'll close with no action :) ",
           "createdAt": "2024-06-24T15:22:52Z",
           "updatedAt": "2024-06-24T15:22:52Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I checked the quiche implementation again, we actually extend `$DataLocation` with a `dropped` value. When processing acks, we'll trigger a stream_data_moved event from `transport` to `dropped`.\r\n\r\nI don't currently actively use this in my tooling but I could (and now I've been reminded it exists, I'm excitied). \r\n\r\nGiven that DataLocation is extensible , I have a custom solution that works for my needs. I'm not hearing any other interest in this right now. It would be easy enough for someone to standardize in future if they wanted.\r\n\r\nPropose to close with no action.",
+          "createdAt": "2024-11-04T16:51:33Z",
+          "updatedAt": "2024-11-04T16:51:33Z"
         }
       ]
     },
@@ -7448,9 +7463,17 @@
       "labels": [],
       "body": "We've had the following todo's for `loss_timer_updated` in the quic schema for a while, pulling them out into this issue\r\n\r\n1. TODO: how about CC algo's that use multiple timers? How generic do these events\r\nneed to be? Just support QUIC-style recovery from the spec or broader?\r\n\r\n2. TODO: read up on the loss detection logic in draft-27 onward and see if this suffices\r\n\r\n",
       "createdAt": "2023-07-05T23:14:01Z",
-      "updatedAt": "2023-07-05T23:14:08Z",
+      "updatedAt": "2024-11-04T16:55:04Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I'm guessing we are looking for volunteers to help us here. We can ask. In the absence of someone offering it, we can use the WGLC as an indicator that there is consensus on what is already in the draft as sufficient.",
+          "createdAt": "2024-11-04T16:55:03Z",
+          "updatedAt": "2024-11-04T16:55:03Z"
+        }
+      ]
     },
     {
       "number": 323,
@@ -8138,7 +8161,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:stream_state_updated:\r\n\r\n  I think this needs to be clarified a little that an event logged here with both\r\n  a `stream_id` field and a `stream_side` field is expressing a state for that\r\n  component of the stream and from the perspective of the specified vantage point\r\n  (also, what about the network vantage point?); whereas an event logged here\r\n  with a `stream_id` field but no `stream_side` field is expressing a state for\r\n  both stream components as a whole.\r\n\r\n  If my interpretation here is correct, I think it would also help to note that\r\n  the valid values of StreamState depend on the value *and* presence of\r\n  stream_side.",
       "createdAt": "2024-01-19T11:19:58Z",
-      "updatedAt": "2024-06-24T14:01:26Z",
+      "updatedAt": "2024-11-04T17:11:24Z",
       "closedAt": null,
       "comments": [
         {
@@ -8154,6 +8177,13 @@
           "body": "@LPardue could use some input on this here :) ",
           "createdAt": "2024-06-24T14:01:25Z",
           "updatedAt": "2024-06-24T14:01:25Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": " I have never used this event myself and have little experience to impart. There's no text to describe how `stream_side` is supposed to be used, which isn't great. \r\n\r\nNot sure what to do here tbh\r\n",
+          "createdAt": "2024-11-04T17:11:22Z",
+          "updatedAt": "2024-11-04T17:11:22Z"
         }
       ]
     },
@@ -9199,6 +9229,22 @@
       "body": "Its still ambiguous what units the logged time field uses. Issue spun off from the other clock updates in the PR below\r\n\r\n              I don't understand this bit. If I have a float64 field, and I decide to use it to log \"1.5\" to mean one and a half seconds, but the logger tool thinks I meant one and a half milliseconds, then there's an interop issue. So I think we need to pick one form of \"units of x with fractional Y\", or add a field to articulate the concrete units and precision.\r\n\r\n_Originally posted by @LPardue in https://github.com/quicwg/qlog/pull/433#discussion_r1808864215_\r\n            ",
       "createdAt": "2024-10-21T14:52:08Z",
       "updatedAt": "2024-10-21T14:52:08Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 443,
+      "id": "I_kwDOCrLn6M6c5Jq_",
+      "title": "Indicate where IANA registries are defined",
+      "url": "https://github.com/quicwg/qlog/issues/443",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "As per an early IANA review before IETF 121, the quic and h3 docs need to explicitly indicate where the new registry is defined (the main schema doc):\r\n\r\n> The \"qlog event schema URIs\" registry hasn\u2019t been created yet. Please cite the document that\u2019s going to create it.",
+      "createdAt": "2024-11-04T09:01:13Z",
+      "updatedAt": "2024-11-04T09:01:13Z",
       "closedAt": null,
       "comments": []
     }
@@ -25228,6 +25274,32 @@
           ]
         }
       ]
+    },
+    {
+      "number": 444,
+      "id": "PR_kwDOCrLn6M6A0xjv",
+      "title": "Indicate send blocking in data_moved events",
+      "url": "https://github.com/quicwg/qlog/pull/444",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #132 (if merged).\r\n\r\nIt struck me that its the \"data_moved\" action that can be blocked, so rather than add\r\na separate event, just add an optional field to an existing event. This helps ensure we\r\ncan represent both stream and datagram data with all relevant fields.\r\n",
+      "createdAt": "2024-11-04T16:38:48Z",
+      "updatedAt": "2024-11-04T16:38:49Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "926f96f26da604d60ed01975c0233e95fed58472",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "blocked-reasons",
+      "headRefOid": "95826e3e2ed1d1fccaa7a20311de8c226aed1bb7",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
