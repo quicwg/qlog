@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2024-11-05T00:58:41.523081+00:00",
+  "timestamp": "2024-11-07T00:58:57.522259+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -2231,7 +2231,7 @@
       "id": "MDU6SXNzdWU1OTg0NzE3MTI=",
       "title": "Add support for connection migration",
       "url": "https://github.com/quicwg/qlog/issues/79",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -2244,8 +2244,8 @@
       ],
       "body": "Now that this is a bit more mature, it should be added to draft-02.\r\n\r\nVia @marten-seemann:\r\n> So I would assume that would best be modeled using a `path_probed` event (which has ips, ports, CID), and then a `path_confirmed` and a `path_abandoned` event\r\n\r\nSomewhat ties into #49 and #78 (and all other connectivity events really...).\r\nAlso look into how this is modeled in qlog for multipath by UCL (@mpiraux)",
       "createdAt": "2020-04-12T12:13:33Z",
-      "updatedAt": "2024-11-04T15:59:05Z",
-      "closedAt": null,
+      "updatedAt": "2024-11-05T19:44:17Z",
+      "closedAt": "2024-11-05T19:44:16Z",
       "comments": [
         {
           "author": "LPardue",
@@ -2253,6 +2253,13 @@
           "body": "@rmarx was this fixed by https://github.com/quicwg/qlog/pull/336?",
           "createdAt": "2024-11-04T15:58:58Z",
           "updatedAt": "2024-11-04T15:59:05Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Indeed, this can be closed :) ",
+          "createdAt": "2024-11-05T19:44:16Z",
+          "updatedAt": "2024-11-05T19:44:16Z"
         }
       ]
     },
@@ -5977,7 +5984,7 @@
       "id": "I_kwDOCrLn6M5DekYc",
       "title": "Add a way to indicate sent-but-unacked data",
       "url": "https://github.com/quicwg/qlog/issues/186",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -5990,8 +5997,8 @@
       ],
       "body": "Once data for a stream is sent in a packet, it has to remain in some form of retransmission buffer (either a separate buffer or as ranges in the main stream buffer or ...) until the data is ACKed as received, only then can it be discarded completely. \r\n\r\nAt this time, there is no way to track how much sent-but-unacked data is outstanding for a given stream. \r\n\r\nThe most organic way to do this seems to be to add a new target to the `data_moved` event. We currently have `\"user\",\"application\",\"transport\",\"network\"`, where we might regard \"network\" as being \"sent but unacked\", but then we still lack a \"discarded\" state. \r\n\r\nBikeshedding is possible on the name: \"discarded\", \"resolved\", \"acknowledged\", ... as conceptually we could even replace the \"user\" target with this one as well, and saying that indicates the data has left the \"network protocol stack\" (either on the sender or receiver side), terming it as \"handled\"/\"resolved\" would make sense there.\r\n\r\ncc @LPardue ",
       "createdAt": "2022-02-11T08:39:33Z",
-      "updatedAt": "2024-11-04T16:51:35Z",
-      "closedAt": null,
+      "updatedAt": "2024-11-05T19:45:54Z",
+      "closedAt": "2024-11-05T19:45:54Z",
       "comments": [
         {
           "author": "LPardue",
@@ -25287,7 +25294,7 @@
       "labels": [],
       "body": "Fixes #132 (if merged).\r\n\r\nIt struck me that its the \"data_moved\" action that can be blocked, so rather than add\r\na separate event, just add an optional field to an existing event. This helps ensure we\r\ncan represent both stream and datagram data with all relevant fields.\r\n",
       "createdAt": "2024-11-04T16:38:48Z",
-      "updatedAt": "2024-11-04T16:38:49Z",
+      "updatedAt": "2024-11-06T12:11:10Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "926f96f26da604d60ed01975c0233e95fed58472",
@@ -25298,7 +25305,43 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Conceptually this works, but I don't like the suggestion we'd have to omit logging `length` to indicate the data was actually not moved... in practice, length could be a strong signal that helps understand why exactly something was blocked for that reason (e.g., trying to write a ridiculous amount of data due to a bug).\r\n\r\nIf we keep this approach, I'd rather the guidance for this is \"if there's a `blocked_reason`, that means the data was not actually moved, but a move was attempted, which was blocked due to `blocked_reason`\". That imo also works :)\r\n(that's also somewhat analogous to Nick's approach in the issue, saying \"The lack of any flags means it's unblocked.\") ",
+          "createdAt": "2024-11-05T19:51:35Z",
+          "updatedAt": "2024-11-05T19:52:18Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Fair comment. For context, the quiche implementation has a stream write operation that takes an arbitrarily large buffer and can return a \"partial write\" result. For example, if the cwnd is 15 KB, and a 20 KB buffer is provided, well return an integer length result of 15 KB, indicating the app was blocked from writing the last 5 KB. \r\n\r\nI was thinking it would be nice to reflect that in the qlog as a stream_data_moved with length 15 KB and blocked_reason of congestion window, etc. \r\n\r\nI didn't think through everything in this proposal and maybe more guidance is useful, but it felt at the time of writing that combing the data in a single event would be more convenient for my use than if I had two separate events. \r\n\r\nAlways happy to hear other opinions or review alternatives though.",
+          "createdAt": "2024-11-05T20:18:06Z",
+          "updatedAt": "2024-11-05T20:18:06Z"
+        },
+        {
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "body": "Having indications for blocked events is paramount to investigating performance issues.\r\n\r\nTherefore, I think they have to be distinct events, rather than tied to data_moved events. That is because not all QUIC implementations \"move\" data between the layers at the same moment (consider implementations having different size of buffers, or having no buffer at all).",
+          "createdAt": "2024-11-06T10:47:25Z",
+          "updatedAt": "2024-11-06T10:47:25Z"
+        },
+        {
+          "author": "nibanks",
+          "authorAssociation": "MEMBER",
+          "body": "My personal preference is for separate events. We already have it built this way in msquic.\r\n\r\nAlso, I agree with Kazuho. We don't have any notion of moving data between layers.",
+          "createdAt": "2024-11-06T11:21:48Z",
+          "updatedAt": "2024-11-06T11:21:48Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Ack. Would someone be willing to help on the alternative proposal? Even if ypu can just frame how the alternative works, we can design the event structure definition around that.",
+          "createdAt": "2024-11-06T12:11:07Z",
+          "updatedAt": "2024-11-06T12:11:07Z"
+        }
+      ],
       "reviews": []
     }
   ]
