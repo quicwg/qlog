@@ -575,6 +575,7 @@ multiple reasons (e.g., privacy) data from which the flow direction can be
 otherwise inferred (e.g., IP addresses) might not be present in the logs.
 
 Meaning of the different values for the flow field:
+
   * "client" indicates that this vantage point follows client data flow semantics (a
     "packet sent" event goes in the direction of the server).
   * "server" indicates that this vantage point follow server data flow semantics (a
@@ -1085,6 +1086,7 @@ files can contain events from multiple schemas without the risk of name
 collisions.
 
 A single event schema can contain exactly one of the below:
+
 * A definition for a new event namespace
 * An extension of an existing namespace (adding new events/data types and/or
   extending existing events/data types within the namespace with new fields)
@@ -1112,6 +1114,7 @@ Inversely, not all event types associated with an event schema listed in
 either of these as an error; see {{tooling}}.
 
 In the following hypothetical example, a qlog file contains events belonging to:
+
 * The two event namespaces defined by event schemas in this document
 ({{generic-event-schema}}).
 * Events in a namespace named `rick` specified in a hypothetical RFC
