@@ -347,6 +347,7 @@ JSON serialization example:
     "serialization_format": "application/qlog+json",
     "title": "Name of this particular qlog file (short)",
     "description": "Description for this group of traces (long)",
+    "event_schemas": ["urn:ietf:params:qlog:events:quic"],
     "traces": [...]
 }
 ~~~
@@ -492,6 +493,7 @@ JSON-SEQ serialization example:
     "serialization_format": "application/qlog+json-seq",
     "title": "Name of JSON Text Sequence qlog file (short)",
     "description": "Description for this trace file (long)",
+    "event_schemas": ["urn:ietf:params:qlog:events:quic"],
     "trace": {
       "common_fields": {
         "protocol_types": ["QUIC","HTTP/3"],
