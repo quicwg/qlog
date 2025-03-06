@@ -333,7 +333,13 @@ In QUIC there are two main connection-closing error categories: connection and
 application errors. They have well-defined error codes and semantics. Next to
 these however, there can be internal errors that occur that may or may not get
 mapped to the official error codes in implementation-specific ways. As such,
-multiple error codes can be set on the same event to reflect this.
+multiple error codes can be set on the same event to reflect this, and more
+fine-grained internal error codes can be reflected in the internal_code field.
+
+If the error code does not map to a known error string, the connection_code or
+application_code value of "unknown" type can be used and the raw value captured
+in the code_bytes field; a numerical value without variable-length integer
+encoding.
 
 ~~~ cddl
 QUICConnectionClosed = {
@@ -341,10 +347,12 @@ QUICConnectionClosed = {
     ; which side closed the connection
     ? owner: Owner
     ? connection_code: $TransportError /
-                       CryptoError /
-                       uint32
-    ? application_code: $ApplicationError /
-                        uint32
+                       CryptoError
+    ? application_code: $ApplicationError
+
+    ; if connection_code or application_code === "unknown"
+    ? code_bytes: uint32
+
     ? internal_code: uint32
     ? reason: text
     ? trigger:
@@ -1746,10 +1754,18 @@ $PacketNumberSpace /= "initial" /
 
 ## PacketHeader
 
+If the packet_type numerical value does not map to a known packet_type string,
+the packet_type value of "unknown" can be used and the raw value captured in the
+packet_type_bytes field; a numerical value without variable-length integer
+encoding.
+
 ~~~ cddl
 PacketHeader = {
     ? quic_bit: bool .default true
     packet_type: $PacketType
+
+    ; only if packet_type === "unknown"
+    ? packet_type_bytes: uint64
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
@@ -1949,12 +1965,20 @@ that packet with number 120 was ACKed). However, in that case, implementers SHOU
 log \[120\] instead and tools MUST be able to deal with both notations.
 
 ### ResetStreamFrame
+
+If the error_code numerical value does not map to a known ApplicationError string,
+the error_code value of "unknown" can be used and the raw value captured in the
+error_code_bytes field; a numerical value without variable-length integer
+encoding.
+
 ~~~ cddl
 ResetStreamFrame = {
     frame_type: "reset_stream"
     stream_id: uint64
-    error_code: $ApplicationError /
-                uint64
+    error_code: $ApplicationError
+
+    ; if error_code === "unknown"
+    ? error_code_bytes: uint64
 
     ; in bytes
     final_size: uint64
@@ -1965,12 +1989,21 @@ ResetStreamFrame = {
 
 
 ### StopSendingFrame
+
+If the error_code numerical value does not map to a known ApplicationError string,
+the error_code value of "unknown" can be used and the raw value captured in the
+error_code_bytes field; a numerical value without variable-length integer
+encoding.
+
 ~~~ cddl
 StopSendingFrame = {
     frame_type: "stop_sending"
     stream_id: uint64
-    error_code: $ApplicationError /
-                uint64
+    error_code: $ApplicationError
+
+    ; if error_code === "unknown"
+    ? error_code_bytes: uint64
+
     ? raw: RawInfo
 }
 ~~~
@@ -2152,9 +2185,10 @@ field using the numerical value without variable-length integer encoding.
 
 When the connection is closed due a connection-level error, the
 `trigger_frame_type` field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used. For unknown
-frame types, the numerical value without variable-length integer encoding is
-used.
+error. For known frame types, the appropriate string value is used in
+error_code. For unknown frame types, the error_code field has the value
+"unknown" and the numerical value without variable-length integer encoding is
+logged in error_code_bytes.
 
 The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the `reason`
@@ -2171,8 +2205,11 @@ ConnectionCloseFrame = {
     ? error_space: ErrorSpace
     ? error_code: $TransportError /
                   CryptoError /
-                  $ApplicationError /
-                  uint64
+                  $ApplicationError
+
+    ; only if error_code === "unknown"
+    ? error_code_bytes: uint64
+
     ? reason: text
     ? reason_bytes: hexstring
 
@@ -2243,7 +2280,8 @@ $TransportError /= "no_error" /
                  "crypto_buffer_exceeded" /
                  "key_update_error" /
                  "aead_limit_reached" /
-                 "no_viable_path"
+                 "no_viable_path" /
+                 "unknown"
                  ; there is no value to reflect CRYPTO_ERROR
                  ; use the CryptoError type instead
 ~~~
@@ -2254,8 +2292,13 @@ $TransportError /= "no_error" /
 By definition, an application error is defined by the application-level
 protocol running on top of QUIC (e.g., HTTP/3).
 
-As such, it cannot be defined here directly. It is instead defined as an empty
-CDDL "type socket" extension point.
+As such, it cannot be defined here completely. It is instead defined as a CDDL
+"type socket" extension point, with a single "unknown" value.
+
+~~~ cddl
+$ApplicationError /= "unknown"
+~~~
+{: #applicationerror-def title="ApplicationError definition"}
 
 Application-level qlog definitions that wish to define new ApplicationError
 strings MUST do so by extending the $ApplicationError socket as such:

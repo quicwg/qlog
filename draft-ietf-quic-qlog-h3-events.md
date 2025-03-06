@@ -692,9 +692,13 @@ HTTP3Priority = text
 
 ### HTTP3ReservedFrame
 
+The frame_type_bytes field is the numerical value without variable-length
+integer encoding.
+
 ~~~ cddl
 HTTP3ReservedFrame = {
     frame_type: "reserved"
+    frame_type_bytes: uint64
     ? raw: RawInfo
 }
 ~~~
