@@ -79,14 +79,6 @@ this namespace multiple events derive from the qlog abstract Event class
 types. These are represented as enums or re-usable definitions, which are
 grouped together on the bottom of this document for clarity.
 
-When any event from this document is included in a qlog trace, the
-`protocol_types` qlog array field MUST contain an entry with the value "QUIC":
-
-~~~ cddl
-$ProtocolType /= "QUIC"
-~~~
-{: #protocoltype-extension-quic title="ProtocolType extension for QUIC"}
-
 ## Use of group IDs
 
 When the qlog `group_id` field is used, it is recommended to use QUIC's Original
@@ -134,8 +126,7 @@ in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
-type, data, group_id, protocol_types, importance, RawInfo, and time-related
-fields.
+type, data, path, group_id, importance, RawInfo, and time-related fields.
 
 As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
 are intentionally agnostic to serialization formats. The choice of format is an
