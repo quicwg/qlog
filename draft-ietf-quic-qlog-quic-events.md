@@ -1891,16 +1891,13 @@ such, each padding byte could be theoretically interpreted and logged as an
 individual PaddingFrame.
 
 However, as this leads to heavy logging overhead, implementations SHOULD instead
-emit just a single PaddingFrame and set the payload_length property to the amount
-of PADDING bytes/frames included in the packet.
+emit just a single PaddingFrame and set the raw.payload_length property to the
+amount of PADDING bytes/frames included in the packet.
 
 ~~~ cddl
 PaddingFrame = {
     frame_type: "padding"
-
-    ; total frame length, including frame header
-    ? length: uint32
-    payload_length: uint32
+    ? raw: RawInfo
 }
 ~~~
 {: #paddingframe-def title="PaddingFrame definition"}
@@ -1910,10 +1907,7 @@ PaddingFrame = {
 ~~~ cddl
 PingFrame = {
     frame_type: "ping"
-
-    ; total frame length, including frame header
-    ? length: uint32
-    ? payload_length: uint32
+    ? raw: RawInfo
 }
 ~~~
 {: #pingframe-def title="PingFrame definition"}
@@ -1942,10 +1936,7 @@ AckFrame = {
     ? ect1: uint64
     ? ect0: uint64
     ? ce: uint64
-
-    ; total frame length, including frame header
-    ? length: uint32
-    ? payload_length: uint32
+    ? raw: RawInfo
 }
 ~~~
 {: #ackframe-def title="AckFrame definition"}
@@ -1967,10 +1958,7 @@ ResetStreamFrame = {
 
     ; in bytes
     final_size: uint64
-
-    ; total frame length, including frame header
-    ? length: uint32
-    ? payload_length: uint32
+    ? raw: RawInfo
 }
 ~~~
 {: #resetstreamframe-def title="ResetStreamFrame definition"}
@@ -1983,10 +1971,7 @@ StopSendingFrame = {
     stream_id: uint64
     error_code: $ApplicationError /
                 uint64
-
-    ; total frame length, including frame header
-    ? length: uint32
-    ? payload_length: uint32
+    ? raw: RawInfo
 }
 ~~~
 {: #stopsendingframe-def title="StopSendingFrame definition"}
@@ -1998,7 +1983,6 @@ CryptoFrame = {
     frame_type: "crypto"
     offset: uint64
     length: uint64
-    ? payload_length: uint32
     ? raw: RawInfo
 }
 ~~~
@@ -2010,6 +1994,7 @@ CryptoFrame = {
 NewTokenFrame = {
   frame_type: "new_token"
   token: Token
+  ? raw: RawInfo
 }
 ~~~
 {: #newtokenframe-def title="NewTokenFrame definition"}
@@ -2041,6 +2026,7 @@ StreamFrame = {
 MaxDataFrame = {
   frame_type: "max_data"
   maximum: uint64
+  ? raw: RawInfo
 }
 ~~~
 {: #maxdataframe-def title="MaxDataFrame definition"}
@@ -2052,6 +2038,7 @@ MaxStreamDataFrame = {
   frame_type: "max_stream_data"
   stream_id: uint64
   maximum: uint64
+  ? raw: RawInfo
 }
 ~~~
 {: #maxstreamdataframe-def title="MaxStreamDataFrame definition"}
@@ -2063,6 +2050,7 @@ MaxStreamsFrame = {
   frame_type: "max_streams"
   stream_type: StreamType
   maximum: uint64
+  ? raw: RawInfo
 }
 ~~~
 {: #maxstreamsframe-def title="MaxStreamsFrame definition"}
@@ -2073,6 +2061,7 @@ MaxStreamsFrame = {
 DataBlockedFrame = {
   frame_type: "data_blocked"
   limit: uint64
+  ? raw: RawInfo
 }
 ~~~
 {: #datablockedframe-def title="DataBlockedFrame definition"}
@@ -2084,6 +2073,7 @@ StreamDataBlockedFrame = {
   frame_type: "stream_data_blocked"
   stream_id: uint64
   limit: uint64
+  ? raw: RawInfo
 }
 ~~~
 {: #streamdatablockedframe-def title="StreamDataBlockedFrame definition"}
@@ -2095,6 +2085,7 @@ StreamsBlockedFrame = {
   frame_type: "streams_blocked"
   stream_type: StreamType
   limit: uint64
+  ? raw: RawInfo
 }
 ~~~
 {: #streamsblockedframe-def title="StreamsBlockedFrame definition"}
@@ -2112,6 +2103,7 @@ NewConnectionIDFrame = {
   ? connection_id_length: uint8
   connection_id: ConnectionID
   ? stateless_reset_token: StatelessResetToken
+  ? raw: RawInfo
 }
 ~~~
 {: #newconnectionidframe-def title="NewConnectionIDFrame definition"}
@@ -2122,6 +2114,7 @@ NewConnectionIDFrame = {
 RetireConnectionIDFrame = {
   frame_type: "retire_connection_id"
   sequence_number: uint32
+  ? raw: RawInfo
 }
 ~~~
 {: #retireconnectionid-def title="RetireConnectionIDFrame definition"}
@@ -2132,8 +2125,9 @@ RetireConnectionIDFrame = {
 PathChallengeFrame = {
   frame_type: "path_challenge"
 
-  ; always 64-bit
+  ; always 64 bits
   ? data: hexstring
+  ? raw: RawInfo
 }
 ~~~
 {: #pathchallengeframe-def title="PathChallengeFrame definition"}
@@ -2144,8 +2138,9 @@ PathChallengeFrame = {
 PathResponseFrame = {
   frame_type: "path_response"
 
-  ; always 64-bit
+  ; always 64 bits
   ? data: hexstring
+  ? raw: RawInfo
 }
 ~~~
 {: #pathresponseframe-def title="PathResponseFrame definition"}
@@ -2184,6 +2179,7 @@ ConnectionCloseFrame = {
     ; when error_space === "transport"
     ? trigger_frame_type: uint64 /
                           text
+    ? raw: RawInfo
 }
 ~~~
 {: #connectioncloseframe-def title="ConnectionCloseFrame definition"}
@@ -2192,7 +2188,8 @@ ConnectionCloseFrame = {
 
 ~~~ cddl
 HandshakeDoneFrame = {
-  frame_type: "handshake_done";
+  frame_type: "handshake_done"
+  ? raw: RawInfo
 }
 ~~~
 {: #handshakedoneframe-def title="HandshakeDoneFrame definition"}

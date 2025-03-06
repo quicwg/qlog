@@ -533,6 +533,7 @@ HTTP3HTTPField = {
 HTTP3HeadersFrame = {
     frame_type: "headers"
     headers: [* HTTP3HTTPField]
+    ? raw: RawInfo
 }
 ~~~
 {: #h3-headersframe-def title="HTTP3HeadersFrame definition"}
@@ -587,6 +588,7 @@ field and MAY include both. An `HTTP3HTTPField` MAY include a `value` or
 HTTP3CancelPushFrame = {
     frame_type: "cancel_push"
     push_id: uint64
+    ? raw: RawInfo
 }
 ~~~
 {: #h3-cancelpushframe-def title="HTTP3CancelPushFrame definition"}
@@ -606,6 +608,7 @@ Instead, the name value of "unknown" can be used and the value captured in the
 HTTP3SettingsFrame = {
     frame_type: "settings"
     settings: [* HTTP3Setting]
+    ? raw: RawInfo
 }
 
 HTTP3Setting = {
@@ -633,6 +636,7 @@ HTTP3PushPromiseFrame = {
     frame_type: "push_promise"
     push_id: uint64
     headers: [* HTTP3HTTPField]
+    ? raw: RawInfo
 }
 ~~~
 {: #h3pushpromiseframe-def title="HTTP3PushPromiseFrame definition"}
@@ -646,6 +650,7 @@ HTTP3GoawayFrame = {
     ; Either stream_id or push_id.
     ; This is implicit from the sender of the frame
     id: uint64
+    ? raw: RawInfo
 }
 ~~~
 {: #h3goawayframe-def title="HTTP3GoawayFrame definition"}
@@ -656,6 +661,7 @@ HTTP3GoawayFrame = {
 HTTP3MaxPushIDFrame = {
     frame_type: "max_push_id"
     push_id: uint64
+    ? raw: RawInfo
 }
 ~~~
 {: #h3maxpushidframe-def title="HTTP3MaxPushIDFrame definition"}
@@ -675,6 +681,7 @@ HTTP3PriorityUpdateFrame = {
     ? push_id: uint64
 
     priority_field_value: HTTP3Priority
+    ? raw: RawInfo
 }
 
 ; The priority value in ASCII text, encoded using Structured Fields
@@ -688,7 +695,7 @@ HTTP3Priority = text
 ~~~ cddl
 HTTP3ReservedFrame = {
     frame_type: "reserved"
-    ? length: uint64
+    ? raw: RawInfo
 }
 ~~~
 {: #h3reservedframe-def title="HTTP3ReservedFrame definition"}
