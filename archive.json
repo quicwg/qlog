@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-03-06T01:02:36.371781+00:00",
+  "timestamp": "2025-03-09T00:54:47.893095+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -9267,9 +9267,41 @@
       "labels": [],
       "body": "In https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-8.13.2\n\n```\n PingFrame = {\n    frame_type: \"ping\"\n\n    ; total frame length, including frame header\n    ? length: uint32\n    ? payload_length: uint32\n}\n```\n\nIn QUIC, the [PING frame](https://datatracker.ietf.org/doc/html/rfc9000#section-19.2) doesn't have a payload so the payload length can never be populated. In my implementation, I've always set this to `None` and the fields are always omitted.\n\nProposal: drop both the `length` and `payload_length` fields",
       "createdAt": "2025-03-04T02:00:14Z",
-      "updatedAt": "2025-03-04T02:00:14Z",
+      "updatedAt": "2025-03-06T09:32:27Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So this is a bit of a weird one... I would agree with `payload_length` but not necessarily with `length`, since that includes the frame header, which can be VLIE. Since we don't guarantee VLIE to always take up the least amount of bytes, this can be 1,2,4,8 bytes. This is primarily needed to do things like the qvis packetization diagram, where you want to know exactly how many bytes are used.\n\nThat said, arguably this should all be changed to just having `? raw: RawInfo` for all these frames (like we already have for the StreamFrame). I am tracking that general update work in https://github.com/quicwg/qlog/issues/421 (note for Robin: CryptoFrame confusingly has both options at the same time?!?)\n\nSo, TL;DR: proposal is to replace both fields with `? raw: RawInfo`\n\n",
+          "createdAt": "2025-03-06T09:32:26Z",
+          "updatedAt": "2025-03-06T09:32:26Z"
+        }
+      ]
+    },
+    {
+      "number": 448,
+      "id": "I_kwDOCrLn6M6s2Nox",
+      "title": "Do we need `protocol_types` now that we have `event_schemas`",
+      "url": "https://github.com/quicwg/qlog/issues/448",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "https://github.com/quicwg/qlog/pull/446 made me think about why we still need `protocol_types` now that we have `event_schemas` and we've decided that those schemas are (most likely) somewhat tightly tied to specific protocols (i.e., we no longer have the generic `connectivity:` events; those are all just `quic:` events now, since TCP-related events would likely be different enough anyway).\n\nIf you know the `event_schemas`, you know which protocol types are expected in a log as well by implicit inference, so we could do away with `protocol_types` easily enough.\n\nHOWEVER, the main problem with that, is that currently `event_schemas` are part of the top-level `QlogFile`, and so defined at a complete file level, while `protocol_types` are at individual `trace` level. For single files that combine logs from multiple different protocols, this would make it annoying to figure out which traces contained which protocols specifically, since `event_schemas` would aggregate everything at the top-level. \n\n\nConceptually, I feel it just makes more sense to have `event_schemas` as a per-trace thing as well, since you might indeed have cases where not every trace uses the same schemas (before looking into this, I already thought this was the case today...). This would be a small conceptual change imo.\n\nProposal:\n- Move `event_schemas` from `QlogFile` to `Trace` and `TraceSeq` (don't think it needs to be in `common_fields`)\n- Remove `protocol_types`",
+      "createdAt": "2025-03-06T09:44:33Z",
+      "updatedAt": "2025-03-06T09:55:40Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I definitely support removing protocol_types, it seems redundant and makes it annoying to have to define a separate identifier for the same thing.\n\nI think per trace event_schemas is the only logical option for the model where a log file contains multiple traces that could belong to different implementations.",
+          "createdAt": "2025-03-06T09:55:39Z",
+          "updatedAt": "2025-03-06T09:55:39Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -25400,13 +25432,108 @@
       "labels": [],
       "body": "According to [section 3](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-10#section-3), event_schemas is required.",
       "createdAt": "2025-03-01T14:22:36Z",
-      "updatedAt": "2025-03-01T14:22:37Z",
+      "updatedAt": "2025-03-06T09:47:39Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "926f96f26da604d60ed01975c0233e95fed58472",
       "headRepository": "mengelbart/qlog-drafts",
       "headRefName": "add-schemas-to-examples",
       "headRefOid": "1cf74addd03cdcf6d375287297425600e69f6f4c",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Thanks for this @mengelbart!\r\n\r\nThough boy, did you open a can of worms in my head :D (see https://github.com/quicwg/qlog/issues/448).\r\n\r\nFor this specific PR though, I just had 1 thought that I've added as a suggestion above.\r\n\r\n\r\n",
+          "createdAt": "2025-03-06T09:47:37Z",
+          "updatedAt": "2025-03-06T09:47:37Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6ex_5g",
+          "commit": {
+            "abbreviatedOid": "1cf74ad"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2025-03-06T09:46:56Z",
+          "updatedAt": "2025-03-06T09:47:06Z",
+          "comments": [
+            {
+              "originalPosition": 12,
+              "body": "Since the `protocol_types` field below is for both QUIC and H3, it would make sense for this to also include the HTTP/3 schema URI:\r\n\r\n```suggestion\r\n    \"event_schemas\": [\"urn:ietf:params:qlog:events:quic\", \"urn:ietf:params:qlog:events:http3\"],\r\n```",
+              "createdAt": "2025-03-06T09:46:56Z",
+              "updatedAt": "2025-03-06T09:47:06Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 449,
+      "id": "PR_kwDOCrLn6M6No8wa",
+      "title": "Remove protocol_types and move event_schemas to Trace and TraceSeq",
+      "url": "https://github.com/quicwg/qlog/pull/449",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #448.\r\n\r\nCo-authored-by: @mengelbart (subsumes #446)",
+      "createdAt": "2025-03-06T13:24:27Z",
+      "updatedAt": "2025-03-06T15:44:42Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "remove-protocol-types",
+      "headRefOid": "c8edf32617bf7623a092920589b51a1e7e3d3b76",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6e1pPX",
+          "commit": {
+            "abbreviatedOid": "c8edf32"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "Always good to delete text",
+          "createdAt": "2025-03-06T15:44:42Z",
+          "updatedAt": "2025-03-06T15:44:42Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 450,
+      "id": "PR_kwDOCrLn6M6NpsWj",
+      "title": "Be consistent in how we allow logging of raw values",
+      "url": "https://github.com/quicwg/qlog/pull/450",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "- Use RawInfo instead of separate length/payload_length fields + make sure RawInfo is defined everywhere (fixes #447)\r\n- Make sure that we have a separate `*_bytes` field to log raw values for unknown frames/errors/packet_types/... (fixes #421)\r\n\r\n",
+      "createdAt": "2025-03-06T14:50:12Z",
+      "updatedAt": "2025-03-06T14:50:13Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "rawinfo-everything",
+      "headRefOid": "25136b9ec29962614d620a0c9dd546e316d7ff35",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
