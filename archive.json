@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-03-09T00:54:47.893095+00:00",
+  "timestamp": "2025-03-11T01:03:19.010774+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -25432,13 +25432,13 @@
       "labels": [],
       "body": "According to [section 3](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-10#section-3), event_schemas is required.",
       "createdAt": "2025-03-01T14:22:36Z",
-      "updatedAt": "2025-03-06T09:47:39Z",
+      "updatedAt": "2025-03-10T19:02:50Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "926f96f26da604d60ed01975c0233e95fed58472",
       "headRepository": "mengelbart/qlog-drafts",
       "headRefName": "add-schemas-to-examples",
-      "headRefOid": "1cf74addd03cdcf6d375287297425600e69f6f4c",
+      "headRefOid": "6675033523754da5e501c5b4baf29760044fd448",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -25450,6 +25450,13 @@
           "body": "Thanks for this @mengelbart!\r\n\r\nThough boy, did you open a can of worms in my head :D (see https://github.com/quicwg/qlog/issues/448).\r\n\r\nFor this specific PR though, I just had 1 thought that I've added as a suggestion above.\r\n\r\n\r\n",
           "createdAt": "2025-03-06T09:47:37Z",
           "updatedAt": "2025-03-06T09:47:37Z"
+        },
+        {
+          "author": "mengelbart",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Glad I could help :D \r\nI'm going to press \"commit suggestion\", just to make sure, but I assume this one can be closed because it's included in #449, right?",
+          "createdAt": "2025-03-10T19:02:13Z",
+          "updatedAt": "2025-03-10T19:02:13Z"
         }
       ],
       "reviews": [
@@ -25527,7 +25534,7 @@
       "labels": [],
       "body": "- Use RawInfo instead of separate length/payload_length fields + make sure RawInfo is defined everywhere (fixes #447)\r\n- Make sure that we have a separate `*_bytes` field to log raw values for unknown frames/errors/packet_types/... (fixes #421)\r\n\r\n",
       "createdAt": "2025-03-06T14:50:12Z",
-      "updatedAt": "2025-03-06T14:50:13Z",
+      "updatedAt": "2025-03-10T15:29:02Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
@@ -25539,7 +25546,128 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6fHUcN",
+          "commit": {
+            "abbreviatedOid": "25136b9"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-03-09T18:48:48Z",
+          "updatedAt": "2025-03-09T18:48:48Z",
+          "comments": [
+            {
+              "originalPosition": 112,
+              "body": "So for my library, the QUIC layer is responsible for generating qlog frames and it is not application aware. That means I always just send the numerical code right now in `error_code`. Requiring me to send \"unknown\" will inflate my logs without any real benefit. Can we consider making `error_code` optional if going this route?",
+              "createdAt": "2025-03-09T18:48:48Z",
+              "updatedAt": "2025-03-09T18:48:48Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6fHUcs",
+          "commit": {
+            "abbreviatedOid": "25136b9"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-03-09T18:49:02Z",
+          "updatedAt": "2025-03-09T18:49:02Z",
+          "comments": [
+            {
+              "originalPosition": 142,
+              "body": "Similar comment here as https://github.com/quicwg/qlog/pull/450/files#r1986392613",
+              "createdAt": "2025-03-09T18:49:02Z",
+              "updatedAt": "2025-03-09T18:49:02Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6fMnkK",
+          "commit": {
+            "abbreviatedOid": "25136b9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-03-10T13:03:58Z",
+          "updatedAt": "2025-03-10T13:03:58Z",
+          "comments": [
+            {
+              "originalPosition": 112,
+              "body": "Gosh, I'm not the biggest fan of this... the main reason to do this type of change (imo) is so it's easier what to look at when parsing a qlog. With this, you can always assume the `error_code` is a string and just use that, and only if the value is `unknown` do you need to maybe look for another field. If you make `error_code` optional and people have to look for the optional presence of `error_code_bytes` as well, then there's not that much benefit to changing this from `$ApplicationError / uint64` to two different fields, imo",
+              "createdAt": "2025-03-10T13:03:58Z",
+              "updatedAt": "2025-03-10T13:03:59Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6fM79U",
+          "commit": {
+            "abbreviatedOid": "25136b9"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-03-10T13:32:15Z",
+          "updatedAt": "2025-03-10T13:32:16Z",
+          "comments": [
+            {
+              "originalPosition": 112,
+              "body": "What do you mean by \"look at when parsing\"? My parser attempts to parse all the defined fields statelessly. It's autogenerated code that currently can determine the qlog type based on whether its parsing a JSON string or number. Since JSON doesn't require order of fields, to be maintained, I'm not sure how a parser can do much statefully without already having parsed the object.\r\n\r\nIf you mean tools dealoling with the qlog object, then I can follow that argument. However, I just render the fields that are in the log, rather than do any checking or enforcement.\r\n\r\nI can live with the current definition, it's straightforward and avoids weird scenarios where a well known error code is logged simply ad an integer rather than a string claiming \"unknown\", which is confusing IMO.",
+              "createdAt": "2025-03-10T13:32:15Z",
+              "updatedAt": "2025-03-10T13:32:16Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6fOb_H",
+          "commit": {
+            "abbreviatedOid": "25136b9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-03-10T15:18:30Z",
+          "updatedAt": "2025-03-10T15:18:30Z",
+          "comments": [
+            {
+              "originalPosition": 112,
+              "body": "I mainly meant `tools dealoling with the qlog object`. Lots of stuff to make qvis more userfriendly (e.g., colors) require having some contextual knowledge rather than just displaying all fields as a flat object. \r\n\r\nWith \"the current definition\" you mean prior to this PR (using `$ApplicationError / uint64`) correct? The reason we're trying to do away with it is because of support for IJSON (if you have a number > 2^53 it would be included as a string, and presumably also parsed as a string in Serde, not a number?), so you'd get weird ambiguities when deciding if something was a number or a string when looking at the `error_code`. \r\n\r\nThis PR is just making that pattern consistent across all the things, instead of just in some instances (e.g., in #383). I'd rather we be consistent/predictable for this situation than ad-hoc solutions myself. ",
+              "createdAt": "2025-03-10T15:18:30Z",
+              "updatedAt": "2025-03-10T15:18:30Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6fOkvm",
+          "commit": {
+            "abbreviatedOid": "25136b9"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-03-10T15:29:02Z",
+          "updatedAt": "2025-03-10T15:29:02Z",
+          "comments": [
+            {
+              "originalPosition": 112,
+              "body": "In that case, I don't think it's too onerous on a more-capable tool to allow for error_code to be optional. It can just treat an omitted field as the default \"unknown\"",
+              "createdAt": "2025-03-10T15:29:02Z",
+              "updatedAt": "2025-03-10T15:29:02Z"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
