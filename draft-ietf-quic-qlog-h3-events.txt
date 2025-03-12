@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 4 September 2025                                           Meta
+Expires: 13 September 2025                                          Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            3 March 2025
+                                                           12 March 2025
 
 
                      HTTP/3 qlog event definitions
@@ -49,7 +49,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 4 September 2025.
+   This Internet-Draft will expire on 13 September 2025.
 
 Copyright Notice
 
@@ -384,12 +384,17 @@ Table of Contents
 
 3.4.  priority_updated
 
-   Emitted when the priority of a request stream or push stream is
-   initialized or updated through mechanisms defined in [RFC9218].  For
-   example, the priority can be updated through signals received from
-   client and/or server (e.g., in HTTP/3 HEADERS or PRIORITY_UPDATE
-   frames) or it can be changed or overridden due to local policies.
-   The event has Base importance level; see Section 9.2 of [QLOG-MAIN].
+   The priority_updated event is emitted when the priority of a request
+   stream or push stream is initialized or updated through mechanisms
+   defined in [RFC9218].  It has Base importance level; see Section 9.2
+   of [QLOG-MAIN].
+
+   There can be several reasons why a priority_updated occurs, and why a
+   particular value was chosen.  For example, the priority can be
+   updated through signals received from client and/or server (e.g., in
+   HTTP/3 HEADERS or PRIORITY_UPDATE frames) or it can be changed or
+   overridden due to local policies.  The trigger and reason fields can
+   be used to optionally capture such details.
 
    HTTP3PriorityUpdated = {
        ; if the prioritized element is a request stream
@@ -400,6 +405,15 @@ Table of Contents
 
        ? old: HTTP3Priority
        new: HTTP3Priority
+
+       ? trigger: "client_signal_received" /
+                   "local" /
+                   "other"
+
+       ? reason: "client_signal_only" /
+                  "client_server_merged" /
+                  "local_policy" /
+                  "other"
 
        * $$http3-priorityupdated-extension
    }
