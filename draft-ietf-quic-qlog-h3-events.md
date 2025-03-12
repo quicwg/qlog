@@ -338,11 +338,11 @@ HTTP3PriorityUpdated = {
     ? old: HTTP3Priority
     new: HTTP3Priority
 
-    ? trigger = "client_signal_received" /
-                "local" / 
+    ? trigger: "client_signal_received" /
+                "local" /
                 "other"
 
-    ? reason = "client_signal_only" /
+    ? reason: "client_signal_only" /
                "client_server_merged" /
                "local_policy" /
                "other"
