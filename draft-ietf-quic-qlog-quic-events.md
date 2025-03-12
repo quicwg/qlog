@@ -287,17 +287,9 @@ importance level; see {{Section 9.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 QUICConnectionStarted = {
-    ? ip_version: IPVersion
-    src_ip: IPAddress
-    dst_ip: IPAddress
-
-    ; transport layer protocol
-    ? protocol: text .default "QUIC"
-    ? src_port: uint16
-    ? dst_port: uint16
-    ? src_cid: ConnectionID
-    ? dst_cid: ConnectionID
-
+    local: PathEndpointInfo
+    remote: PathEndpointInfo
+    
     * $$quic-connectionstarted-extension
 }
 ~~~
