@@ -324,7 +324,7 @@ There can be several reasons why a `priority_updated` occurs, and why a
 particular value was chosen. For example, the priority can be updated through
 signals received from client and/or server (e.g., in HTTP/3 HEADERS or
 PRIORITY_UPDATE frames) or it can be changed or overridden due to local
-policies. The The `trigger` and `reason` fields can be used to optionally
+policies. The `trigger` and `reason` fields can be used to optionally
 capture such details.
 
 ~~~ cddl
