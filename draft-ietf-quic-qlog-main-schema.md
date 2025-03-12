@@ -1317,7 +1317,7 @@ $$quic-packetsent-extension //= (
 
 ### Triggers {#trigger-field}
 
-It can be is useful to understand the cause or trigger of an event. Sometimes,
+It can be useful to understand the cause or trigger of an event. Sometimes,
 events are caused by a variety of other events and additional information is
 needed to identify the exact details. Commonly, the context of the surrounding
 log messages gives a hint about the cause. However, in highly-parallel and
