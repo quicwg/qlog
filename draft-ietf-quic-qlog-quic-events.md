@@ -289,7 +289,7 @@ importance level; see {{Section 9.2 of QLOG-MAIN}}.
 QUICConnectionStarted = {
     local: PathEndpointInfo
     remote: PathEndpointInfo
-    
+
     * $$quic-connectionstarted-extension
 }
 ~~~
