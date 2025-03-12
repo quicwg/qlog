@@ -309,7 +309,9 @@ well as the CONNECTION_CLOSE frame. However, in practice, when analyzing large
 deployments, it can be useful to have a single event representing a
 `connection_closed` event, which also includes an additional reason field to
 provide more information. Furthermore, it is useful to log closures due to
-timeouts, which are difficult to reflect using the other options.
+timeouts or explicit application actions (such as racing multiple connections
+and aborting the slowest), which are difficult to reflect using the other
+options.
 
 The `connection_closed` event is intended to be logged either when the local
 endpoint silently discards the connection due to an idle timeout, when a
@@ -354,6 +356,7 @@ QUICConnectionClosed = {
         "version_mismatch" /
         ; when received from peer
         "stateless_reset" /
+        "aborted" /
         ; when it is unclear what triggered the CONNECTION_CLOSE
         "unspecified"
 
