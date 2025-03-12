@@ -2809,10 +2809,9 @@ is the extensible <code>$ProtocolEventData</code> type. This field acts as an op
 possible types that are allowed for the data field. As such, any new event data
 field is defined as its own CDDL type and later merged with the existing
 <code>$ProtocolEventData</code> enum using the <code>/=</code> extension operator. Any generic
-key-value map type can be assigned to <code>$ProtocolEventData</code> (the only common
-"data" subfield defined in this document is the optional <code>trigger</code> field, see
-<a href="#trigger-field" class="auto internal xref">Section 8.2.1</a>). An example of this setup is shown in
-<a href="#protocoleventdata-def" class="auto internal xref">Figure 29</a>.<a href="#section-8.2-5" class="pilcrow">¶</a></p>
+key-value map type can be assigned to <code>$ProtocolEventData</code>. The example in
+<a href="#protocoleventdata-def" class="auto internal xref">Figure 29</a> demonstrates <code>$ProtocolEventData</code> being extended with
+two types.<a href="#section-8.2-5" class="pilcrow">¶</a></p>
 <span id="name-protocoleventdata-extension"></span><div id="protocoleventdata-def">
 <figure id="figure-29">
           <div class="alignLeft art-text artwork" id="section-8.2-6.1">
@@ -2821,15 +2820,11 @@ key-value map type can be assigned to <code>$ProtocolEventData</code> (the only 
 MyNSEvent1 /= {
     field_1: uint8
 
-    ? trigger: text
-
     * $$myns-event1-extension
 }
 
 MyNSEvent2 /= {
     field_2: bool
-
-    ? trigger: text
 
     * $$myns-event2-extension
 }
@@ -2912,36 +2907,44 @@ $$quic-packetsent-extension //= (
           <h4 id="name-triggers">
 <a href="#section-8.2.1" class="section-number selfRef">8.2.1. </a><a href="#name-triggers" class="section-name selfRef">Triggers</a>
           </h4>
-<p id="section-8.2.1-1">Sometimes, additional information is needed in the case where a single event can
-be caused by a variety of other events. In the normal case, the context of the
-surrounding log messages gives a hint as to which of these other events was the
-cause. However, in highly-parallel and optimized implementations, corresponding
-log messages might separated in time. Another option is to explicitly indicate
-these "triggers" in a high-level way per-event to get more fine-grained
-information without much additional overhead.<a href="#section-8.2.1-1" class="pilcrow">¶</a></p>
-<p id="section-8.2.1-2">In qlog, the optional "trigger" field contains a string value describing
-the reason (if any) for this event instance occurring, see
-<a href="#data-field" class="auto internal xref">Section 8.2</a>. While this "trigger" field could be a property of the
-qlog Event itself, it is instead a property of the "data" field instead.
-This choice was made because many event types do not include a trigger
-value, and having the field at the Event-level would cause overhead in
-some serializations. Additional information on the trigger can be added
-in the form of additional member fields of the "data" field value, yet
-this is highly implementation-specific, as are the trigger field's
-string values.<a href="#section-8.2.1-2" class="pilcrow">¶</a></p>
-<p id="section-8.2.1-3">One purely illustrative example of some potential triggers for QUIC's
-"packet_dropped" event is shown in <a href="#trigger-ex" class="auto internal xref">Figure 31</a>:<a href="#section-8.2.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.2.1-1">It can be useful to understand the cause or trigger of an event. Sometimes,
+events are caused by a variety of other events and additional information is
+needed to identify the exact details. Commonly, the context of the surrounding
+log messages gives a hint about the cause. However, in highly-parallel and
+optimized implementations, corresponding log messages might be separated in
+time, making it difficult to build an accurate context.<a href="#section-8.2.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.2.1-2">Including a "trigger" as part of the event itself is one method for providing
+fine-grained information without much additional overhead. In circumstances
+where a trigger is useful, it is <span class="bcp14">RECOMMENDED</span> for the purpose of consistency that
+the event data definition contains an optional field named "trigger", holding a
+string value.<a href="#section-8.2.1-2" class="pilcrow">¶</a></p>
+<p id="section-8.2.1-3">For example, the QUIC "packet_dropped" event (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-09#section-5.7" class="relref">Section 5.7</a> of [<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>)
+includes a trigger field that identifies the precise reason why a QUIC packet
+was dropped:<a href="#section-8.2.1-3" class="pilcrow">¶</a></p>
 <span id="name-trigger-example"></span><div id="trigger-ex">
 <figure id="figure-31">
             <div class="alignLeft art-text artwork" id="section-8.2.1-4.1">
 <pre>
-TransportPacketDropped = {
-    ? packet_type: PacketType
-    ? raw_length: uint16
-    ? trigger: "key_unavailable" /
-               "unknown_connection_id" /
-               "decrypt_error" /
-               "unsupported_version"
+QUICPacketDropped = {
+
+    ; Primarily packet_type should be filled here,
+    ; as other fields might not be decrypteable or parseable
+    ? header: PacketHeader
+    ? raw: RawInfo
+    ? datagram_id: uint32
+    ? details: {* text =&gt; any}
+    ? trigger:
+        "internal_error" /
+        "rejected" /
+        "unsupported" /
+        "invalid" /
+        "duplicate" /
+        "connection_unknown" /
+        "decryption_failure" /
+        "key_unavailable" /
+        "general"
+
+    * $$quic-packetdropped-extension
 }
 </pre>
 </div>
