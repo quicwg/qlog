@@ -316,12 +316,16 @@ $HTTP3StreamType /=   "request" /
 
 ## priority_updated {#h3-priorityupdated}
 
-Emitted when the priority of a request stream or push stream is initialized or
-updated through mechanisms defined in {{!RFC9218}}. For example, the priority
-can be updated through signals received from client and/or server (e.g., in
-HTTP/3 HEADERS or PRIORITY_UPDATE frames) or it can be changed or overridden due
-to local policies. The event has Base importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+The `priority_updated` event is emitted when the priority of a request stream or
+push stream is initialized or updated through mechanisms defined in
+{{!RFC9218}}. It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+
+There can be several reasons why a `priority_updated` occurs, and why a
+particular value was chosen. For example, the priority can be updated through
+signals received from client and/or server (e.g., in HTTP/3 HEADERS or
+PRIORITY_UPDATE frames) or it can be changed or overridden due to local
+policies. The The `trigger` and `reason` fields can be used to optionally
+capture such details.
 
 ~~~ cddl
 HTTP3PriorityUpdated = {
@@ -333,6 +337,15 @@ HTTP3PriorityUpdated = {
 
     ? old: HTTP3Priority
     new: HTTP3Priority
+
+    ? trigger = "client_signal_received" /
+                "local" / 
+                "other"
+
+    ? reason = "client_signal_only" /
+               "client_server_merged" /
+               "local_policy" /
+               "other"
 
     * $$http3-priorityupdated-extension
 }
