@@ -1053,7 +1053,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 13 September 2025</td>
+<td class="center">Expires 14 September 2025</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1066,12 +1066,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-03-12" class="published">12 March 2025</time>
+<time datetime="2025-03-13" class="published">13 March 2025</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2025-09-13">13 September 2025</time></dd>
+<dd class="expires"><time datetime="2025-09-14">14 September 2025</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1139,7 +1139,7 @@ various programming languages can be found at
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 13 September 2025.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 14 September 2025.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2059,20 +2059,27 @@ instead.<a href="#section-4.3-3" class="pilcrow">¶</a></p>
 application errors. They have well-defined error codes and semantics. Next to
 these however, there can be internal errors that occur that may or may not get
 mapped to the official error codes in implementation-specific ways. As such,
-multiple error codes can be set on the same event to reflect this.<a href="#section-4.3-4" class="pilcrow">¶</a></p>
+multiple error codes can be set on the same event to reflect this, and more
+fine-grained internal error codes can be reflected in the internal_code field.<a href="#section-4.3-4" class="pilcrow">¶</a></p>
+<p id="section-4.3-5">If the error code does not map to a known error string, the connection_code or
+application_code value of "unknown" type can be used and the raw value captured
+in the code_bytes field; a numerical value without variable-length integer
+encoding.<a href="#section-4.3-5" class="pilcrow">¶</a></p>
 <span id="name-quicconnectionclosed-defini"></span><div id="quic-connectionclosed-def">
 <figure id="figure-5">
-          <div class="lang-cddl sourcecode" id="section-4.3-5.1">
+          <div class="lang-cddl sourcecode" id="section-4.3-6.1">
 <pre>
 QUICConnectionClosed = {
 
     ; which side closed the connection
     ? owner: Owner
     ? connection_code: $TransportError /
-                       CryptoError /
-                       uint32
-    ? application_code: $ApplicationError /
-                        uint32
+                       CryptoError
+    ? application_code: $ApplicationError
+
+    ; if connection_code or application_code === "unknown"
+    ? code_bytes: uint32
+
     ? internal_code: uint32
     ? reason: text
     ? trigger:
@@ -2093,10 +2100,10 @@ QUICConnectionClosed = {
 <a href="#name-quicconnectionclosed-defini" class="selfRef">QUICConnectionClosed definition</a>
           </figcaption></figure>
 </div>
-<p id="section-4.3-6">Loggers <span class="bcp14">SHOULD</span> use the most descriptive trigger for a <code>connection_closed</code> event
+<p id="section-4.3-7">Loggers <span class="bcp14">SHOULD</span> use the most descriptive trigger for a <code>connection_closed</code> event
 that they are able to deduce. This is often clear at the peer closing the
 connection (and sending the CONNECTION_CLOSE), but can sometimes be more opaque
-at the receiving end.<a href="#section-4.3-6" class="pilcrow">¶</a></p>
+at the receiving end.<a href="#section-4.3-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-connectionidupdated">
@@ -3856,13 +3863,20 @@ $PacketNumberSpace /= "initial" /
         <h3 id="name-packetheader">
 <a href="#section-8.8" class="section-number selfRef">8.8. </a><a href="#name-packetheader" class="section-name selfRef">PacketHeader</a>
         </h3>
+<p id="section-8.8-1">If the packet_type numerical value does not map to a known packet_type string,
+the packet_type value of "unknown" can be used and the raw value captured in the
+packet_type_bytes field; a numerical value without variable-length integer
+encoding.<a href="#section-8.8-1" class="pilcrow">¶</a></p>
 <span id="name-packetheader-definition"></span><div id="packetheader-def">
 <figure id="figure-45">
-          <div class="lang-cddl sourcecode" id="section-8.8-1.1">
+          <div class="lang-cddl sourcecode" id="section-8.8-2.1">
 <pre>
 PacketHeader = {
     ? quic_bit: bool .default true
     packet_type: $PacketType
+
+    ; only if packet_type === "unknown"
+    ? packet_type_bytes: uint64
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
@@ -4066,18 +4080,15 @@ $QuicFrame /= QuicBaseFrames
 such, each padding byte could be theoretically interpreted and logged as an
 individual PaddingFrame.<a href="#section-8.13.1-1" class="pilcrow">¶</a></p>
 <p id="section-8.13.1-2">However, as this leads to heavy logging overhead, implementations <span class="bcp14">SHOULD</span> instead
-emit just a single PaddingFrame and set the payload_length property to the amount
-of PADDING bytes/frames included in the packet.<a href="#section-8.13.1-2" class="pilcrow">¶</a></p>
+emit just a single PaddingFrame and set the raw.payload_length property to the
+amount of PADDING bytes/frames included in the packet.<a href="#section-8.13.1-2" class="pilcrow">¶</a></p>
 <span id="name-paddingframe-definition"></span><div id="paddingframe-def">
 <figure id="figure-52">
             <div class="lang-cddl sourcecode" id="section-8.13.1-3.1">
 <pre>
 PaddingFrame = {
     frame_type: "padding"
-
-    ; total frame length, including frame header
-    ? length: uint32
-    payload_length: uint32
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4098,10 +4109,7 @@ PaddingFrame = {
 <pre>
 PingFrame = {
     frame_type: "ping"
-
-    ; total frame length, including frame header
-    ? length: uint32
-    ? payload_length: uint32
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4141,10 +4149,7 @@ AckFrame = {
     ? ect1: uint64
     ? ect0: uint64
     ? ce: uint64
-
-    ; total frame length, including frame header
-    ? length: uint32
-    ? payload_length: uint32
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4164,22 +4169,25 @@ log [120] instead and tools <span class="bcp14">MUST</span> be able to deal with
           <h4 id="name-resetstreamframe">
 <a href="#section-8.13.4" class="section-number selfRef">8.13.4. </a><a href="#name-resetstreamframe" class="section-name selfRef">ResetStreamFrame</a>
           </h4>
+<p id="section-8.13.4-1">If the error_code numerical value does not map to a known ApplicationError string,
+the error_code value of "unknown" can be used and the raw value captured in the
+error_code_bytes field; a numerical value without variable-length integer
+encoding.<a href="#section-8.13.4-1" class="pilcrow">¶</a></p>
 <span id="name-resetstreamframe-definition"></span><div id="resetstreamframe-def">
 <figure id="figure-55">
-            <div class="lang-cddl sourcecode" id="section-8.13.4-1.1">
+            <div class="lang-cddl sourcecode" id="section-8.13.4-2.1">
 <pre>
 ResetStreamFrame = {
     frame_type: "reset_stream"
     stream_id: uint64
-    error_code: $ApplicationError /
-                uint64
+    error_code: $ApplicationError
+
+    ; if error_code === "unknown"
+    ? error_code_bytes: uint64
 
     ; in bytes
     final_size: uint64
-
-    ; total frame length, including frame header
-    ? length: uint32
-    ? payload_length: uint32
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4194,19 +4202,23 @@ ResetStreamFrame = {
           <h4 id="name-stopsendingframe">
 <a href="#section-8.13.5" class="section-number selfRef">8.13.5. </a><a href="#name-stopsendingframe" class="section-name selfRef">StopSendingFrame</a>
           </h4>
+<p id="section-8.13.5-1">If the error_code numerical value does not map to a known ApplicationError string,
+the error_code value of "unknown" can be used and the raw value captured in the
+error_code_bytes field; a numerical value without variable-length integer
+encoding.<a href="#section-8.13.5-1" class="pilcrow">¶</a></p>
 <span id="name-stopsendingframe-definition"></span><div id="stopsendingframe-def">
 <figure id="figure-56">
-            <div class="lang-cddl sourcecode" id="section-8.13.5-1.1">
+            <div class="lang-cddl sourcecode" id="section-8.13.5-2.1">
 <pre>
 StopSendingFrame = {
     frame_type: "stop_sending"
     stream_id: uint64
-    error_code: $ApplicationError /
-                uint64
+    error_code: $ApplicationError
 
-    ; total frame length, including frame header
-    ? length: uint32
-    ? payload_length: uint32
+    ; if error_code === "unknown"
+    ? error_code_bytes: uint64
+
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4229,7 +4241,6 @@ CryptoFrame = {
     frame_type: "crypto"
     offset: uint64
     length: uint64
-    ? payload_length: uint32
     ? raw: RawInfo
 }
 </pre>
@@ -4252,6 +4263,7 @@ CryptoFrame = {
 NewTokenFrame = {
   frame_type: "new_token"
   token: Token
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4305,6 +4317,7 @@ StreamFrame = {
 MaxDataFrame = {
   frame_type: "max_data"
   maximum: uint64
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4327,6 +4340,7 @@ MaxStreamDataFrame = {
   frame_type: "max_stream_data"
   stream_id: uint64
   maximum: uint64
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4349,6 +4363,7 @@ MaxStreamsFrame = {
   frame_type: "max_streams"
   stream_type: StreamType
   maximum: uint64
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4370,6 +4385,7 @@ MaxStreamsFrame = {
 DataBlockedFrame = {
   frame_type: "data_blocked"
   limit: uint64
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4392,6 +4408,7 @@ StreamDataBlockedFrame = {
   frame_type: "stream_data_blocked"
   stream_id: uint64
   limit: uint64
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4414,6 +4431,7 @@ StreamsBlockedFrame = {
   frame_type: "streams_blocked"
   stream_type: StreamType
   limit: uint64
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4442,6 +4460,7 @@ NewConnectionIDFrame = {
   ? connection_id_length: uint8
   connection_id: ConnectionID
   ? stateless_reset_token: StatelessResetToken
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4463,6 +4482,7 @@ NewConnectionIDFrame = {
 RetireConnectionIDFrame = {
   frame_type: "retire_connection_id"
   sequence_number: uint32
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4484,8 +4504,9 @@ RetireConnectionIDFrame = {
 PathChallengeFrame = {
   frame_type: "path_challenge"
 
-  ; always 64-bit
+  ; always 64 bits
   ? data: hexstring
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4507,8 +4528,9 @@ PathChallengeFrame = {
 PathResponseFrame = {
   frame_type: "path_response"
 
-  ; always 64-bit
+  ; always 64 bits
   ? data: hexstring
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4527,9 +4549,10 @@ PathResponseFrame = {
 field using the numerical value without variable-length integer encoding.<a href="#section-8.13.19-1" class="pilcrow">¶</a></p>
 <p id="section-8.13.19-2">When the connection is closed due a connection-level error, the
 <code>trigger_frame_type</code> field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used. For unknown
-frame types, the numerical value without variable-length integer encoding is
-used.<a href="#section-8.13.19-2" class="pilcrow">¶</a></p>
+error. For known frame types, the appropriate string value is used in
+error_code. For unknown frame types, the error_code field has the value
+"unknown" and the numerical value without variable-length integer encoding is
+logged in error_code_bytes.<a href="#section-8.13.19-2" class="pilcrow">¶</a></p>
 <p id="section-8.13.19-3">The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the <code>reason</code>
 field. The <code>reason_bytes</code> field supports logging the raw bytes, which can be useful
@@ -4547,14 +4570,18 @@ ConnectionCloseFrame = {
     ? error_space: ErrorSpace
     ? error_code: $TransportError /
                   CryptoError /
-                  $ApplicationError /
-                  uint64
+                  $ApplicationError
+
+    ; only if error_code === "unknown"
+    ? error_code_bytes: uint64
+
     ? reason: text
     ? reason_bytes: hexstring
 
     ; when error_space === "transport"
     ? trigger_frame_type: uint64 /
                           text
+    ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4574,7 +4601,8 @@ ConnectionCloseFrame = {
             <div class="lang-cddl sourcecode" id="section-8.13.20-1.1">
 <pre>
 HandshakeDoneFrame = {
-  frame_type: "handshake_done";
+  frame_type: "handshake_done"
+  ? raw: RawInfo
 }
 </pre>
 </div>
@@ -4658,7 +4686,8 @@ $TransportError /= "no_error" /
                  "crypto_buffer_exceeded" /
                  "key_update_error" /
                  "aead_limit_reached" /
-                 "no_viable_path"
+                 "no_viable_path" /
+                 "unknown"
                  ; there is no value to reflect CRYPTO_ERROR
                  ; use the CryptoError type instead
 </pre>
@@ -4676,15 +4705,26 @@ $TransportError /= "no_error" /
           </h4>
 <p id="section-8.13.24-1">By definition, an application error is defined by the application-level
 protocol running on top of QUIC (e.g., HTTP/3).<a href="#section-8.13.24-1" class="pilcrow">¶</a></p>
-<p id="section-8.13.24-2">As such, it cannot be defined here directly. It is instead defined as an empty
-CDDL "type socket" extension point.<a href="#section-8.13.24-2" class="pilcrow">¶</a></p>
-<p id="section-8.13.24-3">Application-level qlog definitions that wish to define new ApplicationError
-strings <span class="bcp14">MUST</span> do so by extending the $ApplicationError socket as such:<a href="#section-8.13.24-3" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-8.13.24-4">
+<p id="section-8.13.24-2">As such, it cannot be defined here completely. It is instead defined as a CDDL
+"type socket" extension point, with a single "unknown" value.<a href="#section-8.13.24-2" class="pilcrow">¶</a></p>
+<span id="name-applicationerror-definition"></span><div id="applicationerror-def">
+<figure id="figure-75">
+            <div class="lang-cddl sourcecode" id="section-8.13.24-3.1">
+<pre>
+$ApplicationError /= "unknown"
+</pre>
+</div>
+<figcaption><a href="#figure-75" class="selfRef">Figure 75</a>:
+<a href="#name-applicationerror-definition" class="selfRef">ApplicationError definition</a>
+            </figcaption></figure>
+</div>
+<p id="section-8.13.24-4">Application-level qlog definitions that wish to define new ApplicationError
+strings <span class="bcp14">MUST</span> do so by extending the $ApplicationError socket as such:<a href="#section-8.13.24-4" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-8.13.24-5">
 <pre>
 $ApplicationError /= "new_error_name" /
                      "another_new_error_name"
-</pre><a href="#section-8.13.24-4" class="pilcrow">¶</a>
+</pre><a href="#section-8.13.24-5" class="pilcrow">¶</a>
 </div>
 </section>
 </div>
@@ -4701,14 +4741,14 @@ the range reserved for CRYPTO_ERROR."<a href="#section-8.13.25-1" class="pilcrow
 string is defined as having a dynamic component here, which should include the
 hex-encoded and zero-padded value of the TLS alert description.<a href="#section-8.13.25-2" class="pilcrow">¶</a></p>
 <span id="name-cryptoerror-definition"></span><div id="cryptoerror-def">
-<figure id="figure-75">
+<figure id="figure-76">
             <div class="lang-cddl sourcecode" id="section-8.13.25-3.1">
 <pre>
 ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
 CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 </pre>
 </div>
-<figcaption><a href="#figure-75" class="selfRef">Figure 75</a>:
+<figcaption><a href="#figure-76" class="selfRef">Figure 76</a>:
 <a href="#name-cryptoerror-definition" class="selfRef">CryptoError definition</a>
             </figcaption></figure>
 </div>

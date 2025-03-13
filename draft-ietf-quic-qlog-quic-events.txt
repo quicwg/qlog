@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 13 September 2025                                          Meta
+Expires: 14 September 2025                                          Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                           12 March 2025
+                                                           13 March 2025
 
 
                     QUIC event definitions for qlog
@@ -50,7 +50,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 13 September 2025.
+   This Internet-Draft will expire on 14 September 2025.
 
 Copyright Notice
 
@@ -494,17 +494,26 @@ Table of Contents
    codes and semantics.  Next to these however, there can be internal
    errors that occur that may or may not get mapped to the official
    error codes in implementation-specific ways.  As such, multiple error
-   codes can be set on the same event to reflect this.
+   codes can be set on the same event to reflect this, and more fine-
+   grained internal error codes can be reflected in the internal_code
+   field.
+
+   If the error code does not map to a known error string, the
+   connection_code or application_code value of "unknown" type can be
+   used and the raw value captured in the code_bytes field; a numerical
+   value without variable-length integer encoding.
 
    QUICConnectionClosed = {
 
        ; which side closed the connection
        ? owner: Owner
        ? connection_code: $TransportError /
-                          CryptoError /
-                          uint32
-       ? application_code: $ApplicationError /
-                           uint32
+                          CryptoError
+       ? application_code: $ApplicationError
+
+       ; if connection_code or application_code === "unknown"
+       ? code_bytes: uint32
+
        ? internal_code: uint32
        ? reason: text
        ? trigger:
@@ -1941,9 +1950,17 @@ Table of Contents
 
 8.8.  PacketHeader
 
+   If the packet_type numerical value does not map to a known
+   packet_type string, the packet_type value of "unknown" can be used
+   and the raw value captured in the packet_type_bytes field; a
+   numerical value without variable-length integer encoding.
+
    PacketHeader = {
        ? quic_bit: bool .default true
        packet_type: $PacketType
+
+       ; only if packet_type === "unknown"
+       ? packet_type_bytes: uint64
 
        ; only if packet_type === "initial" || "handshake" || "0RTT" ||
        ;                         "1RTT"
@@ -2083,15 +2100,12 @@ Table of Contents
 
    However, as this leads to heavy logging overhead, implementations
    SHOULD instead emit just a single PaddingFrame and set the
-   payload_length property to the amount of PADDING bytes/frames
+   raw.payload_length property to the amount of PADDING bytes/frames
    included in the packet.
 
    PaddingFrame = {
        frame_type: "padding"
-
-       ; total frame length, including frame header
-       ? length: uint32
-       payload_length: uint32
+       ? raw: RawInfo
    }
 
                      Figure 52: PaddingFrame definition
@@ -2100,10 +2114,7 @@ Table of Contents
 
    PingFrame = {
        frame_type: "ping"
-
-       ; total frame length, including frame header
-       ? length: uint32
-       ? payload_length: uint32
+       ? raw: RawInfo
    }
 
                       Figure 53: PingFrame definition
@@ -2131,10 +2142,7 @@ Table of Contents
        ? ect1: uint64
        ? ect0: uint64
        ? ce: uint64
-
-       ; total frame length, including frame header
-       ? length: uint32
-       ? payload_length: uint32
+       ? raw: RawInfo
    }
 
                        Figure 54: AckFrame definition
@@ -2150,33 +2158,42 @@ Table of Contents
 
 8.13.4.  ResetStreamFrame
 
+   If the error_code numerical value does not map to a known
+   ApplicationError string, the error_code value of "unknown" can be
+   used and the raw value captured in the error_code_bytes field; a
+   numerical value without variable-length integer encoding.
+
    ResetStreamFrame = {
        frame_type: "reset_stream"
        stream_id: uint64
-       error_code: $ApplicationError /
-                   uint64
+       error_code: $ApplicationError
+
+       ; if error_code === "unknown"
+       ? error_code_bytes: uint64
 
        ; in bytes
        final_size: uint64
-
-       ; total frame length, including frame header
-       ? length: uint32
-       ? payload_length: uint32
+       ? raw: RawInfo
    }
 
                    Figure 55: ResetStreamFrame definition
 
 8.13.5.  StopSendingFrame
 
+   If the error_code numerical value does not map to a known
+   ApplicationError string, the error_code value of "unknown" can be
+   used and the raw value captured in the error_code_bytes field; a
+   numerical value without variable-length integer encoding.
+
    StopSendingFrame = {
        frame_type: "stop_sending"
        stream_id: uint64
-       error_code: $ApplicationError /
-                   uint64
+       error_code: $ApplicationError
 
-       ; total frame length, including frame header
-       ? length: uint32
-       ? payload_length: uint32
+       ; if error_code === "unknown"
+       ? error_code_bytes: uint64
+
+       ? raw: RawInfo
    }
 
                    Figure 56: StopSendingFrame definition
@@ -2187,7 +2204,6 @@ Table of Contents
        frame_type: "crypto"
        offset: uint64
        length: uint64
-       ? payload_length: uint32
        ? raw: RawInfo
    }
 
@@ -2198,6 +2214,7 @@ Table of Contents
    NewTokenFrame = {
      frame_type: "new_token"
      token: Token
+     ? raw: RawInfo
    }
 
                     Figure 58: NewTokenFrame definition
@@ -2227,6 +2244,7 @@ Table of Contents
    MaxDataFrame = {
      frame_type: "max_data"
      maximum: uint64
+     ? raw: RawInfo
    }
 
                      Figure 60: MaxDataFrame definition
@@ -2237,6 +2255,7 @@ Table of Contents
      frame_type: "max_stream_data"
      stream_id: uint64
      maximum: uint64
+     ? raw: RawInfo
    }
 
                   Figure 61: MaxStreamDataFrame definition
@@ -2247,6 +2266,7 @@ Table of Contents
      frame_type: "max_streams"
      stream_type: StreamType
      maximum: uint64
+     ? raw: RawInfo
    }
 
                    Figure 62: MaxStreamsFrame definition
@@ -2256,6 +2276,7 @@ Table of Contents
    DataBlockedFrame = {
      frame_type: "data_blocked"
      limit: uint64
+     ? raw: RawInfo
    }
 
                    Figure 63: DataBlockedFrame definition
@@ -2266,6 +2287,7 @@ Table of Contents
      frame_type: "stream_data_blocked"
      stream_id: uint64
      limit: uint64
+     ? raw: RawInfo
    }
 
                 Figure 64: StreamDataBlockedFrame definition
@@ -2276,6 +2298,7 @@ Table of Contents
      frame_type: "streams_blocked"
      stream_type: StreamType
      limit: uint64
+     ? raw: RawInfo
    }
 
                  Figure 65: StreamsBlockedFrame definition
@@ -2292,6 +2315,7 @@ Table of Contents
      ? connection_id_length: uint8
      connection_id: ConnectionID
      ? stateless_reset_token: StatelessResetToken
+     ? raw: RawInfo
    }
 
                  Figure 66: NewConnectionIDFrame definition
@@ -2301,6 +2325,7 @@ Table of Contents
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
      sequence_number: uint32
+     ? raw: RawInfo
    }
 
                Figure 67: RetireConnectionIDFrame definition
@@ -2310,8 +2335,9 @@ Table of Contents
    PathChallengeFrame = {
      frame_type: "path_challenge"
 
-     ; always 64-bit
+     ; always 64 bits
      ? data: hexstring
+     ? raw: RawInfo
    }
 
                   Figure 68: PathChallengeFrame definition
@@ -2321,8 +2347,9 @@ Table of Contents
    PathResponseFrame = {
      frame_type: "path_response"
 
-     ; always 64-bit
+     ; always 64 bits
      ? data: hexstring
+     ? raw: RawInfo
    }
 
                   Figure 69: PathResponseFrame definition
@@ -2336,8 +2363,9 @@ Table of Contents
    When the connection is closed due a connection-level error, the
    trigger_frame_type field can be used to log the frame that triggered
    the error.  For known frame types, the appropriate string value is
-   used.  For unknown frame types, the numerical value without variable-
-   length integer encoding is used.
+   used in error_code.  For unknown frame types, the error_code field
+   has the value "unknown" and the numerical value without variable-
+   length integer encoding is logged in error_code_bytes.
 
    The CONNECTION_CLOSE reason phrase is a byte sequences.  It is likely
    that this sequence is presentable as UTF-8, in which case it can be
@@ -2354,14 +2382,18 @@ Table of Contents
        ? error_space: ErrorSpace
        ? error_code: $TransportError /
                      CryptoError /
-                     $ApplicationError /
-                     uint64
+                     $ApplicationError
+
+       ; only if error_code === "unknown"
+       ? error_code_bytes: uint64
+
        ? reason: text
        ? reason_bytes: hexstring
 
        ; when error_space === "transport"
        ? trigger_frame_type: uint64 /
                              text
+       ? raw: RawInfo
    }
 
                  Figure 70: ConnectionCloseFrame definition
@@ -2369,7 +2401,8 @@ Table of Contents
 8.13.20.  HandshakeDoneFrame
 
    HandshakeDoneFrame = {
-     frame_type: "handshake_done";
+     frame_type: "handshake_done"
+     ? raw: RawInfo
    }
 
                   Figure 71: HandshakeDoneFrame definition
@@ -2421,7 +2454,8 @@ Table of Contents
                     "crypto_buffer_exceeded" /
                     "key_update_error" /
                     "aead_limit_reached" /
-                    "no_viable_path"
+                    "no_viable_path" /
+                    "unknown"
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
@@ -2432,8 +2466,13 @@ Table of Contents
    By definition, an application error is defined by the application-
    level protocol running on top of QUIC (e.g., HTTP/3).
 
-   As such, it cannot be defined here directly.  It is instead defined
-   as an empty CDDL "type socket" extension point.
+   As such, it cannot be defined here completely.  It is instead defined
+   as a CDDL "type socket" extension point, with a single "unknown"
+   value.
+
+   $ApplicationError /= "unknown"
+
+                   Figure 75: ApplicationError definition
 
    Application-level qlog definitions that wish to define new
    ApplicationError strings MUST do so by extending the
@@ -2458,7 +2497,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 75: CryptoError definition
+                     Figure 76: CryptoError definition
 
 9.  Security and Privacy Considerations
 
