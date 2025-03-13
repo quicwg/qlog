@@ -100,14 +100,6 @@ bottom of this document for clarity.
 | http3:push_resolved          | Extra      | {{h3-pushresolved}} |
 {: #h3-events title="HTTP/3 Events"}
 
-When any event from this document is included in a qlog trace, the
-"protocol_types" qlog array field MUST contain an entry with the value "HTTP/3":
-
-~~~ cddl
-$ProtocolType /= "HTTP/3"
-~~~
-{: #protocoltype-extension-h3 title="ProtocolType extension for HTTP/3"}
-
 ## Usage with QUIC
 
 The events described in this document can be used with or without logging the
@@ -131,8 +123,7 @@ in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
-type, data, group_id, protocol_types, importance, RawInfo, and time-related
-fields.
+type, data, group_id, importance, RawInfo, and time-related fields.
 
 As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
 are intentionally agnostic to serialization formats. The choice of format is an
