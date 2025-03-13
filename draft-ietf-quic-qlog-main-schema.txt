@@ -90,11 +90,10 @@ Table of Contents
    7.  Abstract Event Class
      7.1.  Timestamps
      7.2.  Path
-     7.3.  ProtocolTypeList and ProtocolType
-     7.4.  Grouping
-     7.5.  SystemInformation
-     7.6.  CommonFields
-   8.  Concrete Event Types and Event Schema
+     7.3.  Grouping
+     7.4.  SystemInformation
+     7.5.  CommonFields
+   8.  Concrete Event Types and Event Schemas
      8.1.  Event Schema URIs
      8.2.  Extending the Data Field
        8.2.1.  Triggers
@@ -334,7 +333,6 @@ Table of Contents
        serialization_format: text
        ? title: text
        ? description: text
-       event_schemas: [+text]
    }
 
                         Figure 2: LogFile definition
@@ -353,11 +351,6 @@ Table of Contents
 
    The optional "title" and "description" fields provide additional
    free-text information about the file.
-
-   The required "event_schemas" field contains event schema URIs that
-   identify concrete event namespaces and their associated types
-   recorded in a log.  Requirements and guidelines are defined in
-   Section 8.
 
 3.1.  Concrete Log File Schema URIs
 
@@ -475,6 +468,7 @@ Table of Contents
        ? description: text
        ? common_fields: CommonFields
        ? vantage_point: VantagePoint
+       event_schemas: [+text]
        events: [* Event]
    }
 
@@ -483,9 +477,14 @@ Table of Contents
    The optional "title" and "description" fields provide additional
    free-text information about the trace.
 
-   The optional "common_fields" field is described in Section 7.6.
+   The optional "common_fields" field is described in Section 7.5.
 
    The optional "vantage_point" field is described in Section 6.
+
+   The required "event_schemas" field contains event schema URIs that
+   identify concrete event namespaces and their associated types
+   recorded in the "events" field.  Requirements and guidelines are
+   defined in Section 8.
 
    The semantics and context of the trace can mainly be deduced from the
    entries in the "common_fields" list and "vantage_point" field.
@@ -507,6 +506,7 @@ Table of Contents
            "name": "backend-67",
            "type": "server"
        },
+       "event_schemas": ["urn:ietf:params:qlog:events:quic"],
        "events": [...]
    }
 
@@ -542,7 +542,7 @@ Table of Contents
 
    Note that another way to combine events of different traces in a
    single qlog file is through the use of the "group_id" field,
-   discussed in Section 7.4.
+   discussed in Section 7.3.
 
 5.  QlogFileSeq schema
 
@@ -583,7 +583,6 @@ Table of Contents
        "description": "Description for this trace file (long)",
        "trace": {
          "common_fields": {
-           "protocol_types": ["QUIC","HTTP/3"],
            "group_id":"127ecc830d98f9d54a42c4f0842aa87e181a",
            "time_format": "relative_to_epoch",
            "reference_time": {
@@ -594,7 +593,9 @@ Table of Contents
          "vantage_point": {
            "name":"backend-67",
            "type":"server"
-         }
+         },
+         "event_schemas": ["urn:ietf:params:qlog:events:quic",
+                           "urn:ietf:params:qlog:events:http3"]
        }
    }
    <RS>{"time": 2, "name": "quic:parameters_set", "data": { ... } }
@@ -614,6 +615,7 @@ Table of Contents
        ? description: text
        ? common_fields: CommonFields
        ? vantage_point: VantagePoint
+       event_schemas: [+text]
    }
 
                        Figure 11: TraceSeq definition
@@ -691,7 +693,6 @@ Table of Contents
        data: $ProtocolEventData
        ? path: PathID
        ? time_format: TimeFormat
-       ? protocol_types: ProtocolTypeList
        ? group_id: GroupID
        ? system_info: SystemInformation
 
@@ -711,12 +712,12 @@ Table of Contents
    optionally add custom fields.
 
    Each qlog event MAY contain the optional fields: "time_format"
-   (Section 7.1), "protocol_type" (Section 7.3), "trigger"
-   (Section 8.2.1), and "group_id" (Section 7.4).
+   (Section 7.1), path (Section 7.2) "trigger" (Section 8.2.1), and
+   "group_id" (Section 7.3).
 
    Multiple events can appear in a Trace or TraceSeq and they might
    contain fields with identical values.  It is possible to optimize out
-   this duplication using "common_fields" (Section 7.6).
+   this duplication using "common_fields" (Section 7.5).
 
    Example qlog event:
 
@@ -726,7 +727,6 @@ Table of Contents
        "name": "quic:packet_sent",
        "data": { ... },
 
-       "protocol_types":  ["QUIC","HTTP/3"],
        "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
 
        "time_format": "relative_to_epoch",
@@ -744,7 +744,7 @@ Table of Contents
    however, a millisecond resolution is employed.  There are several
    options for generating and logging timestamps, these are governed by
    the ReferenceTime type (optionally included in the "reference_time"
-   field contained in a trace's "common_fields" (Section 7.6)) and
+   field contained in a trace's "common_fields" (Section 7.5)) and
    TimeFormat type (optionally included in the "time_format" field
    contained in the event itself, or a trace's "common_fields").
 
@@ -932,7 +932,7 @@ Table of Contents
    trace, and does not need to be logged explicitly with each event.  In
    this case, the "path" field can be omitted (in which case the default
    value of "" is assumed) or reflected in "common_fields" instead (see
-   Section 7.6).
+   Section 7.5).
 
    However, in some situations, such as during QUIC's Connection
    Migration or when using Multipath features, it is useful to be able
@@ -954,27 +954,7 @@ Table of Contents
    couple the PathID value to a specific path configuration, see
    [QLOG-QUIC].
 
-7.3.  ProtocolTypeList and ProtocolType
-
-   An event's "protocol_types" array field indicates to which protocols
-   (or protocol "stacks") this event belongs.  This allows a single qlog
-   file to aggregate traces of different protocols (e.g., a web server
-   offering both TCP+HTTP/2 and QUIC+HTTP/3 connections).
-
-   ProtocolTypeList = [+ $ProtocolType]
-
-   $ProtocolType /= "UNKNOWN"
-
-       Figure 22: ProtocolTypeList and ProtocolType socket definition
-
-   For example, QUIC and HTTP/3 events have the "QUIC" and "HTTP/3"
-   protocol_type entry values, see [QLOG-QUIC] and [QLOG-H3].
-
-   Typically however, all events in a single trace are of the same few
-   protocols, and this array field is logged once in "common_fields",
-   see Section 7.6.
-
-7.4.  Grouping
+7.3.  Grouping
 
    As discussed in Section 4.2, a single qlog file can contain several
    traces taken from different vantage points.  However, a single trace
@@ -999,11 +979,11 @@ Table of Contents
    field, which contains a string value.  Implementations are free to
    use their preferred string serialization for this field, so long as
    it contains a unique value per logical group.  Some examples can be
-   seen in Figure 24.
+   seen in Figure 23.
 
    GroupID = text
 
-                       Figure 23: GroupID definition
+                       Figure 22: GroupID definition
 
    JSON serialization example for events grouped by four tuples and QUIC
    connection IDs:
@@ -1011,7 +991,6 @@ Table of Contents
    "events": [
        {
            "time": 1553986553579,
-           "protocol_types": ["TCP", "TLS", "HTTP2"],
            "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
                       ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
            "name": "quic:packet_received",
@@ -1019,27 +998,26 @@ Table of Contents
        },
        {
            "time": 1553986553581,
-           "protocol_types": ["QUIC","HTTP/3"],
            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
            "name": "quic:packet_sent",
            "data": { ... }
        }
    ]
 
-                         Figure 24: GroupID example
+                         Figure 23: GroupID example
 
    Note that in some contexts (for example a Multipath transport
    protocol) it might make sense to add additional contextual per-event
-   fields (for example "path_id"), rather than use the group_id field
-   for that purpose.
+   fields (for example PathID, see Section 7.2), rather than use the
+   group_id field for that purpose.
 
    Note also that, typically, a single trace only contains events
    belonging to a single logical group (for example, an individual QUIC
    connection).  As such, instead of logging the "group_id" field with
    an identical value for each event instance, this field is typically
-   logged once in "common_fields", see Section 7.6.
+   logged once in "common_fields", see Section 7.5.
 
-7.5.  SystemInformation
+7.4.  SystemInformation
 
    The "system_info" field can be used to record system-specific details
    related to an event.  This is useful, for instance, where an
@@ -1053,22 +1031,22 @@ Table of Contents
      ? thread_id: uint32
    }
 
-7.6.  CommonFields
+7.5.  CommonFields
 
    As discussed in the previous sections, information for a typical qlog
    event varies in three main fields: "time", "name" and associated
    data.  Additionally, there are also several more advanced fields that
    allow mixing events from different protocols and contexts inside of
-   the same trace (for example "protocol_types" and "group_id").  In
-   most "normal" use cases however, the values of these advanced fields
-   are consistent for each event instance (for example, a single trace
-   contains events for a single QUIC connection).
+   the same trace (for example "group_id").  In most "normal" use cases
+   however, the values of these advanced fields are consistent for each
+   event instance (for example, a single trace contains events for a
+   single QUIC connection).
 
    To reduce file size and making logging easier, qlog uses the
    "common_fields" list to indicate those fields and their values that
    are shared by all events in this component trace.  This prevents
    these fields from being logged for each individual event.  An example
-   of this is shown in Figure 25.
+   of this is shown in Figure 24.
 
    JSON serialization with repeated field values
    per-event instance:
@@ -1076,7 +1054,6 @@ Table of Contents
    {
        "events": [{
                "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-               "protocol_type": ["QUIC","HTTP/3"],
                "time_format": "relative_to_epoch",
                "reference_time": {
                  "clock_type": "system",
@@ -1088,7 +1065,6 @@ Table of Contents
                "data": { ... }
            },{
                "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-               "protocol_type": ["QUIC","HTTP/3"],
                "time_format": "relative_to_epoch",
                "reference_time": {
                  "clock_type": "system",
@@ -1108,7 +1084,6 @@ Table of Contents
    {
        "common_fields": {
            "group_id": "127ecc830d98f9d54a42c4f0842aa87e181a",
-           "protocol_type": ["QUIC","HTTP/3"],
            "time_format": "relative_to_epoch",
            "reference_time": {
                "clock_type": "system",
@@ -1128,7 +1103,7 @@ Table of Contents
        ]
    }
 
-                      Figure 25: CommonFields example
+                      Figure 24: CommonFields example
 
    An event's "common_fields" field is a generic dictionary of key-value
    pairs, where the key is always a string and the value can be of any
@@ -1144,12 +1119,11 @@ Table of Contents
        ? path: PathID
        ? time_format: TimeFormat
        ? reference_time: ReferenceTime
-       ? protocol_types: ProtocolTypeList
        ? group_id: GroupID
        * text => any
    }
 
-                     Figure 26: CommonFields definition
+                     Figure 25: CommonFields definition
 
    Tools MUST be able to deal with these fields being defined either on
    each event individually or combined in common_fields.  Note that if
@@ -1158,7 +1132,7 @@ Table of Contents
    defined on each event individually.  Good example of such fields are
    "time" and "data", who are divergent by nature.
 
-8.  Concrete Event Types and Event Schema
+8.  Concrete Event Types and Event Schemas
 
    Concrete event types, as well as related data types, are grouped in
    event namespaces which in turn are defined in one or multiple event
@@ -1182,7 +1156,7 @@ Table of Contents
    The value of a qlog event name field MUST be the concatenation of
    namespace identifier, colon (':'), and event type identifier (for
    example: quic:packet_sent).  The resulting concatenation MUST be
-   globally unique, so log files can contain events from multiple
+   globally unique, so log files can contain events from multiple event
    schemas without the risk of name collisions.
 
    A single event schema can contain exactly one of the below:
@@ -1196,10 +1170,10 @@ Table of Contents
    A single document can define multiple event schemas (for example see
    Section 9).
 
-   Event schema MUST have a single URI [RFC3986] that MUST be absolute.
-   The URI MUST include the namespace identifier.  Event schema that
-   extend an existing namespace MUST furthermore include a non-empty
-   globally-unique "extension" identifier using a URI fragment
+   An event schema MUST have a single URI [RFC3986] that MUST be
+   absolute.  The URI MUST include the namespace identifier.  Event
+   schemas that extend an existing namespace MUST furthermore include a
+   non-empty globally-unique "extension" identifier using a URI fragment
    (characters after a "#" in the URI) using only characters in the URI
    unreserved range; see Section 2.3 of [RFC3986].  Registration
    guidance and requirement for event schema URIs are provided in
@@ -1207,17 +1181,18 @@ Table of Contents
    be extended.
 
    Implementations that record concrete event types SHOULD list all
-   event schema in use.  This is achieved by including the appropriate
-   URIs in the event_schemas field of the abstract LogFile class
-   (Section 3).  The event_schemas is a hint to tools about the possible
-   event namespaces, their extensions, and the event types/data types
-   contained therein, that a qlog file might contain.  The file MAY
-   contain event types that do not belong to a listed event schema.
-   Inversely, not all event types associated with an event schema listed
-   in event_schemas are guaranteed to be logged in a qlog file.  Tools
-   MUST NOT treat either of these as an error; see Section 13.
+   event schemas in use.  This is achieved by including the appropriate
+   URIs in the event_schemas field of the Trace (Section 4.2) and
+   TraceSeq (Section 5.1) classes.  The event_schemas is a hint to tools
+   about the possible event namespaces, their extensions, and the event
+   types/data types contained therein, that a qlog trace might contain.
+   The trace MAY still contain event types that do not belong to a
+   listed event schema.  Inversely, not all event types associated with
+   an event schema listed in event_schemas are guaranteed to be logged
+   in a qlog trace.  Tools MUST NOT treat either of these as an error;
+   see Section 13.
 
-   In the following hypothetical example, a qlog file contains events
+   In the following hypothetical example, a qlog trace contains events
    belonging to:
 
    *  The two event namespaces defined by event schemas in this document
@@ -1245,22 +1220,22 @@ Table of Contents
      "https://example.com/032025/cucumber.html"
    ]
 
-               Figure 27: Example event_schemas serialization
+               Figure 26: Example event_schemas serialization
 
 8.1.  Event Schema URIs
 
-   Event schema defined by RFCs MUST register all namespaces and
+   Event schemas defined by RFCs MUST register all namespaces and
    concrete event types they contain in the "qlog event schema URIs"
    registry.
 
-   Event schema that define a new namespace SHOULD use a URN of the form
-   urn:ietf:params:qlog:events:<namespace identifier>, where <namespace
-   identifier> is globally unique.  For example, this document defines
-   two event schemas (Section 9) for two namespaces: loglevel and sim.
-   Other examples of event schema define the quic [QLOG-QUIC] and http3
-   [QLOG-H3] namespaces.
+   Event schemas that define a new namespace SHOULD use a URN of the
+   form urn:ietf:params:qlog:events:<namespace identifier>, where
+   <namespace identifier> is globally unique.  For example, this
+   document defines two event schemas (Section 9) for two namespaces:
+   loglevel and sim.  Other examples of event schema define the quic
+   [QLOG-QUIC] and http3 [QLOG-H3] namespaces.
 
-   Event schema that extend an existing namespace SHOULD use a URN of
+   Event schemas that extend an existing namespace SHOULD use a URN of
    the form urn:ietf:params:qlog:events:<namespace
    identifier>#<extension identifier>, where the combination of
    <namespace identifier> and <extension identifier> is globally unique.
@@ -1274,7 +1249,7 @@ Table of Contents
    been authorized by the owner of the domain name on or very close to
    that date.  This avoids problems when domain names change ownership.
    The URI does not need to be dereferencable, allowing for confidential
-   use or to cover the case where the event schema continues to be used
+   use or to cover the case where the event schemas continue to be used
    after the organization that defined them ceases to exist.
 
    The "qlog event schema URIs" registry operates under the Expert
@@ -1305,7 +1280,7 @@ Table of Contents
    field acts as a placeholder that can later be replaced with newly
    defined fields by assigning them to the socket with the //= operator.
    Multiple extensions can be assigned to the same group socket.  An
-   example is shown in Figure 28.
+   example is shown in Figure 27.
 
    ; original definition in event schema A
    MyNSEventX = {
@@ -1333,7 +1308,7 @@ Table of Contents
        ? additional_field_c: text
    }
 
-     Figure 28: Example of using a generic CDDL group socket to extend
+     Figure 27: Example of using a generic CDDL group socket to extend
                      an existing event data definition
 
    Secondly, to allow documents to define fully new event data field
@@ -1345,7 +1320,7 @@ Table of Contents
    data field is defined as its own CDDL type and later merged with the
    existing $ProtocolEventData enum using the /= extension operator.
    Any generic key-value map type can be assigned to $ProtocolEventData.
-   The example in Figure 29 demonstrates $ProtocolEventData being
+   The example in Figure 28 demonstrates $ProtocolEventData being
    extended with two types.
 
    ; We define two new concrete events in a new event schema
@@ -1368,7 +1343,7 @@ Table of Contents
    ; the "data" field of a qlog event can now also be of type
    ; MyNSEvent1 and MyNSEvent2
 
-                   Figure 29: ProtocolEventData extension
+                   Figure 28: ProtocolEventData extension
 
    Event schema defining new qlog events MUST properly extend
    $ProtocolEventData when defining data fields to enable automated
@@ -1379,7 +1354,7 @@ Table of Contents
 
    A combined but purely illustrative example of the use of both
    extension points for a conceptual QUIC "packet_sent" event is shown
-   in Figure 30:
+   in Figure 29:
 
    ; defined in the main QUIC event schema
    QUICPacketSent = {
@@ -1426,7 +1401,7 @@ Table of Contents
      }
    }
 
-      Figure 30: Example of an extended 'data' field for a conceptual
+      Figure 29: Example of an extended 'data' field for a conceptual
                            QUIC packet_sent event
 
 8.2.1.  Triggers
@@ -1471,7 +1446,7 @@ Table of Contents
        * $$quic-packetdropped-extension
    }
 
-                         Figure 31: Trigger example
+                         Figure 30: Trigger example
 
 8.3.  Event Importance Levels
 
@@ -1593,7 +1568,7 @@ Table of Contents
 
    $ProtocolEventData /= LogLevelEventData
 
-        Figure 32: LogLevelEventData and ProtocolEventData extension
+        Figure 31: LogLevelEventData and ProtocolEventData extension
 
    The event types are further defined below, their identifier is the
    heading name.
@@ -1610,7 +1585,7 @@ Table of Contents
        * $$loglevel-error-extension
    }
 
-                    Figure 33: LogLevelError definition
+                    Figure 32: LogLevelError definition
 
 9.1.2.  warning
 
@@ -1625,7 +1600,7 @@ Table of Contents
        * $$loglevel-warning-extension
    }
 
-                   Figure 34: LogLevelWarning definition
+                   Figure 33: LogLevelWarning definition
 
 9.1.3.  info
 
@@ -1639,7 +1614,7 @@ Table of Contents
        * $$loglevel-info-extension
    }
 
-                     Figure 35: LogLevelInfo definition
+                     Figure 34: LogLevelInfo definition
 
 9.1.4.  debug
 
@@ -1653,7 +1628,7 @@ Table of Contents
        * $$loglevel-debug-extension
    }
 
-                    Figure 36: LogLevelDebug definition
+                    Figure 35: LogLevelDebug definition
 
 9.1.5.  verbose
 
@@ -1667,7 +1642,7 @@ Table of Contents
        * $$loglevel-verbose-extension
    }
 
-                   Figure 37: LogLevelVerbose definition
+                   Figure 36: LogLevelVerbose definition
 
 9.2.  Simulation Events
 
@@ -1687,7 +1662,7 @@ Table of Contents
 
    $ProtocolEventData /= SimulationEventData
 
-       Figure 38: SimulationEventData and ProtocolEventData extension
+       Figure 37: SimulationEventData and ProtocolEventData extension
 
    The event types are further defined below, their identifier is the
    heading name.
@@ -1706,7 +1681,7 @@ Table of Contents
        * $$simulation-scenario-extension
    }
 
-                  Figure 39: SimulationScenario definition
+                  Figure 38: SimulationScenario definition
 
 9.2.2.  marker
 
@@ -1722,7 +1697,7 @@ Table of Contents
        * $$simulation-marker-extension
    }
 
-                   Figure 40: SimulationMarker definition
+                   Figure 39: SimulationMarker definition
 
 10.  Raw packet and frame information
 
@@ -1752,7 +1727,7 @@ Table of Contents
        ? data: hexstring
    }
 
-                       Figure 41: RawInfo definition
+                       Figure 40: RawInfo definition
 
    The RawInfo:data field can be truncated for privacy or security
    purposes, see Section 11.4.  In this case, the length and
@@ -1923,7 +1898,7 @@ Table of Contents
    tools MUST be able to deal with this situation and derive the length
    of the field from the raw value if no separate length-indicating
    field is present.  The main possible permutations are shown by
-   example in Figure 42.
+   example in Figure 41.
 
    // both the content's value and its length are present
    // (length is redundant)
@@ -1953,7 +1928,7 @@ Table of Contents
        "content": "051428"
    }
 
-          Figure 42: Example for serializing truncated hexstrings
+          Figure 41: Example for serializing truncated hexstrings
 
 11.5.  Optimization of serialized data
 
@@ -2005,7 +1980,7 @@ Table of Contents
    the case for a QUIC server implementation that logs each QUIC
    connection in a separate qlog file.  An alternative that uses
    QLOGFILE would be a QUIC server that logs all connections in a single
-   file and uses the "group_id" field (Section 7.4) to allow post-hoc
+   file and uses the "group_id" field (Section 7.3) to allow post-hoc
    separation of events.
 
    Implementations SHOULD provide support for QLOGDIR and MAY provide
@@ -2017,7 +1992,7 @@ Table of Contents
    example, for QUIC, it is recommended to use the Original Destination
    Connection ID (ODCID), followed by the vantage point type of the
    logging endpoint.  Examples of all options for QUIC are shown in
-   Figure 43.
+   Figure 42.
 
    Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
 
@@ -2044,7 +2019,7 @@ Table of Contents
    this would result in event instances in the qlog file being
    tagged with the "group_id" field with values "abcde" and "12345".
 
-     Figure 43: Environment variable examples for a QUIC implementation
+     Figure 42: Environment variable examples for a QUIC implementation
 
 13.  Tooling requirements
 
