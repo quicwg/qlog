@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-03-11T01:03:19.010774+00:00",
+  "timestamp": "2025-03-13T01:03:28.442802+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -1542,7 +1542,7 @@
       "id": "MDU6SXNzdWU1NjY5MTU2NjY=",
       "title": "Provide clearer usage advice",
       "url": "https://github.com/quicwg/qlog/issues/53",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
@@ -1553,8 +1553,8 @@
       ],
       "body": "At the moment, it's not entirely clear how qlog is \"supposed to be used\".\r\n\r\nFor example, it's not clear to implementers why some fields (e.g., quic version) are duplicated across `connection_started` and also the PacketHeader.\r\n\r\nWe should provide some examples of what things look like if you implement \"all of qlog\" and what should happen if you only implement the Core events (i.e., some fields in the Core events can be skipped if you're using the Base or Extra events instead). This is also important info for tool implementers. \r\n\r\nThis also depends on the use case: tracing while debugging vs production-level logging. ",
       "createdAt": "2020-02-18T14:05:55Z",
-      "updatedAt": "2024-02-19T03:50:51Z",
-      "closedAt": null,
+      "updatedAt": "2025-03-12T20:19:06Z",
+      "closedAt": "2025-03-12T20:19:05Z",
       "comments": [
         {
           "author": "rmarx",
@@ -1583,6 +1583,20 @@
           "body": "Marking this as editorial since I don't think there's anything we can do apart from reiterate that qlog doesn't cover everything and that it extensible enough to support individual needs.\r\n\r\nRequests for adding design changes to these drafts can be raised as new issues (albeit at this stage likely to be declined unless there is sufficient evidence that it is needed).",
           "createdAt": "2024-02-19T03:50:45Z",
           "updatedAt": "2024-02-19T03:50:45Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Wearing both an editor and chair hat, I'm inclined to invoke a statute of limitations on this issue. Its not specific or measurable and there's been no change for over 12 months. \n\nAny objections editors?",
+          "createdAt": "2025-03-12T01:25:01Z",
+          "updatedAt": "2025-03-12T01:25:01Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I think this has severely improved since the issue was originally opened due to many smaller changes anyway. So closing without action is ok for me. ",
+          "createdAt": "2025-03-12T10:57:37Z",
+          "updatedAt": "2025-03-12T10:57:37Z"
         }
       ]
     },
@@ -3835,7 +3849,7 @@
       ],
       "body": "msquic has separate events that indicate if the sender was blocked/delayed/idle and due to which cause (e.g., pacing, flow control limited, cwnd limited, etc.).\r\n\r\nThis is quite useful for debugging. While some of this can be deduced from looking at other existing qlog events, adding some more explicit events for this could be interesting. \r\n\r\n@nibanks: maybe you could give some pointers/links to where these events are defined for msquic for reference? \r\n\r\ncc @lpardue",
       "createdAt": "2021-01-20T16:56:04Z",
-      "updatedAt": "2024-06-24T15:24:07Z",
+      "updatedAt": "2025-03-12T02:25:40Z",
       "closedAt": null,
       "comments": [
         {
@@ -3893,6 +3907,13 @@
           "body": "I still think we can live without standardizing this today. It seems a generic \"application data\" category of event can be defined that would work for e.g. both HTTP/2 and HTTP/3 sending on a stream could be blocked due to stream flow control or the transport congestion control. That's simple enough to write in a new spec.",
           "createdAt": "2023-12-09T21:12:29Z",
           "updatedAt": "2023-12-09T21:12:29Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I made a proposal on #444 and people didn't like it. We are blocked (pun intended) on finding an alternative. @nibanks @kazuho I'd like to make a friendly ping and move the discussion back to here.\n\nAs another proposal what about something simple like\n\n```\nStreamDataBlocked = {\n  ? stream_id: uint64\n  ? reason = $BlockedReason\n}\n\nStreamDataUnblocked = {\n  ? stream_id: uint64\n}\n\nDatagramDataBlocked = {\n  ? reason = $BlockedReason\n{\n\nDatagramDataUnblocked = {\n\n}\n\n$BlockedReason /= \"scheduling\" /\n                  \"pacing\" /\n                  \"amplification_protection\" /\n                  \"congestion_control\" /\n                  \"connection_flow_control\" /\n                  \"stream_flow_control\" /\n                  \"stream_id\" /\n                  \"application\"\n```\n\nThen a log can have a shape like\n\n```\ndo some handshake stuff\ndo some stream data handling\nsend some packets\nreceive some acks\n** stream data blocked for a reason **\ndo some other QUIC things\n** stream data unblocked **\n```",
+          "createdAt": "2025-03-12T02:25:38Z",
+          "updatedAt": "2025-03-12T02:25:38Z"
         }
       ]
     },
@@ -7503,7 +7524,7 @@
       "id": "I_kwDOCrLn6M5qxSZA",
       "title": "Trigger for H3PriorityUpdated",
       "url": "https://github.com/quicwg/qlog/issues/324",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -7512,8 +7533,8 @@
       "labels": [],
       "body": "I am wondering if the new H3PriorityUpdated event (see #312) needs some specified `trigger` field values.\r\n\r\nConceptually, you can get the necessary context from other events surrounding this event (e.g., if you get a H3FrameParsed with a HEADERS containing a `priority` field preceding this, that's a clear indicator that's the trigger). However, there are cases where this is less clear (e.g., default initialization to a value different from the spec, local override due to configuration or other logic, merging of client and server-sent priorities for the same stream, ...)\r\n\r\nWe don't NEED to define any triggers here (`trigger` is always defined on event data, just not necessarily specced in qlog), but I'm wondering if some default values would be useful here @LPardue?\r\n\r\ne.g., \r\n```\r\n? trigger: \"client_directive\" / \"server_directive\" / \"local_override\" / \"local_default\" / \"merge\" / \"merge_override\"\r\n```",
       "createdAt": "2023-07-06T10:51:06Z",
-      "updatedAt": "2024-10-21T14:41:14Z",
-      "closedAt": null,
+      "updatedAt": "2025-03-12T11:44:46Z",
+      "closedAt": "2025-03-12T11:44:46Z",
       "comments": [
         {
           "author": "LPardue",
@@ -7661,7 +7682,7 @@
       "labels": [],
       "body": "Currently the `raw` field includes the wire representation of the frame. This doesn't seem useful, and would mean that a qlog consumer would need to implement a frame parser. Instead, we should only log the payload.\r\n\r\nThis could be done by changing the `raw` field to `payload`.",
       "createdAt": "2023-11-14T10:20:59Z",
-      "updatedAt": "2024-06-25T09:27:13Z",
+      "updatedAt": "2025-03-12T03:47:53Z",
       "closedAt": null,
       "comments": [
         {
@@ -7684,6 +7705,13 @@
           "body": "Discussed during editors' meeting. Indeed makes sense to only log payload. If you need higher up headers, you log previous layer (e.g., if you need QUIC packet headers, you'd get them from the raw UDP packets).",
           "createdAt": "2024-06-25T09:27:13Z",
           "updatedAt": "2024-06-25T09:27:13Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "@rmarx given you're workin on https://github.com/quicwg/qlog/pull/450/files, do you want to visit this issue about StreamFrame and DatagramFrame soon too?",
+          "createdAt": "2025-03-12T03:47:53Z",
+          "updatedAt": "2025-03-12T03:47:53Z"
         }
       ]
     },
@@ -8168,7 +8196,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:stream_state_updated:\r\n\r\n  I think this needs to be clarified a little that an event logged here with both\r\n  a `stream_id` field and a `stream_side` field is expressing a state for that\r\n  component of the stream and from the perspective of the specified vantage point\r\n  (also, what about the network vantage point?); whereas an event logged here\r\n  with a `stream_id` field but no `stream_side` field is expressing a state for\r\n  both stream components as a whole.\r\n\r\n  If my interpretation here is correct, I think it would also help to note that\r\n  the valid values of StreamState depend on the value *and* presence of\r\n  stream_side.",
       "createdAt": "2024-01-19T11:19:58Z",
-      "updatedAt": "2024-11-04T17:11:24Z",
+      "updatedAt": "2025-03-12T03:32:55Z",
       "closedAt": null,
       "comments": [
         {
@@ -8191,6 +8219,13 @@
           "body": " I have never used this event myself and have little experience to impart. There's no text to describe how `stream_side` is supposed to be used, which isn't great. \r\n\r\nNot sure what to do here tbh\r\n",
           "createdAt": "2024-11-04T17:11:22Z",
           "updatedAt": "2024-11-04T17:11:22Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": " Given that\n\na ) this event describes itself as \n\n> The `stream_state_updated` event is emitted whenever the internal state of a\nQUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}.\n\nb) QUIC is not intended to support on-path observation of its details\n\nc) To my knowledge, we have no network observer implementers that are stating this is a problem or providing input to the discussion\n\nI'm not particularly motivated to try and solve any theoretical complications for network observers. \n\nAssuming we agree on that, lets focus on the case of client or server endpoints. This event has a lot of fields and permutations, several of which don't make semantic sense - for example, there's no sense in emitting an event that claims a peer-initiated unidirectional stream was put into a \"data sent\" state. \n\nSimilarly, I don't think there's much logical sense to an stream updated event like \"stream_id=0, stream_side field omitted, new=data_sent\" because a bidirectional field has two stream states in opposite directions. \n\nHugo might disagree, since they say\n\n> whereas an event logged here\nwith a stream_id field but no stream_side field is expressing a state for\nboth stream components as a whole.\n\nbut I tend to disagree that its going to be that common to have a full duplex stream to have consistent stream states.\n\nSo how about this as an idea:\n\n*  make the stream_side field mandatory. They are already mandatory in QUICs stream model. That removes ambiguity in an already complicated puzzle.\n* add an optional initiator field (client, server) to augment the stream_type field. Both initiator and type are already encoded in the stream ID, so these are just crutches to avoid maths\n\nThese steps won't prevent garbage values but will make it cleaer what to do. If we really want to support the idea of \"both sides closed all duplexes and the stream is completely closed\" then add a \"both\" value to stream_side and write some text to explain that.",
+          "createdAt": "2025-03-12T03:32:54Z",
+          "updatedAt": "2025-03-12T03:32:54Z"
         }
       ]
     },
@@ -8689,12 +8724,22 @@
       "assignees": [
         "rmarx"
       ],
-      "labels": [],
+      "labels": [
+        "editorial"
+      ],
       "body": "With #417 and the `additional-schema` proposal, we're moving to a good state for qlog's extensibility. \r\n\r\nHowever, we feel additional prose is needed to make people make good use of this extensibility. Without it, we will mainly have the proper CDDL structures and some scattered prose, but no clear flowcharts/lists or similar. \r\n\r\nFor example, we can add TODOs for different use cases:\r\n- If you want to add a fully new protocol, do xyz\r\n- If you want to add new fields to an existing event, do abc\r\n- If you want to add new options to an ENUM, do def\r\n\r\nThis can only be done after the extensibility stuff is properly done though, so this issue is to remind us later ;) ",
       "createdAt": "2024-03-04T11:48:47Z",
-      "updatedAt": "2024-06-24T15:25:40Z",
+      "updatedAt": "2025-03-12T03:41:58Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Marking this as editorial. \n\nI would suggest a fairly light touch here. I.e. add some short text in the main schema that describes the key points you outline. There's an increasing number of examples of actually using qlog extensibility that I think there's ample examples of these things without needing too many words or fake examples.",
+          "createdAt": "2025-03-12T03:41:30Z",
+          "updatedAt": "2025-03-12T03:41:58Z"
+        }
+      ]
     },
     {
       "number": 410,
@@ -8800,10 +8845,12 @@
       "assignees": [
         "rmarx"
       ],
-      "labels": [],
+      "labels": [
+        "design"
+      ],
       "body": "As detailed here https://github.com/quicwg/qlog/pull/383#issuecomment-2194521047, we're not really consistent in how we allow logging of raw byte values of individual fields, especially if they're \"unknown\"/don't map to a known string or name or type or...\r\n\r\nThis is a reminder to @rmarx to make a PR that makes this consistent across all events that currently don't use the `field_bytes: uint64` (or similar) pattern. ",
       "createdAt": "2024-06-27T18:36:20Z",
-      "updatedAt": "2024-06-27T18:36:20Z",
+      "updatedAt": "2025-03-12T03:42:27Z",
       "closedAt": null,
       "comments": []
     },
@@ -8831,13 +8878,23 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "We already declare that these types exist and should be used but they aren't registered in https://www.iana.org/assignments/media-types/media-types.xhtml#application. We should follow the process described in the notes section at the top of that page. Note, we probably don't want to define `application/qlog` since we are serialization format agnostic and need the suffix to identify the actual format.",
       "createdAt": "2024-07-06T16:55:35Z",
-      "updatedAt": "2024-07-06T16:55:35Z",
+      "updatedAt": "2025-03-12T03:50:56Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "This is tightly linked to https://github.com/quicwg/qlog/issues/434. There's no point registering anything until that discussion is resolved.",
+          "createdAt": "2025-03-12T01:14:50Z",
+          "updatedAt": "2025-03-12T01:14:50Z"
+        }
+      ]
     },
     {
       "number": 426,
@@ -8860,15 +8917,17 @@
       "id": "I_kwDOCrLn6M6PAt_n",
       "title": "How is \"trigger\" a common subfield of \"data\"?",
       "url": "https://github.com/quicwg/qlog/issues/429",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "In https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-8.2-5 we say:\r\n\r\nAny generic key-value map type can be assigned to $ProtocolEventData (the only common \"data\" subfield defined in this document is the optional trigger field, see [Section 7.4](https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#trigger-field)).\r\n\r\nI don't quite understand how this is a common field, since there is no CDDL for it. Should we be defining `$ProtocolEventData` with the actual optional `?trigger` field? Or is is more like \"common by convention\" or some other magic. \r\n\r\nOr is it actually the case that \"trigger\" is a design pattern that concrete event definitions can adopt but that they must explicitly declare the trigger field in their event definition?",
       "createdAt": "2024-07-09T22:25:37Z",
-      "updatedAt": "2024-10-21T14:21:57Z",
-      "closedAt": null,
+      "updatedAt": "2025-03-12T11:47:26Z",
+      "closedAt": "2025-03-12T11:47:26Z",
       "comments": [
         {
           "author": "LPardue",
@@ -9231,11 +9290,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "Its still ambiguous what units the logged time field uses. Issue spun off from the other clock updates in the PR below\r\n\r\n              I don't understand this bit. If I have a float64 field, and I decide to use it to log \"1.5\" to mean one and a half seconds, but the logger tool thinks I meant one and a half milliseconds, then there's an interop issue. So I think we need to pick one form of \"units of x with fractional Y\", or add a field to articulate the concrete units and precision.\r\n\r\n_Originally posted by @LPardue in https://github.com/quicwg/qlog/pull/433#discussion_r1808864215_\r\n            ",
       "createdAt": "2024-10-21T14:52:08Z",
-      "updatedAt": "2024-10-21T14:52:08Z",
+      "updatedAt": "2025-03-12T03:50:03Z",
       "closedAt": null,
       "comments": []
     },
@@ -9247,11 +9308,15 @@
       "state": "OPEN",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "LPardue"
+      ],
+      "labels": [
+        "editorial"
+      ],
       "body": "As per an early IANA review before IETF 121, the quic and h3 docs need to explicitly indicate where the new registry is defined (the main schema doc):\r\n\r\n> The \"qlog event schema URIs\" registry hasn\u2019t been created yet. Please cite the document that\u2019s going to create it.",
       "createdAt": "2024-11-04T09:01:13Z",
-      "updatedAt": "2024-11-04T09:01:13Z",
+      "updatedAt": "2025-03-12T03:48:37Z",
       "closedAt": null,
       "comments": []
     },
@@ -9263,11 +9328,15 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [
+        "design"
+      ],
       "body": "In https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-8.13.2\n\n```\n PingFrame = {\n    frame_type: \"ping\"\n\n    ; total frame length, including frame header\n    ? length: uint32\n    ? payload_length: uint32\n}\n```\n\nIn QUIC, the [PING frame](https://datatracker.ietf.org/doc/html/rfc9000#section-19.2) doesn't have a payload so the payload length can never be populated. In my implementation, I've always set this to `None` and the fields are always omitted.\n\nProposal: drop both the `length` and `payload_length` fields",
       "createdAt": "2025-03-04T02:00:14Z",
-      "updatedAt": "2025-03-06T09:32:27Z",
+      "updatedAt": "2025-03-12T03:49:43Z",
       "closedAt": null,
       "comments": [
         {
@@ -9287,11 +9356,15 @@
       "state": "OPEN",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [
+        "design"
+      ],
       "body": "https://github.com/quicwg/qlog/pull/446 made me think about why we still need `protocol_types` now that we have `event_schemas` and we've decided that those schemas are (most likely) somewhat tightly tied to specific protocols (i.e., we no longer have the generic `connectivity:` events; those are all just `quic:` events now, since TCP-related events would likely be different enough anyway).\n\nIf you know the `event_schemas`, you know which protocol types are expected in a log as well by implicit inference, so we could do away with `protocol_types` easily enough.\n\nHOWEVER, the main problem with that, is that currently `event_schemas` are part of the top-level `QlogFile`, and so defined at a complete file level, while `protocol_types` are at individual `trace` level. For single files that combine logs from multiple different protocols, this would make it annoying to figure out which traces contained which protocols specifically, since `event_schemas` would aggregate everything at the top-level. \n\n\nConceptually, I feel it just makes more sense to have `event_schemas` as a per-trace thing as well, since you might indeed have cases where not every trace uses the same schemas (before looking into this, I already thought this was the case today...). This would be a small conceptual change imo.\n\nProposal:\n- Move `event_schemas` from `QlogFile` to `Trace` and `TraceSeq` (don't think it needs to be in `common_fields`)\n- Remove `protocol_types`",
       "createdAt": "2025-03-06T09:44:33Z",
-      "updatedAt": "2025-03-06T09:55:40Z",
+      "updatedAt": "2025-03-12T03:49:28Z",
       "closedAt": null,
       "comments": [
         {
@@ -9300,6 +9373,30 @@
           "body": "I definitely support removing protocol_types, it seems redundant and makes it annoying to have to define a separate identifier for the same thing.\n\nI think per trace event_schemas is the only logical option for the model where a log file contains multiple traces that could belong to different implementations.",
           "createdAt": "2025-03-06T09:55:39Z",
           "updatedAt": "2025-03-06T09:55:39Z"
+        }
+      ]
+    },
+    {
+      "number": 456,
+      "id": "I_kwDOCrLn6M6tmvg1",
+      "title": "How to log sending of path probe packets?",
+      "url": "https://github.com/quicwg/qlog/issues/456",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "There doesn't seem to be a good way to log the remote address that a path probe packet is being sent to / received from. This would be very helpful for debugging connection migration.",
+      "createdAt": "2025-03-12T04:31:15Z",
+      "updatedAt": "2025-03-12T10:45:32Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Not entirely sure, but isn't this covered by using [the `path_assigned` event](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-09#section-4.7) and logging the remote address in there? \n\nI know that's somewhat more tedious probably than logging it directly together with the probe, but that's the general approach we've taken to path stuff after tons of discussion in the past. If the migration succeeds, you'd be using that PathID anyway.\n\nProposal: use existing `path_assigned` for this use case and close this issue without action. ",
+          "createdAt": "2025-03-12T10:45:03Z",
+          "updatedAt": "2025-03-12T10:45:32Z"
         }
       ]
     }
@@ -25335,21 +25432,21 @@
       "id": "PR_kwDOCrLn6M6A0xjv",
       "title": "Indicate send blocking in data_moved events",
       "url": "https://github.com/quicwg/qlog/pull/444",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Fixes #132 (if merged).\r\n\r\nIt struck me that its the \"data_moved\" action that can be blocked, so rather than add\r\na separate event, just add an optional field to an existing event. This helps ensure we\r\ncan represent both stream and datagram data with all relevant fields.\r\n",
       "createdAt": "2024-11-04T16:38:48Z",
-      "updatedAt": "2024-11-06T12:11:10Z",
+      "updatedAt": "2025-03-12T11:53:54Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "926f96f26da604d60ed01975c0233e95fed58472",
       "headRepository": "quicwg/qlog",
       "headRefName": "blocked-reasons",
       "headRefOid": "95826e3e2ed1d1fccaa7a20311de8c226aed1bb7",
-      "closedAt": null,
+      "closedAt": "2025-03-12T11:53:53Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -25388,6 +25485,13 @@
           "body": "Ack. Would someone be willing to help on the alternative proposal? Even if ypu can just frame how the alternative works, we can design the event structure definition around that.",
           "createdAt": "2024-11-06T12:11:07Z",
           "updatedAt": "2024-11-06T12:11:07Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Conversation moved back to issue",
+          "createdAt": "2025-03-12T11:53:53Z",
+          "updatedAt": "2025-03-12T11:53:53Z"
         }
       ],
       "reviews": []
@@ -25494,7 +25598,7 @@
       "labels": [],
       "body": "Fixes #448.\r\n\r\nCo-authored-by: @mengelbart (subsumes #446)",
       "createdAt": "2025-03-06T13:24:27Z",
-      "updatedAt": "2025-03-06T15:44:42Z",
+      "updatedAt": "2025-03-12T11:53:10Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
@@ -25518,6 +25622,19 @@
           "body": "Always good to delete text",
           "createdAt": "2025-03-06T15:44:42Z",
           "updatedAt": "2025-03-06T15:44:42Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6foY-v",
+          "commit": {
+            "abbreviatedOid": "c8edf32"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-03-12T11:53:10Z",
+          "updatedAt": "2025-03-12T11:53:10Z",
           "comments": []
         }
       ]
@@ -25668,6 +25785,238 @@
           ]
         }
       ]
+    },
+    {
+      "number": 451,
+      "id": "PR_kwDOCrLn6M6OQdgW",
+      "title": "Editorial work of triggers",
+      "url": "https://github.com/quicwg/qlog/pull/451",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "As discussed on https://github.com/quicwg/qlog/issues/429, it seems like a better option to just RECOMMEND a \"trigger\" field if an event would benefit from an explicit trigger.\r\n\r\nThis change removes the mention of triggers from the parent section (8.2) and puts the normative sugestion in the trigger section (8.2.1)\r\n\r\nCloses https://github.com/quicwg/qlog/issues/429",
+      "createdAt": "2025-03-12T01:13:28Z",
+      "updatedAt": "2025-03-12T11:47:25Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "simplify-trigger-text",
+      "headRefOid": "b77f2b711523cdbc6ecb3597f40090ae5cda3e82",
+      "closedAt": "2025-03-12T11:47:25Z",
+      "mergedAt": "2025-03-12T11:47:25Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "7ad61f231de4355260dd7a20502428c26893e1d6"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6fnoeG",
+          "commit": {
+            "abbreviatedOid": "7a74d3e"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "Minus the nit, LGTM!",
+          "createdAt": "2025-03-12T10:54:03Z",
+          "updatedAt": "2025-03-12T10:55:39Z",
+          "comments": [
+            {
+              "originalPosition": 55,
+              "body": "```suggestion\r\nIt can be useful to understand the cause or trigger of an event. Sometimes,\r\n```",
+              "createdAt": "2025-03-12T10:54:03Z",
+              "updatedAt": "2025-03-12T10:55:39Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 452,
+      "id": "PR_kwDOCrLn6M6OQkFi",
+      "title": "Remove resources related to very old drafts",
+      "url": "https://github.com/quicwg/qlog/pull/452",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "These have not been useful for a long time and provide a distraction.\r\n",
+      "createdAt": "2025-03-12T01:32:08Z",
+      "updatedAt": "2025-03-12T11:45:30Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "clear-cruft",
+      "headRefOid": "690a4be9670066c48d14c7e65bc4beb13b2d3b19",
+      "closedAt": "2025-03-12T11:45:26Z",
+      "mergedAt": "2025-03-12T11:45:26Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "3100dd2045771436b2b0054a4c6d930047b38f9c"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6fnjLb",
+          "commit": {
+            "abbreviatedOid": "690a4be"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-03-12T10:46:09Z",
+          "updatedAt": "2025-03-12T10:46:09Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 453,
+      "id": "PR_kwDOCrLn6M6OQuX5",
+      "title": "Update QUICConnectionStarted event",
+      "url": "https://github.com/quicwg/qlog/pull/453",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "We've had issue #119 open for over 4 years. It proposed a few options\r\nwith the preference towards option 3, which related to #57 and #79.\r\nBoth of those issues have been fixed. In parallel, we've also got rid\r\nof the notion of generic \"transport\" events and everything is framed\r\nin terms of QUIC now.\r\n\r\nMore to the point, we added the PathEndpointInfo type that contains\r\nall the same sorts of information that's needed, and it has text that\r\ndescribes directionality aspects that #119 was concerned about.\r\nTherefore, I lets just use that.\r\n\r\nAlso remove the `protocol` field now that the event is purely QUIC.\r\n\r\nCloses #119\r\n",
+      "createdAt": "2025-03-12T01:55:19Z",
+      "updatedAt": "2025-03-12T01:59:07Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "improve-connection-started-event",
+      "headRefOid": "39ffceb8808c928aed8d6b0b3d77046ae3252c41",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 454,
+      "id": "PR_kwDOCrLn6M6OQ7F6",
+      "title": "Add aborted connection_close trigger",
+      "url": "https://github.com/quicwg/qlog/pull/454",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "We talked about this on #147 and there seemed to be agreement to just do it.\r\n\r\n@marten-seemann had an unanswered question on the issue\r\n\r\n> How would an application log more details though? I could image that an application might want to add some more details, like \"lost the race to connection XXX\", but I don't think that's something that we need to standardize.\r\n\r\nMy suggestion is that additional context can be wedged into the existing `reason` field, or just inserted as a new extension field. Particularly if the logs are intended to be consumed by the maintainer of the software that generated the log, they probably have the means to do either and figure out what works best for them.\r\n\r\n\r\nCloses #147",
+      "createdAt": "2025-03-12T02:35:23Z",
+      "updatedAt": "2025-03-12T10:39:48Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "connection-closed-aborted-trigger",
+      "headRefOid": "997c6a1d6a1842137690867e4cf185a08a2791bb",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6fndtq",
+          "commit": {
+            "abbreviatedOid": "997c6a1"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "LGTM!",
+          "createdAt": "2025-03-12T10:39:48Z",
+          "updatedAt": "2025-03-12T10:39:48Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 455,
+      "id": "PR_kwDOCrLn6M6ORBvS",
+      "title": "add trigger and reason to H3PriorityUpdated",
+      "url": "https://github.com/quicwg/qlog/pull/455",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "implements my latest proposal on #324\r\n\r\nCloses #324",
+      "createdAt": "2025-03-12T02:57:22Z",
+      "updatedAt": "2025-03-12T11:44:48Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "priority-updated-reason",
+      "headRefOid": "6ecb2800714e5868091ce1121e261e827642a452",
+      "closedAt": "2025-03-12T11:44:45Z",
+      "mergedAt": "2025-03-12T11:44:45Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "7c6347edf680b7435b1f027372a250c1308333aa"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6fnkw7",
+          "commit": {
+            "abbreviatedOid": "e214c30"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "There's definitely some overlap between the two here which makes it feel less \"clean\". \r\n\r\nHowever, being a Prioritization Enthusiast myself, I can definitely see the value of having a split into two fields, allowing for fine-grained info (especially since the fields are optional). \r\n\r\nMinus the superfluous `The`, LGTM!",
+          "createdAt": "2025-03-12T10:48:05Z",
+          "updatedAt": "2025-03-12T10:51:36Z",
+          "comments": [
+            {
+              "originalPosition": 18,
+              "body": "```suggestion\r\npolicies. The `trigger` and `reason` fields can be used to optionally\r\n```",
+              "createdAt": "2025-03-12T10:48:05Z",
+              "updatedAt": "2025-03-12T10:51:36Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 457,
+      "id": "PR_kwDOCrLn6M6OanxT",
+      "title": "Remove excessive citation of importance level section",
+      "url": "https://github.com/quicwg/qlog/pull/457",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "I don't think the importance level is _that important_ that we need\r\na deep link into the qlog main schema every time. Its a visual\r\ndistraction. So instead, highlight the convention in the convention\r\nsection and remove all these redundant links.\r\n",
+      "createdAt": "2025-03-12T22:34:23Z",
+      "updatedAt": "2025-03-12T22:34:24Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "7ad61f231de4355260dd7a20502428c26893e1d6",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "remove-excessive-citation",
+      "headRefOid": "eda5ce92bccb9b039ed46063517deaf24c2d1a93",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
