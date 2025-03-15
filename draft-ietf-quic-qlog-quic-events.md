@@ -712,10 +712,10 @@ QUICParametersSet = {
 }
 
 PreferredAddress = {
-    ip_v4: IPAddress
-    ip_v6: IPAddress
-    port_v4: uint16
-    port_v6: uint16
+    ? ip_v4: IPAddress
+    ? port_v4: uint16
+    ? ip_v6: IPAddress
+    ? port_v6: uint16
     connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
 }
