@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-03-13T01:03:28.442802+00:00",
+  "timestamp": "2025-03-16T01:08:02.903170+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -3427,7 +3427,7 @@
       "id": "MDU6SXNzdWU3MzM3MjQxNjQ=",
       "title": "Make initiator clear in connection_started",
       "url": "https://github.com/quicwg/qlog/issues/119",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -3441,8 +3441,8 @@
       ],
       "body": "Currently, `connection_started` utilizes `src_ip` and `dst_ip` (and equivalent for ports), where the intended meaning is that src means the initiator (typically client) and dst the server. \r\n\r\nHowever, this is a) unclear and b) it does not allow deducing what the \"local\" ip is for where this trace was captured without correlating client/server with the vantagepoint (and if that vantagepoint is network, it becomes more murky). \r\n\r\nSome options for solving:\r\n1. rename fields to `local_ip` and `remote_ip`  \r\n2. add `initiator` field (e.g., with values 'local' and 'peer')\r\n3. completely revise how we log paths/IPs and potentially decouple from `connection_started` (also good in terms of privacy, migration, multipath, ...). \r\n\r\nOption 3 is probably best, should revisit when properly fixing migration in qlog (see also #79 and #57)\r\n\r\ncc @marten-seemann \r\n",
       "createdAt": "2020-10-31T13:47:19Z",
-      "updatedAt": "2021-08-18T10:15:42Z",
-      "closedAt": null,
+      "updatedAt": "2025-03-13T14:06:43Z",
+      "closedAt": "2025-03-13T14:06:43Z",
       "comments": []
     },
     {
@@ -3849,7 +3849,7 @@
       ],
       "body": "msquic has separate events that indicate if the sender was blocked/delayed/idle and due to which cause (e.g., pacing, flow control limited, cwnd limited, etc.).\r\n\r\nThis is quite useful for debugging. While some of this can be deduced from looking at other existing qlog events, adding some more explicit events for this could be interesting. \r\n\r\n@nibanks: maybe you could give some pointers/links to where these events are defined for msquic for reference? \r\n\r\ncc @lpardue",
       "createdAt": "2021-01-20T16:56:04Z",
-      "updatedAt": "2025-03-12T02:25:40Z",
+      "updatedAt": "2025-03-13T13:44:35Z",
       "closedAt": null,
       "comments": [
         {
@@ -3914,6 +3914,13 @@
           "body": "I made a proposal on #444 and people didn't like it. We are blocked (pun intended) on finding an alternative. @nibanks @kazuho I'd like to make a friendly ping and move the discussion back to here.\n\nAs another proposal what about something simple like\n\n```\nStreamDataBlocked = {\n  ? stream_id: uint64\n  ? reason = $BlockedReason\n}\n\nStreamDataUnblocked = {\n  ? stream_id: uint64\n}\n\nDatagramDataBlocked = {\n  ? reason = $BlockedReason\n{\n\nDatagramDataUnblocked = {\n\n}\n\n$BlockedReason /= \"scheduling\" /\n                  \"pacing\" /\n                  \"amplification_protection\" /\n                  \"congestion_control\" /\n                  \"connection_flow_control\" /\n                  \"stream_flow_control\" /\n                  \"stream_id\" /\n                  \"application\"\n```\n\nThen a log can have a shape like\n\n```\ndo some handshake stuff\ndo some stream data handling\nsend some packets\nreceive some acks\n** stream data blocked for a reason **\ndo some other QUIC things\n** stream data unblocked **\n```",
           "createdAt": "2025-03-12T02:25:38Z",
           "updatedAt": "2025-03-12T02:25:38Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "My one knee-jerk reaction to this is that that would entail a bunch of extra events... especially if you'd split up blocked and unblocked (elsewhere we always use the StateUpdated pattern with `? old` and `? new` instead, so that would be preferential here too?)\n\nIf you combine blocked/unblocked, I guess you'd need 3 extra events for QUIC (connection, stream, datagram) and 1 extra down the line for QPACK, which seems agreeable :) ",
+          "createdAt": "2025-03-13T13:44:34Z",
+          "updatedAt": "2025-03-13T13:44:34Z"
         }
       ]
     },
@@ -4656,7 +4663,7 @@
       "id": "MDU6SXNzdWU4NTE0MjkyNjE=",
       "title": "How to log handshake cancelations?",
       "url": "https://github.com/quicwg/qlog/issues/147",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -4669,8 +4676,8 @@
       ],
       "body": "I didn't think of this back when we defined the triggers for `connection_closed`, but this is happening **a lot** in production: When dialing a new peer, libp2p races connections to that peer on all advertised addresses and transports, and uses whichever connection returns first. All the other connection attempts are canceled.\r\n\r\nIt would be nice if there was a trigger \"the user aborted this connection attempt before handshake completion\".",
       "createdAt": "2021-04-06T13:32:43Z",
-      "updatedAt": "2024-10-21T09:21:18Z",
-      "closedAt": null,
+      "updatedAt": "2025-03-13T14:07:13Z",
+      "closedAt": "2025-03-13T14:07:13Z",
       "comments": [
         {
           "author": "rmarx",
@@ -8839,7 +8846,7 @@
       "id": "I_kwDOCrLn6M6NynFt",
       "title": "Make logging raw byte values consistent",
       "url": "https://github.com/quicwg/qlog/issues/421",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -8850,8 +8857,8 @@
       ],
       "body": "As detailed here https://github.com/quicwg/qlog/pull/383#issuecomment-2194521047, we're not really consistent in how we allow logging of raw byte values of individual fields, especially if they're \"unknown\"/don't map to a known string or name or type or...\r\n\r\nThis is a reminder to @rmarx to make a PR that makes this consistent across all events that currently don't use the `field_bytes: uint64` (or similar) pattern. ",
       "createdAt": "2024-06-27T18:36:20Z",
-      "updatedAt": "2025-03-12T03:42:27Z",
-      "closedAt": null,
+      "updatedAt": "2025-03-13T14:01:43Z",
+      "closedAt": "2025-03-13T14:01:43Z",
       "comments": []
     },
     {
@@ -9325,7 +9332,7 @@
       "id": "I_kwDOCrLn6M6sa19w",
       "title": "PING frame doesn't have a payload",
       "url": "https://github.com/quicwg/qlog/issues/447",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -9336,8 +9343,8 @@
       ],
       "body": "In https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-8.13.2\n\n```\n PingFrame = {\n    frame_type: \"ping\"\n\n    ; total frame length, including frame header\n    ? length: uint32\n    ? payload_length: uint32\n}\n```\n\nIn QUIC, the [PING frame](https://datatracker.ietf.org/doc/html/rfc9000#section-19.2) doesn't have a payload so the payload length can never be populated. In my implementation, I've always set this to `None` and the fields are always omitted.\n\nProposal: drop both the `length` and `payload_length` fields",
       "createdAt": "2025-03-04T02:00:14Z",
-      "updatedAt": "2025-03-12T03:49:43Z",
-      "closedAt": null,
+      "updatedAt": "2025-03-13T14:01:43Z",
+      "closedAt": "2025-03-13T14:01:43Z",
       "comments": [
         {
           "author": "rmarx",
@@ -9353,7 +9360,7 @@
       "id": "I_kwDOCrLn6M6s2Nox",
       "title": "Do we need `protocol_types` now that we have `event_schemas`",
       "url": "https://github.com/quicwg/qlog/issues/448",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -9364,8 +9371,8 @@
       ],
       "body": "https://github.com/quicwg/qlog/pull/446 made me think about why we still need `protocol_types` now that we have `event_schemas` and we've decided that those schemas are (most likely) somewhat tightly tied to specific protocols (i.e., we no longer have the generic `connectivity:` events; those are all just `quic:` events now, since TCP-related events would likely be different enough anyway).\n\nIf you know the `event_schemas`, you know which protocol types are expected in a log as well by implicit inference, so we could do away with `protocol_types` easily enough.\n\nHOWEVER, the main problem with that, is that currently `event_schemas` are part of the top-level `QlogFile`, and so defined at a complete file level, while `protocol_types` are at individual `trace` level. For single files that combine logs from multiple different protocols, this would make it annoying to figure out which traces contained which protocols specifically, since `event_schemas` would aggregate everything at the top-level. \n\n\nConceptually, I feel it just makes more sense to have `event_schemas` as a per-trace thing as well, since you might indeed have cases where not every trace uses the same schemas (before looking into this, I already thought this was the case today...). This would be a small conceptual change imo.\n\nProposal:\n- Move `event_schemas` from `QlogFile` to `Trace` and `TraceSeq` (don't think it needs to be in `common_fields`)\n- Remove `protocol_types`",
       "createdAt": "2025-03-06T09:44:33Z",
-      "updatedAt": "2025-03-12T03:49:28Z",
-      "closedAt": null,
+      "updatedAt": "2025-03-13T14:10:30Z",
+      "closedAt": "2025-03-13T14:10:30Z",
       "comments": [
         {
           "author": "LPardue",
@@ -25529,21 +25536,21 @@
       "id": "PR_kwDOCrLn6M6NCMXJ",
       "title": "Add event_schemas to examples",
       "url": "https://github.com/quicwg/qlog/pull/446",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "mengelbart",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "According to [section 3](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-10#section-3), event_schemas is required.",
       "createdAt": "2025-03-01T14:22:36Z",
-      "updatedAt": "2025-03-10T19:02:50Z",
+      "updatedAt": "2025-03-13T14:11:35Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "926f96f26da604d60ed01975c0233e95fed58472",
       "headRepository": "mengelbart/qlog-drafts",
       "headRefName": "add-schemas-to-examples",
       "headRefOid": "6675033523754da5e501c5b4baf29760044fd448",
-      "closedAt": null,
+      "closedAt": "2025-03-13T14:11:35Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -25561,6 +25568,13 @@
           "body": "Glad I could help :D \r\nI'm going to press \"commit suggestion\", just to make sure, but I assume this one can be closed because it's included in #449, right?",
           "createdAt": "2025-03-10T19:02:13Z",
           "updatedAt": "2025-03-10T19:02:13Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This was indeed done in #449, which was now merged with attribution, so I'm closing this PR :) thanks again!",
+          "createdAt": "2025-03-13T14:11:35Z",
+          "updatedAt": "2025-03-13T14:11:35Z"
         }
       ],
       "reviews": [
@@ -25591,24 +25605,26 @@
       "id": "PR_kwDOCrLn6M6No8wa",
       "title": "Remove protocol_types and move event_schemas to Trace and TraceSeq",
       "url": "https://github.com/quicwg/qlog/pull/449",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #448.\r\n\r\nCo-authored-by: @mengelbart (subsumes #446)",
       "createdAt": "2025-03-06T13:24:27Z",
-      "updatedAt": "2025-03-12T11:53:10Z",
+      "updatedAt": "2025-03-13T14:10:29Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-protocol-types",
       "headRefOid": "c8edf32617bf7623a092920589b51a1e7e3d3b76",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-03-13T14:10:28Z",
+      "mergedAt": "2025-03-13T14:10:28Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "4506b57c84c8e17afaba503a154637a6a5245328"
+      },
       "comments": [],
       "reviews": [
         {
@@ -25644,24 +25660,26 @@
       "id": "PR_kwDOCrLn6M6NpsWj",
       "title": "Be consistent in how we allow logging of raw values",
       "url": "https://github.com/quicwg/qlog/pull/450",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [],
       "labels": [],
       "body": "- Use RawInfo instead of separate length/payload_length fields + make sure RawInfo is defined everywhere (fixes #447)\r\n- Make sure that we have a separate `*_bytes` field to log raw values for unknown frames/errors/packet_types/... (fixes #421)\r\n\r\n",
       "createdAt": "2025-03-06T14:50:12Z",
-      "updatedAt": "2025-03-10T15:29:02Z",
+      "updatedAt": "2025-03-13T14:01:52Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
       "headRepository": "quicwg/qlog",
       "headRefName": "rawinfo-everything",
       "headRefOid": "25136b9ec29962614d620a0c9dd546e316d7ff35",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-03-13T14:01:41Z",
+      "mergedAt": "2025-03-13T14:01:41Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "2f2baeafba04d47ce24b5b44ce285e61990df573"
+      },
       "comments": [],
       "reviews": [
         {
@@ -25783,6 +25801,46 @@
               "updatedAt": "2025-03-10T15:29:02Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6f06-i",
+          "commit": {
+            "abbreviatedOid": "25136b9"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-03-13T11:02:44Z",
+          "updatedAt": "2025-03-13T11:02:44Z",
+          "comments": [
+            {
+              "originalPosition": 112,
+              "body": "another option would be for me to log an empty string (which I think is inherently allowed) - that doesn't require any change to this PR and lets me shave some unnecessary/mislabelled bytes of `\"unknown\"`\r\n",
+              "createdAt": "2025-03-13T11:02:44Z",
+              "updatedAt": "2025-03-13T11:02:44Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M6f3NYM",
+          "commit": {
+            "abbreviatedOid": "25136b9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-03-13T14:00:44Z",
+          "updatedAt": "2025-03-13T14:00:44Z",
+          "comments": [
+            {
+              "originalPosition": 112,
+              "body": "If that's ok for you, then that works for me as well :) ",
+              "createdAt": "2025-03-13T14:00:44Z",
+              "updatedAt": "2025-03-13T14:00:44Z"
+            }
+          ]
         }
       ]
     },
@@ -25882,50 +25940,76 @@
       "id": "PR_kwDOCrLn6M6OQuX5",
       "title": "Update QUICConnectionStarted event",
       "url": "https://github.com/quicwg/qlog/pull/453",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "We've had issue #119 open for over 4 years. It proposed a few options\r\nwith the preference towards option 3, which related to #57 and #79.\r\nBoth of those issues have been fixed. In parallel, we've also got rid\r\nof the notion of generic \"transport\" events and everything is framed\r\nin terms of QUIC now.\r\n\r\nMore to the point, we added the PathEndpointInfo type that contains\r\nall the same sorts of information that's needed, and it has text that\r\ndescribes directionality aspects that #119 was concerned about.\r\nTherefore, I lets just use that.\r\n\r\nAlso remove the `protocol` field now that the event is purely QUIC.\r\n\r\nCloses #119\r\n",
       "createdAt": "2025-03-12T01:55:19Z",
-      "updatedAt": "2025-03-12T01:59:07Z",
+      "updatedAt": "2025-03-13T14:06:48Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
       "headRepository": "quicwg/qlog",
       "headRefName": "improve-connection-started-event",
       "headRefOid": "39ffceb8808c928aed8d6b0b3d77046ae3252c41",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "closedAt": "2025-03-13T14:06:42Z",
+      "mergedAt": "2025-03-13T14:06:42Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "de427ea9e9eef55952f67b5d9efee052ab29a309"
+      },
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I love it when things come together in the end :) Let's merge this!",
+          "createdAt": "2025-03-13T13:50:33Z",
+          "updatedAt": "2025-03-13T13:50:33Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6f3DN9",
+          "commit": {
+            "abbreviatedOid": "39ffceb"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-03-13T13:50:51Z",
+          "updatedAt": "2025-03-13T13:50:51Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 454,
       "id": "PR_kwDOCrLn6M6OQ7F6",
       "title": "Add aborted connection_close trigger",
       "url": "https://github.com/quicwg/qlog/pull/454",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "We talked about this on #147 and there seemed to be agreement to just do it.\r\n\r\n@marten-seemann had an unanswered question on the issue\r\n\r\n> How would an application log more details though? I could image that an application might want to add some more details, like \"lost the race to connection XXX\", but I don't think that's something that we need to standardize.\r\n\r\nMy suggestion is that additional context can be wedged into the existing `reason` field, or just inserted as a new extension field. Particularly if the logs are intended to be consumed by the maintainer of the software that generated the log, they probably have the means to do either and figure out what works best for them.\r\n\r\n\r\nCloses #147",
       "createdAt": "2025-03-12T02:35:23Z",
-      "updatedAt": "2025-03-12T10:39:48Z",
+      "updatedAt": "2025-03-13T14:07:11Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2cab25f65f36feb9a16481e7b7917acb26a1f40f",
       "headRepository": "quicwg/qlog",
       "headRefName": "connection-closed-aborted-trigger",
       "headRefOid": "997c6a1d6a1842137690867e4cf185a08a2791bb",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-03-13T14:07:11Z",
+      "mergedAt": "2025-03-13T14:07:11Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "38c8a4f6d32028ce8acfa109b8dd82fe2e31f074"
+      },
       "comments": [],
       "reviews": [
         {
@@ -26004,13 +26088,68 @@
       "labels": [],
       "body": "I don't think the importance level is _that important_ that we need\r\na deep link into the qlog main schema every time. Its a visual\r\ndistraction. So instead, highlight the convention in the convention\r\nsection and remove all these redundant links.\r\n",
       "createdAt": "2025-03-12T22:34:23Z",
-      "updatedAt": "2025-03-12T22:34:24Z",
+      "updatedAt": "2025-03-13T14:06:10Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "7ad61f231de4355260dd7a20502428c26893e1d6",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-excessive-citation",
       "headRefOid": "eda5ce92bccb9b039ed46063517deaf24c2d1a93",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Yes, this was annoying me as well!\r\n\r\nOne questions is if you intentionally not removed this from the events in the main schema as well (e.g., https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema#section-9.1)? \r\n\r\nI can see an argument for keeping them intact in that doc but not in the others, but if it wasn't intentional, maybe remove them there as well. Otherwise LGTM!",
+          "createdAt": "2025-03-13T13:47:12Z",
+          "updatedAt": "2025-03-13T13:47:12Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Leaving them in main schema was an accident, I'll fix that up",
+          "createdAt": "2025-03-13T14:06:08Z",
+          "updatedAt": "2025-03-13T14:06:08Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6f3Djs",
+          "commit": {
+            "abbreviatedOid": "eda5ce9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-03-13T13:51:10Z",
+          "updatedAt": "2025-03-13T13:51:10Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 458,
+      "id": "PR_kwDOCrLn6M6OwQOP",
+      "title": "make the IPv4 and IPv6 2-tuple in the PreferredAddress optional",
+      "url": "https://github.com/quicwg/qlog/pull/458",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "According to section 18.2 of RFC 9000, the server MAY only send one (valid) address:\r\n> Servers MAY choose to only send a preferred address of one address family by sending an all-zero address and port (0.0.0.0:0 or [::]:0) for the other family. IP addresses are encoded in network byte order.\r\n\r\nIn that case, it should be valid to just not log the invalid address.",
+      "createdAt": "2025-03-15T04:54:36Z",
+      "updatedAt": "2025-03-15T04:54:37Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "4506b57c84c8e17afaba503a154637a6a5245328",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "preferred-address-address-families",
+      "headRefOid": "2a0c438da3312ce47fed3532a1a129da1ab768a5",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
