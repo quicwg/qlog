@@ -252,8 +252,8 @@ level; see {{Section 9.2 of QLOG-MAIN}}.
 ~~~ cddl
 QUICServerListening = {
     ? ip_v4: IPAddress
-    ? ip_v6: IPAddress
     ? port_v4: uint16
+    ? ip_v6: IPAddress
     ? port_v6: uint16
 
     ; the server will always answer client initials with a retry
@@ -1694,8 +1694,8 @@ PathEndpointInfo instances, one for each half of the path.
 ~~~ cddl
 PathEndpointInfo = {
     ? ip_v4: IPAddress
-    ? ip_v6: IPAddress
     ? port_v4: uint16
+    ? ip_v6: IPAddress
     ? port_v6: uint16
 
     ; Even though usually only a single ConnectionID
