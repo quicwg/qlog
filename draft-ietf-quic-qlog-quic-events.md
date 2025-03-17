@@ -1667,7 +1667,7 @@ Owner = "local" /
 ~~~
 {: #owner-def title="Owner definition"}
 
-## IPAddress and IPVersion
+## IPAddress
 
 ~~~ cddl
 ; an IPAddress can either be a "human readable" form
@@ -1680,12 +1680,6 @@ IPAddress = text /
             hexstring
 ~~~
 {: #ipaddress-def title="IPAddress definition"}
-
-~~~ cddl
-IPVersion = "v4" /
-            "v6"
-~~~
-{: #ipversion-def title="IPVersion definition"}
 
 ## PathEndpointInfo
 
