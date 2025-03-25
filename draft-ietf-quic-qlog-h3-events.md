@@ -794,6 +794,12 @@ and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-h3-events-09:
+{:numbered="false"}
+
+* Several editorial changes
+* Consistent use of RawInfo and _bytes fields to log raw data (#450)
+
 ## Since draft-ietf-quic-qlog-h3-events-08:
 {:numbered="false"}
 

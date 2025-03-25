@@ -2339,12 +2339,18 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins and Jonathan Lennox for
-their feedback and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart and
+Jonathan Lennox for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-qlog-quic-events-09:
+{:numbered="false"}
+
+* Several editorial changes
+* Reworked QUICConnectionStarted to use PathEndpointInfo (#453)
+* Consistent use of RawInfo and _bytes fields to log raw data (#450)
 
 ## Since draft-ietf-qlog-quic-events-08:
 {:numbered="false"}
