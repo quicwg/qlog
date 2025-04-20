@@ -209,8 +209,6 @@ QuicEventData = QUICServerListening /
                 QUICConnectionStateUpdated /
                 QUICPathAssigned /
                 QUICMTUUpdated /
-                QUICKeyUpdated /
-                QUICKeyDiscarded /
                 QUICVersionInformation /
                 QUICALPNInformation /
                 QUICParametersSet /
@@ -227,11 +225,16 @@ QuicEventData = QUICServerListening /
                 QUICFramesProcessed /
                 QUICStreamDataMoved /
                 QUICDatagramDataMoved /
+                QUICMigrationStateUpdated /
+                QUICKeyUpdated /
+                QUICKeyDiscarded /
                 QUICRecoveryParametersSet /
                 QUICRecoveryMetricsUpdated /
                 QUICCongestionStateUpdated /
                 QUICLossTimerUpdated /
-                QUICPacketLost
+                QUICPacketLost /
+                QUICMarkedForRetransmit /
+                QUICEcnStateUpdated
 
 $ProtocolEventData /= QuicEventData
 ~~~
