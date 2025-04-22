@@ -234,7 +234,7 @@ QuicEventData = QUICServerListening /
                 QUICLossTimerUpdated /
                 QUICPacketLost /
                 QUICMarkedForRetransmit /
-                QUICEcnStateUpdated
+                QUICECNStateUpdated
 
 $ProtocolEventData /= QuicEventData
 ~~~
