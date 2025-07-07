@@ -126,7 +126,11 @@ in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
-type, data, path, group_id, importance, RawInfo, and time-related fields.
+type, data, group_id, RawInfo, and time-related
+fields.
+
+Events are defined with an importance level as described in {{Section 8.3 of
+QLOG-MAIN}}.
 
 As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
 are intentionally agnostic to serialization formats. The choice of format is an
@@ -250,7 +254,7 @@ Transport and Recovery are purely for readability.
 ## server_listening {#quic-serverlistening}
 
 Emitted when the server starts accepting connections. It has Extra importance
-level; see {{Section 9.2 of QLOG-MAIN}}.
+level.
 
 ~~~ cddl
 QUICServerListening = {
@@ -277,7 +281,7 @@ The `connection_started` event is used for both attempting (client-perspective)
 and accepting (server-perspective) new connections. Note that while there is
 overlap with the `connection_state_updated` event, this event is separate event
 in order to capture additional data that can be useful to log. It has Base
-importance level; see {{Section 9.2 of QLOG-MAIN}}.
+importance level.
 
 ~~~ cddl
 QUICConnectionStarted = {
@@ -295,8 +299,7 @@ IP and/or port information.
 ## connection_closed {#quic-connectionclosed}
 
 The `connection_closed` event is used for logging when a connection was closed,
-typically when an error or timeout occurred. It has Base importance level; see
-{{Section 9.2 of QLOG-MAIN}}.
+typically when an error or timeout occurred. It has Base importance level.
 
 Note that this event has overlap with the `connection_state_updated` event, as
 well as the CONNECTION_CLOSE frame. However, in practice, when analyzing large
@@ -371,7 +374,7 @@ The `connection_id_updated` event is emitted when either party updates their
 current Connection ID. As this typically happens only sparingly over the course
 of a connection, using this event is more efficient than logging the observed
 CID with each and every `packet_sent` or `packet_received` events. It has Base
-importance level; see {{Section 9.2 of QLOG-MAIN}}.
+importance level.
 
 The `connection_id_updated` event is viewed from the perspective of the endpoint
 applying the new ID. As such, when the endpoint receives a new connection ID
@@ -394,8 +397,7 @@ QUICConnectionIDUpdated = {
 The `spin_bit_updated` event conveys information about the QUIC latency spin
 bit; see {{Section 17.4 of QUIC-TRANSPORT}}. The event is emitted when the spin
 bit changes value, it SHOULD NOT be emitted if the spin bit is set without
-changing its value. It has Base importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+changing its value. It has Base importance level.
 
 ~~~ cddl
 QUICSpinBitUpdated = {
@@ -410,7 +412,7 @@ QUICSpinBitUpdated = {
 
 The `connection_state_updated` event is used to track progress through QUIC's
 complex handshake and connection close procedures. It has Base importance
-level; see {{Section 9.2 of QLOG-MAIN}}.
+level.
 
 {{!QUIC-TRANSPORT}} does not contain an exhaustive flow diagram with possible
 connection states nor their transitions (though some are explicitly mentioned,
@@ -540,7 +542,7 @@ indicates the path has been abandoned.
 
 The `mtu_updated` event indicates that the estimated Path MTU was updated. This
 happens as part of the Path MTU discovery process. It has Extra importance
-level; see {{Section 9.2 of QLOG-MAIN}}.
+level.
 
 ~~~ cddl
 QUICMTUUpdated = {
@@ -561,8 +563,7 @@ QUICMTUUpdated = {
 ## version_information {#quic-versioninformation}
 
 The `version_information` event supports QUIC version negotiation; see {{Section
-6 of QUIC-TRANSPORT}}. It has Core importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+6 of QUIC-TRANSPORT}}. It has Core importance level.
 
 QUIC endpoints each have their own list of QUIC versions they support. The
 client uses the most likely version in their first initial. If the server does
@@ -604,8 +605,7 @@ Intended use:
 
 The `alpn_information` event supports Application-Layer Protocol Negotiation
 (ALPN) over the QUIC transport; see {{?RFC7301}} and {{Section 7.4 of
-QUIC-TRANSPORT}}. It has Core importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+QUIC-TRANSPORT}}. It has Core importance level.
 
 QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.
 
@@ -647,7 +647,7 @@ The `parameters_set` event groups settings from several different sources
 (transport parameters, TLS ciphers, etc.) into a single event. This is done to
 minimize the amount of events and to decouple conceptual setting impacts from
 their underlying mechanism for easier high-level reasoning. The event has Core
-importance level; see {{Section 9.2 of QLOG-MAIN}}.
+importance level.
 
 Most of these settings are typically set once and never change. However, they
 are usually set at different times during the connection, so there will
@@ -735,8 +735,7 @@ UnknownParameter = {
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
 transport parameters from the previous connection. The `parameters_restored`
 event is used to indicate which parameters were restored and to which values
-when utilizing 0-RTT. It has Base importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+when utilizing 0-RTT. It has Base importance level.
 
 Note that not all transport parameters should be restored (many are even
 prohibited from being re-utilized). The ones listed here are the ones expected
@@ -773,7 +772,7 @@ QUICParametersRestored = {
 ## packet_sent {#quic-packetsent}
 
 The `packet_sent` event indicates a QUIC-level packet was sent. It has Core
-importance level; see {{Section 9.2 of QLOG-MAIN}}.
+importance level.
 
 ~~~ cddl
 QUICPacketSent = {
@@ -818,7 +817,7 @@ The `datagram_id` field is used to track packet coalescing, see
 ## packet_received {#quic-packetreceived}
 
 The `packet_received` event indicates a QUIC-level packet was received. It has
-Core importance level; see {{Section 9.2 of QLOG-MAIN}}.
+Core importance level.
 
 ~~~ cddl
 QUICPacketReceived = {
@@ -854,7 +853,7 @@ The `datagram_id` field is used to track packet coalescing, see
 ## packet_dropped {#quic-packetdropped}
 
 The `packet_dropped` event indicates a QUIC-level packet was dropped. It has
-Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+Base importance level.
 
 The trigger field indicates a general reason category for dropping the packet,
 while the details field can contain additional implementation-specific
@@ -905,8 +904,7 @@ The `datagram_id` field is used to track packet coalescing, see
 The `packet_buffered` event is emitted when a packet is buffered because it
 cannot be processed yet. Typically, this is because the packet cannot be parsed
 yet, and thus only the full packet contents can be logged when it was parsed in
-a `packet_received` event. The event has Base importance level; see {{Section
-9.2 of QLOG-MAIN}}.
+a `packet_received` event. The event has Base importance level.
 
 ~~~ cddl
 QUICPacketBuffered = {
@@ -936,7 +934,7 @@ The `datagram_id` field is used to track packet coalescing, see
 
 The `packets_acked` event is emitted when a (group of) sent packet(s) is
 acknowledged by the remote peer _for the first time_. It has Extra importance
-level; see {{Section 9.2 of QLOG-MAIN}}.
+level.
 
 This information could also be deduced from the contents of received ACK frames.
 However, ACK frames require additional processing logic to determine when a
@@ -962,8 +960,7 @@ number space a typical QUIC connection will use.
 
 The `datagrams_sent` event indicates when one or more UDP-level datagrams are
 passed to the underlying network socket. This is useful for determining how QUIC
-packet buffers are drained to the OS. The event has Extra importance level; see
-{{Section 9.2 of QLOG-MAIN}}.
+packet buffers are drained to the OS. The event has Extra importance level.
 
 ~~~ cddl
 QUICUDPDatagramsSent = {
@@ -1006,7 +1003,7 @@ implementation choice.
 
 When one or more UDP-level datagrams are received from the socket. This is
 useful for determining how datagrams are passed to the user space stack from the
-OS. The event has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
+OS. The event has Extra importance level.
 
 ~~~ cddl
 QUICUDPDatagramsReceived = {
@@ -1038,8 +1035,7 @@ The `datagram_ids` field is used to track packet coalescing, see
 When a UDP-level datagram is dropped. This is typically done if it does not
 contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
 other reasons, the `packet_dropped` event ({{quic-packetdropped}}) should be
-used instead. The event has Extra importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+used instead. The event has Extra importance level.
 
 ~~~ cddl
 QUICUDPDatagramDropped = {
@@ -1059,7 +1055,7 @@ The `stream_state_updated` event is emitted whenever the internal state of a
 QUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be
 inferred from several types of frames going over the wire, but it's much easier
 to have explicit signals for these state changes. The event has Base importance
-level; see {{Section 9.2 of QLOG-MAIN}}.
+level.
 
 ~~~ cddl
 StreamType = "unidirectional" /
@@ -1115,8 +1111,7 @@ with both types equally.
 
 The `frame_processed` event is intended to prevent a large proliferation of
 specific purpose events (e.g., `packets_acknowledged`, `flow_control_updated`,
-`stream_data_received`). It has Extra importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+`stream_data_received`). It has Extra importance level.
 
 Implementations have the opportunity to (selectively) log this type of
 signal without having to log packet-level details (e.g., in `packet_received`).
@@ -1182,7 +1177,7 @@ STREAM frames received over two packets would have the fields serialized as:
 The `stream_data_moved` event is used to indicate when QUIC stream data moves
 between the different layers. This helps make clear the flow of data, how long
 data remains in various buffers, and the overheads introduced by individual
-layers. The event has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+layers. The event has Base importance level.
 
 This event relates to stream data only. There are no packet or frame headers and
 length values in the `length` or `raw` fields MUST reflect that.
@@ -1240,8 +1235,7 @@ $DataMovedAdditionalInfo /= "fin_set" /
 The `datagram_data_moved` event is used to indicate when QUIC Datagram Frame
 data (see {{!RFC9221}}) moves between the different layers. This helps make
 clear the flow of data, how long data remains in various buffers, and the
-overheads introduced by individual layers. The event has Base importance level;
-see {{Section 9.2 of QLOG-MAIN}}.
+overheads introduced by individual layers. The event has Base importance level.
 
 This event relates to datagram data only. There are no packet or frame headers and
 length values in the `length` or `raw` fields MUST reflect that.
@@ -1279,8 +1273,7 @@ migration. While most details of the QUIC connection migration process can be
 inferred by observing the PATH_CHALLENGE and PATH_RESPONSE frames, in
 combination with the QUICPathAssigned event, it can be useful to explicitly log
 the progression of the migration and potentially made decisions in a single
-location/event. The event has Extra importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+location/event. The event has Extra importance level.
 
 Generally speaking, connection migration goes through two phases: a probing
 phase (which is not always needed/present), and a migration phase (which can be
@@ -1333,7 +1326,7 @@ MigrationState =
 
 ## key_updated {#quic-keyupdated}
 
-The `key_updated` event has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+The `key_updated` event has Base importance level.
 
 ~~~ cddl
 QUICKeyUpdated = {
@@ -1361,8 +1354,7 @@ the packet header is the least significant bit of the key phase.
 
 ## key_discarded {#quic-keydiscarded}
 
-The `key_discarded` event has Base importance level; see {{Section 9.2 of
-QLOG-MAIN}}.
+The `key_discarded` event has Base importance level.
 
 ~~~ cddl
 QUICKeyDiscarded = {
@@ -1394,7 +1386,7 @@ SHOULD make an effort to support and visualize even unknown data in these events
 
 The `recovery_parameters_set` event groups initial parameters from both loss
 detection and congestion control into a single event. It has Base importance
-level; see {{Section 9.2 of QLOG-MAIN}}.
+level.
 
 All these settings are typically set once and never change. Implementation that
 do, for some reason, change these parameters during execution, MAY emit the
@@ -1442,8 +1434,7 @@ different recovery approaches.
 ## recovery_metrics_updated {#quic-recoverymetricsupdated}
 
 The `recovery_metrics_updated` event is emitted when one or more of the observable
-recovery metrics changes value. It has Core importance level; see {{Section
-9.2 of QLOG-MAIN}}.
+recovery metrics changes value. It has Core importance level.
 
 This event SHOULD group all possible metric updates that happen at or around the
 same time in a single event (e.g., if `min_rtt` and `smoothed_rtt` change at the
@@ -1495,7 +1486,7 @@ unspecified fields to support different recovery approaches.
 
 The `congestion_state_updated` event indicates when the congestion controller
 enters a significant new state and changes its behaviour. It has Base importance
-level; see {{Section 9.2 of QLOG-MAIN}}.
+level.
 
 The values of the event's fields are intentionally unspecified here in order to
 support different Congestion Control algorithms, as these typically have
@@ -1525,7 +1516,7 @@ exceeded).
 ## loss_timer_updated {#quic-losstimerupdated}
 
 The `loss_timer_updated` event is emitted when a recovery loss timer changes
-state. It has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
+state. It has Extra importance level.
 
 The three main event types are:
 
@@ -1559,7 +1550,7 @@ QUICLossTimerUpdated = {
 ## packet_lost {#quic-packetlost}
 
 The `packet_lost` event is emitted when a packet is deemed lost by loss
-detection. It has Core importance level; see {{Section 9.2 of QLOG-MAIN}}.
+detection. It has Core importance level.
 
 It is RECOMMENDED to populate the optional `trigger` field in order to help
 disambiguate among the various possible causes of a loss declaration.
@@ -1589,7 +1580,7 @@ QUICPacketLost = {
 
 The `marked_for_retransmit` event indicates which data was marked for
 retransmission upon detection of packet loss (see `packet_lost`). It has Extra
-importance level; see {{Section 9.2 of QLOG-MAIN}}.
+importance level.
 
 Similar to the reasoning for the `frames_processed` event,
 in order to keep the amount of different events low, this signal is grouped into
@@ -1621,7 +1612,7 @@ QUICMarkedForRetransmit = {
 
 The `ecn_state_updated` event indicates a progression in the ECN state machine
 as described in section A.4 of {{QUIC-TRANSPORT}}. It has Extra importance
-level; see {{Section 9.2 of QLOG-MAIN}}.
+level.
 
 ~~~ cddl
 QUICECNStateUpdated = {

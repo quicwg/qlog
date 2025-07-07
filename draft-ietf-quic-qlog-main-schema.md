@@ -129,6 +129,8 @@ etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
 Serialization examples in this document use JSON ({{!JSON=RFC8259}}) unless
 otherwise indicated.
 
+Events are defined with an importance level as described in {{importance}}}.
+
 ## Use of CDDL
 
 To define events and data structures, all qlog documents use the Concise Data
@@ -1452,7 +1454,7 @@ The event types are further defined below, their identifier is the heading name.
 ### error
 
 Used to log details of an internal error that might not get reflected on the
-wire. It has Core importance level; see {{importance}}.
+wire. It has Core importance level.
 
 ~~~ cddl
 LogLevelError = {
@@ -1467,7 +1469,7 @@ LogLevelError = {
 ### warning
 
 Used to log details of an internal warning that might not get reflected on the
-wire. It has Base importance level; see {{importance}}.
+wire. It has Base importance level.
 
 ~~~ cddl
 LogLevelWarning = {
@@ -1483,7 +1485,7 @@ LogLevelWarning = {
 
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see {{importance}}.
+has Extra importance level.
 
 ~~~ cddl
 LogLevelInfo = {
@@ -1498,7 +1500,7 @@ LogLevelInfo = {
 
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see {{importance}}.
+has Extra importance level.
 
 ~~~ cddl
 LogLevelDebug = {
@@ -1513,7 +1515,7 @@ LogLevelDebug = {
 
 Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see {{importance}}.
+has Extra importance level.
 
 ~~~ cddl
 LogLevelVerbose = {
@@ -1566,7 +1568,7 @@ SimulationScenario = {
 
 Used to indicate when specific emulation conditions are triggered at set times
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered). It has Extra importance level; see {{importance}}.
+triggered). It has Extra importance level.
 
 ~~~ cddl
 SimulationMarker = {

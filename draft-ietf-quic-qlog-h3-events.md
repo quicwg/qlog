@@ -123,7 +123,11 @@ in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
-type, data, group_id, importance, RawInfo, and time-related fields.
+type, data, group_id, RawInfo, and time-related
+fields.
+
+Events are defined with an importance level as described in {{Section 8.3 of
+QLOG-MAIN}}.
 
 As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
 are intentionally agnostic to serialization formats. The choice of format is an
@@ -193,8 +197,7 @@ is the heading name.
 ## parameters_set {#h3-parametersset}
 
 The `parameters_set` event contains HTTP/3 and QPACK-level settings, mostly
-those received from the HTTP/3 SETTINGS frame. It has Base importance level; see
-{{Section 9.2 of QLOG-MAIN}}.
+those received from the HTTP/3 SETTINGS frame. It has Base importance level.
 
 All these parameters are typically set once and never change. However, they
 might be set at different times during the connection, therefore a qlog can have
@@ -240,7 +243,7 @@ for extension settings that do not have a related qlog schema definition.
 When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
 server's SETTINGs from the previous connection. The `parameters_restored` event
 is used to indicate which HTTP/3 settings were restored and to which values when
-utilizing 0-RTT. It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+utilizing 0-RTT. It has Base importance level.
 
 ~~~ cddl
 HTTP3ParametersRestored = {
@@ -265,8 +268,7 @@ HTTP3ParametersRestored = {
 ## stream_type_set {#h3-streamtypeset}
 
 The `stream_type_set` event conveys when a HTTP/3 stream type becomes known; see
-{{Sections 6.1 and 6.2 of RFC9114}}. It has Base importance level; see {{Section
-9.2 of QLOG-MAIN}}.
+{{Sections 6.1 and 6.2 of RFC9114}}. It has Base importance level.
 
 Client bidirectional streams always have a stream_type value of "request".
 Server bidirectional streams have no defined use, although extensions could
@@ -309,7 +311,7 @@ $HTTP3StreamType /=   "request" /
 
 The `priority_updated` event is emitted when the priority of a request stream or
 push stream is initialized or updated through mechanisms defined in
-{{!RFC9218}}. It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+{{!RFC9218}}. It has Base importance level.
 
 There can be several reasons why a `priority_updated` occurs, and why a
 particular value was chosen. For example, the priority can be updated through
@@ -346,7 +348,7 @@ HTTP3PriorityUpdated = {
 ## frame_created {#h3-framecreated}
 
 The `frame_created` event is emitted when the HTTP/3 framing actually happens.
-It has Core importance level; see {{Section 9.2 of QLOG-MAIN}}.
+It has Core importance level.
 
 This event does not necessarily coincide with HTTP/3 data getting passed to the
 QUIC layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
@@ -366,7 +368,7 @@ HTTP3FrameCreated = {
 ## frame_parsed {#h3-frameparsed}
 
 The `frame_parsed` event is emitted when the HTTP/3 frame is parsed. It has Core
-importance level; see {{Section 9.2 of QLOG-MAIN}}.
+importance level.
 
 This event is not necessarily the same as when the HTTP/3 data is actually
 received on the QUIC layer. For that, see the `stream_data_moved` event in
@@ -388,7 +390,7 @@ HTTP3FrameParsed = {
 ## datagram_created {#h3-datagramcreated}
 
 The `datagram_created` event is emitted when an HTTP/3 Datagram is created (see
-{{!RFC9297}}). It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+{{!RFC9297}}). It has Base importance level.
 
 This event does not necessarily coincide with the HTTP/3 Datagram getting passed
 to the QUIC layer. For that, see the `datagram_data_moved` event in
@@ -408,7 +410,7 @@ HTTP3DatagramCreated = {
 ## datagram_parsed {#h3-datagramparsed}
 
 The `datagram_parsed` event is emitted when the HTTP/3 Datagram is parsed (see
-{{!RFC9297}}). It has Base importance level; see {{Section 9.2 of QLOG-MAIN}}.
+{{!RFC9297}}). It has Base importance level.
 
 This event is not necessarily the same as when the HTTP/3 Datagram is actually
 received on the QUIC layer. For that, see the `datagram_data_moved` event in
@@ -431,7 +433,7 @@ The `push_resolved` event is emitted when a pushed resource ({{Section 4.6 of
 RFC9114}}) is successfully claimed (used) or, conversely, abandoned (rejected)
 by the application on top of HTTP/3 (e.g., the web browser). This event provides
 additional context that can is aid debugging issues related to server push. It
-has Extra importance level; see {{Section 9.2 of QLOG-MAIN}}.
+has Extra importance level.
 
 ~~~ cddl
 HTTP3PushResolved = {
