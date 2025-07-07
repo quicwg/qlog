@@ -57,10 +57,6 @@ Feedback and discussion are welcome at
 advised to refer to the "editor's draft" at that URL for an up-to-date version
 of this document.
 
-Concrete examples of integrations of this schema in
-various programming languages can be found at
-[https://github.com/quiclog/qlog/](https://github.com/quiclog/qlog/).
-
 --- middle
 
 # Introduction
