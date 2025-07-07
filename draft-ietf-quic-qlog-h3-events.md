@@ -761,7 +761,7 @@ document as well.
 
 # IANA Considerations
 
-This document registers a new entry in the "qlog event schema URIs" registry.
+This document registers a new entry in the "qlog event schema URIs" registry (created in {{Section 15 of QLOG-MAIN}}).
 
 Event schema URI:
 : urn:ietf:params:qlog:events:http3
