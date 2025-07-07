@@ -1266,6 +1266,63 @@ QUICDatagramDataMoved = {
 ~~~
 {: #quic-datagramdatamoved-def title="QUICDatagramDataMoved definition"}
 
+## connection_data_blocked_updated {#quic-connectiondatablockedupdated}
+
+The `connection_data_blocked_updated` event is used to indicate when the QUIC
+connection becomes blocked or unblocked for sending data in either streams or
+datagrams.
+
+~~~ cddl
+QUICConnectionDataBlockedUpdated = {
+    ? old: BlockedState
+    new: BlockedState
+
+    ? reason: $BlockedReason
+}
+
+BlockedState = "blocked" /
+               "unblocked"
+
+$BlockedReason /= "scheduling" /
+                  "pacing" /
+                  "amplification_protection" /
+                  "congestion_control" /
+                  "connection_flow_control" /
+                  "stream_flow_control" /
+                  "stream_id" /
+                  "application"
+~~~
+
+## stream_data_blocked_updated {#quic-streamdatablockedupdated}
+
+The `stream_data_blocked_updated` event is used to indicate when a QUIC
+stream becomes blocked or unblocked for sending.
+
+~~~ cddl
+QUICStreamDataBlockedUpdated = {
+    ? old: BlockedState
+    new: BlockedState
+
+    stream_id: uint64
+
+    ? reason: $BlockedReason
+}
+~~~
+
+## datagram_data_blocked_updated {#quic-datagramdatablockedupdated}
+
+The `datagram_data_blocked_updated` event is used to indicate when QUIC
+datagrames becomes blocked or unblocked for sending.
+
+~~~ cddl
+QUICDatagramDataBlockedUpdated = {
+    ? old: BlockedState
+    new: BlockedState
+
+    ? reason: $BlockedReason
+}
+~~~
+
 ## migration_state_updated {#quic-migrationstateupdated}
 
 Use to provide additional information when attempting (client-side) connection
