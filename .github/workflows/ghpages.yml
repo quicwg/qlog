@@ -18,44 +18,44 @@ jobs:
   build:
     name: "Update Editor's Copy"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - name: "Checkout"
       uses: actions/checkout@v4
 
-    - name: Install System Dependencies
-      run: sudo apt-get install --yes libyaml-dev openssl ruby-dev
+    - name: "Setup"
+      id: setup
+      run: date -u "+date=%FT%T" >>"$GITHUB_OUTPUT"
 
-    - name: "Cache Setup"
-      id: cache-setup
-      run: |
-        mkdir -p "$HOME"/.cache/xml2rfc
-        echo "::set-output name=path::$HOME/.cache/xml2rfc"
-        date -u "+::set-output name=date::%FT%T"
-
-    - name: "Cache References"
+    - name: "Caching"
       uses: actions/cache@v4
       with:
         path: |
-          ${{ steps.cache-setup.outputs.path }}
+          .refcache
+          .venv
+          .gems
+          node_modules
           .targets.mk
-        key: refcache-${{ steps.cache-setup.outputs.date }}
-        restore-keys: |
-          refcache-${{ steps.cache-setup.outputs.date }}
-          refcache-
+        key: i-d-${{ steps.setup.outputs.date }}
+        restore-keys: i-d-
 
     - name: "Build Drafts"
       uses: martinthomson/i-d-template@v1
+      with:
+        token: ${{ github.token }}
 
     - name: "Update GitHub Pages"
       uses: martinthomson/i-d-template@v1
       if: ${{ github.event_name == 'push' }}
       with:
         make: gh-pages
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ github.token }}
 
     - name: "Archive Built Drafts"
       uses: actions/upload-artifact@v4
       with:
+        name: drafts
         path: |
           draft-*.html
           draft-*.txt
