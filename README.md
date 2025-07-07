@@ -1,8 +1,13 @@
-<!-- regenerate: on (set to off if you edit this file) -->
+<!-- regenerate: off (set to off if you edit this file) -->
 
-# QUIC Drafts
+# qlog drafts
 
-This is the working area for IETF [QUIC Working Group](https://datatracker.ietf.org/group/quic/documents/) Internet-Drafts.
+This is the working area for IETF [QUIC Working Group](https://datatracker.ietf.org/wg/quic/documents/) Internet-Drafts concerning the qlog logging format for QUIC and HTTP/3.
+
+Three documents are currently defined:
+- The main schema: high-level schema, defining general logging format and principles
+- Event definitions for QUIC: concrete event definitions for the QUIC protocol
+- Event definitions for HTTP/3 and QPACK: concrete event definitions for the HTTP/3 and QPACK protocols
 
 ## HTTP/3 qlog event definitions
 
