@@ -1059,6 +1059,11 @@ inferred from several types of frames going over the wire, but it's much easier
 to have explicit signals for these state changes. The event has Base importance
 level.
 
+While stream IDs encode the type of stream and its initiator, the optional
+`stream_type` and `initiator` fields can be used to provide a more-accessible
+form of the information.
+
+
 ~~~ cddl
 StreamType = "unidirectional" /
              "bidirectional"
@@ -1068,10 +1073,13 @@ QUICStreamStateUpdated = {
 
     ; mainly useful when opening the stream
     ? stream_type: StreamType
+    ? initiator: "client" /
+                 "server"
+
     ? old: $StreamState
     new: $StreamState
-    ? stream_side: "sending" /
-                   "receiving"
+    stream_side: "sending" /
+                 "receiving"
 
     * $$quic-streamstateupdated-extension
 }
