@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-07-08T01:12:50.935171+00:00",
+  "timestamp": "2025-07-10T01:13:34.254246+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -26527,6 +26527,54 @@
         }
       ],
       "reviews": []
+    },
+    {
+      "number": 468,
+      "id": "PR_kwDOCrLn6M6d7PKP",
+      "title": "Tweak stream_state_updated",
+      "url": "https://github.com/quicwg/qlog/pull/468",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "This implements my suggestions from #374, adding a new optional\r\ninitiator field to supplement the stream_type field, along with\r\nmaking the stream_side field mandatory.\r\n\r\nHaving just implemented a prototype pcap to qlog tool, that tool\r\nneeds to try and build an understanding of who is a QUIC server\r\nand client, and in what direction messages are flowing. So even\r\nan observer vantage point can determine and log `stream_side`.\r\n\r\nCloses #374\r\n",
+      "createdAt": "2025-07-08T11:24:55Z",
+      "updatedAt": "2025-07-08T14:58:22Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "06690b1b3f66df98bdd633d6a04fe755158551be",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "lucas/stream-state-event-tweaks",
+      "headRefOid": "e7c897c1e1647b40d31db84280ca94c2af5f38cf",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Note I am not a strong advocate for things here, just trying to drive the issue to a close :)\r\n\r\nThe spec is a bit strange, it pushes people towards using coarse events:\r\n\r\n> QUIC implementations SHOULD mainly log the simplified (HTTP/2-alike) BaseStreamStates instead of the more fine-grained GranularStreamStates.\r\n\r\nIf we removed `stream_side`, there's a risk that an event like `stream_id=0, new=closed\" is too generic to express the actual QUIC protocol stream state. \r\n\r\nAn alternative might be to ditch the granular stream states, push implementations to log the fine-grained states that encode the QUIC protocol machinery in their labels, and then drop the redundant fields like `stream_side` and `stream_type` (and don't add an `initiator` like we do here). That seems a reasonable alternative to me I could support. Especially since a future extension could add additional fields if they turn out to be needed by someone,",
+          "createdAt": "2025-07-08T14:58:22Z",
+          "updatedAt": "2025-07-08T14:58:22Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M6ysFvL",
+          "commit": {
+            "abbreviatedOid": "e7c897c"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "Isn't this duplicate now? For example, if we're a client, and we're dealing with a client-initiated uni-directional stream, we know for a fact that it's a send stream.\r\n\r\nMy preference would be for removing `stream_side` altogether.",
+          "createdAt": "2025-07-08T14:24:23Z",
+          "updatedAt": "2025-07-08T14:24:23Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
