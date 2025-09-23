@@ -19,21 +19,21 @@ protocol-specific event schemas are also presented. All schemas are defined
 independent of serialization format, allowing logs to be represented in various
 ways such as JSON, CSV, or protobuf. 
     " name="description">
-<meta content="xml2rfc 3.29.0" name="generator">
+<meta content="xml2rfc 3.30.2" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-ietf-quic-qlog-main-schema-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.29.0
+  xml2rfc 3.30.2
     Python 3.12.11
     ConfigArgParse 1.7
     google-i18n-address 3.1.1
     intervaltree 3.1.0
     Jinja2 3.1.6
     lxml 5.3.1
-    platformdirs 4.3.8
+    platformdirs 4.4.0
     pycountry 24.6.1
     PyYAML 6.0.2
-    requests 2.32.4
+    requests 2.32.5
     setuptools 80.9.0
     wcwidth 0.2.13
 -->
@@ -1054,11 +1054,11 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <thead><tr>
 <td class="left">Internet-Draft</td>
 <td class="center">qlog</td>
-<td class="right">July 2025</td>
+<td class="right">September 2025</td>
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 8 January 2026</td>
+<td class="center">Expires 27 March 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1071,12 +1071,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-main-schema-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-07-07" class="published">7 July 2025</time>
+<time datetime="2025-09-23" class="published">23 September 2025</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-01-08">8 January 2026</time></dd>
+<dd class="expires"><time datetime="2026-03-27">27 March 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1146,7 +1146,7 @@ of this document.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 8 January 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 27 March 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1470,6 +1470,7 @@ described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</s
 appear in all capitals, as shown here.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
 <p id="section-1.1-2">Serialization examples in this document use JSON (<span>[<a href="#JSON" class="cite xref">JSON</a>]</span>) unless
 otherwise indicated.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
+<p id="section-1.1-3">Events are defined with an importance level as described in <a href="#importance" class="auto internal xref">Section 8.3</a>}.<a href="#section-1.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="use-of-cddl">
@@ -2142,19 +2143,22 @@ with identical values. It is possible to optimize out this duplication using
 <a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-timestamps" class="section-name selfRef">Timestamps</a>
         </h3>
 <p id="section-7.1-1">Each event <span class="bcp14">MUST</span> include a "time" field to indicate the timestamp that it
-occurred. It is a duration measured from some point in time; its units depend on the type of clock chosen and system used. Typically however, a millisecond resolution is employed.
-There are several options for generating and logging timestamps, these are
+occurred. It is a duration measured from some point in time; its units depend on
+the type of clock chosen and system used. The time field is a float64 and it is
+typically used to represent a duration in milliseconds, with a fractional component
+to microsecond or nanosecond resolution.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
+<p id="section-7.1-2">There are several options for generating and logging timestamps, these are
 governed by the ReferenceTime type (optionally included in the "reference_time"
 field contained in a trace's "common_fields" (<a href="#common-fields" class="auto internal xref">Section 7.5</a>)) and TimeFormat
 type (optionally included in the "time_format" field contained in the event
-itself, or a trace's "common_fields").<a href="#section-7.1-1" class="pilcrow">¶</a></p>
-<p id="section-7.1-2">There is no requirement that events in the same trace use the same time format.
+itself, or a trace's "common_fields").<a href="#section-7.1-2" class="pilcrow">¶</a></p>
+<p id="section-7.1-3">There is no requirement that events in the same trace use the same time format.
 However, using a single time format for related events can make them easier to
-analyze.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
-<p id="section-7.1-3">The reference time governs from which point in time the "time" field values are measured and is defined as:<a href="#section-7.1-3" class="pilcrow">¶</a></p>
+analyze.<a href="#section-7.1-3" class="pilcrow">¶</a></p>
+<p id="section-7.1-4">The reference time governs from which point in time the "time" field values are measured and is defined as:<a href="#section-7.1-4" class="pilcrow">¶</a></p>
 <span id="name-referencetime-definition"></span><div id="reference-time-def">
 <figure id="figure-16">
-          <div class="lang-cddl sourcecode" id="section-7.1-4.1">
+          <div class="lang-cddl sourcecode" id="section-7.1-5.1">
 <pre>
 ReferenceTime = {
     clock_type: "system" / "monotonic" / text .default "system"
@@ -2170,22 +2174,22 @@ RFC3339DateTime = text
 <a href="#name-referencetime-definition" class="selfRef">ReferenceTime definition</a>
           </figcaption></figure>
 </div>
-<p id="section-7.1-5">The required "clock_type" field represents the type of clock used for time
+<p id="section-7.1-6">The required "clock_type" field represents the type of clock used for time
 measurements. The value "system" represents a clock that uses system time,
-commonly measured against a chosen or well-known epoch. However, depending on the system, System time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value "monotonic" represents such a clock.<a href="#section-7.1-5" class="pilcrow">¶</a></p>
-<p id="section-7.1-6">The required "epoch" field is the start of the ReferenceTime. When using the
+commonly measured against a chosen or well-known epoch. However, depending on the system, System time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value "monotonic" represents such a clock.<a href="#section-7.1-6" class="pilcrow">¶</a></p>
+<p id="section-7.1-7">The required "epoch" field is the start of the ReferenceTime. When using the
 "system" clock type, the epoch field <span class="bcp14">SHOULD</span> have a date/time value using the
-format defined in <span>[<a href="#RFC3339" class="cite xref">RFC3339</a>]</span>. However, the value "unknown" <span class="bcp14">MAY</span> be used.<a href="#section-7.1-6" class="pilcrow">¶</a></p>
-<p id="section-7.1-7">When using the "monotonic" clock type, the epoch field <span class="bcp14">MUST</span> have the value
-"unknown".<a href="#section-7.1-7" class="pilcrow">¶</a></p>
-<p id="section-7.1-8">The optional "wall_clock_time" field can be used to provide an approximate
+format defined in <span>[<a href="#RFC3339" class="cite xref">RFC3339</a>]</span>. However, the value "unknown" <span class="bcp14">MAY</span> be used.<a href="#section-7.1-7" class="pilcrow">¶</a></p>
+<p id="section-7.1-8">When using the "monotonic" clock type, the epoch field <span class="bcp14">MUST</span> have the value
+"unknown".<a href="#section-7.1-8" class="pilcrow">¶</a></p>
+<p id="section-7.1-9">The optional "wall_clock_time" field can be used to provide an approximate
 date/time value that logging commenced at if the epoch value is "unknown". It uses
 the format defined in <span>[<a href="#RFC3339" class="cite xref">RFC3339</a>]</span>. Note that conversion of timestamps to
-calendar time based on wall clock times cannot be safely relied on.<a href="#section-7.1-8" class="pilcrow">¶</a></p>
-<p id="section-7.1-9">The time format details how "time" values are encoded relative to the reference time and is defined as:<a href="#section-7.1-9" class="pilcrow">¶</a></p>
+calendar time based on wall clock times cannot be safely relied on.<a href="#section-7.1-9" class="pilcrow">¶</a></p>
+<p id="section-7.1-10">The time format details how "time" values are encoded relative to the reference time and is defined as:<a href="#section-7.1-10" class="pilcrow">¶</a></p>
 <span id="name-timeformat-definition"></span><div id="time-format-def">
 <figure id="figure-17">
-          <div class="lang-cddl sourcecode" id="section-7.1-10.1">
+          <div class="lang-cddl sourcecode" id="section-7.1-11.1">
 <pre>
 TimeFormat = "relative_to_epoch" /
              "relative_to_previous_event" .default "relative_to_epoch"
@@ -2195,36 +2199,36 @@ TimeFormat = "relative_to_epoch" /
 <a href="#name-timeformat-definition" class="selfRef">TimeFormat definition</a>
           </figcaption></figure>
 </div>
-<span class="break"></span><dl class="dlParallel" id="section-7.1-11">
-          <dt id="section-7.1-11.1">relative_to_epoch:</dt>
-          <dd style="margin-left: 1.5em" id="section-7.1-11.2">
-            <p id="section-7.1-11.2.1">A duration relative to the ReferenceTime "epoch" field. This approach uses the
-largest amount of characters. It is good for stateless loggers. This is the default value of the "time_format" field.<a href="#section-7.1-11.2.1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-7.1-12">
+          <dt id="section-7.1-12.1">relative_to_epoch:</dt>
+          <dd style="margin-left: 1.5em" id="section-7.1-12.2">
+            <p id="section-7.1-12.2.1">A duration relative to the ReferenceTime "epoch" field. This approach uses the
+largest amount of characters. It is good for stateless loggers. This is the default value of the "time_format" field.<a href="#section-7.1-12.2.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-7.1-11.3">relative_to_previous_event:</dt>
-          <dd style="margin-left: 1.5em" id="section-7.1-11.4">
-            <p id="section-7.1-11.4.1">A delta-encoded value, based on the previously logged value. The first event
+<dt id="section-7.1-12.3">relative_to_previous_event:</dt>
+          <dd style="margin-left: 1.5em" id="section-7.1-12.4">
+            <p id="section-7.1-12.4.1">A delta-encoded value, based on the previously logged value. The first event
 in a trace is always relative to the ReferenceTime. This approach uses the
-least amount of characters. It is suitable for stateful loggers.<a href="#section-7.1-11.4.1" class="pilcrow">¶</a></p>
+least amount of characters. It is suitable for stateful loggers.<a href="#section-7.1-12.4.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-7.1-12">Events in each individual trace <span class="bcp14">SHOULD</span> be logged in strictly ascending timestamp
+<p id="section-7.1-13">Events in each individual trace <span class="bcp14">SHOULD</span> be logged in strictly ascending timestamp
 order (though not necessarily absolute value, for the "relative_to_previous_event"
 format). Tools <span class="bcp14">MAY</span> sort all events on the timestamp before processing them,
 though are not required to (as this could impose a significant processing
 overhead). This can be a problem especially for multi-threaded and/or streaming
 loggers, who could consider using a separate post-processor to order qlog events
-in time if a tool do not provide this feature.<a href="#section-7.1-12" class="pilcrow">¶</a></p>
-<p id="section-7.1-13">Tools <span class="bcp14">SHOULD NOT</span> assume the ability to derive the absolute calendar timestamp of an event
+in time if a tool do not provide this feature.<a href="#section-7.1-13" class="pilcrow">¶</a></p>
+<p id="section-7.1-14">Tools <span class="bcp14">SHOULD NOT</span> assume the ability to derive the absolute calendar timestamp of an event
 from qlog traces. Tools should not rely on timestamps to be consistent across
 traces, even those generated by the same logging endpoint. For reasons of
-privacy, the reference time <span class="bcp14">MAY</span> have minimization or anonymization applied.<a href="#section-7.1-13" class="pilcrow">¶</a></p>
-<p id="section-7.1-14">Example of a log using the relative_to_epoch format:<a href="#section-7.1-14" class="pilcrow">¶</a></p>
+privacy, the reference time <span class="bcp14">MAY</span> have minimization or anonymization applied.<a href="#section-7.1-14" class="pilcrow">¶</a></p>
+<p id="section-7.1-15">Example of a log using the relative_to_epoch format:<a href="#section-7.1-15" class="pilcrow">¶</a></p>
 <span id="name-relative-to-epoch-timestamp"></span><div id="rel-epoch-time-ex">
 <figure id="figure-18">
-          <div class="alignLeft art-text artwork" id="section-7.1-15.1">
+          <div class="alignLeft art-text artwork" id="section-7.1-16.1">
 <pre>
 "common_fields": {
     "time_format": "relative_to_epoch",
@@ -2261,10 +2265,10 @@ privacy, the reference time <span class="bcp14">MAY</span> have minimization or 
 <a href="#name-relative-to-epoch-timestamp" class="selfRef">Relative to epoch timestamps</a>
           </figcaption></figure>
 </div>
-<p id="section-7.1-16">Example of a log using the relative_to_previous_event format:<a href="#section-7.1-16" class="pilcrow">¶</a></p>
+<p id="section-7.1-17">Example of a log using the relative_to_previous_event format:<a href="#section-7.1-17" class="pilcrow">¶</a></p>
 <span id="name-relative-to-previous-event-"></span><div id="rel-last-event-time-ex">
 <figure id="figure-19">
-          <div class="alignLeft art-text artwork" id="section-7.1-17.1">
+          <div class="alignLeft art-text artwork" id="section-7.1-18.1">
 <pre>
 "common_fields": {
     "time_format": "relative_to_previous_event",
@@ -2301,10 +2305,10 @@ privacy, the reference time <span class="bcp14">MAY</span> have minimization or 
 <a href="#name-relative-to-previous-event-" class="selfRef">Relative-to-previous-event timestamps</a>
           </figcaption></figure>
 </div>
-<p id="section-7.1-18">Example of a monotonic log using the relative_to_epoch format:<a href="#section-7.1-18" class="pilcrow">¶</a></p>
+<p id="section-7.1-19">Example of a monotonic log using the relative_to_epoch format:<a href="#section-7.1-19" class="pilcrow">¶</a></p>
 <span id="name-monotonic-timestamps"></span><div id="mono-time-ex">
 <figure id="figure-20">
-          <div class="alignLeft art-text artwork" id="section-7.1-19.1">
+          <div class="alignLeft art-text artwork" id="section-7.1-20.1">
 <pre>
 "common_fields": {
     "time_format": "relative_to_epoch",
@@ -2883,7 +2887,7 @@ fine-grained information without much additional overhead. In circumstances
 where a trigger is useful, it is <span class="bcp14">RECOMMENDED</span> for the purpose of consistency that
 the event data definition contains an optional field named "trigger", holding a
 string value.<a href="#section-8.2.1-2" class="pilcrow">¶</a></p>
-<p id="section-8.2.1-3">For example, the QUIC "packet_dropped" event (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-10#section-5.7" class="relref">Section 5.7</a> of [<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>)
+<p id="section-8.2.1-3">For example, the QUIC "packet_dropped" event (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-11#section-5.7" class="relref">Section 5.7</a> of [<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>)
 includes a trigger field that identifies the precise reason why a QUIC packet
 was dropped:<a href="#section-8.2.1-3" class="pilcrow">¶</a></p>
 <span id="name-trigger-example"></span><div id="trigger-ex">
@@ -3061,7 +3065,7 @@ $ProtocolEventData /= LogLevelEventData
 <a href="#section-9.1.1" class="section-number selfRef">9.1.1. </a><a href="#name-error" class="section-name selfRef">error</a>
           </h4>
 <p id="section-9.1.1-1">Used to log details of an internal error that might not get reflected on the
-wire. It has Core importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.1-1" class="pilcrow">¶</a></p>
+wire. It has Core importance level.<a href="#section-9.1.1-1" class="pilcrow">¶</a></p>
 <span id="name-loglevelerror-definition"></span><div id="loglevel-error-def">
 <figure id="figure-32">
             <div class="lang-cddl sourcecode" id="section-9.1.1-2.1">
@@ -3086,7 +3090,7 @@ LogLevelError = {
 <a href="#section-9.1.2" class="section-number selfRef">9.1.2. </a><a href="#name-warning" class="section-name selfRef">warning</a>
           </h4>
 <p id="section-9.1.2-1">Used to log details of an internal warning that might not get reflected on the
-wire. It has Base importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.2-1" class="pilcrow">¶</a></p>
+wire. It has Base importance level.<a href="#section-9.1.2-1" class="pilcrow">¶</a></p>
 <span id="name-loglevelwarning-definition"></span><div id="loglevel-warning-def">
 <figure id="figure-33">
             <div class="lang-cddl sourcecode" id="section-9.1.2-2.1">
@@ -3112,7 +3116,7 @@ LogLevelWarning = {
           </h4>
 <p id="section-9.1.3-1">Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.3-1" class="pilcrow">¶</a></p>
+has Extra importance level.<a href="#section-9.1.3-1" class="pilcrow">¶</a></p>
 <span id="name-loglevelinfo-definition"></span><div id="loglevel-info-def">
 <figure id="figure-34">
             <div class="lang-cddl sourcecode" id="section-9.1.3-2.1">
@@ -3137,7 +3141,7 @@ LogLevelInfo = {
           </h4>
 <p id="section-9.1.4-1">Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.4-1" class="pilcrow">¶</a></p>
+has Extra importance level.<a href="#section-9.1.4-1" class="pilcrow">¶</a></p>
 <span id="name-logleveldebug-definition"></span><div id="loglevel-debug-def">
 <figure id="figure-35">
             <div class="lang-cddl sourcecode" id="section-9.1.4-2.1">
@@ -3162,7 +3166,7 @@ LogLevelDebug = {
           </h4>
 <p id="section-9.1.5-1">Used mainly for implementations that want to use qlog as their one and only
 logging format but still want to support unstructured string messages. The event
-has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.1.5-1" class="pilcrow">¶</a></p>
+has Extra importance level.<a href="#section-9.1.5-1" class="pilcrow">¶</a></p>
 <span id="name-loglevelverbose-definition"></span><div id="loglevel-verbose-def">
 <figure id="figure-36">
             <div class="lang-cddl sourcecode" id="section-9.1.5-2.1">
@@ -3244,7 +3248,7 @@ SimulationScenario = {
           </h4>
 <p id="section-9.2.2-1">Used to indicate when specific emulation conditions are triggered at set times
 (e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered). It has Extra importance level; see <a href="#importance" class="auto internal xref">Section 8.3</a>.<a href="#section-9.2.2-1" class="pilcrow">¶</a></p>
+triggered). It has Extra importance level.<a href="#section-9.2.2-1" class="pilcrow">¶</a></p>
 <span id="name-simulationmarker-definition"></span><div id="simulation-marker-def">
 <figure id="figure-39">
             <div class="lang-cddl sourcecode" id="section-9.2.2-2.1">
@@ -4010,11 +4014,11 @@ schema URIs" registry:<a href="#section-15-9" class="pilcrow">¶</a></p>
 <dd class="break"></dd>
 <dt id="QLOG-H3">[QLOG-H3]</dt>
         <dd>
-<span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"HTTP/3 qlog event definitions"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-h3-events-10</span>, <time datetime="2025-03-17" class="refDate">17 March 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events-10">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events-10</a>&gt;</span>. </dd>
+<span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"HTTP/3 qlog event definitions"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-h3-events-11</span>, <time datetime="2025-07-07" class="refDate">7 July 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events-11">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-h3-events-11</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="QLOG-QUIC">[QLOG-QUIC]</dt>
         <dd>
-<span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"QUIC event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-quic-events-10</span>, <time datetime="2025-03-17" class="refDate">17 March 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-10">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-10</a>&gt;</span>. </dd>
+<span class="refAuthor">Marx, R.</span>, <span class="refAuthor">Niccolini, L.</span>, <span class="refAuthor">Seemann, M.</span>, and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"QUIC event definitions for qlog"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-quic-qlog-quic-events-11</span>, <time datetime="2025-07-07" class="refDate">7 July 2025</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-11">https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-11</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8446">[RFC8446]</dt>
         <dd>

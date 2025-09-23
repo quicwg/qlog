@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 8 January 2026                                             Meta
+Expires: 27 March 2026                                              Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             7 July 2025
+                                                       23 September 2025
 
 
                      HTTP/3 qlog event definitions
@@ -30,10 +30,6 @@ Note to Readers
    the "editor's draft" at that URL for an up-to-date version of this
    document.
 
-   Concrete examples of integrations of this schema in various
-   programming languages can be found at https://github.com/quiclog/
-   qlog/ (https://github.com/quiclog/qlog/).
-
 Status of This Memo
 
    This Internet-Draft is submitted in full conformance with the
@@ -49,7 +45,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 8 January 2026.
+   This Internet-Draft will expire on 27 March 2026.
 
 Copyright Notice
 
@@ -187,8 +183,10 @@ Table of Contents
    extensions described in [QLOG-MAIN].
 
    The following fields from [QLOG-MAIN] are imported and used: name,
-   namespace, type, data, group_id, importance, RawInfo, and time-
-   related fields.
+   namespace, type, data, group_id, RawInfo, and time-related fields.
+
+   Events are defined with an importance level as described in
+   Section 8.3 of [QLOG-MAIN].
 
    As is the case for [QLOG-MAIN], the qlog schema definitions in this
    document are intentionally agnostic to serialization formats.  The
@@ -262,7 +260,7 @@ Table of Contents
 
    The parameters_set event contains HTTP/3 and QPACK-level settings,
    mostly those received from the HTTP/3 SETTINGS frame.  It has Base
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   importance level.
 
    All these parameters are typically set once and never change.
    However, they might be set at different times during the connection,
@@ -310,7 +308,7 @@ Table of Contents
    reuse the server's SETTINGs from the previous connection.  The
    parameters_restored event is used to indicate which HTTP/3 settings
    were restored and to which values when utilizing 0-RTT.  It has Base
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   importance level.
 
    HTTP3ParametersRestored = {
        ; RFC9114
@@ -335,7 +333,7 @@ Table of Contents
 
    The stream_type_set event conveys when a HTTP/3 stream type becomes
    known; see Sections 6.1 and 6.2 of [HTTP/3].  It has Base importance
-   level; see Section 9.2 of [QLOG-MAIN].
+   level.
 
    Client bidirectional streams always have a stream_type value of
    "request".  Server bidirectional streams have no defined use,
@@ -379,8 +377,7 @@ Table of Contents
 
    The priority_updated event is emitted when the priority of a request
    stream or push stream is initialized or updated through mechanisms
-   defined in [RFC9218].  It has Base importance level; see Section 9.2
-   of [QLOG-MAIN].
+   defined in [RFC9218].  It has Base importance level.
 
    There can be several reasons why a priority_updated occurs, and why a
    particular value was chosen.  For example, the priority can be
@@ -416,8 +413,7 @@ Table of Contents
 3.5.  frame_created
 
    The frame_created event is emitted when the HTTP/3 framing actually
-   happens.  It has Core importance level; see Section 9.2 of
-   [QLOG-MAIN].
+   happens.  It has Core importance level.
 
    This event does not necessarily coincide with HTTP/3 data getting
    passed to the QUIC layer.  For that, see the stream_data_moved event
@@ -437,7 +433,7 @@ Table of Contents
 3.6.  frame_parsed
 
    The frame_parsed event is emitted when the HTTP/3 frame is parsed.
-   It has Core importance level; see Section 9.2 of [QLOG-MAIN].
+   It has Core importance level.
 
    This event is not necessarily the same as when the HTTP/3 data is
    actually received on the QUIC layer.  For that, see the
@@ -457,8 +453,7 @@ Table of Contents
 3.7.  datagram_created
 
    The datagram_created event is emitted when an HTTP/3 Datagram is
-   created (see [RFC9297]).  It has Base importance level; see
-   Section 9.2 of [QLOG-MAIN].
+   created (see [RFC9297]).  It has Base importance level.
 
    This event does not necessarily coincide with the HTTP/3 Datagram
    getting passed to the QUIC layer.  For that, see the
@@ -477,8 +472,7 @@ Table of Contents
 3.8.  datagram_parsed
 
    The datagram_parsed event is emitted when the HTTP/3 Datagram is
-   parsed (see [RFC9297]).  It has Base importance level; see
-   Section 9.2 of [QLOG-MAIN].
+   parsed (see [RFC9297]).  It has Base importance level.
 
    This event is not necessarily the same as when the HTTP/3 Datagram is
    actually received on the QUIC layer.  For that, see the
@@ -501,7 +495,7 @@ Table of Contents
    conversely, abandoned (rejected) by the application on top of HTTP/3
    (e.g., the web browser).  This event provides additional context that
    can is aid debugging issues related to server push.  It has Extra
-   importance level; see Section 9.2 of [QLOG-MAIN].
+   importance level.
 
    HTTP3PushResolved = {
        ? push_id: uint64
@@ -814,15 +808,15 @@ Table of Contents
 6.  IANA Considerations
 
    This document registers a new entry in the "qlog event schema URIs"
-   registry.
+   registry (created in Section 15 of [QLOG-MAIN]).
 
    Event schema URI:  urn:ietf:params:qlog:events:http3
 
    Namespace  http3
 
-   Event Types  parameters_set,parameters_restored,stream_type_set,prior
-      ity_updated,frame_created,frame_parsed,datagram_created,datagram_p
-      arsed,push_resolved
+   Event Types  parameters_set, parameters_restored, stream_type_set,
+      priority_updated, frame_created, frame_parsed, datagram_created,
+      datagram_parsed, push_resolved
 
    Description:  Event definitions related to the HTTP/3 application
       protocol.
@@ -864,16 +858,16 @@ Table of Contents
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
               "qlog: Structured Logging for Network Protocols", Work in
               Progress, Internet-Draft, draft-ietf-quic-qlog-main-
-              schema-11, 17 March 2025,
+              schema-12, 7 July 2025,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema-11>.
+              qlog-main-schema-12>.
 
    [QLOG-QUIC]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue, "QUIC
               event definitions for qlog", Work in Progress, Internet-
-              Draft, draft-ietf-quic-qlog-quic-events-10, 17 March 2025,
+              Draft, draft-ietf-quic-qlog-quic-events-11, 7 July 2025,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-quic-events-10>.
+              qlog-quic-events-11>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
