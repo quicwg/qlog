@@ -768,7 +768,15 @@ Namespace
 : http3
 
 Event Types
-: parameters_set,parameters_restored,stream_type_set,priority_updated,frame_created,frame_parsed,datagram_created,datagram_parsed,push_resolved
+: parameters_set,
+  parameters_restored,
+  stream_type_set,
+  priority_updated,
+  frame_created,
+  frame_parsed,
+  datagram_created,
+  datagram_parsed,
+  push_resolved
 
 Description:
 : Event definitions related to the HTTP/3 application protocol.
