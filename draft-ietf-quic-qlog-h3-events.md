@@ -152,9 +152,9 @@ The namespace identifier itself is not affected by this requirement.
 # HTTP/3 Events {#h3-ev}
 
 HTTP/3 events extend the `$ProtocolEventData` extension point defined in
-{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+{{Section 8.2 of QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
 per-event extension points via the `$$` CDDL "group socket" syntax, as also
-described in {{QLOG-MAIN}}.
+described in {{Section 8.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 HTTP3EventData = HTTP3ParametersSet /
@@ -754,7 +754,7 @@ $ApplicationError /= HTTP3ApplicationError
 
 # Security and Privacy Considerations
 
-The security and privacy considerations discussed in {{QLOG-MAIN}} apply to this
+The security and privacy considerations discussed in {{Section 14 of QLOG-MAIN}} apply to this
 document as well.
 
 # IANA Considerations
