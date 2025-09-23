@@ -91,7 +91,7 @@ trace of the connection with ODCID abcd1234).
 QUIC packets always include an AEAD authentication tag at the end. In general,
 the length of the AEAD tag depends on the TLS cipher suite, although all cipher
 suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
-lengths in fields of type RawInfo (as defined in {{QLOG-MAIN}}) related to QUIC
+lengths in fields of type RawInfo (as defined in {{Section 10 of QLOG-MAIN}}) related to QUIC
 packets, the AEAD tag is regarded as a trailer.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
@@ -199,9 +199,9 @@ this specification.
 {: #quic-events title="QUIC Events"}
 
 QUIC events extend the `$ProtocolEventData` extension point defined in
-{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+{{Section 8.2 of QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
 per-event extension points via the `$$` CDDL "group socket" syntax, as also
-described in {{QLOG-MAIN}}.
+described in {{Section 8.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 QuicEventData = QUICServerListening /
@@ -495,7 +495,7 @@ Importance: Base
 This event is used to associate a single PathID's value with other parameters
 that describe a unique network path.
 
-As described in {{QLOG-MAIN}}, each qlog event can be linked to a single network
+As described in {{Section 7.2 of QLOG-MAIN}}, each qlog event can be linked to a single network
 path by means of the top-level "path" field, whose value is a PathID. However,
 since it can be cumbersome to encode additional path metadata (such as IP
 addresses or Connection IDs) directly into the PathID, this event allows such an
@@ -2368,7 +2368,7 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
 # Security and Privacy Considerations
 
-The security and privacy considerations discussed in {{QLOG-MAIN}} apply to this
+The security and privacy considerations discussed in {{Section 14 of QLOG-MAIN}} apply to this
 document as well.
 
 # IANA Considerations
