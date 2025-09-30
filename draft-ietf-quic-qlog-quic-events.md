@@ -911,8 +911,8 @@ a `packet_received` event. The event has Base importance level.
 ~~~ cddl
 QUICPacketBuffered = {
 
-    ; primarily packet_type and possible packet_number should be
-    ; filled here as other elements might not be available yet
+    ; primarily packet_type should be filled here as other elements
+    ; might not be available yet
     ? header: PacketHeader
     ? raw: RawInfo
     ? datagram_id: uint32
