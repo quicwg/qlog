@@ -1803,6 +1803,9 @@ encoding.
 PacketHeader = {
     packet_type: $PacketType
 
+    ; only if packet_type === "unknown"
+    ? packet_type_byte: uint8
+
     ? quic_bit: bool .default true
 
     ; only if packet_type === "1RTT"
@@ -1818,9 +1821,6 @@ PacketHeader = {
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
     ? packet_number_length: uint8
-
-    ; only if packet_type === "unknown"
-    ? packet_type_byte: uint8
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
