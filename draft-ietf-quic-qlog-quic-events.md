@@ -2220,10 +2220,9 @@ field using the numerical value without variable-length integer encoding.
 
 When the connection is closed due a connection-level error, the
 `trigger_frame_type` field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used in
-error_code. For unknown frame types, the error_code field has the value
-"unknown" and the numerical value without variable-length integer encoding is
-logged in error_code_bytes.
+error. For known frame types, the appropriate string value is used in error. For
+unknown frame types, the error field has the value "unknown" and the numerical
+value without variable-length integer encoding is logged in error_code.
 
 The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the `reason`
@@ -2238,12 +2237,11 @@ ErrorSpace = "transport" /
 ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
-    ? error_code: $TransportError /
-                  CryptoError /
-                  $ApplicationError
+    ? error: $TransportError / CryptoError /
+             $ApplicationError
 
     ; only if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ? reason: text
     ? reason_bytes: hexstring
