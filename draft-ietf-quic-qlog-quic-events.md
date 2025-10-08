@@ -344,9 +344,9 @@ QUICConnectionClosed = {
     ? application_code: $ApplicationError
 
     ; if connection_code or application_code === "unknown"
-    ? code_bytes: uint32
+    ? code_bytes: uint64
 
-    ? internal_code: uint32
+    ? internal_code: uint64
     ? reason: text
     ? trigger:
         "idle_timeout" /
