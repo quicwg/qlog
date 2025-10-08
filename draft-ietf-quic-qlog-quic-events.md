@@ -2080,8 +2080,7 @@ StreamFrame = {
     frame_type: "stream"
     stream_id: uint64
 
-    ; These two MUST always be set
-    ; If not present in the Frame type, log their default values
+    ; These two MUST always be set, even if not present in the frame type
     offset: uint64
     length: uint64
 
