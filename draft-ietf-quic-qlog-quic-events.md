@@ -2085,9 +2085,6 @@ StreamFrame = {
     offset: uint64
     length: uint64
 
-    ; this MAY be set any time,
-    ; but MUST only be set if the value is true
-    ; if absent, the value MUST be assumed to be false
     ? fin: bool .default false
     ? raw: RawInfo
 }
