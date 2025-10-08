@@ -2169,8 +2169,8 @@ StreamsBlockedFrame = {
 ~~~ cddl
 NewConnectionIDFrame = {
   frame_type: "new_connection_id"
-  sequence_number: uint32
-  retire_prior_to: uint32
+  sequence_number: uint64
+  retire_prior_to: uint64
 
   ; mainly used if e.g., for privacy reasons the full
   ; connection_id cannot be logged
@@ -2187,7 +2187,7 @@ NewConnectionIDFrame = {
 ~~~ cddl
 RetireConnectionIDFrame = {
   frame_type: "retire_connection_id"
-  sequence_number: uint32
+  sequence_number: uint64
   ? raw: RawInfo
 }
 ~~~
