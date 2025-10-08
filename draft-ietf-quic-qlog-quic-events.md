@@ -1801,20 +1801,30 @@ encoding.
 
 ~~~ cddl
 PacketHeader = {
-    ? quic_bit: bool .default true
     packet_type: $PacketType
 
+    ? quic_bit: bool .default true
+
+    ; only if packet_type === "1RTT"
+    ? spin_bit: bool
+
+    ; only if packet_type === "1RTT", and if the key phase was
+    ; determined from the key_phase_bit
+    ? key_phase: uint64
+
+    ; only if packet_type === "1RTT", and if key_phase is not set
+    ? key_phase_bit: bool
+
+    ; only if packet_type === "initial" || "handshake" || "0RTT" ||
+    ;                         "1RTT"
+    ? packet_number_length: uint8
+
     ; only if packet_type === "unknown"
-    ? packet_type_bytes: uint64
+    ? packet_type_byte: uint8
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
     ? packet_number: uint64
-
-    ; the bit flags of the packet headers (spin bit, key update bit,
-    ; etc. up to and including the packet number length bits
-    ; if present
-    ? flags: uint8
 
     ; only if packet_type === "initial" || "retry"
     ? token: Token
