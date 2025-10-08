@@ -1697,8 +1697,7 @@ ECNState =
   "unknown" /
   ; ECN testing failed
   "failed" /
-  ; testing was successful, the endpoint now
-  ; sends packets with ECT(0) marking
+  ; testing was successful
   "capable"
 ~~~
 {: #quic-ecnstateupdated-def title="QUICECNStateUpdated definition"}
