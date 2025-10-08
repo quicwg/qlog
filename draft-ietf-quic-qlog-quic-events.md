@@ -2006,19 +2006,18 @@ log \[120\] instead and tools MUST be able to deal with both notations.
 
 ### ResetStreamFrame
 
-If the error_code numerical value does not map to a known ApplicationError string,
-the error_code value of "unknown" can be used and the raw value captured in the
-error_code_bytes field; a numerical value without variable-length integer
-encoding.
+If the error numerical value does not map to a known ApplicationError string,
+the error value of "unknown" can be used and the raw value captured in the
+error_code field; a numerical value without variable-length integer encoding.
 
 ~~~ cddl
 ResetStreamFrame = {
     frame_type: "reset_stream"
     stream_id: uint64
-    error_code: $ApplicationError
+    error: $ApplicationError
 
     ; if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ; in bytes
     final_size: uint64
