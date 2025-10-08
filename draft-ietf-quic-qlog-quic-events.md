@@ -1820,10 +1820,6 @@ PacketHeader = {
     ; only if packet_type === "initial" || "retry"
     ? token: Token
 
-    ; only if packet_type === "initial" || "handshake" || "0RTT"
-    ; Signifies length of the packet_number plus the payload
-    ? length: uint16
-
     ; only if present in the header
     ; if correctly using transport:connection_id_updated events,
     ; dcid can be skipped for 1RTT packets
