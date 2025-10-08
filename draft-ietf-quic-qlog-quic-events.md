@@ -693,10 +693,10 @@ QUICParametersSet = {
     ? stateless_reset_token: StatelessResetToken
     ? disable_active_migration: bool
     ? max_idle_timeout: uint64
-    ? max_udp_payload_size: uint32
+    ? max_udp_payload_size: uint64
     ? ack_delay_exponent: uint16
     ? max_ack_delay: uint16
-    ? active_connection_id_limit: uint32
+    ? active_connection_id_limit: uint64
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
     ? initial_max_stream_data_bidi_remote: uint64
@@ -749,8 +749,8 @@ QUICParametersRestored = {
     ; RFC9000
     ? disable_active_migration: bool
     ? max_idle_timeout: uint64
-    ? max_udp_payload_size: uint32
-    ? active_connection_id_limit: uint32
+    ? max_udp_payload_size: uint64
+    ? active_connection_id_limit: uint64
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
     ? initial_max_stream_data_bidi_remote: uint64,
