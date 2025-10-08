@@ -329,9 +329,9 @@ mapped to the official error codes in implementation-specific ways. As such,
 multiple error codes can be set on the same event to reflect this, and more
 fine-grained internal error codes can be reflected in the internal_code field.
 
-If the error code does not map to a known error string, the connection_code or
+If the error code does not map to a known error string, the connection_error or
 application_code value of "unknown" type can be used and the raw value captured
-in the code_bytes field; a numerical value without variable-length integer
+in the error_code field; a numerical value without variable-length integer
 encoding.
 
 ~~~ cddl
@@ -339,12 +339,12 @@ QUICConnectionClosed = {
 
     ; which side closed the connection
     ? owner: Owner
-    ? connection_code: $TransportError /
-                       CryptoError
-    ? application_code: $ApplicationError
+    ? connection_error: $TransportError /
+                        CryptoError
+    ? application_error: $ApplicationError
 
-    ; if connection_code or application_code === "unknown"
-    ? code_bytes: uint64
+    ; if connection_error or application_error === "unknown"
+    ? error_code: uint64
 
     ? internal_code: uint64
     ? reason: text
