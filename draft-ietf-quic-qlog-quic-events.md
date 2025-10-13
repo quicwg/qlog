@@ -694,8 +694,8 @@ QUICParametersSet = {
     ? disable_active_migration: bool
     ? max_idle_timeout: uint64
     ? max_udp_payload_size: uint64
-    ? ack_delay_exponent: uint16
-    ? max_ack_delay: uint16
+    ? ack_delay_exponent: uint64
+    ? max_ack_delay: uint64
     ? active_connection_id_limit: uint64
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
