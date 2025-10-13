@@ -329,9 +329,9 @@ mapped to the official error codes in implementation-specific ways. As such,
 multiple error codes can be set on the same event to reflect this, and more
 fine-grained internal error codes can be reflected in the internal_code field.
 
-If the error code does not map to a known error string, the connection_code or
-application_code value of "unknown" type can be used and the raw value captured
-in the code_bytes field; a numerical value without variable-length integer
+If the error code does not map to a known error string, the connection_error or
+application_error value of "unknown" type can be used and the raw value captured
+in the error_code field; a numerical value without variable-length integer
 encoding.
 
 ~~~ cddl
@@ -339,12 +339,12 @@ QUICConnectionClosed = {
 
     ; which side closed the connection
     ? owner: Owner
-    ? connection_code: $TransportError /
-                       CryptoError
-    ? application_code: $ApplicationError
+    ? connection_error: $TransportError /
+                        CryptoError
+    ? application_error: $ApplicationError
 
-    ; if connection_code or application_code === "unknown"
-    ? code_bytes: uint64
+    ; if connection_error or application_error === "unknown"
+    ? error_code: uint64
 
     ? internal_code: uint64
     ? reason: text
@@ -2006,19 +2006,18 @@ log \[120\] instead and tools MUST be able to deal with both notations.
 
 ### ResetStreamFrame
 
-If the error_code numerical value does not map to a known ApplicationError string,
-the error_code value of "unknown" can be used and the raw value captured in the
-error_code_bytes field; a numerical value without variable-length integer
-encoding.
+If the error numerical value does not map to a known ApplicationError string,
+the error value of "unknown" can be used and the raw value captured in the
+error_code field; a numerical value without variable-length integer encoding.
 
 ~~~ cddl
 ResetStreamFrame = {
     frame_type: "reset_stream"
     stream_id: uint64
-    error_code: $ApplicationError
+    error: $ApplicationError
 
     ; if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ; in bytes
     final_size: uint64
@@ -2030,19 +2029,18 @@ ResetStreamFrame = {
 
 ### StopSendingFrame
 
-If the error_code numerical value does not map to a known ApplicationError string,
-the error_code value of "unknown" can be used and the raw value captured in the
-error_code_bytes field; a numerical value without variable-length integer
-encoding.
+If the error numerical value does not map to a known ApplicationError string,
+the error value of "unknown" can be used and the raw value captured in the
+error_code field; a numerical value without variable-length integer encoding.
 
 ~~~ cddl
 StopSendingFrame = {
     frame_type: "stop_sending"
     stream_id: uint64
-    error_code: $ApplicationError
+    error: $ApplicationError
 
     ; if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ? raw: RawInfo
 }
@@ -2222,10 +2220,9 @@ field using the numerical value without variable-length integer encoding.
 
 When the connection is closed due a connection-level error, the
 `trigger_frame_type` field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used in
-error_code. For unknown frame types, the error_code field has the value
-"unknown" and the numerical value without variable-length integer encoding is
-logged in error_code_bytes.
+error. For known frame types, the appropriate string value is used in the error field. For
+unknown frame types, the error field has the value "unknown" and the numerical
+value without variable-length integer encoding can be logged in error_code.
 
 The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the `reason`
@@ -2240,12 +2237,11 @@ ErrorSpace = "transport" /
 ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
-    ? error_code: $TransportError /
-                  CryptoError /
-                  $ApplicationError
+    ? error: $TransportError / CryptoError /
+             $ApplicationError
 
     ; only if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ? reason: text
     ? reason_bytes: hexstring
