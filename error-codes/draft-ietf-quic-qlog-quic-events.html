@@ -2095,9 +2095,9 @@ QUICConnectionClosed = {
     ? application_error: $ApplicationError
 
     ; if connection_error or application_error === "unknown"
-    ? error_code: uint32
+    ? error_code: uint64
 
-    ? internal_code: uint32
+    ? internal_code: uint64
     ? reason: text
     ? trigger:
         "idle_timeout" /
@@ -2803,8 +2803,8 @@ a <code>packet_received</code> event. The event has Base importance level.<a hre
 <pre>
 QUICPacketBuffered = {
 
-    ; primarily packet_type and possible packet_number should be
-    ; filled here as other elements might not be available yet
+    ; primarily packet_type should be filled here as other elements
+    ; might not be available yet
     ? header: PacketHeader
     ? raw: RawInfo
     ? datagram_id: uint32
@@ -3776,8 +3776,7 @@ ECNState =
   "unknown" /
   ; ECN testing failed
   "failed" /
-  ; testing was successful, the endpoint now
-  ; sends packets with ECT(0) marking
+  ; testing was successful
   "capable"
 </pre>
 </div>
@@ -4387,9 +4386,6 @@ StreamFrame = {
     offset: uint64
     length: uint64
 
-    ; this MAY be set any time,
-    ; but MUST only be set if the value is true
-    ; if absent, the value MUST be assumed to be false
     ? fin: bool .default false
     ? raw: RawInfo
 }
@@ -4548,8 +4544,8 @@ StreamsBlockedFrame = {
 <pre>
 NewConnectionIDFrame = {
   frame_type: "new_connection_id"
-  sequence_number: uint32
-  retire_prior_to: uint32
+  sequence_number: uint64
+  retire_prior_to: uint64
 
   ; mainly used if e.g., for privacy reasons the full
   ; connection_id cannot be logged
@@ -4577,7 +4573,7 @@ NewConnectionIDFrame = {
 <pre>
 RetireConnectionIDFrame = {
   frame_type: "retire_connection_id"
-  sequence_number: uint32
+  sequence_number: uint64
   ? raw: RawInfo
 }
 </pre>
@@ -4645,9 +4641,9 @@ PathResponseFrame = {
 field using the numerical value without variable-length integer encoding.<a href="#section-8.13.19-1" class="pilcrow">¶</a></p>
 <p id="section-8.13.19-2">When the connection is closed due a connection-level error, the
 <code>trigger_frame_type</code> field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used in error. For
+error. For known frame types, the appropriate string value is used in the error field. For
 unknown frame types, the error field has the value "unknown" and the numerical
-value without variable-length integer encoding is logged in error_code.<a href="#section-8.13.19-2" class="pilcrow">¶</a></p>
+value without variable-length integer encoding can be logged in error_code.<a href="#section-8.13.19-2" class="pilcrow">¶</a></p>
 <p id="section-8.13.19-3">The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the <code>reason</code>
 field. The <code>reason_bytes</code> field supports logging the raw bytes, which can be useful
