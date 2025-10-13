@@ -2078,9 +2078,9 @@ these however, there can be internal errors that occur that may or may not get
 mapped to the official error codes in implementation-specific ways. As such,
 multiple error codes can be set on the same event to reflect this, and more
 fine-grained internal error codes can be reflected in the internal_code field.<a href="#section-4.3-4" class="pilcrow">¶</a></p>
-<p id="section-4.3-5">If the error code does not map to a known error string, the connection_code or
-application_code value of "unknown" type can be used and the raw value captured
-in the code_bytes field; a numerical value without variable-length integer
+<p id="section-4.3-5">If the error code does not map to a known error string, the connection_error or
+application_error value of "unknown" type can be used and the raw value captured
+in the error_code field; a numerical value without variable-length integer
 encoding.<a href="#section-4.3-5" class="pilcrow">¶</a></p>
 <span id="name-quicconnectionclosed-defini"></span><div id="quic-connectionclosed-def">
 <figure id="figure-4">
@@ -2090,12 +2090,12 @@ QUICConnectionClosed = {
 
     ; which side closed the connection
     ? owner: Owner
-    ? connection_code: $TransportError /
-                       CryptoError
-    ? application_code: $ApplicationError
+    ? connection_error: $TransportError /
+                        CryptoError
+    ? application_error: $ApplicationError
 
-    ; if connection_code or application_code === "unknown"
-    ? code_bytes: uint64
+    ; if connection_error or application_error === "unknown"
+    ? error_code: uint64
 
     ? internal_code: uint64
     ? reason: text
@@ -4266,10 +4266,9 @@ log [120] instead and tools <span class="bcp14">MUST</span> be able to deal with
           <h4 id="name-resetstreamframe">
 <a href="#section-8.13.4" class="section-number selfRef">8.13.4. </a><a href="#name-resetstreamframe" class="section-name selfRef">ResetStreamFrame</a>
           </h4>
-<p id="section-8.13.4-1">If the error_code numerical value does not map to a known ApplicationError string,
-the error_code value of "unknown" can be used and the raw value captured in the
-error_code_bytes field; a numerical value without variable-length integer
-encoding.<a href="#section-8.13.4-1" class="pilcrow">¶</a></p>
+<p id="section-8.13.4-1">If the error numerical value does not map to a known ApplicationError string,
+the error value of "unknown" can be used and the raw value captured in the
+error_code field; a numerical value without variable-length integer encoding.<a href="#section-8.13.4-1" class="pilcrow">¶</a></p>
 <span id="name-resetstreamframe-definition"></span><div id="resetstreamframe-def">
 <figure id="figure-56">
             <div class="lang-cddl sourcecode" id="section-8.13.4-2.1">
@@ -4277,10 +4276,10 @@ encoding.<a href="#section-8.13.4-1" class="pilcrow">¶</a></p>
 ResetStreamFrame = {
     frame_type: "reset_stream"
     stream_id: uint64
-    error_code: $ApplicationError
+    error: $ApplicationError
 
     ; if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ; in bytes
     final_size: uint64
@@ -4299,10 +4298,9 @@ ResetStreamFrame = {
           <h4 id="name-stopsendingframe">
 <a href="#section-8.13.5" class="section-number selfRef">8.13.5. </a><a href="#name-stopsendingframe" class="section-name selfRef">StopSendingFrame</a>
           </h4>
-<p id="section-8.13.5-1">If the error_code numerical value does not map to a known ApplicationError string,
-the error_code value of "unknown" can be used and the raw value captured in the
-error_code_bytes field; a numerical value without variable-length integer
-encoding.<a href="#section-8.13.5-1" class="pilcrow">¶</a></p>
+<p id="section-8.13.5-1">If the error numerical value does not map to a known ApplicationError string,
+the error value of "unknown" can be used and the raw value captured in the
+error_code field; a numerical value without variable-length integer encoding.<a href="#section-8.13.5-1" class="pilcrow">¶</a></p>
 <span id="name-stopsendingframe-definition"></span><div id="stopsendingframe-def">
 <figure id="figure-57">
             <div class="lang-cddl sourcecode" id="section-8.13.5-2.1">
@@ -4310,10 +4308,10 @@ encoding.<a href="#section-8.13.5-1" class="pilcrow">¶</a></p>
 StopSendingFrame = {
     frame_type: "stop_sending"
     stream_id: uint64
-    error_code: $ApplicationError
+    error: $ApplicationError
 
     ; if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ? raw: RawInfo
 }
@@ -4643,10 +4641,9 @@ PathResponseFrame = {
 field using the numerical value without variable-length integer encoding.<a href="#section-8.13.19-1" class="pilcrow">¶</a></p>
 <p id="section-8.13.19-2">When the connection is closed due a connection-level error, the
 <code>trigger_frame_type</code> field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used in
-error_code. For unknown frame types, the error_code field has the value
-"unknown" and the numerical value without variable-length integer encoding is
-logged in error_code_bytes.<a href="#section-8.13.19-2" class="pilcrow">¶</a></p>
+error. For known frame types, the appropriate string value is used in the error field. For
+unknown frame types, the error field has the value "unknown" and the numerical
+value without variable-length integer encoding can be logged in error_code.<a href="#section-8.13.19-2" class="pilcrow">¶</a></p>
 <p id="section-8.13.19-3">The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the <code>reason</code>
 field. The <code>reason_bytes</code> field supports logging the raw bytes, which can be useful
@@ -4662,12 +4659,11 @@ ErrorSpace = "transport" /
 ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
-    ? error_code: $TransportError /
-                  CryptoError /
-                  $ApplicationError
+    ? error: $TransportError / CryptoError /
+             $ApplicationError
 
     ; only if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ? reason: text
     ? reason_bytes: hexstring
