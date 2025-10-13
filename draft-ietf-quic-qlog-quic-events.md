@@ -330,7 +330,7 @@ multiple error codes can be set on the same event to reflect this, and more
 fine-grained internal error codes can be reflected in the internal_code field.
 
 If the error code does not map to a known error string, the connection_error or
-application_code value of "unknown" type can be used and the raw value captured
+application_error value of "unknown" type can be used and the raw value captured
 in the error_code field; a numerical value without variable-length integer
 encoding.
 
