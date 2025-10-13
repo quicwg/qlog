@@ -1806,7 +1806,7 @@ PacketHeader = {
     ; only if packet_type === "unknown"
     ? packet_type_byte: uint8
 
-    ? quic_bit: bool .default true
+    ? fixed_bit : bool .default true
 
     ; only if packet_type === "1RTT"
     ? spin_bit: bool
