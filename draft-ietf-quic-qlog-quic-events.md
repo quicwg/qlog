@@ -2220,7 +2220,7 @@ field using the numerical value without variable-length integer encoding.
 
 When the connection is closed due a connection-level error, the
 `trigger_frame_type` field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used in error. For
+error. For known frame types, the appropriate string value is used in the error field. For
 unknown frame types, the error field has the value "unknown" and the numerical
 value without variable-length integer encoding is logged in error_code.
 
