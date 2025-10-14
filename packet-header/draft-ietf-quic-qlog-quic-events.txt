@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 16 April 2026                                              Meta
+Expires: 17 April 2026                                              Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         13 October 2025
+                                                         14 October 2025
 
 
                     QUIC event definitions for qlog
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 16 April 2026.
+   This Internet-Draft will expire on 17 April 2026.
 
 Copyright Notice
 
@@ -497,22 +497,22 @@ Table of Contents
    field.
 
    If the error code does not map to a known error string, the
-   connection_code or application_code value of "unknown" type can be
-   used and the raw value captured in the code_bytes field; a numerical
+   connection_error or application_error value of "unknown" type can be
+   used and the raw value captured in the error_code field; a numerical
    value without variable-length integer encoding.
 
    QUICConnectionClosed = {
 
        ; which side closed the connection
        ? owner: Owner
-       ? connection_code: $TransportError /
-                          CryptoError
-       ? application_code: $ApplicationError
+       ? connection_error: $TransportError /
+                           CryptoError
+       ? application_error: $ApplicationError
 
-       ; if connection_code or application_code === "unknown"
-       ? code_bytes: uint32
+       ; if connection_error or application_error === "unknown"
+       ? error_code: uint64
 
-       ? internal_code: uint32
+       ? internal_code: uint64
        ? reason: text
        ? trigger:
            "idle_timeout" /
@@ -879,10 +879,10 @@ Table of Contents
        ? stateless_reset_token: StatelessResetToken
        ? disable_active_migration: bool
        ? max_idle_timeout: uint64
-       ? max_udp_payload_size: uint32
-       ? ack_delay_exponent: uint16
-       ? max_ack_delay: uint16
-       ? active_connection_id_limit: uint32
+       ? max_udp_payload_size: uint64
+       ? ack_delay_exponent: uint64
+       ? max_ack_delay: uint64
+       ? active_connection_id_limit: uint64
        ? initial_max_data: uint64
        ? initial_max_stream_data_bidi_local: uint64
        ? initial_max_stream_data_bidi_remote: uint64
@@ -935,8 +935,8 @@ Table of Contents
        ; RFC9000
        ? disable_active_migration: bool
        ? max_idle_timeout: uint64
-       ? max_udp_payload_size: uint32
-       ? active_connection_id_limit: uint32
+       ? max_udp_payload_size: uint64
+       ? active_connection_id_limit: uint64
        ? initial_max_data: uint64
        ? initial_max_stream_data_bidi_local: uint64
        ? initial_max_stream_data_bidi_remote: uint64,
@@ -1105,8 +1105,8 @@ Table of Contents
 
    QUICPacketBuffered = {
 
-       ; primarily packet_type and possible packet_number should be
-       ; filled here as other elements might not be available yet
+       ; primarily packet_type should be filled here as other elements
+       ; might not be available yet
        ? header: PacketHeader
        ? raw: RawInfo
        ? datagram_id: uint32
@@ -1906,8 +1906,7 @@ Table of Contents
      "unknown" /
      ; ECN testing failed
      "failed" /
-     ; testing was successful, the endpoint now
-     ; sends packets with ECT(0) marking
+     ; testing was successful
      "capable"
 
                  Figure 38: QUICECNStateUpdated definition
@@ -1997,18 +1996,11 @@ Table of Contents
 
 8.8.  PacketHeader
 
-   If the packet_type numerical value does not map to a known
-   packet_type string, the packet_type value of "unknown" can be used
-   and the raw value captured in the packet_type_bytes field; a
-   numerical value without variable-length integer encoding.
+   If the fixed bit or the reserved bit has an invalid value, the raw
+   value can be captured in the raw field of the event.
 
    PacketHeader = {
        packet_type: $PacketType
-
-       ; only if packet_type === "unknown"
-       ? packet_type_byte: uint8
-
-       ? fixed_bit : bool .default true
 
        ; only if packet_type === "1RTT"
        ? spin_bit: bool
@@ -2215,18 +2207,18 @@ Table of Contents
 
 8.13.4.  ResetStreamFrame
 
-   If the error_code numerical value does not map to a known
-   ApplicationError string, the error_code value of "unknown" can be
-   used and the raw value captured in the error_code_bytes field; a
-   numerical value without variable-length integer encoding.
+   If the error numerical value does not map to a known ApplicationError
+   string, the error value of "unknown" can be used and the raw value
+   captured in the error_code field; a numerical value without variable-
+   length integer encoding.
 
    ResetStreamFrame = {
        frame_type: "reset_stream"
        stream_id: uint64
-       error_code: $ApplicationError
+       error: $ApplicationError
 
        ; if error_code === "unknown"
-       ? error_code_bytes: uint64
+       ? error_code: uint64
 
        ; in bytes
        final_size: uint64
@@ -2237,18 +2229,18 @@ Table of Contents
 
 8.13.5.  StopSendingFrame
 
-   If the error_code numerical value does not map to a known
-   ApplicationError string, the error_code value of "unknown" can be
-   used and the raw value captured in the error_code_bytes field; a
-   numerical value without variable-length integer encoding.
+   If the error numerical value does not map to a known ApplicationError
+   string, the error value of "unknown" can be used and the raw value
+   captured in the error_code field; a numerical value without variable-
+   length integer encoding.
 
    StopSendingFrame = {
        frame_type: "stop_sending"
        stream_id: uint64
-       error_code: $ApplicationError
+       error: $ApplicationError
 
        ; if error_code === "unknown"
-       ? error_code_bytes: uint64
+       ? error_code: uint64
 
        ? raw: RawInfo
    }
@@ -2287,9 +2279,6 @@ Table of Contents
        offset: uint64
        length: uint64
 
-       ; this MAY be set any time,
-       ; but MUST only be set if the value is true
-       ; if absent, the value MUST be assumed to be false
        ? fin: bool .default false
        ? raw: RawInfo
    }
@@ -2364,8 +2353,8 @@ Table of Contents
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
-     sequence_number: uint32
-     retire_prior_to: uint32
+     sequence_number: uint64
+     retire_prior_to: uint64
 
      ; mainly used if e.g., for privacy reasons the full
      ; connection_id cannot be logged
@@ -2381,7 +2370,7 @@ Table of Contents
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
-     sequence_number: uint32
+     sequence_number: uint64
      ? raw: RawInfo
    }
 
@@ -2420,9 +2409,9 @@ Table of Contents
    When the connection is closed due a connection-level error, the
    trigger_frame_type field can be used to log the frame that triggered
    the error.  For known frame types, the appropriate string value is
-   used in error_code.  For unknown frame types, the error_code field
+   used in the error field.  For unknown frame types, the error field
    has the value "unknown" and the numerical value without variable-
-   length integer encoding is logged in error_code_bytes.
+   length integer encoding can be logged in error_code.
 
    The CONNECTION_CLOSE reason phrase is a byte sequences.  It is likely
    that this sequence is presentable as UTF-8, in which case it can be
@@ -2437,12 +2426,11 @@ Table of Contents
    ConnectionCloseFrame = {
        frame_type: "connection_close"
        ? error_space: ErrorSpace
-       ? error_code: $TransportError /
-                     CryptoError /
-                     $ApplicationError
+       ? error: $TransportError / CryptoError /
+                $ApplicationError
 
        ; only if error_code === "unknown"
-       ? error_code_bytes: uint64
+       ? error_code: uint64
 
        ? reason: text
        ? reason_bytes: hexstring

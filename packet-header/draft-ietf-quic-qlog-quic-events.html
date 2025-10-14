@@ -1053,7 +1053,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 16 April 2026</td>
+<td class="center">Expires 17 April 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1066,12 +1066,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-quic-events-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-10-13" class="published">13 October 2025</time>
+<time datetime="2025-10-14" class="published">14 October 2025</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-04-16">16 April 2026</time></dd>
+<dd class="expires"><time datetime="2026-04-17">17 April 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1136,7 +1136,7 @@ of this document.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 16 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 17 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2078,9 +2078,9 @@ these however, there can be internal errors that occur that may or may not get
 mapped to the official error codes in implementation-specific ways. As such,
 multiple error codes can be set on the same event to reflect this, and more
 fine-grained internal error codes can be reflected in the internal_code field.<a href="#section-4.3-4" class="pilcrow">¶</a></p>
-<p id="section-4.3-5">If the error code does not map to a known error string, the connection_code or
-application_code value of "unknown" type can be used and the raw value captured
-in the code_bytes field; a numerical value without variable-length integer
+<p id="section-4.3-5">If the error code does not map to a known error string, the connection_error or
+application_error value of "unknown" type can be used and the raw value captured
+in the error_code field; a numerical value without variable-length integer
 encoding.<a href="#section-4.3-5" class="pilcrow">¶</a></p>
 <span id="name-quicconnectionclosed-defini"></span><div id="quic-connectionclosed-def">
 <figure id="figure-4">
@@ -2090,14 +2090,14 @@ QUICConnectionClosed = {
 
     ; which side closed the connection
     ? owner: Owner
-    ? connection_code: $TransportError /
-                       CryptoError
-    ? application_code: $ApplicationError
+    ? connection_error: $TransportError /
+                        CryptoError
+    ? application_error: $ApplicationError
 
-    ; if connection_code or application_code === "unknown"
-    ? code_bytes: uint32
+    ; if connection_error or application_error === "unknown"
+    ? error_code: uint64
 
-    ? internal_code: uint32
+    ? internal_code: uint64
     ? reason: text
     ? trigger:
         "idle_timeout" /
@@ -2524,10 +2524,10 @@ QUICParametersSet = {
     ? stateless_reset_token: StatelessResetToken
     ? disable_active_migration: bool
     ? max_idle_timeout: uint64
-    ? max_udp_payload_size: uint32
-    ? ack_delay_exponent: uint16
-    ? max_ack_delay: uint16
-    ? active_connection_id_limit: uint32
+    ? max_udp_payload_size: uint64
+    ? ack_delay_exponent: uint64
+    ? max_ack_delay: uint64
+    ? active_connection_id_limit: uint64
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
     ? initial_max_stream_data_bidi_remote: uint64
@@ -2589,8 +2589,8 @@ QUICParametersRestored = {
     ; RFC9000
     ? disable_active_migration: bool
     ? max_idle_timeout: uint64
-    ? max_udp_payload_size: uint32
-    ? active_connection_id_limit: uint32
+    ? max_udp_payload_size: uint64
+    ? active_connection_id_limit: uint64
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
     ? initial_max_stream_data_bidi_remote: uint64,
@@ -2803,8 +2803,8 @@ a <code>packet_received</code> event. The event has Base importance level.<a hre
 <pre>
 QUICPacketBuffered = {
 
-    ; primarily packet_type and possible packet_number should be
-    ; filled here as other elements might not be available yet
+    ; primarily packet_type should be filled here as other elements
+    ; might not be available yet
     ? header: PacketHeader
     ? raw: RawInfo
     ? datagram_id: uint32
@@ -3776,8 +3776,7 @@ ECNState =
   "unknown" /
   ; ECN testing failed
   "failed" /
-  ; testing was successful, the endpoint now
-  ; sends packets with ECT(0) marking
+  ; testing was successful
   "capable"
 </pre>
 </div>
@@ -3961,21 +3960,14 @@ $PacketNumberSpace /= "initial" /
         <h3 id="name-packetheader">
 <a href="#section-8.8" class="section-number selfRef">8.8. </a><a href="#name-packetheader" class="section-name selfRef">PacketHeader</a>
         </h3>
-<p id="section-8.8-1">If the packet_type numerical value does not map to a known packet_type string,
-the packet_type value of "unknown" can be used and the raw value captured in the
-packet_type_bytes field; a numerical value without variable-length integer
-encoding.<a href="#section-8.8-1" class="pilcrow">¶</a></p>
+<p id="section-8.8-1">If the fixed bit or the reserved bit has an invalid value, the raw value can
+be captured in the raw field of the event.<a href="#section-8.8-1" class="pilcrow">¶</a></p>
 <span id="name-packetheader-definition"></span><div id="packetheader-def">
 <figure id="figure-46">
           <div class="lang-cddl sourcecode" id="section-8.8-2.1">
 <pre>
 PacketHeader = {
     packet_type: $PacketType
-
-    ; only if packet_type === "unknown"
-    ? packet_type_byte: uint8
-
-    ? fixed_bit : bool .default true
 
     ; only if packet_type === "1RTT"
     ? spin_bit: bool
@@ -4277,10 +4269,9 @@ log [120] instead and tools <span class="bcp14">MUST</span> be able to deal with
           <h4 id="name-resetstreamframe">
 <a href="#section-8.13.4" class="section-number selfRef">8.13.4. </a><a href="#name-resetstreamframe" class="section-name selfRef">ResetStreamFrame</a>
           </h4>
-<p id="section-8.13.4-1">If the error_code numerical value does not map to a known ApplicationError string,
-the error_code value of "unknown" can be used and the raw value captured in the
-error_code_bytes field; a numerical value without variable-length integer
-encoding.<a href="#section-8.13.4-1" class="pilcrow">¶</a></p>
+<p id="section-8.13.4-1">If the error numerical value does not map to a known ApplicationError string,
+the error value of "unknown" can be used and the raw value captured in the
+error_code field; a numerical value without variable-length integer encoding.<a href="#section-8.13.4-1" class="pilcrow">¶</a></p>
 <span id="name-resetstreamframe-definition"></span><div id="resetstreamframe-def">
 <figure id="figure-56">
             <div class="lang-cddl sourcecode" id="section-8.13.4-2.1">
@@ -4288,10 +4279,10 @@ encoding.<a href="#section-8.13.4-1" class="pilcrow">¶</a></p>
 ResetStreamFrame = {
     frame_type: "reset_stream"
     stream_id: uint64
-    error_code: $ApplicationError
+    error: $ApplicationError
 
     ; if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ; in bytes
     final_size: uint64
@@ -4310,10 +4301,9 @@ ResetStreamFrame = {
           <h4 id="name-stopsendingframe">
 <a href="#section-8.13.5" class="section-number selfRef">8.13.5. </a><a href="#name-stopsendingframe" class="section-name selfRef">StopSendingFrame</a>
           </h4>
-<p id="section-8.13.5-1">If the error_code numerical value does not map to a known ApplicationError string,
-the error_code value of "unknown" can be used and the raw value captured in the
-error_code_bytes field; a numerical value without variable-length integer
-encoding.<a href="#section-8.13.5-1" class="pilcrow">¶</a></p>
+<p id="section-8.13.5-1">If the error numerical value does not map to a known ApplicationError string,
+the error value of "unknown" can be used and the raw value captured in the
+error_code field; a numerical value without variable-length integer encoding.<a href="#section-8.13.5-1" class="pilcrow">¶</a></p>
 <span id="name-stopsendingframe-definition"></span><div id="stopsendingframe-def">
 <figure id="figure-57">
             <div class="lang-cddl sourcecode" id="section-8.13.5-2.1">
@@ -4321,10 +4311,10 @@ encoding.<a href="#section-8.13.5-1" class="pilcrow">¶</a></p>
 StopSendingFrame = {
     frame_type: "stop_sending"
     stream_id: uint64
-    error_code: $ApplicationError
+    error: $ApplicationError
 
     ; if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ? raw: RawInfo
 }
@@ -4399,9 +4389,6 @@ StreamFrame = {
     offset: uint64
     length: uint64
 
-    ; this MAY be set any time,
-    ; but MUST only be set if the value is true
-    ; if absent, the value MUST be assumed to be false
     ? fin: bool .default false
     ? raw: RawInfo
 }
@@ -4560,8 +4547,8 @@ StreamsBlockedFrame = {
 <pre>
 NewConnectionIDFrame = {
   frame_type: "new_connection_id"
-  sequence_number: uint32
-  retire_prior_to: uint32
+  sequence_number: uint64
+  retire_prior_to: uint64
 
   ; mainly used if e.g., for privacy reasons the full
   ; connection_id cannot be logged
@@ -4589,7 +4576,7 @@ NewConnectionIDFrame = {
 <pre>
 RetireConnectionIDFrame = {
   frame_type: "retire_connection_id"
-  sequence_number: uint32
+  sequence_number: uint64
   ? raw: RawInfo
 }
 </pre>
@@ -4657,10 +4644,9 @@ PathResponseFrame = {
 field using the numerical value without variable-length integer encoding.<a href="#section-8.13.19-1" class="pilcrow">¶</a></p>
 <p id="section-8.13.19-2">When the connection is closed due a connection-level error, the
 <code>trigger_frame_type</code> field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used in
-error_code. For unknown frame types, the error_code field has the value
-"unknown" and the numerical value without variable-length integer encoding is
-logged in error_code_bytes.<a href="#section-8.13.19-2" class="pilcrow">¶</a></p>
+error. For known frame types, the appropriate string value is used in the error field. For
+unknown frame types, the error field has the value "unknown" and the numerical
+value without variable-length integer encoding can be logged in error_code.<a href="#section-8.13.19-2" class="pilcrow">¶</a></p>
 <p id="section-8.13.19-3">The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the <code>reason</code>
 field. The <code>reason_bytes</code> field supports logging the raw bytes, which can be useful
@@ -4676,12 +4662,11 @@ ErrorSpace = "transport" /
 ConnectionCloseFrame = {
     frame_type: "connection_close"
     ? error_space: ErrorSpace
-    ? error_code: $TransportError /
-                  CryptoError /
-                  $ApplicationError
+    ? error: $TransportError / CryptoError /
+             $ApplicationError
 
     ; only if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ? reason: text
     ? reason_bytes: hexstring
