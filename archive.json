@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-12T01:07:46.758459+00:00",
+  "timestamp": "2025-10-14T01:04:31.262604+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -8642,7 +8642,7 @@
       "id": "I_kwDOCrLn6M6Aj2XC",
       "title": "Split out ECN \"capable\" state",
       "url": "https://github.com/quicwg/qlog/issues/397",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -8651,8 +8651,8 @@
       "labels": [],
       "body": "`ECNState` currently has 4 different options.\r\n\r\nDuring IETF 118, it was mentioned by @mirjak that the `capable` option is potentially not fine-grained enough.\r\nI don't know enough about ECN/L4S to know what the change should be here, but the discussion is on YouTube here: https://youtu.be/qbAm_HfLv_c?feature=shared&t=4419\r\n\r\nSomething for @marten-seemann to follow-up on",
       "createdAt": "2024-02-27T15:23:30Z",
-      "updatedAt": "2025-10-08T05:05:31Z",
-      "closedAt": null,
+      "updatedAt": "2025-10-13T13:54:51Z",
+      "closedAt": "2025-10-13T13:54:51Z",
       "comments": [
         {
           "author": "mirjak",
@@ -9509,9 +9509,24 @@
       "labels": [],
       "body": "They also have a `RawInfo` field, which should allow logging of both the length and the payload length.",
       "createdAt": "2025-10-08T15:03:35Z",
-      "updatedAt": "2025-10-08T15:03:35Z",
+      "updatedAt": "2025-10-13T14:17:05Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I see this as a duplicate of #484, with the same answer. ",
+          "createdAt": "2025-10-13T14:01:51Z",
+          "updatedAt": "2025-10-13T14:01:51Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I don't think so. There's no value in having the length field on these two events: If you want to log the length (and / or the payload length), just fill out the `RawInfo`.",
+          "createdAt": "2025-10-13T14:17:05Z",
+          "updatedAt": "2025-10-13T14:17:05Z"
+        }
+      ]
     },
     {
       "number": 484,
@@ -9522,12 +9537,22 @@
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "discuss"
+      ],
       "body": "`HTTP3FrameParsed` and `HTTP3FrameCreated` have a `RawInfo` field. I assume this is because we might parse an unknown frame, which we then skip.\n\nBut all the frames have a `RawInfo` field as well. So now there are two different way to log the length.\n\nCan we just remove it from all the frames?",
       "createdAt": "2025-10-09T14:13:55Z",
-      "updatedAt": "2025-10-09T14:13:55Z",
+      "updatedAt": "2025-10-13T14:01:18Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Yeah, there has always been an uncomfortable straddle here. \n\nRawInfo is not just useful to log unknown frames, but also if you're still developing a QUIC stack from scratch and might have encoding errors where it might be useful to have raw/lower level details available.\n\nIt's also a side-effect of just re-using RawInfo as-is, which will indeed have overlapping fields with things in the frames themselves. But having the same approach there makes creating tools like qvis' packetization and multiplexing diagrams easier to create, because conceptually they could just look at RawInfo for everything (at least if the stack uses them) instead of having to special-case per frame.\n\nI'm probably forgetting a few more reasons, but generally: I would just keep this as-is ,even though it's a bit annoying. RawInfo is always \"optional\"/extra, but fields included in the definition directly should imo be part of the \"main\" frame log.",
+          "createdAt": "2025-10-13T14:01:18Z",
+          "updatedAt": "2025-10-13T14:01:18Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -26759,26 +26784,82 @@
       "id": "PR_kwDOCrLn6M6snP8n",
       "title": "make error / error code field names more consistent",
       "url": "https://github.com/quicwg/qlog/pull/473",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "The `error_code_bytes` naming is confusing, since we're not logging bytes, but an integer.\r\n\r\nThis PR addresses this inconsistency by renaming the respective fields in `QUICConnectionClosed`, `ResetStreamFrame`, `StopSendingFrame` and `ConnectionCloseFrame`: The numerical value is now called `error_code`, and the string value is the `error` / `transport_error` / `application_error`.",
       "createdAt": "2025-10-08T04:17:39Z",
-      "updatedAt": "2025-10-08T04:17:40Z",
+      "updatedAt": "2025-10-13T14:37:07Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "06690b1b3f66df98bdd633d6a04fe755158551be",
+      "baseRefOid": "c9e1cd41c3cb933c731367ae7eb5bd614d5696d5",
       "headRepository": "quicwg/qlog",
       "headRefName": "error-codes",
-      "headRefOid": "4dfa8f211e0954c8e8b6b02d128195813c5a4b5f",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "headRefOid": "adaaf54e35bd90919caa49db34d6a656061830cf",
+      "closedAt": "2025-10-13T14:37:07Z",
+      "mergedAt": "2025-10-13T14:37:06Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "84ba056af199c4104ad7ff01bdf18bbce3532277"
+      },
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Applied all suggestions and rebased.",
+          "createdAt": "2025-10-13T14:24:06Z",
+          "updatedAt": "2025-10-13T14:24:06Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7Gkc8V",
+          "commit": {
+            "abbreviatedOid": "4dfa8f2"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "LGTM minus few nits",
+          "createdAt": "2025-10-13T12:32:59Z",
+          "updatedAt": "2025-10-13T12:37:28Z",
+          "comments": [
+            {
+              "originalPosition": 6,
+              "body": "```suggestion\r\napplication_error value of \"unknown\" type can be used and the raw value captured\r\n```",
+              "createdAt": "2025-10-13T12:32:59Z",
+              "updatedAt": "2025-10-13T12:37:28Z"
+            },
+            {
+              "originalPosition": 88,
+              "body": "```suggestion\r\nerror. For known frame types, the appropriate string value is used in the error field. For\r\n```",
+              "createdAt": "2025-10-13T12:34:49Z",
+              "updatedAt": "2025-10-13T12:37:28Z"
+            },
+            {
+              "originalPosition": 90,
+              "body": "```suggestion\r\nvalue without variable-length integer encoding can be logged in error_code.\r\n```",
+              "createdAt": "2025-10-13T12:35:12Z",
+              "updatedAt": "2025-10-13T12:37:28Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7GknZr",
+          "commit": {
+            "abbreviatedOid": "4dfa8f2"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-13T12:45:12Z",
+          "updatedAt": "2025-10-13T12:45:12Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 474,
@@ -26827,26 +26908,82 @@
       "id": "PR_kwDOCrLn6M6snR2t",
       "title": "use uint64s for transport parameter values",
       "url": "https://github.com/quicwg/qlog/pull/475",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "I don't see any reasonable QUIC stack use any value that exceeds uint32 (or uint16, for that matter), but technically, these are QUIC varints, so we need uint64s here if we want to be able to log any valid value.\r\n\r\nRFC 9000 limits the range of values that are valid to send (sending larger values is a TRANSPORT_PARAMETER_ERROR), but still, we should be able to log the invalid value in case we receive one.",
       "createdAt": "2025-10-08T04:23:53Z",
-      "updatedAt": "2025-10-08T04:23:54Z",
+      "updatedAt": "2025-10-13T14:37:21Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "06690b1b3f66df98bdd633d6a04fe755158551be",
       "headRepository": "quicwg/qlog",
       "headRefName": "transport-parameters-uint64",
-      "headRefOid": "8695d9599d958d0f062f5926e20dc638e060a2ca",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "e8b3b69a41980cd999a71373f6477d0bfb78a3e7",
+      "closedAt": "2025-10-13T14:37:21Z",
+      "mergedAt": "2025-10-13T14:37:21Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "bf3994bbb132f7f151123b686babeb03b0be157e"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7Gkj9a",
+          "commit": {
+            "abbreviatedOid": "8695d95"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2025-10-13T12:41:17Z",
+          "updatedAt": "2025-10-13T12:41:34Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "```suggestion\r\n    ? ack_delay_exponent: uint64\r\n    ? max_ack_delay: uint64\r\n```\r\n\r\nI don't quite understand why these two wouldn't be 64 then? By the same logic, these should also be bigger to allow the full range of potentially invalid values to be logged. ",
+              "createdAt": "2025-10-13T12:41:18Z",
+              "updatedAt": "2025-10-13T12:41:34Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7GkqlQ",
+          "commit": {
+            "abbreviatedOid": "8695d95"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "Wfm modulo rmarx comment",
+          "createdAt": "2025-10-13T12:48:26Z",
+          "updatedAt": "2025-10-13T12:48:26Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7GmHnS",
+          "commit": {
+            "abbreviatedOid": "8695d95"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-13T14:32:28Z",
+          "updatedAt": "2025-10-13T14:32:28Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "That's right.",
+              "createdAt": "2025-10-13T14:32:28Z",
+              "updatedAt": "2025-10-13T14:32:28Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 476,
@@ -26899,10 +27036,12 @@
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "discuss"
+      ],
       "body": "The payload length is already logged in the `RawInfo`, which is part of the respective events that use the `PacketHeader`.",
       "createdAt": "2025-10-08T04:39:55Z",
-      "updatedAt": "2025-10-08T04:39:56Z",
+      "updatedAt": "2025-10-13T15:13:59Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "14510288b3e7641440369ced54798002e1e7c722",
@@ -26913,7 +27052,22 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This is a good one to discuss tomorrow.\r\n\r\nI prefer to keep it in, since it's an explicit field on the wire, and I've tried to keep those in as much as possible as separate fields. If you remove this here, you also need to update `StreamFrame` etc.\r\n\r\nSince RawInfo is always optional (and definitely not logged by all qlog stacks), I'd prefer to keep it in here. ",
+          "createdAt": "2025-10-13T12:49:00Z",
+          "updatedAt": "2025-10-13T12:49:00Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Similar to #483 then. We could also remove the length from `RawInfo` instead. I don't particularly where the length is logged, but having two fields that log the exact same thing seems like a weird design.",
+          "createdAt": "2025-10-13T15:13:59Z",
+          "updatedAt": "2025-10-13T15:13:59Z"
+        }
+      ],
       "reviews": []
     },
     {
@@ -26928,45 +27082,116 @@
       "labels": [],
       "body": "Fixes #471.",
       "createdAt": "2025-10-08T04:42:10Z",
-      "updatedAt": "2025-10-08T04:42:32Z",
+      "updatedAt": "2025-10-13T14:03:50Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "14510288b3e7641440369ced54798002e1e7c722",
       "headRepository": "quicwg/qlog",
       "headRefName": "packet-header",
-      "headRefOid": "b560517fcbfa9ec97faa247ecb63ca65ed359410",
+      "headRefOid": "8f1ed1f0d4671f7a3604d90eb2e3046906914606",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7GlFk2",
+          "commit": {
+            "abbreviatedOid": "b560517"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "Something to discuss :) ",
+          "createdAt": "2025-10-13T13:18:55Z",
+          "updatedAt": "2025-10-13T13:36:04Z",
+          "comments": [
+            {
+              "originalPosition": 11,
+              "body": "```suggestion\r\n    ? fixed_bit : bool .default true\r\n```\r\n\r\nI know this is colloquially called that, but the RFC calls this the fixed bit? (also terrible name, but for consistency?)",
+              "createdAt": "2025-10-13T13:18:55Z",
+              "updatedAt": "2025-10-13T13:36:04Z"
+            },
+            {
+              "originalPosition": 15,
+              "body": "```suggestion\r\n    ; only if packet_type === \"initial\" || \"handshake\" || \"0RTT\" ||\r\n    ;                         \"1RTT\"\r\n    ? reserved_bits: uint8 .default 0\r\n```\r\n\r\nAgain in the interest of being able to log erroneous values (see another recent PR that makes transport params uint64 even though valid values are much lower), should we also have these in here? or just punt them to RawInfo (if we do the latter, we probably should call that out in prose though, imo)",
+              "createdAt": "2025-10-13T13:22:41Z",
+              "updatedAt": "2025-10-13T13:36:04Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 479,
       "id": "PR_kwDOCrLn6M6sncPA",
       "title": "remove circuitous description of default value of StreamFrame.fin",
       "url": "https://github.com/quicwg/qlog/pull/479",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Really, this is not that hard to understand. We don't need to explain how a default value works.",
       "createdAt": "2025-10-08T04:48:57Z",
-      "updatedAt": "2025-10-08T04:48:58Z",
+      "updatedAt": "2025-10-13T13:56:33Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "14510288b3e7641440369ced54798002e1e7c722",
       "headRepository": "quicwg/qlog",
       "headRefName": "stream-frame-fin-default",
       "headRefOid": "d0420929a4e4b0ee1192095f046fdc924af99c7e",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "closedAt": "2025-10-13T13:56:33Z",
+      "mergedAt": "2025-10-13T13:56:33Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "c9e1cd41c3cb933c731367ae7eb5bd614d5696d5"
+      },
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I think I read some of this differently than it just being about defaults. That the expectation is that loggers MUST omit the field if fin is false and MUST set the field if fin is true.\r\n\r\nRemoving the comment leaves it a little ambiguous. However, as you allude to does anyone really care? A parser isn't going to enforce the omit false rule. And it can't really enforce the true rule, since it doesnt have omniprescence.  Its an optional field and if you dont log one of the important fields of this frame, you kind of have yourself to blame.\r\n\r\nRemoving the text seems better than keeping it as it.",
+          "createdAt": "2025-10-13T13:12:06Z",
+          "updatedAt": "2025-10-13T13:12:06Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agree with just removing this",
+          "createdAt": "2025-10-13T13:38:15Z",
+          "updatedAt": "2025-10-13T13:38:15Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7GlAbd",
+          "commit": {
+            "abbreviatedOid": "d042092"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-13T13:12:33Z",
+          "updatedAt": "2025-10-13T13:12:33Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7GlXaz",
+          "commit": {
+            "abbreviatedOid": "d042092"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-13T13:38:24Z",
+          "updatedAt": "2025-10-13T13:38:24Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 480,
@@ -26977,10 +27202,12 @@
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "discuss"
+      ],
       "body": "I assume that \"default value\" is supposed to mean 0, but we can avoid this terminology altogether.",
       "createdAt": "2025-10-08T04:53:14Z",
-      "updatedAt": "2025-10-08T04:53:15Z",
+      "updatedAt": "2025-10-13T13:50:54Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "14510288b3e7641440369ced54798002e1e7c722",
@@ -26991,34 +27218,80 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think we're mixing up two different things: How RFC 9000 encodes a STREAM frame on the wire, and what that STREAM frame represents. I don't think how the frame is encoded is relevant (if you care, you can log the plain bytes).\r\n\r\nFor example, once quic-go parses a frame, there's no way to reconstruct how exactly it was encoded: The peer might have used a longer than necessary varint encoding, sent a value of 0 for the offset instead of using the frame type where you omit the offset, etc. It's just doesn't matter for us.",
+          "createdAt": "2025-10-13T13:50:54Z",
+          "updatedAt": "2025-10-13T13:50:54Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7Glc5G",
+          "commit": {
+            "abbreviatedOid": "35f6103"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "This probably needs a bit more work, especially for the `length` field, since the default there is not 0 but \"remaining length of the packet\":\r\n\r\n```\r\nWhen the LEN bit is set to 0, the Stream Data field consumes all the remaining bytes in the packet.\r\n```\r\n\r\nMy intention was (probably) that you'd calculate the correct remaining length based on the total packet size and log it as such, but I'm not sure who's doing that/if that's easy to do in most stacks.\r\n\r\nSo I'm not sure what we should do here if the LEN bit is not set (just not log the `length` field or force people to log the actual length that it will be based on packet size (as I believe was the original intent))\r\n",
+          "createdAt": "2025-10-13T13:44:19Z",
+          "updatedAt": "2025-10-13T13:44:19Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 481,
       "id": "PR_kwDOCrLn6M6snihx",
       "title": "reword comment for ECNState.capable",
       "url": "https://github.com/quicwg/qlog/pull/481",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #397.",
       "createdAt": "2025-10-08T05:06:30Z",
-      "updatedAt": "2025-10-08T05:06:31Z",
+      "updatedAt": "2025-10-13T13:54:51Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "14510288b3e7641440369ced54798002e1e7c722",
       "headRepository": "quicwg/qlog",
       "headRefName": "encstate-capable-comment",
       "headRefOid": "aa3514efb82d4c30ec4093aae2e33d985c8595dc",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "closedAt": "2025-10-13T13:54:50Z",
+      "mergedAt": "2025-10-13T13:54:50Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "d175382a1c88ba3536325069f661c482a1975829"
+      },
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I don't know enough about ECN to know if this is sufficient or not, so I'll follow your lead on this",
+          "createdAt": "2025-10-13T13:49:59Z",
+          "updatedAt": "2025-10-13T13:49:59Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7GlCDr",
+          "commit": {
+            "abbreviatedOid": "aa3514e"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "Seems like a good compromise ",
+          "createdAt": "2025-10-13T13:14:45Z",
+          "updatedAt": "2025-10-13T13:14:45Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 482,
@@ -27059,6 +27332,32 @@
           "updatedAt": "2025-10-08T09:21:24Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 485,
+      "id": "PR_kwDOCrLn6M6teYPa",
+      "title": "remove length field from HTTP3FrameCreated and HTTP3FrameParsed",
+      "url": "https://github.com/quicwg/qlog/pull/485",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #483.",
+      "createdAt": "2025-10-13T14:19:04Z",
+      "updatedAt": "2025-10-13T14:22:23Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c9e1cd41c3cb933c731367ae7eb5bd614d5696d5",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "http3-frame-remove-length",
+      "headRefOid": "76d7ad3bcfb05097701ed6b6d5d04426c91883e8",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
