@@ -1794,19 +1794,12 @@ $PacketNumberSpace /= "initial" /
 
 ## PacketHeader
 
-If the packet_type numerical value does not map to a known packet_type string,
-the packet_type value of "unknown" can be used and the raw value captured in the
-packet_type_bytes field; a numerical value without variable-length integer
-encoding.
+If the fixed bit or the reserved bit has an invalid value, the raw value can
+be captured in the raw field of the event.
 
 ~~~ cddl
 PacketHeader = {
     packet_type: $PacketType
-
-    ; only if packet_type === "unknown"
-    ? packet_type_byte: uint8
-
-    ? fixed_bit : bool .default true
 
     ; only if packet_type === "1RTT"
     ? spin_bit: bool
