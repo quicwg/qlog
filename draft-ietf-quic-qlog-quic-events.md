@@ -122,8 +122,7 @@ in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
-type, data, group_id, RawInfo, and time-related
-fields.
+type, data, tuple, group_id, RawInfo, and time-related fields.
 
 Events are defined with an importance level as described in {{Section 8.3 of
 QLOG-MAIN}}.
@@ -165,7 +164,7 @@ this specification.
 | quic:connection_id_updated    | Base       | {{quic-connectionidupdated}} |
 | quic:spin_bit_updated         | Base       | {{quic-spinbitupdated}} |
 | quic:connection_state_updated | Base       | {{quic-connectionstateupdated}} |
-| quic:path_assigned            | Base       | {{quic-pathassigned}} |
+| quic:tuple_assigned            | Base      | {{quic-tupleassigned}} |
 | quic:mtu_updated              | Extra      | {{quic-mtuupdated}} |
 | quic:version_information      | Core       | {{quic-versioninformation}} |
 | quic:alpn_information         | Core       | {{quic-alpninformation}} |
@@ -210,7 +209,7 @@ QuicEventData = QUICServerListening /
                 QUICConnectionIDUpdated /
                 QUICSpinBitUpdated /
                 QUICConnectionStateUpdated /
-                QUICPathAssigned /
+                QUICTupleAssigned /
                 QUICMTUUpdated /
                 QUICVersionInformation /
                 QUICALPNInformation /
@@ -287,8 +286,8 @@ importance level.
 
 ~~~ cddl
 QUICConnectionStarted = {
-    local: PathEndpointInfo
-    remote: PathEndpointInfo
+    local: TupleEndpointInfo
+    remote: TupleEndpointInfo
 
     * $$quic-connectionstarted-extension
 }
@@ -489,56 +488,56 @@ implementations are allowed to use other ConnectionState values that adhere more
 closely to their internal logic. Tools SHOULD be able to deal with these custom
 states in a similar way to the pre-defined states in this document.
 
-## path_assigned {#quic-pathassigned}
+## tuple_assigned {#quic-tupleassigned}
 Importance: Base
 
-This event is used to associate a single PathID's value with other parameters
-that describe a unique network path.
+This event is used to associate a single TupleID's value with other parameters
+that describe a unique network tuple.
 
 As described in {{QLOG-MAIN}}, each qlog event can be linked to a single network
-path by means of the top-level "path" field, whose value is a PathID. However,
-since it can be cumbersome to encode additional path metadata (such as IP
-addresses or Connection IDs) directly into the PathID, this event allows such an
-association to happen separately. As such, PathIDs can be short and unique, and
+tuple by means of the top-level "tuple" field, whose value is a TupleID. However,
+since it can be cumbersome to encode additional tuple metadata (such as IP
+addresses or Connection IDs) directly into the TupleID, this event allows such an
+association to happen separately. As such, TupleIDs can be short and unique, and
 can even be updated to be associated with new metadata as the connection's state
 evolves.
 
 Definition:
 
 ~~~ cddl
-QUICPathAssigned = {
-    path_id: PathID
+QUICTupleAssigned = {
+    tuple_id: TupleID
 
     ; the information for traffic going towards the remote receiver
-    ? path_remote: PathEndpointInfo
+    ? tuple_remote: TupleEndpointInfo
 
     ; the information for traffic coming in at the local endpoint
-    ? path_local: PathEndpointInfo
+    ? tuple_local: TupleEndpointInfo
 
-    * $$quic-pathassigned-extension
+    * $$quic-tupleassigned-extension
 }
 ~~~
-{: #quic-pathassigned-def title="QUICPathAssigned definition"}
+{: #quic-tupleassigned-def title="QUICTupleAssigned definition"}
 
-Choosing the different `path_id` values is left up to the implementation. Some
+Choosing the different `tuple_id` values is left up to the implementation. Some
 options include using a uniquely incrementing integer, using the (first)
-Destination Connection ID associated with a path (or its sequence number), or
+Destination Connection ID associated with a tuple (or its sequence number), or
 using (a hash of) the two endpoint IP addresses.
 
-It is important to note that the empty string ("") is a valid PathID and that it
-is the default assigned to events that do not explicitly set a "path" field. Put
-differently, the initial path of a QUIC connection on which the handshake occurs
-(see also {{quic-connectionstarted}}) is implicitly associated with the PathID
-with value "". Associating metadata with this default path is possible by
-logging the QUICPathAssigned event with a value of "" for the `path_id` field.
+It is important to note that the empty string ("") is a valid TupleID and that
+it is the default assigned to events that do not explicitly set a "tuple" field.
+Put differently, the initial tuple of a QUIC connection on which the handshake
+occurs (see also {{quic-connectionstarted}}) is implicitly associated with the
+TupleID with value "". Associating metadata with this default tuple is possible by
+logging the QUICTupleAssigned event with a value of "" for the `tuple_id` field.
 
-As paths and their metadata can evolve over time, multiple QUICPathAssigned
-events can be emitted for each unique PathID. The latest event contains the most
-up-to-date information for that PathID. As such, the first time a PathID is seen
-in a QUICPathAssigned event, it is an indication that the path is
-created. Subsequent occurrences indicate the path is updated, while a final
-occurrence with both `path_local` and `path_remote` fields omitted implicitly
-indicates the path has been abandoned.
+As the usage of TupleIDs and their metadata can evolve over time, multiple
+QUICTupleAssigned events can be emitted for each unique TupleID. The latest
+event contains the most up-to-date information for that TupleID. As such, the
+first time a TupleID is seen in a QUICTupleAssigned event, it is an indication
+that the TupleID is created. Subsequent occurrences indicate the TupleID is
+updated, while a final occurrence with both `tuple_local` and `tuple_remote`
+fields omitted implicitly indicates the TupleID has been abandoned.
 
 ## mtu_updated {#quic-mtuupdated}
 
@@ -1338,7 +1337,7 @@ QUICDatagramDataBlockedUpdated = {
 Use to provide additional information when attempting (client-side) connection
 migration. While most details of the QUIC connection migration process can be
 inferred by observing the PATH_CHALLENGE and PATH_RESPONSE frames, in
-combination with the QUICPathAssigned event, it can be useful to explicitly log
+combination with the QUICTupleAssigned event, it can be useful to explicitly log
 the progression of the migration and potentially made decisions in a single
 location/event. The event has Extra importance level.
 
@@ -1347,7 +1346,7 @@ phase (which is not always needed/present), and a migration phase (which can be
 abandoned upon error).
 
 Implementations that log per-path information in a QUICMigrationStateUpdated,
-SHOULD also emit QUICPathAssigned events, to serve as a ground-truth source of
+SHOULD also emit QUICTupleAssigned events, to serve as a ground-truth source of
 information.
 
 Definition:
@@ -1357,13 +1356,13 @@ QUICMigrationStateUpdated = {
     ? old: MigrationState
     new: MigrationState
 
-    ? path_id: PathID
+    ? tuple_id: TupleID
 
     ; the information for traffic going towards the remote receiver
-    ? path_remote: PathEndpointInfo
+    ? tuple_remote: TupleEndpointInfo
 
     ; the information for traffic coming in at the local endpoint
-    ? path_local: PathEndpointInfo
+    ? tuple_local: TupleEndpointInfo
 
     * $$quic-migrationstateupdated-extension
 }
@@ -1741,33 +1740,33 @@ IPAddress = text /
 ~~~
 {: #ipaddress-def title="IPAddress definition"}
 
-## PathEndpointInfo
+## TupleEndpointInfo
 
-PathEndpointInfo indicates a single half/direction of a path. A full path is
-comprised of two halves. Firstly: the server sends to the remote client IP
+TupleEndpointInfo indicates a single half/direction of a four-tuple. A full tuple
+is comprised of two halves. Firstly: the server sends to the remote client IP
 + port using a specific destination Connection ID. Secondly: the client sends to
 the remote server IP + port using a different destination Connection ID.
 
-As such, structures logging path information SHOULD include two different
-PathEndpointInfo instances, one for each half of the path.
+As such, structures logging tuple information SHOULD include two different
+TupleEndpointInfo instances, one for each half of the tuple.
 
 ~~~ cddl
-PathEndpointInfo = {
+TupleEndpointInfo = {
     ? ip_v4: IPAddress
     ? port_v4: uint16
     ? ip_v6: IPAddress
     ? port_v6: uint16
 
     ; Even though usually only a single ConnectionID
-    ; is associated with a given path at a time,
+    ; is associated with a given tuple/path at a time,
     ; there are situations where there can be an overlap
     ; or a need to keep track of previous ConnectionIDs
     ? connection_ids: [+ ConnectionID]
 
-    * $$quic-pathendpointinfo-extension
+    * $$quic-tupleendpointinfo-extension
 }
 ~~~
-{: #pathendpointinfo-def title="PathEndpointInfo definition"}
+{: #tupleendpointinfo-def title="TupleEndpointInfo definition"}
 
 ## PacketType
 
@@ -2374,7 +2373,7 @@ Namespace
 : quic
 
 Event Types
-: server_listening,connection_started,connection_closed,connection_id_updated,spin_bit_updated,connection_state_updated,path_assigned,mtu_updated,version_information,alpn_information,parameters_set,parameters_restored,packet_sent,packet_received,packet_dropped,packet_buffered,packets_acked,udp_datagrams_sent,udp_datagrams_received,udp_datagram_dropped,stream_state_updated,frames_processed,stream_data_moved,datagram_data_moved,migration_state_updated,key_updated,key_discarded,recovery_parameters_set,recovery_metrics_updated,congestion_state_updated,loss_timer_updated,packet_lost,marked_for_retransmit,ecn_state_updated
+: server_listening,connection_started,connection_closed,connection_id_updated,spin_bit_updated,connection_state_updated,tuple_assigned,mtu_updated,version_information,alpn_information,parameters_set,parameters_restored,packet_sent,packet_received,packet_dropped,packet_buffered,packets_acked,udp_datagrams_sent,udp_datagrams_received,udp_datagram_dropped,stream_state_updated,frames_processed,stream_data_moved,datagram_data_moved,migration_state_updated,key_updated,key_discarded,recovery_parameters_set,recovery_metrics_updated,congestion_state_updated,loss_timer_updated,packet_lost,marked_for_retransmit,ecn_state_updated
 
 Description:
 : Event definitions related to the QUIC transport protocol.

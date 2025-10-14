@@ -349,7 +349,7 @@ JSON serialization example:
 
 It can be advantageous to group several related qlog traces together in a single
 file. For example, it is possible to simultaneously perform logging on the
-client, on the server, and on a single point on their common network path. For
+client, on the server, and on a single point on their common network tuple. For
 analysis, it is useful to aggregate these three individual traces together into
 a single file, so it can be uniquely stored, transferred, and annotated.
 
@@ -600,7 +600,7 @@ Event = {
     time: float64
     name: text
     data: $ProtocolEventData
-    ? path: PathID
+    ? tuple: TupleID
     ? time_format: TimeFormat
     ? group_id: GroupID
     ? system_info: SystemInformation
@@ -621,7 +621,7 @@ the specific values and semantics of common fields, in particular the `name` and
 `data` fields. Furthermore, they can optionally add custom fields.
 
 Each qlog event MAY contain the optional fields: "time_format"
-({{time-based-fields}}), path ({{path-field}}) "trigger" ({{trigger-field}}),
+({{time-based-fields}}), tuple ({{tuple-field}}) "trigger" ({{trigger-field}}),
 and "group_id" ({{group-ids}}).
 
 Multiple events can appear in a Trace or TraceSeq and they might contain fields
@@ -831,35 +831,35 @@ Example of a monotonic log using the relative_to_epoch format:
 {: #mono-time-ex title="Monotonic timestamps"}
 
 
-## Path {#path-field}
+## Tuple {#tuple-field}
 
-A qlog event can be associated with a single "network path" (usually, but not
-always, identified by a 4-tuple of IP addresses and ports). In many cases, the
-path will be the same for all events in a given trace, and does not need to be
-logged explicitly with each event. In this case, the "path" field can be omitted
-(in which case the default value of "" is assumed) or reflected in
-"common_fields" instead (see {{common-fields}}).
+A qlog event is typically associated with a single network tuple (a four-tuple
+of IP addresses and ports). In many cases, this tuple will be the same for all
+events in a given trace, and does not need to be logged explicitly with each
+event. In this case, the "tuple" field can be omitted (in which case the default
+value of "" is assumed) or reflected in "common_fields" instead (see
+{{common-fields}}).
 
 However, in some situations, such as during QUIC's Connection Migration or when
 using Multipath features, it is useful to be able to split events across
-multiple (concurrent) paths.
+multiple (concurrent) tuples and/or paths.
 
 Definition:
 
 ~~~ cddl
-PathID = text .default ""
+TupleID = text .default ""
 ~~~
-{: #path-def title="PathID definition"}
+{: #tuple-def title="TupleID definition"}
 
 
-The "path" field is an identifier that is associated with a single network path.
-This document intentionally does not define further how to choose this
-identifier's value per-path or how to potentially log other parameters that can
-be associated with such a path. This is left for other documents. Implementers
-are free to encode path information directly into the PathID or to log
-associated info in a separate event. For example, QUIC has the "path_assigned"
-event to couple the PathID value to a specific path configuration, see
-{{QLOG-QUIC}}.
+The "tuple" field is an identifier that is associated with a single network
+four-tuple. This document intentionally does not define further how to choose
+this identifier's value per-tuple or how to potentially log other parameters
+that can be associated with such a tuple. This is left for other documents.
+Implementers are free to encode tuple information directly into the TupleID or
+to log associated info in a separate event. For example, QUIC has the
+"tuple_assigned" event to couple the TupleID value to a specific tuple
+configuration, see {{QLOG-QUIC}}.
 
 ## Grouping {#group-ids}
 
@@ -870,14 +870,15 @@ might choose to log events for all incoming connections in a single large
 (streamed) qlog file. As such, a method for splitting up events belonging
 to separate logical entities is required.
 
-The simplest way to perform this splitting is by associating a "group id"
-to each event that indicates to which conceptual "group" each event belongs. A
+The simplest way to perform this splitting is by associating a "group id" to
+each event that indicates to which conceptual "group" each event belongs. A
 post-processing step can then extract events per group. However, this group
 identifier can be highly protocol and context-specific. In the example above,
-the QUIC "Original Destination Connection ID" could be used to uniquely identify a
-connection. As such, they might add a "ODCID" field to each event. However, a
-middlebox logging IP or TCP traffic might rather use four-tuples to identify
-connections, and add a "four_tuple" field.
+the QUIC "Original Destination Connection ID" could be used to uniquely identify
+a connection. As such, they might add a "ODCID" field to each event.
+Additionally, a service providing different levels of Quality of Service (QoS)
+to their users might wish to group connections per QoS level applied. They might
+instead prefer a "qos" field.
 
 As such, to provide consistency and ease of tooling in cross-protocol and
 cross-context setups, qlog instead defines the common "group_id" field, which
@@ -897,8 +898,7 @@ and QUIC connection IDs:
 "events": [
     {
         "time": 1553986553579,
-        "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
-                   ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
+        "group_id": "qos=premium",
         "name": "quic:packet_received",
         "data": { ... }
     },
@@ -913,8 +913,8 @@ and QUIC connection IDs:
 {: #group-id-ex title="GroupID example"}
 
 Note that in some contexts (for example a Multipath transport protocol) it might
-make sense to add additional contextual per-event fields (for example PathID,
-see {{path-field}}), rather than use the group_id field for that purpose.
+make sense to add additional contextual per-event fields (for example TupleID,
+see {{tuple-field}}), rather than use the group_id field for that purpose.
 
 Note also that, typically, a single trace only contains events belonging to a
 single logical group (for example, an individual QUIC connection). As such,
@@ -1023,7 +1023,7 @@ below:
 
 ~~~ cddl
 CommonFields = {
-    ? path: PathID
+    ? tuple: TupleID
     ? time_format: TimeFormat
     ? reference_time: ReferenceTime
     ? group_id: GroupID
@@ -1835,11 +1835,11 @@ steer this generation and access of the results.
 ## Set file output destination via an environment variable
 
 To provide users control over where and how qlog files are created, two
-environment variables are defined. The first, QLOGFILE, indicates a full path to where an
-individual qlog file should be stored. This path MUST include the full file
-extension. The second, QLOGDIR, sets a general directory path in which qlog files
-should be placed. This path MUST include the directory separator character at the
-end.
+environment variables are defined. The first, QLOGFILE, indicates a full path to
+where an individual qlog file should be stored. This path MUST include the full
+file extension. The second, QLOGDIR, sets a general directory path in which qlog
+files should be placed. This path MUST include the directory separator character
+at the end.
 
 In general, QLOGDIR should be preferred over QLOGFILE if an endpoint is prone to
 generate multiple qlog files. This can for example be the case for a QUIC server
