@@ -1794,27 +1794,30 @@ $PacketNumberSpace /= "initial" /
 
 ## PacketHeader
 
-If the packet_type numerical value does not map to a known packet_type string,
-the packet_type value of "unknown" can be used and the raw value captured in the
-packet_type_bytes field; a numerical value without variable-length integer
-encoding.
+If the fixed bit or the reserved bit has an invalid value, the raw value can
+be captured in the raw field of the event.
 
 ~~~ cddl
 PacketHeader = {
-    ? quic_bit: bool .default true
     packet_type: $PacketType
 
-    ; only if packet_type === "unknown"
-    ? packet_type_bytes: uint64
+    ; only if packet_type === "1RTT"
+    ? spin_bit: bool
+
+    ; only if packet_type === "1RTT", and if the key phase was
+    ; determined from the key_phase_bit
+    ? key_phase: uint64
+
+    ; only if packet_type === "1RTT", and if key_phase is not set
+    ? key_phase_bit: bool
+
+    ; only if packet_type === "initial" || "handshake" || "0RTT" ||
+    ;                         "1RTT"
+    ? packet_number_length: uint8
 
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
     ? packet_number: uint64
-
-    ; the bit flags of the packet headers (spin bit, key update bit,
-    ; etc. up to and including the packet number length bits
-    ; if present
-    ? flags: uint8
 
     ; only if packet_type === "initial" || "retry"
     ? token: Token
