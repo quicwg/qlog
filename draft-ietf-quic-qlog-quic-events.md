@@ -658,11 +658,9 @@ regularly be several instances of this event with different fields set.
 Note that some settings have two variations (one set locally, one requested by
 the remote peer). This is reflected in the `owner` field. As such, this field
 MUST be correct for all settings included a single event instance. If you need
-to log settings from two sides, you MUST emit two separate event instances. If a
-setting's final value depends on a combination of proposed values between the
-two peers, or if the local peer decides to ignore/change the remote's value,
-then a third event instance with an `owner` value of `local` can be used to
-reflect the final value.
+to log settings from two sides, you MUST emit two separate event instances. If
+the local peer decides to change its behavior based on remote peer's settings,
+a new event type can be used to reflect the outcome.
 
 By default, each setting is assumed to either be absent (has an `undefined`
 value) or have its default value (if it exists) at the start of the connection.
