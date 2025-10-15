@@ -92,7 +92,7 @@ QUIC packets always include an AEAD authentication tag at the end. In general,
 the length of the AEAD tag depends on the TLS cipher suite, although all cipher
 suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
 lengths in fields of type RawInfo (as defined in {{QLOG-MAIN}}) related to QUIC
-packets, the AEAD tag is regarded as a trailer.
+packets, the AEAD tag is regarded as a trailer with a fixed size of 16 bytes.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
@@ -1161,10 +1161,10 @@ STREAM frames received over two packets would have the fields serialized as:
 
 ~~~
 "frames":[
-  {"frame_type":"stream","stream_id":0,"offset":0,"length":500},
-  {"frame_type":"stream","stream_id":0,"offset":500,"length":200},
-  {"frame_type":"stream","stream_id":1,"offset":0,"length":300},
-  {"frame_type":"stream","stream_id":1,"offset":300,"length":50}
+  {"frame_type":"stream","stream_id":0,"offset":0,"raw":{"length":500}},
+  {"frame_type":"stream","stream_id":0,"offset":500,"raw":{"length":200}},
+  {"frame_type":"stream","stream_id":1,"offset":0,"raw":{"length":300}},
+  {"frame_type":"stream","stream_id":1,"offset":300,"raw":{"length":50}}
   ],
 "packet_numbers":[
   1,
@@ -1181,8 +1181,9 @@ between the different layers. This helps make clear the flow of data, how long
 data remains in various buffers, and the overheads introduced by individual
 layers. The event has Base importance level.
 
-This event relates to stream data only. There are no packet or frame headers and
-length values in the `length` or `raw` fields MUST reflect that.
+The `raw.length` field is used to reflect how many bytes were moved. As this
+event relates to stream data only, there are no packet or frame headers and the
+`raw.length` field MUST reflect that.
 
 For example, it can be useful to understand when data moves from an
 application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
@@ -1194,13 +1195,12 @@ processed first and afterwards the application layer reads from the streams with
 newly available data). This can help identify bottlenecks, flow control issues,
 or scheduling problems.
 
-The `additional_info` field supports optional logging of information
-related to the stream state. For example, an application layer that moves data
-into transport and simultaneously ends the stream, can log `fin_set`. As
-another example, a transport layer that has received an instruction to reset a
-stream can indicate this to the application layer using `reset_stream`.
-In both cases, the length-carrying fields (`length` or `raw`) can be
-omitted or contain zero values.
+The `additional_info` field supports optional logging of information related to
+the stream state. For example, an application layer that moves data into
+transport and simultaneously ends the stream, can log `fin_set`. As another
+example, a transport layer that has received an instruction to reset a stream
+can indicate this to the application layer using `reset_stream`. In both cases,
+the `raw.length` field can be omitted or have a zero value.
 
 This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
 see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
@@ -1209,9 +1209,6 @@ see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
 QUICStreamDataMoved = {
     ? stream_id: uint64
     ? offset: uint64
-
-    ; byte length of the moved data
-    ? length: uint64
 
     ? from: $DataLocation
     ? to: $DataLocation
@@ -1239,8 +1236,9 @@ data (see {{!RFC9221}}) moves between the different layers. This helps make
 clear the flow of data, how long data remains in various buffers, and the
 overheads introduced by individual layers. The event has Base importance level.
 
-This event relates to datagram data only. There are no packet or frame headers and
-length values in the `length` or `raw` fields MUST reflect that.
+The `raw.length` field is used to reflect how many bytes were moved. As this
+event relates to datagram data only, there are no packet or frame headers and
+the `raw.length` field MUST reflect that.
 
 For example, passing from the application protocol (e.g., WebTransport) to QUIC
 Datagram Frame buffers and vice versa.
@@ -1257,8 +1255,6 @@ see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
 
 ~~~ cddl
 QUICDatagramDataMoved = {
-    ; byte length of the moved data
-    ? length: uint64
     ? from: $DataLocation
     ? to: $DataLocation
     ? raw: RawInfo
@@ -1799,6 +1795,10 @@ the packet_type value of "unknown" can be used and the raw value captured in the
 packet_type_bytes field; a numerical value without variable-length integer
 encoding.
 
+For long header packets of type initial, handshake, and 0RTT, the length field
+of the packet header is logged in the qlog `raw.length` field, and the value
+signifies the length of the packet number plus the payload.
+
 ~~~ cddl
 PacketHeader = {
     ? quic_bit: bool .default true
@@ -1818,10 +1818,6 @@ PacketHeader = {
 
     ; only if packet_type === "initial" || "retry"
     ? token: Token
-
-    ; only if packet_type === "initial" || "handshake" || "0RTT"
-    ; Signifies length of the packet_number plus the payload
-    ? length: uint16
 
     ; only if present in the header
     ; if correctly using transport:connection_id_updated events,
@@ -1947,7 +1943,7 @@ such, each padding byte could be theoretically interpreted and logged as an
 individual PaddingFrame.
 
 However, as this leads to heavy logging overhead, implementations SHOULD instead
-emit just a single PaddingFrame and set the raw.payload_length property to the
+emit just a single PaddingFrame and set the `raw.payload_length` property to the
 amount of PADDING bytes/frames included in the packet.
 
 ~~~ cddl
@@ -2049,12 +2045,14 @@ StopSendingFrame = {
 
 ### CryptoFrame
 
+The length field of the Crypto frame MUST be logged in the qlog `raw.length`
+field. The other sub-fields of the `raw` field are optional.
+
 ~~~ cddl
 CryptoFrame = {
     frame_type: "crypto"
     offset: uint64
-    length: uint64
-    ? raw: RawInfo
+    raw: RawInfo
 }
 ~~~
 {: #cryptoframe-def title="CryptoFrame definition"}
@@ -2072,16 +2070,15 @@ NewTokenFrame = {
 
 ### StreamFrame
 
+If the stream frame contains a length field, it MUST be logged in the qlog
+`raw.length` field. If it does not, the implementation MAY calculate the actual
+frame byte length itself and log that in `raw.length` if necessary.
+
 ~~~ cddl
 StreamFrame = {
     frame_type: "stream"
     stream_id: uint64
-
-    ; These two MUST always be set
-    ; If not present in the Frame type, log their default values
-    offset: uint64
-    length: uint64
-
+    ? offset: uint64 .default 0
     ? fin: bool .default false
     ? raw: RawInfo
 }
@@ -2282,10 +2279,13 @@ UnknownFrame = {
 
 The QUIC DATAGRAM frame is defined in {{Section 4 of !RFC9221}}.
 
+If the datagram frame contains a length field, it MUST be logged in the qlog
+`raw.length` field. If it does not, the implementation MAY calculate the actual
+datagram byte length itself and log that in `raw.length` if necessary.
+
 ~~~ cddl
 DatagramFrame = {
     frame_type: "datagram"
-    ? length: uint64
     ? raw: RawInfo
 }
 ~~~
