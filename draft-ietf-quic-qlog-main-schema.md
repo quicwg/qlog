@@ -349,7 +349,7 @@ JSON serialization example:
 
 It can be advantageous to group several related qlog traces together in a single
 file. For example, it is possible to simultaneously perform logging on the
-client, on the server, and on a single point on their common network tuple. For
+client, on the server, and on a single point on their common network path. For
 analysis, it is useful to aggregate these three individual traces together into
 a single file, so it can be uniquely stored, transferred, and annotated.
 
@@ -833,12 +833,12 @@ Example of a monotonic log using the relative_to_epoch format:
 
 ## Tuple {#tuple-field}
 
-A qlog event is typically associated with a single network tuple (a four-tuple
-of IP addresses and ports). In many cases, this tuple will be the same for all
-events in a given trace, and does not need to be logged explicitly with each
-event. In this case, the "tuple" field can be omitted (in which case the default
-value of "" is assumed) or reflected in "common_fields" instead (see
-{{common-fields}}).
+A qlog event is typically associated with a single network "path", which is
+usually aligned with a four-tuple of IP addresses and ports. In many cases, this
+tuple will be the same for all events in a given trace, and does not need to be
+logged explicitly with each event. In this case, the "tuple" field can be
+omitted (in which case the default value of "" is assumed) or reflected in
+"common_fields" instead (see {{common-fields}}).
 
 However, in some situations, such as during QUIC's Connection Migration or when
 using Multipath features, it is useful to be able to split events across
