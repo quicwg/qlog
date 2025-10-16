@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-14T01:04:31.262604+00:00",
+  "timestamp": "2025-10-16T01:05:49.939228+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -700,7 +700,7 @@
       ],
       "body": "using transport.parameters_set there are two parameters to signal 0-RTT:\r\n- resumption_allowed\r\n- early_data_enabled\r\n\r\nAs pointed out by @jlaine, these are a bit ambiguous, as 0-RTT can either be used for the current connection or enabled for a future connection.\r\n\r\nSolution 1:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new events: session_ticket_sent/received (with early_data_enabled?:boolean member)\r\n\r\nSolution 2:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new parameters: resumption_offered and early_data_offered",
       "createdAt": "2019-10-15T09:03:47Z",
-      "updatedAt": "2024-10-21T09:15:22Z",
+      "updatedAt": "2025-10-14T12:59:27Z",
       "closedAt": null,
       "comments": [
         {
@@ -716,6 +716,20 @@
           "body": "Revisiting this issue. I still believe that splitting up the event is the right thing to do: `parameters_set` should **only** be used for QUIC transport parameters. We should probably have a field to indicate where these parameters came from (i.e. newly received vs. restored).\r\n\r\nThis means that we'll need to define new events for TLS session resumption / 0-RTT. As I suggested 3 years ago, this could be achieved with a `resumption_offered` and a `resumption_accepted` / `resumption_rejected` event.",
           "createdAt": "2024-10-21T09:15:20Z",
           "updatedAt": "2024-10-21T09:15:20Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: logging 0-rtt accepting / rejection seems useful; @marten-seemann will prepare a PR for that. In addition, ask client implementers if there are any other gaps.",
+          "createdAt": "2025-10-14T10:50:55Z",
+          "updatedAt": "2025-10-14T10:50:55Z"
+        },
+        {
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "body": "Just to confirm, I assume the expected changes will be related to the acceptance / rejection of 0-RTT and not resumption in general.\n\nResumption (if the handshakeis abbreviated) is a matter internal to TLS. OTOH, it is a matter of the QUIC stack to obtain 0-RTT keys from TLS and to use them for send / receiving 0-RTT packets.",
+          "createdAt": "2025-10-14T12:59:27Z",
+          "updatedAt": "2025-10-14T12:59:27Z"
         }
       ]
     },
@@ -1823,7 +1837,7 @@
       ],
       "body": "Currently, we have few options for logging a lot of TLS related data (e.g., cipher suites, supported groups, (E)SNI, ...). \r\n\r\nNeed to figure out a generic form for TLS (extensions) data so it can be logged using qlog as well. \r\n\r\nNote: this is getting in the \"new TCP+TLS+HTTP/2 schema\" territory ",
       "createdAt": "2020-02-26T11:37:15Z",
-      "updatedAt": "2024-10-21T09:16:59Z",
+      "updatedAt": "2025-10-14T10:36:46Z",
       "closedAt": null,
       "comments": [
         {
@@ -1832,6 +1846,13 @@
           "body": "Note that #27 suggests to add some resumption and 0-RTT events, which arguably are TLS-specific. They do however (at least 0-RTT does) change how the QUIC stack behaves, in pretty fundamental ways (namely sending and processing 0-RTT data, restoring transport parameters, etc.), which is a good justification for including these (but not other) events.",
           "createdAt": "2024-10-21T09:16:58Z",
           "updatedAt": "2024-10-21T09:16:58Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: this is/will be covered by https://github.com/quicwg/qlog/issues/121 so proposed to close when that is resolved",
+          "createdAt": "2025-10-14T10:36:46Z",
+          "updatedAt": "2025-10-14T10:36:46Z"
         }
       ]
     },
@@ -3511,7 +3532,7 @@
       ],
       "body": "Currently, we can log which params/settings were restored upon attempting 0-RTT, but not which ones were actually stored at the end of a connection (though we might assume it were the correct ones, using the values from `parameters_set`).\r\n\r\nFor a server which encodes this information in for example the SessionTicket, we also cannot log which values are in the ticket when sending it, nor when receiving it, nor if early data was denied because of a mismatch therein. ",
       "createdAt": "2020-11-02T23:14:15Z",
-      "updatedAt": "2023-01-09T14:36:34Z",
+      "updatedAt": "2025-10-14T10:35:12Z",
       "closedAt": null,
       "comments": [
         {
@@ -3534,6 +3555,13 @@
           "body": "I'm not sure I understand how exactly that would aid solve this particular issue, unless you mean that the new TLS event would use a `dest`/`src` field as mentioned in your comment above to indicate `TLSParametersSaved` vs `TLSParametersRestored`.\r\n\r\nI do see the appeal of having a separate TLS event. I assume it would still be under the `transport` category? \r\n\r\nCan you make a (quick) mockup of what the `TLSParametersSet` would look like? \r\n",
           "createdAt": "2023-01-09T14:36:14Z",
           "updatedAt": "2023-01-09T14:36:34Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: @marten-seemann to prepare a PR based on input during the meeting",
+          "createdAt": "2025-10-14T10:35:12Z",
+          "updatedAt": "2025-10-14T10:35:12Z"
         }
       ]
     },
@@ -7494,11 +7522,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "rmarx"
+      ],
       "labels": [],
       "body": "We've had the following todo's for `loss_timer_updated` in the quic schema for a while, pulling them out into this issue\r\n\r\n1. TODO: how about CC algo's that use multiple timers? How generic do these events\r\nneed to be? Just support QUIC-style recovery from the spec or broader?\r\n\r\n2. TODO: read up on the loss detection logic in draft-27 onward and see if this suffices\r\n\r\n",
       "createdAt": "2023-07-05T23:14:01Z",
-      "updatedAt": "2025-10-08T05:09:13Z",
+      "updatedAt": "2025-10-14T10:23:34Z",
       "closedAt": null,
       "comments": [
         {
@@ -7514,6 +7544,13 @@
           "body": "> 1. TODO: how about CC algo's that use multiple timers? How generic do these events\n>        need to be? Just support QUIC-style recovery from the spec or broader?\n\nWhy is this a problem? QUIC also has mulitple timers (ACK delay timer, loss recovery, idle timeout, to name a few), and we only log the timer being set to the minimum of these values (which is how most QUIC stacks implement this anyway).\n\nI think we can close this issue without any text changes.",
           "createdAt": "2025-10-08T05:09:13Z",
           "updatedAt": "2025-10-08T05:09:13Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: timers are a general feature so move the definition out of recovery and remove `loss` prefix. @rmarx to make a PR that resolves this issue",
+          "createdAt": "2025-10-14T10:23:34Z",
+          "updatedAt": "2025-10-14T10:23:34Z"
         }
       ]
     },
@@ -7687,7 +7724,7 @@
       "id": "I_kwDOCrLn6M52wiFR",
       "title": "change STREAM and DATAGRAM frame definition to allow logging of frame payload",
       "url": "https://github.com/quicwg/qlog/issues/342",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -7696,8 +7733,8 @@
       "labels": [],
       "body": "Currently the `raw` field includes the wire representation of the frame. This doesn't seem useful, and would mean that a qlog consumer would need to implement a frame parser. Instead, we should only log the payload.\r\n\r\nThis could be done by changing the `raw` field to `payload`.",
       "createdAt": "2023-11-14T10:20:59Z",
-      "updatedAt": "2025-03-12T03:47:53Z",
-      "closedAt": null,
+      "updatedAt": "2025-10-14T13:23:49Z",
+      "closedAt": "2025-10-14T13:23:49Z",
       "comments": [
         {
           "author": "rmarx",
@@ -7726,6 +7763,13 @@
           "body": "@rmarx given you're workin on https://github.com/quicwg/qlog/pull/450/files, do you want to visit this issue about StreamFrame and DatagramFrame soon too?",
           "createdAt": "2025-03-12T03:47:53Z",
           "updatedAt": "2025-03-12T03:47:53Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: the frame's `raw` field can be directly indexed at the offset determined via some simple length calculations. That seems cleaner that adding a new payload field. Proposal is to close with no action.",
+          "createdAt": "2025-10-14T10:01:58Z",
+          "updatedAt": "2025-10-14T10:01:58Z"
         }
       ]
     },
@@ -8210,7 +8254,7 @@
       "labels": [],
       "body": "As reported by @hlandau on the mailing list:\r\n\r\nquic:stream_state_updated:\r\n\r\n  I think this needs to be clarified a little that an event logged here with both\r\n  a `stream_id` field and a `stream_side` field is expressing a state for that\r\n  component of the stream and from the perspective of the specified vantage point\r\n  (also, what about the network vantage point?); whereas an event logged here\r\n  with a `stream_id` field but no `stream_side` field is expressing a state for\r\n  both stream components as a whole.\r\n\r\n  If my interpretation here is correct, I think it would also help to note that\r\n  the valid values of StreamState depend on the value *and* presence of\r\n  stream_side.",
       "createdAt": "2024-01-19T11:19:58Z",
-      "updatedAt": "2025-03-12T03:32:55Z",
+      "updatedAt": "2025-10-14T09:49:53Z",
       "closedAt": null,
       "comments": [
         {
@@ -8240,6 +8284,13 @@
           "body": " Given that\n\na ) this event describes itself as \n\n> The `stream_state_updated` event is emitted whenever the internal state of a\nQUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}.\n\nb) QUIC is not intended to support on-path observation of its details\n\nc) To my knowledge, we have no network observer implementers that are stating this is a problem or providing input to the discussion\n\nI'm not particularly motivated to try and solve any theoretical complications for network observers. \n\nAssuming we agree on that, lets focus on the case of client or server endpoints. This event has a lot of fields and permutations, several of which don't make semantic sense - for example, there's no sense in emitting an event that claims a peer-initiated unidirectional stream was put into a \"data sent\" state. \n\nSimilarly, I don't think there's much logical sense to an stream updated event like \"stream_id=0, stream_side field omitted, new=data_sent\" because a bidirectional field has two stream states in opposite directions. \n\nHugo might disagree, since they say\n\n> whereas an event logged here\nwith a stream_id field but no stream_side field is expressing a state for\nboth stream components as a whole.\n\nbut I tend to disagree that its going to be that common to have a full duplex stream to have consistent stream states.\n\nSo how about this as an idea:\n\n*  make the stream_side field mandatory. They are already mandatory in QUICs stream model. That removes ambiguity in an already complicated puzzle.\n* add an optional initiator field (client, server) to augment the stream_type field. Both initiator and type are already encoded in the stream ID, so these are just crutches to avoid maths\n\nThese steps won't prevent garbage values but will make it cleaer what to do. If we really want to support the idea of \"both sides closed all duplexes and the stream is completely closed\" then add a \"both\" value to stream_side and write some text to explain that.",
           "createdAt": "2025-03-12T03:32:54Z",
           "updatedAt": "2025-03-12T03:32:54Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: https://github.com/quicwg/qlog/pull/468 proposal closed. @rmarx to create alternative PR(s) based on emerging consensus",
+          "createdAt": "2025-10-14T09:49:53Z",
+          "updatedAt": "2025-10-14T09:49:53Z"
         }
       ]
     },
@@ -8684,7 +8735,7 @@
       "labels": [],
       "body": "Spinoff/splitoff from #369.\r\n\r\n@hlandau  originally reported for `quic:parameters_set`:\r\n\r\nI think this event needs more clarify in terms of the distinction between\r\nattempting to negotiate a feature and it being enabled. It should be possible\r\nto log the feature set a local or remote endpoint is requesting and it\r\nshould be possible to log the actually negotiated feature set. Possibly\r\nthis can be resolved via simple clarification. If a client connects to\r\na server, does it start by emitting parameters_set (owner=local) with (e.g.)\r\nmax_datagram_frame_size set, and then when the server responds without\r\nit, emit parameters_set (owner=remote) without it? I guess this allows\r\nthe necessary information to be inferred.\r\n\r\nIf the absence of a field indicates it was not negotiated after receiving\r\ntransport parameters from a server, this creates a problem if this event has\r\nto be used to log other parameters determined at different times (which seems\r\nplausible for tls_cipher, early_data_enabled, etc.), as then logging\r\nthose parameters could be misinterpreted as a sign that the transport\r\nparameters have been received and a feature has not been negotiated.\r\nEither the cause of a parameters_set event should be clarified (maybe a trigger\r\nfield) or possibly this should be split into different event types.",
       "createdAt": "2024-02-28T11:26:54Z",
-      "updatedAt": "2024-06-24T15:26:00Z",
+      "updatedAt": "2025-10-14T09:34:23Z",
       "closedAt": null,
       "comments": [
         {
@@ -8700,6 +8751,13 @@
           "body": "1 sounds good to me and makes sense.\r\n\r\nFor 2, an example scenario:\r\n\r\n- Client sends handshake, TPs include idle timeout TP, parameters_set(owner=local, idle_timeout=...) logged\r\n- Server sends handshake, TP include idle timeout TP, parameters_set(owner=remote, idle_timeout=...) logged\r\n- Some other event on the client happens which causes parameters_set(owner=local, foo=...) to be logged\r\n- This obviously should not imply `idle_timeout` is no longer configured.\r\n- But for a parameters_set event which is TP-triggered, absence of `idle_timeout` seems to imply it was not sent.\r\n\r\nOK, thinking about it, is the intention here to have \"stateful\" handling of this where a qlog consumer models the current state as the product of all events? i.e.,\r\n\r\n```\r\ncurParams.idleTimeout = UNSET\r\nfor each params event:\r\n  if event.idleTimeout is present:\r\n    curParams.idleTimeout = event.idleTimeout\r\n```\r\n\r\nThat works but should be made clear. Can a param transition back to its \"unset\" value using `null` explicitly? Or is `null` the same as a field being missing?\r\n\r\nHere's some wording I've come up with quickly, feel free to mess with it:\r\n\r\n```\r\nSome parameters are the result of negotiation between peers. In this case, one\r\nendpoint generally suggests a possible value for a parameter and its peer then\r\nsuggests another possible value. The value used is the result of some\r\nparameter-specific function applied over those two suggested values.\r\nSuch negotiation SHOULD be expressed as a series of `parameters_set` events.\r\nFor example:\r\n\r\n- The local endpoint logs a `parameters_set` event with an `owner` of `local`\r\n  reflecting the negotiated parameter values it would like to use.\r\n- The local endpoint receives parameter values from the peer and logs a\r\n  `parameters_set` event with an `owner` of `remote` reflecting the desired\r\n  values expressed by the peer.\r\n- The local endpoint logs a `parameters_set` event with an `owner` of `local`\r\n  reflecting the negotiated parameter values determined from the two sets\r\n  of paramater values communicated by the local and remote endpoints.\r\n\r\nEach parameter in a `parameters_set` event supersedes the previous value of that\r\nparameter if present. If a parameter does not appear in a given `parameters_set`\r\nevent, its value is unchanged from the previous event which set that parameter.\r\nIf a parameter never appears in a `parameters_set` event, it retains its default\r\nvalue. A default value may be restored by specifying a JSON value of `null` for\r\na parameter, which is semantically distinct from the absence of a parameter in a\r\n`parameters_set` event.\r\n```",
           "createdAt": "2024-03-06T00:46:59Z",
           "updatedAt": "2024-03-06T00:46:59Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: emerging consensus to make no design changes related to this, so proposal to close with no action. A separate followup editorial PR to explain a bit more about how to approach TPs might come but doesn't block this.",
+          "createdAt": "2025-10-14T09:34:23Z",
+          "updatedAt": "2025-10-14T09:34:23Z"
         }
       ]
     },
@@ -8750,7 +8808,7 @@
       ],
       "body": "With #417 and the `additional-schema` proposal, we're moving to a good state for qlog's extensibility. \r\n\r\nHowever, we feel additional prose is needed to make people make good use of this extensibility. Without it, we will mainly have the proper CDDL structures and some scattered prose, but no clear flowcharts/lists or similar. \r\n\r\nFor example, we can add TODOs for different use cases:\r\n- If you want to add a fully new protocol, do xyz\r\n- If you want to add new fields to an existing event, do abc\r\n- If you want to add new options to an ENUM, do def\r\n\r\nThis can only be done after the extensibility stuff is properly done though, so this issue is to remind us later ;) ",
       "createdAt": "2024-03-04T11:48:47Z",
-      "updatedAt": "2025-03-12T03:41:58Z",
+      "updatedAt": "2025-10-14T09:20:35Z",
       "closedAt": null,
       "comments": [
         {
@@ -8759,6 +8817,13 @@
           "body": "Marking this as editorial. \n\nI would suggest a fairly light touch here. I.e. add some short text in the main schema that describes the key points you outline. There's an increasing number of examples of actually using qlog extensibility that I think there's ample examples of these things without needing too many words or fake examples.",
           "createdAt": "2025-03-12T03:41:30Z",
           "updatedAt": "2025-03-12T03:41:58Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: Robin to refresh memory and address before Montreal",
+          "createdAt": "2025-10-14T09:20:35Z",
+          "updatedAt": "2025-10-14T09:20:35Z"
         }
       ]
     },
@@ -8848,12 +8913,22 @@
       "assignees": [
         "rmarx"
       ],
-      "labels": [],
+      "labels": [
+        "editorial"
+      ],
       "body": "With https://github.com/quicwg/qlog/pull/415 and the upcoming PR describing general extensibility, we won't yet have discussed guidelines for extending other stuff (e.g., $QuicFrame or $H3Parameters or $H3FrameType), so don't forget to add those once those two PRs are merged.\r\n\r\nAt that point, probably also best to move the socket extensibility discussion to the general extensibility section and add this new thing there as well.\r\n\r\n(this is mostly a DO NOT FORGET ABOUT THIS ROBIN issue)",
       "createdAt": "2024-03-18T15:48:21Z",
-      "updatedAt": "2024-03-18T15:48:22Z",
+      "updatedAt": "2025-10-14T09:19:15Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: Robin to refresh memory and address before Montreal",
+          "createdAt": "2025-10-14T09:19:15Z",
+          "updatedAt": "2025-10-14T09:19:15Z"
+        }
+      ]
     },
     {
       "number": 421,
@@ -9036,11 +9111,13 @@
       "state": "OPEN",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "When we switched to JSON-SEQ a while back (https://github.com/quicwg/qlog/issues/172), we assumed that using record separators instead of newline-delimited JSON wouldn't cause too much pain. I think it's time to reevaluate this assumption.\r\n\r\n## vim\r\n\r\nIt also turns out that existing software is not that great at handling record record separators. Here's a screenshot of `vim` messing up the line character count (note that last line, where it usually tells you the cursor position, and it now displays 12-13).\r\n![image](https://github.com/user-attachments/assets/1bfa7d6f-c354-43dc-950e-73df0aad951d)\r\n\r\n## jq\r\n\r\n`jq` is actually the tool that's the most compatible with JSONSEQ. However, one MUST use the `--seq` flag, using standard `jq` results in the following error, which is not very helpful for the user:\r\n```\r\njq: parse error: Invalid numeric literal at line 1, column 2\r\n```\r\nI had to use a search engine to figure out how to convince `jq` to use record separators. Definitely not the end of the world, but a subpar developer experience nonetheless.\r\n\r\n## grep\r\n\r\nAnother example is `grep`. Try to extract the `transport:connection_started` event from this qlog file using `grep`:\r\n\r\n```\r\n\u001e{\r\n    \"qlog_format\":\"JSON-SEQ\",\r\n    \"qlog_version\":\"draft-03\",\r\n    \"title\":\"quic-go qlog\",\r\n    \"configuration\":{\"code_version\":\"(devel)\"},\r\n    \"trace\":{\r\n        \"vantage_point\":{\"type\":\"client\"},\r\n        \"common_fields\":{\"ODCID\":\"65b480747721258697d6\",\"group_id\":\"65b480747721258697d6\",\"reference_time\":1722494434168.3032,\"time_format\":\"relative\"},\r\n    },\r\n}\r\n\u001e{\r\n    \"time\":0.038458,\r\n    \"name\":\"transport:connection_started\",\r\n    \"data\":{\"ip_version\":\"ipv6\",\"src_ip\":\"::\",\"src_port\":55464,\"dst_ip\":\"127.0.0.1\",\"dst_port\":6121,\"src_cid\":\"36ff0294\",\"dst_cid\":\"65b480747721258697d6\"},\r\n}\r\n```\r\n\r\nFirst of all, note how GitHub renders the record separator here: \ufffd (I love seeing this character on my screen!).\r\n\r\nBut back to `grep`: I haven't figured out a way to grep for the `transport:connection_started` event, and [apparently](https://superuser.com/questions/140965/grep-changing-the-delimiter) it's not easy to change the record separator.\r\n\r\n`grep`ing is **very important** when debugging, I often find myself filtering a qlog file for the event type(s) that I'm interested in.",
       "createdAt": "2024-08-01T19:11:44Z",
-      "updatedAt": "2024-10-17T13:49:56Z",
+      "updatedAt": "2025-10-14T09:17:10Z",
       "closedAt": null,
       "comments": [
         {
@@ -9161,6 +9238,13 @@
           "body": "This needs to be raised on the QUIC mailing list before then, to reach that the broadest set of people",
           "createdAt": "2024-10-17T13:49:55Z",
           "updatedAt": "2024-10-17T13:49:55Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: not much has changed since last discussed. Another approach could be remove streaming format altogether. Proposal to present idea of defining our own newline streaming JSON in qlog itself at the next IETF meeting and gather more feedback.",
+          "createdAt": "2025-10-14T09:17:10Z",
+          "updatedAt": "2025-10-14T09:17:10Z"
         }
       ]
     },
@@ -9402,15 +9486,15 @@
       "id": "I_kwDOCrLn6M6tmvg1",
       "title": "How to log sending of path probe packets?",
       "url": "https://github.com/quicwg/qlog/issues/456",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "There doesn't seem to be a good way to log the remote address that a path probe packet is being sent to / received from. This would be very helpful for debugging connection migration.",
       "createdAt": "2025-03-12T04:31:15Z",
-      "updatedAt": "2025-07-07T01:50:02Z",
-      "closedAt": null,
+      "updatedAt": "2025-10-14T09:04:11Z",
+      "closedAt": "2025-10-14T09:04:11Z",
       "comments": [
         {
           "author": "rmarx",
@@ -9425,6 +9509,13 @@
           "body": "This proposal seems reasonable to me. @marten-seemann any objections?",
           "createdAt": "2025-07-07T01:50:02Z",
           "updatedAt": "2025-07-07T01:50:02Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: using path_id (or whatever it will be called) is ok. Close with no action.",
+          "createdAt": "2025-10-14T09:04:11Z",
+          "updatedAt": "2025-10-14T09:04:11Z"
         }
       ]
     },
@@ -9471,7 +9562,7 @@
       "labels": [],
       "body": "`PacketHeader.flags` requires consumers to implement a packet header parser. It would be nicer if we actually spelled out the values, i.e.\n```\n? quic_bit: uint8\n? spin_bit: uint8\n? key_phase: int\n? packet_number_length: uint8\n```\n\nI imagine most implementations won't be interested in logging most of these values. For example, I'm not going to even implement the `spin_bit` flag in quic-go, since quic-go doesn't support the spin bit. Similarly, there's no value in logging `quic_bit`, unless the greasing extension is implemented (and even then, it's not clear if there's a lot of value in logging it).\n\nOpen question: Should we log the key phase bit, or the key phase (the key phase is derived from the bit). I'd argue that we should log the key phase, similar to how we log the decoded and not the wire packet number.",
       "createdAt": "2025-09-29T15:39:43Z",
-      "updatedAt": "2025-10-08T04:29:37Z",
+      "updatedAt": "2025-10-14T08:49:33Z",
       "closedAt": null,
       "comments": [
         {
@@ -9494,6 +9585,13 @@
           "body": "> Maybe we should add an optional `RawInfo` field for that case?\n\nActually, we already have `RawInfo` on the events that use the `PacketHeader`, e.g. `QUICPacketDropped`.",
           "createdAt": "2025-10-08T04:29:37Z",
           "updatedAt": "2025-10-08T04:29:37Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: support for the proposal, update PR to address feedback",
+          "createdAt": "2025-10-14T08:49:32Z",
+          "updatedAt": "2025-10-14T08:49:32Z"
         }
       ]
     },
@@ -9505,11 +9603,13 @@
       "state": "OPEN",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "marten-seemann"
+      ],
       "labels": [],
       "body": "They also have a `RawInfo` field, which should allow logging of both the length and the payload length.",
       "createdAt": "2025-10-08T15:03:35Z",
-      "updatedAt": "2025-10-13T14:17:05Z",
+      "updatedAt": "2025-10-14T08:42:35Z",
       "closedAt": null,
       "comments": [
         {
@@ -9525,6 +9625,13 @@
           "body": "I don't think so. There's no value in having the length field on these two events: If you want to log the length (and / or the payload length), just fill out the `RawInfo`.",
           "createdAt": "2025-10-13T14:17:05Z",
           "updatedAt": "2025-10-13T14:17:05Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: @marten-seemann to prepare a PR to remove this field from `HTTP3FrameParsed` and `HTTP3FrameCreated` ",
+          "createdAt": "2025-10-14T08:42:35Z",
+          "updatedAt": "2025-10-14T08:42:35Z"
         }
       ]
     },
@@ -9536,13 +9643,15 @@
       "state": "OPEN",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "marten-seemann"
+      ],
       "labels": [
         "discuss"
       ],
       "body": "`HTTP3FrameParsed` and `HTTP3FrameCreated` have a `RawInfo` field. I assume this is because we might parse an unknown frame, which we then skip.\n\nBut all the frames have a `RawInfo` field as well. So now there are two different way to log the length.\n\nCan we just remove it from all the frames?",
       "createdAt": "2025-10-09T14:13:55Z",
-      "updatedAt": "2025-10-13T14:01:18Z",
+      "updatedAt": "2025-10-14T08:42:20Z",
       "closedAt": null,
       "comments": [
         {
@@ -9551,6 +9660,195 @@
           "body": "Yeah, there has always been an uncomfortable straddle here. \n\nRawInfo is not just useful to log unknown frames, but also if you're still developing a QUIC stack from scratch and might have encoding errors where it might be useful to have raw/lower level details available.\n\nIt's also a side-effect of just re-using RawInfo as-is, which will indeed have overlapping fields with things in the frames themselves. But having the same approach there makes creating tools like qvis' packetization and multiplexing diagrams easier to create, because conceptually they could just look at RawInfo for everything (at least if the stack uses them) instead of having to special-case per frame.\n\nI'm probably forgetting a few more reasons, but generally: I would just keep this as-is ,even though it's a bit annoying. RawInfo is always \"optional\"/extra, but fields included in the definition directly should imo be part of the \"main\" frame log.",
           "createdAt": "2025-10-13T14:01:18Z",
           "updatedAt": "2025-10-13T14:01:18Z"
+        },
+        {
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "body": "For frames being defined, I think we agree that RawInfo is unnecessary?\n\nIf so, maybe define UnknownFrame type that can be used to log arbitrary frames in raw?",
+          "createdAt": "2025-10-14T08:33:55Z",
+          "updatedAt": "2025-10-14T08:33:55Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: @marten-seemann to prepare a PR to remove this field from `HTTP3FrameParsed` and `HTTP3FrameCreated` ",
+          "createdAt": "2025-10-14T08:42:16Z",
+          "updatedAt": "2025-10-14T08:42:16Z"
+        }
+      ]
+    },
+    {
+      "number": 486,
+      "id": "I_kwDOCrLn6M7RVWr1",
+      "title": "define logging for Capsules",
+      "url": "https://github.com/quicwg/qlog/issues/486",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [
+        "marten-seemann"
+      ],
+      "labels": [],
+      "body": "RFC 9297 define Capsules (in general) and DATAGRAM Capsules. We should define how to log them in an extensible way, such that applications using the Capsule protocol can easily define qlog extensions for the capsules they define.",
+      "createdAt": "2025-10-14T01:38:59Z",
+      "updatedAt": "2025-10-14T08:39:59Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Thst sounds like interesting work but beyond the scope of these documents. We are already way over time on delivering them.",
+          "createdAt": "2025-10-14T06:51:13Z",
+          "updatedAt": "2025-10-14T06:51:13Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "How is it beyond the scope? RFC 9297 is in scope and capsules are a part of it.",
+          "createdAt": "2025-10-14T07:08:33Z",
+          "updatedAt": "2025-10-14T07:08:33Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Lol I forgot we already have the events for HTTP/3 datagram, sorry.\n\nHowever, capsules are not part of HTTP/3, which is the current scope of this document. It is an HTTP-level extension.\n\nIt seems an annoying omission, especially when we have several protocols based on the capsule prototocol.\n\nTo include it in this doc though would require a slight title change and to define an http namespace. Both of these seem in scope of work we committed to by accepting RFC 9297.",
+          "createdAt": "2025-10-14T07:32:05Z",
+          "updatedAt": "2025-10-14T07:32:05Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, in the original email communicating the decisions on this, I explicitly stated that while 9297 is in scope, the capsule protocol explicitly is NOT.\n\nLink to the original email: https://mailarchive.ietf.org/arch/msg/quic/qhRfp99S3JPFl-89XFRSpMiZwOQ/\n\nSo propose to close this without action (for now)",
+          "createdAt": "2025-10-14T08:02:51Z",
+          "updatedAt": "2025-10-14T08:02:51Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": ">. as it's not a direct extension to QUIC/H3 and would introduce (excessive) additional complexity.\n\nI'm not sure the reasoning from back then still applies. This seems pretty easy to specify, and rather valuable for application protocols like MASQUE.",
+          "createdAt": "2025-10-14T08:07:33Z",
+          "updatedAt": "2025-10-14T08:07:33Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Meeting notes: Marten to prepare a proposal in current document. Solicit the idea at the next IETF",
+          "createdAt": "2025-10-14T08:29:59Z",
+          "updatedAt": "2025-10-14T08:29:59Z"
+        }
+      ]
+    },
+    {
+      "number": 487,
+      "id": "I_kwDOCrLn6M7RZK83",
+      "title": "Rename PathID (and related) to TupleID",
+      "url": "https://github.com/quicwg/qlog/issues/487",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [
+        "editorial"
+      ],
+      "body": "Following feedback from the Multipath extension editors (CC @mirjak), it would be less confusing if we used the terminology \"Tuple\" instead of \"Path\" in qlog.\n\nShould update text around the concepts of paths and events like path_assigned to match this. ",
+      "createdAt": "2025-10-14T09:05:50Z",
+      "updatedAt": "2025-10-14T09:05:50Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 488,
+      "id": "I_kwDOCrLn6M7RZ6QJ",
+      "title": "Is it possible to log only the STREAM / DATAGRAM frame headers using RawInfo?",
+      "url": "https://github.com/quicwg/qlog/issues/488",
+      "state": "CLOSED",
+      "author": "kazuho",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "It is often useful to log the STREAM / DATAGRAM frame headers. At the same time, people often do not want to log the payload due to privacy concerns.\n\nSo the question is: can we use RawInfo to log only the frame headers, omitting the payload part?",
+      "createdAt": "2025-10-14T10:03:30Z",
+      "updatedAt": "2025-10-14T10:25:09Z",
+      "closedAt": "2025-10-14T10:25:08Z",
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Yes, `RawInfo` allows you to truncate `data`.",
+          "createdAt": "2025-10-14T10:15:08Z",
+          "updatedAt": "2025-10-14T10:15:08Z"
+        },
+        {
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "body": "Thank you for the clarification, I'm happy \ud83d\udc4d ",
+          "createdAt": "2025-10-14T10:25:09Z",
+          "updatedAt": "2025-10-14T10:25:09Z"
+        }
+      ]
+    },
+    {
+      "number": 492,
+      "id": "I_kwDOCrLn6M7Rho26",
+      "title": "Re-evaluate use of RawInfo.length",
+      "url": "https://github.com/quicwg/qlog/issues/492",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [
+        "rmarx"
+      ],
+      "labels": [],
+      "body": "During the interim today it was decided that we would only use RawInfo.length to log `length` information, in a consistent way, across all events.\n\n@marten-seemann will make these changes for the events described in #483.\n\nThis issue is to track work to identify other places where this is ambiguous currently (e.g., PacketHeader and StreamFrame) and make sure those get updated to the new style as well.\n\nAdditionally, we should add some extra prose describing this convention and to explain that people SHOULD log explicit length information for a variety of reasons (e.g., congestion control logic uses packet lengths). ",
+      "createdAt": "2025-10-14T19:49:40Z",
+      "updatedAt": "2025-10-14T19:49:40Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 494,
+      "id": "I_kwDOCrLn6M7RltZ1",
+      "title": "Is HTTP3Datagram a layering violation?",
+      "url": "https://github.com/quicwg/qlog/issues/494",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I started thinking about logging protocols building on top of HTTP/3, such as the various MASQUE flavors and WebTransport.\n\nKeep in mind that a single QUIC server can support multiple of these protocols, even on the same connection: In principle, you could proxy using CONNECT-UDP and serve a WebTransport session at the same time.\n\nThis leads us to the question who's logging `HTTP3Datagram` events:\n* Is it the HTTP/3 layer? If so, how does the HTTP/3 layer which application protocol is running on top of the HTTP stream that the datagram was sent / received for?\n* Is it the application layer? First of all, this seems wrong, since there might be buffer of received datagrams, leading to delayed logging of that datagram. Second, what if the datagram is never consumed (e.g. the WebTransport session might have closed)?\n\nI'm wondering if we should remove the extensibility of `HTTP3Datagram`. The HTTP/3 layer would simply log that a DATAGRAM with a respective Quarter Stream ID was received. The application layer would then log further details about that datagram, e.g. the Context ID in the case of MASQUE.",
+      "createdAt": "2025-10-15T04:48:40Z",
+      "updatedAt": "2025-10-15T09:31:43Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I dont think it's any more a layering violation than RFC 9297 is. QUIC DATAGRAMS just contain a payload with no demultiplexer. HTTP/3 datagrams are the object that defines the quarter stream ID occurs at the start of the datagram payload.\n\nWhat protocol is running on any given stream doesn't seem that important. Similar to how we log request or response headers and data without caring what HTTP semantics they are expressing.",
+          "createdAt": "2025-10-15T08:16:37Z",
+          "updatedAt": "2025-10-15T08:16:37Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I dont think it's any more a layering violation than RFC 9297 is. QUIC DATAGRAMS just contain a payload with no demultiplexer. HTTP/3 datagrams are the object that defines the quarter stream ID occurs at the start of the datagram payload.\n\nThis far, no disagreement. Of course the HTTP/3 layer should log the Quarter Stream ID.\n\nMy concern is regarding the datagram payload (i.e. `HTTP3Datagram`), which is currently logged at the HTTP/3 layer, although it is a property of the application layer.",
+          "createdAt": "2025-10-15T08:21:10Z",
+          "updatedAt": "2025-10-15T08:21:10Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Oh I think i understand what you're saying, the _created and _parsed event captures the quarter stream ID and then what is the purpose of HTTP3Datagram, since those events have their own raw field.\n\nAre you bumping into this due to the capsule work? \n\nI suspect the current design of HTTP3Datagram was an attempt to try and capture the generic HTTP datagram semantic. But I tend to agree that is presently confusing. Probably easier to just remove it as you suggest.",
+          "createdAt": "2025-10-15T09:12:14Z",
+          "updatedAt": "2025-10-15T09:12:14Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Are you bumping into this due to the capsule work?\n\nSpecifically, I started thinking about qlog support for CONNECT-UDP, and was trying to figure out how I would log the context ID.\n\n> I suspect the current design of HTTP3Datagram was an attempt to try and capture the generic HTTP datagram semantic. But I tend to agree that is presently confusing. Probably easier to just remove it as you suggest.\n\nWe might want to introduce a `DATAGRAM_id` (similar to the `datagram_id` we have at the QUIC layer), to make it easier to follow the path of one DATAGRAM through the stack (from QUIC DATAGRAM -> HTTP/3 DATAGRAM -> MASQUE DATAGRAM). And yes, naming things is hard...",
+          "createdAt": "2025-10-15T09:31:43Z",
+          "updatedAt": "2025-10-15T09:31:43Z"
         }
       ]
     }
@@ -26642,21 +26940,21 @@
       "id": "PR_kwDOCrLn6M6d7PKP",
       "title": "Tweak stream_state_updated",
       "url": "https://github.com/quicwg/qlog/pull/468",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "This implements my suggestions from #374, adding a new optional\r\ninitiator field to supplement the stream_type field, along with\r\nmaking the stream_side field mandatory.\r\n\r\nHaving just implemented a prototype pcap to qlog tool, that tool\r\nneeds to try and build an understanding of who is a QUIC server\r\nand client, and in what direction messages are flowing. So even\r\nan observer vantage point can determine and log `stream_side`.\r\n\r\nCloses #374\r\n",
       "createdAt": "2025-07-08T11:24:55Z",
-      "updatedAt": "2025-07-08T14:58:22Z",
+      "updatedAt": "2025-10-14T09:49:05Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "06690b1b3f66df98bdd633d6a04fe755158551be",
       "headRepository": "quicwg/qlog",
       "headRefName": "lucas/stream-state-event-tweaks",
       "headRefOid": "e7c897c1e1647b40d31db84280ca94c2af5f38cf",
-      "closedAt": null,
+      "closedAt": "2025-10-14T09:49:05Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -26667,6 +26965,13 @@
           "body": "Note I am not a strong advocate for things here, just trying to drive the issue to a close :)\r\n\r\nThe spec is a bit strange, it pushes people towards using coarse events:\r\n\r\n> QUIC implementations SHOULD mainly log the simplified (HTTP/2-alike) BaseStreamStates instead of the more fine-grained GranularStreamStates.\r\n\r\nIf we removed `stream_side`, there's a risk that an event like `stream_id=0, new=closed\" is too generic to express the actual QUIC protocol stream state. \r\n\r\nAn alternative might be to ditch the granular stream states, push implementations to log the fine-grained states that encode the QUIC protocol machinery in their labels, and then drop the redundant fields like `stream_side` and `stream_type` (and don't add an `initiator` like we do here). That seems a reasonable alternative to me I could support. Especially since a future extension could add additional fields if they turn out to be needed by someone,",
           "createdAt": "2025-07-08T14:58:22Z",
           "updatedAt": "2025-07-08T14:58:22Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Discussed in interim, closing for alternative",
+          "createdAt": "2025-10-14T09:49:05Z",
+          "updatedAt": "2025-10-14T09:49:05Z"
         }
       ],
       "reviews": [
@@ -27082,13 +27387,13 @@
       "labels": [],
       "body": "Fixes #471.",
       "createdAt": "2025-10-08T04:42:10Z",
-      "updatedAt": "2025-10-13T14:03:50Z",
+      "updatedAt": "2025-10-14T19:57:40Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "14510288b3e7641440369ced54798002e1e7c722",
+      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
       "headRepository": "quicwg/qlog",
       "headRefName": "packet-header",
-      "headRefOid": "8f1ed1f0d4671f7a3604d90eb2e3046906914606",
+      "headRefOid": "4258cc94d6f71841616b7008376e89f75fcf84f2",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -27118,6 +27423,86 @@
               "body": "```suggestion\r\n    ; only if packet_type === \"initial\" || \"handshake\" || \"0RTT\" ||\r\n    ;                         \"1RTT\"\r\n    ? reserved_bits: uint8 .default 0\r\n```\r\n\r\nAgain in the interest of being able to log erroneous values (see another recent PR that makes transport params uint64 even though valid values are much lower), should we also have these in here? or just punt them to RawInfo (if we do the latter, we probably should call that out in prose though, imo)",
               "createdAt": "2025-10-13T13:22:41Z",
               "updatedAt": "2025-10-13T13:36:04Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7G0ULX",
+          "commit": {
+            "abbreviatedOid": "4258cc9"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-14T13:19:42Z",
+          "updatedAt": "2025-10-14T13:19:42Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "This sentence didn't make a lot of sense: There are 4 different code points encoding the packet type. If you know the version, you know how these map to the respective packet types.",
+              "createdAt": "2025-10-14T13:19:42Z",
+              "updatedAt": "2025-10-14T13:19:42Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7G0Un6",
+          "commit": {
+            "abbreviatedOid": "4258cc9"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-14T13:20:01Z",
+          "updatedAt": "2025-10-14T13:20:01Z",
+          "comments": [
+            {
+              "originalPosition": 15,
+              "body": "As discussed, we should neither log the fixed_bit nor the reserved_bits.",
+              "createdAt": "2025-10-14T13:20:01Z",
+              "updatedAt": "2025-10-14T13:20:01Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7G6eIJ",
+          "commit": {
+            "abbreviatedOid": "4258cc9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2025-10-14T19:54:05Z",
+          "updatedAt": "2025-10-14T19:54:14Z",
+          "comments": [
+            {
+              "originalPosition": 9,
+              "body": "```suggestion\r\nThe fixed and reserved bits are omitted here because they must be 0; see {{QUIC-TRANSPORT}}. \r\nIf these bits have an invalid value, the raw values can be captured in the raw field of the event.\r\n```",
+              "createdAt": "2025-10-14T19:54:05Z",
+              "updatedAt": "2025-10-14T19:54:14Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7G6iDw",
+          "commit": {
+            "abbreviatedOid": "4258cc9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-14T19:57:40Z",
+          "updatedAt": "2025-10-14T19:57:40Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "Not sure I agree with this... the packet_type is used for more than just the 4 long header types:\r\n\r\n```\r\n$PacketType /=  \"initial\" /\r\n                \"handshake\" /\r\n                \"0RTT\" /\r\n                \"1RTT\" /\r\n                \"retry\" /\r\n                \"version_negotiation\" /\r\n                \"stateless_reset\" /\r\n                \"unknown\"\r\n```\r\n\r\nSo say there's a future extension adding a new packet type that the current qlog stack didn't support, they would want to log that as \"unknown\", no? \r\n\r\nput differently: this is not a direct mapping of the 2 packet type bits in the long header. ",
+              "createdAt": "2025-10-14T19:57:40Z",
+              "updatedAt": "2025-10-14T19:57:40Z"
             }
           ]
         }
@@ -27346,13 +27731,306 @@
       "labels": [],
       "body": "Fixes #483.",
       "createdAt": "2025-10-13T14:19:04Z",
-      "updatedAt": "2025-10-13T14:22:23Z",
+      "updatedAt": "2025-10-15T22:32:36Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "c9e1cd41c3cb933c731367ae7eb5bd614d5696d5",
       "headRepository": "quicwg/qlog",
       "headRefName": "http3-frame-remove-length",
       "headRefOid": "76d7ad3bcfb05097701ed6b6d5d04426c91883e8",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7HO2Op",
+          "commit": {
+            "abbreviatedOid": "76d7ad3"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-15T22:32:36Z",
+          "updatedAt": "2025-10-15T22:32:36Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 489,
+      "id": "PR_kwDOCrLn6M6tqv6r",
+      "title": "remove length and raw from HTTP3FrameCreated and HTTP3FrameParsed",
+      "url": "https://github.com/quicwg/qlog/pull/489",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #483. Fixes #484. Closes #485.",
+      "createdAt": "2025-10-14T13:22:46Z",
+      "updatedAt": "2025-10-15T22:35:19Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "http3-frame-lengths",
+      "headRefOid": "dbc00292d1270f4572e5aa4793e847666931378e",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7HO3Nq",
+          "commit": {
+            "abbreviatedOid": "dbc0029"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-15T22:35:13Z",
+          "updatedAt": "2025-10-15T22:35:13Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "nit: was keeping a blank line here intentional or not. I don't really care but flagging in case it was some accident",
+              "createdAt": "2025-10-15T22:35:13Z",
+              "updatedAt": "2025-10-15T22:35:14Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HO3Pd",
+          "commit": {
+            "abbreviatedOid": "dbc0029"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-15T22:35:19Z",
+          "updatedAt": "2025-10-15T22:35:19Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 490,
+      "id": "PR_kwDOCrLn6M6tr9Or",
+      "title": "add support for RFC 9297 Capsule Protocol",
+      "url": "https://github.com/quicwg/qlog/pull/490",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #486.\r\n\r\nThis turned out to be more text than I expected, but it's mostly just copy-pasted from the respective HTTP/3 section.",
+      "createdAt": "2025-10-14T14:48:56Z",
+      "updatedAt": "2025-10-14T14:49:34Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "capsule",
+      "headRefOid": "3869e7796dc4bb8b6078b4aa3fa5fa970b715ee8",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7G2NB5",
+          "commit": {
+            "abbreviatedOid": "3869e77"
+          },
+          "author": "copilot-pull-request-reviewer",
+          "authorAssociation": "NONE",
+          "state": "COMMENTED",
+          "body": "## Pull Request Overview\n\nThis PR adds support for the Capsule Protocol from RFC 9297 by defining a new `http` namespace for qlog events. The changes extend the existing HTTP/3 qlog event schema to include capsule-related events for logging capsule creation and parsing operations.\n\n- Added a new `http` namespace with events for capsule protocol operations\n- Updated abstract and introduction to reflect expanded scope beyond HTTP/3\n- Defined CDDL schemas for capsule events and data types\n\n\n\n\n\n---\n\n<sub>**Tip:** Customize your code reviews with copilot-instructions.md. <a href=\"/quicwg/qlog/new/main/.github?filename=copilot-instructions.md\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">Create the file</a> or <a href=\"https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot\" class=\"Link--inTextBlock\" target=\"_blank\" rel=\"noopener noreferrer\">learn how to get started</a>.</sub>",
+          "createdAt": "2025-10-14T14:49:33Z",
+          "updatedAt": "2025-10-14T14:49:34Z",
+          "comments": [
+            {
+              "originalPosition": 18,
+              "body": "Both references point to the same RFC 9297. The second reference should clarify that it's specifically about the Capsule Protocol within RFC 9297, or use a more descriptive reference name like 'CAPSULE-PROTOCOL' to distinguish it from the H3-DATAGRAM reference.",
+              "createdAt": "2025-10-14T14:49:33Z",
+              "updatedAt": "2025-10-14T14:49:34Z"
+            },
+            {
+              "originalPosition": 139,
+              "body": "The comment indicates 'any key-value map' but the CDDL definition restricts keys to text type only. The comment should be updated to reflect this constraint: '; The HTTPCapsule is a key-value map with text keys (e.g., JSON object)'\n```suggestion\n; The HTTPCapsule is a key-value map with text keys (e.g., JSON object)\n```",
+              "createdAt": "2025-10-14T14:49:34Z",
+              "updatedAt": "2025-10-14T14:49:34Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 491,
+      "id": "PR_kwDOCrLn6M6tvNGx",
+      "title": "Change occurrences of Path to Tuple",
+      "url": "https://github.com/quicwg/qlog/pull/491",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #487. \r\n\r\nBit annoying because RFC 9000 also uses Path terminology in several ways, so it's less internally consistent now, but more externally consistent with e.g., multipath probably.",
+      "createdAt": "2025-10-14T19:45:54Z",
+      "updatedAt": "2025-10-15T15:18:41Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "tuple-not-path",
+      "headRefOid": "2ff2af3e9c457a1c434d3b867411d5a62d6af708",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7G-LcW",
+          "commit": {
+            "abbreviatedOid": "bd086c4"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-15T03:07:46Z",
+          "updatedAt": "2025-10-15T03:10:16Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "Path seems right here.",
+              "createdAt": "2025-10-15T03:07:46Z",
+              "updatedAt": "2025-10-15T03:10:16Z"
+            },
+            {
+              "originalPosition": 40,
+              "body": "Here too.",
+              "createdAt": "2025-10-15T03:08:55Z",
+              "updatedAt": "2025-10-15T03:10:16Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 493,
+      "id": "PR_kwDOCrLn6M6tvpn0",
+      "title": "Clarify logging of negotiated parameters and how to combine parameters_set values",
+      "url": "https://github.com/quicwg/qlog/pull/493",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #398 \r\n\r\nFirst stab at a simpler solution for that issue (supersedes previous attempt #409).\r\n\r\nI tried to keep as much nuance as possible while adding as little prose as possible + not adding extra design/format elements.",
+      "createdAt": "2025-10-14T20:22:42Z",
+      "updatedAt": "2025-10-15T15:24:45Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "tp-merge-clarify",
+      "headRefOid": "5af9df5bf23ec8ffce87a8c3dc80fe85961d3ea9",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7G-c-N",
+          "commit": {
+            "abbreviatedOid": "a22c3f3"
+          },
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-15T04:00:15Z",
+          "updatedAt": "2025-10-15T04:00:24Z",
+          "comments": [
+            {
+              "originalPosition": 15,
+              "body": "> settting's final value depends on a combination of proposed values\n\nThis is confusing, as Transport Parameters do not derive their \"final\" values based on what are sent on the wire.\n\nMaybe something along the lines of:\n```suggestion\nto log settings from two sides, you MUST emit two separate event instances. If\nthe local peer decides to change its behavior based on remote peer's settings,\na new event type can be used to reflect the outcome.\n```",
+              "createdAt": "2025-10-15T04:00:15Z",
+              "updatedAt": "2025-10-15T04:00:24Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HC7p5",
+          "commit": {
+            "abbreviatedOid": "a22c3f3"
+          },
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-15T09:45:48Z",
+          "updatedAt": "2025-10-15T09:45:49Z",
+          "comments": [
+            {
+              "originalPosition": 15,
+              "body": "Hopefully using some examples might help.\r\n\r\nConsider `max_udp_payload_size`.\r\n\r\nHonestly, I'm not familiar with qlog, and I could very well be missing something, but in the status quo, a _local_ \"parameters_set\" event indicates the Transport Parameters being advertised by the host which, in case of `max_udp_payload_size`, is the maximum size of the datagrams that _the peer_ is allowed send, while a _remote_ event indicates what the peer advertised which is what the _host_ can send.\r\n\r\nThe PR allows the use of another \"parameters_set\" with the owner set to \"local\", but what would this event mean? The only logical semantics of \"max_udp_payload_size\" in this event would be that the host chose a smaller maximum size for UDP datagrams _the host sends_, but the meaning of the field is obviously different from that of the first _local_ parameters_set that indicated the limit applied to datagrams _the peer sends_.\r\n\r\nI think the first thing the stacks want to do is log Transport Parameters that they sent / received as-is, and considering that \"parameters_set\" should fill that purpose, as it is the only event for logging transport parameters.\r\n\r\nIn addition, we can discuss if we need to log what the values the endpoints decided adopting, if necessary. However, as pointed out above, it would be confusing to reuse \"local\".",
+              "createdAt": "2025-10-15T09:45:49Z",
+              "updatedAt": "2025-10-15T09:48:48Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HI8gk",
+          "commit": {
+            "abbreviatedOid": "a22c3f3"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-15T15:24:45Z",
+          "updatedAt": "2025-10-15T15:24:45Z",
+          "comments": [
+            {
+              "originalPosition": 15,
+              "body": "I had first typed a whole reply where I explained how the \"just use a new event\" option has a few vague edge cases, but in the end decided it was probably not worth it.\r\n\r\nFact remains we currently don't have any parameter examples where this might come up, and it's not the best idea to design for potential future usage, so just saying a different (new) event could be used for that is probably sufficient at this time, so I've accepted your suggestion here.\r\n\r\nThanks for the detailed comment!",
+              "createdAt": "2025-10-15T15:24:45Z",
+              "updatedAt": "2025-10-15T15:24:45Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 495,
+      "id": "PR_kwDOCrLn6M6t61oa",
+      "title": "Replace all length fields with raw.length",
+      "url": "https://github.com/quicwg/qlog/pull/495",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #492, #484, #483.\r\nSupersedes #477, #480, #485, #489.\r\n\r\n\r\nAs discussed at the end of the meeting yesterday, it might make more sense to do all these changes in 1 big PR to make it easier to oversee/check and also for easier trackability later.\r\n\r\nThis PR combines all the previous ones from @marten-seemann and resolves additional occurrences + adds some prose in the main document on how the `raw.length` field is supposed to be used. It's specially the latter that probably needs a good review here if the messaging is clear. ",
+      "createdAt": "2025-10-15T16:01:24Z",
+      "updatedAt": "2025-10-15T16:01:25Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "only-raw-lengths",
+      "headRefOid": "4addeb6a86e1a91215f2c119d7f7ae8d70a3aea5",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
