@@ -187,12 +187,12 @@ this specification.
 | quic:stream_data_blocked_updated              | Extra       | {{quic-streamdatablockedupdated}} |
 | quic:datagram_data_blocked_updated              | Extra       | {{quic-datagramdatablockedupdated}} |
 | quic:migration_state_updated          | Extra      | {{quic-migrationstateupdated}} |
+| quic:timer_updated                    | Extra      | {{quic-timerupdated}} |
 | quic:key_updated                  | Base       | {{quic-keyupdated}} |
 | quic:key_discarded                | Base       | {{quic-keydiscarded}} |
 | quic:recovery_parameters_set               | Base       | {{quic-recoveryparametersset}} |
 | quic:recovery_metrics_updated              | Core       | {{quic-recoverymetricsupdated}} |
 | quic:congestion_state_updated     | Base       | {{quic-congestionstateupdated}} |
-| quic:loss_timer_updated           | Extra      | {{quic-losstimerupdated}} |
 | quic:packet_lost                  | Core       | {{quic-packetlost}} |
 | quic:marked_for_retransmit        | Extra      | {{quic-markedforretransmit}} |
 | quic:ecn_state_updated            | Extra      | {{quic-ecnstateupdated}} |
@@ -232,12 +232,12 @@ QuicEventData = QUICServerListening /
                 QUICStreamDataBlockedUpdated /
                 QUICDatagramDataBlockedUpdated /
                 QUICMigrationStateUpdated /
+                QUICTimerUpdated /
                 QUICKeyUpdated /
                 QUICKeyDiscarded /
                 QUICRecoveryParametersSet /
                 QUICRecoveryMetricsUpdated /
                 QUICCongestionStateUpdated /
-                QUICLossTimerUpdated /
                 QUICPacketLost /
                 QUICMarkedForRetransmit /
                 QUICECNStateUpdated
@@ -1389,6 +1389,55 @@ MigrationState =
 ~~~
 {: #quic-migrationstateupdated-def title="QUICMigrationStateUpdated definition"}
 
+
+## timer_updated {#quic-timerupdated}
+
+The `timer_updated` event is emitted when a timer changes state. It has Extra
+importance level.
+
+The three main event types are:
+
+* set: the timer is set with a delta timeout for when it will trigger next
+* expired: when the timer effectively expires after the delta timeout
+* cancelled: when a timer is cancelled
+
+In order to indicate an active timer's timeout update, a new `set` event is used.
+
+The QUIC protocol conceptually employs a variety of timers, but their usage can
+be implementation-dependent. Implementers can add additional fields to this
+event if needed via `$$quic-timerupdated-extension` or specify other/additional
+timer types via `$TimerType`.
+
+~~~ cddl
+; a non-exhaustive list of typically employed timers
+$TimerType /= "ack" /
+              "pto" /
+              "loss_timeout" /
+              "path_validation" /
+              "handshake_timeout" /
+              "idle_timeout"
+
+QUICTimerUpdated = {
+    ? timer_type: $TimerType
+
+    ; to disambiguate in case there are multiple timers of the same type
+    ? timer_id: uint64
+
+    ; if used for recovery timers, this can be useful information
+    ? packet_number_space: $PacketNumberSpace
+    event_type: "set" /
+                "expired" /
+                "cancelled"
+
+    ; if event_type === "set": delta time is in ms from
+    ; this event's timestamp until when the timer should trigger
+    ? delta: float32
+
+    * $$quic-timerupdated-extension
+}
+~~~
+{: #quic-timerupdated-def title="QUICTimerUpdated definition"}
+
 # Security Events {#sec-ev}
 
 ## key_updated {#quic-keyupdated}
@@ -1579,40 +1628,6 @@ The `trigger` field SHOULD be logged if there are multiple ways in which a state
 change can occur but MAY be omitted if a given state can only be due to a single
 event occurring (for example Slow Start is often exited only when ssthresh is
 exceeded).
-
-## loss_timer_updated {#quic-losstimerupdated}
-
-The `loss_timer_updated` event is emitted when a recovery loss timer changes
-state. It has Extra importance level.
-
-The three main event types are:
-
-* set: the timer is set with a delta timeout for when it will trigger next
-* expired: when the timer effectively expires after the delta timeout
-* cancelled: when a timer is cancelled (e.g., all outstanding packets are
-  acknowledged, start idle period)
-
-In order to indicate an active timer's timeout update, a new `set` event is used.
-
-~~~ cddl
-QUICLossTimerUpdated = {
-
-    ; called "mode" in RFC 9002 A.9.
-    ? timer_type: "ack" /
-                  "pto"
-    ? packet_number_space: $PacketNumberSpace
-    event_type: "set" /
-                "expired" /
-                "cancelled"
-
-    ; if event_type === "set": delta time is in ms from
-    ; this event's timestamp until when the timer will trigger
-    ? delta: float32
-
-    * $$quic-losstimerupdated-extension
-}
-~~~
-{: #quic-losstimerupdated-def title="QUICLossTimerUpdated definition"}
 
 ## packet_lost {#quic-packetlost}
 
@@ -2374,7 +2389,7 @@ Namespace
 : quic
 
 Event Types
-: server_listening,connection_started,connection_closed,connection_id_updated,spin_bit_updated,connection_state_updated,path_assigned,mtu_updated,version_information,alpn_information,parameters_set,parameters_restored,packet_sent,packet_received,packet_dropped,packet_buffered,packets_acked,udp_datagrams_sent,udp_datagrams_received,udp_datagram_dropped,stream_state_updated,frames_processed,stream_data_moved,datagram_data_moved,migration_state_updated,key_updated,key_discarded,recovery_parameters_set,recovery_metrics_updated,congestion_state_updated,loss_timer_updated,packet_lost,marked_for_retransmit,ecn_state_updated
+: server_listening,connection_started,connection_closed,connection_id_updated,spin_bit_updated,connection_state_updated,path_assigned,mtu_updated,version_information,alpn_information,parameters_set,parameters_restored,packet_sent,packet_received,packet_dropped,packet_buffered,packets_acked,udp_datagrams_sent,udp_datagrams_received,udp_datagram_dropped,stream_state_updated,frames_processed,stream_data_moved,datagram_data_moved,migration_state_updated,key_updated,key_discarded,recovery_parameters_set,recovery_metrics_updated,congestion_state_updated,timer_updated,packet_lost,marked_for_retransmit,ecn_state_updated
 
 Description:
 : Event definitions related to the QUIC transport protocol.
