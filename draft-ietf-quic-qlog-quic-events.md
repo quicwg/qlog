@@ -1055,9 +1055,23 @@ QUICUDPDatagramDropped = {
 
 The `stream_state_updated` event is emitted whenever the internal state of a
 QUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be
-inferred from several types of frames going over the wire, but it's much easier
+inferred from several types of frames going over the wire, but it's often easier
 to have explicit signals for these state changes. The event has Base importance
 level.
+
+While QUIC stream IDs encode the type of stream, (see {{Section 2.1 of
+QUIC-TRANSPORT}}), the optional `stream_type` field can be used to provide a
+more-accessible form of the information.
+
+As QUIC streams (can) utilize a separate state machine for their sending and
+receiving sides, the `stream_side` field is used to indicate which side's state
+is updated in the logged event. In case both sides of the stream change state at
+the same time (for example both become `closed`), two separate events with
+different `stream_side` fields should be logged.
+
+In cases where it is useful to know which side of the connection initiated a
+state change (for example, closed due to either RESET_STREAM or STOP_SENDING),
+this can be reflected using the `trigger` field.
 
 ~~~ cddl
 StreamType = "unidirectional" /
@@ -1065,13 +1079,16 @@ StreamType = "unidirectional" /
 
 QUICStreamStateUpdated = {
     stream_id: uint64
-
-    ; mainly useful when opening the stream
     ? stream_type: StreamType
     ? old: $StreamState
     new: $StreamState
-    ? stream_side: "sending" /
-                   "receiving"
+    stream_side: "sending" /
+                 "receiving"
+    ? trigger:
+      ; stream state change was initiated by a local action
+      "local" /
+      ; stream state change was initiated by a remote action
+      "remote"
 
     * $$quic-streamstateupdated-extension
 }
@@ -1104,10 +1121,9 @@ $StreamState /= BaseStreamStates / GranularStreamStates
 ~~~
 {: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
-QUIC implementations SHOULD mainly log the simplified (HTTP/2-alike)
-BaseStreamStates instead of the more fine-grained GranularStreamStates. These
-latter ones are mainly for more in-depth debugging. Tools SHOULD be able to deal
-with both types equally.
+QUIC implementations SHOULD mainly log the simplified BaseStreamStates instead
+of the more fine-grained GranularStreamStates. These latter ones are mainly for
+more in-depth debugging. Tools SHOULD be able to deal with both types equally.
 
 ## frames_processed {#quic-framesprocessed}
 
