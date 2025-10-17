@@ -352,7 +352,6 @@ QUIC layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 ~~~ cddl
 HTTP3FrameCreated = {
     stream_id: uint64
-
     frame: $HTTP3Frame
 
     * $$http3-framecreated-extension
@@ -372,7 +371,6 @@ received on the QUIC layer. For that, see the `stream_data_moved` event in
 ~~~ cddl
 HTTP3FrameParsed = {
     stream_id: uint64
-
     frame: $HTTP3Frame
 
     * $$h3-frameparsed-extension
