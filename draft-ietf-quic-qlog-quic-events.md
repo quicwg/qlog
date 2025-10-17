@@ -657,8 +657,8 @@ regularly be several instances of this event with different fields set.
 
 Note that some settings have two variations (one set locally, one requested by
 the remote peer). This is reflected in the `owner` field. As such, this field
-MUST be correct for all settings included a single event instance. If you need
-to log settings from two sides, you MUST emit two separate event instances. If
+MUST be correct for all settings included a single event instance. If the settings
+from two sides are required, they MUST be logged as two separate event instances. If
 the local peer decides to change its behavior based on remote peer's settings,
 a new event type can be used to reflect the outcome.
 
