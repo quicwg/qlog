@@ -1063,11 +1063,12 @@ While QUIC stream IDs encode the type of stream, (see {{Section 2.1 of
 QUIC-TRANSPORT}}), the optional `stream_type` field can be used to provide a
 more-accessible form of the information.
 
-As QUIC streams (can) utilize a separate state machine for their sending and
-receiving sides, the `stream_side` field is used to indicate which side's state
-is updated in the logged event. In case both sides of the stream change state at
-the same time (for example both become `closed`), two separate events with
-different `stream_side` fields should be logged.
+{{Section 3 of QUIC-TRANSPORT}} describes streams in terms of their send and
+receive components, with a state machine for each. The `stream_side` field is
+used to indicate which side's state is updated in the logged event. In case both
+sides of the stream change state at the same time (for example both become
+`closed`), two separate events with different `stream_side` fields SHOULD be
+logged.
 
 In cases where it is useful to know which side of the connection initiated a
 state change (for example, closed due to either RESET_STREAM or STOP_SENDING),
