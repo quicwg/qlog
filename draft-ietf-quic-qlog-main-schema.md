@@ -1609,15 +1609,18 @@ RawInfo = {
 ~~~
 {: #raw-info-def title="RawInfo definition"}
 
-The RawInfo:data field can be truncated for privacy or security purposes, see
-{{truncated-values}}. In this case, the length and payload_length fields should
-still indicate the non-truncated lengths when used for debugging purposes.
+All fields in RawInfo are defined as optional. It is acceptable to log any field
+without the others. Logging length related fields and omitting the data field
+permits protocol debugging without the risk of logging potentially sensitive
+data. The data field, if logged, is not required to contain the contents of a
+full entity and can be truncated, see {{truncated-values}}. The length fields,
+if logged, should indicate the length of the the full entity, even if the data
+field is omitted or truncated.
 
-It is perfectly acceptable (and even encouraged) to log the length and
-payload_length fields without logging a (partial) data field. Protocol entities
-containing a length field (for example a packet header or QUIC's stream frame)
-are strongly recommended to re-use the `raw.length` field instead of defining a
-separate length field, to maintain consistency and prevent data duplication.
+Protocol entities containing an on-the-wire length field (for example a packet
+header or QUIC's stream frame) are strongly recommended to re-use the
+`raw.length` field instead of defining a separate length field, to maintain
+consistency and prevent data duplication.
 
 This document does not specify explicit header_length or trailer_length fields.
 In protocols without trailers, header_length can be calculated by subtracting
