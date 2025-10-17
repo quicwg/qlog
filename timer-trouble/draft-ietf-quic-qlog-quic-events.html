@@ -3401,13 +3401,18 @@ importance level.<a href="#section-5.21-1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 <p id="section-5.21-4">In order to indicate an active timer's timeout update, a new <code>set</code> event is used.<a href="#section-5.21-4" class="pilcrow">¶</a></p>
-<p id="section-5.21-5">The QUIC protocol conceptually employs a variety of timers, but their usage can
+<p id="section-5.21-5">QUICTimerUpdated events with the <code>timer_type</code> set to <code>ack</code>or <code>pto</code> indicate
+changes to the individual timeouts defined by RFC 9002: the threshold loss
+detection timeout (see <span><a href="https://rfc-editor.org/rfc/rfc9002#section-6.1.2" class="relref">Section 6.1.2</a> of [<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span>) and the probe timeout
+(see <span><a href="https://rfc-editor.org/rfc/rfc9002#section-6.2" class="relref">Section 6.2</a> of [<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span>). Those set to <code>loss_timeout</code> represent
+changes to the multi-modal loss detection timer (see <span><a href="https://rfc-editor.org/rfc/rfc9002#section-3" class="relref">Section 3</a> of [<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span>).<a href="#section-5.21-5" class="pilcrow">¶</a></p>
+<p id="section-5.21-6">The QUIC protocol conceptually employs a variety of timers, but their usage can
 be implementation-dependent. Implementers can add additional fields to this
 event if needed via <code>$$quic-timerupdated-extension</code> or specify other/additional
-timer types via <code>$TimerType</code>.<a href="#section-5.21-5" class="pilcrow">¶</a></p>
+timer types via <code>$TimerType</code>.<a href="#section-5.21-6" class="pilcrow">¶</a></p>
 <span id="name-quictimerupdated-definition"></span><div id="quic-timerupdated-def">
 <figure id="figure-30">
-          <div class="lang-cddl sourcecode" id="section-5.21-6.1">
+          <div class="lang-cddl sourcecode" id="section-5.21-7.1">
 <pre>
 ; a non-exhaustive list of typically employed timers
 $TimerType /= "ack" /
@@ -3420,7 +3425,8 @@ $TimerType /= "ack" /
 QUICTimerUpdated = {
     ? timer_type: $TimerType
 
-    ; to disambiguate in case there are multiple timers of the same type
+    ; to disambiguate in case there are multiple timers
+    ; of the same type
     ? timer_id: uint64
 
     ; if used for recovery timers, this can be useful information
