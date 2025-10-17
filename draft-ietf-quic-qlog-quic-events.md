@@ -2374,7 +2374,40 @@ Namespace
 : quic
 
 Event Types
-: server_listening,connection_started,connection_closed,connection_id_updated,spin_bit_updated,connection_state_updated,path_assigned,mtu_updated,version_information,alpn_information,parameters_set,parameters_restored,packet_sent,packet_received,packet_dropped,packet_buffered,packets_acked,udp_datagrams_sent,udp_datagrams_received,udp_datagram_dropped,stream_state_updated,frames_processed,stream_data_moved,datagram_data_moved,migration_state_updated,key_updated,key_discarded,recovery_parameters_set,recovery_metrics_updated,congestion_state_updated,loss_timer_updated,packet_lost,marked_for_retransmit,ecn_state_updated
+: server_listening,
+  connection_started,
+  connection_closed,
+  connection_id_updated,
+  spin_bit_updated,
+  connection_state_updated,
+  path_assigned,
+  mtu_updated,
+  version_information,
+  alpn_information,
+  parameters_set,
+  parameters_restored,
+  packet_sent,
+  packet_received,
+  packet_dropped,
+  packet_buffered,
+  packets_acked,
+  udp_datagrams_sent,
+  udp_datagrams_received,
+  udp_datagram_dropped,
+  stream_state_updated,
+  frames_processed,
+  stream_data_moved,
+  datagram_data_moved,
+  migration_state_updated,
+  key_updated,
+  key_discarded,
+  recovery_parameters_set,
+  recovery_metrics_updated,
+  congestion_state_updated,
+  loss_timer_updated,
+  packet_lost,
+  marked_for_retransmit,
+  ecn_state_updated
 
 Description:
 : Event definitions related to the QUIC transport protocol.
