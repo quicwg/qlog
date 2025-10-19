@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2025-10-16T01:05:49.939228+00:00",
+  "timestamp": "2025-10-19T01:13:30.959831+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -700,7 +700,7 @@
       ],
       "body": "using transport.parameters_set there are two parameters to signal 0-RTT:\r\n- resumption_allowed\r\n- early_data_enabled\r\n\r\nAs pointed out by @jlaine, these are a bit ambiguous, as 0-RTT can either be used for the current connection or enabled for a future connection.\r\n\r\nSolution 1:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new events: session_ticket_sent/received (with early_data_enabled?:boolean member)\r\n\r\nSolution 2:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new parameters: resumption_offered and early_data_offered",
       "createdAt": "2019-10-15T09:03:47Z",
-      "updatedAt": "2025-10-14T12:59:27Z",
+      "updatedAt": "2025-10-18T10:02:26Z",
       "closedAt": null,
       "comments": [
         {
@@ -730,6 +730,20 @@
           "body": "Just to confirm, I assume the expected changes will be related to the acceptance / rejection of 0-RTT and not resumption in general.\n\nResumption (if the handshakeis abbreviated) is a matter internal to TLS. OTOH, it is a matter of the QUIC stack to obtain 0-RTT keys from TLS and to use them for send / receiving 0-RTT packets.",
           "createdAt": "2025-10-14T12:59:27Z",
           "updatedAt": "2025-10-14T12:59:27Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "@kazuho What's your take on the `QUICParametersSet.resumption_allowed`? With your reasoning, we'd have to remove it, right? I'm not opposed to that, just want to be consistent.\n\nFollowing the same logic, we need to preserve `QUICParametersSet.tls_cipher` somewhere, since it does determine how the QUIC stack applies header protection.",
+          "createdAt": "2025-10-18T05:03:48Z",
+          "updatedAt": "2025-10-18T05:03:48Z"
+        },
+        {
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "body": "> What's your take on the `QUICParametersSet.resumption_allowed`? With your reasoning, we'd have to remove it, right? I'm not opposed to that, just want to be consistent.\n\nI think it can stay, because it is always the responsibility of the QUIC stacks to receive the tickets from the TLS stack and save them. This is because QUIC stacks to bundle certain transport parameters to the TLS session ticket.\n\nThat said, to me:\n* The name \"resumption_allowed\" seems a bit odd to indicate the receipt of a TLS session ticket. IMO a name like \"session_ticket_received\" makes more sense.\n* It is a bit odd that an event in the reverse direction missing; i.e., one that indicates the QUIC stack passing the session ticket to the TLS stack.",
+          "createdAt": "2025-10-18T09:58:58Z",
+          "updatedAt": "2025-10-18T10:02:26Z"
         }
       ]
     },
@@ -9600,7 +9614,7 @@
       "id": "I_kwDOCrLn6M7QXirH",
       "title": "Why does HTTP3FrameCreated and HTTP3FrameParsed have a length field?",
       "url": "https://github.com/quicwg/qlog/issues/483",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -9609,8 +9623,8 @@
       "labels": [],
       "body": "They also have a `RawInfo` field, which should allow logging of both the length and the payload length.",
       "createdAt": "2025-10-08T15:03:35Z",
-      "updatedAt": "2025-10-14T08:42:35Z",
-      "closedAt": null,
+      "updatedAt": "2025-10-16T02:01:47Z",
+      "closedAt": "2025-10-16T02:01:47Z",
       "comments": [
         {
           "author": "rmarx",
@@ -9640,7 +9654,7 @@
       "id": "I_kwDOCrLn6M7QlC7w",
       "title": "HTTP/3 frame RawInfo is confusing",
       "url": "https://github.com/quicwg/qlog/issues/484",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -9651,8 +9665,8 @@
       ],
       "body": "`HTTP3FrameParsed` and `HTTP3FrameCreated` have a `RawInfo` field. I assume this is because we might parse an unknown frame, which we then skip.\n\nBut all the frames have a `RawInfo` field as well. So now there are two different way to log the length.\n\nCan we just remove it from all the frames?",
       "createdAt": "2025-10-09T14:13:55Z",
-      "updatedAt": "2025-10-14T08:42:20Z",
-      "closedAt": null,
+      "updatedAt": "2025-10-16T02:01:48Z",
+      "closedAt": "2025-10-16T02:01:48Z",
       "comments": [
         {
           "author": "rmarx",
@@ -26995,24 +27009,26 @@
       "id": "PR_kwDOCrLn6M6p9qbI",
       "title": "Break long lines",
       "url": "https://github.com/quicwg/qlog/pull/469",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "The lack of spaces between commas makes the rendered output way too long. It also makes the markdown annoying to edit. ",
       "createdAt": "2025-09-23T00:12:00Z",
-      "updatedAt": "2025-09-23T00:12:01Z",
+      "updatedAt": "2025-10-17T07:26:53Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "06690b1b3f66df98bdd633d6a04fe755158551be",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-overflowing-text",
       "headRefOid": "71f7a7ce69368c5bb99d3fc0ff9df27f0ff99907",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-10-17T07:26:53Z",
+      "mergedAt": "2025-10-17T07:26:53Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "d1e7b8fcc73403010175aa07eacb039165fc0a2f"
+      },
       "comments": [],
       "reviews": []
     },
@@ -27724,21 +27740,21 @@
       "id": "PR_kwDOCrLn6M6teYPa",
       "title": "remove length field from HTTP3FrameCreated and HTTP3FrameParsed",
       "url": "https://github.com/quicwg/qlog/pull/485",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #483.",
       "createdAt": "2025-10-13T14:19:04Z",
-      "updatedAt": "2025-10-15T22:32:36Z",
+      "updatedAt": "2025-10-16T02:01:48Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "c9e1cd41c3cb933c731367ae7eb5bd614d5696d5",
       "headRepository": "quicwg/qlog",
       "headRefName": "http3-frame-remove-length",
       "headRefOid": "76d7ad3bcfb05097701ed6b6d5d04426c91883e8",
-      "closedAt": null,
+      "closedAt": "2025-10-16T02:01:48Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -27764,24 +27780,26 @@
       "id": "PR_kwDOCrLn6M6tqv6r",
       "title": "remove length and raw from HTTP3FrameCreated and HTTP3FrameParsed",
       "url": "https://github.com/quicwg/qlog/pull/489",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #483. Fixes #484. Closes #485.",
       "createdAt": "2025-10-14T13:22:46Z",
-      "updatedAt": "2025-10-15T22:35:19Z",
+      "updatedAt": "2025-10-16T02:01:47Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
       "headRepository": "quicwg/qlog",
       "headRefName": "http3-frame-lengths",
       "headRefOid": "dbc00292d1270f4572e5aa4793e847666931378e",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2025-10-16T02:01:46Z",
+      "mergedAt": "2025-10-16T02:01:46Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "18ac1fc44fdaa0e86f1a11cfe381b99fe49665ca"
+      },
       "comments": [],
       "reviews": [
         {
@@ -27816,6 +27834,26 @@
           "createdAt": "2025-10-15T22:35:19Z",
           "updatedAt": "2025-10-15T22:35:19Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HP3zY",
+          "commit": {
+            "abbreviatedOid": "dbc0029"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-16T02:01:14Z",
+          "updatedAt": "2025-10-16T02:01:15Z",
+          "comments": [
+            {
+              "originalPosition": 5,
+              "body": "In some places, we have a blank line and in others we don't. We should probably make this consistent at some point. For now, I don't really care.",
+              "createdAt": "2025-10-16T02:01:14Z",
+              "updatedAt": "2025-10-16T02:01:15Z"
+            }
+          ]
         }
       ]
     },
@@ -27884,13 +27922,13 @@
       "labels": [],
       "body": "Fixes #487. \r\n\r\nBit annoying because RFC 9000 also uses Path terminology in several ways, so it's less internally consistent now, but more externally consistent with e.g., multipath probably.",
       "createdAt": "2025-10-14T19:45:54Z",
-      "updatedAt": "2025-10-15T15:18:41Z",
+      "updatedAt": "2025-10-17T08:19:33Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
+      "baseRefOid": "d1e7b8fcc73403010175aa07eacb039165fc0a2f",
       "headRepository": "quicwg/qlog",
       "headRefName": "tuple-not-path",
-      "headRefOid": "2ff2af3e9c457a1c434d3b867411d5a62d6af708",
+      "headRefOid": "36f4e598302f5cfd6e346053e1c7eb4347361c54",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -27937,13 +27975,13 @@
       "labels": [],
       "body": "Fixes #398 \r\n\r\nFirst stab at a simpler solution for that issue (supersedes previous attempt #409).\r\n\r\nI tried to keep as much nuance as possible while adding as little prose as possible + not adding extra design/format elements.",
       "createdAt": "2025-10-14T20:22:42Z",
-      "updatedAt": "2025-10-15T15:24:45Z",
+      "updatedAt": "2025-10-17T08:03:39Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
       "headRepository": "quicwg/qlog",
       "headRefName": "tp-merge-clarify",
-      "headRefOid": "5af9df5bf23ec8ffce87a8c3dc80fe85961d3ea9",
+      "headRefOid": "cb2c0469969dcf965313040f1465ee86482e6f3e",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
@@ -28009,6 +28047,26 @@
               "updatedAt": "2025-10-15T15:24:45Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7Hg6rK",
+          "commit": {
+            "abbreviatedOid": "5af9df5"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-16T23:13:04Z",
+          "updatedAt": "2025-10-16T23:13:04Z",
+          "comments": [
+            {
+              "originalPosition": 11,
+              "body": "The use of \"you\" in this paragraph sticks out. There's nothing else like it in our qlog specs. I know it was in the old text but while we are here lets change it. Something like below perhaps\r\n\r\n```suggestion\r\nMUST be correct for all settings included a single event instance. If the settings\r\nfrom two sides are required, they MUST be logged as two separate event instances. If\r\n```",
+              "createdAt": "2025-10-16T23:13:04Z",
+              "updatedAt": "2025-10-16T23:13:24Z"
+            }
+          ]
         }
       ]
     },
@@ -28024,19 +28082,323 @@
       "labels": [],
       "body": "Closes #492, #484, #483.\r\nSupersedes #477, #480, #485, #489.\r\n\r\n\r\nAs discussed at the end of the meeting yesterday, it might make more sense to do all these changes in 1 big PR to make it easier to oversee/check and also for easier trackability later.\r\n\r\nThis PR combines all the previous ones from @marten-seemann and resolves additional occurrences + adds some prose in the main document on how the `raw.length` field is supposed to be used. It's specially the latter that probably needs a good review here if the messaging is clear. ",
       "createdAt": "2025-10-15T16:01:24Z",
-      "updatedAt": "2025-10-15T16:01:25Z",
+      "updatedAt": "2025-10-17T07:53:33Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
+      "baseRefOid": "d1e7b8fcc73403010175aa07eacb039165fc0a2f",
       "headRepository": "quicwg/qlog",
       "headRefName": "only-raw-lengths",
-      "headRefOid": "4addeb6a86e1a91215f2c119d7f7ae8d70a3aea5",
+      "headRefOid": "1dc03a0ca90e5f4ec4624dc5e8d750a5ecded0a2",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7Hh1C6",
+          "commit": {
+            "abbreviatedOid": "4addeb6"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-17T00:21:13Z",
+          "updatedAt": "2025-10-17T00:21:14Z",
+          "comments": [
+            {
+              "originalPosition": 12,
+              "body": "I think it might be better to split this paragraph and combine the intent the first sentence with the prior paragraph. Some thing like below perhaps.\r\n\r\n```\r\nAll fields in RawInfo are defined as optional. It is acceptable to log any field without the others. \r\nLogging length related fields and omitting the data field permits protocol debugging without the\r\nrisk of logging potentially sensitive data. The data field, if logged, is not required to contain the\r\ncontents of a full entity and can be truncated. The length fields, if logged, should indicate the\r\nlength of the the full entity, even if the data field is omitted or truncated.\r\n```",
+              "createdAt": "2025-10-17T00:21:13Z",
+              "updatedAt": "2025-10-17T00:21:14Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7Hh1gv",
+          "commit": {
+            "abbreviatedOid": "4addeb6"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM modulo one suggestion related to prose",
+          "createdAt": "2025-10-17T00:22:00Z",
+          "updatedAt": "2025-10-17T00:22:00Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HmZ_5",
+          "commit": {
+            "abbreviatedOid": "4addeb6"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-17T07:52:27Z",
+          "updatedAt": "2025-10-17T07:52:28Z",
+          "comments": [
+            {
+              "originalPosition": 12,
+              "body": "Excellent suggestion, added!",
+              "createdAt": "2025-10-17T07:52:28Z",
+              "updatedAt": "2025-10-17T07:52:28Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 496,
+      "id": "PR_kwDOCrLn6M6uEc_j",
+      "title": "Make loss_timer_updated a generic timer_updated instead",
+      "url": "https://github.com/quicwg/qlog/pull/496",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #319 \r\n\r\nAs discussed during the interim, we have a need for logging more timers than just the loss/recovery timers.\r\nAs such, we move the `loss_timer_updated` from Recovery to Transport and rename it to `timer_updated`.\r\n\r\nThere was however still discussion on how to deal with implementations that use a single recovery timer, whether logging all timer resets wouldn't be too chatty (e.g., idle timer), whether we should still have a separate event for recovery timers vs others, etc.\r\n\r\nThis PR contains an initial proposal, including the timer types I could easily discern in RFC9000 and 9002. \r\nFeedback on the details from @marten-seemann, @LPardue, @mirjak and @kazuho more than welcome!",
+      "createdAt": "2025-10-16T11:57:51Z",
+      "updatedAt": "2025-10-17T07:40:42Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "d1e7b8fcc73403010175aa07eacb039165fc0a2f",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "timer-trouble",
+      "headRefOid": "162b60680b55fa8a4919bda08ab8325994151bb2",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "This look fine to me but I politely ask that we merge https://github.com/quicwg/qlog/pull/469 before this because you're touching the same line and its more work for me to change things than you (and I've been waiting longer :P)",
+          "createdAt": "2025-10-17T00:01:34Z",
+          "updatedAt": "2025-10-17T00:01:34Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "> This look fine to me but I politely ask that we merge #469 before this because you're touching the same line and its more work for me to change things than you (and I've been waiting longer :P)\r\n\r\nMerged #469 and updated the merge conflict :)",
+          "createdAt": "2025-10-17T07:40:42Z",
+          "updatedAt": "2025-10-17T07:40:42Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7Hhh_0",
+          "commit": {
+            "abbreviatedOid": "e0b1a01"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-17T00:00:33Z",
+          "updatedAt": "2025-10-17T00:00:33Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HiDZL",
+          "commit": {
+            "abbreviatedOid": "e0b1a01"
+          },
+          "author": "kazuho",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "Thank you @rmarx for the PR.\n\nLooks good, modulo the point below.",
+          "createdAt": "2025-10-17T00:43:04Z",
+          "updatedAt": "2025-10-17T00:43:39Z",
+          "comments": [
+            {
+              "originalPosition": 55,
+              "body": "Having these three seems like a good compromise, though I'm concerned it might be confusing without some clarification.\n\nSo many adding a paragraph along the lines of:\n```\nQUICTimerUpdated events with the `timer_type` set to `ack`or `pto` indicate\nchanges to the individual timeouts defined by RFC 9002: the threshold loss\ndetection timeout (Section 6.1.2 of RFC 9002) and the probe timeout \n(Section 6.2 of RFC 9002). Those set to `loss_timeout` represent changes to\nthe multi-modal loss detection timer (Appendix 3 of RFC 9002).\n```",
+              "createdAt": "2025-10-17T00:43:04Z",
+              "updatedAt": "2025-10-17T00:43:39Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HmQV7",
+          "commit": {
+            "abbreviatedOid": "e0b1a01"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-17T07:39:54Z",
+          "updatedAt": "2025-10-17T07:39:54Z",
+          "comments": [
+            {
+              "originalPosition": 55,
+              "body": "Excellent point and even more excellent suggested text. Just added that, thanks!",
+              "createdAt": "2025-10-17T07:39:54Z",
+              "updatedAt": "2025-10-17T07:39:54Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 497,
+      "id": "PR_kwDOCrLn6M6uE9U0",
+      "title": "Update stream_state_updated",
+      "url": "https://github.com/quicwg/qlog/pull/497",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #374.\r\n\r\nDuring the discussion at the interim, we decided a separate `initiator` field was not needed, and that `trigger` could be used instead.\r\n\r\nThis PR adds that option + some prose to explain the different options and when to use what + makes `stream_side` obligatory (following previous proposal in #468)",
+      "createdAt": "2025-10-16T12:36:05Z",
+      "updatedAt": "2025-10-17T08:01:43Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "18ac1fc44fdaa0e86f1a11cfe381b99fe49665ca",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "stream-state-rework",
+      "headRefOid": "fa3a27bf07337def39699216072170789da7aa80",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7HXY1R",
+          "commit": {
+            "abbreviatedOid": "aec5122"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-16T13:15:52Z",
+          "updatedAt": "2025-10-16T13:15:52Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HhC2F",
+          "commit": {
+            "abbreviatedOid": "aec5122"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-16T23:24:23Z",
+          "updatedAt": "2025-10-16T23:24:23Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "The (can) sticks out a bit to me. How about something like\r\n\r\n```suggestion\r\nSection {{3 of QUIC-Transport}} describes streams in terms of their send and\r\nreceive components, with a state machine for each. The `stream_side` field is\r\nused to indicate which side's state is updated in the logged event. In case\r\nboth sides of the stream change state at the same time (for example both become\r\n`closed`), two separate events with different `stream_side` fields should be\r\nlogged.\r\n```",
+              "createdAt": "2025-10-16T23:24:23Z",
+              "updatedAt": "2025-10-16T23:24:23Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7HhDKU",
+          "commit": {
+            "abbreviatedOid": "aec5122"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-16T23:24:53Z",
+          "updatedAt": "2025-10-16T23:24:54Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "The text says `should` but is it a `SHOULD` normative requirement?",
+              "createdAt": "2025-10-16T23:24:53Z",
+              "updatedAt": "2025-10-16T23:24:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7Hmh1F",
+          "commit": {
+            "abbreviatedOid": "aec5122"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2025-10-17T08:01:43Z",
+          "updatedAt": "2025-10-17T08:01:43Z",
+          "comments": [
+            {
+              "originalPosition": 17,
+              "body": "Updated text with this and SHOULD below. Thanks!!",
+              "createdAt": "2025-10-17T08:01:43Z",
+              "updatedAt": "2025-10-17T08:01:43Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 498,
+      "id": "PR_kwDOCrLn6M6uFFR-",
+      "title": "Rename Owner to Initiator",
+      "url": "https://github.com/quicwg/qlog/pull/498",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "As discussed during the interim, the semantics of an \"owner\" are a bit weird in qlog and replacing it with \"initiator\" makes a lot more sense everywhere \"owner\" was being used.\r\n\r\nThis PR does just that. \r\n\r\nNote: should be merged AFTER #493, which has a mention of `owner` in some text as well. ",
+      "createdAt": "2025-10-16T12:47:11Z",
+      "updatedAt": "2025-10-16T23:15:03Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "18ac1fc44fdaa0e86f1a11cfe381b99fe49665ca",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "owner-vs-initiator",
+      "headRefOid": "2b15a7cc4da70bee61c2a6d54126d7806c8a7444",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7HXWty",
+          "commit": {
+            "abbreviatedOid": "2b15a7c"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-16T13:14:12Z",
+          "updatedAt": "2025-10-16T13:14:12Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7Hg7-X",
+          "commit": {
+            "abbreviatedOid": "2b15a7c"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2025-10-16T23:15:03Z",
+          "updatedAt": "2025-10-16T23:15:03Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
