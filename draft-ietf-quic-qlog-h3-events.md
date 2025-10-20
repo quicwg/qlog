@@ -52,8 +52,9 @@ informative:
 
 --- abstract
 
-This document defines a qlog event schema containing concrete events for the
-core HTTP/3 protocol and selected extensions.
+This document defines qlog event schemas containing concrete events for the core
+HTTP/3 protocol and selected extensions. It also defines an http namespace for
+the Capsule Protocol.
 
 --- note_Note_to_Readers
 
@@ -71,7 +72,8 @@ of this document.
 This document defines a qlog event schema ({{Section 8 of QLOG-MAIN}})
 containing concrete events for the core HTTP/3 protocol {{RFC9114}} and selected
 extensions ({{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}}, and
-{{!H3-DATAGRAM=RFC9297}}).
+{{!H3-DATAGRAM=RFC9297}}), as well as the Capsule Protocol defined in
+{{!H3-DATAGRAM=RFC9297}}.
 
 The event namespace with identifier `http3` is defined; see {{schema-def}}. In
 this namespace multiple events derive from the qlog abstract Event class
@@ -95,6 +97,15 @@ bottom of this document for clarity.
 | http3:datagram_parsed        | Base       | {{h3-datagramparsed}} |
 | http3:push_resolved          | Extra      | {{h3-pushresolved}} |
 {: #h3-events title="HTTP/3 Events"}
+
+{{http-events}} summarizes the name value of each event type that is defined in
+the http namespace in this specification.
+
+| Name value                   | Importance |  Definition |
+|:-----------------------------|:-----------|:------------|
+| http:capsule_created         | Core       | {{http-capsulecreated}} |
+| http:capsule_parsed          | Core       | {{http-capsuleparsed}} |
+{: #http-events title="HTTP Events"}
 
 ## Usage with QUIC
 
@@ -129,7 +140,7 @@ As is the case for {{QLOG-MAIN}}, the qlog schema definitions in this document
 are intentionally agnostic to serialization formats. The choice of format is an
 implementation decision.
 
-# Event Schema Definition {#schema-def}
+# HTTP/3 Event Schema Definition {#schema-def}
 
 This document describes how the core HTTP/3 protocol and selected extensions can
 be expressed in qlog using a newly defined event schema. Per the requirements in
@@ -748,6 +759,136 @@ definition in the qlog QUIC document, see {{QLOG-QUIC}}.
 $ApplicationError /= HTTP3ApplicationError
 ~~~
 
+# HTTP Event Schema Definition {#http-schema-def}
+
+This document describes how the Capsule Protocol can be expressed in qlog using
+a newly defined event schema. Per the requirements in {{Section 8 of
+QLOG-MAIN}}, this document registers the `http` namespace. The event schema URI
+is `urn:ietf:params:qlog:events:http`.
+
+## Draft Event Schema Identification
+{:removeinrfc="true"}
+
+Only implementations of the final, published RFC can use the events belonging to
+the event schema with the URI `urn:ietf:params:qlog:events:http`. Until such an
+RFC exists, implementations MUST NOT identify themselves using this URI.
+
+Implementations of draft versions of the event schema MUST append the string "-"
+and the corresponding draft number to the URI. For example, draft 07 of this
+document is identified using the URI `urn:ietf:params:qlog:events:http-07`.
+
+The namespace identifier itself is not affected by this requirement.
+
+# HTTP Events {#http-ev}
+
+HTTP events extend the `$ProtocolEventData` extension point defined in
+{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+per-event extension points via the `$$` CDDL "group socket" syntax, as also
+described in {{QLOG-MAIN}}.
+
+~~~ cddl
+HTTPEventData = HTTPCapsuleCreated /
+                HTTPCapsuleParsed
+
+$ProtocolEventData /= HTTPEventData
+~~~
+{: #http-events-def title="HTTPEventData definition and ProtocolEventData extension"}
+
+The concrete HTTP event types are further defined below, their type identifier
+is the heading name.
+
+## capsule_created {#http-capsulecreated}
+
+The `capsule_created` event is emitted when a Capsule is created (see
+{{H3-DATAGRAM}}). It has Core importance level.
+
+This event does not necessarily coincide with data getting passed to the
+transport layer. In HTTP/3, capsules are sent inside DATA frames, so the
+frame_created event would be logged separately.
+
+~~~ cddl
+HTTPCapsuleCreated = {
+    stream_id: uint64
+
+    capsule: $HTTPCapsule
+
+    * $$http-capsulecreated-extension
+}
+~~~
+{: #http-capsulecreated-def title="HTTPCapsuleCreated definition"}
+
+## capsule_parsed {#http-capsuleparsed}
+
+The `capsule_parsed` event is emitted when a Capsule is parsed (see
+{{H3-DATAGRAM}}). It has Core importance level.
+
+This event is not necessarily the same as when the data is actually received on
+the transport layer. In HTTP/3, capsules are received inside DATA frames, so the
+frame_parsed event would be logged separately.
+
+~~~ cddl
+HTTPCapsuleParsed = {
+    stream_id: uint64
+
+    capsule: $HTTPCapsule
+
+    * $$http-capsuleparsed-extension
+}
+~~~
+{: #http-capsuleparsed-def title="HTTPCapsuleParsed definition"}
+
+# HTTP Data Type Definitions
+
+The following data type definitions can be used in HTTP events.
+
+## HTTPCapsule
+
+The generic `$HTTPCapsule` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional capsule types.
+
+~~~~~~
+; The HTTPCapsule is any key-value map (e.g., JSON object)
+$HTTPCapsule /= {
+    * text => any
+}
+~~~~~~
+{: #http-capsule-def title="HTTPCapsule type socket definition"}
+
+The capsule types defined in this document are as follows:
+
+~~~ cddl
+HTTPBaseCapsules = HTTPCapsuleDatagram /
+                   HTTPCapsuleUnknown
+
+$HTTPCapsule /= HTTPBaseCapsules
+~~~
+{: #httpbasecapsule-def title="HTTPBaseCapsules definition"}
+
+### HTTPCapsuleDatagram
+
+~~~ cddl
+HTTPCapsuleDatagram = {
+    capsule_type: "datagram"
+    ? raw: RawInfo
+}
+~~~
+{: #httpcapsuledatagram-def title="HTTPCapsuleDatagram definition"}
+
+### HTTPCapsuleUnknown
+
+The capsule_type_value field is the numerical value without variable-length
+integer encoding.
+
+~~~ cddl
+HTTPCapsuleUnknown = {
+    capsule_type: "unknown"
+
+    ? capsule_type_value: uint64
+    ? raw: RawInfo
+}
+~~~
+{: #httpcapsuleunknown-def title="HTTPCapsuleUnknown definition"}
+
 # Security and Privacy Considerations
 
 The security and privacy considerations discussed in {{QLOG-MAIN}} apply to this
@@ -776,6 +917,23 @@ Event Types
 
 Description:
 : Event definitions related to the HTTP/3 application protocol.
+
+Reference:
+: This Document
+
+This document registers a new entry in the "qlog event schema URIs" registry.
+
+Event schema URI:
+: urn:ietf:params:qlog:events:http
+
+Namespace
+: http
+
+Event Types
+: capsule_created,capsule_parsed
+
+Description:
+: Event definitions for the Capsule Protocol.
 
 Reference:
 : This Document
