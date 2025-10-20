@@ -656,11 +656,11 @@ are usually set at different times during the connection, so there will
 regularly be several instances of this event with different fields set.
 
 Note that some settings have two variations (one set locally, one requested by
-the remote peer). This is reflected in the `owner` field. As such, this field
-MUST be correct for all settings included a single event instance. If the settings
-from two sides are required, they MUST be logged as two separate event instances. If
-the local peer decides to change its behavior based on remote peer's settings,
-a new event type can be used to reflect the outcome.
+the remote peer). This is reflected in the `initiator` field. As such, this
+field MUST be correct for all settings included a single event instance. If the
+settings from two sides are required, they MUST be logged as two separate event
+instances. If the local peer decides to change its behavior based on remote
+peer's settings, a new event type can be used to reflect the outcome.
 
 By default, each setting is assumed to either be absent (has an `undefined`
 value) or have its default value (if it exists) at the start of the connection.
