@@ -1394,7 +1394,6 @@ Table of Contents
          "frames": [
              {
                  "frame_type": "stream",
-                 "length": 1000,
                  "offset": 456
              },
              {
@@ -1731,10 +1730,19 @@ Table of Contents
 
                        Figure 40: RawInfo definition
 
-   The RawInfo:data field can be truncated for privacy or security
-   purposes, see Section 11.4.  In this case, the length and
-   payload_length fields should still indicate the non-truncated lengths
-   when used for debugging purposes.
+   All fields in RawInfo are defined as optional.  It is acceptable to
+   log any field without the others.  Logging length related fields and
+   omitting the data field permits protocol debugging without the risk
+   of logging potentially sensitive data.  The data field, if logged, is
+   not required to contain the contents of a full entity and can be
+   truncated, see Section 11.4.  The length fields, if logged, should
+   indicate the length of the the full entity, even if the data field is
+   omitted or truncated.
+
+   Protocol entities containing an on-the-wire length field (for example
+   a packet header or QUIC's stream frame) are strongly recommended to
+   re-use the raw.length field instead of defining a separate length
+   field, to maintain consistency and prevent data duplication.
 
    This document does not specify explicit header_length or
    trailer_length fields.  In protocols without trailers, header_length
@@ -1897,10 +1905,10 @@ Table of Contents
 
    To reduce overhead however and in the case the full raw value is
    logged, the extra length-indicating field can be left out.  As such,
-   tools MUST be able to deal with this situation and derive the length
-   of the field from the raw value if no separate length-indicating
-   field is present.  The main possible permutations are shown by
-   example in Figure 41.
+   tools SHOULD be able to deal with this situation and derive the
+   length of the field from the raw value if no separate length-
+   indicating field is present.  The main possible permutations are
+   shown by example in Figure 41.
 
    // both the content's value and its length are present
    // (length is redundant)
