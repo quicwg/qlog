@@ -102,6 +102,7 @@ Table of Contents
      5.18. stream_data_blocked_updated
      5.19. datagram_data_blocked_updated
      5.20. migration_state_updated
+     5.21. timer_updated
    6.  Security Events
      6.1.  key_updated
      6.2.  key_discarded
@@ -109,10 +110,9 @@ Table of Contents
      7.1.  recovery_parameters_set
      7.2.  recovery_metrics_updated
      7.3.  congestion_state_updated
-     7.4.  loss_timer_updated
-     7.5.  packet_lost
-     7.6.  marked_for_retransmit
-     7.7.  ecn_state_updated
+     7.4.  packet_lost
+     7.5.  marked_for_retransmit
+     7.6.  ecn_state_updated
    8.  QUIC data type definitions
      8.1.  QuicVersion
      8.2.  ConnectionID
@@ -343,6 +343,8 @@ Table of Contents
    +--------------------------------------+------------+--------------+
    | quic:migration_state_updated         | Extra      | Section 5.20 |
    +--------------------------------------+------------+--------------+
+   | quic:timer_updated                   | Extra      | Section 5.21 |
+   +--------------------------------------+------------+--------------+
    | quic:key_updated                     | Base       | Section 6.1  |
    +--------------------------------------+------------+--------------+
    | quic:key_discarded                   | Base       | Section 6.2  |
@@ -353,13 +355,11 @@ Table of Contents
    +--------------------------------------+------------+--------------+
    | quic:congestion_state_updated        | Base       | Section 7.3  |
    +--------------------------------------+------------+--------------+
-   | quic:loss_timer_updated              | Extra      | Section 7.4  |
+   | quic:packet_lost                     | Core       | Section 7.4  |
    +--------------------------------------+------------+--------------+
-   | quic:packet_lost                     | Core       | Section 7.5  |
+   | quic:marked_for_retransmit           | Extra      | Section 7.5  |
    +--------------------------------------+------------+--------------+
-   | quic:marked_for_retransmit           | Extra      | Section 7.6  |
-   +--------------------------------------+------------+--------------+
-   | quic:ecn_state_updated               | Extra      | Section 7.7  |
+   | quic:ecn_state_updated               | Extra      | Section 7.6  |
    +--------------------------------------+------------+--------------+
 
                            Table 1: QUIC Events
@@ -397,12 +397,12 @@ Table of Contents
                    QUICStreamDataBlockedUpdated /
                    QUICDatagramDataBlockedUpdated /
                    QUICMigrationStateUpdated /
+                   QUICTimerUpdated /
                    QUICKeyUpdated /
                    QUICKeyDiscarded /
                    QUICRecoveryParametersSet /
                    QUICRecoveryMetricsUpdated /
                    QUICCongestionStateUpdated /
-                   QUICLossTimerUpdated /
                    QUICPacketLost /
                    QUICMarkedForRetransmit /
                    QUICECNStateUpdated
@@ -1596,6 +1596,66 @@ Table of Contents
 
               Figure 29: QUICMigrationStateUpdated definition
 
+5.21.  timer_updated
+
+   The timer_updated event is emitted when a timer changes state.  It
+   has Extra importance level.
+
+   The three main event types are:
+
+   *  set: the timer is set with a delta timeout for when it will
+      trigger next
+
+   *  expired: when the timer effectively expires after the delta
+      timeout
+
+   *  cancelled: when a timer is cancelled
+
+   In order to indicate an active timer's timeout update, a new set
+   event is used.
+
+   QUICTimerUpdated events with the timer_type set to ackor pto indicate
+   changes to the individual timeouts defined by RFC 9002: the threshold
+   loss detection timeout (see Section 6.1.2 of [QUIC-RECOVERY]) and the
+   probe timeout (see Section 6.2 of [QUIC-RECOVERY]).  Those set to
+   loss_timeout represent changes to the multi-modal loss detection
+   timer (see Section 3 of [QUIC-RECOVERY]).
+
+   The QUIC protocol conceptually employs a variety of timers, but their
+   usage can be implementation-dependent.  Implementers can add
+   additional fields to this event if needed via $$quic-timerupdated-
+   extension or specify other/additional timer types via $TimerType.
+
+   ; a non-exhaustive list of typically employed timers
+   $TimerType /= "ack" /
+                 "pto" /
+                 "loss_timeout" /
+                 "path_validation" /
+                 "handshake_timeout" /
+                 "idle_timeout"
+
+   QUICTimerUpdated = {
+       ? timer_type: $TimerType
+
+       ; to disambiguate in case there are multiple timers
+       ; of the same type
+       ? timer_id: uint64
+
+       ; if used for recovery timers, this can be useful information
+       ? packet_number_space: $PacketNumberSpace
+       event_type: "set" /
+                   "expired" /
+                   "cancelled"
+
+       ; if event_type === "set": delta time is in ms from
+       ; this event's timestamp until when the timer should trigger
+       ? delta: float32
+
+       * $$quic-timerupdated-extension
+   }
+
+                   Figure 30: QUICTimerUpdated definition
+
 6.  Security Events
 
 6.1.  key_updated
@@ -1619,7 +1679,7 @@ Table of Contents
        * $$quic-keyupdated-extension
    }
 
-                    Figure 30: QUICKeyUpdated definition
+                    Figure 31: QUICKeyUpdated definition
 
    Note that the key_phase is the full value of the key phase (as
    indicated by @M and @N in Figure 9 of [QUIC-TLS]).  The key phase bit
@@ -1646,7 +1706,7 @@ Table of Contents
        * $$quic-keydiscarded-extension
    }
 
-                   Figure 31: QUICKeyDiscarded definition
+                   Figure 32: QUICKeyDiscarded definition
 
 7.  Recovery events
 
@@ -1700,7 +1760,7 @@ Table of Contents
        * $$quic-recoveryparametersset-extension
    }
 
-              Figure 32: QUICRecoveryParametersSet definition
+              Figure 33: QUICRecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
@@ -1746,7 +1806,7 @@ Table of Contents
        * $$quic-recoverymetricsupdated-extension
    }
 
-              Figure 33: QUICRecoveryMetricsUpdated definition
+              Figure 34: QUICRecoveryMetricsUpdated definition
 
    In order to make logging easier, implementations MAY log values even
    if they are the same as previously reported values (e.g., two
@@ -1782,52 +1842,14 @@ Table of Contents
        * $$quic-congestionstateupdated-extension
    }
 
-              Figure 34: QUICCongestionStateUpdated definition
+              Figure 35: QUICCongestionStateUpdated definition
 
    The trigger field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
    can only be due to a single event occurring (for example Slow Start
    is often exited only when ssthresh is exceeded).
 
-7.4.  loss_timer_updated
-
-   The loss_timer_updated event is emitted when a recovery loss timer
-   changes state.  It has Extra importance level.
-
-   The three main event types are:
-
-   *  set: the timer is set with a delta timeout for when it will
-      trigger next
-
-   *  expired: when the timer effectively expires after the delta
-      timeout
-
-   *  cancelled: when a timer is cancelled (e.g., all outstanding
-      packets are acknowledged, start idle period)
-
-   In order to indicate an active timer's timeout update, a new set
-   event is used.
-
-   QUICLossTimerUpdated = {
-
-       ; called "mode" in RFC 9002 A.9.
-       ? timer_type: "ack" /
-                     "pto"
-       ? packet_number_space: $PacketNumberSpace
-       event_type: "set" /
-                   "expired" /
-                   "cancelled"
-
-       ; if event_type === "set": delta time is in ms from
-       ; this event's timestamp until when the timer will trigger
-       ? delta: float32
-
-       * $$quic-losstimerupdated-extension
-   }
-
-                 Figure 35: QUICLossTimerUpdated definition
-
-7.5.  packet_lost
+7.4.  packet_lost
 
    The packet_lost event is emitted when a packet is deemed lost by loss
    detection.  It has Core importance level.
@@ -1856,7 +1878,7 @@ Table of Contents
 
                     Figure 36: QUICPacketLost definition
 
-7.6.  marked_for_retransmit
+7.5.  marked_for_retransmit
 
    The marked_for_retransmit event indicates which data was marked for
    retransmission upon detection of packet loss (see packet_lost).  It
@@ -1889,7 +1911,7 @@ Table of Contents
 
                Figure 37: QUICMarkedForRetransmit definition
 
-7.7.  ecn_state_updated
+7.6.  ecn_state_updated
 
    The ecn_state_updated event indicates a progression in the ECN state
    machine as described in section A.4 of [QUIC-TRANSPORT].  It has
@@ -2576,7 +2598,7 @@ Table of Contents
       stream_state_updated, frames_processed, stream_data_moved,
       datagram_data_moved, migration_state_updated, key_updated,
       key_discarded, recovery_parameters_set, recovery_metrics_updated,
-      congestion_state_updated, loss_timer_updated, packet_lost,
+      congestion_state_updated, timer_updated, packet_lost,
       marked_for_retransmit, ecn_state_updated
 
    Description:  Event definitions related to the QUIC transport
