@@ -85,7 +85,7 @@ Table of Contents
    6.  VantagePoint
    7.  Abstract Event Class
      7.1.  Timestamps
-     7.2.  Path
+     7.2.  Tuple
      7.3.  Grouping
      7.4.  SystemInformation
      7.5.  CommonFields
@@ -691,7 +691,7 @@ Table of Contents
        time: float64
        name: text
        data: $ProtocolEventData
-       ? path: PathID
+       ? tuple: TupleID
        ? time_format: TimeFormat
        ? group_id: GroupID
        ? system_info: SystemInformation
@@ -712,7 +712,7 @@ Table of Contents
    optionally add custom fields.
 
    Each qlog event MAY contain the optional fields: "time_format"
-   (Section 7.1), path (Section 7.2) "trigger" (Section 8.2.1), and
+   (Section 7.1), tuple (Section 7.2) "trigger" (Section 8.2.1), and
    "group_id" (Section 7.3).
 
    Multiple events can appear in a Trace or TraceSeq and they might
@@ -928,35 +928,35 @@ Table of Contents
 
                       Figure 20: Monotonic timestamps
 
-7.2.  Path
+7.2.  Tuple
 
-   A qlog event can be associated with a single "network path" (usually,
-   but not always, identified by a 4-tuple of IP addresses and ports).
-   In many cases, the path will be the same for all events in a given
+   A qlog event is typically associated with a single network "path",
+   which is usually aligned with a four-tuple of IP addresses and ports.
+   In many cases, this tuple will be the same for all events in a given
    trace, and does not need to be logged explicitly with each event.  In
-   this case, the "path" field can be omitted (in which case the default
-   value of "" is assumed) or reflected in "common_fields" instead (see
-   Section 7.5).
+   this case, the "tuple" field can be omitted (in which case the
+   default value of "" is assumed) or reflected in "common_fields"
+   instead (see Section 7.5).
 
    However, in some situations, such as during QUIC's Connection
    Migration or when using Multipath features, it is useful to be able
-   to split events across multiple (concurrent) paths.
+   to split events across multiple (concurrent) tuples and/or paths.
 
    Definition:
 
-   PathID = text .default ""
+   TupleID = text .default ""
 
-                        Figure 21: PathID definition
+                       Figure 21: TupleID definition
 
-   The "path" field is an identifier that is associated with a single
-   network path.  This document intentionally does not define further
-   how to choose this identifier's value per-path or how to potentially
-   log other parameters that can be associated with such a path.  This
-   is left for other documents.  Implementers are free to encode path
-   information directly into the PathID or to log associated info in a
-   separate event.  For example, QUIC has the "path_assigned" event to
-   couple the PathID value to a specific path configuration, see
-   [QLOG-QUIC].
+   The "tuple" field is an identifier that is associated with a single
+   network four-tuple.  This document intentionally does not define
+   further how to choose this identifier's value per-tuple or how to
+   potentially log other parameters that can be associated with such a
+   tuple.  This is left for other documents.  Implementers are free to
+   encode tuple information directly into the TupleID or to log
+   associated info in a separate event.  For example, QUIC has the
+   "tuple_assigned" event to couple the TupleID value to a specific
+   tuple configuration, see [QLOG-QUIC].
 
 7.3.  Grouping
 
@@ -975,8 +975,9 @@ Table of Contents
    context-specific.  In the example above, the QUIC "Original
    Destination Connection ID" could be used to uniquely identify a
    connection.  As such, they might add a "ODCID" field to each event.
-   However, a middlebox logging IP or TCP traffic might rather use four-
-   tuples to identify connections, and add a "four_tuple" field.
+   Additionally, a service providing different levels of Quality of
+   Service (QoS) to their users might wish to group connections per QoS
+   level applied.  They might instead prefer a "qos" field.
 
    As such, to provide consistency and ease of tooling in cross-protocol
    and cross-context setups, qlog instead defines the common "group_id"
@@ -989,14 +990,14 @@ Table of Contents
 
                        Figure 22: GroupID definition
 
-   JSON serialization example for events grouped by four tuples and QUIC
-   connection IDs:
+   JSON serialization example for events grouped either by QUIC
+   Connection IDs, or according to an endpoint-specific Quality of
+   Service (QoS) logic that includes the service level:
 
    "events": [
        {
            "time": 1553986553579,
-           "group_id": "ip1=2001:67c:1232:144:9498:6df6:f450:110b,
-                      ip2=2001:67c:2b0:1c1::198,port1=59105,port2=80",
+           "group_id": "qos=premium",
            "name": "quic:packet_received",
            "data": { ... }
        },
@@ -1012,7 +1013,7 @@ Table of Contents
 
    Note that in some contexts (for example a Multipath transport
    protocol) it might make sense to add additional contextual per-event
-   fields (for example PathID, see Section 7.2), rather than use the
+   fields (for example TupleID, see Section 7.2), rather than use the
    group_id field for that purpose.
 
    Note also that, typically, a single trace only contains events
@@ -1120,7 +1121,7 @@ Table of Contents
    are shown in the listing below:
 
    CommonFields = {
-       ? path: PathID
+       ? tuple: TupleID
        ? time_format: TimeFormat
        ? reference_time: ReferenceTime
        ? group_id: GroupID
@@ -1394,7 +1395,6 @@ Table of Contents
          "frames": [
              {
                  "frame_type": "stream",
-                 "length": 1000,
                  "offset": 456
              },
              {
@@ -1731,10 +1731,19 @@ Table of Contents
 
                        Figure 40: RawInfo definition
 
-   The RawInfo:data field can be truncated for privacy or security
-   purposes, see Section 11.4.  In this case, the length and
-   payload_length fields should still indicate the non-truncated lengths
-   when used for debugging purposes.
+   All fields in RawInfo are defined as optional.  It is acceptable to
+   log any field without the others.  Logging length related fields and
+   omitting the data field permits protocol debugging without the risk
+   of logging potentially sensitive data.  The data field, if logged, is
+   not required to contain the contents of a full entity and can be
+   truncated, see Section 11.4.  The length fields, if logged, should
+   indicate the length of the the full entity, even if the data field is
+   omitted or truncated.
+
+   Protocol entities containing an on-the-wire length field (for example
+   a packet header or QUIC's stream frame) are strongly recommended to
+   re-use the raw.length field instead of defining a separate length
+   field, to maintain consistency and prevent data duplication.
 
    This document does not specify explicit header_length or
    trailer_length fields.  In protocols without trailers, header_length
@@ -1897,10 +1906,10 @@ Table of Contents
 
    To reduce overhead however and in the case the full raw value is
    logged, the extra length-indicating field can be left out.  As such,
-   tools MUST be able to deal with this situation and derive the length
-   of the field from the raw value if no separate length-indicating
-   field is present.  The main possible permutations are shown by
-   example in Figure 41.
+   tools SHOULD be able to deal with this situation and derive the
+   length of the field from the raw value if no separate length-
+   indicating field is present.  The main possible permutations are
+   shown by example in Figure 41.
 
    // both the content's value and its length are present
    // (length is redundant)
@@ -2395,8 +2404,8 @@ Acknowledgements
    Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
    Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind,
    Jeremy Lainé, Kazu Yamamoto, Christian Huitema, Hugo Landau, Will
-   Hawkins, Mathis Engelbart and Jonathan Lennox for their feedback and
-   suggestions.
+   Hawkins, Mathis Engelbart, Kazuho Oku, and Jonathan Lennox for their
+   feedback and suggestions.
 
 Change Log
 
