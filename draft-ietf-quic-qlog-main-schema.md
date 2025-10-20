@@ -2126,8 +2126,8 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart and
-Jonathan Lennox for their feedback and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart, Kazuho
+Oku, and Jonathan Lennox for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
