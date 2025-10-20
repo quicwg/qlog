@@ -796,6 +796,12 @@ their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-h3-events-11:
+{:numbered="false"}
+
+* Replaced all length fields with raw.length (#495)
+* Renamed owner to initiator (#498)
+
 ## Since draft-ietf-quic-qlog-h3-events-09:
 {:numbered="false"}
 

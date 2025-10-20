@@ -2498,6 +2498,19 @@ Oku, and Jonathan Lennox for their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-qlog-quic-events-11:
+{:numbered="false"}
+
+* Updated several fields to be uint64 per QUIC spec
+* Renamed error and error_code fields and logic (#473)
+* Clarified parameters_set usage (#493)
+* Replaced all length fields with raw.length (#495)
+* Change loss_timer_updated to timer_updated (#496)
+* Renamed path_assigned to tuple_assigned (#491)
+* Reworked stream_state_updated (#497)
+* Renamed owner to initiator (#498)
+* Split up flags in PacketHeader (#478)
+
 ## Since draft-ietf-qlog-quic-events-09:
 {:numbered="false"}
 

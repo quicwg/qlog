@@ -2133,6 +2133,11 @@ Oku, and Jonathan Lennox for their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-main-schema-12:
+{:numbered="false"}
+
+* Changed Path and related fields to Tuple (#491)
+* Replaced all lenght fields with raw.length (#495)
 
 ## Since draft-ietf-quic-qlog-main-schema-10:
 {:numbered="false"}
