@@ -1794,12 +1794,25 @@ $PacketNumberSpace /= "initial" /
 
 ## PacketHeader
 
-The fixed and reserved bits are omitted here because they must be 0; see {{QUIC-TRANSPORT}}. 
-If these bits have an invalid value, the raw values can be captured in the raw field of the event.
+If the `packet_type` numerical value does not map to a known `$PacketType`
+string, the `packet_type` value of "unknown" can be used and the raw value
+captured in the `packet_type_bytes` field; a numerical value without
+variable-length integer encoding.
+
+The fixed and reserved bits are omitted here because they must be 0; see
+{{QUIC-TRANSPORT}}. If these bits have an invalid value, the raw values can be
+captured in the `raw.data` field of the event logging the PacketHeader.
+
+QUIC extensions that do utilize these bits are expected to create new events
+(analogous to `spin_bit_updated`) or use qlog extension mechanisms to reflect
+that usage.
 
 ~~~ cddl
 PacketHeader = {
     packet_type: $PacketType
+
+    ; only if packet_type === "unknown"
+    ? packet_type_bytes: uint64
 
     ; only if packet_type === "1RTT"
     ? spin_bit: bool
@@ -1826,7 +1839,7 @@ PacketHeader = {
     ; Signifies length of the packet_number plus the payload
     ? length: uint16
 
-    ; only if present in the header
+    ; only if present in the header.
     ; if correctly using transport:connection_id_updated events,
     ; dcid can be skipped for 1RTT packets
     ? version: QuicVersion
