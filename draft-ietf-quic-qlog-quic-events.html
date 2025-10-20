@@ -2995,25 +2995,39 @@ QUICUDPDatagramDropped = {
         </h3>
 <p id="section-5.13-1">The <code>stream_state_updated</code> event is emitted whenever the internal state of a
 QUIC stream is updated; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-3" class="relref">Section 3</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. Most of this can be
-inferred from several types of frames going over the wire, but it's much easier
+inferred from several types of frames going over the wire, but it's often easier
 to have explicit signals for these state changes. The event has Base importance
 level.<a href="#section-5.13-1" class="pilcrow">¶</a></p>
+<p id="section-5.13-2">While QUIC stream IDs encode the type of stream, (see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-2.1" class="relref">Section 2.1</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>), the optional <code>stream_type</code> field can be used to provide a
+more-accessible form of the information.<a href="#section-5.13-2" class="pilcrow">¶</a></p>
+<p id="section-5.13-3"><span><a href="https://rfc-editor.org/rfc/rfc9000#section-3" class="relref">Section 3</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span> describes streams in terms of their send and
+receive components, with a state machine for each. The <code>stream_side</code> field is
+used to indicate which side's state is updated in the logged event. In case both
+sides of the stream change state at the same time (for example both become
+<code>closed</code>), two separate events with different <code>stream_side</code> fields <span class="bcp14">SHOULD</span> be
+logged.<a href="#section-5.13-3" class="pilcrow">¶</a></p>
+<p id="section-5.13-4">In cases where it is useful to know which side of the connection initiated a
+state change (for example, closed due to either RESET_STREAM or STOP_SENDING),
+this can be reflected using the <code>trigger</code> field.<a href="#section-5.13-4" class="pilcrow">¶</a></p>
 <span id="name-quicstreamstateupdated-defi"></span><div id="quic-streamstateupdated-def">
 <figure id="figure-22">
-          <div class="lang-cddl sourcecode" id="section-5.13-2.1">
+          <div class="lang-cddl sourcecode" id="section-5.13-5.1">
 <pre>
 StreamType = "unidirectional" /
              "bidirectional"
 
 QUICStreamStateUpdated = {
     stream_id: uint64
-
-    ; mainly useful when opening the stream
     ? stream_type: StreamType
     ? old: $StreamState
     new: $StreamState
-    ? stream_side: "sending" /
-                   "receiving"
+    stream_side: "sending" /
+                 "receiving"
+    ? trigger:
+      ; stream state change was initiated by a local action
+      "local" /
+      ; stream state change was initiated by a remote action
+      "remote"
 
     * $$quic-streamstateupdated-extension
 }
@@ -3049,10 +3063,9 @@ $StreamState /= BaseStreamStates / GranularStreamStates
 <a href="#name-quicstreamstateupdated-defi" class="selfRef">QUICStreamStateUpdated definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.13-3">QUIC implementations <span class="bcp14">SHOULD</span> mainly log the simplified (HTTP/2-alike)
-BaseStreamStates instead of the more fine-grained GranularStreamStates. These
-latter ones are mainly for more in-depth debugging. Tools <span class="bcp14">SHOULD</span> be able to deal
-with both types equally.<a href="#section-5.13-3" class="pilcrow">¶</a></p>
+<p id="section-5.13-6">QUIC implementations <span class="bcp14">SHOULD</span> mainly log the simplified BaseStreamStates instead
+of the more fine-grained GranularStreamStates. These latter ones are mainly for
+more in-depth debugging. Tools <span class="bcp14">SHOULD</span> be able to deal with both types equally.<a href="#section-5.13-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-framesprocessed">
