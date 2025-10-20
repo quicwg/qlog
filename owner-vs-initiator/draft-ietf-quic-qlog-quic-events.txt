@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 19 April 2026                                              Meta
+Expires: 23 April 2026                                              Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         16 October 2025
+                                                         20 October 2025
 
 
                     QUIC event definitions for qlog
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 19 April 2026.
+   This Internet-Draft will expire on 23 April 2026.
 
 Copyright Notice
 
@@ -102,6 +102,7 @@ Table of Contents
      5.18. stream_data_blocked_updated
      5.19. datagram_data_blocked_updated
      5.20. migration_state_updated
+     5.21. timer_updated
    6.  Security Events
      6.1.  key_updated
      6.2.  key_discarded
@@ -109,10 +110,9 @@ Table of Contents
      7.1.  recovery_parameters_set
      7.2.  recovery_metrics_updated
      7.3.  congestion_state_updated
-     7.4.  loss_timer_updated
-     7.5.  packet_lost
-     7.6.  marked_for_retransmit
-     7.7.  ecn_state_updated
+     7.4.  packet_lost
+     7.5.  marked_for_retransmit
+     7.6.  ecn_state_updated
    8.  QUIC data type definitions
      8.1.  QuicVersion
      8.2.  ConnectionID
@@ -208,7 +208,7 @@ Table of Contents
    suite, although all cipher suites used in QUIC v1 use a 16 byte tag.
    For the purposes of calculating the lengths in fields of type RawInfo
    (as defined in [QLOG-MAIN]) related to QUIC packets, the AEAD tag is
-   regarded as a trailer.
+   regarded as a trailer with a fixed size of 16 bytes.
 
 1.3.  Events not belonging to a single connection
 
@@ -343,6 +343,8 @@ Table of Contents
    +--------------------------------------+------------+--------------+
    | quic:migration_state_updated         | Extra      | Section 5.20 |
    +--------------------------------------+------------+--------------+
+   | quic:timer_updated                   | Extra      | Section 5.21 |
+   +--------------------------------------+------------+--------------+
    | quic:key_updated                     | Base       | Section 6.1  |
    +--------------------------------------+------------+--------------+
    | quic:key_discarded                   | Base       | Section 6.2  |
@@ -353,13 +355,11 @@ Table of Contents
    +--------------------------------------+------------+--------------+
    | quic:congestion_state_updated        | Base       | Section 7.3  |
    +--------------------------------------+------------+--------------+
-   | quic:loss_timer_updated              | Extra      | Section 7.4  |
+   | quic:packet_lost                     | Core       | Section 7.4  |
    +--------------------------------------+------------+--------------+
-   | quic:packet_lost                     | Core       | Section 7.5  |
+   | quic:marked_for_retransmit           | Extra      | Section 7.5  |
    +--------------------------------------+------------+--------------+
-   | quic:marked_for_retransmit           | Extra      | Section 7.6  |
-   +--------------------------------------+------------+--------------+
-   | quic:ecn_state_updated               | Extra      | Section 7.7  |
+   | quic:ecn_state_updated               | Extra      | Section 7.6  |
    +--------------------------------------+------------+--------------+
 
                            Table 1: QUIC Events
@@ -397,12 +397,12 @@ Table of Contents
                    QUICStreamDataBlockedUpdated /
                    QUICDatagramDataBlockedUpdated /
                    QUICMigrationStateUpdated /
+                   QUICTimerUpdated /
                    QUICKeyUpdated /
                    QUICKeyDiscarded /
                    QUICRecoveryParametersSet /
                    QUICRecoveryMetricsUpdated /
                    QUICCongestionStateUpdated /
-                   QUICLossTimerUpdated /
                    QUICPacketLost /
                    QUICMarkedForRetransmit /
                    QUICECNStateUpdated
@@ -840,10 +840,19 @@ Table of Contents
    event with different fields set.
 
    Note that some settings have two variations (one set locally, one
-   requested by the remote peer).  This is reflected in the initiator
-   field.  As such, this field MUST be correct for all settings included
-   a single event instance.  If you need to log settings from two sides,
-   you MUST emit two separate event instances.
+   requested by the remote peer).  This is reflected in the owner field.
+   As such, this field MUST be correct for all settings included a
+   single event instance.  If the settings from two sides are required,
+   they MUST be logged as two separate event instances.  If the local
+   peer decides to change its behavior based on remote peer's settings,
+   a new event type can be used to reflect the outcome.
+
+   By default, each setting is assumed to either be absent (has an
+   undefined value) or have its default value (if it exists) at the
+   start of the connection.  Subsequently, each setting's value in a
+   parameters_set event supersedes the previous value of that parameter
+   if present.  If a setting does not appear in a given parameters_set
+   event, its value is unchanged.
 
    Implementations are not required to recognize, process or support
    every setting/parameter received in all situations.  For example,
@@ -1251,21 +1260,40 @@ Table of Contents
    The stream_state_updated event is emitted whenever the internal state
    of a QUIC stream is updated; see Section 3 of [QUIC-TRANSPORT].  Most
    of this can be inferred from several types of frames going over the
-   wire, but it's much easier to have explicit signals for these state
+   wire, but it's often easier to have explicit signals for these state
    changes.  The event has Base importance level.
+
+   While QUIC stream IDs encode the type of stream, (see Section 2.1 of
+   [QUIC-TRANSPORT]), the optional stream_type field can be used to
+   provide a more-accessible form of the information.
+
+   Section 3 of [QUIC-TRANSPORT] describes streams in terms of their
+   send and receive components, with a state machine for each.  The
+   stream_side field is used to indicate which side's state is updated
+   in the logged event.  In case both sides of the stream change state
+   at the same time (for example both become closed), two separate
+   events with different stream_side fields SHOULD be logged.
+
+   In cases where it is useful to know which side of the connection
+   initiated a state change (for example, closed due to either
+   RESET_STREAM or STOP_SENDING), this can be reflected using the
+   trigger field.
 
    StreamType = "unidirectional" /
                 "bidirectional"
 
    QUICStreamStateUpdated = {
        stream_id: uint64
-
-       ; mainly useful when opening the stream
        ? stream_type: StreamType
        ? old: $StreamState
        new: $StreamState
-       ? stream_side: "sending" /
-                      "receiving"
+       stream_side: "sending" /
+                    "receiving"
+       ? trigger:
+         ; stream state change was initiated by a local action
+         "local" /
+         ; stream state change was initiated by a remote action
+         "remote"
 
        * $$quic-streamstateupdated-extension
    }
@@ -1298,7 +1326,7 @@ Table of Contents
 
                 Figure 22: QUICStreamStateUpdated definition
 
-   QUIC implementations SHOULD mainly log the simplified (HTTP/2-alike)
+   QUIC implementations SHOULD mainly log the simplified
    BaseStreamStates instead of the more fine-grained
    GranularStreamStates.  These latter ones are mainly for more in-depth
    debugging.  Tools SHOULD be able to deal with both types equally.
@@ -1358,18 +1386,18 @@ Table of Contents
    represents four STREAM frames received over two packets would have
    the fields serialized as:
 
-   "frames":[
-     {"frame_type":"stream","stream_id":0,"offset":0,"length":500},
-     {"frame_type":"stream","stream_id":0,"offset":500,"length":200},
-     {"frame_type":"stream","stream_id":1,"offset":0,"length":300},
-     {"frame_type":"stream","stream_id":1,"offset":300,"length":50}
-     ],
-   "packet_numbers":[
-     1,
-     1,
-     2,
-     2
-   ]
+"frames":[
+  {"frame_type":"stream","stream_id":0,"offset":0,"raw":{"length":500}},
+  {"frame_type":"stream","stream_id":0,"offset":500,"raw":{"length":200}},
+  {"frame_type":"stream","stream_id":1,"offset":0,"raw":{"length":300}},
+  {"frame_type":"stream","stream_id":1,"offset":300,"raw":{"length":50}}
+  ],
+"packet_numbers":[
+  1,
+  1,
+  2,
+  2
+]
 
 5.15.  stream_data_moved
 
@@ -1379,9 +1407,9 @@ Table of Contents
    introduced by individual layers.  The event has Base importance
    level.
 
-   This event relates to stream data only.  There are no packet or frame
-   headers and length values in the length or raw fields MUST reflect
-   that.
+   The raw.length field is used to reflect how many bytes were moved.
+   As this event relates to stream data only, there are no packet or
+   frame headers and the raw.length field MUST reflect that.
 
    For example, it can be useful to understand when data moves from an
    application protocol (e.g., HTTP) to QUIC stream buffers and vice
@@ -1400,8 +1428,8 @@ Table of Contents
    moves data into transport and simultaneously ends the stream, can log
    fin_set.  As another example, a transport layer that has received an
    instruction to reset a stream can indicate this to the application
-   layer using reset_stream.  In both cases, the length-carrying fields
-   (length or raw) can be omitted or contain zero values.
+   layer using reset_stream.  In both cases, the raw.length field can be
+   omitted or have a zero value.
 
    This event is only for data in QUIC streams.  For data in QUIC
    Datagram Frames, see the datagram_data_moved event defined in
@@ -1410,9 +1438,6 @@ Table of Contents
    QUICStreamDataMoved = {
        ? stream_id: uint64
        ? offset: uint64
-
-       ; byte length of the moved data
-       ? length: uint64
 
        ? from: $DataLocation
        ? to: $DataLocation
@@ -1441,9 +1466,9 @@ Table of Contents
    buffers, and the overheads introduced by individual layers.  The
    event has Base importance level.
 
-   This event relates to datagram data only.  There are no packet or
-   frame headers and length values in the length or raw fields MUST
-   reflect that.
+   The raw.length field is used to reflect how many bytes were moved.
+   As this event relates to datagram data only, there are no packet or
+   frame headers and the raw.length field MUST reflect that.
 
    For example, passing from the application protocol (e.g.,
    WebTransport) to QUIC Datagram Frame buffers and vice versa.
@@ -1461,8 +1486,6 @@ Table of Contents
    Section 5.15.
 
    QUICDatagramDataMoved = {
-       ; byte length of the moved data
-       ? length: uint64
        ? from: $DataLocation
        ? to: $DataLocation
        ? raw: RawInfo
@@ -1592,6 +1615,66 @@ Table of Contents
 
               Figure 29: QUICMigrationStateUpdated definition
 
+5.21.  timer_updated
+
+   The timer_updated event is emitted when a timer changes state.  It
+   has Extra importance level.
+
+   The three main event types are:
+
+   *  set: the timer is set with a delta timeout for when it will
+      trigger next
+
+   *  expired: when the timer effectively expires after the delta
+      timeout
+
+   *  cancelled: when a timer is cancelled
+
+   In order to indicate an active timer's timeout update, a new set
+   event is used.
+
+   QUICTimerUpdated events with the timer_type set to ackor pto indicate
+   changes to the individual timeouts defined by RFC 9002: the threshold
+   loss detection timeout (see Section 6.1.2 of [QUIC-RECOVERY]) and the
+   probe timeout (see Section 6.2 of [QUIC-RECOVERY]).  Those set to
+   loss_timeout represent changes to the multi-modal loss detection
+   timer (see Section 3 of [QUIC-RECOVERY]).
+
+   The QUIC protocol conceptually employs a variety of timers, but their
+   usage can be implementation-dependent.  Implementers can add
+   additional fields to this event if needed via $$quic-timerupdated-
+   extension or specify other/additional timer types via $TimerType.
+
+   ; a non-exhaustive list of typically employed timers
+   $TimerType /= "ack" /
+                 "pto" /
+                 "loss_timeout" /
+                 "path_validation" /
+                 "handshake_timeout" /
+                 "idle_timeout"
+
+   QUICTimerUpdated = {
+       ? timer_type: $TimerType
+
+       ; to disambiguate in case there are multiple timers
+       ; of the same type
+       ? timer_id: uint64
+
+       ; if used for recovery timers, this can be useful information
+       ? packet_number_space: $PacketNumberSpace
+       event_type: "set" /
+                   "expired" /
+                   "cancelled"
+
+       ; if event_type === "set": delta time is in ms from
+       ; this event's timestamp until when the timer should trigger
+       ? delta: float32
+
+       * $$quic-timerupdated-extension
+   }
+
+                   Figure 30: QUICTimerUpdated definition
+
 6.  Security Events
 
 6.1.  key_updated
@@ -1615,7 +1698,7 @@ Table of Contents
        * $$quic-keyupdated-extension
    }
 
-                    Figure 30: QUICKeyUpdated definition
+                    Figure 31: QUICKeyUpdated definition
 
    Note that the key_phase is the full value of the key phase (as
    indicated by @M and @N in Figure 9 of [QUIC-TLS]).  The key phase bit
@@ -1642,7 +1725,7 @@ Table of Contents
        * $$quic-keydiscarded-extension
    }
 
-                   Figure 31: QUICKeyDiscarded definition
+                   Figure 32: QUICKeyDiscarded definition
 
 7.  Recovery events
 
@@ -1696,7 +1779,7 @@ Table of Contents
        * $$quic-recoveryparametersset-extension
    }
 
-              Figure 32: QUICRecoveryParametersSet definition
+              Figure 33: QUICRecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
@@ -1742,7 +1825,7 @@ Table of Contents
        * $$quic-recoverymetricsupdated-extension
    }
 
-              Figure 33: QUICRecoveryMetricsUpdated definition
+              Figure 34: QUICRecoveryMetricsUpdated definition
 
    In order to make logging easier, implementations MAY log values even
    if they are the same as previously reported values (e.g., two
@@ -1778,52 +1861,14 @@ Table of Contents
        * $$quic-congestionstateupdated-extension
    }
 
-              Figure 34: QUICCongestionStateUpdated definition
+              Figure 35: QUICCongestionStateUpdated definition
 
    The trigger field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
    can only be due to a single event occurring (for example Slow Start
    is often exited only when ssthresh is exceeded).
 
-7.4.  loss_timer_updated
-
-   The loss_timer_updated event is emitted when a recovery loss timer
-   changes state.  It has Extra importance level.
-
-   The three main event types are:
-
-   *  set: the timer is set with a delta timeout for when it will
-      trigger next
-
-   *  expired: when the timer effectively expires after the delta
-      timeout
-
-   *  cancelled: when a timer is cancelled (e.g., all outstanding
-      packets are acknowledged, start idle period)
-
-   In order to indicate an active timer's timeout update, a new set
-   event is used.
-
-   QUICLossTimerUpdated = {
-
-       ; called "mode" in RFC 9002 A.9.
-       ? timer_type: "ack" /
-                     "pto"
-       ? packet_number_space: $PacketNumberSpace
-       event_type: "set" /
-                   "expired" /
-                   "cancelled"
-
-       ; if event_type === "set": delta time is in ms from
-       ; this event's timestamp until when the timer will trigger
-       ? delta: float32
-
-       * $$quic-losstimerupdated-extension
-   }
-
-                 Figure 35: QUICLossTimerUpdated definition
-
-7.5.  packet_lost
+7.4.  packet_lost
 
    The packet_lost event is emitted when a packet is deemed lost by loss
    detection.  It has Core importance level.
@@ -1852,7 +1897,7 @@ Table of Contents
 
                     Figure 36: QUICPacketLost definition
 
-7.6.  marked_for_retransmit
+7.5.  marked_for_retransmit
 
    The marked_for_retransmit event indicates which data was marked for
    retransmission upon detection of packet loss (see packet_lost).  It
@@ -1885,7 +1930,7 @@ Table of Contents
 
                Figure 37: QUICMarkedForRetransmit definition
 
-7.7.  ecn_state_updated
+7.6.  ecn_state_updated
 
    The ecn_state_updated event indicates a progression in the ECN state
    machine as described in section A.4 of [QUIC-TRANSPORT].  It has
@@ -2001,6 +2046,11 @@ Table of Contents
    and the raw value captured in the packet_type_bytes field; a
    numerical value without variable-length integer encoding.
 
+   For long header packets of type initial, handshake, and 0RTT, the
+   length field of the packet header is logged in the qlog raw.length
+   field, and the value signifies the length of the packet number plus
+   the payload.
+
    PacketHeader = {
        ? quic_bit: bool .default true
        packet_type: $PacketType
@@ -2019,10 +2069,6 @@ Table of Contents
 
        ; only if packet_type === "initial" || "retry"
        ? token: Token
-
-       ; only if packet_type === "initial" || "handshake" || "0RTT"
-       ; Signifies length of the packet_number plus the payload
-       ? length: uint16
 
        ; only if present in the header
        ; if correctly using transport:connection_id_updated events,
@@ -2246,11 +2292,14 @@ Table of Contents
 
 8.13.6.  CryptoFrame
 
+   The length field of the Crypto frame MUST be logged in the qlog
+   raw.length field.  The other sub-fields of the raw field are
+   optional.
+
    CryptoFrame = {
        frame_type: "crypto"
        offset: uint64
-       length: uint64
-       ? raw: RawInfo
+       raw: RawInfo
    }
 
                      Figure 58: CryptoFrame definition
@@ -2267,15 +2316,15 @@ Table of Contents
 
 8.13.8.  StreamFrame
 
+   If the stream frame contains a length field, it MUST be logged in the
+   qlog raw.length field.  If it does not, the implementation MAY
+   calculate the actual frame byte length itself and log that in
+   raw.length if necessary.
+
    StreamFrame = {
        frame_type: "stream"
        stream_id: uint64
-
-       ; These two MUST always be set
-       ; If not present in the Frame type, log their default values
-       offset: uint64
-       length: uint64
-
+       ? offset: uint64 .default 0
        ? fin: bool .default false
        ? raw: RawInfo
    }
@@ -2466,9 +2515,13 @@ Table of Contents
 
    The QUIC DATAGRAM frame is defined in Section 4 of [RFC9221].
 
+   If the datagram frame contains a length field, it MUST be logged in
+   the qlog raw.length field.  If it does not, the implementation MAY
+   calculate the actual datagram byte length itself and log that in
+   raw.length if necessary.
+
    DatagramFrame = {
        frame_type: "datagram"
-       ? length: uint64
        ? raw: RawInfo
    }
 
@@ -2555,16 +2608,17 @@ Table of Contents
 
    Namespace  quic
 
-   Event Types  server_listening,connection_started,connection_closed,co
-      nnection_id_updated,spin_bit_updated,connection_state_updated,path
-      _assigned,mtu_updated,version_information,alpn_information,paramet
-      ers_set,parameters_restored,packet_sent,packet_received,packet_dro
-      pped,packet_buffered,packets_acked,udp_datagrams_sent,udp_datagram
-      s_received,udp_datagram_dropped,stream_state_updated,frames_proces
-      sed,stream_data_moved,datagram_data_moved,migration_state_updated,
-      key_updated,key_discarded,recovery_parameters_set,recovery_metrics
-      _updated,congestion_state_updated,loss_timer_updated,packet_lost,m
-      arked_for_retransmit,ecn_state_updated
+   Event Types  server_listening, connection_started, connection_closed,
+      connection_id_updated, spin_bit_updated, connection_state_updated,
+      path_assigned, mtu_updated, version_information, alpn_information,
+      parameters_set, parameters_restored, packet_sent, packet_received,
+      packet_dropped, packet_buffered, packets_acked,
+      udp_datagrams_sent, udp_datagrams_received, udp_datagram_dropped,
+      stream_state_updated, frames_processed, stream_data_moved,
+      datagram_data_moved, migration_state_updated, key_updated,
+      key_discarded, recovery_parameters_set, recovery_metrics_updated,
+      congestion_state_updated, timer_updated, packet_lost,
+      marked_for_retransmit, ecn_state_updated
 
    Description:  Event definitions related to the QUIC transport
       protocol.
@@ -2644,8 +2698,8 @@ Acknowledgements
    Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
    Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind,
    Jeremy Lainé, Kazu Yamamoto, Christian Huitema, Hugo Landau, Will
-   Hawkins, Mathis Engelbart and Jonathan Lennox for their feedback and
-   suggestions.
+   Hawkins, Mathis Engelbart, Kazuho Oku, and Jonathan Lennox for their
+   feedback and suggestions.
 
 Change Log
 

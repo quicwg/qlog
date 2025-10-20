@@ -19,22 +19,21 @@ protocol-specific event schemas are also presented. All schemas are defined
 independent of serialization format, allowing logs to be represented in various
 ways such as JSON, CSV, or protobuf. 
     " name="description">
-<meta content="xml2rfc 3.30.2" name="generator">
+<meta content="xml2rfc 3.31.0" name="generator">
 <meta content="Internet-Draft" name="keyword">
 <meta content="draft-ietf-quic-qlog-main-schema-latest" name="ietf.draft">
 <!-- Generator version information:
-  xml2rfc 3.30.2
-    Python 3.12.11
+  xml2rfc 3.31.0
+    Python 3.12.12
     ConfigArgParse 1.7
     google-i18n-address 3.1.1
     intervaltree 3.1.0
     Jinja2 3.1.6
     lxml 5.3.1
-    platformdirs 4.4.0
+    platformdirs 4.5.0
     pycountry 24.6.1
     PyYAML 6.0.2
     requests 2.32.5
-    setuptools 80.9.0
     wcwidth 0.2.14
 -->
 <link href="draft-ietf-quic-qlog-main-schema.xml" rel="alternate" type="application/rfc+xml">
@@ -1058,7 +1057,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Marx, et al.</td>
-<td class="center">Expires 19 April 2026</td>
+<td class="center">Expires 23 April 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1071,12 +1070,12 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <dd class="internet-draft">draft-ietf-quic-qlog-main-schema-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2025-10-16" class="published">16 October 2025</time>
+<time datetime="2025-10-20" class="published">20 October 2025</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-04-19">19 April 2026</time></dd>
+<dd class="expires"><time datetime="2026-04-23">23 April 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1146,7 +1145,7 @@ of this document.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 19 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 23 April 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -2855,7 +2854,6 @@ $$quic-packetsent-extension //= (
       "frames": [
           {
               "frame_type": "stream",
-              "length": 1000,
               "offset": 456
           },
           {
@@ -3308,14 +3306,22 @@ RawInfo = {
 <a href="#name-rawinfo-definition" class="selfRef">RawInfo definition</a>
         </figcaption></figure>
 </div>
-<p id="section-10-3">The RawInfo:data field can be truncated for privacy or security purposes, see
-<a href="#truncated-values" class="auto internal xref">Section 11.4</a>. In this case, the length and payload_length fields should
-still indicate the non-truncated lengths when used for debugging purposes.<a href="#section-10-3" class="pilcrow">¶</a></p>
-<p id="section-10-4">This document does not specify explicit header_length or trailer_length fields.
+<p id="section-10-3">All fields in RawInfo are defined as optional. It is acceptable to log any field
+without the others. Logging length related fields and omitting the data field
+permits protocol debugging without the risk of logging potentially sensitive
+data. The data field, if logged, is not required to contain the contents of a
+full entity and can be truncated, see <a href="#truncated-values" class="auto internal xref">Section 11.4</a>. The length fields,
+if logged, should indicate the length of the the full entity, even if the data
+field is omitted or truncated.<a href="#section-10-3" class="pilcrow">¶</a></p>
+<p id="section-10-4">Protocol entities containing an on-the-wire length field (for example a packet
+header or QUIC's stream frame) are strongly recommended to re-use the
+<code>raw.length</code> field instead of defining a separate length field, to maintain
+consistency and prevent data duplication.<a href="#section-10-4" class="pilcrow">¶</a></p>
+<p id="section-10-5">This document does not specify explicit header_length or trailer_length fields.
 In protocols without trailers, header_length can be calculated by subtracting
 the payload_length from the length. In protocols with trailers (e.g., QUIC's
 AEAD tag), event definition documents <span class="bcp14">SHOULD</span> define how to support header_length
-calculation.<a href="#section-10-4" class="pilcrow">¶</a></p>
+calculation.<a href="#section-10-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="concrete-formats">
@@ -3451,24 +3457,21 @@ I-JSON.<a href="#section-11.3-3" class="pilcrow">¶</a></p>
         <h3 id="name-truncated-values">
 <a href="#section-11.4" class="section-number selfRef">11.4. </a><a href="#name-truncated-values" class="section-name selfRef">Truncated values</a>
         </h3>
-<p id="section-11.4-1">For some use cases (e.g., limiting file size, privacy), it can be
-necessary not to log a full raw blob (using the <code>hexstring</code> type) but
-instead a truncated value. For example, one might only store the first 100 bytes of an
-HTTP response body to be able to discern which file it actually
-contained. In these cases, the original byte-size length cannot be
-obtained from the serialized value directly.<a href="#section-11.4-1" class="pilcrow">¶</a></p>
+<p id="section-11.4-1">For some use cases (e.g., limiting file size, privacy), it can be necessary not
+to log a full raw blob (using the <code>hexstring</code> type) but instead a truncated
+value. For example, one might only store the first 100 bytes of an HTTP response
+body to be able to discern which file it actually contained. In these cases, the
+original byte-size length cannot be obtained from the serialized value directly.<a href="#section-11.4-1" class="pilcrow">¶</a></p>
 <p id="section-11.4-2">As such, all qlog schema definitions <span class="bcp14">SHOULD</span> include a separate,
-length-indicating field for all fields of type <code>hexstring</code> they specify,
-see for example <a href="#raw-info" class="auto internal xref">Section 10</a>. This not only ensures the original length
-can always be retrieved, but also allows the omission of any raw value
-bytes of the field completely (e.g., out of privacy or security
-considerations).<a href="#section-11.4-2" class="pilcrow">¶</a></p>
-<p id="section-11.4-3">To reduce overhead however and in the case the full raw value is logged,
-the extra length-indicating field can be left out. As such, tools <span class="bcp14">MUST</span>
-be able to deal with this situation and derive the length of the field
-from the raw value if no separate length-indicating field is present.
-The main possible permutations are shown by example in
-<a href="#truncated-values-ex" class="auto internal xref">Figure 41</a>.<a href="#section-11.4-3" class="pilcrow">¶</a></p>
+length-indicating field for all fields of type <code>hexstring</code> they specify, see for
+example <a href="#raw-info" class="auto internal xref">Section 10</a>. This not only ensures the original length can always be
+retrieved, but also allows the omission of any raw value bytes of the field
+completely (e.g., out of privacy or security considerations).<a href="#section-11.4-2" class="pilcrow">¶</a></p>
+<p id="section-11.4-3">To reduce overhead however and in the case the full raw value is logged, the
+extra length-indicating field can be left out. As such, tools <span class="bcp14">SHOULD</span> be able to
+deal with this situation and derive the length of the field from the raw value
+if no separate length-indicating field is present. The main possible
+permutations are shown by example in <a href="#truncated-values-ex" class="auto internal xref">Figure 41</a>.<a href="#section-11.4-3" class="pilcrow">¶</a></p>
 <span id="name-example-for-serializing-tru"></span><div id="truncated-values-ex">
 <figure id="figure-41">
           <div class="alignLeft art-text artwork" id="section-11.4-4.1">
@@ -4042,8 +4045,8 @@ schema URIs" registry:<a href="#section-15-9" class="pilcrow">¶</a></p>
 Universities.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
 <p id="appendix-A-2">Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart and
-Jonathan Lennox for their feedback and suggestions.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
+Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart, Kazuho
+Oku, and Jonathan Lennox for their feedback and suggestions.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="change-log">
