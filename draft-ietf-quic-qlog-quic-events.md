@@ -92,7 +92,7 @@ QUIC packets always include an AEAD authentication tag at the end. In general,
 the length of the AEAD tag depends on the TLS cipher suite, although all cipher
 suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
 lengths in fields of type RawInfo (as defined in {{QLOG-MAIN}}) related to QUIC
-packets, the AEAD tag is regarded as a trailer.
+packets, the AEAD tag is regarded as a trailer with a fixed size of 16 bytes.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
@@ -122,8 +122,7 @@ in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
-type, data, group_id, RawInfo, and time-related
-fields.
+type, data, tuple, group_id, RawInfo, and time-related fields.
 
 Events are defined with an importance level as described in {{Section 8.3 of
 QLOG-MAIN}}.
@@ -165,7 +164,7 @@ this specification.
 | quic:connection_id_updated    | Base       | {{quic-connectionidupdated}} |
 | quic:spin_bit_updated         | Base       | {{quic-spinbitupdated}} |
 | quic:connection_state_updated | Base       | {{quic-connectionstateupdated}} |
-| quic:path_assigned            | Base       | {{quic-pathassigned}} |
+| quic:tuple_assigned            | Base      | {{quic-tupleassigned}} |
 | quic:mtu_updated              | Extra      | {{quic-mtuupdated}} |
 | quic:version_information      | Core       | {{quic-versioninformation}} |
 | quic:alpn_information         | Core       | {{quic-alpninformation}} |
@@ -187,12 +186,12 @@ this specification.
 | quic:stream_data_blocked_updated              | Extra       | {{quic-streamdatablockedupdated}} |
 | quic:datagram_data_blocked_updated              | Extra       | {{quic-datagramdatablockedupdated}} |
 | quic:migration_state_updated          | Extra      | {{quic-migrationstateupdated}} |
+| quic:timer_updated                    | Extra      | {{quic-timerupdated}} |
 | quic:key_updated                  | Base       | {{quic-keyupdated}} |
 | quic:key_discarded                | Base       | {{quic-keydiscarded}} |
 | quic:recovery_parameters_set               | Base       | {{quic-recoveryparametersset}} |
 | quic:recovery_metrics_updated              | Core       | {{quic-recoverymetricsupdated}} |
 | quic:congestion_state_updated     | Base       | {{quic-congestionstateupdated}} |
-| quic:loss_timer_updated           | Extra      | {{quic-losstimerupdated}} |
 | quic:packet_lost                  | Core       | {{quic-packetlost}} |
 | quic:marked_for_retransmit        | Extra      | {{quic-markedforretransmit}} |
 | quic:ecn_state_updated            | Extra      | {{quic-ecnstateupdated}} |
@@ -210,7 +209,7 @@ QuicEventData = QUICServerListening /
                 QUICConnectionIDUpdated /
                 QUICSpinBitUpdated /
                 QUICConnectionStateUpdated /
-                QUICPathAssigned /
+                QUICTupleAssigned /
                 QUICMTUUpdated /
                 QUICVersionInformation /
                 QUICALPNInformation /
@@ -232,12 +231,12 @@ QuicEventData = QUICServerListening /
                 QUICStreamDataBlockedUpdated /
                 QUICDatagramDataBlockedUpdated /
                 QUICMigrationStateUpdated /
+                QUICTimerUpdated /
                 QUICKeyUpdated /
                 QUICKeyDiscarded /
                 QUICRecoveryParametersSet /
                 QUICRecoveryMetricsUpdated /
                 QUICCongestionStateUpdated /
-                QUICLossTimerUpdated /
                 QUICPacketLost /
                 QUICMarkedForRetransmit /
                 QUICECNStateUpdated
@@ -287,8 +286,8 @@ importance level.
 
 ~~~ cddl
 QUICConnectionStarted = {
-    local: PathEndpointInfo
-    remote: PathEndpointInfo
+    local: TupleEndpointInfo
+    remote: TupleEndpointInfo
 
     * $$quic-connectionstarted-extension
 }
@@ -338,7 +337,7 @@ encoding.
 QUICConnectionClosed = {
 
     ; which side closed the connection
-    ? owner: Owner
+    ? initiator: Initiator
     ? connection_error: $TransportError /
                         CryptoError
     ? application_error: $ApplicationError
@@ -380,12 +379,12 @@ importance level.
 
 The `connection_id_updated` event is viewed from the perspective of the endpoint
 applying the new ID. As such, when the endpoint receives a new connection ID
-from the peer, the owner field will be "remote". When the endpoint updates its
-own connection ID, the owner field will be "local".
+from the peer, the initiator field will be "remote". When the endpoint updates its
+own connection ID, the initiator field will be "local".
 
 ~~~ cddl
 QUICConnectionIDUpdated = {
-    owner: Owner
+    initiator: Initiator
     ? old: ConnectionID
     ? new: ConnectionID
 
@@ -489,56 +488,56 @@ implementations are allowed to use other ConnectionState values that adhere more
 closely to their internal logic. Tools SHOULD be able to deal with these custom
 states in a similar way to the pre-defined states in this document.
 
-## path_assigned {#quic-pathassigned}
+## tuple_assigned {#quic-tupleassigned}
 Importance: Base
 
-This event is used to associate a single PathID's value with other parameters
-that describe a unique network path.
+This event is used to associate a single TupleID's value with other parameters
+that describe a unique network tuple.
 
 As described in {{QLOG-MAIN}}, each qlog event can be linked to a single network
-path by means of the top-level "path" field, whose value is a PathID. However,
-since it can be cumbersome to encode additional path metadata (such as IP
-addresses or Connection IDs) directly into the PathID, this event allows such an
-association to happen separately. As such, PathIDs can be short and unique, and
+tuple by means of the top-level "tuple" field, whose value is a TupleID. However,
+since it can be cumbersome to encode additional tuple metadata (such as IP
+addresses or Connection IDs) directly into the TupleID, this event allows such an
+association to happen separately. As such, TupleIDs can be short and unique, and
 can even be updated to be associated with new metadata as the connection's state
 evolves.
 
 Definition:
 
 ~~~ cddl
-QUICPathAssigned = {
-    path_id: PathID
+QUICTupleAssigned = {
+    tuple_id: TupleID
 
     ; the information for traffic going towards the remote receiver
-    ? path_remote: PathEndpointInfo
+    ? tuple_remote: TupleEndpointInfo
 
     ; the information for traffic coming in at the local endpoint
-    ? path_local: PathEndpointInfo
+    ? tuple_local: TupleEndpointInfo
 
-    * $$quic-pathassigned-extension
+    * $$quic-tupleassigned-extension
 }
 ~~~
-{: #quic-pathassigned-def title="QUICPathAssigned definition"}
+{: #quic-tupleassigned-def title="QUICTupleAssigned definition"}
 
-Choosing the different `path_id` values is left up to the implementation. Some
+Choosing the different `tuple_id` values is left up to the implementation. Some
 options include using a uniquely incrementing integer, using the (first)
-Destination Connection ID associated with a path (or its sequence number), or
+Destination Connection ID associated with a tuple (or its sequence number), or
 using (a hash of) the two endpoint IP addresses.
 
-It is important to note that the empty string ("") is a valid PathID and that it
-is the default assigned to events that do not explicitly set a "path" field. Put
-differently, the initial path of a QUIC connection on which the handshake occurs
-(see also {{quic-connectionstarted}}) is implicitly associated with the PathID
-with value "". Associating metadata with this default path is possible by
-logging the QUICPathAssigned event with a value of "" for the `path_id` field.
+It is important to note that the empty string ("") is a valid TupleID and that
+it is the default assigned to events that do not explicitly set a "tuple" field.
+Put differently, the initial tuple of a QUIC connection on which the handshake
+occurs (see also {{quic-connectionstarted}}) is implicitly associated with the
+TupleID with value "". Associating metadata with this default tuple is possible by
+logging the QUICTupleAssigned event with a value of "" for the `tuple_id` field.
 
-As paths and their metadata can evolve over time, multiple QUICPathAssigned
-events can be emitted for each unique PathID. The latest event contains the most
-up-to-date information for that PathID. As such, the first time a PathID is seen
-in a QUICPathAssigned event, it is an indication that the path is
-created. Subsequent occurrences indicate the path is updated, while a final
-occurrence with both `path_local` and `path_remote` fields omitted implicitly
-indicates the path has been abandoned.
+As the usage of TupleIDs and their metadata can evolve over time, multiple
+QUICTupleAssigned events can be emitted for each unique TupleID. The latest
+event contains the most up-to-date information for that TupleID. As such, the
+first time a TupleID is seen in a QUICTupleAssigned event, it is an indication
+that the TupleID is created. Subsequent occurrences indicate the TupleID is
+updated, while a final occurrence with both `tuple_local` and `tuple_remote`
+fields omitted implicitly indicates the TupleID has been abandoned.
 
 ## mtu_updated {#quic-mtuupdated}
 
@@ -655,10 +654,18 @@ Most of these settings are typically set once and never change. However, they
 are usually set at different times during the connection, so there will
 regularly be several instances of this event with different fields set.
 
-Note that some settings have two variations (one set locally, one requested by the
-remote peer). This is reflected in the `owner` field. As such, this field MUST be
-correct for all settings included a single event instance. If you need to log
-settings from two sides, you MUST emit two separate event instances.
+Note that some settings have two variations (one set locally, one requested by
+the remote peer). This is reflected in the `initiator` field. As such, this
+field MUST be correct for all settings included a single event instance. If the
+settings from two sides are required, they MUST be logged as two separate event
+instances. If the local peer decides to change its behavior based on remote
+peer's settings, a new event type can be used to reflect the outcome.
+
+By default, each setting is assumed to either be absent (has an `undefined`
+value) or have its default value (if it exists) at the start of the connection.
+Subsequently, each setting's value in a `parameters_set` event supersedes the
+previous value of that parameter if present. If a setting does not appear in a
+given `parameters_set` event, its value is unchanged.
 
 Implementations are not required to recognize, process or support every
 setting/parameter received in all situations. For example, QUIC implementations
@@ -675,7 +682,7 @@ event to indicate the updated values, as normal.
 
 ~~~ cddl
 QUICParametersSet = {
-    ? owner: Owner
+    ? initiator: Initiator
 
     ; true if valid session ticket was received
     ? resumption_allowed: bool
@@ -1055,9 +1062,24 @@ QUICUDPDatagramDropped = {
 
 The `stream_state_updated` event is emitted whenever the internal state of a
 QUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be
-inferred from several types of frames going over the wire, but it's much easier
+inferred from several types of frames going over the wire, but it's often easier
 to have explicit signals for these state changes. The event has Base importance
 level.
+
+While QUIC stream IDs encode the type of stream, (see {{Section 2.1 of
+QUIC-TRANSPORT}}), the optional `stream_type` field can be used to provide a
+more-accessible form of the information.
+
+{{Section 3 of QUIC-TRANSPORT}} describes streams in terms of their send and
+receive components, with a state machine for each. The `stream_side` field is
+used to indicate which side's state is updated in the logged event. In case both
+sides of the stream change state at the same time (for example both become
+`closed`), two separate events with different `stream_side` fields SHOULD be
+logged.
+
+In cases where it is useful to know which side of the connection initiated a
+state change (for example, closed due to either RESET_STREAM or STOP_SENDING),
+this can be reflected using the `trigger` field.
 
 ~~~ cddl
 StreamType = "unidirectional" /
@@ -1065,13 +1087,16 @@ StreamType = "unidirectional" /
 
 QUICStreamStateUpdated = {
     stream_id: uint64
-
-    ; mainly useful when opening the stream
     ? stream_type: StreamType
     ? old: $StreamState
     new: $StreamState
-    ? stream_side: "sending" /
-                   "receiving"
+    stream_side: "sending" /
+                 "receiving"
+    ? trigger:
+      ; stream state change was initiated by a local action
+      "local" /
+      ; stream state change was initiated by a remote action
+      "remote"
 
     * $$quic-streamstateupdated-extension
 }
@@ -1104,10 +1129,9 @@ $StreamState /= BaseStreamStates / GranularStreamStates
 ~~~
 {: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
-QUIC implementations SHOULD mainly log the simplified (HTTP/2-alike)
-BaseStreamStates instead of the more fine-grained GranularStreamStates. These
-latter ones are mainly for more in-depth debugging. Tools SHOULD be able to deal
-with both types equally.
+QUIC implementations SHOULD mainly log the simplified BaseStreamStates instead
+of the more fine-grained GranularStreamStates. These latter ones are mainly for
+more in-depth debugging. Tools SHOULD be able to deal with both types equally.
 
 ## frames_processed {#quic-framesprocessed}
 
@@ -1161,10 +1185,10 @@ STREAM frames received over two packets would have the fields serialized as:
 
 ~~~
 "frames":[
-  {"frame_type":"stream","stream_id":0,"offset":0,"length":500},
-  {"frame_type":"stream","stream_id":0,"offset":500,"length":200},
-  {"frame_type":"stream","stream_id":1,"offset":0,"length":300},
-  {"frame_type":"stream","stream_id":1,"offset":300,"length":50}
+  {"frame_type":"stream","stream_id":0,"offset":0,"raw":{"length":500}},
+  {"frame_type":"stream","stream_id":0,"offset":500,"raw":{"length":200}},
+  {"frame_type":"stream","stream_id":1,"offset":0,"raw":{"length":300}},
+  {"frame_type":"stream","stream_id":1,"offset":300,"raw":{"length":50}}
   ],
 "packet_numbers":[
   1,
@@ -1181,8 +1205,9 @@ between the different layers. This helps make clear the flow of data, how long
 data remains in various buffers, and the overheads introduced by individual
 layers. The event has Base importance level.
 
-This event relates to stream data only. There are no packet or frame headers and
-length values in the `length` or `raw` fields MUST reflect that.
+The `raw.length` field is used to reflect how many bytes were moved. As this
+event relates to stream data only, there are no packet or frame headers and the
+`raw.length` field MUST reflect that.
 
 For example, it can be useful to understand when data moves from an
 application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
@@ -1194,13 +1219,12 @@ processed first and afterwards the application layer reads from the streams with
 newly available data). This can help identify bottlenecks, flow control issues,
 or scheduling problems.
 
-The `additional_info` field supports optional logging of information
-related to the stream state. For example, an application layer that moves data
-into transport and simultaneously ends the stream, can log `fin_set`. As
-another example, a transport layer that has received an instruction to reset a
-stream can indicate this to the application layer using `reset_stream`.
-In both cases, the length-carrying fields (`length` or `raw`) can be
-omitted or contain zero values.
+The `additional_info` field supports optional logging of information related to
+the stream state. For example, an application layer that moves data into
+transport and simultaneously ends the stream, can log `fin_set`. As another
+example, a transport layer that has received an instruction to reset a stream
+can indicate this to the application layer using `reset_stream`. In both cases,
+the `raw.length` field can be omitted or have a zero value.
 
 This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
 see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
@@ -1209,9 +1233,6 @@ see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
 QUICStreamDataMoved = {
     ? stream_id: uint64
     ? offset: uint64
-
-    ; byte length of the moved data
-    ? length: uint64
 
     ? from: $DataLocation
     ? to: $DataLocation
@@ -1239,8 +1260,9 @@ data (see {{!RFC9221}}) moves between the different layers. This helps make
 clear the flow of data, how long data remains in various buffers, and the
 overheads introduced by individual layers. The event has Base importance level.
 
-This event relates to datagram data only. There are no packet or frame headers and
-length values in the `length` or `raw` fields MUST reflect that.
+The `raw.length` field is used to reflect how many bytes were moved. As this
+event relates to datagram data only, there are no packet or frame headers and
+the `raw.length` field MUST reflect that.
 
 For example, passing from the application protocol (e.g., WebTransport) to QUIC
 Datagram Frame buffers and vice versa.
@@ -1257,8 +1279,6 @@ see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
 
 ~~~ cddl
 QUICDatagramDataMoved = {
-    ; byte length of the moved data
-    ? length: uint64
     ? from: $DataLocation
     ? to: $DataLocation
     ? raw: RawInfo
@@ -1338,7 +1358,7 @@ QUICDatagramDataBlockedUpdated = {
 Use to provide additional information when attempting (client-side) connection
 migration. While most details of the QUIC connection migration process can be
 inferred by observing the PATH_CHALLENGE and PATH_RESPONSE frames, in
-combination with the QUICPathAssigned event, it can be useful to explicitly log
+combination with the QUICTupleAssigned event, it can be useful to explicitly log
 the progression of the migration and potentially made decisions in a single
 location/event. The event has Extra importance level.
 
@@ -1347,7 +1367,7 @@ phase (which is not always needed/present), and a migration phase (which can be
 abandoned upon error).
 
 Implementations that log per-path information in a QUICMigrationStateUpdated,
-SHOULD also emit QUICPathAssigned events, to serve as a ground-truth source of
+SHOULD also emit QUICTupleAssigned events, to serve as a ground-truth source of
 information.
 
 Definition:
@@ -1357,13 +1377,13 @@ QUICMigrationStateUpdated = {
     ? old: MigrationState
     new: MigrationState
 
-    ? path_id: PathID
+    ? tuple_id: TupleID
 
     ; the information for traffic going towards the remote receiver
-    ? path_remote: PathEndpointInfo
+    ? tuple_remote: TupleEndpointInfo
 
     ; the information for traffic coming in at the local endpoint
-    ? path_local: PathEndpointInfo
+    ? tuple_local: TupleEndpointInfo
 
     * $$quic-migrationstateupdated-extension
 }
@@ -1388,6 +1408,63 @@ MigrationState =
     "migration_complete"
 ~~~
 {: #quic-migrationstateupdated-def title="QUICMigrationStateUpdated definition"}
+
+
+## timer_updated {#quic-timerupdated}
+
+The `timer_updated` event is emitted when a timer changes state. It has Extra
+importance level.
+
+The three main event types are:
+
+* set: the timer is set with a delta timeout for when it will trigger next
+* expired: when the timer effectively expires after the delta timeout
+* cancelled: when a timer is cancelled
+
+In order to indicate an active timer's timeout update, a new `set` event is used.
+
+QUICTimerUpdated events with the `timer_type` set to `ack`or `pto` indicate
+changes to the individual timeouts defined by RFC 9002: the threshold loss
+detection timeout (see {{Section 6.1.2 of QUIC-RECOVERY}}) and the probe timeout
+(see {{Section 6.2 of QUIC-RECOVERY}}). Those set to `loss_timeout` represent
+changes to the multi-modal loss detection timer (see {{Appendix 3 of
+QUIC-RECOVERY}}).
+
+The QUIC protocol conceptually employs a variety of timers, but their usage can
+be implementation-dependent. Implementers can add additional fields to this
+event if needed via `$$quic-timerupdated-extension` or specify other/additional
+timer types via `$TimerType`.
+
+~~~ cddl
+; a non-exhaustive list of typically employed timers
+$TimerType /= "ack" /
+              "pto" /
+              "loss_timeout" /
+              "path_validation" /
+              "handshake_timeout" /
+              "idle_timeout"
+
+QUICTimerUpdated = {
+    ? timer_type: $TimerType
+
+    ; to disambiguate in case there are multiple timers
+    ; of the same type
+    ? timer_id: uint64
+
+    ; if used for recovery timers, this can be useful information
+    ? packet_number_space: $PacketNumberSpace
+    event_type: "set" /
+                "expired" /
+                "cancelled"
+
+    ; if event_type === "set": delta time is in ms from
+    ; this event's timestamp until when the timer should trigger
+    ? delta: float32
+
+    * $$quic-timerupdated-extension
+}
+~~~
+{: #quic-timerupdated-def title="QUICTimerUpdated definition"}
 
 # Security Events {#sec-ev}
 
@@ -1580,40 +1657,6 @@ change can occur but MAY be omitted if a given state can only be due to a single
 event occurring (for example Slow Start is often exited only when ssthresh is
 exceeded).
 
-## loss_timer_updated {#quic-losstimerupdated}
-
-The `loss_timer_updated` event is emitted when a recovery loss timer changes
-state. It has Extra importance level.
-
-The three main event types are:
-
-* set: the timer is set with a delta timeout for when it will trigger next
-* expired: when the timer effectively expires after the delta timeout
-* cancelled: when a timer is cancelled (e.g., all outstanding packets are
-  acknowledged, start idle period)
-
-In order to indicate an active timer's timeout update, a new `set` event is used.
-
-~~~ cddl
-QUICLossTimerUpdated = {
-
-    ; called "mode" in RFC 9002 A.9.
-    ? timer_type: "ack" /
-                  "pto"
-    ? packet_number_space: $PacketNumberSpace
-    event_type: "set" /
-                "expired" /
-                "cancelled"
-
-    ; if event_type === "set": delta time is in ms from
-    ; this event's timestamp until when the timer will trigger
-    ? delta: float32
-
-    * $$quic-losstimerupdated-extension
-}
-~~~
-{: #quic-losstimerupdated-def title="QUICLossTimerUpdated definition"}
-
 ## packet_lost {#quic-packetlost}
 
 The `packet_lost` event is emitted when a packet is deemed lost by loss
@@ -1719,13 +1762,13 @@ ConnectionID = hexstring
 ~~~
 {: #connectionid-def title="ConnectionID definition"}
 
-## Owner
+## Initiator
 
 ~~~ cddl
-Owner = "local" /
-        "remote"
+Initiator = "local" /
+            "remote"
 ~~~
-{: #owner-def title="Owner definition"}
+{: #initiator-def title="Initiator definition"}
 
 ## IPAddress
 
@@ -1741,33 +1784,33 @@ IPAddress = text /
 ~~~
 {: #ipaddress-def title="IPAddress definition"}
 
-## PathEndpointInfo
+## TupleEndpointInfo
 
-PathEndpointInfo indicates a single half/direction of a path. A full path is
-comprised of two halves. Firstly: the server sends to the remote client IP
+TupleEndpointInfo indicates a single half/direction of a four-tuple. A full tuple
+is comprised of two halves. Firstly: the server sends to the remote client IP
 + port using a specific destination Connection ID. Secondly: the client sends to
 the remote server IP + port using a different destination Connection ID.
 
-As such, structures logging path information SHOULD include two different
-PathEndpointInfo instances, one for each half of the path.
+As such, structures logging tuple information SHOULD include two different
+TupleEndpointInfo instances, one for each half of the tuple.
 
 ~~~ cddl
-PathEndpointInfo = {
+TupleEndpointInfo = {
     ? ip_v4: IPAddress
     ? port_v4: uint16
     ? ip_v6: IPAddress
     ? port_v6: uint16
 
     ; Even though usually only a single ConnectionID
-    ; is associated with a given path at a time,
+    ; is associated with a given tuple/path at a time,
     ; there are situations where there can be an overlap
     ; or a need to keep track of previous ConnectionIDs
     ? connection_ids: [+ ConnectionID]
 
-    * $$quic-pathendpointinfo-extension
+    * $$quic-tupleendpointinfo-extension
 }
 ~~~
-{: #pathendpointinfo-def title="PathEndpointInfo definition"}
+{: #tupleendpointinfo-def title="TupleEndpointInfo definition"}
 
 ## PacketType
 
@@ -1806,6 +1849,10 @@ captured in the `raw.data` field of the event logging the PacketHeader.
 QUIC extensions that do utilize these bits are expected to create new events
 (analogous to `spin_bit_updated`) or use qlog extension mechanisms to reflect
 that usage.
+
+For long header packets of type initial, handshake, and 0RTT, the length field
+of the packet header is logged in the qlog `raw.length` field, and the value
+signifies the length of the packet number plus the payload.
 
 ~~~ cddl
 PacketHeader = {
@@ -1963,7 +2010,7 @@ such, each padding byte could be theoretically interpreted and logged as an
 individual PaddingFrame.
 
 However, as this leads to heavy logging overhead, implementations SHOULD instead
-emit just a single PaddingFrame and set the raw.payload_length property to the
+emit just a single PaddingFrame and set the `raw.payload_length` property to the
 amount of PADDING bytes/frames included in the packet.
 
 ~~~ cddl
@@ -2065,12 +2112,14 @@ StopSendingFrame = {
 
 ### CryptoFrame
 
+The length field of the Crypto frame MUST be logged in the qlog `raw.length`
+field. The other sub-fields of the `raw` field are optional.
+
 ~~~ cddl
 CryptoFrame = {
     frame_type: "crypto"
     offset: uint64
-    length: uint64
-    ? raw: RawInfo
+    raw: RawInfo
 }
 ~~~
 {: #cryptoframe-def title="CryptoFrame definition"}
@@ -2088,16 +2137,15 @@ NewTokenFrame = {
 
 ### StreamFrame
 
+If the stream frame contains a length field, it MUST be logged in the qlog
+`raw.length` field. If it does not, the implementation MAY calculate the actual
+frame byte length itself and log that in `raw.length` if necessary.
+
 ~~~ cddl
 StreamFrame = {
     frame_type: "stream"
     stream_id: uint64
-
-    ; These two MUST always be set
-    ; If not present in the Frame type, log their default values
-    offset: uint64
-    length: uint64
-
+    ? offset: uint64 .default 0
     ? fin: bool .default false
     ? raw: RawInfo
 }
@@ -2298,10 +2346,13 @@ UnknownFrame = {
 
 The QUIC DATAGRAM frame is defined in {{Section 4 of !RFC9221}}.
 
+If the datagram frame contains a length field, it MUST be logged in the qlog
+`raw.length` field. If it does not, the implementation MAY calculate the actual
+datagram byte length itself and log that in `raw.length` if necessary.
+
 ~~~ cddl
 DatagramFrame = {
     frame_type: "datagram"
-    ? length: uint64
     ? raw: RawInfo
 }
 ~~~
@@ -2390,7 +2441,40 @@ Namespace
 : quic
 
 Event Types
-: server_listening,connection_started,connection_closed,connection_id_updated,spin_bit_updated,connection_state_updated,path_assigned,mtu_updated,version_information,alpn_information,parameters_set,parameters_restored,packet_sent,packet_received,packet_dropped,packet_buffered,packets_acked,udp_datagrams_sent,udp_datagrams_received,udp_datagram_dropped,stream_state_updated,frames_processed,stream_data_moved,datagram_data_moved,migration_state_updated,key_updated,key_discarded,recovery_parameters_set,recovery_metrics_updated,congestion_state_updated,loss_timer_updated,packet_lost,marked_for_retransmit,ecn_state_updated
+: server_listening,
+  connection_started,
+  connection_closed,
+  connection_id_updated,
+  spin_bit_updated,
+  connection_state_updated,
+  tuple_assigned,
+  mtu_updated,
+  version_information,
+  alpn_information,
+  parameters_set,
+  parameters_restored,
+  packet_sent,
+  packet_received,
+  packet_dropped,
+  packet_buffered,
+  packets_acked,
+  udp_datagrams_sent,
+  udp_datagrams_received,
+  udp_datagram_dropped,
+  stream_state_updated,
+  frames_processed,
+  stream_data_moved,
+  datagram_data_moved,
+  migration_state_updated,
+  key_updated,
+  key_discarded,
+  recovery_parameters_set,
+  recovery_metrics_updated,
+  congestion_state_updated,
+  timer_updated,
+  packet_lost,
+  marked_for_retransmit,
+  ecn_state_updated
 
 Description:
 : Event definitions related to the QUIC transport protocol.
@@ -2408,8 +2492,8 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart and
-Jonathan Lennox for their feedback and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart, Kazuho
+Oku, and Jonathan Lennox for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}

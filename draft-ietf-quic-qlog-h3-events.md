@@ -199,13 +199,13 @@ All these parameters are typically set once and never change. However, they
 might be set at different times during the connection, therefore a qlog can have
 multiple instances of `parameters_set` with different fields set.
 
-The "owner" field reflects how Settings are exchanged on a connection. Sent
+The "initiator" field reflects how Settings are exchanged on a connection. Sent
 settings have the value "local" and received settings have the value
 "received".
 
 ~~~ cddl
 HTTP3ParametersSet = {
-    ? owner: Owner
+    ? initiator: Initiator
 
     ; RFC9114
     ? max_field_section_size: uint64
@@ -280,7 +280,7 @@ point. It can be extended to support additional HTTP/3 stream types.
 
 ~~~ cddl
 HTTP3StreamTypeSet = {
-    ? owner: Owner
+    ? initiator: Initiator
     stream_id: uint64
     stream_type: $HTTP3StreamType
 
@@ -352,9 +352,7 @@ QUIC layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 ~~~ cddl
 HTTP3FrameCreated = {
     stream_id: uint64
-    ? length: uint64
     frame: $HTTP3Frame
-    ? raw: RawInfo
 
     * $$http3-framecreated-extension
 }
@@ -373,9 +371,7 @@ received on the QUIC layer. For that, see the `stream_data_moved` event in
 ~~~ cddl
 HTTP3FrameParsed = {
     stream_id: uint64
-    ? length: uint64
     frame: $HTTP3Frame
-    ? raw: RawInfo
 
     * $$h3-frameparsed-extension
 }
@@ -452,13 +448,13 @@ HTTP3PushDecision = "claimed" /
 
 The following data type definitions can be used in HTTP/3 events.
 
-## Owner
+## Initiator
 
 ~~~ cddl
-Owner = "local" /
-        "remote"
+Initiator = "local" /
+            "remote"
 ~~~
-{: #owner-def title="Owner definition"}
+{: #initiator-def title="Initiator definition"}
 
 ## HTTP3Frame
 
@@ -768,7 +764,15 @@ Namespace
 : http3
 
 Event Types
-: parameters_set,parameters_restored,stream_type_set,priority_updated,frame_created,frame_parsed,datagram_created,datagram_parsed,push_resolved
+: parameters_set,
+  parameters_restored,
+  stream_type_set,
+  priority_updated,
+  frame_created,
+  frame_parsed,
+  datagram_created,
+  datagram_parsed,
+  push_resolved
 
 Description:
 : Event definitions related to the HTTP/3 application protocol.
@@ -786,8 +790,8 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau and Jonathan Lennox for their feedback
-and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau, Kazuho Oku, and Jonathan Lennox for
+their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
