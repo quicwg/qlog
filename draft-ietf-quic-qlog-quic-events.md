@@ -1794,8 +1794,8 @@ $PacketNumberSpace /= "initial" /
 
 ## PacketHeader
 
-If the fixed bit or the reserved bit has an invalid value, the raw value can
-be captured in the raw field of the event.
+The fixed and reserved bits are omitted here because they must be 0; see {{QUIC-TRANSPORT}}. 
+If these bits have an invalid value, the raw values can be captured in the raw field of the event.
 
 ~~~ cddl
 PacketHeader = {
