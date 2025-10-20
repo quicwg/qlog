@@ -199,13 +199,13 @@ All these parameters are typically set once and never change. However, they
 might be set at different times during the connection, therefore a qlog can have
 multiple instances of `parameters_set` with different fields set.
 
-The "owner" field reflects how Settings are exchanged on a connection. Sent
+The "initiator" field reflects how Settings are exchanged on a connection. Sent
 settings have the value "local" and received settings have the value
 "received".
 
 ~~~ cddl
 HTTP3ParametersSet = {
-    ? owner: Owner
+    ? initiator: Initiator
 
     ; RFC9114
     ? max_field_section_size: uint64
@@ -280,7 +280,7 @@ point. It can be extended to support additional HTTP/3 stream types.
 
 ~~~ cddl
 HTTP3StreamTypeSet = {
-    ? owner: Owner
+    ? initiator: Initiator
     stream_id: uint64
     stream_type: $HTTP3StreamType
 
@@ -448,13 +448,13 @@ HTTP3PushDecision = "claimed" /
 
 The following data type definitions can be used in HTTP/3 events.
 
-## Owner
+## Initiator
 
 ~~~ cddl
-Owner = "local" /
-        "remote"
+Initiator = "local" /
+            "remote"
 ~~~
-{: #owner-def title="Owner definition"}
+{: #initiator-def title="Initiator definition"}
 
 ## HTTP3Frame
 

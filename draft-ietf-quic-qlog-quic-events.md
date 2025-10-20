@@ -338,7 +338,7 @@ encoding.
 QUICConnectionClosed = {
 
     ; which side closed the connection
-    ? owner: Owner
+    ? initiator: Initiator
     ? connection_error: $TransportError /
                         CryptoError
     ? application_error: $ApplicationError
@@ -380,12 +380,12 @@ importance level.
 
 The `connection_id_updated` event is viewed from the perspective of the endpoint
 applying the new ID. As such, when the endpoint receives a new connection ID
-from the peer, the owner field will be "remote". When the endpoint updates its
-own connection ID, the owner field will be "local".
+from the peer, the initiator field will be "remote". When the endpoint updates its
+own connection ID, the initiator field will be "local".
 
 ~~~ cddl
 QUICConnectionIDUpdated = {
-    owner: Owner
+    initiator: Initiator
     ? old: ConnectionID
     ? new: ConnectionID
 
@@ -656,11 +656,11 @@ are usually set at different times during the connection, so there will
 regularly be several instances of this event with different fields set.
 
 Note that some settings have two variations (one set locally, one requested by
-the remote peer). This is reflected in the `owner` field. As such, this field
-MUST be correct for all settings included a single event instance. If the settings
-from two sides are required, they MUST be logged as two separate event instances. If
-the local peer decides to change its behavior based on remote peer's settings,
-a new event type can be used to reflect the outcome.
+the remote peer). This is reflected in the `initiator` field. As such, this
+field MUST be correct for all settings included a single event instance. If the
+settings from two sides are required, they MUST be logged as two separate event
+instances. If the local peer decides to change its behavior based on remote
+peer's settings, a new event type can be used to reflect the outcome.
 
 By default, each setting is assumed to either be absent (has an `undefined`
 value) or have its default value (if it exists) at the start of the connection.
@@ -683,7 +683,7 @@ event to indicate the updated values, as normal.
 
 ~~~ cddl
 QUICParametersSet = {
-    ? owner: Owner
+    ? initiator: Initiator
 
     ; true if valid session ticket was received
     ? resumption_allowed: bool
@@ -1763,13 +1763,13 @@ ConnectionID = hexstring
 ~~~
 {: #connectionid-def title="ConnectionID definition"}
 
-## Owner
+## Initiator
 
 ~~~ cddl
-Owner = "local" /
-        "remote"
+Initiator = "local" /
+            "remote"
 ~~~
-{: #owner-def title="Owner definition"}
+{: #initiator-def title="Initiator definition"}
 
 ## IPAddress
 
