@@ -891,8 +891,9 @@ GroupID = text
 ~~~
 {: #group-id-def title="GroupID definition"}
 
-JSON serialization example for events grouped by four tuples
-and QUIC connection IDs:
+JSON serialization example for events grouped either by QUIC Connection IDs, or
+according to an endpoint-specific Quality of Service (QoS) logic that includes
+the service level:
 
 ~~~~~~~~
 "events": [
