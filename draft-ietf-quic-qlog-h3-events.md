@@ -352,9 +352,7 @@ QUIC layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 ~~~ cddl
 HTTP3FrameCreated = {
     stream_id: uint64
-    ? length: uint64
     frame: $HTTP3Frame
-    ? raw: RawInfo
 
     * $$http3-framecreated-extension
 }
@@ -373,9 +371,7 @@ received on the QUIC layer. For that, see the `stream_data_moved` event in
 ~~~ cddl
 HTTP3FrameParsed = {
     stream_id: uint64
-    ? length: uint64
     frame: $HTTP3Frame
-    ? raw: RawInfo
 
     * $$h3-frameparsed-extension
 }
@@ -768,7 +764,15 @@ Namespace
 : http3
 
 Event Types
-: parameters_set,parameters_restored,stream_type_set,priority_updated,frame_created,frame_parsed,datagram_created,datagram_parsed,push_resolved
+: parameters_set,
+  parameters_restored,
+  stream_type_set,
+  priority_updated,
+  frame_created,
+  frame_parsed,
+  datagram_created,
+  datagram_parsed,
+  push_resolved
 
 Description:
 : Event definitions related to the HTTP/3 application protocol.
@@ -786,8 +790,8 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau and Jonathan Lennox for their feedback
-and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau, Kazuho Oku, and Jonathan Lennox for
+their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}

@@ -92,7 +92,7 @@ QUIC packets always include an AEAD authentication tag at the end. In general,
 the length of the AEAD tag depends on the TLS cipher suite, although all cipher
 suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
 lengths in fields of type RawInfo (as defined in {{QLOG-MAIN}}) related to QUIC
-packets, the AEAD tag is regarded as a trailer.
+packets, the AEAD tag is regarded as a trailer with a fixed size of 16 bytes.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
@@ -187,12 +187,12 @@ this specification.
 | quic:stream_data_blocked_updated              | Extra       | {{quic-streamdatablockedupdated}} |
 | quic:datagram_data_blocked_updated              | Extra       | {{quic-datagramdatablockedupdated}} |
 | quic:migration_state_updated          | Extra      | {{quic-migrationstateupdated}} |
+| quic:timer_updated                    | Extra      | {{quic-timerupdated}} |
 | quic:key_updated                  | Base       | {{quic-keyupdated}} |
 | quic:key_discarded                | Base       | {{quic-keydiscarded}} |
 | quic:recovery_parameters_set               | Base       | {{quic-recoveryparametersset}} |
 | quic:recovery_metrics_updated              | Core       | {{quic-recoverymetricsupdated}} |
 | quic:congestion_state_updated     | Base       | {{quic-congestionstateupdated}} |
-| quic:loss_timer_updated           | Extra      | {{quic-losstimerupdated}} |
 | quic:packet_lost                  | Core       | {{quic-packetlost}} |
 | quic:marked_for_retransmit        | Extra      | {{quic-markedforretransmit}} |
 | quic:ecn_state_updated            | Extra      | {{quic-ecnstateupdated}} |
@@ -232,12 +232,12 @@ QuicEventData = QUICServerListening /
                 QUICStreamDataBlockedUpdated /
                 QUICDatagramDataBlockedUpdated /
                 QUICMigrationStateUpdated /
+                QUICTimerUpdated /
                 QUICKeyUpdated /
                 QUICKeyDiscarded /
                 QUICRecoveryParametersSet /
                 QUICRecoveryMetricsUpdated /
                 QUICCongestionStateUpdated /
-                QUICLossTimerUpdated /
                 QUICPacketLost /
                 QUICMarkedForRetransmit /
                 QUICECNStateUpdated
@@ -655,10 +655,18 @@ Most of these settings are typically set once and never change. However, they
 are usually set at different times during the connection, so there will
 regularly be several instances of this event with different fields set.
 
-Note that some settings have two variations (one set locally, one requested by the
-remote peer). This is reflected in the `initiator` field. As such, this field MUST be
-correct for all settings included a single event instance. If you need to log
-settings from two sides, you MUST emit two separate event instances.
+Note that some settings have two variations (one set locally, one requested by
+the remote peer). This is reflected in the `owner` field. As such, this field
+MUST be correct for all settings included a single event instance. If the settings
+from two sides are required, they MUST be logged as two separate event instances. If
+the local peer decides to change its behavior based on remote peer's settings,
+a new event type can be used to reflect the outcome.
+
+By default, each setting is assumed to either be absent (has an `undefined`
+value) or have its default value (if it exists) at the start of the connection.
+Subsequently, each setting's value in a `parameters_set` event supersedes the
+previous value of that parameter if present. If a setting does not appear in a
+given `parameters_set` event, its value is unchanged.
 
 Implementations are not required to recognize, process or support every
 setting/parameter received in all situations. For example, QUIC implementations
@@ -1055,9 +1063,24 @@ QUICUDPDatagramDropped = {
 
 The `stream_state_updated` event is emitted whenever the internal state of a
 QUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be
-inferred from several types of frames going over the wire, but it's much easier
+inferred from several types of frames going over the wire, but it's often easier
 to have explicit signals for these state changes. The event has Base importance
 level.
+
+While QUIC stream IDs encode the type of stream, (see {{Section 2.1 of
+QUIC-TRANSPORT}}), the optional `stream_type` field can be used to provide a
+more-accessible form of the information.
+
+{{Section 3 of QUIC-TRANSPORT}} describes streams in terms of their send and
+receive components, with a state machine for each. The `stream_side` field is
+used to indicate which side's state is updated in the logged event. In case both
+sides of the stream change state at the same time (for example both become
+`closed`), two separate events with different `stream_side` fields SHOULD be
+logged.
+
+In cases where it is useful to know which side of the connection initiated a
+state change (for example, closed due to either RESET_STREAM or STOP_SENDING),
+this can be reflected using the `trigger` field.
 
 ~~~ cddl
 StreamType = "unidirectional" /
@@ -1065,13 +1088,16 @@ StreamType = "unidirectional" /
 
 QUICStreamStateUpdated = {
     stream_id: uint64
-
-    ; mainly useful when opening the stream
     ? stream_type: StreamType
     ? old: $StreamState
     new: $StreamState
-    ? stream_side: "sending" /
-                   "receiving"
+    stream_side: "sending" /
+                 "receiving"
+    ? trigger:
+      ; stream state change was initiated by a local action
+      "local" /
+      ; stream state change was initiated by a remote action
+      "remote"
 
     * $$quic-streamstateupdated-extension
 }
@@ -1104,10 +1130,9 @@ $StreamState /= BaseStreamStates / GranularStreamStates
 ~~~
 {: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
-QUIC implementations SHOULD mainly log the simplified (HTTP/2-alike)
-BaseStreamStates instead of the more fine-grained GranularStreamStates. These
-latter ones are mainly for more in-depth debugging. Tools SHOULD be able to deal
-with both types equally.
+QUIC implementations SHOULD mainly log the simplified BaseStreamStates instead
+of the more fine-grained GranularStreamStates. These latter ones are mainly for
+more in-depth debugging. Tools SHOULD be able to deal with both types equally.
 
 ## frames_processed {#quic-framesprocessed}
 
@@ -1161,10 +1186,10 @@ STREAM frames received over two packets would have the fields serialized as:
 
 ~~~
 "frames":[
-  {"frame_type":"stream","stream_id":0,"offset":0,"length":500},
-  {"frame_type":"stream","stream_id":0,"offset":500,"length":200},
-  {"frame_type":"stream","stream_id":1,"offset":0,"length":300},
-  {"frame_type":"stream","stream_id":1,"offset":300,"length":50}
+  {"frame_type":"stream","stream_id":0,"offset":0,"raw":{"length":500}},
+  {"frame_type":"stream","stream_id":0,"offset":500,"raw":{"length":200}},
+  {"frame_type":"stream","stream_id":1,"offset":0,"raw":{"length":300}},
+  {"frame_type":"stream","stream_id":1,"offset":300,"raw":{"length":50}}
   ],
 "packet_numbers":[
   1,
@@ -1181,8 +1206,9 @@ between the different layers. This helps make clear the flow of data, how long
 data remains in various buffers, and the overheads introduced by individual
 layers. The event has Base importance level.
 
-This event relates to stream data only. There are no packet or frame headers and
-length values in the `length` or `raw` fields MUST reflect that.
+The `raw.length` field is used to reflect how many bytes were moved. As this
+event relates to stream data only, there are no packet or frame headers and the
+`raw.length` field MUST reflect that.
 
 For example, it can be useful to understand when data moves from an
 application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
@@ -1194,13 +1220,12 @@ processed first and afterwards the application layer reads from the streams with
 newly available data). This can help identify bottlenecks, flow control issues,
 or scheduling problems.
 
-The `additional_info` field supports optional logging of information
-related to the stream state. For example, an application layer that moves data
-into transport and simultaneously ends the stream, can log `fin_set`. As
-another example, a transport layer that has received an instruction to reset a
-stream can indicate this to the application layer using `reset_stream`.
-In both cases, the length-carrying fields (`length` or `raw`) can be
-omitted or contain zero values.
+The `additional_info` field supports optional logging of information related to
+the stream state. For example, an application layer that moves data into
+transport and simultaneously ends the stream, can log `fin_set`. As another
+example, a transport layer that has received an instruction to reset a stream
+can indicate this to the application layer using `reset_stream`. In both cases,
+the `raw.length` field can be omitted or have a zero value.
 
 This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
 see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
@@ -1209,9 +1234,6 @@ see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
 QUICStreamDataMoved = {
     ? stream_id: uint64
     ? offset: uint64
-
-    ; byte length of the moved data
-    ? length: uint64
 
     ? from: $DataLocation
     ? to: $DataLocation
@@ -1239,8 +1261,9 @@ data (see {{!RFC9221}}) moves between the different layers. This helps make
 clear the flow of data, how long data remains in various buffers, and the
 overheads introduced by individual layers. The event has Base importance level.
 
-This event relates to datagram data only. There are no packet or frame headers and
-length values in the `length` or `raw` fields MUST reflect that.
+The `raw.length` field is used to reflect how many bytes were moved. As this
+event relates to datagram data only, there are no packet or frame headers and
+the `raw.length` field MUST reflect that.
 
 For example, passing from the application protocol (e.g., WebTransport) to QUIC
 Datagram Frame buffers and vice versa.
@@ -1257,8 +1280,6 @@ see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
 
 ~~~ cddl
 QUICDatagramDataMoved = {
-    ; byte length of the moved data
-    ? length: uint64
     ? from: $DataLocation
     ? to: $DataLocation
     ? raw: RawInfo
@@ -1388,6 +1409,63 @@ MigrationState =
     "migration_complete"
 ~~~
 {: #quic-migrationstateupdated-def title="QUICMigrationStateUpdated definition"}
+
+
+## timer_updated {#quic-timerupdated}
+
+The `timer_updated` event is emitted when a timer changes state. It has Extra
+importance level.
+
+The three main event types are:
+
+* set: the timer is set with a delta timeout for when it will trigger next
+* expired: when the timer effectively expires after the delta timeout
+* cancelled: when a timer is cancelled
+
+In order to indicate an active timer's timeout update, a new `set` event is used.
+
+QUICTimerUpdated events with the `timer_type` set to `ack`or `pto` indicate
+changes to the individual timeouts defined by RFC 9002: the threshold loss
+detection timeout (see {{Section 6.1.2 of QUIC-RECOVERY}}) and the probe timeout
+(see {{Section 6.2 of QUIC-RECOVERY}}). Those set to `loss_timeout` represent
+changes to the multi-modal loss detection timer (see {{Appendix 3 of
+QUIC-RECOVERY}}).
+
+The QUIC protocol conceptually employs a variety of timers, but their usage can
+be implementation-dependent. Implementers can add additional fields to this
+event if needed via `$$quic-timerupdated-extension` or specify other/additional
+timer types via `$TimerType`.
+
+~~~ cddl
+; a non-exhaustive list of typically employed timers
+$TimerType /= "ack" /
+              "pto" /
+              "loss_timeout" /
+              "path_validation" /
+              "handshake_timeout" /
+              "idle_timeout"
+
+QUICTimerUpdated = {
+    ? timer_type: $TimerType
+
+    ; to disambiguate in case there are multiple timers
+    ; of the same type
+    ? timer_id: uint64
+
+    ; if used for recovery timers, this can be useful information
+    ? packet_number_space: $PacketNumberSpace
+    event_type: "set" /
+                "expired" /
+                "cancelled"
+
+    ; if event_type === "set": delta time is in ms from
+    ; this event's timestamp until when the timer should trigger
+    ? delta: float32
+
+    * $$quic-timerupdated-extension
+}
+~~~
+{: #quic-timerupdated-def title="QUICTimerUpdated definition"}
 
 # Security Events {#sec-ev}
 
@@ -1580,40 +1658,6 @@ change can occur but MAY be omitted if a given state can only be due to a single
 event occurring (for example Slow Start is often exited only when ssthresh is
 exceeded).
 
-## loss_timer_updated {#quic-losstimerupdated}
-
-The `loss_timer_updated` event is emitted when a recovery loss timer changes
-state. It has Extra importance level.
-
-The three main event types are:
-
-* set: the timer is set with a delta timeout for when it will trigger next
-* expired: when the timer effectively expires after the delta timeout
-* cancelled: when a timer is cancelled (e.g., all outstanding packets are
-  acknowledged, start idle period)
-
-In order to indicate an active timer's timeout update, a new `set` event is used.
-
-~~~ cddl
-QUICLossTimerUpdated = {
-
-    ; called "mode" in RFC 9002 A.9.
-    ? timer_type: "ack" /
-                  "pto"
-    ? packet_number_space: $PacketNumberSpace
-    event_type: "set" /
-                "expired" /
-                "cancelled"
-
-    ; if event_type === "set": delta time is in ms from
-    ; this event's timestamp until when the timer will trigger
-    ? delta: float32
-
-    * $$quic-losstimerupdated-extension
-}
-~~~
-{: #quic-losstimerupdated-def title="QUICLossTimerUpdated definition"}
-
 ## packet_lost {#quic-packetlost}
 
 The `packet_lost` event is emitted when a packet is deemed lost by loss
@@ -1799,6 +1843,10 @@ the packet_type value of "unknown" can be used and the raw value captured in the
 packet_type_bytes field; a numerical value without variable-length integer
 encoding.
 
+For long header packets of type initial, handshake, and 0RTT, the length field
+of the packet header is logged in the qlog `raw.length` field, and the value
+signifies the length of the packet number plus the payload.
+
 ~~~ cddl
 PacketHeader = {
     ? quic_bit: bool .default true
@@ -1818,10 +1866,6 @@ PacketHeader = {
 
     ; only if packet_type === "initial" || "retry"
     ? token: Token
-
-    ; only if packet_type === "initial" || "handshake" || "0RTT"
-    ; Signifies length of the packet_number plus the payload
-    ? length: uint16
 
     ; only if present in the header
     ; if correctly using transport:connection_id_updated events,
@@ -1947,7 +1991,7 @@ such, each padding byte could be theoretically interpreted and logged as an
 individual PaddingFrame.
 
 However, as this leads to heavy logging overhead, implementations SHOULD instead
-emit just a single PaddingFrame and set the raw.payload_length property to the
+emit just a single PaddingFrame and set the `raw.payload_length` property to the
 amount of PADDING bytes/frames included in the packet.
 
 ~~~ cddl
@@ -2049,12 +2093,14 @@ StopSendingFrame = {
 
 ### CryptoFrame
 
+The length field of the Crypto frame MUST be logged in the qlog `raw.length`
+field. The other sub-fields of the `raw` field are optional.
+
 ~~~ cddl
 CryptoFrame = {
     frame_type: "crypto"
     offset: uint64
-    length: uint64
-    ? raw: RawInfo
+    raw: RawInfo
 }
 ~~~
 {: #cryptoframe-def title="CryptoFrame definition"}
@@ -2072,16 +2118,15 @@ NewTokenFrame = {
 
 ### StreamFrame
 
+If the stream frame contains a length field, it MUST be logged in the qlog
+`raw.length` field. If it does not, the implementation MAY calculate the actual
+frame byte length itself and log that in `raw.length` if necessary.
+
 ~~~ cddl
 StreamFrame = {
     frame_type: "stream"
     stream_id: uint64
-
-    ; These two MUST always be set
-    ; If not present in the Frame type, log their default values
-    offset: uint64
-    length: uint64
-
+    ? offset: uint64 .default 0
     ? fin: bool .default false
     ? raw: RawInfo
 }
@@ -2282,10 +2327,13 @@ UnknownFrame = {
 
 The QUIC DATAGRAM frame is defined in {{Section 4 of !RFC9221}}.
 
+If the datagram frame contains a length field, it MUST be logged in the qlog
+`raw.length` field. If it does not, the implementation MAY calculate the actual
+datagram byte length itself and log that in `raw.length` if necessary.
+
 ~~~ cddl
 DatagramFrame = {
     frame_type: "datagram"
-    ? length: uint64
     ? raw: RawInfo
 }
 ~~~
@@ -2374,7 +2422,40 @@ Namespace
 : quic
 
 Event Types
-: server_listening,connection_started,connection_closed,connection_id_updated,spin_bit_updated,connection_state_updated,path_assigned,mtu_updated,version_information,alpn_information,parameters_set,parameters_restored,packet_sent,packet_received,packet_dropped,packet_buffered,packets_acked,udp_datagrams_sent,udp_datagrams_received,udp_datagram_dropped,stream_state_updated,frames_processed,stream_data_moved,datagram_data_moved,migration_state_updated,key_updated,key_discarded,recovery_parameters_set,recovery_metrics_updated,congestion_state_updated,loss_timer_updated,packet_lost,marked_for_retransmit,ecn_state_updated
+: server_listening,
+  connection_started,
+  connection_closed,
+  connection_id_updated,
+  spin_bit_updated,
+  connection_state_updated,
+  path_assigned,
+  mtu_updated,
+  version_information,
+  alpn_information,
+  parameters_set,
+  parameters_restored,
+  packet_sent,
+  packet_received,
+  packet_dropped,
+  packet_buffered,
+  packets_acked,
+  udp_datagrams_sent,
+  udp_datagrams_received,
+  udp_datagram_dropped,
+  stream_state_updated,
+  frames_processed,
+  stream_data_moved,
+  datagram_data_moved,
+  migration_state_updated,
+  key_updated,
+  key_discarded,
+  recovery_parameters_set,
+  recovery_metrics_updated,
+  congestion_state_updated,
+  timer_updated,
+  packet_lost,
+  marked_for_retransmit,
+  ecn_state_updated
 
 Description:
 : Event definitions related to the QUIC transport protocol.
@@ -2392,8 +2473,8 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart and
-Jonathan Lennox for their feedback and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart, Kazuho
+Oku, and Jonathan Lennox for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}

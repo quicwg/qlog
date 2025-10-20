@@ -1280,7 +1280,6 @@ $$quic-packetsent-extension //= (
       "frames": [
           {
               "frame_type": "stream",
-              "length": 1000,
               "offset": 456
           },
           {
@@ -1610,9 +1609,18 @@ RawInfo = {
 ~~~
 {: #raw-info-def title="RawInfo definition"}
 
-The RawInfo:data field can be truncated for privacy or security purposes, see
-{{truncated-values}}. In this case, the length and payload_length fields should
-still indicate the non-truncated lengths when used for debugging purposes.
+All fields in RawInfo are defined as optional. It is acceptable to log any field
+without the others. Logging length related fields and omitting the data field
+permits protocol debugging without the risk of logging potentially sensitive
+data. The data field, if logged, is not required to contain the contents of a
+full entity and can be truncated, see {{truncated-values}}. The length fields,
+if logged, should indicate the length of the the full entity, even if the data
+field is omitted or truncated.
+
+Protocol entities containing an on-the-wire length field (for example a packet
+header or QUIC's stream frame) are strongly recommended to re-use the
+`raw.length` field instead of defining a separate length field, to maintain
+consistency and prevent data duplication.
 
 This document does not specify explicit header_length or trailer_length fields.
 In protocols without trailers, header_length can be calculated by subtracting
@@ -1748,26 +1756,23 @@ I-JSON.
 
 ## Truncated values {#truncated-values}
 
-For some use cases (e.g., limiting file size, privacy), it can be
-necessary not to log a full raw blob (using the `hexstring` type) but
-instead a truncated value. For example, one might only store the first 100 bytes of an
-HTTP response body to be able to discern which file it actually
-contained. In these cases, the original byte-size length cannot be
-obtained from the serialized value directly.
+For some use cases (e.g., limiting file size, privacy), it can be necessary not
+to log a full raw blob (using the `hexstring` type) but instead a truncated
+value. For example, one might only store the first 100 bytes of an HTTP response
+body to be able to discern which file it actually contained. In these cases, the
+original byte-size length cannot be obtained from the serialized value directly.
 
 As such, all qlog schema definitions SHOULD include a separate,
-length-indicating field for all fields of type `hexstring` they specify,
-see for example {{raw-info}}. This not only ensures the original length
-can always be retrieved, but also allows the omission of any raw value
-bytes of the field completely (e.g., out of privacy or security
-considerations).
+length-indicating field for all fields of type `hexstring` they specify, see for
+example {{raw-info}}. This not only ensures the original length can always be
+retrieved, but also allows the omission of any raw value bytes of the field
+completely (e.g., out of privacy or security considerations).
 
-To reduce overhead however and in the case the full raw value is logged,
-the extra length-indicating field can be left out. As such, tools MUST
-be able to deal with this situation and derive the length of the field
-from the raw value if no separate length-indicating field is present.
-The main possible permutations are shown by example in
-{{truncated-values-ex}}.
+To reduce overhead however and in the case the full raw value is logged, the
+extra length-indicating field can be left out. As such, tools SHOULD be able to
+deal with this situation and derive the length of the field from the raw value
+if no separate length-indicating field is present. The main possible
+permutations are shown by example in {{truncated-values-ex}}.
 
 ~~~~~~~~
 // both the content's value and its length are present
@@ -2121,8 +2126,8 @@ Universities.
 
 Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen Petrides, Jari
 Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind, Jeremy Lainé, Kazu
-Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart and
-Jonathan Lennox for their feedback and suggestions.
+Yamamoto, Christian Huitema, Hugo Landau, Will Hawkins, Mathis Engelbart, Kazuho
+Oku, and Jonathan Lennox for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
