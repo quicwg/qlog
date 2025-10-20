@@ -116,7 +116,7 @@ Table of Contents
    8.  QUIC data type definitions
      8.1.  QuicVersion
      8.2.  ConnectionID
-     8.3.  Owner
+     8.3.  Initiator
      8.4.  IPAddress
      8.5.  PathEndpointInfo
      8.6.  PacketType
@@ -504,7 +504,7 @@ Table of Contents
    QUICConnectionClosed = {
 
        ; which side closed the connection
-       ? owner: Owner
+       ? initiator: Initiator
        ? connection_error: $TransportError /
                            CryptoError
        ? application_error: $ApplicationError
@@ -546,12 +546,12 @@ Table of Contents
 
    The connection_id_updated event is viewed from the perspective of the
    endpoint applying the new ID.  As such, when the endpoint receives a
-   new connection ID from the peer, the owner field will be "remote".
-   When the endpoint updates its own connection ID, the owner field will
-   be "local".
+   new connection ID from the peer, the initiator field will be
+   "remote".  When the endpoint updates its own connection ID, the
+   initiator field will be "local".
 
    QUICConnectionIDUpdated = {
-       owner: Owner
+       initiator: Initiator
        ? old: ConnectionID
        ? new: ConnectionID
 
@@ -840,12 +840,12 @@ Table of Contents
    event with different fields set.
 
    Note that some settings have two variations (one set locally, one
-   requested by the remote peer).  This is reflected in the owner field.
-   As such, this field MUST be correct for all settings included a
-   single event instance.  If the settings from two sides are required,
-   they MUST be logged as two separate event instances.  If the local
-   peer decides to change its behavior based on remote peer's settings,
-   a new event type can be used to reflect the outcome.
+   requested by the remote peer).  This is reflected in the initiator
+   field.  As such, this field MUST be correct for all settings included
+   a single event instance.  If the settings from two sides are
+   required, they MUST be logged as two separate event instances.  If
+   the local peer decides to change its behavior based on remote peer's
+   settings, a new event type can be used to reflect the outcome.
 
    By default, each setting is assumed to either be absent (has an
    undefined value) or have its default value (if it exists) at the
@@ -870,7 +870,7 @@ Table of Contents
    values, as normal.
 
    QUICParametersSet = {
-       ? owner: Owner
+       ? initiator: Initiator
 
        ; true if valid session ticket was received
        ? resumption_allowed: bool
@@ -1970,12 +1970,12 @@ Table of Contents
 
                      Figure 40: ConnectionID definition
 
-8.3.  Owner
+8.3.  Initiator
 
-   Owner = "local" /
-           "remote"
+   Initiator = "local" /
+               "remote"
 
-                        Figure 41: Owner definition
+                      Figure 41: Initiator definition
 
 8.4.  IPAddress
 
