@@ -1837,10 +1837,18 @@ $PacketNumberSpace /= "initial" /
 
 ## PacketHeader
 
-If the packet_type numerical value does not map to a known packet_type string,
-the packet_type value of "unknown" can be used and the raw value captured in the
-packet_type_bytes field; a numerical value without variable-length integer
-encoding.
+If the `packet_type` numerical value does not map to a known `$PacketType`
+string, the `packet_type` value of "unknown" can be used and the raw value
+captured in the `packet_type_bytes` field; a numerical value without
+variable-length integer encoding.
+
+The fixed and reserved bits are omitted here because they must be 0; see
+{{QUIC-TRANSPORT}}. If these bits have an invalid value, the raw values can be
+captured in the `raw.data` field of the event logging the PacketHeader.
+
+QUIC extensions that do utilize these bits are expected to create new events
+(analogous to `spin_bit_updated`) or use qlog extension mechanisms to reflect
+that usage.
 
 For long header packets of type initial, handshake, and 0RTT, the length field
 of the packet header is logged in the qlog `raw.length` field, and the value
@@ -1848,25 +1856,37 @@ signifies the length of the packet number plus the payload.
 
 ~~~ cddl
 PacketHeader = {
-    ? quic_bit: bool .default true
     packet_type: $PacketType
 
     ; only if packet_type === "unknown"
     ? packet_type_bytes: uint64
 
+    ; only if packet_type === "1RTT"
+    ? spin_bit: bool
+
+    ; only if packet_type === "1RTT", and if the key phase was
+    ; determined from the key_phase_bit
+    ? key_phase: uint64
+
+    ; only if packet_type === "1RTT", and if key_phase is not set
+    ? key_phase_bit: bool
+
+    ; only if packet_type === "initial" || "handshake" || "0RTT" ||
+    ;                         "1RTT"
+    ? packet_number_length: uint8
+
     ; only if packet_type === "initial" || "handshake" || "0RTT" ||
     ;                         "1RTT"
     ? packet_number: uint64
 
-    ; the bit flags of the packet headers (spin bit, key update bit,
-    ; etc. up to and including the packet number length bits
-    ; if present
-    ? flags: uint8
-
     ; only if packet_type === "initial" || "retry"
     ? token: Token
 
-    ; only if present in the header
+    ; only if packet_type === "initial" || "handshake" || "0RTT"
+    ; Signifies length of the packet_number plus the payload
+    ? length: uint16
+
+    ; only if present in the header.
     ; if correctly using transport:connection_id_updated events,
     ; dcid can be skipped for 1RTT packets
     ? version: QuicVersion
