@@ -720,6 +720,10 @@ QUICParametersSet = {
     ; true if present, absent or false if extension not negotiated
     ? grease_quic_bit: bool
 
+    ; draft-ietf-quic-reliable-stream-reset
+    ; true if present, absent or false if extension not negotiated
+    ? reset_stream_at: bool
+
     * $$quic-parametersset-extension
 }
 
@@ -1980,6 +1984,7 @@ QuicBaseFrames =  PaddingFrame /
                   PingFrame /
                   AckFrame /
                   ResetStreamFrame /
+                  ResetStreamAtFrame /
                   StopSendingFrame /
                   CryptoFrame /
                   NewTokenFrame /
@@ -2088,6 +2093,33 @@ ResetStreamFrame = {
 }
 ~~~
 {: #resetstreamframe-def title="ResetStreamFrame definition"}
+
+### ResetStreamAtFrame
+
+If the error_code numerical value does not map to a known ApplicationError string,
+the error_code value of "unknown" can be used and the raw value captured in the
+error_code_bytes field; a numerical value without variable-length integer
+encoding.
+
+~~~ cddl
+ResetStreamAtFrame = {
+    frame_type: "reset_stream_at"
+    stream_id: uint64
+    error_code: $ApplicationError
+
+    ; if error_code === "unknown"
+    ? error_code_bytes: uint64
+
+    ; in bytes
+    final_size: uint64
+
+    ; in bytes
+    reliable_size: uint64
+
+    ? raw: RawInfo
+}
+~~~
+{: #resetstreamatframe-def title="ResetStreamAtFrame definition"}
 
 
 ### StopSendingFrame
