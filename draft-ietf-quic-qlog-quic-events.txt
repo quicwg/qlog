@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 23 April 2026                                              Meta
+Expires: 15 May 2026                                                Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         20 October 2025
+                                                        11 November 2025
 
 
                     QUIC event definitions for qlog
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 23 April 2026.
+   This Internet-Draft will expire on 15 May 2026.
 
 Copyright Notice
 
@@ -131,27 +131,28 @@ Table of Contents
        8.13.2.  PingFrame
        8.13.3.  AckFrame
        8.13.4.  ResetStreamFrame
-       8.13.5.  StopSendingFrame
-       8.13.6.  CryptoFrame
-       8.13.7.  NewTokenFrame
-       8.13.8.  StreamFrame
-       8.13.9.  MaxDataFrame
-       8.13.10. MaxStreamDataFrame
-       8.13.11. MaxStreamsFrame
-       8.13.12. DataBlockedFrame
-       8.13.13. StreamDataBlockedFrame
-       8.13.14. StreamsBlockedFrame
-       8.13.15. NewConnectionIDFrame
-       8.13.16. RetireConnectionIDFrame
-       8.13.17. PathChallengeFrame
-       8.13.18. PathResponseFrame
-       8.13.19. ConnectionCloseFrame
-       8.13.20. HandshakeDoneFrame
-       8.13.21. UnknownFrame
-       8.13.22. DatagramFrame
-       8.13.23. TransportError
-       8.13.24. ApplicationError
-       8.13.25. CryptoError
+       8.13.5.  ResetStreamAtFrame
+       8.13.6.  StopSendingFrame
+       8.13.7.  CryptoFrame
+       8.13.8.  NewTokenFrame
+       8.13.9.  StreamFrame
+       8.13.10. MaxDataFrame
+       8.13.11. MaxStreamDataFrame
+       8.13.12. MaxStreamsFrame
+       8.13.13. DataBlockedFrame
+       8.13.14. StreamDataBlockedFrame
+       8.13.15. StreamsBlockedFrame
+       8.13.16. NewConnectionIDFrame
+       8.13.17. RetireConnectionIDFrame
+       8.13.18. PathChallengeFrame
+       8.13.19. PathResponseFrame
+       8.13.20. ConnectionCloseFrame
+       8.13.21. HandshakeDoneFrame
+       8.13.22. UnknownFrame
+       8.13.23. DatagramFrame
+       8.13.24. TransportError
+       8.13.25. ApplicationError
+       8.13.26. CryptoError
    9.  Security and Privacy Considerations
    10. IANA Considerations
    11. References
@@ -909,6 +910,10 @@ Table of Contents
        ; RFC9287
        ; true if present, absent or false if extension not negotiated
        ? grease_quic_bit: bool
+
+       ; draft-ietf-quic-reliable-stream-reset
+       ; true if present, absent or false if extension not negotiated
+       ? reset_stream_at: bool
 
        * $$quic-parametersset-extension
    }
@@ -2185,6 +2190,7 @@ Table of Contents
                      PingFrame /
                      AckFrame /
                      ResetStreamFrame /
+                     ResetStreamAtFrame /
                      StopSendingFrame /
                      CryptoFrame /
                      NewTokenFrame /
@@ -2294,7 +2300,33 @@ Table of Contents
 
                    Figure 56: ResetStreamFrame definition
 
-8.13.5.  StopSendingFrame
+8.13.5.  ResetStreamAtFrame
+
+   If the error_code numerical value does not map to a known
+   ApplicationError string, the error_code value of "unknown" can be
+   used and the raw value captured in the error_code_bytes field; a
+   numerical value without variable-length integer encoding.
+
+   ResetStreamAtFrame = {
+       frame_type: "reset_stream_at"
+       stream_id: uint64
+       error_code: $ApplicationError
+
+       ; if error_code === "unknown"
+       ? error_code_bytes: uint64
+
+       ; in bytes
+       final_size: uint64
+
+       ; in bytes
+       reliable_size: uint64
+
+       ? raw: RawInfo
+   }
+
+                  Figure 57: ResetStreamAtFrame definition
+
+8.13.6.  StopSendingFrame
 
    If the error numerical value does not map to a known ApplicationError
    string, the error value of "unknown" can be used and the raw value
@@ -2312,9 +2344,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 57: StopSendingFrame definition
+                   Figure 58: StopSendingFrame definition
 
-8.13.6.  CryptoFrame
+8.13.7.  CryptoFrame
 
    The length field of the Crypto frame MUST be logged in the qlog
    raw.length field.  The other sub-fields of the raw field are
@@ -2326,9 +2358,9 @@ Table of Contents
        raw: RawInfo
    }
 
-                     Figure 58: CryptoFrame definition
+                     Figure 59: CryptoFrame definition
 
-8.13.7.  NewTokenFrame
+8.13.8.  NewTokenFrame
 
    NewTokenFrame = {
      frame_type: "new_token"
@@ -2336,9 +2368,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                    Figure 59: NewTokenFrame definition
+                    Figure 60: NewTokenFrame definition
 
-8.13.8.  StreamFrame
+8.13.9.  StreamFrame
 
    If the stream frame contains a length field, it MUST be logged in the
    qlog raw.length field.  If it does not, the implementation MAY
@@ -2353,9 +2385,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 60: StreamFrame definition
+                     Figure 61: StreamFrame definition
 
-8.13.9.  MaxDataFrame
+8.13.10.  MaxDataFrame
 
    MaxDataFrame = {
      frame_type: "max_data"
@@ -2363,9 +2395,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                     Figure 61: MaxDataFrame definition
+                     Figure 62: MaxDataFrame definition
 
-8.13.10.  MaxStreamDataFrame
+8.13.11.  MaxStreamDataFrame
 
    MaxStreamDataFrame = {
      frame_type: "max_stream_data"
@@ -2374,9 +2406,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 62: MaxStreamDataFrame definition
+                  Figure 63: MaxStreamDataFrame definition
 
-8.13.11.  MaxStreamsFrame
+8.13.12.  MaxStreamsFrame
 
    MaxStreamsFrame = {
      frame_type: "max_streams"
@@ -2385,9 +2417,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                   Figure 63: MaxStreamsFrame definition
+                   Figure 64: MaxStreamsFrame definition
 
-8.13.12.  DataBlockedFrame
+8.13.13.  DataBlockedFrame
 
    DataBlockedFrame = {
      frame_type: "data_blocked"
@@ -2395,9 +2427,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                   Figure 64: DataBlockedFrame definition
+                   Figure 65: DataBlockedFrame definition
 
-8.13.13.  StreamDataBlockedFrame
+8.13.14.  StreamDataBlockedFrame
 
    StreamDataBlockedFrame = {
      frame_type: "stream_data_blocked"
@@ -2406,9 +2438,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                Figure 65: StreamDataBlockedFrame definition
+                Figure 66: StreamDataBlockedFrame definition
 
-8.13.14.  StreamsBlockedFrame
+8.13.15.  StreamsBlockedFrame
 
    StreamsBlockedFrame = {
      frame_type: "streams_blocked"
@@ -2417,9 +2449,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                 Figure 66: StreamsBlockedFrame definition
+                 Figure 67: StreamsBlockedFrame definition
 
-8.13.15.  NewConnectionIDFrame
+8.13.16.  NewConnectionIDFrame
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
@@ -2434,9 +2466,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                 Figure 67: NewConnectionIDFrame definition
+                 Figure 68: NewConnectionIDFrame definition
 
-8.13.16.  RetireConnectionIDFrame
+8.13.17.  RetireConnectionIDFrame
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
@@ -2444,9 +2476,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-               Figure 68: RetireConnectionIDFrame definition
+               Figure 69: RetireConnectionIDFrame definition
 
-8.13.17.  PathChallengeFrame
+8.13.18.  PathChallengeFrame
 
    PathChallengeFrame = {
      frame_type: "path_challenge"
@@ -2456,9 +2488,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 69: PathChallengeFrame definition
+                  Figure 70: PathChallengeFrame definition
 
-8.13.18.  PathResponseFrame
+8.13.19.  PathResponseFrame
 
    PathResponseFrame = {
      frame_type: "path_response"
@@ -2468,9 +2500,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 70: PathResponseFrame definition
+                  Figure 71: PathResponseFrame definition
 
-8.13.19.  ConnectionCloseFrame
+8.13.20.  ConnectionCloseFrame
 
    An endpoint that receives unknown error codes can record it in the
    error_code field using the numerical value without variable-length
@@ -2511,18 +2543,18 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 71: ConnectionCloseFrame definition
+                 Figure 72: ConnectionCloseFrame definition
 
-8.13.20.  HandshakeDoneFrame
+8.13.21.  HandshakeDoneFrame
 
    HandshakeDoneFrame = {
      frame_type: "handshake_done"
      ? raw: RawInfo
    }
 
-                  Figure 72: HandshakeDoneFrame definition
+                  Figure 73: HandshakeDoneFrame definition
 
-8.13.21.  UnknownFrame
+8.13.22.  UnknownFrame
 
    The frame_type_bytes field is the numerical value without variable-
    length integer encoding.
@@ -2533,9 +2565,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 73: UnknownFrame definition
+                     Figure 74: UnknownFrame definition
 
-8.13.22.  DatagramFrame
+8.13.23.  DatagramFrame
 
    The QUIC DATAGRAM frame is defined in Section 4 of [RFC9221].
 
@@ -2549,9 +2581,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 74: DatagramFrame definition
+                    Figure 75: DatagramFrame definition
 
-8.13.23.  TransportError
+8.13.24.  TransportError
 
    The generic $TransportError is defined here as a CDDL "type socket"
    extension point.  It can be extended to support additional Transport
@@ -2578,9 +2610,9 @@ Table of Contents
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
-                    Figure 75: TransportError definition
+                    Figure 76: TransportError definition
 
-8.13.24.  ApplicationError
+8.13.25.  ApplicationError
 
    By definition, an application error is defined by the application-
    level protocol running on top of QUIC (e.g., HTTP/3).
@@ -2591,7 +2623,7 @@ Table of Contents
 
    $ApplicationError /= "unknown"
 
-                   Figure 76: ApplicationError definition
+                   Figure 77: ApplicationError definition
 
    Application-level qlog definitions that wish to define new
    ApplicationError strings MUST do so by extending the
@@ -2600,7 +2632,7 @@ Table of Contents
    $ApplicationError /= "new_error_name" /
                         "another_new_error_name"
 
-8.13.25.  CryptoError
+8.13.26.  CryptoError
 
    These errors are defined in the TLS document as "A TLS alert is
    turned into a QUIC connection error by converting the one-byte alert
@@ -2616,7 +2648,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 77: CryptoError definition
+                     Figure 78: CryptoError definition
 
 9.  Security and Privacy Considerations
 
@@ -2668,9 +2700,9 @@ Table of Contents
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
               "qlog: Structured Logging for Network Protocols", Work in
               Progress, Internet-Draft, draft-ietf-quic-qlog-main-
-              schema-12, 7 July 2025,
+              schema-13, 20 October 2025,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema-12>.
+              qlog-main-schema-13>.
 
    [QUIC-DATAGRAM]
               Pauly, T., Kinnear, E., and D. Schinazi, "An Unreliable
