@@ -486,21 +486,6 @@ $HTTP3Frame /= HTTP3BaseFrames
 ~~~
 {: #h3baseframe-def title="HTTP3BaseFrames definition"}
 
-## HTTP3Datagram
-
-The generic `$HTTP3Datagram` is defined here as a CDDL "type socket" extension
-point. It can be extended to support additional HTTP/3 datagram types. This
-document intentionally does not define any specific qlog schemas for specific
-HTTP/3 Datagram types.
-
-~~~~~~
-; The HTTP3Datagram is any key-value map (e.g., JSON object)
-$HTTP3Datagram /= {
-    * text => any
-}
-~~~~~~
-{: #h3-datagram-def title="HTTP3Datagram type socket definition"}
-
 ### HTTP3DataFrame
 
 ~~~ cddl
@@ -716,7 +701,22 @@ HTTP3UnknownFrame = {
 ~~~
 {: #h3unknownframe-def title="HTTP3UnknownFrame definition"}
 
-### HTTP3ApplicationError
+## HTTP3Datagram
+
+The generic `$HTTP3Datagram` is defined here as a CDDL "type socket" extension
+point. It can be extended to support additional HTTP/3 datagram types. This
+document intentionally does not define any specific qlog schemas for specific
+HTTP/3 Datagram types.
+
+~~~~~~
+; The HTTP3Datagram is any key-value map (e.g., JSON object)
+$HTTP3Datagram /= {
+    * text => any
+}
+~~~~~~
+{: #h3-datagram-def title="HTTP3Datagram type socket definition"}
+
+## HTTP3ApplicationError
 
 ~~~ cddl
 HTTP3ApplicationError = "http_no_error" /
