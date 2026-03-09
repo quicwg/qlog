@@ -711,7 +711,7 @@ The ORIGIN frame is defined in {{ORIGIN}}.
 ~~~ cddl
 HTTP3OriginEntry = {
   origin_len: uint16
-  ? ASCII-Origin: text
+  ? ascii_origin: text
 }
 
 HTTP3OriginFrame = {
