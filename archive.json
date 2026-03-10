@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-03-03T01:44:28.870435+00:00",
+  "timestamp": "2026-03-10T01:25:44.368170+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -9138,7 +9138,7 @@
       "labels": [],
       "body": "When we switched to JSON-SEQ a while back (https://github.com/quicwg/qlog/issues/172), we assumed that using record separators instead of newline-delimited JSON wouldn't cause too much pain. I think it's time to reevaluate this assumption.\r\n\r\n## vim\r\n\r\nIt also turns out that existing software is not that great at handling record record separators. Here's a screenshot of `vim` messing up the line character count (note that last line, where it usually tells you the cursor position, and it now displays 12-13).\r\n![image](https://github.com/user-attachments/assets/1bfa7d6f-c354-43dc-950e-73df0aad951d)\r\n\r\n## jq\r\n\r\n`jq` is actually the tool that's the most compatible with JSONSEQ. However, one MUST use the `--seq` flag, using standard `jq` results in the following error, which is not very helpful for the user:\r\n```\r\njq: parse error: Invalid numeric literal at line 1, column 2\r\n```\r\nI had to use a search engine to figure out how to convince `jq` to use record separators. Definitely not the end of the world, but a subpar developer experience nonetheless.\r\n\r\n## grep\r\n\r\nAnother example is `grep`. Try to extract the `transport:connection_started` event from this qlog file using `grep`:\r\n\r\n```\r\n\u001e{\r\n    \"qlog_format\":\"JSON-SEQ\",\r\n    \"qlog_version\":\"draft-03\",\r\n    \"title\":\"quic-go qlog\",\r\n    \"configuration\":{\"code_version\":\"(devel)\"},\r\n    \"trace\":{\r\n        \"vantage_point\":{\"type\":\"client\"},\r\n        \"common_fields\":{\"ODCID\":\"65b480747721258697d6\",\"group_id\":\"65b480747721258697d6\",\"reference_time\":1722494434168.3032,\"time_format\":\"relative\"},\r\n    },\r\n}\r\n\u001e{\r\n    \"time\":0.038458,\r\n    \"name\":\"transport:connection_started\",\r\n    \"data\":{\"ip_version\":\"ipv6\",\"src_ip\":\"::\",\"src_port\":55464,\"dst_ip\":\"127.0.0.1\",\"dst_port\":6121,\"src_cid\":\"36ff0294\",\"dst_cid\":\"65b480747721258697d6\"},\r\n}\r\n```\r\n\r\nFirst of all, note how GitHub renders the record separator here: \ufffd (I love seeing this character on my screen!).\r\n\r\nBut back to `grep`: I haven't figured out a way to grep for the `transport:connection_started` event, and [apparently](https://superuser.com/questions/140965/grep-changing-the-delimiter) it's not easy to change the record separator.\r\n\r\n`grep`ing is **very important** when debugging, I often find myself filtering a qlog file for the event type(s) that I'm interested in.",
       "createdAt": "2024-08-01T19:11:44Z",
-      "updatedAt": "2025-10-14T09:17:10Z",
+      "updatedAt": "2026-03-09T15:19:36Z",
       "closedAt": null,
       "comments": [
         {
@@ -9266,6 +9266,13 @@
           "body": "Meeting notes: not much has changed since last discussed. Another approach could be remove streaming format altogether. Proposal to present idea of defining our own newline streaming JSON in qlog itself at the next IETF meeting and gather more feedback.",
           "createdAt": "2025-10-14T09:17:10Z",
           "updatedAt": "2025-10-14T09:17:10Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "So, we addressed this briefly in the presentation at IETF 124 but AFAIK there were no strong opinions on any approach in the room/in the chat? \n\nIIRC @LPardue was going to try to backchannel this a bit to see what opinions were on defining our own JSON streaming format (we intentionally kept this out of the presentation then). Did anything come out of that? \n\nThis is imo still our main open issue and I'd personally still prefer the option that'll provide the least friction (just keep what we have now with JSON-SEQ and have a separate extension draft in parallel that proposes the pure-newline approach). \n\nWhat's your current stance on this @marten-seemann, since you've been the main proponent of dropping JSON-SEQ in the past? ",
+          "createdAt": "2026-03-09T15:19:36Z",
+          "updatedAt": "2026-03-09T15:19:36Z"
         }
       ]
     },
@@ -9847,7 +9854,7 @@
       "labels": [],
       "body": "I started thinking about logging protocols building on top of HTTP/3, such as the various MASQUE flavors and WebTransport.\n\nKeep in mind that a single QUIC server can support multiple of these protocols, even on the same connection: In principle, you could proxy using CONNECT-UDP and serve a WebTransport session at the same time.\n\nThis leads us to the question who's logging `HTTP3Datagram` events:\n* Is it the HTTP/3 layer? If so, how does the HTTP/3 layer which application protocol is running on top of the HTTP stream that the datagram was sent / received for?\n* Is it the application layer? First of all, this seems wrong, since there might be buffer of received datagrams, leading to delayed logging of that datagram. Second, what if the datagram is never consumed (e.g. the WebTransport session might have closed)?\n\nI'm wondering if we should remove the extensibility of `HTTP3Datagram`. The HTTP/3 layer would simply log that a DATAGRAM with a respective Quarter Stream ID was received. The application layer would then log further details about that datagram, e.g. the Context ID in the case of MASQUE.",
       "createdAt": "2025-10-15T04:48:40Z",
-      "updatedAt": "2025-10-15T09:31:43Z",
+      "updatedAt": "2026-03-09T15:14:37Z",
       "closedAt": null,
       "comments": [
         {
@@ -9877,6 +9884,13 @@
           "body": "> Are you bumping into this due to the capsule work?\n\nSpecifically, I started thinking about qlog support for CONNECT-UDP, and was trying to figure out how I would log the context ID.\n\n> I suspect the current design of HTTP3Datagram was an attempt to try and capture the generic HTTP datagram semantic. But I tend to agree that is presently confusing. Probably easier to just remove it as you suggest.\n\nWe might want to introduce a `DATAGRAM_id` (similar to the `datagram_id` we have at the QUIC layer), to make it easier to follow the path of one DATAGRAM through the stack (from QUIC DATAGRAM -> HTTP/3 DATAGRAM -> MASQUE DATAGRAM). And yes, naming things is hard...",
           "createdAt": "2025-10-15T09:31:43Z",
           "updatedAt": "2025-10-15T09:31:43Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "What's the status on this one @marten-seemann ? Have you further opinions through ongoing implementation work? Is this something we can improve as part of #490? \n\nI personally have no strong opinions towards the current design. ",
+          "createdAt": "2026-03-09T15:14:37Z",
+          "updatedAt": "2026-03-09T15:14:37Z"
         }
       ]
     },
@@ -9928,7 +9942,7 @@
       "labels": [],
       "body": "The tuple is currently a property of the `Event`. I'm not sure if that makes sense. At the very least, it would complicate the data structures used in my implementation quite significantly.\n\nFor example, it doesn't really make sense to set the tuple on the `QUICKeyUpdated` event. With the exception of a few events like `QUICPacketSent`, `QUICPacketReceived`, `QUICPacketDropped`, etc., most events are connection-level events. This applies even more so when moving up the application stack: No HTTP/3 event benefits from specifying the tuple.\n\nI suggest:\n\n1. Moving the `TupleID` definition to the QUIC document.\n2. Making it a field in the few events where it actually applies.",
       "createdAt": "2025-12-03T05:08:43Z",
-      "updatedAt": "2025-12-04T04:17:42Z",
+      "updatedAt": "2026-03-09T15:12:45Z",
       "closedAt": null,
       "comments": [
         {
@@ -9937,6 +9951,13 @@
           "body": "To add my 2c:\n\nI didn't get around to trying to implement this yet. I suspect that it would be trivial to add it to the qlog crate but there could be some difficulty in doing the plumbing to populate a tuple value, depending how is used.\n\nThe field is optional, it doesn't seem to create much harm. That said, we sort of did something with triggers IIRC and now in https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-8.2.1 say \"Including a \"trigger\" as part of the event itself is one method for providing fine-grained information \". We could similarly move the tuple out of the base class and move the text into section 8.2.2 that gives general guidance for tuple-y things, that the QUIC spec can then implement (this way, other schema have a generic way to refer to the tuple-y things, without needing to quote QUIC)",
           "createdAt": "2025-12-04T04:17:42Z",
           "updatedAt": "2025-12-04T04:17:42Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "The thing with Tuple is that that it's a key building block for basic \"multipath\" logic...\n\nIn that light, you probably also want to know the TupleID for things like `QUICFramesProcessed` to see on which Tuple a multipath-specific frame (MP_ACK or whatever it's called today) was received etc. Similar for congestion control stuff where you're managing multiple paths etc.\n\nGiven that reworking that would require (imo) a bunch of doublechecking (and revisiting the multipath can of worms again), and given that it's an optional field that you'd be fully in your rights to only log with the events listed in the issue text, I wouldn't really change the base design here.\n\nWhat we could do, is make it clearer you don't HAVE to log`tuple` with every single event even if you're in a trace logging multiple tuples? ",
+          "createdAt": "2026-03-09T15:12:45Z",
+          "updatedAt": "2026-03-09T15:12:45Z"
         }
       ]
     },
@@ -9952,7 +9973,7 @@
       "labels": [],
       "body": "I recently added support for the `datagram_id` in my QUIC stack, and I chose to use the CRC32 of the packet as the datagram ID, mostly because this allows me to generate an ID without keeping additional state (unless the packet is buffered).\n\nIt has another nice property: When looking at qlogs generated by a quic-go server and client, the datagram IDs now match, allowing me to see which packet was buffered, for example. This is extremely useful.\n\nI'm wondering if we should mandate CRC32 (or any other algorithm, I don't really care), so we get this feature across QUIC stacks.",
       "createdAt": "2025-12-21T06:53:23Z",
-      "updatedAt": "2026-02-13T08:20:15Z",
+      "updatedAt": "2026-03-09T15:03:37Z",
       "closedAt": null,
       "comments": [
         {
@@ -9961,6 +9982,13 @@
           "body": "I'm not a strong believer in mandating such things, it risks us bikshedding on some consensus issues. Instead, you could capture the benefits of a stateless approach, along with non-normative example of crc32.\n\nThe other thing I noticed inn the QUIC schema, is that all the mentions of datagram_id forward to section 5.10, which is the definition of udp_datagrams_sent. You'd probably be better to extract the prose about datagram_id out of that and make it its own section, that might give a bit more breathing room for some expanded text on the topic.",
           "createdAt": "2026-02-13T08:20:15Z",
           "updatedAt": "2026-02-13T08:20:15Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agree with Lucas that I wouldn't mandate anything here, but some more discussion and a recommended option of crc32 would be fine. \n\nMind proposing a PR for that @marten-seemann ? ",
+          "createdAt": "2026-03-09T15:03:36Z",
+          "updatedAt": "2026-03-09T15:03:36Z"
         }
       ]
     },
@@ -9987,7 +10015,7 @@
       "id": "I_kwDOCrLn6M7vNUz6",
       "title": "Fix H3 schema ToC",
       "url": "https://github.com/quicwg/qlog/issues/505",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -9998,8 +10026,8 @@
       ],
       "body": "The HTTP/3 schema has weird nesting\n\n<img width=\"437\" height=\"521\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/092ad64f-f110-4d25-88bc-8746ef38ca30\" />\n\nI'll propose a PR to make it more logical",
       "createdAt": "2026-03-02T20:50:36Z",
-      "updatedAt": "2026-03-02T20:50:36Z",
-      "closedAt": null,
+      "updatedAt": "2026-03-09T16:15:48Z",
+      "closedAt": "2026-03-09T16:15:48Z",
       "comments": []
     }
   ],
@@ -28045,7 +28073,7 @@
       "labels": [],
       "body": "Fixes #486.\r\n\r\nThis turned out to be more text than I expected, but it's mostly just copy-pasted from the respective HTTP/3 section.",
       "createdAt": "2025-10-14T14:48:56Z",
-      "updatedAt": "2025-10-19T14:44:16Z",
+      "updatedAt": "2026-03-09T15:02:07Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
@@ -28063,6 +28091,13 @@
           "body": "The design aspects of this look good to me. We just need to answer the scoping question to see whether it lives in this document or not.",
           "createdAt": "2025-10-19T14:44:16Z",
           "updatedAt": "2025-10-19T14:44:16Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Looking at the discussion post IETF 124 where we presented the question, the consensus seemed to be \"if it's easy and quick to merge, just do it in the current docs\" (see https://datatracker.ietf.org/meeting/124/materials/minutes-124-quic-00). This PR was explicitly mentioned as part of the list that should be easy to merge.\r\n\r\nAs such, @marten-seemann, want to finish this up? ",
+          "createdAt": "2026-03-09T15:02:07Z",
+          "updatedAt": "2026-03-09T15:02:07Z"
         }
       ],
       "reviews": [
@@ -28727,26 +28762,67 @@
       "labels": [],
       "body": "\u2026nd add ORIGIN frame\r\n\r\nWhile adding ORIGIN frame I noticed we'd omitted mentioning PRIORITY_UPDATE in the schema extension point, so this fixes that too and hence the reordering makes it a bit clearer what is base vs. extension\r\n\r\n\r\nfixes https://github.com/quicwg/qlog/issues/503",
       "createdAt": "2026-03-02T17:37:35Z",
-      "updatedAt": "2026-03-02T17:40:38Z",
+      "updatedAt": "2026-03-09T16:16:43Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "274a09147b6863f6a7c95d589a248faae510d4f8",
       "headRepository": "quicwg/qlog",
       "headRefName": "better-h3-extension-frames",
-      "headRefOid": "660ef8d3b52645f8bb55cc363031fd21c5304b2a",
+      "headRefOid": "c5d780bdc678880524c443a8a774b11050b09147",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7paZBt",
+          "commit": {
+            "abbreviatedOid": "660ef8d"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2026-03-09T14:53:21Z",
+          "updatedAt": "2026-03-09T14:59:12Z",
+          "comments": [
+            {
+              "originalPosition": 80,
+              "body": "it's not a hard rule I guess, but up until now we've had all lowercase for field names, as well as undescores instead of dashes... so should be:\n\n\n```suggestion\n  ? ascii_origin: text\n```",
+              "createdAt": "2026-03-09T14:53:21Z",
+              "updatedAt": "2026-03-09T14:59:13Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M7pcj66",
+          "commit": {
+            "abbreviatedOid": "660ef8d"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-03-09T16:16:39Z",
+          "updatedAt": "2026-03-09T16:16:39Z",
+          "comments": [
+            {
+              "originalPosition": 80,
+              "body": "Ah, that was a copy/paster from the RFC, thanks.",
+              "createdAt": "2026-03-09T16:16:39Z",
+              "updatedAt": "2026-03-09T16:16:39Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 506,
       "id": "PR_kwDOCrLn6M7Hb2hy",
       "title": "Fix H3 TOC by placing frame defs under HTTP3Frame",
       "url": "https://github.com/quicwg/qlog/pull/506",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -28755,19 +28831,35 @@
       ],
       "body": "This is what it looks like with fix\r\n<img width=\"449\" height=\"519\" alt=\"image\" src=\"https://github.com/user-attachments/assets/b7ca3ec2-6390-49b6-a544-112ad49bbd87\" />\r\n\r\n\r\n\r\nCloses #505",
       "createdAt": "2026-03-02T20:54:54Z",
-      "updatedAt": "2026-03-02T20:55:17Z",
+      "updatedAt": "2026-03-09T16:15:50Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "274a09147b6863f6a7c95d589a248faae510d4f8",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-h3-toc",
       "headRefOid": "dab3c3046f3e943695146bbfaf656d6cfc3627bf",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-03-09T16:15:47Z",
+      "mergedAt": "2026-03-09T16:15:47Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "a61f1d85c5259f533c01178bae1a88515ef336c5"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M7pakeG",
+          "commit": {
+            "abbreviatedOid": "dab3c30"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "I noticed this too while reviewing the other PR :) Thanks for fixing it",
+          "createdAt": "2026-03-09T15:00:09Z",
+          "updatedAt": "2026-03-09T15:00:09Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
