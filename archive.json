@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-03-10T01:25:44.368170+00:00",
+  "timestamp": "2026-03-19T01:48:18.754941+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10029,6 +10029,30 @@
       "updatedAt": "2026-03-09T16:15:48Z",
       "closedAt": "2026-03-09T16:15:48Z",
       "comments": []
+    },
+    {
+      "number": 507,
+      "id": "I_kwDOCrLn6M70JVSd",
+      "title": "frames_processed event for receiving *and* sending?",
+      "url": "https://github.com/quicwg/qlog/issues/507",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "I'm prototyping qmux and qlog almost \"just works\" without any modification. However, one issue I hit was that I was only logging information about QUIC frames in packet_received and packet_sent events. HTTP/3 frames didn't hit the issue because we have frame_created and frame_parsed events there. The asymmetry makes some sense, due to how H3 is running over a stream.\n\nIn qmux, QUIC framing is also running over a stream and there are not packets. One hack for logging frames is to make fake packet events. Another would be to define a qmux event, perhaps a qmux_record_received if we go with https://github.com/quicwg/qmux/pull/26 (or overload the packet_received event for the record). Another potential event is frames_processed https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-frames_processed, taking some choice words from the spec\n\n> Implementations have the opportunity to (selectively) log this type of signal without having to log packet-level details (e.g., in packet_received). Since for almost all cases, the effects of applying a frame to the internal state of an implementation can be inferred from that frame's contents, these events are aggregated into this single frames_processed event.\n\n> In some implementations, it can be difficult to log frames directly, even when using packet_sent and packet_received events.\n\nWell, I don't have packet details so this seems ideal! However, if I use the frames_processed event I can't disambiguate between frame creation and frame parsing. Maybe we could add an optional field to explicitly indicate which one of these it is?\n\n",
+      "createdAt": "2026-03-18T15:49:43Z",
+      "updatedAt": "2026-03-18T16:06:37Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Here's an example using the suggestion of adding an optional field\n\n```\n\u001e{\"file_schema\":\"urn:ietf:params:qlog:file:sequential\",\"serialization_format\":\"JSON-SEQ\",\"title\":\"qmux-server qlog\",\"description\":\"qmux-server 1773849630\",\"trace\":{\"title\":\"qmux-server qlog\",\"description\":\"qmux-server 1773849630\",\"vantage_point\":{\"type\":\"server\"},\"event_schemas\":[\"urn:ietf:params:qlog:events:quic-12\",\"urn:ietf:params:qlog:events:http3-12\"]}}\n\u001e{\"time\":0.0,\"name\":\"quic:parameters_set\",\"data\":{\"initiator\":\"local\",\"disable_active_migration\":false,\"max_idle_timeout\":30000,\"max_udp_payload_size\":65527,\"ack_delay_exponent\":3,\"max_ack_delay\":25,\"active_connection_id_limit\":2,\"initial_max_data\":10000000,\"initial_max_stream_data_bidi_local\":1000000,\"initial_max_stream_data_bidi_remote\":1000000,\"initial_max_stream_data_uni\":1000000,\"initial_max_streams_bidi\":100,\"initial_max_streams_uni\":100,\"unknown_parameters\":[]}}\n\u001e{\"time\":0.212966,\"name\":\"quic:frames_processed\",\"data\":{\"frames\":[{\"frame_type\":\"unknown\",\"frame_type_bytes\":4562519363345321226}],\"direction\":\"created\"}}\n\u001e{\"time\":0.454615,\"name\":\"quic:frames_processed\",\"data\":{\"frames\":[{\"frame_type\":\"unknown\",\"frame_type_bytes\":4562519363345321226}],\"direction\":\"parsed\"}}\n\u001e{\"time\":0.561113,\"name\":\"quic:stream_data_moved\",\"data\":{\"stream_id\":3,\"offset\":0,\"from\":\"application\",\"to\":\"transport\",\"raw\":{\"length\":1}}}\n\u001e{\"time\":0.578628,\"name\":\"http3:stream_type_set\",\"data\":{\"initiator\":\"local\",\"stream_id\":3,\"stream_type\":\"control\"}}\n\u001e{\"time\":0.607355,\"name\":\"quic:stream_data_moved\",\"data\":{\"stream_id\":3,\"offset\":1,\"from\":\"application\",\"to\":\"transport\",\"raw\":{\"length\":18}}}\n\u001e{\"time\":0.620332,\"name\":\"http3:frame_created\",\"data\":{\"stream_id\":3,\"length\":18,\"frame\":{\"frame_type\":\"settings\",\"settings\":[{\"name\":\"4560856924583320385\",\"value\":12045197955639269}]}}}\n\u001e{\"time\":0.643862,\"name\":\"quic:stream_data_moved\",\"data\":{\"stream_id\":7,\"offset\":0,\"from\":\"application\",\"to\":\"transport\",\"raw\":{\"length\":1}}}\n\u001e{\"time\":0.653534,\"name\":\"http3:stream_type_set\",\"data\":{\"initiator\":\"local\",\"stream_id\":7,\"stream_type\":\"qpack_encode\"}}\n```",
+          "createdAt": "2026-03-18T16:06:37Z",
+          "updatedAt": "2026-03-18T16:06:37Z"
+        }
+      ]
     }
   ],
   "pulls": [
