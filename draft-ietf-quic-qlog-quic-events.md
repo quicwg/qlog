@@ -1166,26 +1166,29 @@ important, the `packet_received` event can be used instead.
 
 In some implementations, it can be difficult to log frames directly, even when
 using `packet_sent` and `packet_received` events. For these cases, the
-`frames_processed` event also contains the `packet_numbers` field, which can be
-used to more explicitly link this event to the `packet_sent`/`received events`.
-The field is an array, which supports using a single `frames_processed` event
-for multiple frames received over multiple packets. To map between frames and
-packets, the position and order of entries in the `frames` and `packet_numbers`
-is used. If the optional `packet_numbers` field is used, each frame MUST have a
-corresponding packet number at the same index.
+`frames_processed` event also contains two optional fields to help
+disambiguation: `packet_numbers` and `action`.
 
 ~~~ cddl
 QUICFramesProcessed = {
     frames: [* $QuicFrame]
     ? packet_numbers: [* uint64]
+    ? action: "created" / "parsed"
 
     * $$quic-framesprocessed-extension
 }
 ~~~
 {: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
 
-For example, an instance of the `frames_processed` event that represents four
-STREAM frames received over two packets would have the fields serialized as:
+The `packet_numbers` field can be used to more explicitly link
+`frames_processed` to the `packet_sent`/`received events`. The field is an
+array, which supports using a single `frames_processed` event for multiple
+frames received over multiple packets. To map between frames and packets, the
+position and order of entries in the `frames` and `packet_numbers` is used. If
+the optional `packet_numbers` field is used, each frame MUST have a
+corresponding packet number at the same index. For example, an instance of the
+`frames_processed` event that represents four STREAM frames received over two
+packets would have the fields serialized as:
 
 ~~~
 "frames":[
@@ -1201,6 +1204,9 @@ STREAM frames received over two packets would have the fields serialized as:
   2
 ]
 ~~~
+
+The `action` field can be used to state whether a `frame_processed` event is
+related to frame creation or parsing.
 
 ## stream_data_moved {#quic-streamdatamoved}
 
