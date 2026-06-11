@@ -70,8 +70,8 @@ of this document.
 
 This document defines a qlog event schema ({{Section 8 of QLOG-MAIN}})
 containing concrete events for the core HTTP/3 protocol {{RFC9114}} and selected
-extensions ({{!EXTENDED-CONNECT=RFC9220}}, {{!H3_PRIORITIZATION=RFC9218}}, and
-{{!H3-DATAGRAM=RFC9297}}).
+extensions ({{!EXTENDED-CONNECT=RFC9220}}, {{!EXTENSIBLE_PRIORITIZATION=RFC9218}},
+{{!H3-DATAGRAM=RFC9297}}), and {{!ORIGIN=RFC9412}}.
 
 The event namespace with identifier `http3` is defined; see {{schema-def}}. In
 this namespace multiple events derive from the qlog abstract Event class
@@ -482,7 +482,10 @@ HTTP3BaseFrames = HTTP3DataFrame /
                   HTTP3ReservedFrame /
                   HTTP3UnknownFrame
 
-$HTTP3Frame /= HTTP3BaseFrames
+HTTP3ExtensionFrames = HTTP3PriorityUpdateFrame /
+                       HTTP3OriginFrame
+
+$HTTP3Frame /= HTTP3BaseFrames / HTTP3ExtensionFrames
 ~~~
 {: #h3baseframe-def title="HTTP3BaseFrames definition"}
 
@@ -649,30 +652,6 @@ HTTP3MaxPushIDFrame = {
 ~~~
 {: #h3maxpushidframe-def title="HTTP3MaxPushIDFrame definition"}
 
-### HTTP3PriorityUpdateFrame
-
-The PRIORITY_UPDATE frame is defined in {{!RFC9218}}.
-
-~~~ cddl
-HTTP3PriorityUpdateFrame = {
-    frame_type: "priority_update"
-
-    ; if the prioritized element is a request stream
-    ? stream_id: uint64
-
-    ; if the prioritized element is a push stream
-    ? push_id: uint64
-
-    priority_field_value: HTTP3Priority
-    ? raw: RawInfo
-}
-
-; The priority value in ASCII text, encoded using Structured Fields
-; Example: u=5, i
-HTTP3Priority = text
-~~~
-{: #h3priorityupdateframe-def title="HTTP3PriorityUpdateFrame definition"}
-
 ### HTTP3ReservedFrame
 
 The frame_type_bytes field is the numerical value without variable-length
@@ -701,6 +680,48 @@ HTTP3UnknownFrame = {
 ~~~
 {: #h3unknownframe-def title="HTTP3UnknownFrame definition"}
 
+### HTTP3PriorityUpdateFrame
+
+The PRIORITY_UPDATE frame is defined in {{EXTENSIBLE_PRIORITIZATION}}.
+
+~~~ cddl
+HTTP3PriorityUpdateFrame = {
+    frame_type: "priority_update"
+
+    ; if the prioritized element is a request stream
+    ? stream_id: uint64
+
+    ; if the prioritized element is a push stream
+    ? push_id: uint64
+
+    priority_field_value: HTTP3Priority
+    ? raw: RawInfo
+}
+
+; The priority value in ASCII text, encoded using Structured Fields
+; Example: u=5, i
+HTTP3Priority = text
+~~~
+{: #h3priorityupdateframe-def title="HTTP3PriorityUpdateFrame definition"}
+
+### HTTP3OriginFrame
+
+The ORIGIN frame is defined in {{ORIGIN}}.
+
+~~~ cddl
+HTTP3OriginEntry = {
+  origin_len: uint16
+  ? ascii_origin: text
+}
+
+HTTP3OriginFrame = {
+  frame_type: "origin"
+
+  origin_entries: [* HTTP3OriginEntry]
+}
+~~~
+{: #h3originframe-def title="HTTP3OriginFrame definition"}
+
 ## HTTP3Datagram
 
 The generic `$HTTP3Datagram` is defined here as a CDDL "type socket" extension
@@ -717,6 +738,10 @@ $HTTP3Datagram /= {
 {: #h3-datagram-def title="HTTP3Datagram type socket definition"}
 
 ## HTTP3ApplicationError
+=======
+
+
+### HTTP3ApplicationError
 
 ~~~ cddl
 HTTP3ApplicationError = "http_no_error" /
