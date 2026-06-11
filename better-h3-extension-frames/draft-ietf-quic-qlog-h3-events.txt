@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 10 September 2026                                          Meta
+Expires: 13 December 2026                                           Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            9 March 2026
+                                                            11 June 2026
 
 
                      HTTP/3 qlog event definitions
@@ -45,7 +45,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 10 September 2026.
+   This Internet-Draft will expire on 13 December 2026.
 
 Copyright Notice
 
@@ -81,19 +81,20 @@ Table of Contents
    4.  HTTP/3 Data Type Definitions
      4.1.  Initiator
      4.2.  HTTP3Frame
+       4.2.1.  HTTP3DataFrame
+       4.2.2.  HTTP3HeadersFrame
+       4.2.3.  HTTP3CancelPushFrame
+       4.2.4.  HTTP3SettingsFrame
+       4.2.5.  HTTP3PushPromiseFrame
+       4.2.6.  HTTP3GoAwayFrame
+       4.2.7.  HTTP3MaxPushIDFrame
+       4.2.8.  HTTP3ReservedFrame
+       4.2.9.  HTTP3UnknownFrame
+       4.2.10. HTTP3PriorityUpdateFrame
+       4.2.11. HTTP3OriginFrame
      4.3.  HTTP3Datagram
-       4.3.1.  HTTP3DataFrame
-       4.3.2.  HTTP3HeadersFrame
-       4.3.3.  HTTP3CancelPushFrame
-       4.3.4.  HTTP3SettingsFrame
-       4.3.5.  HTTP3PushPromiseFrame
-       4.3.6.  HTTP3GoAwayFrame
-       4.3.7.  HTTP3MaxPushIDFrame
-       4.3.8.  HTTP3ReservedFrame
-       4.3.9.  HTTP3UnknownFrame
-       4.3.10. HTTP3PriorityUpdateFrame
-       4.3.11. HTTP3OriginFrame
-       4.3.12. HTTP3ApplicationError
+     4.4.  HTTP3ApplicationError
+       4.4.1.  HTTP3ApplicationError
    5.  Security and Privacy Considerations
    6.  IANA Considerations
    7.  Normative References
@@ -554,30 +555,16 @@ Table of Contents
 
                    Figure 13: HTTP3BaseFrames definition
 
-4.3.  HTTP3Datagram
-
-   The generic $HTTP3Datagram is defined here as a CDDL "type socket"
-   extension point.  It can be extended to support additional HTTP/3
-   datagram types.  This document intentionally does not define any
-   specific qlog schemas for specific HTTP/3 Datagram types.
-
-   ; The HTTP3Datagram is any key-value map (e.g., JSON object)
-   $HTTP3Datagram /= {
-       * text => any
-   }
-
-              Figure 14: HTTP3Datagram type socket definition
-
-4.3.1.  HTTP3DataFrame
+4.2.1.  HTTP3DataFrame
 
    HTTP3DataFrame = {
        frame_type: "data"
        ? raw: RawInfo
    }
 
-                    Figure 15: HTTP3DataFrame definition
+                    Figure 14: HTTP3DataFrame definition
 
-4.3.2.  HTTP3HeadersFrame
+4.2.2.  HTTP3HeadersFrame
 
    The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an
    HTTP field section; see Section 7.2.2 of [HTTP/3].  HTTP3HeaderFrame,
@@ -590,7 +577,7 @@ Table of Contents
        ? value_bytes: hexstring
    }
 
-                    Figure 16: HTTP3HTTPField definition
+                    Figure 15: HTTP3HTTPField definition
 
    HTTP3HeadersFrame = {
        frame_type: "headers"
@@ -598,7 +585,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 17: HTTP3HeadersFrame definition
+                  Figure 16: HTTP3HeadersFrame definition
 
    For example, the HTTP field section
 
@@ -628,7 +615,7 @@ Table of Contents
      }
    ]
 
-                    Figure 18: HTTP3HeadersFrame example
+                    Figure 17: HTTP3HeadersFrame example
 
    Section 4.2 of [HTTP/3] and Section 5.1 of [HTTP] define rules for
    the characters used in HTTP field sections names and values.
@@ -642,7 +629,7 @@ Table of Contents
    name_bytes field and MAY include both.  An HTTP3HTTPField MAY include
    a value or value_bytes field or neither.
 
-4.3.3.  HTTP3CancelPushFrame
+4.2.3.  HTTP3CancelPushFrame
 
    HTTP3CancelPushFrame = {
        frame_type: "cancel_push"
@@ -650,9 +637,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 19: HTTP3CancelPushFrame definition
+                 Figure 18: HTTP3CancelPushFrame definition
 
-4.3.4.  HTTP3SettingsFrame
+4.2.4.  HTTP3SettingsFrame
 
    The settings field can contain zero or more entries.  Each setting
    has a name field, which corresponds to Setting Name as defined (or as
@@ -687,9 +674,9 @@ Table of Contents
                       "reserved" /
                       "unknown"
 
-                  Figure 20: HTTP3SettingsFrame definition
+                  Figure 19: HTTP3SettingsFrame definition
 
-4.3.5.  HTTP3PushPromiseFrame
+4.2.5.  HTTP3PushPromiseFrame
 
    HTTP3PushPromiseFrame = {
        frame_type: "push_promise"
@@ -698,9 +685,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                Figure 21: HTTP3PushPromiseFrame definition
+                Figure 20: HTTP3PushPromiseFrame definition
 
-4.3.6.  HTTP3GoAwayFrame
+4.2.6.  HTTP3GoAwayFrame
 
    HTTP3GoawayFrame = {
        frame_type: "goaway"
@@ -711,9 +698,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 22: HTTP3GoawayFrame definition
+                   Figure 21: HTTP3GoawayFrame definition
 
-4.3.7.  HTTP3MaxPushIDFrame
+4.2.7.  HTTP3MaxPushIDFrame
 
    HTTP3MaxPushIDFrame = {
        frame_type: "max_push_id"
@@ -721,9 +708,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 23: HTTP3MaxPushIDFrame definition
+                 Figure 22: HTTP3MaxPushIDFrame definition
 
-4.3.8.  HTTP3ReservedFrame
+4.2.8.  HTTP3ReservedFrame
 
    The frame_type_bytes field is the numerical value without variable-
    length integer encoding.
@@ -734,9 +721,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 24: HTTP3ReservedFrame definition
+                  Figure 23: HTTP3ReservedFrame definition
 
-4.3.9.  HTTP3UnknownFrame
+4.2.9.  HTTP3UnknownFrame
 
    The frame_type_bytes field is the numerical value without variable-
    length integer encoding.
@@ -747,9 +734,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 25: HTTP3UnknownFrame definition
+                  Figure 24: HTTP3UnknownFrame definition
 
-4.3.10.  HTTP3PriorityUpdateFrame
+4.2.10.  HTTP3PriorityUpdateFrame
 
    The PRIORITY_UPDATE frame is defined in [EXTENSIBLE_PRIORITIZATION].
 
@@ -770,9 +757,9 @@ Table of Contents
    ; Example: u=5, i
    HTTP3Priority = text
 
-               Figure 26: HTTP3PriorityUpdateFrame definition
+               Figure 25: HTTP3PriorityUpdateFrame definition
 
-4.3.11.  HTTP3OriginFrame
+4.2.11.  HTTP3OriginFrame
 
    The ORIGIN frame is defined in [ORIGIN].
 
@@ -787,9 +774,27 @@ Table of Contents
      origin_entries: [* HTTP3OriginEntry]
    }
 
-                   Figure 27: HTTP3OriginFrame definition
+                   Figure 26: HTTP3OriginFrame definition
 
-4.3.12.  HTTP3ApplicationError
+4.3.  HTTP3Datagram
+
+   The generic $HTTP3Datagram is defined here as a CDDL "type socket"
+   extension point.  It can be extended to support additional HTTP/3
+   datagram types.  This document intentionally does not define any
+   specific qlog schemas for specific HTTP/3 Datagram types.
+
+   ; The HTTP3Datagram is any key-value map (e.g., JSON object)
+   $HTTP3Datagram /= {
+       * text => any
+   }
+
+              Figure 27: HTTP3Datagram type socket definition
+
+4.4.  HTTP3ApplicationError
+
+   =======
+
+4.4.1.  HTTP3ApplicationError
 
    HTTP3ApplicationError = "http_no_error" /
                           "http_general_protocol_error" /
