@@ -841,7 +841,7 @@ omitted (in which case the default value of "" is assumed) or reflected in
 "common_fields" instead (see {{common-fields}}).
 
 However, in some situations, such as during QUIC's Connection Migration or when
-using Multipath features, it is useful to be able to split events across
+a transport protocol can use multiple paths, it is useful to be able to split events across
 multiple (concurrent) tuples and/or paths.
 
 Definition:
@@ -913,9 +913,10 @@ the service level:
 ~~~~~~~~
 {: #group-id-ex title="GroupID example"}
 
-Note that in some contexts (for example a Multipath transport protocol) it might
-make sense to add additional contextual per-event fields (for example TupleID,
-see {{tuple-field}}), rather than use the group_id field for that purpose.
+Note that in some contexts (for example a transport protocol that can use
+multiple paths) it might make sense to add additional contextual per-event
+fields (for example TupleID, see {{tuple-field}}), rather than use the group_id
+field for that purpose.
 
 Note also that, typically, a single trace only contains events belonging to a
 single logical group (for example, an individual QUIC connection). As such,
