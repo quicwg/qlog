@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 10 September 2026                                          Meta
+Expires: 13 December 2026                                           Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            9 March 2026
+                                                            11 June 2026
 
 
                      HTTP/3 qlog event definitions
@@ -45,7 +45,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 10 September 2026.
+   This Internet-Draft will expire on 13 December 2026.
 
 Copyright Notice
 
@@ -88,11 +88,13 @@ Table of Contents
        4.2.5.  HTTP3PushPromiseFrame
        4.2.6.  HTTP3GoAwayFrame
        4.2.7.  HTTP3MaxPushIDFrame
-       4.2.8.  HTTP3PriorityUpdateFrame
-       4.2.9.  HTTP3ReservedFrame
-       4.2.10. HTTP3UnknownFrame
+       4.2.8.  HTTP3ReservedFrame
+       4.2.9.  HTTP3UnknownFrame
+       4.2.10. HTTP3PriorityUpdateFrame
+       4.2.11. HTTP3OriginFrame
      4.3.  HTTP3Datagram
      4.4.  HTTP3ApplicationError
+       4.4.1.  HTTP3ApplicationError
    5.  Security and Privacy Considerations
    6.  IANA Considerations
    7.  Normative References
@@ -118,8 +120,8 @@ Table of Contents
 
    This document defines a qlog event schema (Section 8 of [QLOG-MAIN])
    containing concrete events for the core HTTP/3 protocol [HTTP/3] and
-   selected extensions ([EXTENDED-CONNECT], [H3_PRIORITIZATION], and
-   [H3-DATAGRAM]).
+   selected extensions ([EXTENDED-CONNECT], [EXTENSIBLE_PRIORITIZATION],
+   [H3-DATAGRAM]), and [ORIGIN].
 
    The event namespace with identifier http3 is defined; see Section 2.
    In this namespace multiple events derive from the qlog abstract Event
@@ -546,7 +548,10 @@ Table of Contents
                      HTTP3ReservedFrame /
                      HTTP3UnknownFrame
 
-   $HTTP3Frame /= HTTP3BaseFrames
+   HTTP3ExtensionFrames = HTTP3PriorityUpdateFrame /
+                          HTTP3OriginFrame
+
+   $HTTP3Frame /= HTTP3BaseFrames / HTTP3ExtensionFrames
 
                    Figure 13: HTTP3BaseFrames definition
 
@@ -705,9 +710,35 @@ Table of Contents
 
                  Figure 22: HTTP3MaxPushIDFrame definition
 
-4.2.8.  HTTP3PriorityUpdateFrame
+4.2.8.  HTTP3ReservedFrame
 
-   The PRIORITY_UPDATE frame is defined in [RFC9218].
+   The frame_type_bytes field is the numerical value without variable-
+   length integer encoding.
+
+   HTTP3ReservedFrame = {
+       frame_type: "reserved"
+       frame_type_bytes: uint64
+       ? raw: RawInfo
+   }
+
+                  Figure 23: HTTP3ReservedFrame definition
+
+4.2.9.  HTTP3UnknownFrame
+
+   The frame_type_bytes field is the numerical value without variable-
+   length integer encoding.
+
+   HTTP3UnknownFrame = {
+       frame_type: "unknown"
+       frame_type_bytes: uint64
+       ? raw: RawInfo
+   }
+
+                  Figure 24: HTTP3UnknownFrame definition
+
+4.2.10.  HTTP3PriorityUpdateFrame
+
+   The PRIORITY_UPDATE frame is defined in [EXTENSIBLE_PRIORITIZATION].
 
    HTTP3PriorityUpdateFrame = {
        frame_type: "priority_update"
@@ -726,33 +757,24 @@ Table of Contents
    ; Example: u=5, i
    HTTP3Priority = text
 
-               Figure 23: HTTP3PriorityUpdateFrame definition
+               Figure 25: HTTP3PriorityUpdateFrame definition
 
-4.2.9.  HTTP3ReservedFrame
+4.2.11.  HTTP3OriginFrame
 
-   The frame_type_bytes field is the numerical value without variable-
-   length integer encoding.
+   The ORIGIN frame is defined in [ORIGIN].
 
-   HTTP3ReservedFrame = {
-       frame_type: "reserved"
-       frame_type_bytes: uint64
-       ? raw: RawInfo
+   HTTP3OriginEntry = {
+     origin_len: uint16
+     ? ascii_origin: text
    }
 
-                  Figure 24: HTTP3ReservedFrame definition
+   HTTP3OriginFrame = {
+     frame_type: "origin"
 
-4.2.10.  HTTP3UnknownFrame
-
-   The frame_type_bytes field is the numerical value without variable-
-   length integer encoding.
-
-   HTTP3UnknownFrame = {
-       frame_type: "unknown"
-       frame_type_bytes: uint64
-       ? raw: RawInfo
+     origin_entries: [* HTTP3OriginEntry]
    }
 
-                  Figure 25: HTTP3UnknownFrame definition
+                   Figure 26: HTTP3OriginFrame definition
 
 4.3.  HTTP3Datagram
 
@@ -766,9 +788,13 @@ Table of Contents
        * text => any
    }
 
-              Figure 26: HTTP3Datagram type socket definition
+              Figure 27: HTTP3Datagram type socket definition
 
 4.4.  HTTP3ApplicationError
+
+   =======
+
+4.4.1.  HTTP3ApplicationError
 
    HTTP3ApplicationError = "http_no_error" /
                           "http_general_protocol_error" /
@@ -788,7 +814,7 @@ Table of Contents
                           "http_connect_error" /
                           "http_version_fallback"
 
-                Figure 27: HTTP3ApplicationError definition
+                Figure 28: HTTP3ApplicationError definition
 
    The HTTP3ApplicationError extends the general $ApplicationError
    definition in the qlog QUIC document, see [QLOG-QUIC].
@@ -833,15 +859,15 @@ Table of Contents
               RFC 9220, DOI 10.17487/RFC9220, June 2022,
               <https://www.rfc-editor.org/rfc/rfc9220>.
 
+   [EXTENSIBLE_PRIORITIZATION]
+              Oku, K. and L. Pardue, "Extensible Prioritization Scheme
+              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
+              <https://www.rfc-editor.org/rfc/rfc9218>.
+
    [H3-DATAGRAM]
               Schinazi, D. and L. Pardue, "HTTP Datagrams and the
               Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
               2022, <https://www.rfc-editor.org/rfc/rfc9297>.
-
-   [H3_PRIORITIZATION]
-              Oku, K. and L. Pardue, "Extensible Prioritization Scheme
-              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
-              <https://www.rfc-editor.org/rfc/rfc9218>.
 
    [HTTP]     Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
               Ed., "HTTP Semantics", STD 97, RFC 9110,
@@ -850,6 +876,10 @@ Table of Contents
 
    [HTTP/3]   Bishop, M., Ed., "HTTP/3", RFC 9114, DOI 10.17487/RFC9114,
               June 2022, <https://www.rfc-editor.org/rfc/rfc9114>.
+
+   [ORIGIN]   Bishop, M., "The ORIGIN Extension in HTTP/3", RFC 9412,
+              DOI 10.17487/RFC9412, June 2023,
+              <https://www.rfc-editor.org/rfc/rfc9412>.
 
    [QLOG-MAIN]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
