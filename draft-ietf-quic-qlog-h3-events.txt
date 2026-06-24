@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 13 December 2026                                           Meta
+Expires: 26 December 2026                                           Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            11 June 2026
+                                                            24 June 2026
 
 
                      HTTP/3 qlog event definitions
@@ -18,8 +18,9 @@ Expires: 13 December 2026                                           Meta
 
 Abstract
 
-   This document defines a qlog event schema containing concrete events
-   for the core HTTP/3 protocol and selected extensions.
+   This document defines qlog event schemas containing concrete events
+   for the core HTTP/3 protocol and selected extensions.  It also
+   defines an http namespace for the Capsule Protocol.
 
 Note to Readers
 
@@ -45,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 13 December 2026.
+   This Internet-Draft will expire on 26 December 2026.
 
 Copyright Notice
 
@@ -66,7 +67,7 @@ Table of Contents
    1.  Introduction
      1.1.  Usage with QUIC
      1.2.  Notational Conventions
-   2.  Event Schema Definition
+   2.  HTTP/3 Event Schema Definition
      2.1.  Draft Event Schema Identification
    3.  HTTP/3 Events
      3.1.  parameters_set
@@ -95,9 +96,18 @@ Table of Contents
      4.3.  HTTP3Datagram
      4.4.  HTTP3ApplicationError
        4.4.1.  HTTP3ApplicationError
-   5.  Security and Privacy Considerations
-   6.  IANA Considerations
-   7.  Normative References
+   5.  HTTP Event Schema Definition
+     5.1.  Draft Event Schema Identification
+   6.  HTTP Events
+     6.1.  capsule_created
+     6.2.  capsule_parsed
+   7.  HTTP Data Type Definitions
+     7.1.  HTTPCapsule
+       7.1.1.  HTTPCapsuleDatagram
+       7.1.2.  HTTPCapsuleUnknown
+   8.  Security and Privacy Considerations
+   9.  IANA Considerations
+   10. Normative References
    Acknowledgements
    Change Log
      Since draft-ietf-quic-qlog-h3-events-11:
@@ -120,8 +130,11 @@ Table of Contents
 
    This document defines a qlog event schema (Section 8 of [QLOG-MAIN])
    containing concrete events for the core HTTP/3 protocol [HTTP/3] and
-   selected extensions ([EXTENDED-CONNECT], [EXTENSIBLE_PRIORITIZATION],
-   [H3-DATAGRAM]), and [ORIGIN].
+   selected extensions: Extended CONNECT ([EXTENDED-CONNECT]),
+   PRIORITY_UPDATE (Section 7 of [PRIORITIZATION]), ORIGIN [ORIGIN], and
+   HTTP/3 Datagrams Section 2.1 of [DGRAM-AND-CAPSULE]).  It also
+   defines a schema for the HTTP Capsule Protocol (Section 3 of
+   [DGRAM-AND-CAPSULE].
 
    The event namespace with identifier http3 is defined; see Section 2.
    In this namespace multiple events derive from the qlog abstract Event
@@ -157,6 +170,19 @@ Table of Contents
          +---------------------------+------------+-------------+
 
                           Table 1: HTTP/3 Events
+
+   Table 2 summarizes the name value of each event type that is defined
+   in the http namespace in this specification.
+
+            +======================+============+=============+
+            | Name value           | Importance | Definition  |
+            +======================+============+=============+
+            | http:capsule_created | Core       | Section 6.1 |
+            +----------------------+------------+-------------+
+            | http:capsule_parsed  | Core       | Section 6.2 |
+            +----------------------+------------+-------------+
+
+                            Table 2: HTTP Events
 
 1.1.  Usage with QUIC
 
@@ -195,7 +221,7 @@ Table of Contents
    document are intentionally agnostic to serialization formats.  The
    choice of format is an implementation decision.
 
-2.  Event Schema Definition
+2.  HTTP/3 Event Schema Definition
 
    This document describes how the core HTTP/3 protocol and selected
    extensions can be expressed in qlog using a newly defined event
@@ -739,7 +765,7 @@ Table of Contents
 
 4.2.10.  HTTP3PriorityUpdateFrame
 
-   The PRIORITY_UPDATE frame is defined in [EXTENSIBLE_PRIORITIZATION].
+   The PRIORITY_UPDATE frame is defined in [PRIORITIZATION].
 
    HTTP3PriorityUpdateFrame = {
        frame_type: "priority_update"
@@ -824,12 +850,140 @@ Table of Contents
    ; e.g., QUIC's ConnectionClose Frame
    $ApplicationError /= HTTP3ApplicationError
 
-5.  Security and Privacy Considerations
+5.  HTTP Event Schema Definition
+
+   This document describes how the Capsule Protocol can be expressed in
+   qlog using a newly defined event schema.  Per the requirements in
+   Section 8 of [QLOG-MAIN], this document registers the http namespace.
+   The event schema URI is urn:ietf:params:qlog:events:http.
+
+5.1.  Draft Event Schema Identification
+
+   This section is to be removed before publishing as an RFC.
+
+   Only implementations of the final, published RFC can use the events
+   belonging to the event schema with the URI
+   urn:ietf:params:qlog:events:http.  Until such an RFC exists,
+   implementations MUST NOT identify themselves using this URI.
+
+   Implementations of draft versions of the event schema MUST append the
+   string "-" and the corresponding draft number to the URI.  For
+   example, draft 07 of this document is identified using the URI
+   urn:ietf:params:qlog:events:http-07.
+
+   The namespace identifier itself is not affected by this requirement.
+
+6.  HTTP Events
+
+   HTTP events extend the $ProtocolEventData extension point defined in
+   [QLOG-MAIN].  Additionally, they allow for direct extensibility by
+   their use of per-event extension points via the $$ CDDL "group
+   socket" syntax, as also described in [QLOG-MAIN].
+
+   HTTPEventData = HTTPCapsuleCreated /
+                   HTTPCapsuleParsed
+
+   $ProtocolEventData /= HTTPEventData
+
+    Figure 29: HTTPEventData definition and ProtocolEventData extension
+
+   The concrete HTTP event types are further defined below, their type
+   identifier is the heading name.
+
+6.1.  capsule_created
+
+   The capsule_created event is emitted when a Capsule is created (see
+   (Section 3 of [DGRAM-AND-CAPSULE]).  It has Core importance level.
+
+   This event does not necessarily coincide with data getting passed to
+   the transport layer.  In HTTP/3, capsules are sent inside DATA
+   frames, so the frame_created event would be logged separately.
+
+   HTTPCapsuleCreated = {
+       stream_id: uint64
+
+       capsule: $HTTPCapsule
+
+       * $$http-capsulecreated-extension
+   }
+
+                  Figure 30: HTTPCapsuleCreated definition
+
+6.2.  capsule_parsed
+
+   The capsule_parsed event is emitted when a Capsule is parsed (see
+   (Section 3 of [DGRAM-AND-CAPSULE]).  It has Core importance level.
+
+   This event is not necessarily the same as when the data is actually
+   received on the transport layer.  In HTTP/3, capsules are received
+   inside DATA frames, so the frame_parsed event would be logged
+   separately.
+
+   HTTPCapsuleParsed = {
+       stream_id: uint64
+
+       capsule: $HTTPCapsule
+
+       * $$http-capsuleparsed-extension
+   }
+
+                  Figure 31: HTTPCapsuleParsed definition
+
+7.  HTTP Data Type Definitions
+
+   The following data type definitions can be used in HTTP events.
+
+7.1.  HTTPCapsule
+
+   The generic $HTTPCapsule is defined here as a CDDL "type socket"
+   extension point.  It can be extended to support additional capsule
+   types.
+
+   ; The HTTPCapsule is any key-value map (e.g., JSON object)
+   $HTTPCapsule /= {
+       * text => any
+   }
+
+               Figure 32: HTTPCapsule type socket definition
+
+   The capsule types defined in this document are as follows:
+
+   HTTPBaseCapsules = HTTPCapsuleDatagram /
+                      HTTPCapsuleUnknown
+
+   $HTTPCapsule /= HTTPBaseCapsules
+
+                   Figure 33: HTTPBaseCapsules definition
+
+7.1.1.  HTTPCapsuleDatagram
+
+   HTTPCapsuleDatagram = {
+       capsule_type: "datagram"
+       ? raw: RawInfo
+   }
+
+                 Figure 34: HTTPCapsuleDatagram definition
+
+7.1.2.  HTTPCapsuleUnknown
+
+   The capsule_type_value field is the numerical value without variable-
+   length integer encoding.
+
+   HTTPCapsuleUnknown = {
+       capsule_type: "unknown"
+
+       ? capsule_type_value: uint64
+       ? raw: RawInfo
+   }
+
+                  Figure 35: HTTPCapsuleUnknown definition
+
+8.  Security and Privacy Considerations
 
    The security and privacy considerations discussed in Section 14 of
    [QLOG-MAIN] apply to this document as well.
 
-6.  IANA Considerations
+9.  IANA Considerations
 
    This document registers a new entry in the "qlog event schema URIs"
    registry (created in Section 15 of [QLOG-MAIN]).
@@ -847,7 +1001,20 @@ Table of Contents
 
    Reference:  This Document
 
-7.  Normative References
+   This document registers a new entry in the "qlog event schema URIs"
+   registry.
+
+   Event schema URI:  urn:ietf:params:qlog:events:http
+
+   Namespace  http
+
+   Event Types  capsule_created,capsule_parsed
+
+   Description:  Event definitions for the Capsule Protocol.
+
+   Reference:  This Document
+
+10.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -855,20 +1022,15 @@ Table of Contents
               JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
               June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
 
+   [DGRAM-AND-CAPSULE]
+              Schinazi, D. and L. Pardue, "HTTP Datagrams and the
+              Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
+              2022, <https://www.rfc-editor.org/rfc/rfc9297>.
+
    [EXTENDED-CONNECT]
               Hamilton, R., "Bootstrapping WebSockets with HTTP/3",
               RFC 9220, DOI 10.17487/RFC9220, June 2022,
               <https://www.rfc-editor.org/rfc/rfc9220>.
-
-   [EXTENSIBLE_PRIORITIZATION]
-              Oku, K. and L. Pardue, "Extensible Prioritization Scheme
-              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
-              <https://www.rfc-editor.org/rfc/rfc9218>.
-
-   [H3-DATAGRAM]
-              Schinazi, D. and L. Pardue, "HTTP Datagrams and the
-              Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
-              2022, <https://www.rfc-editor.org/rfc/rfc9297>.
 
    [HTTP]     Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
               Ed., "HTTP Semantics", STD 97, RFC 9110,
@@ -881,6 +1043,11 @@ Table of Contents
    [ORIGIN]   Bishop, M., "The ORIGIN Extension in HTTP/3", RFC 9412,
               DOI 10.17487/RFC9412, June 2023,
               <https://www.rfc-editor.org/rfc/rfc9412>.
+
+   [PRIORITIZATION]
+              Oku, K. and L. Pardue, "Extensible Prioritization Scheme
+              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
+              <https://www.rfc-editor.org/rfc/rfc9218>.
 
    [QLOG-MAIN]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
