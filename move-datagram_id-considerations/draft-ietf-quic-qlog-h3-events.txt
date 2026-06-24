@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 20 April 2026                                              Meta
+Expires: 26 December 2026                                           Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                         17 October 2025
+                                                            24 June 2026
 
 
                      HTTP/3 qlog event definitions
@@ -45,11 +45,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 20 April 2026.
+   This Internet-Draft will expire on 26 December 2026.
 
 Copyright Notice
 
-   Copyright (c) 2025 IETF Trust and the persons identified as the
+   Copyright (c) 2026 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
    This document is subject to BCP 78 and the IETF Trust's Legal
@@ -79,25 +79,28 @@ Table of Contents
      3.8.  datagram_parsed
      3.9.  push_resolved
    4.  HTTP/3 Data Type Definitions
-     4.1.  Owner
+     4.1.  Initiator
      4.2.  HTTP3Frame
+       4.2.1.  HTTP3DataFrame
+       4.2.2.  HTTP3HeadersFrame
+       4.2.3.  HTTP3CancelPushFrame
+       4.2.4.  HTTP3SettingsFrame
+       4.2.5.  HTTP3PushPromiseFrame
+       4.2.6.  HTTP3GoAwayFrame
+       4.2.7.  HTTP3MaxPushIDFrame
+       4.2.8.  HTTP3ReservedFrame
+       4.2.9.  HTTP3UnknownFrame
+       4.2.10. HTTP3PriorityUpdateFrame
+       4.2.11. HTTP3OriginFrame
      4.3.  HTTP3Datagram
-       4.3.1.  HTTP3DataFrame
-       4.3.2.  HTTP3HeadersFrame
-       4.3.3.  HTTP3CancelPushFrame
-       4.3.4.  HTTP3SettingsFrame
-       4.3.5.  HTTP3PushPromiseFrame
-       4.3.6.  HTTP3GoAwayFrame
-       4.3.7.  HTTP3MaxPushIDFrame
-       4.3.8.  HTTP3PriorityUpdateFrame
-       4.3.9.  HTTP3ReservedFrame
-       4.3.10. HTTP3UnknownFrame
-       4.3.11. HTTP3ApplicationError
+     4.4.  HTTP3ApplicationError
+       4.4.1.  HTTP3ApplicationError
    5.  Security and Privacy Considerations
    6.  IANA Considerations
    7.  Normative References
    Acknowledgements
    Change Log
+     Since draft-ietf-quic-qlog-h3-events-11:
      Since draft-ietf-quic-qlog-h3-events-09:
      Since draft-ietf-quic-qlog-h3-events-08:
      Since draft-ietf-quic-qlog-h3-events-07:
@@ -117,8 +120,8 @@ Table of Contents
 
    This document defines a qlog event schema (Section 8 of [QLOG-MAIN])
    containing concrete events for the core HTTP/3 protocol [HTTP/3] and
-   selected extensions ([EXTENDED-CONNECT], [H3_PRIORITIZATION], and
-   [H3-DATAGRAM]).
+   selected extensions ([EXTENDED-CONNECT], [EXTENSIBLE_PRIORITIZATION],
+   [H3-DATAGRAM]), and [ORIGIN].
 
    The event namespace with identifier http3 is defined; see Section 2.
    In this namespace multiple events derive from the qlog abstract Event
@@ -219,9 +222,10 @@ Table of Contents
 3.  HTTP/3 Events
 
    HTTP/3 events extend the $ProtocolEventData extension point defined
-   in [QLOG-MAIN].  Additionally, they allow for direct extensibility by
-   their use of per-event extension points via the $$ CDDL "group
-   socket" syntax, as also described in [QLOG-MAIN].
+   in Section 8.2 of [QLOG-MAIN].  Additionally, they allow for direct
+   extensibility by their use of per-event extension points via the $$
+   CDDL "group socket" syntax, as also described in Section 8.2 of
+   [QLOG-MAIN].
 
    HTTP3EventData = HTTP3ParametersSet /
                  HTTP3ParametersRestored /
@@ -267,12 +271,12 @@ Table of Contents
    therefore a qlog can have multiple instances of parameters_set with
    different fields set.
 
-   The "owner" field reflects how Settings are exchanged on a
+   The "initiator" field reflects how Settings are exchanged on a
    connection.  Sent settings have the value "local" and received
    settings have the value "received".
 
    HTTP3ParametersSet = {
-       ? owner: Owner
+       ? initiator: Initiator
 
        ; RFC9114
        ? max_field_section_size: uint64
@@ -350,7 +354,7 @@ Table of Contents
    stream types.
 
    HTTP3StreamTypeSet = {
-       ? owner: Owner
+       ? initiator: Initiator
        stream_id: uint64
        stream_type: $HTTP3StreamType
 
@@ -421,7 +425,6 @@ Table of Contents
 
    HTTP3FrameCreated = {
        stream_id: uint64
-
        frame: $HTTP3Frame
 
        * $$http3-framecreated-extension
@@ -440,7 +443,6 @@ Table of Contents
 
    HTTP3FrameParsed = {
        stream_id: uint64
-
        frame: $HTTP3Frame
 
        * $$h3-frameparsed-extension
@@ -515,12 +517,12 @@ Table of Contents
 
    The following data type definitions can be used in HTTP/3 events.
 
-4.1.  Owner
+4.1.  Initiator
 
-   Owner = "local" /
-           "remote"
+   Initiator = "local" /
+               "remote"
 
-                        Figure 11: Owner definition
+                      Figure 11: Initiator definition
 
 4.2.  HTTP3Frame
 
@@ -547,34 +549,23 @@ Table of Contents
                      HTTP3ReservedFrame /
                      HTTP3UnknownFrame
 
-   $HTTP3Frame /= HTTP3BaseFrames
+   HTTP3ExtensionFrames = HTTP3PriorityUpdateFrame /
+                          HTTP3OriginFrame
+
+   $HTTP3Frame /= HTTP3BaseFrames / HTTP3ExtensionFrames
 
                    Figure 13: HTTP3BaseFrames definition
 
-4.3.  HTTP3Datagram
-
-   The generic $HTTP3Datagram is defined here as a CDDL "type socket"
-   extension point.  It can be extended to support additional HTTP/3
-   datagram types.  This document intentionally does not define any
-   specific qlog schemas for specific HTTP/3 Datagram types.
-
-   ; The HTTP3Datagram is any key-value map (e.g., JSON object)
-   $HTTP3Datagram /= {
-       * text => any
-   }
-
-              Figure 14: HTTP3Datagram type socket definition
-
-4.3.1.  HTTP3DataFrame
+4.2.1.  HTTP3DataFrame
 
    HTTP3DataFrame = {
        frame_type: "data"
        ? raw: RawInfo
    }
 
-                    Figure 15: HTTP3DataFrame definition
+                    Figure 14: HTTP3DataFrame definition
 
-4.3.2.  HTTP3HeadersFrame
+4.2.2.  HTTP3HeadersFrame
 
    The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an
    HTTP field section; see Section 7.2.2 of [HTTP/3].  HTTP3HeaderFrame,
@@ -587,7 +578,7 @@ Table of Contents
        ? value_bytes: hexstring
    }
 
-                    Figure 16: HTTP3HTTPField definition
+                    Figure 15: HTTP3HTTPField definition
 
    HTTP3HeadersFrame = {
        frame_type: "headers"
@@ -595,7 +586,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 17: HTTP3HeadersFrame definition
+                  Figure 16: HTTP3HeadersFrame definition
 
    For example, the HTTP field section
 
@@ -625,7 +616,7 @@ Table of Contents
      }
    ]
 
-                    Figure 18: HTTP3HeadersFrame example
+                    Figure 17: HTTP3HeadersFrame example
 
    Section 4.2 of [HTTP/3] and Section 5.1 of [HTTP] define rules for
    the characters used in HTTP field sections names and values.
@@ -639,7 +630,7 @@ Table of Contents
    name_bytes field and MAY include both.  An HTTP3HTTPField MAY include
    a value or value_bytes field or neither.
 
-4.3.3.  HTTP3CancelPushFrame
+4.2.3.  HTTP3CancelPushFrame
 
    HTTP3CancelPushFrame = {
        frame_type: "cancel_push"
@@ -647,9 +638,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 19: HTTP3CancelPushFrame definition
+                 Figure 18: HTTP3CancelPushFrame definition
 
-4.3.4.  HTTP3SettingsFrame
+4.2.4.  HTTP3SettingsFrame
 
    The settings field can contain zero or more entries.  Each setting
    has a name field, which corresponds to Setting Name as defined (or as
@@ -684,9 +675,9 @@ Table of Contents
                       "reserved" /
                       "unknown"
 
-                  Figure 20: HTTP3SettingsFrame definition
+                  Figure 19: HTTP3SettingsFrame definition
 
-4.3.5.  HTTP3PushPromiseFrame
+4.2.5.  HTTP3PushPromiseFrame
 
    HTTP3PushPromiseFrame = {
        frame_type: "push_promise"
@@ -695,9 +686,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                Figure 21: HTTP3PushPromiseFrame definition
+                Figure 20: HTTP3PushPromiseFrame definition
 
-4.3.6.  HTTP3GoAwayFrame
+4.2.6.  HTTP3GoAwayFrame
 
    HTTP3GoawayFrame = {
        frame_type: "goaway"
@@ -708,9 +699,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 22: HTTP3GoawayFrame definition
+                   Figure 21: HTTP3GoawayFrame definition
 
-4.3.7.  HTTP3MaxPushIDFrame
+4.2.7.  HTTP3MaxPushIDFrame
 
    HTTP3MaxPushIDFrame = {
        frame_type: "max_push_id"
@@ -718,11 +709,37 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 23: HTTP3MaxPushIDFrame definition
+                 Figure 22: HTTP3MaxPushIDFrame definition
 
-4.3.8.  HTTP3PriorityUpdateFrame
+4.2.8.  HTTP3ReservedFrame
 
-   The PRIORITY_UPDATE frame is defined in [RFC9218].
+   The frame_type_bytes field is the numerical value without variable-
+   length integer encoding.
+
+   HTTP3ReservedFrame = {
+       frame_type: "reserved"
+       frame_type_bytes: uint64
+       ? raw: RawInfo
+   }
+
+                  Figure 23: HTTP3ReservedFrame definition
+
+4.2.9.  HTTP3UnknownFrame
+
+   The frame_type_bytes field is the numerical value without variable-
+   length integer encoding.
+
+   HTTP3UnknownFrame = {
+       frame_type: "unknown"
+       frame_type_bytes: uint64
+       ? raw: RawInfo
+   }
+
+                  Figure 24: HTTP3UnknownFrame definition
+
+4.2.10.  HTTP3PriorityUpdateFrame
+
+   The PRIORITY_UPDATE frame is defined in [EXTENSIBLE_PRIORITIZATION].
 
    HTTP3PriorityUpdateFrame = {
        frame_type: "priority_update"
@@ -741,35 +758,44 @@ Table of Contents
    ; Example: u=5, i
    HTTP3Priority = text
 
-               Figure 24: HTTP3PriorityUpdateFrame definition
+               Figure 25: HTTP3PriorityUpdateFrame definition
 
-4.3.9.  HTTP3ReservedFrame
+4.2.11.  HTTP3OriginFrame
 
-   The frame_type_bytes field is the numerical value without variable-
-   length integer encoding.
+   The ORIGIN frame is defined in [ORIGIN].
 
-   HTTP3ReservedFrame = {
-       frame_type: "reserved"
-       frame_type_bytes: uint64
-       ? raw: RawInfo
+   HTTP3OriginEntry = {
+     origin_len: uint16
+     ? ascii_origin: text
    }
 
-                  Figure 25: HTTP3ReservedFrame definition
+   HTTP3OriginFrame = {
+     frame_type: "origin"
 
-4.3.10.  HTTP3UnknownFrame
-
-   The frame_type_bytes field is the numerical value without variable-
-   length integer encoding.
-
-   HTTP3UnknownFrame = {
-       frame_type: "unknown"
-       frame_type_bytes: uint64
-       ? raw: RawInfo
+     origin_entries: [* HTTP3OriginEntry]
    }
 
-                  Figure 26: HTTP3UnknownFrame definition
+                   Figure 26: HTTP3OriginFrame definition
 
-4.3.11.  HTTP3ApplicationError
+4.3.  HTTP3Datagram
+
+   The generic $HTTP3Datagram is defined here as a CDDL "type socket"
+   extension point.  It can be extended to support additional HTTP/3
+   datagram types.  This document intentionally does not define any
+   specific qlog schemas for specific HTTP/3 Datagram types.
+
+   ; The HTTP3Datagram is any key-value map (e.g., JSON object)
+   $HTTP3Datagram /= {
+       * text => any
+   }
+
+              Figure 27: HTTP3Datagram type socket definition
+
+4.4.  HTTP3ApplicationError
+
+   =======
+
+4.4.1.  HTTP3ApplicationError
 
    HTTP3ApplicationError = "http_no_error" /
                           "http_general_protocol_error" /
@@ -789,7 +815,7 @@ Table of Contents
                           "http_connect_error" /
                           "http_version_fallback"
 
-                Figure 27: HTTP3ApplicationError definition
+                Figure 28: HTTP3ApplicationError definition
 
    The HTTP3ApplicationError extends the general $ApplicationError
    definition in the qlog QUIC document, see [QLOG-QUIC].
@@ -800,8 +826,8 @@ Table of Contents
 
 5.  Security and Privacy Considerations
 
-   The security and privacy considerations discussed in [QLOG-MAIN]
-   apply to this document as well.
+   The security and privacy considerations discussed in Section 14 of
+   [QLOG-MAIN] apply to this document as well.
 
 6.  IANA Considerations
 
@@ -834,15 +860,15 @@ Table of Contents
               RFC 9220, DOI 10.17487/RFC9220, June 2022,
               <https://www.rfc-editor.org/rfc/rfc9220>.
 
+   [EXTENSIBLE_PRIORITIZATION]
+              Oku, K. and L. Pardue, "Extensible Prioritization Scheme
+              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
+              <https://www.rfc-editor.org/rfc/rfc9218>.
+
    [H3-DATAGRAM]
               Schinazi, D. and L. Pardue, "HTTP Datagrams and the
               Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
               2022, <https://www.rfc-editor.org/rfc/rfc9297>.
-
-   [H3_PRIORITIZATION]
-              Oku, K. and L. Pardue, "Extensible Prioritization Scheme
-              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
-              <https://www.rfc-editor.org/rfc/rfc9218>.
 
    [HTTP]     Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
               Ed., "HTTP Semantics", STD 97, RFC 9110,
@@ -852,20 +878,24 @@ Table of Contents
    [HTTP/3]   Bishop, M., Ed., "HTTP/3", RFC 9114, DOI 10.17487/RFC9114,
               June 2022, <https://www.rfc-editor.org/rfc/rfc9114>.
 
+   [ORIGIN]   Bishop, M., "The ORIGIN Extension in HTTP/3", RFC 9412,
+              DOI 10.17487/RFC9412, June 2023,
+              <https://www.rfc-editor.org/rfc/rfc9412>.
+
    [QLOG-MAIN]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
               "qlog: Structured Logging for Network Protocols", Work in
               Progress, Internet-Draft, draft-ietf-quic-qlog-main-
-              schema-12, 7 July 2025,
+              schema-13, 20 October 2025,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema-12>.
+              qlog-main-schema-13>.
 
    [QLOG-QUIC]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue, "QUIC
               event definitions for qlog", Work in Progress, Internet-
-              Draft, draft-ietf-quic-qlog-quic-events-11, 7 July 2025,
-              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-quic-events-11>.
+              Draft, draft-ietf-quic-qlog-quic-events-12, 20 October
+              2025, <https://datatracker.ietf.org/doc/html/draft-ietf-
+              quic-qlog-quic-events-12>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -891,12 +921,18 @@ Acknowledgements
 
    Thanks to Jana Iyengar, Brian Trammell, Dmitri Tikhonov, Stephen
    Petrides, Jari Arkko, Marcus Ihlar, Victor Vasiliev, Mirja Kühlewind,
-   Jeremy Lainé, Kazu Yamamoto, Christian Huitema, Hugo Landau and
-   Jonathan Lennox for their feedback and suggestions.
+   Jeremy Lainé, Kazu Yamamoto, Christian Huitema, Hugo Landau, Kazuho
+   Oku, and Jonathan Lennox for their feedback and suggestions.
 
 Change Log
 
    This section is to be removed before publishing as an RFC.
+
+Since draft-ietf-quic-qlog-h3-events-11:
+
+   *  Replaced all length fields with raw.length (#495)
+
+   *  Renamed owner to initiator (#498)
 
 Since draft-ietf-quic-qlog-h3-events-09:
 
