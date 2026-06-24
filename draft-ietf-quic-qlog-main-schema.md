@@ -2117,6 +2117,131 @@ Description:
 Reference:
 : {{sim-events}}
 
+## Media Type Registrations {#iana-media-types}
+
+IANA is requested to register the following media types in the "Media Types"
+registry \<https://www.iana.org/assignments/media-types/\>.
+
+### application/qlog+json Media Type {#iana-qlog-json}
+
+Type name:
+: application
+
+Subtype name:
+: qlog+json
+
+Required parameters:
+: n/a
+
+Optional parameters:
+: n/a
+
+Encoding considerations:
+: binary; see {{format-json}}
+
+Security considerations:
+: See {{privacy}} of this document
+
+Interoperability considerations:
+: See {{json-interop}} of this document
+
+Published specification:
+: This document
+
+Applications that use this media type:
+: Applications that generate, consume, or process qlog-format network protocol
+  logs, such as protocol analyzers, debugging tools, and performance monitoring
+  systems.
+
+Additional information:
+
+  Deprecated alias names for this type:
+  : n/a
+
+  Magic number(s):
+  : n/a
+
+  File extension(s):
+  : .qlog
+
+  Macintosh file type code(s):
+  : n/a
+
+Person to contact for further information:
+: QUIC WG, quic@ietf.org
+
+Intended usage:
+: COMMON
+
+Restrictions on usage:
+: n/a
+
+Author:
+: QUIC WG, quic@ietf.org
+
+Change controller:
+: IETF
+
+### application/qlog+json-seq Media Type {#iana-qlog-json-seq}
+
+Type name:
+: application
+
+Subtype name:
+: qlog+json-seq
+
+Required parameters:
+: n/a
+
+Optional parameters:
+: n/a
+
+Encoding considerations:
+: binary; see {{format-json-seq}}
+
+Security considerations:
+: See {{privacy}} of this document
+
+Interoperability considerations:
+: See {{json-interop}} of this document
+
+Published specification:
+: This document
+
+Applications that use this media type:
+: Applications that generate, consume, or process qlog-format network protocol
+  logs in a streaming fashion, such as protocol analyzers, debugging tools, and
+  performance monitoring systems.
+
+Additional information:
+
+  Deprecated alias names for this type:
+  : n/a
+
+  Magic number(s):
+  : n/a
+
+  File extension(s):
+  : .sqlog
+
+  Macintosh file type code(s):
+  : n/a
+
+Person to contact for further information:
+: QUIC WG, quic@ietf.org
+
+Intended usage:
+: COMMON
+
+Restrictions on usage:
+: n/a
+
+Author:
+: QUIC WG, quic@ietf.org
+
+Change controller:
+: IETF
+
 --- back
 
 # Acknowledgements
