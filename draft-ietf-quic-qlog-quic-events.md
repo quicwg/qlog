@@ -2138,10 +2138,10 @@ encoding.
 ResetStreamAtFrame = {
     frame_type: "reset_stream_at"
     stream_id: uint64
-    error_code: $ApplicationError
+    error: $ApplicationError
 
     ; if error_code === "unknown"
-    ? error_code_bytes: uint64
+    ? error_code: uint64
 
     ; in bytes
     final_size: uint64
