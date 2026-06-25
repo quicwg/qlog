@@ -153,11 +153,12 @@ Table of Contents
        8.13.24. TransportError
        8.13.25. ApplicationError
        8.13.26. CryptoError
-   9.  Security and Privacy Considerations
-   10. IANA Considerations
-   11. References
-     11.1.  Normative References
-     11.2.  Informative References
+   9.  Handling Packet Coalescing
+   10. Security and Privacy Considerations
+   11. IANA Considerations
+   12. References
+     12.1.  Normative References
+     12.2.  Informative References
    Acknowledgements
    Change Log
      Since draft-ietf-qlog-quic-events-11:
@@ -1016,7 +1017,7 @@ Table of Contents
    (assuming correct implementation)
 
    The datagram_id field is used to track packet coalescing, see
-   Section 5.10.
+   Section 9.
 
 5.6.  packet_received
 
@@ -1051,7 +1052,7 @@ Table of Contents
    (assuming correct implementation).
 
    The datagram_id field is used to track packet coalescing, see
-   Section 5.10.
+   Section 9.
 
 5.7.  packet_dropped
 
@@ -1110,7 +1111,7 @@ Table of Contents
    *  general: situations not clearly covered in the other categories
 
    The datagram_id field is used to track packet coalescing, see
-   Section 5.10.
+   Section 9.
 
 5.8.  packet_buffered
 
@@ -1141,7 +1142,7 @@ Table of Contents
                   Figure 17: QUICPacketBuffered definition
 
    The datagram_id field is used to track packet coalescing, see
-   Section 5.10.
+   Section 9.
 
 5.9.  packets_acked
 
@@ -1200,19 +1201,8 @@ Table of Contents
    Since QUIC implementations rarely control UDP logic directly, the raw
    data excludes UDP-level headers in all RawInfo fields.
 
-   Multiple QUIC packets can be coalesced in a single UDP datagram,
-   especially during the handshake (see Section 12.2 of
-   [QUIC-TRANSPORT]).  However, neither QUIC nor UDP themselves provide
-   an explicit mechanism to track this behaviour.  To make it possible
-   for implementations to track coalescing across packet-level and
-   datagram-level qlog events, this document defines a qlog-specific
-   mechanism for tracking coalescing across packet-level and datagram-
-   level qlog events: a "datagram identifier" carried in datagram_id
-   fields. qlog implementations that want to track coalescing can use
-   this mechanism, where multiple events sharing the same datagram_id
-   indicate they were coalesced in the same UDP datagram.  The selection
-   of specific and locally-unique datagram_id values is an
-   implementation choice.
+   The datagram_id field is used to track packet coalescing, see
+   Section 9.
 
 5.11.  udp_datagrams_received
 
@@ -1242,7 +1232,7 @@ Table of Contents
                Figure 20: QUICUDPDatagramsReceived definition
 
    The datagram_ids field is used to track packet coalescing, see
-   Section 5.10.
+   Section 9.
 
 5.12.  udp_datagram_dropped
 
@@ -2651,12 +2641,28 @@ Table of Contents
 
                      Figure 78: CryptoError definition
 
-9.  Security and Privacy Considerations
+9.  Handling Packet Coalescing
+
+   Multiple QUIC packets can be coalesced in a single UDP datagram,
+   especially during the handshake (see Section 12.2 of
+   [QUIC-TRANSPORT]).  However, neither QUIC nor UDP themselves provide
+   an explicit mechanism to track this behaviour.  To make it possible
+   for implementations to track coalescing across packet-level and
+   datagram-level qlog events, this document defines a qlog-specific
+   mechanism for tracking coalescing across packet-level and datagram-
+   level qlog events: a "datagram identifier" carried in datagram_id
+   fields. qlog implementations that want to track coalescing can use
+   this mechanism, where multiple events sharing the same datagram_id
+   indicate they were coalesced in the same UDP datagram.  The selection
+   of specific and locally-unique datagram_id values is an
+   implementation choice.
+
+10.  Security and Privacy Considerations
 
    The security and privacy considerations discussed in Section 14 of
    [QLOG-MAIN] apply to this document as well.
 
-10.  IANA Considerations
+11.  IANA Considerations
 
    This document registers a new entry in the "qlog event schema URIs"
    registry (created in Section 15 of [QLOG-MAIN]):
@@ -2682,9 +2688,9 @@ Table of Contents
 
    Reference:  This Document
 
-11.  References
+12.  References
 
-11.1.  Normative References
+12.1.  Normative References
 
    [CDDL]     Birkholz, H., Vigano, C., and C. Bormann, "Concise Data
               Definition Language (CDDL): A Notational Convention to
@@ -2740,7 +2746,7 @@ Table of Contents
               DOI 10.17487/RFC9221, March 2022,
               <https://www.rfc-editor.org/rfc/rfc9221>.
 
-11.2.  Informative References
+12.2.  Informative References
 
    [RFC7301]  Friedl, S., Popov, A., Langley, A., and E. Stephan,
               "Transport Layer Security (TLS) Application-Layer Protocol
