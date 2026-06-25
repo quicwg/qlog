@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-14T03:26:14.197680+00:00",
+  "timestamp": "2026-06-25T02:43:19.535100+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -9138,7 +9138,7 @@
       "labels": [],
       "body": "When we switched to JSON-SEQ a while back (https://github.com/quicwg/qlog/issues/172), we assumed that using record separators instead of newline-delimited JSON wouldn't cause too much pain. I think it's time to reevaluate this assumption.\r\n\r\n## vim\r\n\r\nIt also turns out that existing software is not that great at handling record record separators. Here's a screenshot of `vim` messing up the line character count (note that last line, where it usually tells you the cursor position, and it now displays 12-13).\r\n![image](https://github.com/user-attachments/assets/1bfa7d6f-c354-43dc-950e-73df0aad951d)\r\n\r\n## jq\r\n\r\n`jq` is actually the tool that's the most compatible with JSONSEQ. However, one MUST use the `--seq` flag, using standard `jq` results in the following error, which is not very helpful for the user:\r\n```\r\njq: parse error: Invalid numeric literal at line 1, column 2\r\n```\r\nI had to use a search engine to figure out how to convince `jq` to use record separators. Definitely not the end of the world, but a subpar developer experience nonetheless.\r\n\r\n## grep\r\n\r\nAnother example is `grep`. Try to extract the `transport:connection_started` event from this qlog file using `grep`:\r\n\r\n```\r\n\u001e{\r\n    \"qlog_format\":\"JSON-SEQ\",\r\n    \"qlog_version\":\"draft-03\",\r\n    \"title\":\"quic-go qlog\",\r\n    \"configuration\":{\"code_version\":\"(devel)\"},\r\n    \"trace\":{\r\n        \"vantage_point\":{\"type\":\"client\"},\r\n        \"common_fields\":{\"ODCID\":\"65b480747721258697d6\",\"group_id\":\"65b480747721258697d6\",\"reference_time\":1722494434168.3032,\"time_format\":\"relative\"},\r\n    },\r\n}\r\n\u001e{\r\n    \"time\":0.038458,\r\n    \"name\":\"transport:connection_started\",\r\n    \"data\":{\"ip_version\":\"ipv6\",\"src_ip\":\"::\",\"src_port\":55464,\"dst_ip\":\"127.0.0.1\",\"dst_port\":6121,\"src_cid\":\"36ff0294\",\"dst_cid\":\"65b480747721258697d6\"},\r\n}\r\n```\r\n\r\nFirst of all, note how GitHub renders the record separator here: \ufffd (I love seeing this character on my screen!).\r\n\r\nBut back to `grep`: I haven't figured out a way to grep for the `transport:connection_started` event, and [apparently](https://superuser.com/questions/140965/grep-changing-the-delimiter) it's not easy to change the record separator.\r\n\r\n`grep`ing is **very important** when debugging, I often find myself filtering a qlog file for the event type(s) that I'm interested in.",
       "createdAt": "2024-08-01T19:11:44Z",
-      "updatedAt": "2026-03-09T15:19:36Z",
+      "updatedAt": "2026-06-24T13:13:05Z",
       "closedAt": null,
       "comments": [
         {
@@ -9273,6 +9273,13 @@
           "body": "So, we addressed this briefly in the presentation at IETF 124 but AFAIK there were no strong opinions on any approach in the room/in the chat? \n\nIIRC @LPardue was going to try to backchannel this a bit to see what opinions were on defining our own JSON streaming format (we intentionally kept this out of the presentation then). Did anything come out of that? \n\nThis is imo still our main open issue and I'd personally still prefer the option that'll provide the least friction (just keep what we have now with JSON-SEQ and have a separate extension draft in parallel that proposes the pure-newline approach). \n\nWhat's your current stance on this @marten-seemann, since you've been the main proponent of dropping JSON-SEQ in the past? ",
           "createdAt": "2026-03-09T15:19:36Z",
           "updatedAt": "2026-03-09T15:19:36Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I had a chance to speak with some folks back at the Montreal meeting and more recently during the MoQ interim a few. \n\nThe first theme is: any form of streaming JSON is imperfect. They all have warts. Trying to stick lipstick on a pig. All that.\n\nThe second theme is: AI assistance has reduced pain and barriers significantly. People can triage issues or develop their own things much easier now. Folks in MoQ don't really seem to have concerns about JSON-SEQ.\n\nGiven the following characteristics, I propose to close this issue with no action:\n\n- age of this issue,\n- absence of strong support to switch formats,\n-  absence of volunteers to step up and do the work required to change the format and drive that through to completion in a published document",
+          "createdAt": "2026-06-24T13:13:05Z",
+          "updatedAt": "2026-06-24T13:13:05Z"
         }
       ]
     },
@@ -9710,7 +9717,7 @@
       "id": "I_kwDOCrLn6M7RVWr1",
       "title": "define logging for Capsules",
       "url": "https://github.com/quicwg/qlog/issues/486",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -9719,8 +9726,8 @@
       "labels": [],
       "body": "RFC 9297 define Capsules (in general) and DATAGRAM Capsules. We should define how to log them in an extensible way, such that applications using the Capsule protocol can easily define qlog extensions for the capsules they define.",
       "createdAt": "2025-10-14T01:38:59Z",
-      "updatedAt": "2025-11-07T07:47:15Z",
-      "closedAt": null,
+      "updatedAt": "2026-06-24T14:37:27Z",
+      "closedAt": "2026-06-24T14:37:27Z",
       "comments": [
         {
           "author": "LPardue",
@@ -9854,7 +9861,7 @@
       "labels": [],
       "body": "I started thinking about logging protocols building on top of HTTP/3, such as the various MASQUE flavors and WebTransport.\n\nKeep in mind that a single QUIC server can support multiple of these protocols, even on the same connection: In principle, you could proxy using CONNECT-UDP and serve a WebTransport session at the same time.\n\nThis leads us to the question who's logging `HTTP3Datagram` events:\n* Is it the HTTP/3 layer? If so, how does the HTTP/3 layer which application protocol is running on top of the HTTP stream that the datagram was sent / received for?\n* Is it the application layer? First of all, this seems wrong, since there might be buffer of received datagrams, leading to delayed logging of that datagram. Second, what if the datagram is never consumed (e.g. the WebTransport session might have closed)?\n\nI'm wondering if we should remove the extensibility of `HTTP3Datagram`. The HTTP/3 layer would simply log that a DATAGRAM with a respective Quarter Stream ID was received. The application layer would then log further details about that datagram, e.g. the Context ID in the case of MASQUE.",
       "createdAt": "2025-10-15T04:48:40Z",
-      "updatedAt": "2026-03-09T15:14:37Z",
+      "updatedAt": "2026-06-24T16:46:30Z",
       "closedAt": null,
       "comments": [
         {
@@ -9891,6 +9898,27 @@
           "body": "What's the status on this one @marten-seemann ? Have you further opinions through ongoing implementation work? Is this something we can improve as part of #490? \n\nI personally have no strong opinions towards the current design. ",
           "createdAt": "2026-03-09T15:14:37Z",
           "updatedAt": "2026-03-09T15:14:37Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "It seems to me that we have something that is good enough and can be made better by extensions if people feel strongly about it. Propose to close with no action.",
+          "createdAt": "2026-06-24T14:16:30Z",
+          "updatedAt": "2026-06-24T14:16:30Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I don\u2019t think what we have works at all. I was not able to implement it in my stack. Let\u2019s not close this issue. ",
+          "createdAt": "2026-06-24T16:29:50Z",
+          "updatedAt": "2026-06-24T16:29:50Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "can you be more specific about what \"doesn't work at all\"? \n\nEither the H3 layer or applications can themselves generate the event and then populate the `quarter_stream_id` field. They can add any applicaion-specific field they like such as the structured contents of \"payload\" in the `? datagram: $HTTP3Datagram` field. They could also put those fields directly in the frame via `* $$http3-datagramparsed-extension`.\n\nTo give a concrete example, quiche's HTTP/3 layer wouldn't log the `HTTP3DatagramCreated` or `HTTP3DatagramParsed` events because we deletagate that to applications. We'd probably provide the means to add arbitrary key-value pairs to a collection named after either extension point.\n\nIf the argument is we have duplicate/redundant ways to carry things, then dropping `? datagram: $HTTP3Datagram` seems reasonable. WDYT?",
+          "createdAt": "2026-06-24T16:46:01Z",
+          "updatedAt": "2026-06-24T16:46:30Z"
         }
       ]
     },
@@ -9926,9 +9954,17 @@
       "labels": [],
       "body": "The main schema defines RawInfo and our QUIC and HTTP/3 schemas use it. However, while implementing the update to latest drafts and migrating code, I wasn't always sure how to deal with things like STREAM frame RawInfo::length vs. RawInfo::payload_length. If things are ambiguous, we risk some interoperability issues. I think it would help to be quite explicit on how to populate the `raw` fields of protocol elements such as frames.",
       "createdAt": "2025-11-25T16:16:39Z",
-      "updatedAt": "2025-11-25T16:16:39Z",
+      "updatedAt": "2026-06-24T14:12:49Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I've lost track of what might help here, propose to close with no action.",
+          "createdAt": "2026-06-24T14:12:49Z",
+          "updatedAt": "2026-06-24T14:12:49Z"
+        }
+      ]
     },
     {
       "number": 501,
@@ -9942,7 +9978,7 @@
       "labels": [],
       "body": "The tuple is currently a property of the `Event`. I'm not sure if that makes sense. At the very least, it would complicate the data structures used in my implementation quite significantly.\n\nFor example, it doesn't really make sense to set the tuple on the `QUICKeyUpdated` event. With the exception of a few events like `QUICPacketSent`, `QUICPacketReceived`, `QUICPacketDropped`, etc., most events are connection-level events. This applies even more so when moving up the application stack: No HTTP/3 event benefits from specifying the tuple.\n\nI suggest:\n\n1. Moving the `TupleID` definition to the QUIC document.\n2. Making it a field in the few events where it actually applies.",
       "createdAt": "2025-12-03T05:08:43Z",
-      "updatedAt": "2026-03-09T15:12:45Z",
+      "updatedAt": "2026-06-24T14:39:30Z",
       "closedAt": null,
       "comments": [
         {
@@ -9958,6 +9994,13 @@
           "body": "The thing with Tuple is that that it's a key building block for basic \"multipath\" logic...\n\nIn that light, you probably also want to know the TupleID for things like `QUICFramesProcessed` to see on which Tuple a multipath-specific frame (MP_ACK or whatever it's called today) was received etc. Similar for congestion control stuff where you're managing multiple paths etc.\n\nGiven that reworking that would require (imo) a bunch of doublechecking (and revisiting the multipath can of worms again), and given that it's an optional field that you'd be fully in your rights to only log with the events listed in the issue text, I wouldn't really change the base design here.\n\nWhat we could do, is make it clearer you don't HAVE to log`tuple` with every single event even if you're in a trace logging multiple tuples? ",
           "createdAt": "2026-03-09T15:12:45Z",
           "updatedAt": "2026-03-09T15:12:45Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> What we could do, is make it clearer you don't HAVE to logtuple with every single event even if you're in a trace logging multiple tuples?\n\n@rmarx can you propose a PR with this suggestion?",
+          "createdAt": "2026-06-24T14:39:30Z",
+          "updatedAt": "2026-06-24T14:39:30Z"
         }
       ]
     },
@@ -9973,7 +10016,7 @@
       "labels": [],
       "body": "I recently added support for the `datagram_id` in my QUIC stack, and I chose to use the CRC32 of the packet as the datagram ID, mostly because this allows me to generate an ID without keeping additional state (unless the packet is buffered).\n\nIt has another nice property: When looking at qlogs generated by a quic-go server and client, the datagram IDs now match, allowing me to see which packet was buffered, for example. This is extremely useful.\n\nI'm wondering if we should mandate CRC32 (or any other algorithm, I don't really care), so we get this feature across QUIC stacks.",
       "createdAt": "2025-12-21T06:53:23Z",
-      "updatedAt": "2026-03-09T15:03:37Z",
+      "updatedAt": "2026-06-24T14:12:02Z",
       "closedAt": null,
       "comments": [
         {
@@ -9989,6 +10032,13 @@
           "body": "Agree with Lucas that I wouldn't mandate anything here, but some more discussion and a recommended option of crc32 would be fine. \n\nMind proposing a PR for that @marten-seemann ? ",
           "createdAt": "2026-03-09T15:03:36Z",
           "updatedAt": "2026-03-09T15:03:36Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> The other thing I noticed inn the QUIC schema, is that all the mentions of datagram_id forward to section 5.10, which is the definition of udp_datagrams_sent. You'd probably be better to extract the prose about datagram_id out of that and make it its own section, that might give a bit more breathing room for some expanded text on the topic.\n\nI made https://github.com/quicwg/qlog/pull/510 for this.\n\nI propose we timebox this issue. If a PR along the lines of my suggestion \"you could capture the benefits of a stateless approach, along with non-normative example of crc32.\" is not created for this issue by IETF 126 then we close with no action.\n\n",
+          "createdAt": "2026-06-24T14:12:02Z",
+          "updatedAt": "2026-06-24T14:12:02Z"
         }
       ]
     },
@@ -28092,24 +28142,26 @@
       "id": "PR_kwDOCrLn6M6tr9Or",
       "title": "add support for RFC 9297 Capsule Protocol",
       "url": "https://github.com/quicwg/qlog/pull/490",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #486.\r\n\r\nThis turned out to be more text than I expected, but it's mostly just copy-pasted from the respective HTTP/3 section.",
       "createdAt": "2025-10-14T14:48:56Z",
-      "updatedAt": "2026-06-11T16:51:30Z",
+      "updatedAt": "2026-06-24T14:37:32Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
-      "baseRefOid": "bf3994bbb132f7f151123b686babeb03b0be157e",
+      "baseRefOid": "d86b109ae20349844d36a4b88b540aada918acc1",
       "headRepository": "quicwg/qlog",
       "headRefName": "capsule",
-      "headRefOid": "3869e7796dc4bb8b6078b4aa3fa5fa970b715ee8",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "1ececbd52c06ea1d7b3991626cfaeba0fadf265b",
+      "closedAt": "2026-06-24T14:37:26Z",
+      "mergedAt": "2026-06-24T14:37:26Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "b56822b0621144708abe125f2f7b1cf01dc28556"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -28177,6 +28229,46 @@
               "body": "We could probably make this part clearer with something like \r\n\r\nextensions: Extended CONNECT ({{!EXTENDED-CONNECT=RFC9220}}), PRIORITY_UPDATE ({{Section 7 of !PRIORITIZATION=RFC9218}}), and HTTP/3 Datagrams {{Section 2.1 of !DGRAM-AND-CAPSULE=RFC9297}}). It also defines a schema for the HTTP Capsule Protocol ({{Section 3 of DGRAM-AND-CAPSULE}}.",
               "createdAt": "2025-10-19T14:35:27Z",
               "updatedAt": "2025-10-19T14:35:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABD_rA7w",
+          "commit": {
+            "abbreviatedOid": "3869e77"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-24T14:23:33Z",
+          "updatedAt": "2026-06-24T14:23:33Z",
+          "comments": [
+            {
+              "originalPosition": 139,
+              "body": "its consistent with other text so go away",
+              "createdAt": "2026-06-24T14:23:33Z",
+              "updatedAt": "2026-06-24T14:23:34Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABD_yyhA",
+          "commit": {
+            "abbreviatedOid": "3869e77"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-06-24T14:37:08Z",
+          "updatedAt": "2026-06-24T14:37:08Z",
+          "comments": [
+            {
+              "originalPosition": 18,
+              "body": "fixed it per my suggestion that doesn't seem to have been rendered",
+              "createdAt": "2026-06-24T14:37:08Z",
+              "updatedAt": "2026-06-24T14:37:08Z"
             }
           ]
         }
@@ -28941,6 +29033,60 @@
       "headRepository": "quicwg/qlog",
       "headRefName": "multipath-nono",
       "headRefOid": "4cbeb06a5bb51078636853a3036cc9a04c25d432",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 510,
+      "id": "PR_kwDOCrLn6M7qISrn",
+      "title": "Move packet coalescing and datagram_id considerations to own section",
+      "url": "https://github.com/quicwg/qlog/pull/510",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "Spining off from my comment https://github.com/quicwg/qlog/issues/502#issuecomment-3895549137\r\n\r\nThis is a pure move, it doesn't change the body of the text",
+      "createdAt": "2026-06-24T13:32:52Z",
+      "updatedAt": "2026-06-24T13:32:53Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "d86b109ae20349844d36a4b88b540aada918acc1",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "move-datagram_id-considerations",
+      "headRefOid": "205c6e7f2c394d60667223d35a571f166ae5de63",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 511,
+      "id": "PR_kwDOCrLn6M7qKdDc",
+      "title": "Add IANA media type registration templates for qlog (#425)",
+      "url": "https://github.com/quicwg/qlog/pull/511",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Register application/qlog+json and application/qlog+json-seq in the\r\nIANA Considerations section, following the standard template per\r\nRFC 6838. These types were already referenced in the serialization\r\nmapping sections but lacked formal registration text.\r\n\r\nCloses https://github.com/quicwg/qlog/issues/425",
+      "createdAt": "2026-06-24T14:57:02Z",
+      "updatedAt": "2026-06-24T14:57:03Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b56822b0621144708abe125f2f7b1cf01dc28556",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "media-type-reg",
+      "headRefOid": "65e44b2d1ff45be56e437a1a54ae4782b5e98133",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
