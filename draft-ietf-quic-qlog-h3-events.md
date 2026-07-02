@@ -750,10 +750,6 @@ $HTTP3Datagram /= {
 {: #h3-datagram-def title="HTTP3Datagram type socket definition"}
 
 ## HTTP3ApplicationError
-=======
-
-
-### HTTP3ApplicationError
 
 ~~~ cddl
 HTTP3ApplicationError = "http_no_error" /
