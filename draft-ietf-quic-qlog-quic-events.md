@@ -2117,7 +2117,7 @@ ResetStreamFrame = {
     stream_id: uint64
     error: $ApplicationError
 
-    ; if error_code === "unknown"
+    ; if error === "unknown"
     ? error_code: uint64
 
     ; in bytes
@@ -2140,7 +2140,7 @@ ResetStreamAtFrame = {
     stream_id: uint64
     error: $ApplicationError
 
-    ; if error_code === "unknown"
+    ; if error === "unknown"
     ? error_code: uint64
 
     ; in bytes
@@ -2167,7 +2167,7 @@ StopSendingFrame = {
     stream_id: uint64
     error: $ApplicationError
 
-    ; if error_code === "unknown"
+    ; if error === "unknown"
     ? error_code: uint64
 
     ? raw: RawInfo
@@ -2369,7 +2369,7 @@ ConnectionCloseFrame = {
     ? error: $TransportError / CryptoError /
              $ApplicationError
 
-    ; only if error_code === "unknown"
+    ; only if error === "unknown"
     ? error_code: uint64
 
     ? reason: text
