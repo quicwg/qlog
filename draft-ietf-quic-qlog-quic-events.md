@@ -802,7 +802,7 @@ QUICPacketSent = {
     ; only if header.packet_type === "version_negotiation"
     ? supported_versions: [+ QuicVersion]
     ? raw: RawInfo
-    ? datagram_id: uint32
+    ? datagram_payload_checksum: uint32
     ? is_mtu_probe_packet: bool .default false
 
     ? trigger:
@@ -827,7 +827,7 @@ The `encryption_level` and `packet_number_space` are not logged explicitly:
 the `header.packet_type` specifies this by inference (assuming correct
 implementation)
 
-The `datagram_id` field is used to track packet coalescing, see
+The `datagram_payload_checksum` field is used to track packet coalescing, see
 {{packet-coalescing}}.
 
 ## packet_received {#quic-packetreceived}
@@ -847,7 +847,7 @@ QUICPacketReceived = {
     ; only if header.packet_type === "version_negotiation"
     ? supported_versions: [+ QuicVersion]
     ? raw: RawInfo
-    ? datagram_id: uint32
+    ? datagram_payload_checksum: uint32
 
     ? trigger:
         ; if packet was buffered because it couldn't be
@@ -863,7 +863,7 @@ The `encryption_level` and `packet_number_space` are not logged explicitly: the
 `header.packet_type` specifies this by inference (assuming correct
 implementation).
 
-The `datagram_id` field is used to track packet coalescing, see
+The `datagram_payload_checksum` field is used to track packet coalescing, see
 {{packet-coalescing}}.
 
 ## packet_dropped {#quic-packetdropped}
@@ -882,7 +882,7 @@ QUICPacketDropped = {
     ; as other fields might not be decryptable or parsable
     ? header: PacketHeader
     ? raw: RawInfo
-    ? datagram_id: uint32
+    ? datagram_payload_checksum: uint32
     ? details: {* text => any}
     ? trigger:
         "internal_error" /
@@ -912,7 +912,7 @@ Some example situations for each of the trigger categories include:
 - `key_unavailable`: decryption key was unavailable
 - `general`: situations not clearly covered in the other categories
 
-The `datagram_id` field is used to track packet coalescing, see
+The `datagram_payload_checksum` field is used to track packet coalescing, see
 {{packet-coalescing}}.
 
 ## packet_buffered {#quic-packetbuffered}
@@ -929,7 +929,7 @@ QUICPacketBuffered = {
     ; might not be available yet
     ? header: PacketHeader
     ? raw: RawInfo
-    ? datagram_id: uint32
+    ? datagram_payload_checksum: uint32
     ? trigger:
         ; indicates the parser cannot keep up, temporarily buffers
         ; packet for later processing
@@ -943,7 +943,7 @@ QUICPacketBuffered = {
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
-The `datagram_id` field is used to track packet coalescing, see
+The `datagram_payload_checksum` field is used to track packet coalescing, see
 {{packet-coalescing}}.
 
 ## packets_acked {#quic-packetsacked}
@@ -993,7 +993,7 @@ QUICUDPDatagramsSent = {
     ; QUICUDPDatagramsSent event
     ? ecn: [+ ECN]
 
-    ? datagram_ids: [+ uint32]
+    ? datagram_payload_checksums: [+ uint32]
 
     * $$quic-udpdatagramssent-extension
 }
@@ -1003,7 +1003,7 @@ QUICUDPDatagramsSent = {
 Since QUIC implementations rarely control UDP logic directly, the raw data
 excludes UDP-level headers in all RawInfo fields.
 
-The `datagram_ids` field is used to track packet coalescing, see
+The `datagram_payload_checksums` field is used to track packet coalescing, see
 {{packet-coalescing}}.
 
 ## udp_datagrams_received {#quic-udpdatagramsreceived}
@@ -1027,14 +1027,14 @@ QUICUDPDatagramsReceived = {
     ; QUICUDPDatagramsReceived event
     ? ecn: [+ ECN]
 
-    ? datagram_ids: [+ uint32]
+    ? datagram_payload_checksums: [+ uint32]
 
     * $$quic-udpdatagramsreceived-extension
 }
 ~~~
 {: #quic-udpdatagramsreceived-def title="QUICUDPDatagramsReceived definition"}
 
-The `datagram_ids` field is used to track packet coalescing, see
+The `datagram_payload_checksums` field is used to track packet coalescing, see
 {{packet-coalescing}}.
 
 ## udp_datagram_dropped {#quic-udpdatagramdropped}
@@ -2496,14 +2496,10 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 Multiple QUIC packets can be coalesced in a single UDP datagram, especially
 during the handshake (see {{Section 12.2 of QUIC-TRANSPORT}}). However, neither
 QUIC nor UDP themselves provide an explicit mechanism to track this behaviour.
-To make it possible for implementations to track coalescing across packet-level
-and datagram-level qlog events, this document defines a qlog-specific mechanism
-for tracking coalescing across packet-level and datagram-level qlog events: a
-"datagram identifier" carried in `datagram_id` fields. qlog implementations that
-want to track coalescing can use this mechanism, where multiple events sharing
-the same `datagram_id` indicate they were coalesced in the same UDP datagram.
-The selection of specific and locally-unique `datagram_id` values is an
-implementation choice.
+To make it possible for implementations to track coalescing across QUIC
+packet-level and UDP datagram-level qlog events, can use the optional
+`datagram_payload_checksum` field. It carries a 32-bit CRC32c value that is
+calculated on the UDP user payload as described in {{Section 11.3 of !RFC9868}}.
 
 # Security and Privacy Considerations
 
