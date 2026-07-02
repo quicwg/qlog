@@ -403,7 +403,6 @@ to the QUIC layer. For that, see the `datagram_data_moved` event in
 ~~~ cddl
 HTTP3DatagramCreated = {
     quarter_stream_id: uint64
-    ? datagram: $HTTP3Datagram
     ? raw: RawInfo
 
     * $$http3-datagramcreated-extension
@@ -423,7 +422,6 @@ received on the QUIC layer. For that, see the `datagram_data_moved` event in
 ~~~ cddl
 HTTP3DatagramParsed = {
     quarter_stream_id: uint64
-    ? datagram: $HTTP3Datagram
     ? raw: RawInfo
 
     * $$http3-datagramparsed-extension
@@ -733,21 +731,6 @@ HTTP3OriginFrame = {
 }
 ~~~
 {: #h3originframe-def title="HTTP3OriginFrame definition"}
-
-## HTTP3Datagram
-
-The generic `$HTTP3Datagram` is defined here as a CDDL "type socket" extension
-point. It can be extended to support additional HTTP/3 datagram types. This
-document intentionally does not define any specific qlog schemas for specific
-HTTP/3 Datagram types.
-
-~~~~~~
-; The HTTP3Datagram is any key-value map (e.g., JSON object)
-$HTTP3Datagram /= {
-    * text => any
-}
-~~~~~~
-{: #h3-datagram-def title="HTTP3Datagram type socket definition"}
 
 ## HTTP3ApplicationError
 
