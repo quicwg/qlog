@@ -1050,7 +1050,11 @@ would be part of the `quic` namespace, which is defined in an event schema with
 URI `urn:ietf:params:qlog:events:quic`. A later extension that adds a new QUIC
 frame `QUICNewFrame` would also be part of the `quic` namespace, but defined in
 a new event schema with URI
-`urn:ietf:params:qlog:events:quic#new-frame-extension`.
+`urn:ietf:params:qlog:events:quic#new-frame-extension`. Similarly, the first
+document containing qlog event definitions for a new hypothetical protocol
+called "IPoAC" would be part of the new event namespace `ipoac` which is defined
+as part of the new Event Schema URI `urn:ietf:params:qlog:events:ipoac`, both of
+which are defined and registered in that first document.
 
 Concrete event types MUST belong to a single event namespace and MUST have a
 registered non-empty identifier of type `text`.
@@ -1080,18 +1084,19 @@ namespace MUST furthermore include a non-empty globally-unique "extension"
 identifier using a URI fragment (characters after a "#" in the URI) using only
 characters in the URI unreserved range; see {{Section 2.3 of RFC3986}}.
 Registration guidance and requirement for event schema URIs are provided in
-{{event-schema-reg}}. Event schemas by themselves are immutable and MUST NOT be
-extended.
+{{event-schema-reg}}. Event schemas by themselves are immutable once defined and
+MUST NOT be extended.
 
 Implementations that record concrete event types SHOULD list all event schemas
-in use. This is achieved by including the appropriate URIs in the
-`event_schemas` field of the Trace ({{trace}}) and TraceSeq ({{traceseq}})
-classes. The `event_schemas` is a hint to tools about the possible event
-namespaces, their extensions, and the event types/data types contained therein,
-that a qlog trace might contain. The trace MAY still contain event types that do
-not belong to a listed event schema. Inversely, not all event types associated
-with an event schema listed in `event_schemas` are guaranteed to be logged in a
-qlog trace. Tools MUST NOT treat either of these as an error; see {{tooling}}.
+in use in a specific trace. This is achieved by including the appropriate URIs
+in the `event_schemas` field of the Trace ({{trace}}) and TraceSeq
+({{traceseq}}) classes. The `event_schemas` is a hint to tools about the
+possible event namespaces, their extensions, and the event types/data types
+contained therein, that a qlog trace might contain. The trace MAY still contain
+event types that do not belong to a listed event schema. Inversely, not all
+event types associated with an event schema listed in `event_schemas` are
+guaranteed to be logged in a qlog trace. Tools MUST NOT treat either of these as
+an error; see {{tooling}}.
 
 In the following hypothetical example, a qlog trace contains events belonging to:
 
