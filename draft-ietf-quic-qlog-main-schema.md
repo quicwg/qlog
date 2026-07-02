@@ -621,8 +621,8 @@ the specific values and semantics of common fields, in particular the `name` and
 `data` fields. Furthermore, they can optionally add custom fields.
 
 Each qlog event MAY contain the optional fields: "time_format"
-({{time-based-fields}}), tuple ({{tuple-field}}) "trigger" ({{trigger-field}}),
-and "group_id" ({{group-ids}}).
+({{time-based-fields}}), tuple ({{tuple-field}}), and "group_id"
+({{group-ids}}).
 
 Multiple events can appear in a Trace or TraceSeq and they might contain fields
 with identical values. It is possible to optimize out this duplication using
@@ -834,15 +834,9 @@ Example of a monotonic log using the relative_to_epoch format:
 ## Tuple {#tuple-field}
 
 A qlog event is typically associated with a single network "path", which is
-usually aligned with a four-tuple of IP addresses and ports. In many cases, this
-tuple will be the same for all events in a given trace, and does not need to be
-logged explicitly with each event. In this case, the "tuple" field can be
-omitted (in which case the default value of "" is assumed) or reflected in
-"common_fields" instead (see {{common-fields}}).
-
-However, in some situations, such as during QUIC's Connection Migration or when
-a transport protocol can use multiple paths, it is useful to be able to split events across
-multiple (concurrent) tuples and/or paths.
+usually aligned with a four-tuple of IP addresses and ports. The optional
+"tuple" field (of type TupleID) identifies a single network four-tuple and can
+be used to associate individual events with a specific "path".
 
 Definition:
 
@@ -851,15 +845,29 @@ TupleID = text .default ""
 ~~~
 {: #tuple-def title="TupleID definition"}
 
+Because tuple definitions can depend and vary based on the underlying protocols
+and mechanisms used, this document intentionally does not define further how to
+choose this identifier's value per tuple or how to log other parameters that can
+be associated with such a tuple. This is left for other documents. Implementers
+are for example free to encode or serialize tuple information directly into the
+TupleID's contents or to log associated info in a separate event. For example,
+QUIC has the "tuple_assigned" event to couple the TupleID contents to a specific
+tuple configuration, see {{Section 4.7 of QLOG-QUIC}}.
 
-The "tuple" field is an identifier that is associated with a single network
-four-tuple. This document intentionally does not define further how to choose
-this identifier's value per-tuple or how to potentially log other parameters
-that can be associated with such a tuple. This is left for other documents.
-Implementers are free to encode tuple information directly into the TupleID or
-to log associated info in a separate event. For example, QUIC has the
-"tuple_assigned" event to couple the TupleID value to a specific tuple
-configuration, see {{QLOG-QUIC}}.
+The "tuple" field is intentionally marked as optional, as there can be many
+practical or logical reasons why implementations might not want to log it for
+every event. For example, the TupleID contents will usually be the same for all
+events in a single connection and bears no repeating. Similarly, application
+level protocols will typically not care which tuple a specific frame is
+sent/received on.
+
+However, in some situations, such as during QUIC's Connection Migration or when
+a transport protocol can use multiple paths, it is useful to be able to split
+events across multiple (concurrent) tuples and/or paths, especially for
+packet-level events. Even in those cases however, it is allowed to log the
+"tuple" field only for some events in the trace when salient (for example only
+when QUIC PATH_CHALLENGE and PATH_RESPONSE frames are involved, or when the
+first packet on a new path is sent/received) and omit it when not.
 
 ## Grouping {#group-ids}
 
