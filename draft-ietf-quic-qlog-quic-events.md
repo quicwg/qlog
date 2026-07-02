@@ -2369,7 +2369,7 @@ ConnectionCloseFrame = {
     ? error: $TransportError / CryptoError /
              $ApplicationError
 
-    ; only if error === "unknown"
+    ; if error === "unknown"
     ? error_code: uint64
 
     ? reason: text
