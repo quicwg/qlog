@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 27 December 2026                                           Meta
+Expires: 3 January 2027                                             Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                            25 June 2026
+                                                             2 July 2026
 
 
                     QUIC event definitions for qlog
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 27 December 2026.
+   This Internet-Draft will expire on 3 January 2027.
 
 Copyright Notice
 
@@ -95,7 +95,10 @@ Table of Contents
      5.11. udp_datagrams_received
      5.12. udp_datagram_dropped
      5.13. stream_state_updated
-     5.14. frames_processed
+     5.14. Frame-related events
+       5.14.1.  frames_created
+       5.14.2.  frames_parsed
+       5.14.3.  frames_processed
      5.15. stream_data_moved
      5.16. datagram_data_moved
      5.17. connection_data_blocked_updated
@@ -333,7 +336,14 @@ Table of Contents
    +--------------------------------------+------------+--------------+
    | quic:stream_state_updated            | Base       | Section 5.13 |
    +--------------------------------------+------------+--------------+
-   | quic:frames_processed                | Extra      | Section 5.14 |
+   | quic:frames_created                  | Extra      | Section      |
+   |                                      |            | 5.14.1       |
+   +--------------------------------------+------------+--------------+
+   | quic:frames_parsed                   | Extra      | Section      |
+   |                                      |            | 5.14.2       |
+   +--------------------------------------+------------+--------------+
+   | quic:frames_processed                | Extra      | Section      |
+   |                                      |            | 5.14.3       |
    +--------------------------------------+------------+--------------+
    | quic:stream_data_moved               | Base       | Section 5.15 |
    +--------------------------------------+------------+--------------+
@@ -1329,47 +1339,103 @@ Table of Contents
    GranularStreamStates.  These latter ones are mainly for more in-depth
    debugging.  Tools SHOULD be able to deal with both types equally.
 
-5.14.  frames_processed
+5.14.  Frame-related events
 
-   The frame_processed event is intended to prevent a large
-   proliferation of specific purpose events (e.g., packets_acknowledged,
-   flow_control_updated, stream_data_received).  It has Extra importance
-   level.
+   While the packet_sent (Section 5.5) and packet_received (Section 5.6)
+   events can convey all frames contained in a single QUIC packet, some
+   implementations might not be able or willing to include frame
+   information at the moment either event is logged.
 
-   Implementations have the opportunity to (selectively) log this type
-   of signal without having to log packet-level details (e.g., in
-   packet_received).  Since for almost all cases, the effects of
-   applying a frame to the internal state of an implementation can be
-   inferred from that frame's contents, these events are aggregated into
-   this single frames_processed event.
+   In order to support logging frame-related operations independent of
+   packets, the frames_created, frames_parsed, and frames_processed
+   events are defined.
 
-   The frame_processed event can be used to signal internal state change
-   not resulting directly from the actual "parsing" of a frame (e.g.,
-   the frame could have been parsed, data put into a buffer, then later
-   processed, then logged with this event).
+   A qlog trace can contain both packet and frame-related events.
+   However, it is RECOMMENDED that implementations avoid generating
+   events with duplicate or redundant frame information, since doing so
+   inflates the size of logs.
 
-   The packet_received event can convey all constituent frames.  It is
-   not expected that the frames_processed event will also be used for a
-   redundant purpose.  Rather, implementations can use this event to
-   avoid having to log full packets or to convey extra information about
-   when frames are processed (for example, if frame processing is
-   deferred for any reason).
+   Where an implementation logs both packet and frame-related events,
+   the optional packet_numbers field in frame-related events can be used
+   to explicitly link frames to packets.  The field is an array, which
+   supports using a single event for multiple frames related to multiple
+   packets.  To map between the two, the position and order of entries
+   in the frames and packet_numbers is used.  If the packet_numbers
+   field is logged, each and every frame MUST have a corresponding
+   packet number at the same index.
 
-   Note that for some events, this approach will lose some information
-   (e.g., for which encryption level are packets being acknowledged?).
-   If this information is important, the packet_received event can be
-   used instead.
+   For example, an instance of the frames_processed event that
+   represents four STREAM frames received over two packets can be
+   serialized as:
 
-   In some implementations, it can be difficult to log frames directly,
-   even when using packet_sent and packet_received events.  For these
-   cases, the frames_processed event also contains the packet_numbers
-   field, which can be used to more explicitly link this event to the
-   packet_sent/received events.  The field is an array, which supports
-   using a single frames_processed event for multiple frames received
-   over multiple packets.  To map between frames and packets, the
-   position and order of entries in the frames and packet_numbers is
-   used.  If the optional packet_numbers field is used, each frame MUST
-   have a corresponding packet number at the same index.
+  "frames":[
+    {"frame_type":"stream","stream_id":0,"offset":0,"raw":{"length":5}},
+    {"frame_type":"stream","stream_id":0,"offset":5,"raw":{"length":5}},
+    {"frame_type":"stream","stream_id":1,"offset":0,"raw":{"length":9}},
+    {"frame_type":"stream","stream_id":1,"offset":9,"raw":{"length":9}}
+    ],
+  "packet_numbers":[
+    1,
+    1,
+    2,
+    2
+  ]
+
+   Frame-related events omit information that is available in the
+   packet_received or packet_created event.  For instance, the packet
+   encryption level.  For use cases that require such information, the
+   packet events are preferable.
+
+   Frame-related events make it possible to log, in extensions,
+   information that is otherwise not available at the moment a packet
+   event occurs.  For instance, if frame processing was deferred for any
+   reason.
+
+5.14.1.  frames_created
+
+   The frames_created event indicates when a set of QUIC frames have
+   been created.  It has Extra importance level.
+
+   QUICFramesCreated = {
+       frames: [* $QuicFrame]
+       ? packet_numbers: [* uint64]
+
+       * $$quic-framescreated-extension
+   }
+
+                  Figure 23: QUICFramesCreated definition
+
+5.14.2.  frames_parsed
+
+   The frames_parsed event indicates when a set of QUIC frames have been
+   parsed.  It has Extra importance level.
+
+   QUICFramesParsed = {
+       frames: [* $QuicFrame]
+       ? packet_numbers: [* uint64]
+
+       * $$quic-framesparsed-extension
+   }
+
+                   Figure 24: QUICFramesParsed definition
+
+5.14.3.  frames_processed
+
+   The frames_processed event indicates when a set of QUIC frames have
+   been processed at the receiver.  It has Extra importance level.
+
+   This event exists to eliminate the need to define specific-purpose
+   events, where the effect of processing a frame can be easily inferred
+   from its contents.  For example, there would be no need to define a
+   hypotheical packets_acknowledged event, when the an ACK frame
+   contains all relevant information.
+
+   The frames_processed event can be used to signal internal state
+   change not resulting directly from the actual parsing of a frame
+   (e.g., the frame could have been parsed, data put into a buffer, then
+   later processed and logged).  Using frames_processed in additional to
+   packet_received and/or frames_parsed allows an implementation to log
+   its full sequence of events.
 
    QUICFramesProcessed = {
        frames: [* $QuicFrame]
@@ -1378,24 +1444,7 @@ Table of Contents
        * $$quic-framesprocessed-extension
    }
 
-                 Figure 23: QUICFramesProcessed definition
-
-   For example, an instance of the frames_processed event that
-   represents four STREAM frames received over two packets would have
-   the fields serialized as:
-
-"frames":[
-  {"frame_type":"stream","stream_id":0,"offset":0,"raw":{"length":500}},
-  {"frame_type":"stream","stream_id":0,"offset":500,"raw":{"length":200}},
-  {"frame_type":"stream","stream_id":1,"offset":0,"raw":{"length":300}},
-  {"frame_type":"stream","stream_id":1,"offset":300,"raw":{"length":50}}
-  ],
-"packet_numbers":[
-  1,
-  1,
-  2,
-  2
-]
+                 Figure 25: QUICFramesProcessed definition
 
 5.15.  stream_data_moved
 
@@ -1454,7 +1503,7 @@ Table of Contents
    $DataMovedAdditionalInfo /= "fin_set" /
                                "stream_reset"
 
-                 Figure 24: QUICStreamDataMoved definition
+                 Figure 26: QUICStreamDataMoved definition
 
 5.16.  datagram_data_moved
 
@@ -1491,7 +1540,7 @@ Table of Contents
        * $$quic-datagramdatamoved-extension
    }
 
-                Figure 25: QUICDatagramDataMoved definition
+                Figure 27: QUICDatagramDataMoved definition
 
 5.17.  connection_data_blocked_updated
 
@@ -1523,7 +1572,7 @@ Table of Contents
                      "stream_id" /
                      "application"
 
-           Figure 26: QUICConnectionDataBlockedUpdated definition
+           Figure 28: QUICConnectionDataBlockedUpdated definition
 
 5.18.  stream_data_blocked_updated
 
@@ -1540,7 +1589,7 @@ Table of Contents
        ? reason: $BlockedReason
    }
 
-             Figure 27: QUICStreamDataBlockedUpdated definition
+             Figure 29: QUICStreamDataBlockedUpdated definition
 
 5.19.  datagram_data_blocked_updated
 
@@ -1555,7 +1604,7 @@ Table of Contents
        ? reason: $BlockedReason
    }
 
-            Figure 28: QUICDatagramDataBlockedUpdated definition
+            Figure 30: QUICDatagramDataBlockedUpdated definition
 
 5.20.  migration_state_updated
 
@@ -1611,7 +1660,7 @@ Table of Contents
        ; new path is now fully used, old path is discarded
        "migration_complete"
 
-              Figure 29: QUICMigrationStateUpdated definition
+              Figure 31: QUICMigrationStateUpdated definition
 
 5.21.  timer_updated
 
@@ -1671,7 +1720,7 @@ Table of Contents
        * $$quic-timerupdated-extension
    }
 
-                   Figure 30: QUICTimerUpdated definition
+                   Figure 32: QUICTimerUpdated definition
 
 6.  Security Events
 
@@ -1696,7 +1745,7 @@ Table of Contents
        * $$quic-keyupdated-extension
    }
 
-                    Figure 31: QUICKeyUpdated definition
+                    Figure 33: QUICKeyUpdated definition
 
    Note that the key_phase is the full value of the key phase (as
    indicated by @M and @N in Figure 9 of [QUIC-TLS]).  The key phase bit
@@ -1723,7 +1772,7 @@ Table of Contents
        * $$quic-keydiscarded-extension
    }
 
-                   Figure 32: QUICKeyDiscarded definition
+                   Figure 34: QUICKeyDiscarded definition
 
 7.  Recovery events
 
@@ -1777,7 +1826,7 @@ Table of Contents
        * $$quic-recoveryparametersset-extension
    }
 
-              Figure 33: QUICRecoveryParametersSet definition
+              Figure 35: QUICRecoveryParametersSet definition
 
    Additionally, this event can contain any number of unspecified fields
    to support different recovery approaches.
@@ -1823,7 +1872,7 @@ Table of Contents
        * $$quic-recoverymetricsupdated-extension
    }
 
-              Figure 34: QUICRecoveryMetricsUpdated definition
+              Figure 36: QUICRecoveryMetricsUpdated definition
 
    In order to make logging easier, implementations MAY log values even
    if they are the same as previously reported values (e.g., two
@@ -1859,7 +1908,7 @@ Table of Contents
        * $$quic-congestionstateupdated-extension
    }
 
-              Figure 35: QUICCongestionStateUpdated definition
+              Figure 37: QUICCongestionStateUpdated definition
 
    The trigger field SHOULD be logged if there are multiple ways in
    which a state change can occur but MAY be omitted if a given state
@@ -1893,7 +1942,7 @@ Table of Contents
        * $$quic-packetlost-extension
    }
 
-                    Figure 36: QUICPacketLost definition
+                    Figure 38: QUICPacketLost definition
 
 7.5.  marked_for_retransmit
 
@@ -1926,7 +1975,7 @@ Table of Contents
        * $$quic-markedforretransmit-extension
    }
 
-               Figure 37: QUICMarkedForRetransmit definition
+               Figure 39: QUICMarkedForRetransmit definition
 
 7.6.  ecn_state_updated
 
@@ -1952,7 +2001,7 @@ Table of Contents
      ; testing was successful
      "capable"
 
-                 Figure 38: QUICECNStateUpdated definition
+                 Figure 40: QUICECNStateUpdated definition
 
 8.  QUIC data type definitions
 
@@ -1960,20 +2009,20 @@ Table of Contents
 
    QuicVersion = hexstring
 
-                     Figure 39: QuicVersion definition
+                     Figure 41: QuicVersion definition
 
 8.2.  ConnectionID
 
    ConnectionID = hexstring
 
-                     Figure 40: ConnectionID definition
+                     Figure 42: ConnectionID definition
 
 8.3.  Initiator
 
    Initiator = "local" /
                "remote"
 
-                      Figure 41: Initiator definition
+                      Figure 43: Initiator definition
 
 8.4.  IPAddress
 
@@ -1986,7 +2035,7 @@ Table of Contents
    IPAddress = text /
                hexstring
 
-                      Figure 42: IPAddress definition
+                      Figure 44: IPAddress definition
 
 8.5.  TupleEndpointInfo
 
@@ -2015,7 +2064,7 @@ Table of Contents
        * $$quic-tupleendpointinfo-extension
    }
 
-                  Figure 43: TupleEndpointInfo definition
+                  Figure 45: TupleEndpointInfo definition
 
 8.6.  PacketType
 
@@ -2028,7 +2077,7 @@ Table of Contents
                    "stateless_reset" /
                    "unknown"
 
-                      Figure 44: PacketType definition
+                      Figure 46: PacketType definition
 
 8.7.  PacketNumberSpace
 
@@ -2036,7 +2085,7 @@ Table of Contents
                          "handshake" /
                          "application_data"
 
-                  Figure 45: PacketNumberSpace definition
+                  Figure 47: PacketNumberSpace definition
 
 8.8.  PacketHeader
 
@@ -2102,7 +2151,7 @@ Table of Contents
        * $$quic-packetheader-extension
    }
 
-                     Figure 46: PacketHeader definition
+                     Figure 48: PacketHeader definition
 
 8.9.  Token
 
@@ -2122,7 +2171,7 @@ Table of Contents
    $TokenType /= "retry" /
                  "resumption"
 
-                        Figure 47: Token definition
+                        Figure 49: Token definition
 
    The token carried in an Initial packet can either be a retry token
    from a Retry packet, or one originally provided by the server in a
@@ -2136,7 +2185,7 @@ Table of Contents
 
    StatelessResetToken = hexstring .size 16
 
-                Figure 48: Stateless Reset Token definition
+                Figure 50: Stateless Reset Token definition
 
    The stateless reset token is carried in stateless reset packets, in
    transport parameters and in NEW_CONNECTION_ID frames.
@@ -2152,13 +2201,13 @@ Table of Contents
                "server_1rtt_secret" /
                "client_1rtt_secret"
 
-                       Figure 49: KeyType definition
+                       Figure 51: KeyType definition
 
 8.12.  ECN
 
    ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 
-                         Figure 50: ECN definition
+                         Figure 52: ECN definition
 
    The ECN bits carried in the IP header.
 
@@ -2173,7 +2222,7 @@ Table of Contents
        * text => any
    }
 
-                Figure 51: QuicFrame type socket definition
+                Figure 53: QuicFrame type socket definition
 
    The QUIC frame types defined in this document are as follows:
 
@@ -2203,7 +2252,7 @@ Table of Contents
 
    $QuicFrame /= QuicBaseFrames
 
-                    Figure 52: QuicBaseFrames definition
+                    Figure 54: QuicBaseFrames definition
 
 8.13.1.  PaddingFrame
 
@@ -2221,7 +2270,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 53: PaddingFrame definition
+                     Figure 55: PaddingFrame definition
 
 8.13.2.  PingFrame
 
@@ -2230,7 +2279,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                      Figure 54: PingFrame definition
+                      Figure 56: PingFrame definition
 
 8.13.3.  AckFrame
 
@@ -2258,7 +2307,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                       Figure 55: AckFrame definition
+                       Figure 57: AckFrame definition
 
    Note that the packet ranges in AckFrame.acked_ranges do not
    necessarily have to be ordered (e.g., [[5,9],[1,4]] is a valid
@@ -2289,7 +2338,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 56: ResetStreamFrame definition
+                   Figure 58: ResetStreamFrame definition
 
 8.13.5.  ResetStreamAtFrame
 
@@ -2315,7 +2364,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 57: ResetStreamAtFrame definition
+                  Figure 59: ResetStreamAtFrame definition
 
 8.13.6.  StopSendingFrame
 
@@ -2335,7 +2384,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 58: StopSendingFrame definition
+                   Figure 60: StopSendingFrame definition
 
 8.13.7.  CryptoFrame
 
@@ -2349,7 +2398,7 @@ Table of Contents
        raw: RawInfo
    }
 
-                     Figure 59: CryptoFrame definition
+                     Figure 61: CryptoFrame definition
 
 8.13.8.  NewTokenFrame
 
@@ -2359,7 +2408,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                    Figure 60: NewTokenFrame definition
+                    Figure 62: NewTokenFrame definition
 
 8.13.9.  StreamFrame
 
@@ -2376,7 +2425,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 61: StreamFrame definition
+                     Figure 63: StreamFrame definition
 
 8.13.10.  MaxDataFrame
 
@@ -2386,7 +2435,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                     Figure 62: MaxDataFrame definition
+                     Figure 64: MaxDataFrame definition
 
 8.13.11.  MaxStreamDataFrame
 
@@ -2397,7 +2446,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 63: MaxStreamDataFrame definition
+                  Figure 65: MaxStreamDataFrame definition
 
 8.13.12.  MaxStreamsFrame
 
@@ -2408,7 +2457,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                   Figure 64: MaxStreamsFrame definition
+                   Figure 66: MaxStreamsFrame definition
 
 8.13.13.  DataBlockedFrame
 
@@ -2418,7 +2467,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                   Figure 65: DataBlockedFrame definition
+                   Figure 67: DataBlockedFrame definition
 
 8.13.14.  StreamDataBlockedFrame
 
@@ -2429,7 +2478,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                Figure 66: StreamDataBlockedFrame definition
+                Figure 68: StreamDataBlockedFrame definition
 
 8.13.15.  StreamsBlockedFrame
 
@@ -2440,7 +2489,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                 Figure 67: StreamsBlockedFrame definition
+                 Figure 69: StreamsBlockedFrame definition
 
 8.13.16.  NewConnectionIDFrame
 
@@ -2457,7 +2506,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                 Figure 68: NewConnectionIDFrame definition
+                 Figure 70: NewConnectionIDFrame definition
 
 8.13.17.  RetireConnectionIDFrame
 
@@ -2467,7 +2516,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-               Figure 69: RetireConnectionIDFrame definition
+               Figure 71: RetireConnectionIDFrame definition
 
 8.13.18.  PathChallengeFrame
 
@@ -2479,7 +2528,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 70: PathChallengeFrame definition
+                  Figure 72: PathChallengeFrame definition
 
 8.13.19.  PathResponseFrame
 
@@ -2491,7 +2540,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 71: PathResponseFrame definition
+                  Figure 73: PathResponseFrame definition
 
 8.13.20.  ConnectionCloseFrame
 
@@ -2534,7 +2583,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 72: ConnectionCloseFrame definition
+                 Figure 74: ConnectionCloseFrame definition
 
 8.13.21.  HandshakeDoneFrame
 
@@ -2543,7 +2592,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 73: HandshakeDoneFrame definition
+                  Figure 75: HandshakeDoneFrame definition
 
 8.13.22.  UnknownFrame
 
@@ -2556,7 +2605,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 74: UnknownFrame definition
+                     Figure 76: UnknownFrame definition
 
 8.13.23.  DatagramFrame
 
@@ -2572,7 +2621,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 75: DatagramFrame definition
+                    Figure 77: DatagramFrame definition
 
 8.13.24.  TransportError
 
@@ -2601,7 +2650,7 @@ Table of Contents
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
-                    Figure 76: TransportError definition
+                    Figure 78: TransportError definition
 
 8.13.25.  ApplicationError
 
@@ -2614,7 +2663,7 @@ Table of Contents
 
    $ApplicationError /= "unknown"
 
-                   Figure 77: ApplicationError definition
+                   Figure 79: ApplicationError definition
 
    Application-level qlog definitions that wish to define new
    ApplicationError strings MUST do so by extending the
@@ -2639,7 +2688,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 78: CryptoError definition
+                     Figure 80: CryptoError definition
 
 9.  Handling Packet Coalescing
 
