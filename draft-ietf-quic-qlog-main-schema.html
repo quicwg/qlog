@@ -2125,8 +2125,8 @@ abstract Event class; see <a href="#event-types-and-schema" class="auto internal
 the specific values and semantics of common fields, in particular the <code>name</code> and
 <code>data</code> fields. Furthermore, they can optionally add custom fields.<a href="#section-7-4" class="pilcrow">¶</a></p>
 <p id="section-7-5">Each qlog event <span class="bcp14">MAY</span> contain the optional fields: "time_format"
-(<a href="#time-based-fields" class="auto internal xref">Section 7.1</a>), tuple (<a href="#tuple-field" class="auto internal xref">Section 7.2</a>) "trigger" (<a href="#trigger-field" class="auto internal xref">Section 8.2.1</a>),
-and "group_id" (<a href="#group-ids" class="auto internal xref">Section 7.3</a>).<a href="#section-7-5" class="pilcrow">¶</a></p>
+(<a href="#time-based-fields" class="auto internal xref">Section 7.1</a>), tuple (<a href="#tuple-field" class="auto internal xref">Section 7.2</a>), and "group_id"
+(<a href="#group-ids" class="auto internal xref">Section 7.3</a>).<a href="#section-7-5" class="pilcrow">¶</a></p>
 <p id="section-7-6">Multiple events can appear in a Trace or TraceSeq and they might contain fields
 with identical values. It is possible to optimize out this duplication using
 "common_fields" (<a href="#common-fields" class="auto internal xref">Section 7.5</a>).<a href="#section-7-6" class="pilcrow">¶</a></p>
@@ -2370,18 +2370,13 @@ privacy, the reference time <span class="bcp14">MAY</span> have minimization or 
 <a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-tuple" class="section-name selfRef">Tuple</a>
         </h3>
 <p id="section-7.2-1">A qlog event is typically associated with a single network "path", which is
-usually aligned with a four-tuple of IP addresses and ports. In many cases, this
-tuple will be the same for all events in a given trace, and does not need to be
-logged explicitly with each event. In this case, the "tuple" field can be
-omitted (in which case the default value of "" is assumed) or reflected in
-"common_fields" instead (see <a href="#common-fields" class="auto internal xref">Section 7.5</a>).<a href="#section-7.2-1" class="pilcrow">¶</a></p>
-<p id="section-7.2-2">However, in some situations, such as during QUIC's Connection Migration or when
-a transport protocol can use multiple paths, it is useful to be able to split events across
-multiple (concurrent) tuples and/or paths.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
-<p id="section-7.2-3">Definition:<a href="#section-7.2-3" class="pilcrow">¶</a></p>
+usually aligned with a four-tuple of IP addresses and ports. The optional
+"tuple" field (of type TupleID) identifies a single network four-tuple and can
+be used to associate individual events with a specific "path".<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+<p id="section-7.2-2">Definition:<a href="#section-7.2-2" class="pilcrow">¶</a></p>
 <span id="name-tupleid-definition"></span><div id="tuple-def">
 <figure id="figure-21">
-          <div class="lang-cddl sourcecode" id="section-7.2-4.1">
+          <div class="lang-cddl sourcecode" id="section-7.2-3.1">
 <pre>
 TupleID = text .default ""
 </pre>
@@ -2390,14 +2385,28 @@ TupleID = text .default ""
 <a href="#name-tupleid-definition" class="selfRef">TupleID definition</a>
           </figcaption></figure>
 </div>
-<p id="section-7.2-5">The "tuple" field is an identifier that is associated with a single network
-four-tuple. This document intentionally does not define further how to choose
-this identifier's value per-tuple or how to potentially log other parameters
-that can be associated with such a tuple. This is left for other documents.
-Implementers are free to encode tuple information directly into the TupleID or
-to log associated info in a separate event. For example, QUIC has the
-"tuple_assigned" event to couple the TupleID value to a specific tuple
-configuration, see <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-7.2-5" class="pilcrow">¶</a></p>
+<p id="section-7.2-4">Because tuple definitions can depend and vary based on the underlying protocols
+and mechanisms used, this document intentionally does not define further how to
+choose this identifier's value per tuple or how to log other parameters that can
+be associated with such a tuple. This is expected to be defined by extension
+schemas that want to use the tuple field. Implementers are for example free to
+encode or serialize tuple information directly into the TupleID's contents or to
+log associated info in a separate event. For example, QUIC has the
+"tuple_assigned" event to couple the TupleID contents to a specific tuple
+configuration, see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events-12#section-4.7" class="relref">Section 4.7</a> of [<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-7.2-4" class="pilcrow">¶</a></p>
+<p id="section-7.2-5">The "tuple" field is intentionally marked as optional, as there can be many
+practical or logical reasons why implementations might not want to log it for
+every event. For example, the TupleID contents will usually be the same for all
+events in a single connection and bears no repeating. Similarly, application
+level protocols will typically not care which tuple a specific frame is
+sent/received on.<a href="#section-7.2-5" class="pilcrow">¶</a></p>
+<p id="section-7.2-6">However, in some situations, such as during QUIC's Connection Migration or when
+a transport protocol can use multiple paths, it is useful to be able to split
+events across multiple (concurrent) tuples and/or paths, especially for
+packet-level events. Even in those cases however, it is allowed to log the
+"tuple" field only for some events in the trace when salient (for example only
+when QUIC PATH_CHALLENGE and PATH_RESPONSE frames are involved, or when the
+first packet on a new path is sent/received) and omit it when not.<a href="#section-7.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="group-ids">
