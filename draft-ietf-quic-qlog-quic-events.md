@@ -2497,9 +2497,9 @@ Multiple QUIC packets can be coalesced in a single UDP datagram, especially
 during the handshake (see {{Section 12.2 of QUIC-TRANSPORT}}). However, neither
 QUIC nor UDP themselves provide an explicit mechanism to track this behaviour.
 To make it possible for implementations to track coalescing across QUIC
-packet-level and UDP datagram-level qlog events, can use the optional
-`datagram_payload_checksum` field. It carries a 32-bit CRC32c value that is
-calculated on the UDP user payload as described in {{Section 11.3 of !RFC9868}}.
+packet-level and UDP datagram-level qlog events, the optional
+`datagram_payload_checksum` field is defined. It carries a 32-bit CRC32c value that is
+calculated on the UDP user data payload as described in {{Section 11.3 of !RFC9868}}.
 
 # Security and Privacy Considerations
 
