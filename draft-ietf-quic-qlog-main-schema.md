@@ -848,11 +848,12 @@ TupleID = text .default ""
 Because tuple definitions can depend and vary based on the underlying protocols
 and mechanisms used, this document intentionally does not define further how to
 choose this identifier's value per tuple or how to log other parameters that can
-be associated with such a tuple. This is left for other documents. Implementers
-are for example free to encode or serialize tuple information directly into the
-TupleID's contents or to log associated info in a separate event. For example,
-QUIC has the "tuple_assigned" event to couple the TupleID contents to a specific
-tuple configuration, see {{Section 4.7 of QLOG-QUIC}}.
+be associated with such a tuple. This is expected to be defined by extension
+schemas that want to use the tuple field. Implementers are for example free to
+encode or serialize tuple information directly into the TupleID's contents or to
+log associated info in a separate event. For example, QUIC has the
+"tuple_assigned" event to couple the TupleID contents to a specific tuple
+configuration, see {{Section 4.7 of QLOG-QUIC}}.
 
 The "tuple" field is intentionally marked as optional, as there can be many
 practical or logical reasons why implementations might not want to log it for
