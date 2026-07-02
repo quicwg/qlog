@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-28T02:52:43.744345+00:00",
+  "timestamp": "2026-07-02T02:42:52.103485+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -9961,7 +9961,7 @@
       "labels": [],
       "body": "The main schema defines RawInfo and our QUIC and HTTP/3 schemas use it. However, while implementing the update to latest drafts and migrating code, I wasn't always sure how to deal with things like STREAM frame RawInfo::length vs. RawInfo::payload_length. If things are ambiguous, we risk some interoperability issues. I think it would help to be quite explicit on how to populate the `raw` fields of protocol elements such as frames.",
       "createdAt": "2025-11-25T16:16:39Z",
-      "updatedAt": "2026-06-24T14:12:49Z",
+      "updatedAt": "2026-07-01T16:09:49Z",
       "closedAt": null,
       "comments": [
         {
@@ -9970,6 +9970,13 @@
           "body": "I've lost track of what might help here, propose to close with no action.",
           "createdAt": "2026-06-24T14:12:49Z",
           "updatedAt": "2026-06-24T14:12:49Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agreed with closing with no action, as I feel the description in https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-10 is pretty clear?\n\n`length` is everything (including headers and trailers), payload_length is `length - header_length - trailer_length`, and https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-1.2 provides guidance on how to do `trailer_length` for QUIC packets.\n\nSo for your example, STREAM frame `length` would include the stream frame headers (i.e., Type (i) = 0x08..0x0f, Stream ID (i), [Offset (i)], [Length (i)],) all with their VLIE wire encoding (as this is `raw` after all) and the length of the actual payload as well (in Stream Data (..))",
+          "createdAt": "2026-07-01T16:09:49Z",
+          "updatedAt": "2026-07-01T16:09:49Z"
         }
       ]
     },
@@ -29192,7 +29199,7 @@
       "labels": [],
       "body": "I think there was a race condition and the error_code related fields\r\nin ResetStreamAtFrame use old terminology. This fixes them.\r\n\r\nFor context, see the bulk rename https://github.com/quicwg/qlog/pull/473",
       "createdAt": "2026-06-26T00:00:42Z",
-      "updatedAt": "2026-06-26T04:58:06Z",
+      "updatedAt": "2026-07-01T16:03:20Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "c4958e151c0398c15e0f6ced4b4305a0cf40984a",
@@ -29217,6 +29224,26 @@
           "createdAt": "2026-06-26T04:58:06Z",
           "updatedAt": "2026-06-26T04:58:06Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABEtNgXw",
+          "commit": {
+            "abbreviatedOid": "53b5f9c"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2026-07-01T16:03:14Z",
+          "updatedAt": "2026-07-01T16:03:20Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "```suggestion\n    ; if error === \"unknown\"\n```\n\nSeems like we forgot to update the comments everywhere where we replaced `error_code` with `error`, not just in this or ResetStreamFrame definitions... (so the above suggestion should be applied in many other places as well)\n\nMight want to just tackle that as part of this PR? Or should we make a separate one? ",
+              "createdAt": "2026-07-01T16:03:14Z",
+              "updatedAt": "2026-07-01T16:03:20Z"
+            }
+          ]
         }
       ]
     },
@@ -29232,7 +29259,7 @@
       "labels": [],
       "body": "This is an alternative solution to #507.\r\n\r\nI originally intended this PR to split frames_processed into\r\nframes_created and frames_parsed. However, reading more closely\r\nthe existing text, this paragraph stuck out\r\n\r\n  > The frame_processed event can be used to signal internal\r\n    state change not resulting directly from the actual \"parsing\"\r\n    of a frame (e.g., the frame could have been parsed, data put\r\n    into a buffer, then later processed, then logged with this\r\n    event).\r\n\r\nIt seemed like that it might be useful to keep this model when an\r\nimplementation can separate out parsing of frames from processing\r\nthem. This also helps maintain the goal of \"intended to prevent a\r\nlarge proliferation of specific purpose events (e.g.,\r\npackets_acknowledged, flow_control_updated, stream_data_received)\"\r\n\r\nTo avoid a tremendous amount of text duplication, I created a\r\nframe-related events section that contains all words that are\r\ncommon to all 3 events. I took some liberty to rewrite sections\r\nthat seemed quite wordy - sorry - but I think this makes it\r\nclearer to a reader why all of these events exist and how they\r\nmight be used in combination with packet events.\r\n\r\nIf we don't want to keep frames_processed, we can easily just delete\r\nit from this PR. Let's discuss.\r\n",
       "createdAt": "2026-06-26T01:26:48Z",
-      "updatedAt": "2026-06-26T01:31:19Z",
+      "updatedAt": "2026-07-01T16:00:06Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "c4958e151c0398c15e0f6ced4b4305a0cf40984a",
@@ -29284,6 +29311,19 @@
               "updatedAt": "2026-06-26T01:31:18Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABEtMIUA",
+          "commit": {
+            "abbreviatedOid": "0862b07"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "LGTM",
+          "createdAt": "2026-07-01T16:00:06Z",
+          "updatedAt": "2026-07-01T16:00:06Z",
+          "comments": []
         }
       ]
     }
