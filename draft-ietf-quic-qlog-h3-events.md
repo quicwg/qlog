@@ -393,8 +393,12 @@ HTTP3FrameParsed = {
 
 ## datagram_created {#h3-datagramcreated}
 
-The `datagram_created` event is emitted when an HTTP/3 Datagram is created (see
-{{!RFC9297}}). It has Base importance level.
+The `datagram_created` event is emitted when an HTTP/3 Datagram ({{Section 2.1
+of !RFC9297}}) is created. It has Base importance level.
+
+Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
+defined by the the extension using HTTP datagram. The HTTP3DatagramCreated event
+can be extended to support logging of such information.
 
 This event does not necessarily coincide with the HTTP/3 Datagram getting passed
 to the QUIC layer. For that, see the `datagram_data_moved` event in
@@ -412,8 +416,12 @@ HTTP3DatagramCreated = {
 
 ## datagram_parsed {#h3-datagramparsed}
 
-The `datagram_parsed` event is emitted when the HTTP/3 Datagram is parsed (see
-{{!RFC9297}}). It has Base importance level.
+The `datagram_parsed` event is emitted when an HTTP/3 Datagram ({{Section 2.1 of
+!RFC9297}}) is parsed. It has Base importance level.
+
+Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
+defined by the the extension using HTTP datagram. The HTTP3DatagramParsed event
+can be extended to support logging of such information.
 
 This event is not necessarily the same as when the HTTP/3 Datagram is actually
 received on the QUIC layer. For that, see the `datagram_data_moved` event in
