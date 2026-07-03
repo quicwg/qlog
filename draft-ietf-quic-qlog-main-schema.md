@@ -1630,7 +1630,7 @@ without the others. Logging length related fields and omitting the data field
 permits protocol debugging without the risk of logging potentially sensitive
 data. The data field, if logged, is not required to contain the contents of a
 full entity and can be truncated, see {{truncated-values}}. The length fields,
-if logged, should indicate the length of the the full entity, even if the data
+if logged, should indicate the length of the full entity, even if the data
 field is omitted or truncated.
 
 Protocol entities containing an on-the-wire length field (for example a packet
