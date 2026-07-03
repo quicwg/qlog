@@ -1173,7 +1173,7 @@ STREAM frames received over two packets can be serialized as:
 ~~~
 
 Frame-related events omit information that is available in the `packet_received`
-or `packet_created` event. For instance, the packet encryption level. For use
+or `packet_sent` event. For instance, the packet encryption level. For use
 cases that require such information, the packet events are preferable.
 
 Frame-related events make it possible to log, in extensions, information that is
