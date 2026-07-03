@@ -117,7 +117,7 @@ implementation. Some options include:
 
 {::boilerplate bcp14-tagged}
 
-The event and data structure definitions in ths document are expressed
+The event and data structure definitions in this document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
