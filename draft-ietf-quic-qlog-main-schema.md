@@ -579,7 +579,7 @@ Meaning of the different values for the flow field:
 
   * "client" indicates that this vantage point follows client data flow semantics (a
     "packet sent" event goes in the direction of the server).
-  * "server" indicates that this vantage point follow server data flow semantics (a
+  * "server" indicates that this vantage point follows server data flow semantics (a
     "packet sent" event goes in the direction of the client).
   * "unknown" indicates that the flow's direction is unknown.
 
