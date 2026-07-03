@@ -319,7 +319,7 @@ $HTTP3StreamType /=   "request" /
 
 The `priority_updated` event is emitted when the priority of a request stream or
 push stream is initialized or updated through mechanisms defined in
-{{!RFC9218}}. It has Base importance level.
+{{PRIORITIZATION}}. It has Base importance level.
 
 There can be several reasons why a `priority_updated` occurs, and why a
 particular value was chosen. For example, the priority can be updated through
@@ -700,7 +700,7 @@ HTTP3UnknownFrame = {
 
 ### HTTP3PriorityUpdateFrame
 
-The PRIORITY_UPDATE frame is defined in {{PRIORITIZATION}}.
+The PRIORITY_UPDATE frame is defined in {{Section 7 of PRIORITIZATION}}.
 
 ~~~ cddl
 HTTP3PriorityUpdateFrame = {
@@ -724,7 +724,7 @@ HTTP3Priority = text
 
 ### HTTP3OriginFrame
 
-The ORIGIN frame is defined in {{ORIGIN}}.
+The ORIGIN frame is defined in {{Section 2 of ORIGIN}}.
 
 ~~~ cddl
 HTTP3OriginEntry = {
