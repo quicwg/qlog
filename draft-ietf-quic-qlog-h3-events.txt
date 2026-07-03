@@ -93,8 +93,7 @@ Table of Contents
        4.2.9.  HTTP3UnknownFrame
        4.2.10. HTTP3PriorityUpdateFrame
        4.2.11. HTTP3OriginFrame
-     4.3.  HTTP3Datagram
-     4.4.  HTTP3ApplicationError
+     4.3.  HTTP3ApplicationError
    5.  HTTP Event Schema Definition
      5.1.  Draft Event Schema Identification
    6.  HTTP Events
@@ -477,8 +476,14 @@ Table of Contents
 
 3.7.  datagram_created
 
-   The datagram_created event is emitted when an HTTP/3 Datagram is
-   created (see [RFC9297]).  It has Base importance level.
+   The datagram_created event is emitted when an HTTP/3 Datagram
+   (Section 2.1 of [RFC9297]) is created.  It has Base importance level.
+
+   Beyond the Quarter Stream ID field, the remaining contents of HTTP
+   Datagrams are defined by the concrete protocol using HTTP datagrams.
+   The HTTP3DatagramCreated event can be extended through the $$http3-
+   datagramcreated-extension socket to support logging of such
+   information.
 
    This event does not necessarily coincide with the HTTP/3 Datagram
    getting passed to the QUIC layer.  For that, see the
@@ -486,7 +491,6 @@ Table of Contents
 
    HTTP3DatagramCreated = {
        quarter_stream_id: uint64
-       ? datagram: $HTTP3Datagram
        ? raw: RawInfo
 
        * $$http3-datagramcreated-extension
@@ -496,8 +500,14 @@ Table of Contents
 
 3.8.  datagram_parsed
 
-   The datagram_parsed event is emitted when the HTTP/3 Datagram is
-   parsed (see [RFC9297]).  It has Base importance level.
+   The datagram_parsed event is emitted when an HTTP/3 Datagram
+   (Section 2.1 of [RFC9297]) is parsed.  It has Base importance level.
+
+   Beyond the Quarter Stream ID field, the remaining contents of HTTP
+   Datagrams are defined by the concrete protocol using HTTP datagrams.
+   The HTTP3DatagramParsed event can be extended through the $$http3-
+   datagramparsed-extension socket to support logging of such
+   information.
 
    This event is not necessarily the same as when the HTTP/3 Datagram is
    actually received on the QUIC layer.  For that, see the
@@ -505,7 +515,6 @@ Table of Contents
 
    HTTP3DatagramParsed = {
        quarter_stream_id: uint64
-       ? datagram: $HTTP3Datagram
        ? raw: RawInfo
 
        * $$http3-datagramparsed-extension
@@ -802,21 +811,7 @@ Table of Contents
 
                    Figure 26: HTTP3OriginFrame definition
 
-4.3.  HTTP3Datagram
-
-   The generic $HTTP3Datagram is defined here as a CDDL "type socket"
-   extension point.  It can be extended to support additional HTTP/3
-   datagram types.  This document intentionally does not define any
-   specific qlog schemas for specific HTTP/3 Datagram types.
-
-   ; The HTTP3Datagram is any key-value map (e.g., JSON object)
-   $HTTP3Datagram /= {
-       * text => any
-   }
-
-              Figure 27: HTTP3Datagram type socket definition
-
-4.4.  HTTP3ApplicationError
+4.3.  HTTP3ApplicationError
 
    HTTP3ApplicationError = "http_no_error" /
                           "http_general_protocol_error" /
@@ -836,7 +831,7 @@ Table of Contents
                           "http_connect_error" /
                           "http_version_fallback"
 
-                Figure 28: HTTP3ApplicationError definition
+                Figure 27: HTTP3ApplicationError definition
 
    The HTTP3ApplicationError extends the general $ApplicationError
    definition in the qlog QUIC document, see [QLOG-QUIC].
@@ -880,7 +875,7 @@ Table of Contents
 
    $ProtocolEventData /= HTTPEventData
 
-    Figure 29: HTTPEventData definition and ProtocolEventData extension
+    Figure 28: HTTPEventData definition and ProtocolEventData extension
 
    The concrete HTTP event types are further defined below, their type
    identifier is the heading name.
@@ -902,7 +897,7 @@ Table of Contents
        * $$http-capsulecreated-extension
    }
 
-                  Figure 30: HTTPCapsuleCreated definition
+                  Figure 29: HTTPCapsuleCreated definition
 
 6.2.  capsule_parsed
 
@@ -922,7 +917,7 @@ Table of Contents
        * $$http-capsuleparsed-extension
    }
 
-                  Figure 31: HTTPCapsuleParsed definition
+                  Figure 30: HTTPCapsuleParsed definition
 
 7.  HTTP Data Type Definitions
 
@@ -939,7 +934,7 @@ Table of Contents
        * text => any
    }
 
-               Figure 32: HTTPCapsule type socket definition
+               Figure 31: HTTPCapsule type socket definition
 
    The capsule types defined in this document are as follows:
 
@@ -948,7 +943,7 @@ Table of Contents
 
    $HTTPCapsule /= HTTPBaseCapsules
 
-                   Figure 33: HTTPBaseCapsules definition
+                   Figure 32: HTTPBaseCapsules definition
 
 7.1.1.  HTTPCapsuleDatagram
 
@@ -957,7 +952,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 34: HTTPCapsuleDatagram definition
+                 Figure 33: HTTPCapsuleDatagram definition
 
 7.1.2.  HTTPCapsuleUnknown
 
@@ -971,7 +966,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 35: HTTPCapsuleUnknown definition
+                  Figure 34: HTTPCapsuleUnknown definition
 
 8.  Security and Privacy Considerations
 
