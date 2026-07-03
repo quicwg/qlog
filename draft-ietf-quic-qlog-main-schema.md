@@ -1046,8 +1046,8 @@ CommonFields = {
 Tools MUST be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
 trace has a different value for a given field, this field MUST NOT be added to
-common_fields but instead defined on each event individually. Good example of such
-fields are "time" and "data", who are divergent by nature.
+common_fields but instead defined on each event individually. Good examples of such
+fields are "time" and "data", which are divergent by nature.
 
 # Concrete Event Types and Event Schemas {#event-types-and-schema}
 
