@@ -1808,7 +1808,7 @@ permutations are shown by example in {{truncated-values-ex}}.
 // only the length is present, meaning the value
 // was omitted
 {
-    "content_length": 5,
+    "content_length": 5
 }
 
 // both value and length are present, but the lengths
