@@ -2077,7 +2077,7 @@ file schema URIs" registry:
 
 | Log File Schema URI | Description | Reference |
 | urn:ietf:params:qlog:file:contained | Concrete log file schema that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
-| urn:ietf:params:qlog:file:sequential | Concrete log file schema containing a single trace, optimized for seqential read and write access. | {{qlog-file-seq-schema}} |
+| urn:ietf:params:qlog:file:sequential | Concrete log file schema containing a single trace, optimized for sequential read and write access. | {{qlog-file-seq-schema}} |
 
 IANA is requested to create the "qlog event schema URIs" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
