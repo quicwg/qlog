@@ -1764,7 +1764,7 @@ restricted 64-bit integer range. However, some of the protocols that qlog is
 intended to support (e.g., QUIC, HTTP/3), can use the full range of uint64
 values.
 
-As such, to support situations where I-JSON is in use, seralizers MAY encode
+As such, to support situations where I-JSON is in use, serializers MAY encode
 uint64 values using JSON strings. qlog parsers, therefore, SHOULD support
 parsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band
 information indicating that neither the serializer nor parser are constrained by
