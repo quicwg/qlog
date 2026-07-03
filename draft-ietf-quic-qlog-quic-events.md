@@ -1569,7 +1569,7 @@ The `recovery_parameters_set` event groups initial parameters from both loss
 detection and congestion control into a single event. It has Base importance
 level.
 
-All these settings are typically set once and never change. Implementation that
+All these settings are typically set once and never change. Implementations that
 do, for some reason, change these parameters during execution, MAY emit the
 `recovery_parameters_set` event more than once.
 
