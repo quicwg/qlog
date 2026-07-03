@@ -2037,7 +2037,7 @@ user privacy or identity, particularly with large or easily correlated data sets
 Operators should consider end user rights and preferences. Active user participation (as
 indicated by {{!RFC6973}}) on a per-qlog basis is challenging but aligning qlog
 capture, storage, and removal with existing user preference and privacy controls
-is crucial. Operators should consider agressive approaches to deletion or
+is crucial. Operators should consider aggressive approaches to deletion or
 aggregation.
 
 The most sensitive data in qlog is typically contained in RawInfo type fields
