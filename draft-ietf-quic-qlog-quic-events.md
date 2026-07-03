@@ -1377,7 +1377,7 @@ QUICStreamDataBlockedUpdated = {
 ## datagram_data_blocked_updated {#quic-datagramdatablockedupdated}
 
 The `datagram_data_blocked_updated` event is used to indicate when QUIC
-datagrames becomes blocked or unblocked for sending. The event has Extra
+datagrams become blocked or unblocked for sending. The event has Extra
 importance level.
 
 ~~~ cddl
