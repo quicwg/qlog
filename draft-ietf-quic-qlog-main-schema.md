@@ -1670,8 +1670,8 @@ tools.
 Considering these tradeoffs, JSON-based serialization formats provide features
 that make them a good starting point for qlog flexibility and interoperability.
 For these reasons, JSON is a recommended default and expanded considerations are
-given to how to map qlog to JSON ({{format-json}}, and its streaming counterpart
-JSON Text Sequences ({{format-json-seq}}. {{json-interop}} presents
+given to how to map qlog to JSON ({{format-json}}), and its streaming counterpart
+JSON Text Sequences ({{format-json-seq}}). {{json-interop}} presents
 interoperability considerations for both formats, and {{optimizations}} presents
 potential optimizations.
 
