@@ -813,7 +813,7 @@ is the heading name.
 ## capsule_created {#http-capsulecreated}
 
 The `capsule_created` event is emitted when a Capsule is created (see
-({{Section 3 of DGRAM-AND-CAPSULE}}). It has Core importance level.
+{{Section 3 of DGRAM-AND-CAPSULE}}). It has Core importance level.
 
 This event does not necessarily coincide with data getting passed to the
 transport layer. In HTTP/3, capsules are sent inside DATA frames, so the
@@ -833,7 +833,7 @@ HTTPCapsuleCreated = {
 ## capsule_parsed {#http-capsuleparsed}
 
 The `capsule_parsed` event is emitted when a Capsule is parsed (see
-({{Section 3 of DGRAM-AND-CAPSULE}}). It has Core importance level.
+{{Section 3 of DGRAM-AND-CAPSULE}}). It has Core importance level.
 
 This event is not necessarily the same as when the data is actually received on
 the transport layer. In HTTP/3, capsules are received inside DATA frames, so the
