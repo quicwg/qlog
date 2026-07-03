@@ -1329,13 +1329,13 @@ QUICDatagramDataMoved = {
 
 ## connection_data_blocked_updated {#quic-connectiondatablockedupdated}
 
-The `connection_blocked_updated` event is used to indicate when the QUIC
+The `connection_data_blocked_updated` event is used to indicate when the QUIC
 connection becomes blocked or unblocked for sending data. When a connection is
 "blocked", data can't be sent in streams and/or datagrams until the blocking
 reason has been resolved. The event has Extra importance level.
 
-Use the `stream_blocked_updated` or `datagram_blocked_updated` event to provide
-more fine-grained information for individual data types.
+Use the `stream_data_blocked_updated` or `datagram_data_blocked_updated` event to
+provide more fine-grained information for individual data types.
 
 ~~~ cddl
 QUICConnectionDataBlockedUpdated = {
