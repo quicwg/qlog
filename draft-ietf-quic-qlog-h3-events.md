@@ -581,7 +581,7 @@ range are invalid and result in the message being treated as malformed. It can
 however be useful to also log these invalid HTTP fields. Characters in the
 allowed range can be safely logged by the text type used in the `name` and
 `value` fields of `HTTP3HTTPField`. Characters outside the range are unsafe for the
-text type and need to be logged using the `name_bytes` and `value_bytes` field.
+text type and need to be logged using the `name_bytes` and `value_bytes` fields.
 An instance of `HTTP3HTTPField` MUST include either the `name` or `name_bytes`
 field and MAY include both. An `HTTP3HTTPField` MAY include a `value` or
 `value_bytes` field or neither.
