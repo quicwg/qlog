@@ -397,8 +397,8 @@ The `datagram_created` event is emitted when an HTTP/3 Datagram ({{Section 2.1
 of !RFC9297}}) is created. It has Base importance level.
 
 Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
-defined by the the extension using HTTP datagram. The HTTP3DatagramCreated event
-can be extended to support logging of such information.
+defined by the concrete protocol using HTTP datagrams. The HTTP3DatagramCreated event
+can be extended through the $$http3-datagramcreated-extension socket to support logging of such information.
 
 This event does not necessarily coincide with the HTTP/3 Datagram getting passed
 to the QUIC layer. For that, see the `datagram_data_moved` event in
@@ -420,8 +420,8 @@ The `datagram_parsed` event is emitted when an HTTP/3 Datagram ({{Section 2.1 of
 !RFC9297}}) is parsed. It has Base importance level.
 
 Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
-defined by the the extension using HTTP datagram. The HTTP3DatagramParsed event
-can be extended to support logging of such information.
+defined by the concrete protocol using HTTP datagrams. The HTTP3DatagramParsed event
+can be extended through the $$http3-datagramparsed-extension socket to support logging of such information.
 
 This event is not necessarily the same as when the HTTP/3 Datagram is actually
 received on the QUIC layer. For that, see the `datagram_data_moved` event in
