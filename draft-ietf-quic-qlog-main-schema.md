@@ -125,7 +125,7 @@ etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
 Serialization examples in this document use JSON ({{!JSON=RFC8259}}) unless
 otherwise indicated.
 
-Events are defined with an importance level as described in {{importance}}}.
+Events are defined with an importance level as described in {{importance}}.
 
 ## Use of CDDL
 
