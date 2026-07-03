@@ -520,7 +520,7 @@ HTTP3DataFrame = {
 ### HTTP3HeadersFrame
 
 The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an HTTP field
-section; see {{Section 7.2.2 of RFC9114}}. `HTTP3HeaderFrame`, in contrast,
+section; see {{Section 7.2.2 of RFC9114}}. `HTTP3HeadersFrame`, in contrast,
 contains the HTTP field section without QPACK encoding.
 
 ~~~ cddl
