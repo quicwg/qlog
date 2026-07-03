@@ -1022,7 +1022,7 @@ extracted to common_fields:
 ~~~~~~~~
 {: #common-fields-ex title="CommonFields example"}
 
-An event's "common_fields" field is a generic dictionary of key-value pairs, where the
+The "common_fields" field is a generic dictionary of key-value pairs, where the
 key is always a string and the value can be of any type, but is typically also a
 string or number. As such, unknown entries in this dictionary MUST be disregarded
 by the user and tools (i.e., the presence of an unknown field is explicitly NOT an
