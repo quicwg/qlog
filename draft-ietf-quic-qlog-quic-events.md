@@ -1216,8 +1216,8 @@ processed at the receiver. It has Extra importance level.
 
 This event exists to eliminate the need to define specific-purpose events, where
 the effect of processing a frame can be easily inferred from its contents. For
-example, there would be no need to define a hypotheical `packets_acknowledged`
-event, when the an ACK frame contains all relevant information.
+example, there would be no need to define a hypothetical `packets_acknowledged`
+event, when an ACK frame contains all relevant information.
 
 The `frames_processed` event can be used to signal internal state change not
 resulting directly from the actual parsing of a frame (e.g., the frame could
