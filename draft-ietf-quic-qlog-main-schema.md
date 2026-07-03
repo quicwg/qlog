@@ -716,8 +716,8 @@ order (though not necessarily absolute value, for the "relative_to_previous_even
 format). Tools MAY sort all events on the timestamp before processing them,
 though are not required to (as this could impose a significant processing
 overhead). This can be a problem especially for multi-threaded and/or streaming
-loggers, who could consider using a separate post-processor to order qlog events
-in time if a tool do not provide this feature.
+loggers, which could consider using a separate post-processor to order qlog events
+in time if a tool does not provide this feature.
 
 Tools SHOULD NOT assume the ability to derive the absolute calendar timestamp of an event
 from qlog traces. Tools should not rely on timestamps to be consistent across
