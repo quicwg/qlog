@@ -1460,7 +1460,7 @@ The three main event types are:
 
 In order to indicate an active timer's timeout update, a new `set` event is used.
 
-QUICTimerUpdated events with the `timer_type` set to `ack`or `pto` indicate
+QUICTimerUpdated events with the `timer_type` set to `ack` or `pto` indicate
 changes to the individual timeouts defined by RFC 9002: the threshold loss
 detection timeout (see {{Section 6.1.2 of QUIC-RECOVERY}}) and the probe timeout
 (see {{Section 6.2 of QUIC-RECOVERY}}). Those set to `loss_timeout` represent
