@@ -975,7 +975,7 @@ number space a typical QUIC connection will use.
 
 ## udp_datagrams_sent {#quic-udpdatagramssent}
 
-The `datagrams_sent` event indicates when one or more UDP-level datagrams are
+The `udp_datagrams_sent` event indicates when one or more UDP-level datagrams are
 passed to the underlying network socket. This is useful for determining how QUIC
 packet buffers are drained to the OS. The event has Extra importance level.
 
@@ -991,7 +991,7 @@ QUICUDPDatagramsSent = {
 
     ; ECN bits in the IP header
     ; if not set, defaults to the value used on the last
-    ; QUICDatagramsSent event
+    ; QUICUDPDatagramsSent event
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
@@ -1004,7 +1004,7 @@ QUICUDPDatagramsSent = {
 Since QUIC implementations rarely control UDP logic directly, the raw data
 excludes UDP-level headers in all RawInfo fields.
 
-The `datagram_id` field is used to track packet coalescing, see
+The `datagram_ids` field is used to track packet coalescing, see
 {{packet-coalescing}}.
 
 ## udp_datagrams_received {#quic-udpdatagramsreceived}
@@ -1025,7 +1025,7 @@ QUICUDPDatagramsReceived = {
 
     ; ECN bits in the IP header
     ; if not set, defaults to the value on the last
-    ; QUICDatagramsReceived event
+    ; QUICUDPDatagramsReceived event
     ? ecn: [+ ECN]
 
     ? datagram_ids: [+ uint32]
