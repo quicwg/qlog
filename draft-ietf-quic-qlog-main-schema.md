@@ -1112,7 +1112,7 @@ In the following hypothetical example, a qlog trace contains events belonging to
 * The two event namespaces defined by event schemas in this document
 ({{generic-event-schema}}).
 * Events in a namespace named `rick` specified in a hypothetical RFC
-* Extentions to the `rick` namespace defined in two separate new event schemas
+* Extensions to the `rick` namespace defined in two separate new event schemas
   (with URI extension identifiers `astley` and `moranis`)
 * Events from three private event schemas, detailing definitions for and
   extensions to two namespaces (`pickle` and `cucumber`)
