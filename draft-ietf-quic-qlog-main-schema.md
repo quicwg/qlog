@@ -457,8 +457,8 @@ is through the use of the "group_id" field, discussed in {{group-ids}}.
 
 A qlog file using the QlogFileSeq schema can be serialized to a streamable JSON
 format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}). The top-level
-element in this schema defines only a small set of "header" fields and an array
-of component traces. This is defined in {{qlog-file-def}} as:
+element in this schema defines only a small set of "header" fields and a single
+component trace. This is defined in {{qlog-file-seq-def}} as:
 
 ~~~ cddl
 QlogFileSeq = {
