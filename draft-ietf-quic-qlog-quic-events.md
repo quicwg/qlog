@@ -282,7 +282,7 @@ IP and/or port information.
 
 The `connection_started` event is used for both attempting (client-perspective)
 and accepting (server-perspective) new connections. Note that while there is
-overlap with the `connection_state_updated` event, this event is separate event
+overlap with the `connection_state_updated` event, this is a separate event
 in order to capture additional data that can be useful to log. It has Base
 importance level.
 
