@@ -878,7 +878,7 @@ information.
 QUICPacketDropped = {
 
     ; Primarily packet_type should be filled here,
-    ; as other fields might not be decrypteable or parseable
+    ; as other fields might not be decryptable or parsable
     ? header: PacketHeader
     ? raw: RawInfo
     ? datagram_id: uint32
