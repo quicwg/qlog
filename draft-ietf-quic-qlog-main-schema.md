@@ -1909,7 +1909,7 @@ tagged with the "group_id" field with values "abcde" and "12345".
 
 # Tooling requirements {#tooling}
 
-Tools ingestion qlog MUST indicate which qlog version(s), qlog format(s), qlog
+Tools ingesting qlog MUST indicate which qlog version(s), qlog format(s), qlog
 file and event schema(s), compression methods and potentially other input file
 formats (for example .pcap) they support. Tools SHOULD at least support .qlog
 files in the default JSON format ({{format-json}}). Additionally, they SHOULD
