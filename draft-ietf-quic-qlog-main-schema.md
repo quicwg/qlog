@@ -1546,7 +1546,7 @@ LogLevelVerbose = {
 When evaluating a protocol implementation, one typically sets up a series of
 interoperability or benchmarking tests, in which the test situations can change
 over time. For example, the network bandwidth or latency can vary during the
-test, or the network can be fully disable for a short time. In these setups, it
+test, or the network can be fully disabled for a short time. In these setups, it
 is useful to know when exactly these conditions are triggered, to allow for
 proper correlation with other events. This namespace defines event types to
 allow logging of such simulation metadata and its identifier is "simulation".
