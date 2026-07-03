@@ -959,7 +959,7 @@ different protocols and contexts inside of the same trace (for example
 fields are consistent for each event instance (for example, a single trace
 contains events for a single QUIC connection).
 
-To reduce file size and making logging easier, qlog uses the "common_fields" list
+To reduce file size and make logging easier, qlog uses the "common_fields" list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
 event. An example of this is shown in {{common-fields-ex}}.
