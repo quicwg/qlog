@@ -491,10 +491,9 @@ closely to their internal logic. Tools SHOULD be able to deal with these custom
 states in a similar way to the pre-defined states in this document.
 
 ## tuple_assigned {#quic-tupleassigned}
-Importance: Base
 
 This event is used to associate a single TupleID's value with other parameters
-that describe a unique network tuple.
+that describe a unique network tuple. It has Base importance level.
 
 As described in {{Section 7.2 of QLOG-MAIN}}, each qlog event can be linked to a single network
 tuple by means of the top-level "tuple" field, whose value is a TupleID. However,
