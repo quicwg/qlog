@@ -481,7 +481,7 @@ $ConnectionState /= BaseConnectionStates / GranularConnectionStates
 ~~~
 {: #quic-connectionstateupdated-def title="QUICConnectionStateUpdated definition"}
 
-The `connection_state_changed` event has some overlap with the
+The `connection_state_updated` event has some overlap with the
 `connection_closed` and `connection_started` events, and the handling of various
 frames (for example in a `packet_received` event). Still, it can be useful to
 log these logical state transitions separately, especially if they map to an
