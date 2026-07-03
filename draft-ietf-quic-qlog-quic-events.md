@@ -613,7 +613,7 @@ QUIC-TRANSPORT}}. It has Core importance level.
 QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.
 
 ALPN identifiers are byte sequences that may be presentable as UTF-8.
-The `ALPNIdentifier`` type supports either format. Implementations SHOULD log at
+The `ALPNIdentifier` type supports either format. Implementations SHOULD log at
 least one format, but MAY log both or none.
 
 ~~~ cddl
