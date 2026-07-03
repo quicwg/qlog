@@ -72,9 +72,9 @@ of this document.
 This document defines a qlog event schema ({{Section 8 of QLOG-MAIN}})
 containing concrete events for the core HTTP/3 protocol {{RFC9114}} and selected
 extensions: Extended CONNECT ({{!EXTENDED-CONNECT=RFC9220}}), PRIORITY_UPDATE
-({{Section 7 of !PRIORITIZATION=RFC9218}}), ORIGIN {{!ORIGIN=RFC9412}}, and
-HTTP/3 Datagrams {{Section 2.1 of !DGRAM-AND-CAPSULE=RFC9297}}). It also defines
-a schema for the HTTP Capsule Protocol ({{Section 3 of DGRAM-AND-CAPSULE}}.
+({{Section 7 of !PRIORITIZATION=RFC9218}}), ORIGIN ({{!ORIGIN=RFC9412}}), and
+HTTP/3 Datagrams ({{Section 2.1 of !DGRAM-AND-CAPSULE=RFC9297}}). It also defines
+a schema for the HTTP Capsule Protocol ({{Section 3 of DGRAM-AND-CAPSULE}}).
 
 The event namespace with identifier `http3` is defined; see {{schema-def}}. In
 this namespace multiple events derive from the qlog abstract Event class
