@@ -1953,7 +1953,7 @@ assess or respond effectively.
 qlog operators and implementers need to consider security and privacy risks when
 handling qlog data, including logging, storage, usage, and more. The
 considerations presented in this section may pose varying risks depending on the
-the data itself or its handling.
+data itself or its handling.
 
 The following is a non-exhaustive list of example data types that could contain
 sensitive information that might allow identification or correlation of
