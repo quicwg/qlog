@@ -766,7 +766,7 @@ QUICParametersRestored = {
     ? active_connection_id_limit: uint64
     ? initial_max_data: uint64
     ? initial_max_stream_data_bidi_local: uint64
-    ? initial_max_stream_data_bidi_remote: uint64,
+    ? initial_max_stream_data_bidi_remote: uint64
     ? initial_max_stream_data_uni: uint64
     ? initial_max_streams_bidi: uint64
     ? initial_max_streams_uni: uint64
