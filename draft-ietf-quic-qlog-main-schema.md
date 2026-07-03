@@ -1829,7 +1829,7 @@ general small to medium scale (debugging) setups. However, these approaches tend
 to be relatively verbose, leading to larger file sizes. Additionally, generalized
 JSON(-SEQ) (de)serialization performance is typically (slightly) lower than that
 of more optimized and predictable formats. Both aspects present challenges to
-large scale setups, though they may still be practical to deploy; see [ANRW-2020].
+large scale setups, though they may still be practical to deploy; see {{ANRW-2020}}.
 JSON and JSON-SEQ compress very well using commonly-available algorithms such as
 GZIP or Brotli.
 
