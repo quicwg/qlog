@@ -128,7 +128,7 @@ GUID abcd1234).
 
 The event and data structure definitions in ths document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
-extensions described in {{QLOG-MAIN}}.
+extensions described in {{Section 1.2 of QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
 type, data, group_id, RawInfo, and time-related
@@ -795,9 +795,9 @@ The namespace identifier itself is not affected by this requirement.
 # HTTP Events {#http-ev}
 
 HTTP events extend the `$ProtocolEventData` extension point defined in
-{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+{{Section 8.2 of QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
 per-event extension points via the `$$` CDDL "group socket" syntax, as also
-described in {{QLOG-MAIN}}.
+described in {{Section 8.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 HTTPEventData = HTTPCapsuleCreated /
