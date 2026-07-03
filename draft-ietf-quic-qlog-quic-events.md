@@ -226,6 +226,8 @@ QuicEventData = QUICServerListening /
                 QUICUDPDatagramsReceived /
                 QUICUDPDatagramDropped /
                 QUICStreamStateUpdated /
+                QUICFramesCreated /
+                QUICFramesParsed /
                 QUICFramesProcessed /
                 QUICStreamDataMoved /
                 QUICDatagramDataMoved /
