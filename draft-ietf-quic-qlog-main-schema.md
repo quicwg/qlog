@@ -2047,7 +2047,7 @@ inclusion of such fields for all but the most stringent use cases.
 # IANA Considerations {#iana}
 
 IANA is requested to register a new entry in the "IETF URN Sub-namespace for
-Registered Protocol Parameter Identifiers" registry ({{!RFC3553}})":
+Registered Protocol Parameter Identifiers" registry ({{!RFC3553}}):
 
 Registered Parameter Identifier:
 : qlog
