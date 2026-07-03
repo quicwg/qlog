@@ -442,7 +442,7 @@ HTTP3DatagramParsed = {
 The `push_resolved` event is emitted when a pushed resource ({{Section 4.6 of
 RFC9114}}) is successfully claimed (used) or, conversely, abandoned (rejected)
 by the application on top of HTTP/3 (e.g., the web browser). This event provides
-additional context that can is aid debugging issues related to server push. It
+additional context that can aid debugging issues related to server push. It
 has Extra importance level.
 
 ~~~ cddl
