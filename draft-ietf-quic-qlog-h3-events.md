@@ -282,7 +282,7 @@ Client bidirectional streams always have a stream_type value of "request".
 Server bidirectional streams have no defined use, although extensions could
 change that.
 
-Unidirectional streams in either direction begin with with a variable-length
+Unidirectional streams in either direction begin with a variable-length
 integer type. Where the type is not known, the stream_type value of "unknown"
 type can be used and the value captured in the stream_type_bytes field; a
 numerical value without variable-length integer encoding.
