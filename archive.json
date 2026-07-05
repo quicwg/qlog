@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-02T02:42:52.103485+00:00",
+  "timestamp": "2026-07-05T02:32:46.773535+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -700,7 +700,7 @@
       ],
       "body": "using transport.parameters_set there are two parameters to signal 0-RTT:\r\n- resumption_allowed\r\n- early_data_enabled\r\n\r\nAs pointed out by @jlaine, these are a bit ambiguous, as 0-RTT can either be used for the current connection or enabled for a future connection.\r\n\r\nSolution 1:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new events: session_ticket_sent/received (with early_data_enabled?:boolean member)\r\n\r\nSolution 2:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new parameters: resumption_offered and early_data_offered",
       "createdAt": "2019-10-15T09:03:47Z",
-      "updatedAt": "2025-10-18T10:02:26Z",
+      "updatedAt": "2026-07-02T11:32:09Z",
       "closedAt": null,
       "comments": [
         {
@@ -744,6 +744,13 @@
           "body": "> What's your take on the `QUICParametersSet.resumption_allowed`? With your reasoning, we'd have to remove it, right? I'm not opposed to that, just want to be consistent.\n\nI think it can stay, because it is always the responsibility of the QUIC stacks to receive the tickets from the TLS stack and save them. This is because QUIC stacks to bundle certain transport parameters to the TLS session ticket.\n\nThat said, to me:\n* The name \"resumption_allowed\" seems a bit odd to indicate the receipt of a TLS session ticket. IMO a name like \"session_ticket_received\" makes more sense.\n* It is a bit odd that an event in the reverse direction missing; i.e., one that indicates the QUIC stack passing the session ticket to the TLS stack.",
           "createdAt": "2025-10-18T09:58:58Z",
           "updatedAt": "2025-10-18T10:02:26Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Going in reverse order of Kazuho's 2 points:\n\n1. `parameters_set` is intended to be used for both directions, indicated by the `initiator` field (https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-5.3)\n2. As such, if we would change the field to `session_ticket` it should probably be `session_ticket_present` or `session_ticket_used` to be compatible with both directions.\n\nHowever, all of this might be mute if we do the suggestion on https://github.com/quicwg/qlog/issues/121#issuecomment-4865158461 (add the readable part of the session_ticket blob to `parameters_set`). In that case, we can do away with `resumption_allowed`, as the presence of the session_ticket blob is indication it's set/present/used. We would need a way to allow indicating that without having to log the real blob though (e.g., for privacy reasons)\n\nThat does leave us with no way to log 0-RTT acceptance/rejection yet though, so that should be separate PR @marten-seemann ",
+          "createdAt": "2026-07-02T11:32:09Z",
+          "updatedAt": "2026-07-02T11:32:09Z"
         }
       ]
     },
@@ -1840,7 +1847,7 @@
       "id": "MDU6SXNzdWU1NzEyNzIxMTI=",
       "title": "Add more TLS-specifics",
       "url": "https://github.com/quicwg/qlog/issues/59",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -1851,8 +1858,8 @@
       ],
       "body": "Currently, we have few options for logging a lot of TLS related data (e.g., cipher suites, supported groups, (E)SNI, ...). \r\n\r\nNeed to figure out a generic form for TLS (extensions) data so it can be logged using qlog as well. \r\n\r\nNote: this is getting in the \"new TCP+TLS+HTTP/2 schema\" territory ",
       "createdAt": "2020-02-26T11:37:15Z",
-      "updatedAt": "2025-10-14T10:36:46Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-02T13:30:05Z",
+      "closedAt": "2026-07-02T13:30:05Z",
       "comments": [
         {
           "author": "marten-seemann",
@@ -1867,6 +1874,13 @@
           "body": "Meeting notes: this is/will be covered by https://github.com/quicwg/qlog/issues/121 so proposed to close when that is resolved",
           "createdAt": "2025-10-14T10:36:46Z",
           "updatedAt": "2025-10-14T10:36:46Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Given overlap with #121, closing as duplicate",
+          "createdAt": "2026-07-02T13:30:05Z",
+          "updatedAt": "2026-07-02T13:30:05Z"
         }
       ]
     },
@@ -3546,7 +3560,7 @@
       ],
       "body": "Currently, we can log which params/settings were restored upon attempting 0-RTT, but not which ones were actually stored at the end of a connection (though we might assume it were the correct ones, using the values from `parameters_set`).\r\n\r\nFor a server which encodes this information in for example the SessionTicket, we also cannot log which values are in the ticket when sending it, nor when receiving it, nor if early data was denied because of a mismatch therein. ",
       "createdAt": "2020-11-02T23:14:15Z",
-      "updatedAt": "2025-10-14T10:35:12Z",
+      "updatedAt": "2026-07-02T11:33:01Z",
       "closedAt": null,
       "comments": [
         {
@@ -3576,6 +3590,13 @@
           "body": "Meeting notes: @marten-seemann to prepare a PR based on input during the meeting",
           "createdAt": "2025-10-14T10:35:12Z",
           "updatedAt": "2025-10-14T10:35:12Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "For reference (make it easier to make progress during meeting later today), these are the salient meeting notes for this ticket:\n\n```\n#121: Session Ticket\n    Marten: have ways to log Token and StatelessResetToken. We could replicate that for the SessionTicket.\n    \n    Mirja: logging session ticket is useful, not sure where to put it\n    \n    Lucas: maybe useful to separate out \n    \n    Kazuho: if we go down to the TLS level, things get messy (encrypted, obfuscated, etc.)\n        maybe only log QUIC-accessible part of the session ticket blob\n        \n        Robin & Marten: love that suggestion; let's do it like that\n        \n        Mirja: things that are only in RFC9001 should not be in here ,but things that might be in 9000 might make sense\n        \n    Lucas: TODO Marten: propose PR to add session ticket info to parameters_set\n```\n\nSpecifically, it seem we just want to log the QUIC-accessible part of the session ticket blog as part of `parameters_set`.\n\nAs mentioned in https://github.com/quicwg/qlog/issues/27#issuecomment-4865218427 though, we should probably also allow logging a bogus/encoded value for implementations that dont' want to expose the raw data in the logs. ",
+          "createdAt": "2026-07-02T11:24:48Z",
+          "updatedAt": "2026-07-02T11:33:01Z"
         }
       ]
     },
@@ -8811,7 +8832,7 @@
       "id": "I_kwDOCrLn6M6BJIC9",
       "title": "Give concrete guidance on how to extend qlog",
       "url": "https://github.com/quicwg/qlog/issues/405",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -8822,8 +8843,8 @@
       ],
       "body": "With #417 and the `additional-schema` proposal, we're moving to a good state for qlog's extensibility. \r\n\r\nHowever, we feel additional prose is needed to make people make good use of this extensibility. Without it, we will mainly have the proper CDDL structures and some scattered prose, but no clear flowcharts/lists or similar. \r\n\r\nFor example, we can add TODOs for different use cases:\r\n- If you want to add a fully new protocol, do xyz\r\n- If you want to add new fields to an existing event, do abc\r\n- If you want to add new options to an ENUM, do def\r\n\r\nThis can only be done after the extensibility stuff is properly done though, so this issue is to remind us later ;) ",
       "createdAt": "2024-03-04T11:48:47Z",
-      "updatedAt": "2025-10-14T09:20:35Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-02T13:27:36Z",
+      "closedAt": "2026-07-02T13:27:36Z",
       "comments": [
         {
           "author": "LPardue",
@@ -8921,7 +8942,7 @@
       "id": "I_kwDOCrLn6M6CsDrv",
       "title": "Discuss extensibility of extension points through type or group sockets",
       "url": "https://github.com/quicwg/qlog/issues/416",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "rmarx",
       "authorAssociation": "CONTRIBUTOR",
       "assignees": [
@@ -8932,8 +8953,8 @@
       ],
       "body": "With https://github.com/quicwg/qlog/pull/415 and the upcoming PR describing general extensibility, we won't yet have discussed guidelines for extending other stuff (e.g., $QuicFrame or $H3Parameters or $H3FrameType), so don't forget to add those once those two PRs are merged.\r\n\r\nAt that point, probably also best to move the socket extensibility discussion to the general extensibility section and add this new thing there as well.\r\n\r\n(this is mostly a DO NOT FORGET ABOUT THIS ROBIN issue)",
       "createdAt": "2024-03-18T15:48:21Z",
-      "updatedAt": "2025-10-14T09:19:15Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-02T13:27:10Z",
+      "closedAt": "2026-07-02T13:27:10Z",
       "comments": [
         {
           "author": "LPardue",
@@ -8941,6 +8962,20 @@
           "body": "Meeting notes: Robin to refresh memory and address before Montreal",
           "createdAt": "2025-10-14T09:19:15Z",
           "updatedAt": "2025-10-14T09:19:15Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Reading up on this in Section 8.2 \"Extending the Data field\" (https://quicwg.org/qlog/draft-ietf-quic-qlog-main-schema.html#section-8.2) and related sections in QUIC (such as 8.13 for QuicFrame https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-8.13) and HTTP/3 (https://quicwg.org/qlog/draft-ietf-quic-qlog-h3-events.html#name-http3frame) makes me feel like we can **close this with no action.** \n\nThe current text and concrete examples should be sufficient (the main schema explicitly includes an example of how to extend existing events with $$ and QUIC talks explicitly about the group socket thing in https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#section-3, so that's sufficient for me. \n\n",
+          "createdAt": "2026-07-02T10:47:41Z",
+          "updatedAt": "2026-07-02T10:47:41Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "ok lets close!",
+          "createdAt": "2026-07-02T13:27:10Z",
+          "updatedAt": "2026-07-02T13:27:10Z"
         }
       ]
     },
@@ -9861,15 +9896,17 @@
       "id": "I_kwDOCrLn6M7RltZ1",
       "title": "Is HTTP3Datagram a layering violation?",
       "url": "https://github.com/quicwg/qlog/issues/494",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "I started thinking about logging protocols building on top of HTTP/3, such as the various MASQUE flavors and WebTransport.\n\nKeep in mind that a single QUIC server can support multiple of these protocols, even on the same connection: In principle, you could proxy using CONNECT-UDP and serve a WebTransport session at the same time.\n\nThis leads us to the question who's logging `HTTP3Datagram` events:\n* Is it the HTTP/3 layer? If so, how does the HTTP/3 layer which application protocol is running on top of the HTTP stream that the datagram was sent / received for?\n* Is it the application layer? First of all, this seems wrong, since there might be buffer of received datagrams, leading to delayed logging of that datagram. Second, what if the datagram is never consumed (e.g. the WebTransport session might have closed)?\n\nI'm wondering if we should remove the extensibility of `HTTP3Datagram`. The HTTP/3 layer would simply log that a DATAGRAM with a respective Quarter Stream ID was received. The application layer would then log further details about that datagram, e.g. the Context ID in the case of MASQUE.",
       "createdAt": "2025-10-15T04:48:40Z",
-      "updatedAt": "2026-06-24T16:46:30Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-03T13:35:33Z",
+      "closedAt": "2026-07-03T13:35:33Z",
       "comments": [
         {
           "author": "LPardue",
@@ -9926,6 +9963,13 @@
           "body": "can you be more specific about what \"doesn't work at all\"? \n\nEither the H3 layer or applications can themselves generate the event and then populate the `quarter_stream_id` field. They can add any applicaion-specific field they like such as the structured contents of \"payload\" in the `? datagram: $HTTP3Datagram` field. They could also put those fields directly in the frame via `* $$http3-datagramparsed-extension`.\n\nTo give a concrete example, quiche's HTTP/3 layer wouldn't log the `HTTP3DatagramCreated` or `HTTP3DatagramParsed` events because we deletagate that to applications. We'd probably provide the means to add arbitrary key-value pairs to a collection named after either extension point.\n\nIf the argument is we have duplicate/redundant ways to carry things, then dropping `? datagram: $HTTP3Datagram` seems reasonable. WDYT?",
           "createdAt": "2026-06-24T16:46:01Z",
           "updatedAt": "2026-06-24T16:46:30Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Discussed in last meeting: will remove `? datagram: $HTTP3Datagram` from both events + remove the definition of HTTP3Datagram completely (since it's just a plain object anyway, which can be added by implementations easily enough later).\n\n",
+          "createdAt": "2026-07-02T13:04:20Z",
+          "updatedAt": "2026-07-02T13:04:20Z"
         }
       ]
     },
@@ -9952,7 +9996,7 @@
       "id": "I_kwDOCrLn6M7aX_rj",
       "title": "Guidance for using RawInfo in protocol schemas",
       "url": "https://github.com/quicwg/qlog/issues/500",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -9961,8 +10005,8 @@
       "labels": [],
       "body": "The main schema defines RawInfo and our QUIC and HTTP/3 schemas use it. However, while implementing the update to latest drafts and migrating code, I wasn't always sure how to deal with things like STREAM frame RawInfo::length vs. RawInfo::payload_length. If things are ambiguous, we risk some interoperability issues. I think it would help to be quite explicit on how to populate the `raw` fields of protocol elements such as frames.",
       "createdAt": "2025-11-25T16:16:39Z",
-      "updatedAt": "2026-07-01T16:09:49Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-02T13:25:34Z",
+      "closedAt": "2026-07-02T13:25:34Z",
       "comments": [
         {
           "author": "LPardue",
@@ -9985,7 +10029,7 @@
       "id": "I_kwDOCrLn6M7b2p8R",
       "title": "consider moving tuple information to QUICPacketSent / QUICPacketReceived / QUICPacketDropped event",
       "url": "https://github.com/quicwg/qlog/issues/501",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -9994,8 +10038,8 @@
       "labels": [],
       "body": "The tuple is currently a property of the `Event`. I'm not sure if that makes sense. At the very least, it would complicate the data structures used in my implementation quite significantly.\n\nFor example, it doesn't really make sense to set the tuple on the `QUICKeyUpdated` event. With the exception of a few events like `QUICPacketSent`, `QUICPacketReceived`, `QUICPacketDropped`, etc., most events are connection-level events. This applies even more so when moving up the application stack: No HTTP/3 event benefits from specifying the tuple.\n\nI suggest:\n\n1. Moving the `TupleID` definition to the QUIC document.\n2. Making it a field in the few events where it actually applies.",
       "createdAt": "2025-12-03T05:08:43Z",
-      "updatedAt": "2026-06-25T12:54:51Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-02T14:53:45Z",
+      "closedAt": "2026-07-02T14:53:45Z",
       "comments": [
         {
           "author": "LPardue",
@@ -10110,15 +10154,15 @@
       "id": "I_kwDOCrLn6M70JVSd",
       "title": "frames_processed event for receiving *and* sending?",
       "url": "https://github.com/quicwg/qlog/issues/507",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "I'm prototyping qmux and qlog almost \"just works\" without any modification. However, one issue I hit was that I was only logging information about QUIC frames in packet_received and packet_sent events. HTTP/3 frames didn't hit the issue because we have frame_created and frame_parsed events there. The asymmetry makes some sense, due to how H3 is running over a stream.\n\nIn qmux, QUIC framing is also running over a stream and there are not packets. One hack for logging frames is to make fake packet events. Another would be to define a qmux event, perhaps a qmux_record_received if we go with https://github.com/quicwg/qmux/pull/26 (or overload the packet_received event for the record). Another potential event is frames_processed https://quicwg.org/qlog/draft-ietf-quic-qlog-quic-events.html#name-frames_processed, taking some choice words from the spec\n\n> Implementations have the opportunity to (selectively) log this type of signal without having to log packet-level details (e.g., in packet_received). Since for almost all cases, the effects of applying a frame to the internal state of an implementation can be inferred from that frame's contents, these events are aggregated into this single frames_processed event.\n\n> In some implementations, it can be difficult to log frames directly, even when using packet_sent and packet_received events.\n\nWell, I don't have packet details so this seems ideal! However, if I use the frames_processed event I can't disambiguate between frame creation and frame parsing. Maybe we could add an optional field to explicitly indicate which one of these it is?\n\n",
       "createdAt": "2026-03-18T15:49:43Z",
-      "updatedAt": "2026-03-18T16:06:37Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-02T13:22:36Z",
+      "closedAt": "2026-07-02T13:22:36Z",
       "comments": [
         {
           "author": "LPardue",
@@ -10126,8 +10170,47 @@
           "body": "Here's an example using the suggestion of adding an optional field\n\n```\n\u001e{\"file_schema\":\"urn:ietf:params:qlog:file:sequential\",\"serialization_format\":\"JSON-SEQ\",\"title\":\"qmux-server qlog\",\"description\":\"qmux-server 1773849630\",\"trace\":{\"title\":\"qmux-server qlog\",\"description\":\"qmux-server 1773849630\",\"vantage_point\":{\"type\":\"server\"},\"event_schemas\":[\"urn:ietf:params:qlog:events:quic-12\",\"urn:ietf:params:qlog:events:http3-12\"]}}\n\u001e{\"time\":0.0,\"name\":\"quic:parameters_set\",\"data\":{\"initiator\":\"local\",\"disable_active_migration\":false,\"max_idle_timeout\":30000,\"max_udp_payload_size\":65527,\"ack_delay_exponent\":3,\"max_ack_delay\":25,\"active_connection_id_limit\":2,\"initial_max_data\":10000000,\"initial_max_stream_data_bidi_local\":1000000,\"initial_max_stream_data_bidi_remote\":1000000,\"initial_max_stream_data_uni\":1000000,\"initial_max_streams_bidi\":100,\"initial_max_streams_uni\":100,\"unknown_parameters\":[]}}\n\u001e{\"time\":0.212966,\"name\":\"quic:frames_processed\",\"data\":{\"frames\":[{\"frame_type\":\"unknown\",\"frame_type_bytes\":4562519363345321226}],\"direction\":\"created\"}}\n\u001e{\"time\":0.454615,\"name\":\"quic:frames_processed\",\"data\":{\"frames\":[{\"frame_type\":\"unknown\",\"frame_type_bytes\":4562519363345321226}],\"direction\":\"parsed\"}}\n\u001e{\"time\":0.561113,\"name\":\"quic:stream_data_moved\",\"data\":{\"stream_id\":3,\"offset\":0,\"from\":\"application\",\"to\":\"transport\",\"raw\":{\"length\":1}}}\n\u001e{\"time\":0.578628,\"name\":\"http3:stream_type_set\",\"data\":{\"initiator\":\"local\",\"stream_id\":3,\"stream_type\":\"control\"}}\n\u001e{\"time\":0.607355,\"name\":\"quic:stream_data_moved\",\"data\":{\"stream_id\":3,\"offset\":1,\"from\":\"application\",\"to\":\"transport\",\"raw\":{\"length\":18}}}\n\u001e{\"time\":0.620332,\"name\":\"http3:frame_created\",\"data\":{\"stream_id\":3,\"length\":18,\"frame\":{\"frame_type\":\"settings\",\"settings\":[{\"name\":\"4560856924583320385\",\"value\":12045197955639269}]}}}\n\u001e{\"time\":0.643862,\"name\":\"quic:stream_data_moved\",\"data\":{\"stream_id\":7,\"offset\":0,\"from\":\"application\",\"to\":\"transport\",\"raw\":{\"length\":1}}}\n\u001e{\"time\":0.653534,\"name\":\"http3:stream_type_set\",\"data\":{\"initiator\":\"local\",\"stream_id\":7,\"stream_type\":\"qpack_encode\"}}\n```",
           "createdAt": "2026-03-18T16:06:37Z",
           "updatedAt": "2026-03-18T16:06:37Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Resolved by #513 ",
+          "createdAt": "2026-07-02T13:22:36Z",
+          "updatedAt": "2026-07-02T13:22:36Z"
         }
       ]
+    },
+    {
+      "number": 517,
+      "id": "I_kwDOCrLn6M8AAAABHc9B-Q",
+      "title": "Make frames_processed consistent across QUIC and HTTP/3",
+      "url": "https://github.com/quicwg/qlog/issues/517",
+      "state": "OPEN",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "https://github.com/quicwg/qlog/pull/513 and #507  split up the original `quic:frames_processed` into 3 events (parsed, created, processed).\n\nHowever, for HTTP/3 we only have parsed and created at this time. The reasoning behind keeping `processed` for QUIC (if stuff is buffered upon receipt and only actually _processed_ later) also applies to HTTP/3 though, so there's an argument for adding it to H3 as well.\n\nHowever, we can also make the argument that the new `processed` isn't terribly useful in QUIC/unlikely to be used much in QUIC either (and has overlap with other events like `stream_data_moved`) and we could remove it instead, keeping only created and parsed.\n\nThis issue is to track this to-be-made decision.\n\nTL;DR: either:\n1. add `frames_processed` to HTTP/3 as well\n2. OR remove `frames_processed` from QUIC\n\n",
+      "createdAt": "2026-07-02T13:55:07Z",
+      "updatedAt": "2026-07-02T13:55:07Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 541,
+      "id": "I_kwDOCrLn6M8AAAABHmIY1A",
+      "title": "Reusing VantagePointType for `type` and `flow` fields is slightly confusing",
+      "url": "https://github.com/quicwg/qlog/issues/541",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "We have\n\n```\nVantagePoint = {\n    ? name: text\n    type: VantagePointType\n    ? flow: VantagePointType\n}\n```\n\nand \n\n> The flow field is only required if the type is \"network\" (for example, the trace\nis generated from a packet capture).\n\nand \n\n> Meaning of the different values for the flow field:\n> \n>   * \"client\" indicates that this vantage point follows client data flow semantics (a\n>     \"packet sent\" event goes in the direction of the server).\n>   * \"server\" indicates that this vantage point follow server data flow semantics (a\n>     \"packet sent\" event goes in the direction of the client).\n>   * \"unknown\" indicates that the flow's direction is unknown.\n\nThere's no mening for a flow of \"network\", so I'd suggest that we define a VantagePointFlow type and work the prose a bit for it",
+      "createdAt": "2026-07-03T15:41:34Z",
+      "updatedAt": "2026-07-03T15:41:34Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -29018,21 +29101,21 @@
       "id": "PR_kwDOCrLn6M7lbEm9",
       "title": "Add new optional action field to frames_processed",
       "url": "https://github.com/quicwg/qlog/pull/508",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "A logger might not have any access to QUIC packets,\nfor example a QMux implementation that sends records rather than packets.\n\nThis commit adds a new optional `action` field that allows for explicity\nstating if the frames are create or parsed.\n\nFurthermore, although the existing `packet_numbers` field can help in situations\nwhere the logger _can_ log packets but not include frame information,\nsince packet numbers are not globally unique, using them leaves an ambiguity (\ndeterming who sent or received a packet might be racy). The action field helps\nthere too.\n\nFixes #507\n",
       "createdAt": "2026-06-11T17:13:56Z",
-      "updatedAt": "2026-06-25T13:17:10Z",
+      "updatedAt": "2026-07-02T13:11:09Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "d86b109ae20349844d36a4b88b540aada918acc1",
       "headRepository": "quicwg/qlog",
       "headRefName": "frames_processed_direcion",
       "headRefOid": "674265afe227595b48a768bedeaa97ef37878c58",
-      "closedAt": null,
+      "closedAt": "2026-07-02T13:11:08Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -29043,6 +29126,13 @@
           "body": "We won't do this, we'll split the event into frames_created, frames_parsed events. Prose must be clear.",
           "createdAt": "2026-06-25T13:17:10Z",
           "updatedAt": "2026-06-25T13:17:10Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "closing as fixed by an laternative approach",
+          "createdAt": "2026-07-02T13:11:08Z",
+          "updatedAt": "2026-07-02T13:11:08Z"
         }
       ],
       "reviews": []
@@ -29192,24 +29282,26 @@
       "id": "PR_kwDOCrLn6M7qyTIi",
       "title": "Make ResetStreamAtFrame consistent with ResetStreamFrame",
       "url": "https://github.com/quicwg/qlog/pull/512",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "I think there was a race condition and the error_code related fields\r\nin ResetStreamAtFrame use old terminology. This fixes them.\r\n\r\nFor context, see the bulk rename https://github.com/quicwg/qlog/pull/473",
       "createdAt": "2026-06-26T00:00:42Z",
-      "updatedAt": "2026-07-01T16:03:20Z",
+      "updatedAt": "2026-07-02T13:10:13Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "c4958e151c0398c15e0f6ced4b4305a0cf40984a",
       "headRepository": "quicwg/qlog",
       "headRefName": "resetstreamat-consistency",
       "headRefOid": "53b5f9cf23de639691871f0868369244474eeea1",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-02T13:10:13Z",
+      "mergedAt": "2026-07-02T13:10:13Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "ae364050794ee64adf9fb196b346ccca5f1402fa"
+      },
       "comments": [],
       "reviews": [
         {
@@ -29244,6 +29336,26 @@
               "updatedAt": "2026-07-01T16:03:20Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABEzzgvQ",
+          "commit": {
+            "abbreviatedOid": "53b5f9c"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-02T13:10:02Z",
+          "updatedAt": "2026-07-02T13:10:02Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "I'll follow up on a sweep for the whole document to fix this.",
+              "createdAt": "2026-07-02T13:10:02Z",
+              "updatedAt": "2026-07-02T13:10:02Z"
+            }
+          ]
         }
       ]
     },
@@ -29252,24 +29364,26 @@
       "id": "PR_kwDOCrLn6M7qzYl3",
       "title": "Split frames_processed into 3 events",
       "url": "https://github.com/quicwg/qlog/pull/513",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "This is an alternative solution to #507.\r\n\r\nI originally intended this PR to split frames_processed into\r\nframes_created and frames_parsed. However, reading more closely\r\nthe existing text, this paragraph stuck out\r\n\r\n  > The frame_processed event can be used to signal internal\r\n    state change not resulting directly from the actual \"parsing\"\r\n    of a frame (e.g., the frame could have been parsed, data put\r\n    into a buffer, then later processed, then logged with this\r\n    event).\r\n\r\nIt seemed like that it might be useful to keep this model when an\r\nimplementation can separate out parsing of frames from processing\r\nthem. This also helps maintain the goal of \"intended to prevent a\r\nlarge proliferation of specific purpose events (e.g.,\r\npackets_acknowledged, flow_control_updated, stream_data_received)\"\r\n\r\nTo avoid a tremendous amount of text duplication, I created a\r\nframe-related events section that contains all words that are\r\ncommon to all 3 events. I took some liberty to rewrite sections\r\nthat seemed quite wordy - sorry - but I think this makes it\r\nclearer to a reader why all of these events exist and how they\r\nmight be used in combination with packet events.\r\n\r\nIf we don't want to keep frames_processed, we can easily just delete\r\nit from this PR. Let's discuss.\r\n",
       "createdAt": "2026-06-26T01:26:48Z",
-      "updatedAt": "2026-07-01T16:00:06Z",
+      "updatedAt": "2026-07-02T13:08:40Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "c4958e151c0398c15e0f6ced4b4305a0cf40984a",
       "headRepository": "quicwg/qlog",
       "headRefName": "split-frames-processed",
       "headRefOid": "0862b07f4aabb89096fc0237f0154db78122fcb9",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-02T13:08:40Z",
+      "mergedAt": "2026-07-02T13:08:40Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "f731c61b65b18ba2dd28d8f3600d63cc117dbe55"
+      },
       "comments": [],
       "reviews": [
         {
@@ -29326,6 +29440,1268 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 514,
+      "id": "PR_kwDOCrLn6M7tFHow",
+      "title": "Make optional nature and usage of Tuple clearer",
+      "url": "https://github.com/quicwg/qlog/pull/514",
+      "state": "MERGED",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #501 \r\n\r\nAs discussed there, I'd rather not move this to the `data` field directly (like `trigger`), since there's no way in CDDL to enforce the `tuple` name (`trigger` is also just a suggestion). \r\n\r\nAs such, I've mostly tried to make it clearer that `tuple` is an optional field and that it does not have to be logged with each individual event, even in multipath/multiconnection traces. ",
+      "createdAt": "2026-07-02T10:39:56Z",
+      "updatedAt": "2026-07-02T14:53:50Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c4958e151c0398c15e0f6ced4b4305a0cf40984a",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "tuple-optional",
+      "headRefOid": "cc0c3a567ef5bbbd8eecae6f98336df6f0f49582",
+      "closedAt": "2026-07-02T14:53:44Z",
+      "mergedAt": "2026-07-02T14:53:44Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "f805f4080f3e5d44cb85740e726e9caecace1d04"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABEz2SiQ",
+          "commit": {
+            "abbreviatedOid": "529fba6"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-02T13:14:55Z",
+          "updatedAt": "2026-07-02T13:14:55Z",
+          "comments": [
+            {
+              "originalPosition": 37,
+              "body": "```suggestion\nbe associated with such a tuple. This is expected to be defined by extension schemas that want to use the tupleID. Implementers\n```",
+              "createdAt": "2026-07-02T13:14:55Z",
+              "updatedAt": "2026-07-02T13:14:55Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABEz3AqQ",
+          "commit": {
+            "abbreviatedOid": "529fba6"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM modulo a small suggestion",
+          "createdAt": "2026-07-02T13:16:22Z",
+          "updatedAt": "2026-07-02T13:16:22Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 515,
+      "id": "PR_kwDOCrLn6M7tFYpA",
+      "title": "[Editorial] Move HTTP3ApplicationError up one level",
+      "url": "https://github.com/quicwg/qlog/pull/515",
+      "state": "MERGED",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Purely editorial. There was an extra unnecessary indentation level here, see [HTTP3ApplicationError](https://quicwg.org/qlog/draft-ietf-quic-qlog-h3-events.html#name-http3applicationerror)",
+      "createdAt": "2026-07-02T10:51:33Z",
+      "updatedAt": "2026-07-02T13:17:23Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c4958e151c0398c15e0f6ced4b4305a0cf40984a",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "h3apperror_fix",
+      "headRefOid": "c6b3f8d20d927b83deba0168226078afd730bca9",
+      "closedAt": "2026-07-02T13:17:23Z",
+      "mergedAt": "2026-07-02T13:17:23Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "b6c0990b687fc1ac81b674218e383e003d2206c2"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABEz3cxA",
+          "commit": {
+            "abbreviatedOid": "c6b3f8d"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "lol",
+          "createdAt": "2026-07-02T13:17:14Z",
+          "updatedAt": "2026-07-02T13:17:14Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 516,
+      "id": "PR_kwDOCrLn6M7tGC6d",
+      "title": "Small update to extension guidance: how to add new protocol",
+      "url": "https://github.com/quicwg/qlog/pull/516",
+      "state": "MERGED",
+      "author": "rmarx",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes #405 \r\n\r\nAs @LPardue mentioned there, I agree only a light touch was needed. Especially section 8.1 (Extending the Data Field) has plenty of info on extending specific events / adding new ones, and ENUMs are a natural extension of that (and should be clear from how we use them in QUIC and H3).\r\n\r\nThe one thing I found lacking was that we didn't explicitly mention how to define a completely new protocol with an example, so that's what this PR is for. \r\n\r\n",
+      "createdAt": "2026-07-02T11:21:30Z",
+      "updatedAt": "2026-07-02T13:27:35Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "c4958e151c0398c15e0f6ced4b4305a0cf40984a",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "extending-guidelines",
+      "headRefOid": "cda172daac1b78dc1e31d9fd14a947a8e946771b",
+      "closedAt": "2026-07-02T13:27:34Z",
+      "mergedAt": "2026-07-02T13:27:34Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "0755c6c694a5ab65173603b9eb45c6261dedcd21"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABEz5nqQ",
+          "commit": {
+            "abbreviatedOid": "cda172d"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-02T13:21:18Z",
+          "updatedAt": "2026-07-02T13:21:18Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 518,
+      "id": "PR_kwDOCrLn6M7tLzZr",
+      "title": "Remove $HTTP3Datagram",
+      "url": "https://github.com/quicwg/qlog/pull/518",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Closes https://github.com/quicwg/qlog/issues/494",
+      "createdAt": "2026-07-02T14:58:32Z",
+      "updatedAt": "2026-07-03T13:35:32Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f805f4080f3e5d44cb85740e726e9caecace1d04",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "remove-http3datagram",
+      "headRefOid": "71b1a6b0eefda7ab9cb77446c904a627ce1bded5",
+      "closedAt": "2026-07-03T13:35:32Z",
+      "mergedAt": "2026-07-03T13:35:32Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13"
+      },
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Generally LGTM, but I wonder if we shouldn't have one sentence in there that explicitly says that we intentionally don't have a `datagram` field in there because users of that should extend the event through the $$ sockets OR add their own events in a new extension. ",
+          "createdAt": "2026-07-02T15:32:29Z",
+          "updatedAt": "2026-07-02T15:32:29Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Good point, tried to address it in another commit",
+          "createdAt": "2026-07-02T16:13:12Z",
+          "updatedAt": "2026-07-02T16:13:12Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE1A1KQ",
+          "commit": {
+            "abbreviatedOid": "adaad52"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-02T15:31:41Z",
+          "updatedAt": "2026-07-02T15:31:41Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE2i24A",
+          "commit": {
+            "abbreviatedOid": "9270f20"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "The use of the term \"extension\" was a bit confusing, since one was referring to HTTP Datagrams usage (e.g., in WebTransport) and the other to qlog extension sockets. ",
+          "createdAt": "2026-07-02T19:28:54Z",
+          "updatedAt": "2026-07-02T19:30:29Z",
+          "comments": [
+            {
+              "originalPosition": 11,
+              "body": "```suggestion\ndefined by the concrete protocol using HTTP datagrams. The HTTP3DatagramCreated event\ncan be extended through the $$http3-datagramcreated-extension socket to support logging of such information.\n```",
+              "createdAt": "2026-07-02T19:28:54Z",
+              "updatedAt": "2026-07-02T19:30:29Z"
+            },
+            {
+              "originalPosition": 34,
+              "body": "```suggestion\ndefined by the concrete protocol using HTTP datagrams. The HTTP3DatagramParsed event\ncan be extended through the $$http3-datagramparsed-extension socket to support logging of such information.\n```",
+              "createdAt": "2026-07-02T19:29:36Z",
+              "updatedAt": "2026-07-02T19:30:29Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE37Kzg",
+          "commit": {
+            "abbreviatedOid": "9270f20"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-03T01:10:52Z",
+          "updatedAt": "2026-07-03T01:10:52Z",
+          "comments": [
+            {
+              "originalPosition": 11,
+              "body": "Yeah I was reusing through language in rfc 9297 but can see how its confusing.",
+              "createdAt": "2026-07-03T01:10:52Z",
+              "updatedAt": "2026-07-03T01:10:52Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE7qUvA",
+          "commit": {
+            "abbreviatedOid": "71b1a6b"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-03T13:04:20Z",
+          "updatedAt": "2026-07-03T13:04:20Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 519,
+      "id": "PR_kwDOCrLn6M7tMKTq",
+      "title": "s/error_code/error in some hangover places",
+      "url": "https://github.com/quicwg/qlog/pull/519",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-02T15:11:20Z",
+      "updatedAt": "2026-07-03T13:35:12Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f805f4080f3e5d44cb85740e726e9caecace1d04",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "error-codez",
+      "headRefOid": "28f2f22cfb93e349e06a3333652666e31f94e567",
+      "closedAt": "2026-07-03T13:35:08Z",
+      "mergedAt": "2026-07-03T13:35:08Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "1855ea55e4f7d483951f7c1b41a1a4cdc2f956da"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE0698A",
+          "commit": {
+            "abbreviatedOid": "afd3718"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-02T15:18:28Z",
+          "updatedAt": "2026-07-02T15:18:33Z",
+          "comments": [
+            {
+              "originalPosition": 32,
+              "body": "```suggestion\n    ; if error === \"unknown\"\n```\n\nLet's be pedantic about consistency :D ",
+              "createdAt": "2026-07-02T15:18:29Z",
+              "updatedAt": "2026-07-02T15:18:33Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 520,
+      "id": "PR_kwDOCrLn6M7tNbeP",
+      "title": "Replace datagram_id with datagram_payload_checksum",
+      "url": "https://github.com/quicwg/qlog/pull/520",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Picking datagram_id values was left for implementers. This change\r\nreplaces it for a well-defined (and importantly externally defined)\r\nchecksum. This is the CRC32c value descirbed in the UDP APC Option\r\nformat; see https://www.rfc-editor.org/info/rfc9868/#section-11.3. Using this provides consistency and some upsides. For instance,\r\na pcap may contain the UDP APC Option value and allow correlation\r\nwith a qlog.\r\n\r\nCloses #502",
+      "createdAt": "2026-07-02T16:02:23Z",
+      "updatedAt": "2026-07-02T19:26:12Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f805f4080f3e5d44cb85740e726e9caecace1d04",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "datagram_payload_checksum",
+      "headRefOid": "9be8ad879f25914e7cbdce965748bfb19d644ae7",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE1Rkdw",
+          "commit": {
+            "abbreviatedOid": "1b35737"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "",
+          "createdAt": "2026-07-02T16:08:43Z",
+          "updatedAt": "2026-07-02T16:11:16Z",
+          "comments": [
+            {
+              "originalPosition": 121,
+              "body": "```suggestion\npacket-level and UDP datagram-level qlog events, the optional\n`datagram_payload_checksum` field is defined. It carries a 32-bit CRC32c value that is\n```",
+              "createdAt": "2026-07-02T16:08:43Z",
+              "updatedAt": "2026-07-02T16:11:16Z"
+            },
+            {
+              "originalPosition": 122,
+              "body": "what is a \"user payload\" here? is the word \"user\" correct/needed? In RFC9868 it's apparently \"user data\" not just \"user\".",
+              "createdAt": "2026-07-02T16:11:08Z",
+              "updatedAt": "2026-07-02T16:11:16Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE1VW2g",
+          "commit": {
+            "abbreviatedOid": "1b35737"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-02T16:17:39Z",
+          "updatedAt": "2026-07-02T16:17:39Z",
+          "comments": [
+            {
+              "originalPosition": 122,
+              "body": "oops i meant to write \"UDP user data\"",
+              "createdAt": "2026-07-02T16:17:39Z",
+              "updatedAt": "2026-07-02T16:17:39Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE1Vu5w",
+          "commit": {
+            "abbreviatedOid": "1b35737"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-07-02T16:18:36Z",
+          "updatedAt": "2026-07-02T16:18:36Z",
+          "comments": [
+            {
+              "originalPosition": 122,
+              "body": "```suggestion\ncalculated on the UDP user data payload as described in {{Section 11.3 of !RFC9868}}.\n```",
+              "createdAt": "2026-07-02T16:18:36Z",
+              "updatedAt": "2026-07-02T16:18:36Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE2h5GQ",
+          "commit": {
+            "abbreviatedOid": "9be8ad8"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-02T19:26:11Z",
+          "updatedAt": "2026-07-02T19:26:11Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 521,
+      "id": "PR_kwDOCrLn6M7tnKRB",
+      "title": "Add missing frames_created/frames_parsed to QuicEventData",
+      "url": "https://github.com/quicwg/qlog/pull/521",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T13:50:09Z",
+      "updatedAt": "2026-07-03T16:10:16Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-qlog-review",
+      "headRefOid": "f1737086e71eb9c84566d96d28c852959a063d99",
+      "closedAt": "2026-07-03T16:10:11Z",
+      "mergedAt": "2026-07-03T16:10:11Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "fbb6eac924d7937810908d3effc7e5191770b96e"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE77KCA",
+          "commit": {
+            "abbreviatedOid": "f173708"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "LGTM! ",
+          "createdAt": "2026-07-03T13:51:49Z",
+          "updatedAt": "2026-07-03T13:51:49Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 522,
+      "id": "PR_kwDOCrLn6M7tnRiY",
+      "title": "Add missing events to QUIC IANA Event Types list",
+      "url": "https://github.com/quicwg/qlog/pull/522",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T13:55:21Z",
+      "updatedAt": "2026-07-03T16:12:08Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-quic-iana-event-types",
+      "headRefOid": "3fd1a4a9e98ab200c42786737a2a20e5391b49e7",
+      "closedAt": "2026-07-03T16:12:06Z",
+      "mergedAt": "2026-07-03T16:12:06Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "9086b9be99137f5358e94c69b13e8667fea91b3f"
+      },
+      "comments": [
+        {
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "body": "fix looks good, but is the PR title accurate? ",
+          "createdAt": "2026-07-03T14:12:41Z",
+          "updatedAt": "2026-07-03T14:12:41Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "yeah it is :smile: ",
+          "createdAt": "2026-07-03T16:12:00Z",
+          "updatedAt": "2026-07-03T16:12:00Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 523,
+      "id": "PR_kwDOCrLn6M7tnWAC",
+      "title": "Fix event name connection_state_changed to connection_state_updated",
+      "url": "https://github.com/quicwg/qlog/pull/523",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "This is one case we missed in a prior refactor",
+      "createdAt": "2026-07-03T13:58:34Z",
+      "updatedAt": "2026-07-03T16:12:39Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-connection-state-updated-name",
+      "headRefOid": "2cc904850e0682b6875bb05290f5e0682fe8d85e",
+      "closedAt": "2026-07-03T16:12:36Z",
+      "mergedAt": "2026-07-03T16:12:36Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "cd78dbf0d767be561d625046fae96ab7e6c77388"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE8Dmfg",
+          "commit": {
+            "abbreviatedOid": "2cc9048"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-03T14:13:23Z",
+          "updatedAt": "2026-07-03T14:13:23Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 524,
+      "id": "PR_kwDOCrLn6M7tnehJ",
+      "title": "Fix udp_datagrams event and field naming inconsistencies",
+      "url": "https://github.com/quicwg/qlog/pull/524",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:04:21Z",
+      "updatedAt": "2026-07-03T16:13:31Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-udp-datagrams-naming",
+      "headRefOid": "c69739ae6f79c6a6e3c450d2adf6f16d654ec5e8",
+      "closedAt": "2026-07-03T16:13:29Z",
+      "mergedAt": "2026-07-03T16:13:29Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "03775e18a466f095b7975eab02ea1621c0bbd141"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE8D4aA",
+          "commit": {
+            "abbreviatedOid": "c69739a"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-03T14:13:56Z",
+          "updatedAt": "2026-07-03T14:13:56Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 525,
+      "id": "PR_kwDOCrLn6M7tni5H",
+      "title": "Fix blocked_updated event names to match definitions",
+      "url": "https://github.com/quicwg/qlog/pull/525",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:07:10Z",
+      "updatedAt": "2026-07-03T16:13:50Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-blocked-updated-event-names",
+      "headRefOid": "bf65a2595efee40e4f6f1e7a55b58196775f2e8a",
+      "closedAt": "2026-07-03T16:13:48Z",
+      "mergedAt": "2026-07-03T16:13:48Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "16ddb6f81283a11bac26333acea042bde0db6452"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE8EHZw",
+          "commit": {
+            "abbreviatedOid": "bf65a25"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-03T14:14:23Z",
+          "updatedAt": "2026-07-03T14:14:23Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 526,
+      "id": "PR_kwDOCrLn6M7tnlGZ",
+      "title": "Align stream_data_moved prose with stream_reset enum value",
+      "url": "https://github.com/quicwg/qlog/pull/526",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:08:48Z",
+      "updatedAt": "2026-07-03T14:08:49Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-stream-reset-additional-info",
+      "headRefOid": "159c1f85fc6c52776b67f46c563e081f6da910ed",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 527,
+      "id": "PR_kwDOCrLn6M7tnmyD",
+      "title": "Fix packet_created reference to packet_sent",
+      "url": "https://github.com/quicwg/qlog/pull/527",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:10:03Z",
+      "updatedAt": "2026-07-03T16:14:36Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-packet-sent-reference",
+      "headRefOid": "67286b820fa413cef71798423add8d10a98937b5",
+      "closedAt": "2026-07-03T16:14:34Z",
+      "mergedAt": "2026-07-03T16:14:34Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "48595645445d947a99c761195239ad26e8fd97d4"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE8RexA",
+          "commit": {
+            "abbreviatedOid": "67286b8"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-03T14:45:41Z",
+          "updatedAt": "2026-07-03T14:45:41Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 528,
+      "id": "PR_kwDOCrLn6M7tnskV",
+      "title": "Use standard importance-level wording for tuple_assigned",
+      "url": "https://github.com/quicwg/qlog/pull/528",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:14:23Z",
+      "updatedAt": "2026-07-03T16:14:48Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-tuple-assigned-importance",
+      "headRefOid": "d77687f57929a58532800f4427fc5d8b18f33922",
+      "closedAt": "2026-07-03T16:14:46Z",
+      "mergedAt": "2026-07-03T16:14:46Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "e424c598ffad1944869dcb68e57827c8893242d7"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE8LW2A",
+          "commit": {
+            "abbreviatedOid": "d77687f"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-03T14:33:17Z",
+          "updatedAt": "2026-07-03T14:33:17Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 529,
+      "id": "PR_kwDOCrLn6M7tnvvQ",
+      "title": "Remove stray trailing comma in QUICParametersRestored CDDL",
+      "url": "https://github.com/quicwg/qlog/pull/529",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:16:29Z",
+      "updatedAt": "2026-07-03T16:15:00Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-cddl-trailing-comma",
+      "headRefOid": "287b6bef48ada7a192b348e8395e0118e8204191",
+      "closedAt": "2026-07-03T16:14:59Z",
+      "mergedAt": "2026-07-03T16:14:59Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "126d46bf81a23b85ed8a9cae489f2a47db4ac615"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE8LHJw",
+          "commit": {
+            "abbreviatedOid": "287b6be"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-03T14:32:48Z",
+          "updatedAt": "2026-07-03T14:32:48Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 530,
+      "id": "PR_kwDOCrLn6M7toKI-",
+      "title": "Fix QUIC schema spelling and grammar",
+      "url": "https://github.com/quicwg/qlog/pull/530",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "- **Fix typo: ths -> this**\r\n- **Fix grammar: this is a separate event**\r\n- **Fix grammar in ALPN identifier description**\r\n- **Fix stray double backtick on ALPNIdentifier**\r\n- **Fix grammar: included in a single event instance**\r\n- **Fix spelling: decryptable or parsable**\r\n- **Fix typos: hypothetical, remove stray 'the'**\r\n- **Fix grammar: datagrams become blocked**\r\n- **Fix missing space between ack and or**\r\n- **Fix grammar: Implementations that do**\r\n- **Fix grammar: a byte sequence**\r\n",
+      "createdAt": "2026-07-03T14:36:29Z",
+      "updatedAt": "2026-07-03T14:43:08Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-quic-grammar",
+      "headRefOid": "73b4b0fcba322a1b1cd25e10d1d8c3da82e4f302",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABE8Qa8A",
+          "commit": {
+            "abbreviatedOid": "73b4b0f"
+          },
+          "author": "lnicco",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-03T14:43:07Z",
+          "updatedAt": "2026-07-03T14:43:07Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 531,
+      "id": "PR_kwDOCrLn6M7toj79",
+      "title": "Fix extension socket name to http3-frameparsed-extension",
+      "url": "https://github.com/quicwg/qlog/pull/531",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:53:41Z",
+      "updatedAt": "2026-07-03T14:53:42Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-h3-frameparsed-extension-name",
+      "headRefOid": "a84be17355c4773fdf4b2b37e47ae6652cb62319",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 532,
+      "id": "PR_kwDOCrLn6M7ton14",
+      "title": "Fix type name HTTP3HeaderFrame to HTTP3HeadersFrame",
+      "url": "https://github.com/quicwg/qlog/pull/532",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:56:34Z",
+      "updatedAt": "2026-07-03T14:56:35Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-h3-headersframe-name",
+      "headRefOid": "3b0747c7aa3b34ab2e2e272e14c5208868bd8893",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 533,
+      "id": "PR_kwDOCrLn6M7toq9b",
+      "title": "Fix heading HTTP3GoAwayFrame to HTTP3GoawayFrame",
+      "url": "https://github.com/quicwg/qlog/pull/533",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T14:59:00Z",
+      "updatedAt": "2026-07-03T14:59:01Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-h3-goawayframe-heading",
+      "headRefOid": "c4ced3400ef14cd23e4a2eba9b9994517721f28d",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 534,
+      "id": "PR_kwDOCrLn6M7towMf",
+      "title": "Fix parentheses",
+      "url": "https://github.com/quicwg/qlog/pull/534",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "- **Fix mismatched parentheses in extension list**\r\n- **Fix double opening parenthesis in capsule event descriptions**\r\n",
+      "createdAt": "2026-07-03T15:02:56Z",
+      "updatedAt": "2026-07-03T15:02:57Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-h3-intro-parentheses",
+      "headRefOid": "b8af855a622608a032e5bfcd216fe7e4301e02d5",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 535,
+      "id": "PR_kwDOCrLn6M7to6rb",
+      "title": "Fix H3 schema spelling and grammar",
+      "url": "https://github.com/quicwg/qlog/pull/535",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "- **Fix typo: ths -> this**\r\n- **Fix duplicated word: begin with**\r\n- **Fix grammar: that can aid debugging**\r\n- **Fix grammar: field section names**\r\n- **Fix grammar: name_bytes and value_bytes fields**\r\n",
+      "createdAt": "2026-07-03T15:11:02Z",
+      "updatedAt": "2026-07-03T15:11:03Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-h3-grammar",
+      "headRefOid": "562f04d3e54d934671959a0efec2be149b3c8750",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 536,
+      "id": "PR_kwDOCrLn6M7to922",
+      "title": "Fix namespace name sim to simulation",
+      "url": "https://github.com/quicwg/qlog/pull/536",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:13:33Z",
+      "updatedAt": "2026-07-03T15:13:34Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-simulation-namespace",
+      "headRefOid": "72d15175ee65aec8bdcc087c34b658b0eaeb6741",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 537,
+      "id": "PR_kwDOCrLn6M7tpFxU",
+      "title": "Fix QlogFileSeq xref and single-trace description",
+      "url": "https://github.com/quicwg/qlog/pull/537",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:20:14Z",
+      "updatedAt": "2026-07-03T15:20:15Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-qlogfileseq-xref",
+      "headRefOid": "ac1dd072af70f9eaa96e4b66cb69efd31a21f589",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 538,
+      "id": "PR_kwDOCrLn6M7tpH_k",
+      "title": "Fix QlogFile to QlogFileSeq in QlogFileSeq section",
+      "url": "https://github.com/quicwg/qlog/pull/538",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:22:01Z",
+      "updatedAt": "2026-07-03T15:22:02Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-qlogfileseq-extends",
+      "headRefOid": "390d1b69b1e77a5b3914f0ba120f6fa3d40d87e9",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 539,
+      "id": "PR_kwDOCrLn6M7tpJ3F",
+      "title": "Fix invalid RFC3339 timestamps (stray colon after T)",
+      "url": "https://github.com/quicwg/qlog/pull/539",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:23:29Z",
+      "updatedAt": "2026-07-03T15:23:30Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-rfc3339-timestamps",
+      "headRefOid": "ea6fe1a1a02c3fbffbfb873e0fb815d203ee5ec8",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 540,
+      "id": "PR_kwDOCrLn6M7tpVyy",
+      "title": "Fix common_fields ownership: it belongs to the trace, not an event",
+      "url": "https://github.com/quicwg/qlog/pull/540",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:32:49Z",
+      "updatedAt": "2026-07-03T15:32:50Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-common-fields-ownership",
+      "headRefOid": "d6260c74cb54e113dc512420935e467af6bc73d9",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 542,
+      "id": "PR_kwDOCrLn6M7tpnGb",
+      "title": "Add VantagePointFlow type to restrict flow to client/server/unknown",
+      "url": "https://github.com/quicwg/qlog/pull/542",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #541 541",
+      "createdAt": "2026-07-03T15:47:08Z",
+      "updatedAt": "2026-07-03T15:47:09Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-vantagepoint-flow-type",
+      "headRefOid": "166d9a91c002783f667a7f851c39546500ce6ba1",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 543,
+      "id": "PR_kwDOCrLn6M7tpqNo",
+      "title": "Fix stray closing brace in importance cross-reference",
+      "url": "https://github.com/quicwg/qlog/pull/543",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:50:01Z",
+      "updatedAt": "2026-07-03T15:50:02Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-importance-xref-brace",
+      "headRefOid": "5981c837ec063c1b0e333734a2a0bc5dff736ee9",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 544,
+      "id": "PR_kwDOCrLn6M7tpsU3",
+      "title": "Fix unbalanced parentheses in serialization format references",
+      "url": "https://github.com/quicwg/qlog/pull/544",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:51:48Z",
+      "updatedAt": "2026-07-03T15:51:49Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-serialization-parens",
+      "headRefOid": "c5e0b1be57696160ef1417f02fd49d16c4b701c4",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 545,
+      "id": "PR_kwDOCrLn6M7tpw3m",
+      "title": "Remove duplicated timestamp and CDDL type paragraphs",
+      "url": "https://github.com/quicwg/qlog/pull/545",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:55:11Z",
+      "updatedAt": "2026-07-03T15:55:12Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-duplicate-paragraphs",
+      "headRefOid": "da786bbd1bd60ab50cbd0356c0dda5facb5adeaa",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 546,
+      "id": "PR_kwDOCrLn6M7tp0fa",
+      "title": "Remove stray quote in IANA registry sentence",
+      "url": "https://github.com/quicwg/qlog/pull/546",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-07-03T15:57:35Z",
+      "updatedAt": "2026-07-03T15:57:36Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-rfc3553-stray-chars",
+      "headRefOid": "a2f3f02407f4172d4e78912c2695c507f8a436ce",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 547,
+      "id": "PR_kwDOCrLn6M7tqCyl",
+      "title": "Main schema spelling and grammar",
+      "url": "https://github.com/quicwg/qlog/pull/547",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "- **Fix subject-verb agreement: follows**\r\n- **Fix capitalization: system time**\r\n- **Fix grammar: which could consider; a tool does not provide**\r\n- **Fix parallelism: and make logging easier**\r\n- **Fix grammar: Good examples ... which are divergent**\r\n- **Fix typo: Extensions**\r\n- **Fix spelling: decryptable or parsable**\r\n- **Fix grammar: fully disabled**\r\n- **Fix duplicated word: the**\r\n- **Fix typo: serializers**\r\n- **Fix grammar: Tools ingesting qlog**\r\n- **Fix duplicated word: the**\r\n- **Fix spelling: aggressive**\r\n- **Fix spelling: sequential**\r\n",
+      "createdAt": "2026-07-03T16:09:13Z",
+      "updatedAt": "2026-07-03T16:09:14Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-mainschema-grammar",
+      "headRefOid": "3816ac92ad2686503b25e411241962d2599174ce",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 548,
+      "id": "PR_kwDOCrLn6M7tq2SO",
+      "title": "Assorted cross ref fixes",
+      "url": "https://github.com/quicwg/qlog/pull/548",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "- **Fix broken/incorrect xrefs**\r\n- **Improve deep linking of external references**\r\n- **Deep-link remaining QLOG-MAIN references**\r\n- **Use {{ANRW-2020}} citation syntax for consistency**\r\n",
+      "createdAt": "2026-07-03T16:57:58Z",
+      "updatedAt": "2026-07-03T16:57:59Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "126d46bf81a23b85ed8a9cae489f2a47db4ac615",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "fix-xrefs",
+      "headRefOid": "29d4290501adf7691fc86bdbf500c1be460ccda4",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
