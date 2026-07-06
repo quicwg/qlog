@@ -117,7 +117,7 @@ implementation. Some options include:
 
 {::boilerplate bcp14-tagged}
 
-The event and data structure definitions in ths document are expressed
+The event and data structure definitions in this document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
@@ -284,7 +284,7 @@ IP and/or port information.
 
 The `connection_started` event is used for both attempting (client-perspective)
 and accepting (server-perspective) new connections. Note that while there is
-overlap with the `connection_state_updated` event, this event is separate event
+overlap with the `connection_state_updated` event, this is a separate event
 in order to capture additional data that can be useful to log. It has Base
 importance level.
 
@@ -613,8 +613,8 @@ QUIC-TRANSPORT}}. It has Core importance level.
 
 QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.
 
-ALPN identifiers are byte sequences, that may be possible to present as UTF-8.
-The `ALPNIdentifier`` type supports either format. Implementations SHOULD log at
+ALPN identifiers are byte sequences that may be presentable as UTF-8.
+The `ALPNIdentifier` type supports either format. Implementations SHOULD log at
 least one format, but MAY log both or none.
 
 ~~~ cddl
@@ -659,7 +659,7 @@ regularly be several instances of this event with different fields set.
 
 Note that some settings have two variations (one set locally, one requested by
 the remote peer). This is reflected in the `initiator` field. As such, this
-field MUST be correct for all settings included a single event instance. If the
+field MUST be correct for all settings included in a single event instance. If the
 settings from two sides are required, they MUST be logged as two separate event
 instances. If the local peer decides to change its behavior based on remote
 peer's settings, a new event type can be used to reflect the outcome.
@@ -879,7 +879,7 @@ information.
 QUICPacketDropped = {
 
     ; Primarily packet_type should be filled here,
-    ; as other fields might not be decrypteable or parseable
+    ; as other fields might not be decryptable or parsable
     ? header: PacketHeader
     ? raw: RawInfo
     ? datagram_id: uint32
@@ -1217,8 +1217,8 @@ processed at the receiver. It has Extra importance level.
 
 This event exists to eliminate the need to define specific-purpose events, where
 the effect of processing a frame can be easily inferred from its contents. For
-example, there would be no need to define a hypotheical `packets_acknowledged`
-event, when the an ACK frame contains all relevant information.
+example, there would be no need to define a hypothetical `packets_acknowledged`
+event, when an ACK frame contains all relevant information.
 
 The `frames_processed` event can be used to signal internal state change not
 resulting directly from the actual parsing of a frame (e.g., the frame could
@@ -1378,7 +1378,7 @@ QUICStreamDataBlockedUpdated = {
 ## datagram_data_blocked_updated {#quic-datagramdatablockedupdated}
 
 The `datagram_data_blocked_updated` event is used to indicate when QUIC
-datagrames becomes blocked or unblocked for sending. The event has Extra
+datagrams become blocked or unblocked for sending. The event has Extra
 importance level.
 
 ~~~ cddl
@@ -1461,7 +1461,7 @@ The three main event types are:
 
 In order to indicate an active timer's timeout update, a new `set` event is used.
 
-QUICTimerUpdated events with the `timer_type` set to `ack`or `pto` indicate
+QUICTimerUpdated events with the `timer_type` set to `ack` or `pto` indicate
 changes to the individual timeouts defined by RFC 9002: the threshold loss
 detection timeout (see {{Section 6.1.2 of QUIC-RECOVERY}}) and the probe timeout
 (see {{Section 6.2 of QUIC-RECOVERY}}). Those set to `loss_timeout` represent
@@ -1570,7 +1570,7 @@ The `recovery_parameters_set` event groups initial parameters from both loss
 detection and congestion control into a single event. It has Base importance
 level.
 
-All these settings are typically set once and never change. Implementation that
+All these settings are typically set once and never change. Implementations that
 do, for some reason, change these parameters during execution, MAY emit the
 `recovery_parameters_set` event more than once.
 
@@ -2354,7 +2354,7 @@ error. For known frame types, the appropriate string value is used in the error 
 unknown frame types, the error field has the value "unknown" and the numerical
 value without variable-length integer encoding can be logged in error_code.
 
-The CONNECTION_CLOSE reason phrase is a byte sequences. It is likely that this
+The CONNECTION_CLOSE reason phrase is a byte sequence. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the `reason`
 field. The `reason_bytes` field supports logging the raw bytes, which can be useful
 when the value is not UTF-8 or when an endpoint does not want to decode it.
