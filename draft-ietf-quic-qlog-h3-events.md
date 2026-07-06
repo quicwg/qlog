@@ -385,7 +385,7 @@ HTTP3FrameParsed = {
     stream_id: uint64
     frame: $HTTP3Frame
 
-    * $$h3-frameparsed-extension
+    * $$http3-frameparsed-extension
 }
 ~~~
 {: #h3-frameparsed-def title="HTTP3FrameParsed definition"}
