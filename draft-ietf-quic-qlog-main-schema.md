@@ -573,7 +573,7 @@ Meaning of the different values for the flow field:
 
   * "client" indicates that this vantage point follows client data flow semantics (a
     "packet sent" event goes in the direction of the server).
-  * "server" indicates that this vantage point follow server data flow semantics (a
+  * "server" indicates that this vantage point follows server data flow semantics (a
     "packet sent" event goes in the direction of the client).
   * "unknown" indicates that the flow's direction is unknown.
 
@@ -674,7 +674,7 @@ RFC3339DateTime = text
 
 The required "clock_type" field represents the type of clock used for time
 measurements. The value "system" represents a clock that uses system time,
-commonly measured against a chosen or well-known epoch. However, depending on the system, System time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value "monotonic" represents such a clock.
+commonly measured against a chosen or well-known epoch. However, depending on the system, system time can potentially jump forward or back. In contrast, a clock using monotonic time is generally guaranteed to never go backwards. The value "monotonic" represents such a clock.
 
 The required "epoch" field is the start of the ReferenceTime. When using the
 "system" clock type, the epoch field SHOULD have a date/time value using the
@@ -710,8 +710,8 @@ order (though not necessarily absolute value, for the "relative_to_previous_even
 format). Tools MAY sort all events on the timestamp before processing them,
 though are not required to (as this could impose a significant processing
 overhead). This can be a problem especially for multi-threaded and/or streaming
-loggers, who could consider using a separate post-processor to order qlog events
-in time if a tool do not provide this feature.
+loggers, which could consider using a separate post-processor to order qlog events
+in time if a tool does not provide this feature.
 
 Tools SHOULD NOT assume the ability to derive the absolute calendar timestamp of an event
 from qlog traces. Tools should not rely on timestamps to be consistent across
@@ -953,7 +953,7 @@ different protocols and contexts inside of the same trace (for example
 fields are consistent for each event instance (for example, a single trace
 contains events for a single QUIC connection).
 
-To reduce file size and making logging easier, qlog uses the "common_fields" list
+To reduce file size and make logging easier, qlog uses the "common_fields" list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
 event. An example of this is shown in {{common-fields-ex}}.
@@ -1040,8 +1040,8 @@ CommonFields = {
 Tools MUST be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
 trace has a different value for a given field, this field MUST NOT be added to
-common_fields but instead defined on each event individually. Good example of such
-fields are "time" and "data", who are divergent by nature.
+common_fields but instead defined on each event individually. Good examples of such
+fields are "time" and "data", which are divergent by nature.
 
 # Concrete Event Types and Event Schemas {#event-types-and-schema}
 
@@ -1106,7 +1106,7 @@ In the following hypothetical example, a qlog trace contains events belonging to
 * The two event namespaces defined by event schemas in this document
 ({{generic-event-schema}}).
 * Events in a namespace named `rick` specified in a hypothetical RFC
-* Extentions to the `rick` namespace defined in two separate new event schemas
+* Extensions to the `rick` namespace defined in two separate new event schemas
   (with URI extension identifiers `astley` and `moranis`)
 * Events from three private event schemas, detailing definitions for and
   extensions to two namespaces (`pickle` and `cucumber`)
@@ -1326,7 +1326,7 @@ was dropped:
 QUICPacketDropped = {
 
     ; Primarily packet_type should be filled here,
-    ; as other fields might not be decrypteable or parseable
+    ; as other fields might not be decryptable or parsable
     ? header: PacketHeader
     ? raw: RawInfo
     ? datagram_id: uint32
@@ -1541,7 +1541,7 @@ LogLevelVerbose = {
 When evaluating a protocol implementation, one typically sets up a series of
 interoperability or benchmarking tests, in which the test situations can change
 over time. For example, the network bandwidth or latency can vary during the
-test, or the network can be fully disable for a short time. In these setups, it
+test, or the network can be fully disabled for a short time. In these setups, it
 is useful to know when exactly these conditions are triggered, to allow for
 proper correlation with other events. This namespace defines event types to
 allow logging of such simulation metadata and its identifier is "simulation".
@@ -1625,7 +1625,7 @@ without the others. Logging length related fields and omitting the data field
 permits protocol debugging without the risk of logging potentially sensitive
 data. The data field, if logged, is not required to contain the contents of a
 full entity and can be truncated, see {{truncated-values}}. The length fields,
-if logged, should indicate the length of the the full entity, even if the data
+if logged, should indicate the length of the full entity, even if the data
 field is omitted or truncated.
 
 Protocol entities containing an on-the-wire length field (for example a packet
@@ -1759,7 +1759,7 @@ restricted 64-bit integer range. However, some of the protocols that qlog is
 intended to support (e.g., QUIC, HTTP/3), can use the full range of uint64
 values.
 
-As such, to support situations where I-JSON is in use, seralizers MAY encode
+As such, to support situations where I-JSON is in use, serializers MAY encode
 uint64 values using JSON strings. qlog parsers, therefore, SHOULD support
 parsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band
 information indicating that neither the serializer nor parser are constrained by
@@ -1904,7 +1904,7 @@ tagged with the "group_id" field with values "abcde" and "12345".
 
 # Tooling requirements {#tooling}
 
-Tools ingestion qlog MUST indicate which qlog version(s), qlog format(s), qlog
+Tools ingesting qlog MUST indicate which qlog version(s), qlog format(s), qlog
 file and event schema(s), compression methods and potentially other input file
 formats (for example .pcap) they support. Tools SHOULD at least support .qlog
 files in the default JSON format ({{format-json}}). Additionally, they SHOULD
@@ -1948,7 +1948,7 @@ assess or respond effectively.
 qlog operators and implementers need to consider security and privacy risks when
 handling qlog data, including logging, storage, usage, and more. The
 considerations presented in this section may pose varying risks depending on the
-the data itself or its handling.
+data itself or its handling.
 
 The following is a non-exhaustive list of example data types that could contain
 sensitive information that might allow identification or correlation of
@@ -2032,7 +2032,7 @@ user privacy or identity, particularly with large or easily correlated data sets
 Operators should consider end user rights and preferences. Active user participation (as
 indicated by {{!RFC6973}}) on a per-qlog basis is challenging but aligning qlog
 capture, storage, and removal with existing user preference and privacy controls
-is crucial. Operators should consider agressive approaches to deletion or
+is crucial. Operators should consider aggressive approaches to deletion or
 aggregation.
 
 The most sensitive data in qlog is typically contained in RawInfo type fields
@@ -2072,7 +2072,7 @@ file schema URIs" registry:
 
 | Log File Schema URI | Description | Reference |
 | urn:ietf:params:qlog:file:contained | Concrete log file schema that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
-| urn:ietf:params:qlog:file:sequential | Concrete log file schema containing a single trace, optimized for seqential read and write access. | {{qlog-file-seq-schema}} |
+| urn:ietf:params:qlog:file:sequential | Concrete log file schema containing a single trace, optimized for sequential read and write access. | {{qlog-file-seq-schema}} |
 
 IANA is requested to create the "qlog event schema URIs" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
