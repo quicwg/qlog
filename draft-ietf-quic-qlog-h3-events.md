@@ -645,7 +645,7 @@ HTTP3PushPromiseFrame = {
 ~~~
 {: #h3pushpromiseframe-def title="HTTP3PushPromiseFrame definition"}
 
-### HTTP3GoAwayFrame
+### HTTP3GoawayFrame
 
 ~~~ cddl
 HTTP3GoawayFrame = {
