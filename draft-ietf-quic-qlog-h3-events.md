@@ -967,6 +967,13 @@ their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-h3-events-12:
+{:numbered="false"}
+
+* Added HTTP3OriginFrame (#504)
+* Added support for Capsule Protocol (#504)
+* Wide range of editorial changes
+
 ## Since draft-ietf-quic-qlog-h3-events-11:
 {:numbered="false"}
 

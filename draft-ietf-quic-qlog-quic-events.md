@@ -2583,6 +2583,12 @@ Oku, and Jonathan Lennox for their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-qlog-quic-events-12:
+{:numbered="false"}
+
+* Split frames_processed into 3 events (#513)
+* Wide range of editorial changes
+
 ## Since draft-ietf-qlog-quic-events-11:
 {:numbered="false"}
 
