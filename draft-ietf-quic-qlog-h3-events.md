@@ -126,7 +126,7 @@ GUID abcd1234).
 
 {::boilerplate bcp14-tagged}
 
-The event and data structure definitions in ths document are expressed
+The event and data structure definitions in this document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{QLOG-MAIN}}.
 
@@ -282,7 +282,7 @@ Client bidirectional streams always have a stream_type value of "request".
 Server bidirectional streams have no defined use, although extensions could
 change that.
 
-Unidirectional streams in either direction begin with with a variable-length
+Unidirectional streams in either direction begin with a variable-length
 integer type. Where the type is not known, the stream_type value of "unknown"
 type can be used and the value captured in the stream_type_bytes field; a
 numerical value without variable-length integer encoding.
@@ -442,7 +442,7 @@ HTTP3DatagramParsed = {
 The `push_resolved` event is emitted when a pushed resource ({{Section 4.6 of
 RFC9114}}) is successfully claimed (used) or, conversely, abandoned (rejected)
 by the application on top of HTTP/3 (e.g., the web browser). This event provides
-additional context that can is aid debugging issues related to server push. It
+additional context that can aid debugging issues related to server push. It
 has Extra importance level.
 
 ~~~ cddl
@@ -576,12 +576,12 @@ headers: [
 {: #h3-headersframe-ex title="HTTP3HeadersFrame example"}
 
 {{Section 4.2 of RFC9114}} and {{Section 5.1 of RFC9110}} define rules for the
-characters used in HTTP field sections names and values. Characters outside the
+characters used in HTTP field section names and values. Characters outside the
 range are invalid and result in the message being treated as malformed. It can
 however be useful to also log these invalid HTTP fields. Characters in the
 allowed range can be safely logged by the text type used in the `name` and
 `value` fields of `HTTP3HTTPField`. Characters outside the range are unsafe for the
-text type and need to be logged using the `name_bytes` and `value_bytes` field.
+text type and need to be logged using the `name_bytes` and `value_bytes` fields.
 An instance of `HTTP3HTTPField` MUST include either the `name` or `name_bytes`
 field and MAY include both. An `HTTP3HTTPField` MAY include a `value` or
 `value_bytes` field or neither.
