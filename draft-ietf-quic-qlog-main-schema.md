@@ -974,7 +974,7 @@ per-event instance:
             "time_format": "relative_to_epoch",
             "reference_time": {
               "clock_type": "system",
-              "epoch": "2019-03-29T:22:55:53.572Z"
+              "epoch": "2019-03-29T22:55:53.572Z"
             },
 
             "time": 2,
@@ -985,7 +985,7 @@ per-event instance:
             "time_format": "relative_to_epoch",
             "reference_time": {
               "clock_type": "system",
-              "epoch": "2019-03-29T:22:55:53.572Z"
+              "epoch": "2019-03-29T22:55:53.572Z"
             },
 
             "time": 7,
@@ -1004,7 +1004,7 @@ extracted to common_fields:
         "time_format": "relative_to_epoch",
         "reference_time": {
             "clock_type": "system",
-            "epoch": "2019-03-29T:22:55:53.572Z"
+            "epoch": "2019-03-29T22:55:53.572Z"
         },
     },
     "events": [
