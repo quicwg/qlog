@@ -534,7 +534,7 @@ defined in {{vantage-point-def}} as:
 VantagePoint = {
     ? name: text
     type: VantagePointType
-    ? flow: VantagePointType
+    ? flow: VantagePointFlow
 }
 
 ; client = endpoint which initiates the connection
@@ -543,6 +543,15 @@ VantagePoint = {
 VantagePointType = "client" /
                    "server" /
                    "network" /
+                   "unknown"
+
+; client = vantage point follows client data flow semantics
+;          (a "packet sent" event goes in the direction of the server)
+; server = vantage point follows server data flow semantics
+;          (a "packet sent" event goes in the direction of the client)
+; unknown = the flow's direction is unknown
+VantagePointFlow = "client" /
+                   "server" /
                    "unknown"
 ~~~
 {: #vantage-point-def title="VantagePoint definition"}
