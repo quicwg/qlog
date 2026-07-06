@@ -119,7 +119,7 @@ implementation. Some options include:
 
 The event and data structure definitions in this document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
-extensions described in {{QLOG-MAIN}}.
+extensions described in {{Section 1.2 of QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
 type, data, tuple, group_id, RawInfo, and time-related fields.
@@ -608,8 +608,8 @@ Intended use:
 ## alpn_information {#quic-alpninformation}
 
 The `alpn_information` event supports Application-Layer Protocol Negotiation
-(ALPN) over the QUIC transport; see {{?RFC7301}} and {{Section 7.4 of
-QUIC-TRANSPORT}}. It has Core importance level.
+(ALPN) over the QUIC transport; see {{?RFC7301}} and {{Section 8.1 of
+QUIC-TLS}}. It has Core importance level.
 
 QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.
 
@@ -1465,7 +1465,7 @@ QUICTimerUpdated events with the `timer_type` set to `ack` or `pto` indicate
 changes to the individual timeouts defined by RFC 9002: the threshold loss
 detection timeout (see {{Section 6.1.2 of QUIC-RECOVERY}}) and the probe timeout
 (see {{Section 6.2 of QUIC-RECOVERY}}). Those set to `loss_timeout` represent
-changes to the multi-modal loss detection timer (see {{Appendix 3 of
+changes to the multi-modal loss detection timer (see {{Appendix A.8 of
 QUIC-RECOVERY}}).
 
 The QUIC protocol conceptually employs a variety of timers, but their usage can
@@ -1759,7 +1759,7 @@ QUICMarkedForRetransmit = {
 ## ecn_state_updated {#quic-ecnstateupdated}
 
 The `ecn_state_updated` event indicates a progression in the ECN state machine
-as described in section A.4 of {{QUIC-TRANSPORT}}. It has Extra importance
+as described in {{Section A.4 of QUIC-TRANSPORT}}. It has Extra importance
 level.
 
 ~~~ cddl

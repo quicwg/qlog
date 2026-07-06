@@ -128,7 +128,7 @@ GUID abcd1234).
 
 The event and data structure definitions in this document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
-extensions described in {{QLOG-MAIN}}.
+extensions described in {{Section 1.2 of QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
 type, data, group_id, RawInfo, and time-related
@@ -319,7 +319,7 @@ $HTTP3StreamType /=   "request" /
 
 The `priority_updated` event is emitted when the priority of a request stream or
 push stream is initialized or updated through mechanisms defined in
-{{!RFC9218}}. It has Base importance level.
+{{PRIORITIZATION}}. It has Base importance level.
 
 There can be several reasons why a `priority_updated` occurs, and why a
 particular value was chosen. For example, the priority can be updated through
@@ -700,7 +700,7 @@ HTTP3UnknownFrame = {
 
 ### HTTP3PriorityUpdateFrame
 
-The PRIORITY_UPDATE frame is defined in {{PRIORITIZATION}}.
+The PRIORITY_UPDATE frame is defined in {{Section 7 of PRIORITIZATION}}.
 
 ~~~ cddl
 HTTP3PriorityUpdateFrame = {
@@ -724,7 +724,7 @@ HTTP3Priority = text
 
 ### HTTP3OriginFrame
 
-The ORIGIN frame is defined in {{ORIGIN}}.
+The ORIGIN frame is defined in {{Section 2 of ORIGIN}}.
 
 ~~~ cddl
 HTTP3OriginEntry = {
@@ -795,9 +795,9 @@ The namespace identifier itself is not affected by this requirement.
 # HTTP Events {#http-ev}
 
 HTTP events extend the `$ProtocolEventData` extension point defined in
-{{QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
+{{Section 8.2 of QLOG-MAIN}}. Additionally, they allow for direct extensibility by their use of
 per-event extension points via the `$$` CDDL "group socket" syntax, as also
-described in {{QLOG-MAIN}}.
+described in {{Section 8.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 HTTPEventData = HTTPCapsuleCreated /
