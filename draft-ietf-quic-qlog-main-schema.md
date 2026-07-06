@@ -190,12 +190,6 @@ should be aware of for easy reading comprehension are:
   have a string key that maps to any value. Used to indicate a generic
   JSON object.
 
-All timestamps and time-related values (e.g., offsets) in qlog are
-logged as `float64` in the millisecond resolution.
-
-Other qlog documents can define their own CDDL-compatible (struct) types
-(e.g., separately for each Packet type that a protocol supports).
-
 # Design Overview
 
 The main tenets for the qlog design are:
