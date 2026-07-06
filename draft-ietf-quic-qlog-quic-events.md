@@ -1261,7 +1261,7 @@ The `additional_info` field supports optional logging of information related to
 the stream state. For example, an application layer that moves data into
 transport and simultaneously ends the stream, can log `fin_set`. As another
 example, a transport layer that has received an instruction to reset a stream
-can indicate this to the application layer using `reset_stream`. In both cases,
+can indicate this to the application layer using `stream_reset`. In both cases,
 the `raw.length` field can be omitted or have a zero value.
 
 This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
