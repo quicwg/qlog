@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-05T02:32:46.773535+00:00",
+  "timestamp": "2026-07-07T02:33:17.754608+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10029,7 +10029,7 @@
       "id": "I_kwDOCrLn6M7b2p8R",
       "title": "consider moving tuple information to QUICPacketSent / QUICPacketReceived / QUICPacketDropped event",
       "url": "https://github.com/quicwg/qlog/issues/501",
-      "state": "CLOSED",
+      "state": "OPEN",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [
@@ -10038,8 +10038,8 @@
       "labels": [],
       "body": "The tuple is currently a property of the `Event`. I'm not sure if that makes sense. At the very least, it would complicate the data structures used in my implementation quite significantly.\n\nFor example, it doesn't really make sense to set the tuple on the `QUICKeyUpdated` event. With the exception of a few events like `QUICPacketSent`, `QUICPacketReceived`, `QUICPacketDropped`, etc., most events are connection-level events. This applies even more so when moving up the application stack: No HTTP/3 event benefits from specifying the tuple.\n\nI suggest:\n\n1. Moving the `TupleID` definition to the QUIC document.\n2. Making it a field in the few events where it actually applies.",
       "createdAt": "2025-12-03T05:08:43Z",
-      "updatedAt": "2026-07-02T14:53:45Z",
-      "closedAt": "2026-07-02T14:53:45Z",
+      "updatedAt": "2026-07-06T08:15:11Z",
+      "closedAt": null,
       "comments": [
         {
           "author": "LPardue",
@@ -10061,6 +10061,13 @@
           "body": "> What we could do, is make it clearer you don't HAVE to logtuple with every single event even if you're in a trace logging multiple tuples?\n\n@rmarx can you propose a PR with this suggestion?",
           "createdAt": "2026-06-24T14:39:30Z",
           "updatedAt": "2026-06-24T14:39:30Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> In that light, you probably also want to know the TupleID for things like QUICFramesProcessed to see on which Tuple a multipath-specific frame (MP_ACK or whatever it's called today) was received etc. Similar for congestion control stuff where you're managing multiple paths etc.\n\nYou'd get that from the `quic:packet_received` event, don't you?\n\nI don't think that #514 actually resolved this issue, and that the current design is pretty much impossible for me to implement in my QUIC stack.",
+          "createdAt": "2026-07-06T08:15:11Z",
+          "updatedAt": "2026-07-06T08:15:11Z"
         }
       ]
     },
@@ -10201,15 +10208,15 @@
       "id": "I_kwDOCrLn6M8AAAABHmIY1A",
       "title": "Reusing VantagePointType for `type` and `flow` fields is slightly confusing",
       "url": "https://github.com/quicwg/qlog/issues/541",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "We have\n\n```\nVantagePoint = {\n    ? name: text\n    type: VantagePointType\n    ? flow: VantagePointType\n}\n```\n\nand \n\n> The flow field is only required if the type is \"network\" (for example, the trace\nis generated from a packet capture).\n\nand \n\n> Meaning of the different values for the flow field:\n> \n>   * \"client\" indicates that this vantage point follows client data flow semantics (a\n>     \"packet sent\" event goes in the direction of the server).\n>   * \"server\" indicates that this vantage point follow server data flow semantics (a\n>     \"packet sent\" event goes in the direction of the client).\n>   * \"unknown\" indicates that the flow's direction is unknown.\n\nThere's no mening for a flow of \"network\", so I'd suggest that we define a VantagePointFlow type and work the prose a bit for it",
       "createdAt": "2026-07-03T15:41:34Z",
-      "updatedAt": "2026-07-03T15:41:34Z",
-      "closedAt": null,
+      "updatedAt": "2026-07-06T09:48:03Z",
+      "closedAt": "2026-07-06T09:48:03Z",
       "comments": []
     }
   ],
@@ -30074,26 +30081,42 @@
       "id": "PR_kwDOCrLn6M7tnlGZ",
       "title": "Align stream_data_moved prose with stream_reset enum value",
       "url": "https://github.com/quicwg/qlog/pull/526",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T14:08:48Z",
-      "updatedAt": "2026-07-03T14:08:49Z",
+      "updatedAt": "2026-07-06T09:24:48Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-stream-reset-additional-info",
       "headRefOid": "159c1f85fc6c52776b67f46c563e081f6da910ed",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:24:47Z",
+      "mergedAt": "2026-07-06T09:24:47Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "0f644d83123affb6629fcc5d4d6cf2bf9c844aad"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDzImw",
+          "commit": {
+            "abbreviatedOid": "159c1f8"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T09:24:34Z",
+          "updatedAt": "2026-07-06T09:24:34Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 527,
@@ -30226,24 +30249,26 @@
       "id": "PR_kwDOCrLn6M7toKI-",
       "title": "Fix QUIC schema spelling and grammar",
       "url": "https://github.com/quicwg/qlog/pull/530",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "- **Fix typo: ths -> this**\r\n- **Fix grammar: this is a separate event**\r\n- **Fix grammar in ALPN identifier description**\r\n- **Fix stray double backtick on ALPNIdentifier**\r\n- **Fix grammar: included in a single event instance**\r\n- **Fix spelling: decryptable or parsable**\r\n- **Fix typos: hypothetical, remove stray 'the'**\r\n- **Fix grammar: datagrams become blocked**\r\n- **Fix missing space between ack and or**\r\n- **Fix grammar: Implementations that do**\r\n- **Fix grammar: a byte sequence**\r\n",
       "createdAt": "2026-07-03T14:36:29Z",
-      "updatedAt": "2026-07-03T14:43:08Z",
+      "updatedAt": "2026-07-06T09:26:49Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-quic-grammar",
       "headRefOid": "73b4b0fcba322a1b1cd25e10d1d8c3da82e4f302",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:26:46Z",
+      "mergedAt": "2026-07-06T09:26:46Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "34a8e3caad7a14a1a2a0418dc07b758efbf9e95a"
+      },
       "comments": [],
       "reviews": [
         {
@@ -30258,6 +30283,19 @@
           "createdAt": "2026-07-03T14:43:07Z",
           "updatedAt": "2026-07-03T14:43:07Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFD0AcQ",
+          "commit": {
+            "abbreviatedOid": "73b4b0f"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T09:26:31Z",
+          "updatedAt": "2026-07-06T09:26:31Z",
+          "comments": []
         }
       ]
     },
@@ -30266,180 +30304,319 @@
       "id": "PR_kwDOCrLn6M7toj79",
       "title": "Fix extension socket name to http3-frameparsed-extension",
       "url": "https://github.com/quicwg/qlog/pull/531",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T14:53:41Z",
-      "updatedAt": "2026-07-03T14:53:42Z",
+      "updatedAt": "2026-07-06T09:29:27Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-h3-frameparsed-extension-name",
       "headRefOid": "a84be17355c4773fdf4b2b37e47ae6652cb62319",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:29:25Z",
+      "mergedAt": "2026-07-06T09:29:25Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "ef03a3bde0f36e4ee72d22c62ac85d4399ccad0f"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDbyKA",
+          "commit": {
+            "abbreviatedOid": "a84be17"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:28:59Z",
+          "updatedAt": "2026-07-06T08:28:59Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFD1G0w",
+          "commit": {
+            "abbreviatedOid": "a84be17"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T09:28:59Z",
+          "updatedAt": "2026-07-06T09:28:59Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 532,
       "id": "PR_kwDOCrLn6M7ton14",
       "title": "Fix type name HTTP3HeaderFrame to HTTP3HeadersFrame",
       "url": "https://github.com/quicwg/qlog/pull/532",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T14:56:34Z",
-      "updatedAt": "2026-07-03T14:56:35Z",
+      "updatedAt": "2026-07-06T08:28:42Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-h3-headersframe-name",
       "headRefOid": "3b0747c7aa3b34ab2e2e272e14c5208868bd8893",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T08:28:41Z",
+      "mergedAt": "2026-07-06T08:28:41Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "bfd72bca0f87c4b9efc1530fc1ecb94a934eed50"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDbnXQ",
+          "commit": {
+            "abbreviatedOid": "3b0747c"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:28:36Z",
+          "updatedAt": "2026-07-06T08:28:36Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 533,
       "id": "PR_kwDOCrLn6M7toq9b",
       "title": "Fix heading HTTP3GoAwayFrame to HTTP3GoawayFrame",
       "url": "https://github.com/quicwg/qlog/pull/533",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T14:59:00Z",
-      "updatedAt": "2026-07-03T14:59:01Z",
+      "updatedAt": "2026-07-06T09:28:20Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-h3-goawayframe-heading",
       "headRefOid": "c4ced3400ef14cd23e4a2eba9b9994517721f28d",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
-      "reviews": []
+      "closedAt": "2026-07-06T09:28:19Z",
+      "mergedAt": "2026-07-06T09:28:19Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "5ce96466793e066aadfeda145d947ae582789eac"
+      },
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I don't understand why the frame isn't name GO_AWAY in RFC 9114 though. That would be more consistent with the naming of the other frames, wouldn't it?",
+          "createdAt": "2026-07-06T08:36:04Z",
+          "updatedAt": "2026-07-06T08:36:04Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Agree with you on that Marten, it is weird... but I do think this is the right approach for qlog, so merging :) ",
+          "createdAt": "2026-07-06T09:28:14Z",
+          "updatedAt": "2026-07-06T09:28:14Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDbeew",
+          "commit": {
+            "abbreviatedOid": "c4ced34"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:28:16Z",
+          "updatedAt": "2026-07-06T08:28:16Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 534,
       "id": "PR_kwDOCrLn6M7towMf",
       "title": "Fix parentheses",
       "url": "https://github.com/quicwg/qlog/pull/534",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "- **Fix mismatched parentheses in extension list**\r\n- **Fix double opening parenthesis in capsule event descriptions**\r\n",
       "createdAt": "2026-07-03T15:02:56Z",
-      "updatedAt": "2026-07-03T15:02:57Z",
+      "updatedAt": "2026-07-06T08:26:23Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-h3-intro-parentheses",
       "headRefOid": "b8af855a622608a032e5bfcd216fe7e4301e02d5",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T08:26:21Z",
+      "mergedAt": "2026-07-06T08:26:21Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "bdde4671f231514c61c6434b852393d76cc209e4"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDajsA",
+          "commit": {
+            "abbreviatedOid": "b8af855"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:26:15Z",
+          "updatedAt": "2026-07-06T08:26:15Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 535,
       "id": "PR_kwDOCrLn6M7to6rb",
       "title": "Fix H3 schema spelling and grammar",
       "url": "https://github.com/quicwg/qlog/pull/535",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "- **Fix typo: ths -> this**\r\n- **Fix duplicated word: begin with**\r\n- **Fix grammar: that can aid debugging**\r\n- **Fix grammar: field section names**\r\n- **Fix grammar: name_bytes and value_bytes fields**\r\n",
       "createdAt": "2026-07-03T15:11:02Z",
-      "updatedAt": "2026-07-03T15:11:03Z",
+      "updatedAt": "2026-07-06T09:30:09Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-h3-grammar",
       "headRefOid": "562f04d3e54d934671959a0efec2be149b3c8750",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:30:08Z",
+      "mergedAt": "2026-07-06T09:30:08Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "ed642d5c0f6e9846c21fe42a5473e0b530225d59"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDddiQ",
+          "commit": {
+            "abbreviatedOid": "562f04d"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:32:36Z",
+          "updatedAt": "2026-07-06T08:32:36Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFD1fMA",
+          "commit": {
+            "abbreviatedOid": "562f04d"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T09:29:58Z",
+          "updatedAt": "2026-07-06T09:29:58Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 536,
       "id": "PR_kwDOCrLn6M7to922",
       "title": "Fix namespace name sim to simulation",
       "url": "https://github.com/quicwg/qlog/pull/536",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:13:33Z",
-      "updatedAt": "2026-07-03T15:13:34Z",
+      "updatedAt": "2026-07-06T09:31:10Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-simulation-namespace",
       "headRefOid": "72d15175ee65aec8bdcc087c34b658b0eaeb6741",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:31:08Z",
+      "mergedAt": "2026-07-06T09:31:08Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "19ff3c776caaeae90bbc60d5ec943c9c33167bdb"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDaUtg",
+          "commit": {
+            "abbreviatedOid": "72d1517"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:25:40Z",
+          "updatedAt": "2026-07-06T08:25:40Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 537,
       "id": "PR_kwDOCrLn6M7tpFxU",
       "title": "Fix QlogFileSeq xref and single-trace description",
       "url": "https://github.com/quicwg/qlog/pull/537",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:20:14Z",
-      "updatedAt": "2026-07-03T15:20:15Z",
+      "updatedAt": "2026-07-06T09:37:49Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-qlogfileseq-xref",
       "headRefOid": "ac1dd072af70f9eaa96e4b66cb69efd31a21f589",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:37:47Z",
+      "mergedAt": "2026-07-06T09:37:47Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "d550b5b91de8aa0fa7ae357a5f61aebae05d864d"
+      },
       "comments": [],
       "reviews": []
     },
@@ -30448,76 +30625,110 @@
       "id": "PR_kwDOCrLn6M7tpH_k",
       "title": "Fix QlogFile to QlogFileSeq in QlogFileSeq section",
       "url": "https://github.com/quicwg/qlog/pull/538",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:22:01Z",
-      "updatedAt": "2026-07-03T15:22:02Z",
+      "updatedAt": "2026-07-06T09:32:50Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-qlogfileseq-extends",
       "headRefOid": "390d1b69b1e77a5b3914f0ba120f6fa3d40d87e9",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:32:48Z",
+      "mergedAt": "2026-07-06T09:32:48Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "ee3368315754a87197818a377eb6be57f7a93293"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDc_vQ",
+          "commit": {
+            "abbreviatedOid": "390d1b6"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:31:31Z",
+          "updatedAt": "2026-07-06T08:31:31Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 539,
       "id": "PR_kwDOCrLn6M7tpJ3F",
       "title": "Fix invalid RFC3339 timestamps (stray colon after T)",
       "url": "https://github.com/quicwg/qlog/pull/539",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:23:29Z",
-      "updatedAt": "2026-07-03T15:23:30Z",
+      "updatedAt": "2026-07-06T08:25:19Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-rfc3339-timestamps",
       "headRefOid": "ea6fe1a1a02c3fbffbfb873e0fb815d203ee5ec8",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T08:25:17Z",
+      "mergedAt": "2026-07-06T08:25:17Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "dcd39f3014a48203ff56e046f07ebf60ad424d91"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDaIHg",
+          "commit": {
+            "abbreviatedOid": "ea6fe1a"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:25:12Z",
+          "updatedAt": "2026-07-06T08:25:12Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 540,
       "id": "PR_kwDOCrLn6M7tpVyy",
       "title": "Fix common_fields ownership: it belongs to the trace, not an event",
       "url": "https://github.com/quicwg/qlog/pull/540",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:32:49Z",
-      "updatedAt": "2026-07-03T15:32:50Z",
+      "updatedAt": "2026-07-06T09:33:33Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-common-fields-ownership",
       "headRefOid": "d6260c74cb54e113dc512420935e467af6bc73d9",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:33:31Z",
+      "mergedAt": "2026-07-06T09:33:31Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "aedb76fbec397e5de7a933b7d0f53d98c52bb64e"
+      },
       "comments": [],
       "reviews": []
     },
@@ -30526,182 +30737,307 @@
       "id": "PR_kwDOCrLn6M7tpnGb",
       "title": "Add VantagePointFlow type to restrict flow to client/server/unknown",
       "url": "https://github.com/quicwg/qlog/pull/542",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Fixes #541 541",
       "createdAt": "2026-07-03T15:47:08Z",
-      "updatedAt": "2026-07-03T15:47:09Z",
+      "updatedAt": "2026-07-06T09:48:03Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-vantagepoint-flow-type",
       "headRefOid": "166d9a91c002783f667a7f851c39546500ce6ba1",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:48:02Z",
+      "mergedAt": "2026-07-06T09:48:02Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "2516bcdbc76a58c9217e92b5995aef02c501d7f9"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFD9jbA",
+          "commit": {
+            "abbreviatedOid": "166d9a9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T09:47:56Z",
+          "updatedAt": "2026-07-06T09:47:56Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 543,
       "id": "PR_kwDOCrLn6M7tpqNo",
       "title": "Fix stray closing brace in importance cross-reference",
       "url": "https://github.com/quicwg/qlog/pull/543",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:50:01Z",
-      "updatedAt": "2026-07-03T15:50:02Z",
+      "updatedAt": "2026-07-06T08:24:56Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-importance-xref-brace",
       "headRefOid": "5981c837ec063c1b0e333734a2a0bc5dff736ee9",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T08:24:54Z",
+      "mergedAt": "2026-07-06T08:24:54Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "ca17de6a2c2248e2a43c7f78bda3f6c65d3de601"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDZ8xQ",
+          "commit": {
+            "abbreviatedOid": "5981c83"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:24:48Z",
+          "updatedAt": "2026-07-06T08:24:48Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 544,
       "id": "PR_kwDOCrLn6M7tpsU3",
       "title": "Fix unbalanced parentheses in serialization format references",
       "url": "https://github.com/quicwg/qlog/pull/544",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:51:48Z",
-      "updatedAt": "2026-07-03T15:51:49Z",
+      "updatedAt": "2026-07-06T08:24:35Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-serialization-parens",
       "headRefOid": "c5e0b1be57696160ef1417f02fd49d16c4b701c4",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T08:24:34Z",
+      "mergedAt": "2026-07-06T08:24:34Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "e5e9968ae96303759d3c379dfa39010798d78d82"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDZtmg",
+          "commit": {
+            "abbreviatedOid": "c5e0b1b"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:24:15Z",
+          "updatedAt": "2026-07-06T08:24:15Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 545,
       "id": "PR_kwDOCrLn6M7tpw3m",
       "title": "Remove duplicated timestamp and CDDL type paragraphs",
       "url": "https://github.com/quicwg/qlog/pull/545",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:55:11Z",
-      "updatedAt": "2026-07-03T15:55:12Z",
+      "updatedAt": "2026-07-06T09:39:10Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-duplicate-paragraphs",
       "headRefOid": "da786bbd1bd60ab50cbd0356c0dda5facb5adeaa",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:39:09Z",
+      "mergedAt": "2026-07-06T09:39:09Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "f3d640367e58dec5dccbd94e77de6d44643f989f"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDZj3Q",
+          "commit": {
+            "abbreviatedOid": "da786bb"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:23:55Z",
+          "updatedAt": "2026-07-06T08:23:55Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 546,
       "id": "PR_kwDOCrLn6M7tp0fa",
       "title": "Remove stray quote in IANA registry sentence",
       "url": "https://github.com/quicwg/qlog/pull/546",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "",
       "createdAt": "2026-07-03T15:57:35Z",
-      "updatedAt": "2026-07-03T15:57:36Z",
+      "updatedAt": "2026-07-06T08:32:02Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-rfc3553-stray-chars",
       "headRefOid": "a2f3f02407f4172d4e78912c2695c507f8a436ce",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T08:32:00Z",
+      "mergedAt": "2026-07-06T08:32:00Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "3e4646f18b1f4de6c0887ef7fbe54a6397a30aa0"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDdKZg",
+          "commit": {
+            "abbreviatedOid": "a2f3f02"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:31:55Z",
+          "updatedAt": "2026-07-06T08:31:55Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 547,
       "id": "PR_kwDOCrLn6M7tqCyl",
       "title": "Main schema spelling and grammar",
       "url": "https://github.com/quicwg/qlog/pull/547",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "- **Fix subject-verb agreement: follows**\r\n- **Fix capitalization: system time**\r\n- **Fix grammar: which could consider; a tool does not provide**\r\n- **Fix parallelism: and make logging easier**\r\n- **Fix grammar: Good examples ... which are divergent**\r\n- **Fix typo: Extensions**\r\n- **Fix spelling: decryptable or parsable**\r\n- **Fix grammar: fully disabled**\r\n- **Fix duplicated word: the**\r\n- **Fix typo: serializers**\r\n- **Fix grammar: Tools ingesting qlog**\r\n- **Fix duplicated word: the**\r\n- **Fix spelling: aggressive**\r\n- **Fix spelling: sequential**\r\n",
       "createdAt": "2026-07-03T16:09:13Z",
-      "updatedAt": "2026-07-03T16:09:14Z",
+      "updatedAt": "2026-07-06T09:40:27Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "b50049a9bcbbf878aa8e71cb94df4d8e587fcf13",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-mainschema-grammar",
       "headRefOid": "3816ac92ad2686503b25e411241962d2599174ce",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:40:25Z",
+      "mergedAt": "2026-07-06T09:40:25Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "2b83efdabcbd6bad37baf0329912dbb4f88014af"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDcpeA",
+          "commit": {
+            "abbreviatedOid": "3816ac9"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T08:30:44Z",
+          "updatedAt": "2026-07-06T08:30:44Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFD6ZKw",
+          "commit": {
+            "abbreviatedOid": "3816ac9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-07-06T09:40:16Z",
+          "updatedAt": "2026-07-06T09:40:16Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 548,
       "id": "PR_kwDOCrLn6M7tq2SO",
       "title": "Assorted cross ref fixes",
       "url": "https://github.com/quicwg/qlog/pull/548",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "- **Fix broken/incorrect xrefs**\r\n- **Improve deep linking of external references**\r\n- **Deep-link remaining QLOG-MAIN references**\r\n- **Use {{ANRW-2020}} citation syntax for consistency**\r\n",
       "createdAt": "2026-07-03T16:57:58Z",
-      "updatedAt": "2026-07-03T16:57:59Z",
+      "updatedAt": "2026-07-06T09:47:13Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "126d46bf81a23b85ed8a9cae489f2a47db4ac615",
       "headRepository": "quicwg/qlog",
       "headRefName": "fix-xrefs",
       "headRefOid": "29d4290501adf7691fc86bdbf500c1be460ccda4",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-07-06T09:47:11Z",
+      "mergedAt": "2026-07-06T09:47:11Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "01e8a5f5f9a5d616acf7a2ab7b8f357cd4cf8efe"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABFDY_rw",
+          "commit": {
+            "abbreviatedOid": "29d4290"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "I didn't check all the sections, but I'm sure somebody will do that as part of the review process ;)",
+          "createdAt": "2026-07-06T08:22:50Z",
+          "updatedAt": "2026-07-06T08:22:50Z",
+          "comments": []
+        }
+      ]
     }
   ]
 }
