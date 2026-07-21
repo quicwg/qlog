@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 3 January 2027                                             Meta
+Expires: 22 January 2027                                            Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             2 July 2026
+                                                            21 July 2026
 
 
                      HTTP/3 qlog event definitions
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 3 January 2027.
+   This Internet-Draft will expire on 22 January 2027.
 
 Copyright Notice
 
@@ -87,14 +87,13 @@ Table of Contents
        4.2.3.  HTTP3CancelPushFrame
        4.2.4.  HTTP3SettingsFrame
        4.2.5.  HTTP3PushPromiseFrame
-       4.2.6.  HTTP3GoAwayFrame
+       4.2.6.  HTTP3GoawayFrame
        4.2.7.  HTTP3MaxPushIDFrame
        4.2.8.  HTTP3ReservedFrame
        4.2.9.  HTTP3UnknownFrame
        4.2.10. HTTP3PriorityUpdateFrame
        4.2.11. HTTP3OriginFrame
-     4.3.  HTTP3Datagram
-     4.4.  HTTP3ApplicationError
+     4.3.  HTTP3ApplicationError
    5.  HTTP Event Schema Definition
      5.1.  Draft Event Schema Identification
    6.  HTTP Events
@@ -109,6 +108,7 @@ Table of Contents
    10. Normative References
    Acknowledgements
    Change Log
+     Since draft-ietf-quic-qlog-h3-events-12:
      Since draft-ietf-quic-qlog-h3-events-11:
      Since draft-ietf-quic-qlog-h3-events-09:
      Since draft-ietf-quic-qlog-h3-events-08:
@@ -130,10 +130,10 @@ Table of Contents
    This document defines a qlog event schema (Section 8 of [QLOG-MAIN])
    containing concrete events for the core HTTP/3 protocol [HTTP/3] and
    selected extensions: Extended CONNECT ([EXTENDED-CONNECT]),
-   PRIORITY_UPDATE (Section 7 of [PRIORITIZATION]), ORIGIN [ORIGIN], and
-   HTTP/3 Datagrams Section 2.1 of [DGRAM-AND-CAPSULE]).  It also
+   PRIORITY_UPDATE (Section 7 of [PRIORITIZATION]), ORIGIN ([ORIGIN]),
+   and HTTP/3 Datagrams (Section 2.1 of [DGRAM-AND-CAPSULE]).  It also
    defines a schema for the HTTP Capsule Protocol (Section 3 of
-   [DGRAM-AND-CAPSULE].
+   [DGRAM-AND-CAPSULE]).
 
    The event namespace with identifier http3 is defined; see Section 2.
    In this namespace multiple events derive from the qlog abstract Event
@@ -206,9 +206,9 @@ Table of Contents
    BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
    capitals, as shown here.
 
-   The event and data structure definitions in ths document are
+   The event and data structure definitions in this document are
    expressed in the Concise Data Definition Language [CDDL] and its
-   extensions described in [QLOG-MAIN].
+   extensions described in Section 1.2 of [QLOG-MAIN].
 
    The following fields from [QLOG-MAIN] are imported and used: name,
    namespace, type, data, group_id, RawInfo, and time-related fields.
@@ -368,11 +368,11 @@ Table of Contents
    "request".  Server bidirectional streams have no defined use,
    although extensions could change that.
 
-   Unidirectional streams in either direction begin with with a
-   variable-length integer type.  Where the type is not known, the
-   stream_type value of "unknown" type can be used and the value
-   captured in the stream_type_bytes field; a numerical value without
-   variable-length integer encoding.
+   Unidirectional streams in either direction begin with a variable-
+   length integer type.  Where the type is not known, the stream_type
+   value of "unknown" type can be used and the value captured in the
+   stream_type_bytes field; a numerical value without variable-length
+   integer encoding.
 
    The generic $HTTP3StreamType is defined here as a CDDL "type socket"
    extension point.  It can be extended to support additional HTTP/3
@@ -406,7 +406,7 @@ Table of Contents
 
    The priority_updated event is emitted when the priority of a request
    stream or push stream is initialized or updated through mechanisms
-   defined in [RFC9218].  It has Base importance level.
+   defined in [PRIORITIZATION].  It has Base importance level.
 
    There can be several reasons why a priority_updated occurs, and why a
    particular value was chosen.  For example, the priority can be
@@ -470,15 +470,21 @@ Table of Contents
        stream_id: uint64
        frame: $HTTP3Frame
 
-       * $$h3-frameparsed-extension
+       * $$http3-frameparsed-extension
    }
 
                    Figure 7: HTTP3FrameParsed definition
 
 3.7.  datagram_created
 
-   The datagram_created event is emitted when an HTTP/3 Datagram is
-   created (see [RFC9297]).  It has Base importance level.
+   The datagram_created event is emitted when an HTTP/3 Datagram
+   (Section 2.1 of [RFC9297]) is created.  It has Base importance level.
+
+   Beyond the Quarter Stream ID field, the remaining contents of HTTP
+   Datagrams are defined by the concrete protocol using HTTP datagrams.
+   The HTTP3DatagramCreated event can be extended through the $$http3-
+   datagramcreated-extension socket to support logging of such
+   information.
 
    This event does not necessarily coincide with the HTTP/3 Datagram
    getting passed to the QUIC layer.  For that, see the
@@ -486,7 +492,6 @@ Table of Contents
 
    HTTP3DatagramCreated = {
        quarter_stream_id: uint64
-       ? datagram: $HTTP3Datagram
        ? raw: RawInfo
 
        * $$http3-datagramcreated-extension
@@ -496,8 +501,14 @@ Table of Contents
 
 3.8.  datagram_parsed
 
-   The datagram_parsed event is emitted when the HTTP/3 Datagram is
-   parsed (see [RFC9297]).  It has Base importance level.
+   The datagram_parsed event is emitted when an HTTP/3 Datagram
+   (Section 2.1 of [RFC9297]) is parsed.  It has Base importance level.
+
+   Beyond the Quarter Stream ID field, the remaining contents of HTTP
+   Datagrams are defined by the concrete protocol using HTTP datagrams.
+   The HTTP3DatagramParsed event can be extended through the $$http3-
+   datagramparsed-extension socket to support logging of such
+   information.
 
    This event is not necessarily the same as when the HTTP/3 Datagram is
    actually received on the QUIC layer.  For that, see the
@@ -505,7 +516,6 @@ Table of Contents
 
    HTTP3DatagramParsed = {
        quarter_stream_id: uint64
-       ? datagram: $HTTP3Datagram
        ? raw: RawInfo
 
        * $$http3-datagramparsed-extension
@@ -519,7 +529,7 @@ Table of Contents
    (Section 4.6 of [HTTP/3]) is successfully claimed (used) or,
    conversely, abandoned (rejected) by the application on top of HTTP/3
    (e.g., the web browser).  This event provides additional context that
-   can is aid debugging issues related to server push.  It has Extra
+   can aid debugging issues related to server push.  It has Extra
    importance level.
 
    HTTP3PushResolved = {
@@ -593,8 +603,9 @@ Table of Contents
 4.2.2.  HTTP3HeadersFrame
 
    The payload of an HTTP/3 HEADERS frame is the QPACK-encoding of an
-   HTTP field section; see Section 7.2.2 of [HTTP/3].  HTTP3HeaderFrame,
-   in contrast, contains the HTTP field section without QPACK encoding.
+   HTTP field section; see Section 7.2.2 of [HTTP/3].
+   HTTP3HeadersFrame, in contrast, contains the HTTP field section
+   without QPACK encoding.
 
    HTTP3HTTPField = {
        ? name: text
@@ -644,16 +655,16 @@ Table of Contents
                     Figure 17: HTTP3HeadersFrame example
 
    Section 4.2 of [HTTP/3] and Section 5.1 of [HTTP] define rules for
-   the characters used in HTTP field sections names and values.
+   the characters used in HTTP field section names and values.
    Characters outside the range are invalid and result in the message
    being treated as malformed.  It can however be useful to also log
    these invalid HTTP fields.  Characters in the allowed range can be
    safely logged by the text type used in the name and value fields of
    HTTP3HTTPField.  Characters outside the range are unsafe for the text
    type and need to be logged using the name_bytes and value_bytes
-   field.  An instance of HTTP3HTTPField MUST include either the name or
-   name_bytes field and MAY include both.  An HTTP3HTTPField MAY include
-   a value or value_bytes field or neither.
+   fields.  An instance of HTTP3HTTPField MUST include either the name
+   or name_bytes field and MAY include both.  An HTTP3HTTPField MAY
+   include a value or value_bytes field or neither.
 
 4.2.3.  HTTP3CancelPushFrame
 
@@ -713,7 +724,7 @@ Table of Contents
 
                 Figure 20: HTTP3PushPromiseFrame definition
 
-4.2.6.  HTTP3GoAwayFrame
+4.2.6.  HTTP3GoawayFrame
 
    HTTP3GoawayFrame = {
        frame_type: "goaway"
@@ -764,7 +775,8 @@ Table of Contents
 
 4.2.10.  HTTP3PriorityUpdateFrame
 
-   The PRIORITY_UPDATE frame is defined in [PRIORITIZATION].
+   The PRIORITY_UPDATE frame is defined in Section 7 of
+   [PRIORITIZATION].
 
    HTTP3PriorityUpdateFrame = {
        frame_type: "priority_update"
@@ -787,7 +799,7 @@ Table of Contents
 
 4.2.11.  HTTP3OriginFrame
 
-   The ORIGIN frame is defined in [ORIGIN].
+   The ORIGIN frame is defined in Section 2 of [ORIGIN].
 
    HTTP3OriginEntry = {
      origin_len: uint16
@@ -802,21 +814,7 @@ Table of Contents
 
                    Figure 26: HTTP3OriginFrame definition
 
-4.3.  HTTP3Datagram
-
-   The generic $HTTP3Datagram is defined here as a CDDL "type socket"
-   extension point.  It can be extended to support additional HTTP/3
-   datagram types.  This document intentionally does not define any
-   specific qlog schemas for specific HTTP/3 Datagram types.
-
-   ; The HTTP3Datagram is any key-value map (e.g., JSON object)
-   $HTTP3Datagram /= {
-       * text => any
-   }
-
-              Figure 27: HTTP3Datagram type socket definition
-
-4.4.  HTTP3ApplicationError
+4.3.  HTTP3ApplicationError
 
    HTTP3ApplicationError = "http_no_error" /
                           "http_general_protocol_error" /
@@ -836,7 +834,7 @@ Table of Contents
                           "http_connect_error" /
                           "http_version_fallback"
 
-                Figure 28: HTTP3ApplicationError definition
+                Figure 27: HTTP3ApplicationError definition
 
    The HTTP3ApplicationError extends the general $ApplicationError
    definition in the qlog QUIC document, see [QLOG-QUIC].
@@ -871,16 +869,17 @@ Table of Contents
 6.  HTTP Events
 
    HTTP events extend the $ProtocolEventData extension point defined in
-   [QLOG-MAIN].  Additionally, they allow for direct extensibility by
-   their use of per-event extension points via the $$ CDDL "group
-   socket" syntax, as also described in [QLOG-MAIN].
+   Section 8.2 of [QLOG-MAIN].  Additionally, they allow for direct
+   extensibility by their use of per-event extension points via the $$
+   CDDL "group socket" syntax, as also described in Section 8.2 of
+   [QLOG-MAIN].
 
    HTTPEventData = HTTPCapsuleCreated /
                    HTTPCapsuleParsed
 
    $ProtocolEventData /= HTTPEventData
 
-    Figure 29: HTTPEventData definition and ProtocolEventData extension
+    Figure 28: HTTPEventData definition and ProtocolEventData extension
 
    The concrete HTTP event types are further defined below, their type
    identifier is the heading name.
@@ -888,7 +887,7 @@ Table of Contents
 6.1.  capsule_created
 
    The capsule_created event is emitted when a Capsule is created (see
-   (Section 3 of [DGRAM-AND-CAPSULE]).  It has Core importance level.
+   Section 3 of [DGRAM-AND-CAPSULE]).  It has Core importance level.
 
    This event does not necessarily coincide with data getting passed to
    the transport layer.  In HTTP/3, capsules are sent inside DATA
@@ -902,12 +901,12 @@ Table of Contents
        * $$http-capsulecreated-extension
    }
 
-                  Figure 30: HTTPCapsuleCreated definition
+                  Figure 29: HTTPCapsuleCreated definition
 
 6.2.  capsule_parsed
 
    The capsule_parsed event is emitted when a Capsule is parsed (see
-   (Section 3 of [DGRAM-AND-CAPSULE]).  It has Core importance level.
+   Section 3 of [DGRAM-AND-CAPSULE]).  It has Core importance level.
 
    This event is not necessarily the same as when the data is actually
    received on the transport layer.  In HTTP/3, capsules are received
@@ -922,7 +921,7 @@ Table of Contents
        * $$http-capsuleparsed-extension
    }
 
-                  Figure 31: HTTPCapsuleParsed definition
+                  Figure 30: HTTPCapsuleParsed definition
 
 7.  HTTP Data Type Definitions
 
@@ -939,7 +938,7 @@ Table of Contents
        * text => any
    }
 
-               Figure 32: HTTPCapsule type socket definition
+               Figure 31: HTTPCapsule type socket definition
 
    The capsule types defined in this document are as follows:
 
@@ -948,7 +947,7 @@ Table of Contents
 
    $HTTPCapsule /= HTTPBaseCapsules
 
-                   Figure 33: HTTPBaseCapsules definition
+                   Figure 32: HTTPBaseCapsules definition
 
 7.1.1.  HTTPCapsuleDatagram
 
@@ -957,7 +956,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 34: HTTPCapsuleDatagram definition
+                 Figure 33: HTTPCapsuleDatagram definition
 
 7.1.2.  HTTPCapsuleUnknown
 
@@ -971,7 +970,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 35: HTTPCapsuleUnknown definition
+                  Figure 34: HTTPCapsuleUnknown definition
 
 8.  Security and Privacy Considerations
 
@@ -1048,16 +1047,16 @@ Table of Contents
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
               "qlog: Structured Logging for Network Protocols", Work in
               Progress, Internet-Draft, draft-ietf-quic-qlog-main-
-              schema-13, 20 October 2025,
+              schema-14, 6 July 2026,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema-13>.
+              qlog-main-schema-14>.
 
    [QLOG-QUIC]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue, "QUIC
               event definitions for qlog", Work in Progress, Internet-
-              Draft, draft-ietf-quic-qlog-quic-events-12, 20 October
-              2025, <https://datatracker.ietf.org/doc/html/draft-ietf-
-              quic-qlog-quic-events-12>.
+              Draft, draft-ietf-quic-qlog-quic-events-13, 6 July 2026,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
+              qlog-quic-events-13>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1067,10 +1066,6 @@ Table of Contents
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
-
-   [RFC9218]  Oku, K. and L. Pardue, "Extensible Prioritization Scheme
-              for HTTP", RFC 9218, DOI 10.17487/RFC9218, June 2022,
-              <https://www.rfc-editor.org/rfc/rfc9218>.
 
    [RFC9297]  Schinazi, D. and L. Pardue, "HTTP Datagrams and the
               Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
@@ -1089,6 +1084,14 @@ Acknowledgements
 Change Log
 
    This section is to be removed before publishing as an RFC.
+
+Since draft-ietf-quic-qlog-h3-events-12:
+
+   *  Added HTTP3OriginFrame (#504)
+
+   *  Added support for Capsule Protocol (#504)
+
+   *  Wide range of editorial changes
 
 Since draft-ietf-quic-qlog-h3-events-11:
 

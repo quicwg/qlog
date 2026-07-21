@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 3 January 2027                                             Meta
+Expires: 22 January 2027                                            Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             2 July 2026
+                                                            21 July 2026
 
 
                     QUIC event definitions for qlog
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 3 January 2027.
+   This Internet-Draft will expire on 22 January 2027.
 
 Copyright Notice
 
@@ -164,6 +164,7 @@ Table of Contents
      12.2.  Informative References
    Acknowledgements
    Change Log
+     Since draft-ietf-qlog-quic-events-12:
      Since draft-ietf-qlog-quic-events-11:
      Since draft-ietf-qlog-quic-events-09:
      Since draft-ietf-qlog-quic-events-08:
@@ -247,9 +248,9 @@ Table of Contents
    BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
    capitals, as shown here.
 
-   The event and data structure definitions in ths document are
+   The event and data structure definitions in this document are
    expressed in the Concise Data Definition Language [CDDL] and its
-   extensions described in [QLOG-MAIN].
+   extensions described in Section 1.2 of [QLOG-MAIN].
 
    The following fields from [QLOG-MAIN] are imported and used: name,
    namespace, type, data, tuple, group_id, RawInfo, and time-related
@@ -405,6 +406,8 @@ Table of Contents
                    QUICUDPDatagramsReceived /
                    QUICUDPDatagramDropped /
                    QUICStreamStateUpdated /
+                   QUICFramesCreated /
+                   QUICFramesParsed /
                    QUICFramesProcessed /
                    QUICStreamDataMoved /
                    QUICDatagramDataMoved /
@@ -461,8 +464,8 @@ Table of Contents
    The connection_started event is used for both attempting (client-
    perspective) and accepting (server-perspective) new connections.
    Note that while there is overlap with the connection_state_updated
-   event, this event is separate event in order to capture additional
-   data that can be useful to log.  It has Base importance level.
+   event, this is a separate event in order to capture additional data
+   that can be useful to log.  It has Base importance level.
 
    QUICConnectionStarted = {
        local: TupleEndpointInfo
@@ -660,7 +663,7 @@ Table of Contents
 
               Figure 7: QUICConnectionStateUpdated definition
 
-   The connection_state_changed event has some overlap with the
+   The connection_state_updated event has some overlap with the
    connection_closed and connection_started events, and the handling of
    various frames (for example in a packet_received event).  Still, it
    can be useful to log these logical state transitions separately,
@@ -672,10 +675,9 @@ Table of Contents
 
 4.7.  tuple_assigned
 
-   Importance: Base
-
    This event is used to associate a single TupleID's value with other
-   parameters that describe a unique network tuple.
+   parameters that describe a unique network tuple.  It has Base
+   importance level.
 
    As described in Section 7.2 of [QLOG-MAIN], each qlog event can be
    linked to a single network tuple by means of the top-level "tuple"
@@ -796,7 +798,7 @@ Table of Contents
 
    The alpn_information event supports Application-Layer Protocol
    Negotiation (ALPN) over the QUIC transport; see [RFC7301] and
-   Section 7.4 of [QUIC-TRANSPORT].  It has Core importance level.
+   Section 8.1 of [QUIC-TLS].  It has Core importance level.
 
    QUIC endpoints are configured with a list of supported ALPN
    identifiers.  Clients send the list in a TLS ClientHello, and servers
@@ -804,10 +806,9 @@ Table of Contents
    chosen and sent back in a TLS ServerHello.  If no match is found, the
    connection is closed.
 
-   ALPN identifiers are byte sequences, that may be possible to present
-   as UTF-8.  The ALPNIdentifier` type supports either format.
-   Implementations SHOULD log at least one format, but MAY log both or
-   none.
+   ALPN identifiers are byte sequences that may be presentable as UTF-8.
+   The ALPNIdentifier type supports either format.  Implementations
+   SHOULD log at least one format, but MAY log both or none.
 
    QUICALPNInformation = {
        ? server_alpns: [* ALPNIdentifier]
@@ -857,7 +858,7 @@ Table of Contents
    Note that some settings have two variations (one set locally, one
    requested by the remote peer).  This is reflected in the initiator
    field.  As such, this field MUST be correct for all settings included
-   a single event instance.  If the settings from two sides are
+   in a single event instance.  If the settings from two sides are
    required, they MUST be logged as two separate event instances.  If
    the local peer decides to change its behavior based on remote peer's
    settings, a new event type can be used to reflect the outcome.
@@ -967,7 +968,7 @@ Table of Contents
        ? active_connection_id_limit: uint64
        ? initial_max_data: uint64
        ? initial_max_stream_data_bidi_local: uint64
-       ? initial_max_stream_data_bidi_remote: uint64,
+       ? initial_max_stream_data_bidi_remote: uint64
        ? initial_max_stream_data_uni: uint64
        ? initial_max_streams_bidi: uint64
        ? initial_max_streams_uni: uint64
@@ -1076,7 +1077,7 @@ Table of Contents
    QUICPacketDropped = {
 
        ; Primarily packet_type should be filled here,
-       ; as other fields might not be decrypteable or parseable
+       ; as other fields might not be decryptable or parsable
        ? header: PacketHeader
        ? raw: RawInfo
        ? datagram_payload_checksum: uint32
@@ -1182,7 +1183,7 @@ Table of Contents
 
 5.10.  udp_datagrams_sent
 
-   The datagrams_sent event indicates when one or more UDP-level
+   The udp_datagrams_sent event indicates when one or more UDP-level
    datagrams are passed to the underlying network socket.  This is
    useful for determining how QUIC packet buffers are drained to the OS.
    The event has Extra importance level.
@@ -1198,7 +1199,7 @@ Table of Contents
 
        ; ECN bits in the IP header
        ; if not set, defaults to the value used on the last
-       ; QUICDatagramsSent event
+       ; QUICUDPDatagramsSent event
        ? ecn: [+ ECN]
 
        ? datagram_payload_checksums: [+ uint32]
@@ -1211,7 +1212,7 @@ Table of Contents
    Since QUIC implementations rarely control UDP logic directly, the raw
    data excludes UDP-level headers in all RawInfo fields.
 
-   The datagram_payload_checksum field is used to track packet
+   The datagram_payload_checksums field is used to track packet
    coalescing, see Section 9.
 
 5.11.  udp_datagrams_received
@@ -1231,7 +1232,7 @@ Table of Contents
 
        ; ECN bits in the IP header
        ; if not set, defaults to the value on the last
-       ; QUICDatagramsReceived event
+       ; QUICUDPDatagramsReceived event
        ? ecn: [+ ECN]
 
        ? datagram_payload_checksums: [+ uint32]
@@ -1382,7 +1383,7 @@ Table of Contents
   ]
 
    Frame-related events omit information that is available in the
-   packet_received or packet_created event.  For instance, the packet
+   packet_received or packet_sent event.  For instance, the packet
    encryption level.  For use cases that require such information, the
    packet events are preferable.
 
@@ -1427,8 +1428,8 @@ Table of Contents
    This event exists to eliminate the need to define specific-purpose
    events, where the effect of processing a frame can be easily inferred
    from its contents.  For example, there would be no need to define a
-   hypotheical packets_acknowledged event, when the an ACK frame
-   contains all relevant information.
+   hypothetical packets_acknowledged event, when an ACK frame contains
+   all relevant information.
 
    The frames_processed event can be used to signal internal state
    change not resulting directly from the actual parsing of a frame
@@ -1475,7 +1476,7 @@ Table of Contents
    moves data into transport and simultaneously ends the stream, can log
    fin_set.  As another example, a transport layer that has received an
    instruction to reset a stream can indicate this to the application
-   layer using reset_stream.  In both cases, the raw.length field can be
+   layer using stream_reset.  In both cases, the raw.length field can be
    omitted or have a zero value.
 
    This event is only for data in QUIC streams.  For data in QUIC
@@ -1544,14 +1545,15 @@ Table of Contents
 
 5.17.  connection_data_blocked_updated
 
-   The connection_blocked_updated event is used to indicate when the
-   QUIC connection becomes blocked or unblocked for sending data.  When
-   a connection is "blocked", data can't be sent in streams and/or
+   The connection_data_blocked_updated event is used to indicate when
+   the QUIC connection becomes blocked or unblocked for sending data.
+   When a connection is "blocked", data can't be sent in streams and/or
    datagrams until the blocking reason has been resolved.  The event has
    Extra importance level.
 
-   Use the stream_blocked_updated or datagram_blocked_updated event to
-   provide more fine-grained information for individual data types.
+   Use the stream_data_blocked_updated or datagram_data_blocked_updated
+   event to provide more fine-grained information for individual data
+   types.
 
    QUICConnectionDataBlockedUpdated = {
        ? old: $BlockedState
@@ -1594,7 +1596,7 @@ Table of Contents
 5.19.  datagram_data_blocked_updated
 
    The datagram_data_blocked_updated event is used to indicate when QUIC
-   datagrames becomes blocked or unblocked for sending.  The event has
+   datagrams become blocked or unblocked for sending.  The event has
    Extra importance level.
 
    QUICDatagramDataBlockedUpdated = {
@@ -1680,12 +1682,13 @@ Table of Contents
    In order to indicate an active timer's timeout update, a new set
    event is used.
 
-   QUICTimerUpdated events with the timer_type set to ackor pto indicate
-   changes to the individual timeouts defined by RFC 9002: the threshold
-   loss detection timeout (see Section 6.1.2 of [QUIC-RECOVERY]) and the
-   probe timeout (see Section 6.2 of [QUIC-RECOVERY]).  Those set to
-   loss_timeout represent changes to the multi-modal loss detection
-   timer (see Section 3 of [QUIC-RECOVERY]).
+   QUICTimerUpdated events with the timer_type set to ack or pto
+   indicate changes to the individual timeouts defined by RFC 9002: the
+   threshold loss detection timeout (see Section 6.1.2 of
+   [QUIC-RECOVERY]) and the probe timeout (see Section 6.2 of
+   [QUIC-RECOVERY]).  Those set to loss_timeout represent changes to the
+   multi-modal loss detection timer (see Appendix A.8 of
+   [QUIC-RECOVERY]).
 
    The QUIC protocol conceptually employs a variety of timers, but their
    usage can be implementation-dependent.  Implementers can add
@@ -1789,7 +1792,7 @@ Table of Contents
    Base importance level.
 
    All these settings are typically set once and never change.
-   Implementation that do, for some reason, change these parameters
+   Implementations that do, for some reason, change these parameters
    during execution, MAY emit the recovery_parameters_set event more
    than once.
 
@@ -1980,7 +1983,7 @@ Table of Contents
 7.6.  ecn_state_updated
 
    The ecn_state_updated event indicates a progression in the ECN state
-   machine as described in section A.4 of [QUIC-TRANSPORT].  It has
+   machine as described in Appendix A.4 of [QUIC-TRANSPORT].  It has
    Extra importance level.
 
    QUICECNStateUpdated = {
@@ -2330,7 +2333,7 @@ Table of Contents
        stream_id: uint64
        error: $ApplicationError
 
-       ; if error_code === "unknown"
+       ; if error === "unknown"
        ? error_code: uint64
 
        ; in bytes
@@ -2352,7 +2355,7 @@ Table of Contents
        stream_id: uint64
        error: $ApplicationError
 
-       ; if error_code === "unknown"
+       ; if error === "unknown"
        ? error_code: uint64
 
        ; in bytes
@@ -2378,7 +2381,7 @@ Table of Contents
        stream_id: uint64
        error: $ApplicationError
 
-       ; if error_code === "unknown"
+       ; if error === "unknown"
        ? error_code: uint64
 
        ? raw: RawInfo
@@ -2555,7 +2558,7 @@ Table of Contents
    has the value "unknown" and the numerical value without variable-
    length integer encoding can be logged in error_code.
 
-   The CONNECTION_CLOSE reason phrase is a byte sequences.  It is likely
+   The CONNECTION_CLOSE reason phrase is a byte sequence.  It is likely
    that this sequence is presentable as UTF-8, in which case it can be
    logged in the reason field.  The reason_bytes field supports logging
    the raw bytes, which can be useful when the value is not UTF-8 or
@@ -2571,7 +2574,7 @@ Table of Contents
        ? error: $TransportError / CryptoError /
                 $ApplicationError
 
-       ; only if error_code === "unknown"
+       ; if error === "unknown"
        ? error_code: uint64
 
        ? reason: text
@@ -2722,11 +2725,14 @@ Table of Contents
       alpn_information, parameters_set, parameters_restored,
       packet_sent, packet_received, packet_dropped, packet_buffered,
       packets_acked, udp_datagrams_sent, udp_datagrams_received,
-      udp_datagram_dropped, stream_state_updated, frames_processed,
-      stream_data_moved, datagram_data_moved, migration_state_updated,
-      key_updated, key_discarded, recovery_parameters_set,
-      recovery_metrics_updated, congestion_state_updated, timer_updated,
-      packet_lost, marked_for_retransmit, ecn_state_updated
+      udp_datagram_dropped, stream_state_updated, frames_created,
+      frames_parsed, frames_processed, stream_data_moved,
+      datagram_data_moved, connection_data_blocked_updated,
+      stream_data_blocked_updated, datagram_data_blocked_updated,
+      migration_state_updated, key_updated, key_discarded,
+      recovery_parameters_set, recovery_metrics_updated,
+      congestion_state_updated, timer_updated, packet_lost,
+      marked_for_retransmit, ecn_state_updated
 
    Description:  Event definitions related to the QUIC transport
       protocol.
@@ -2752,9 +2758,9 @@ Table of Contents
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
               "qlog: Structured Logging for Network Protocols", Work in
               Progress, Internet-Draft, draft-ietf-quic-qlog-main-
-              schema-13, 20 October 2025,
+              schema-14, 6 July 2026,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema-13>.
+              qlog-main-schema-14>.
 
    [QUIC-DATAGRAM]
               Pauly, T., Kinnear, E., and D. Schinazi, "An Unreliable
@@ -2816,6 +2822,12 @@ Acknowledgements
 Change Log
 
    This section is to be removed before publishing as an RFC.
+
+Since draft-ietf-qlog-quic-events-12:
+
+   *  Split frames_processed into 3 events (#513)
+
+   *  Wide range of editorial changes
 
 Since draft-ietf-qlog-quic-events-11:
 
