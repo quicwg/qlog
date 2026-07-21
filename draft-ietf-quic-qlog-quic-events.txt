@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 7 January 2027                                             Meta
+Expires: 22 January 2027                                            Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                               Cloudflare
-                                                             6 July 2026
+                                                            21 July 2026
 
 
                     QUIC event definitions for qlog
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 7 January 2027.
+   This Internet-Draft will expire on 22 January 2027.
 
 Copyright Notice
 
@@ -1002,7 +1002,7 @@ Table of Contents
        ; only if header.packet_type === "version_negotiation"
        ? supported_versions: [+ QuicVersion]
        ? raw: RawInfo
-       ? datagram_id: uint32
+       ? datagram_payload_checksum: uint32
        ? is_mtu_probe_packet: bool .default false
 
        ? trigger:
@@ -1027,8 +1027,8 @@ Table of Contents
    explicitly: the header.packet_type specifies this by inference
    (assuming correct implementation)
 
-   The datagram_id field is used to track packet coalescing, see
-   Section 9.
+   The datagram_payload_checksum field is used to track packet
+   coalescing, see Section 9.
 
 5.6.  packet_received
 
@@ -1046,7 +1046,7 @@ Table of Contents
        ; only if header.packet_type === "version_negotiation"
        ? supported_versions: [+ QuicVersion]
        ? raw: RawInfo
-       ? datagram_id: uint32
+       ? datagram_payload_checksum: uint32
 
        ? trigger:
            ; if packet was buffered because it couldn't be
@@ -1062,8 +1062,8 @@ Table of Contents
    explicitly: the header.packet_type specifies this by inference
    (assuming correct implementation).
 
-   The datagram_id field is used to track packet coalescing, see
-   Section 9.
+   The datagram_payload_checksum field is used to track packet
+   coalescing, see Section 9.
 
 5.7.  packet_dropped
 
@@ -1080,7 +1080,7 @@ Table of Contents
        ; as other fields might not be decryptable or parsable
        ? header: PacketHeader
        ? raw: RawInfo
-       ? datagram_id: uint32
+       ? datagram_payload_checksum: uint32
        ? details: {* text => any}
        ? trigger:
            "internal_error" /
@@ -1121,8 +1121,8 @@ Table of Contents
 
    *  general: situations not clearly covered in the other categories
 
-   The datagram_id field is used to track packet coalescing, see
-   Section 9.
+   The datagram_payload_checksum field is used to track packet
+   coalescing, see Section 9.
 
 5.8.  packet_buffered
 
@@ -1138,7 +1138,7 @@ Table of Contents
        ; might not be available yet
        ? header: PacketHeader
        ? raw: RawInfo
-       ? datagram_id: uint32
+       ? datagram_payload_checksum: uint32
        ? trigger:
            ; indicates the parser cannot keep up, temporarily buffers
            ; packet for later processing
@@ -1152,8 +1152,8 @@ Table of Contents
 
                   Figure 17: QUICPacketBuffered definition
 
-   The datagram_id field is used to track packet coalescing, see
-   Section 9.
+   The datagram_payload_checksum field is used to track packet
+   coalescing, see Section 9.
 
 5.9.  packets_acked
 
@@ -1202,7 +1202,7 @@ Table of Contents
        ; QUICUDPDatagramsSent event
        ? ecn: [+ ECN]
 
-       ? datagram_ids: [+ uint32]
+       ? datagram_payload_checksums: [+ uint32]
 
        * $$quic-udpdatagramssent-extension
    }
@@ -1212,8 +1212,8 @@ Table of Contents
    Since QUIC implementations rarely control UDP logic directly, the raw
    data excludes UDP-level headers in all RawInfo fields.
 
-   The datagram_ids field is used to track packet coalescing, see
-   Section 9.
+   The datagram_payload_checksums field is used to track packet
+   coalescing, see Section 9.
 
 5.11.  udp_datagrams_received
 
@@ -1235,15 +1235,15 @@ Table of Contents
        ; QUICUDPDatagramsReceived event
        ? ecn: [+ ECN]
 
-       ? datagram_ids: [+ uint32]
+       ? datagram_payload_checksums: [+ uint32]
 
        * $$quic-udpdatagramsreceived-extension
    }
 
                Figure 20: QUICUDPDatagramsReceived definition
 
-   The datagram_ids field is used to track packet coalescing, see
-   Section 9.
+   The datagram_payload_checksums field is used to track packet
+   coalescing, see Section 9.
 
 5.12.  udp_datagram_dropped
 
@@ -2699,15 +2699,11 @@ Table of Contents
    especially during the handshake (see Section 12.2 of
    [QUIC-TRANSPORT]).  However, neither QUIC nor UDP themselves provide
    an explicit mechanism to track this behaviour.  To make it possible
-   for implementations to track coalescing across packet-level and
-   datagram-level qlog events, this document defines a qlog-specific
-   mechanism for tracking coalescing across packet-level and datagram-
-   level qlog events: a "datagram identifier" carried in datagram_id
-   fields. qlog implementations that want to track coalescing can use
-   this mechanism, where multiple events sharing the same datagram_id
-   indicate they were coalesced in the same UDP datagram.  The selection
-   of specific and locally-unique datagram_id values is an
-   implementation choice.
+   for implementations to track coalescing across QUIC packet-level and
+   UDP datagram-level qlog events, the optional
+   datagram_payload_checksum field is defined.  It carries a 32-bit
+   CRC32c value that is calculated on the UDP user data payload as
+   described in Section 11.3 of [RFC9868].
 
 10.  Security and Privacy Considerations
 
@@ -2762,9 +2758,9 @@ Table of Contents
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
               "qlog: Structured Logging for Network Protocols", Work in
               Progress, Internet-Draft, draft-ietf-quic-qlog-main-
-              schema-13, 20 October 2025,
+              schema-14, 6 July 2026,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema-13>.
+              qlog-main-schema-14>.
 
    [QUIC-DATAGRAM]
               Pauly, T., Kinnear, E., and D. Schinazi, "An Unreliable
@@ -2800,6 +2796,10 @@ Table of Contents
               Datagram Extension to QUIC", RFC 9221,
               DOI 10.17487/RFC9221, March 2022,
               <https://www.rfc-editor.org/rfc/rfc9221>.
+
+   [RFC9868]  Touch, J. and C. Heard, Ed., "Transport Options for UDP",
+              RFC 9868, DOI 10.17487/RFC9868, October 2025,
+              <https://www.rfc-editor.org/rfc/rfc9868>.
 
 12.2.  Informative References
 
