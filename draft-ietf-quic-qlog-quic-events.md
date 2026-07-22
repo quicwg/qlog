@@ -181,7 +181,6 @@ this specification.
 | quic:stream_state_updated        | Base       | {{quic-streamstateupdated}} |
 | quic:frames_created            | Extra      | {{quic-framescreated}} |
 | quic:frames_parsed            | Extra      | {{quic-framesparsed}} |
-| quic:frames_processed            | Extra      | {{quic-framesprocessed}} |
 | quic:stream_data_moved                | Base       | {{quic-streamdatamoved}} |
 | quic:datagram_data_moved              | Base       | {{quic-datagramdatamoved}} |
 | quic:connection_data_blocked_updated              | Extra       | {{quic-connectiondatablockedupdated}} |
@@ -228,7 +227,6 @@ QuicEventData = QUICServerListening /
                 QUICStreamStateUpdated /
                 QUICFramesCreated /
                 QUICFramesParsed /
-                QUICFramesProcessed /
                 QUICStreamDataMoved /
                 QUICDatagramDataMoved /
                 QUICConnectionDataBlockedUpdated /
@@ -1139,7 +1137,7 @@ QUIC packet, some implementations might not be able or willing to include frame
 information at the moment either event is logged.
 
 In order to support logging frame-related operations independent of packets, the
-`frames_created`, `frames_parsed`, and `frames_processed` events are defined.
+`frames_created` and `frames_parsed` events are defined.
 
 A qlog trace can contain both packet and frame-related events. However, it is
 RECOMMENDED that implementations avoid generating events with duplicate or
@@ -1153,7 +1151,7 @@ position and order of entries in the `frames` and `packet_numbers` is used. If
 the `packet_numbers` field is logged, each and every frame MUST have a
 corresponding packet number at the same index.
 
-For example, an instance of the `frames_processed` event that represents four
+For example, an instance of the `frames_parsed` event that represents four
 STREAM frames received over two packets can be serialized as:
 
 ~~~
@@ -1209,32 +1207,6 @@ QUICFramesParsed = {
 }
 ~~~
 {: #quic-framesparsed-def title="QUICFramesParsed definition"}
-
-### frames_processed {#quic-framesprocessed}
-
-The `frames_processed` event indicates when a set of QUIC frames have been
-processed at the receiver. It has Extra importance level.
-
-This event exists to eliminate the need to define specific-purpose events, where
-the effect of processing a frame can be easily inferred from its contents. For
-example, there would be no need to define a hypothetical `packets_acknowledged`
-event, when an ACK frame contains all relevant information.
-
-The `frames_processed` event can be used to signal internal state change not
-resulting directly from the actual parsing of a frame (e.g., the frame could
-have been parsed, data put into a buffer, then later processed and logged).
-Using `frames_processed` in additional to `packet_received` and/or
-`frames_parsed` allows an implementation to log its full sequence of events.
-
-~~~ cddl
-QUICFramesProcessed = {
-    frames: [* $QuicFrame]
-    ? packet_numbers: [* uint64]
-
-    * $$quic-framesprocessed-extension
-}
-~~~
-{: #quic-framesprocessed-def title="QUICFramesProcessed definition"}
 
 ## stream_data_moved {#quic-streamdatamoved}
 
@@ -1730,7 +1702,7 @@ The `marked_for_retransmit` event indicates which data was marked for
 retransmission upon detection of packet loss (see `packet_lost`). It has Extra
 importance level.
 
-Similar to the reasoning for the `frames_processed` event,
+Similar to the reasoning for the `frames_sent` and `frames_parsed` events,
 in order to keep the amount of different events low, this signal is grouped into
 in a single event based on existing QUIC frame definitions for all types of
 retransmittable data.
@@ -2540,7 +2512,6 @@ Event Types
   stream_state_updated,
   frames_created,
   frames_parsed,
-  frames_processed,
   stream_data_moved,
   datagram_data_moved,
   connection_data_blocked_updated,
