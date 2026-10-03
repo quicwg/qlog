@@ -1088,8 +1088,7 @@ QUICStreamStateUpdated = {
     ? stream_type: StreamType
     ? old: $StreamState
     new: $StreamState
-    stream_side: "sending" /
-                 "receiving"
+    stream_side: Direction
     ? trigger:
       ; stream state change was initiated by a local action
       "local" /
@@ -1315,7 +1314,7 @@ For drops of entire QUIC packets, use `packet_dropped` ({{quic-packetdropped}}).
 
 ~~~ cddl
 QUICDatagramDropped = {
-    ? direction: "sending" / "receiving"
+    ? direction: Direction
     ? raw: RawInfo
     ? trigger:
         ; insufficient space in a send or receive buffer
@@ -1810,6 +1809,16 @@ Initiator = "local" /
             "remote"
 ~~~
 {: #initiator-def title="Initiator definition"}
+
+## Direction
+
+Direction identifies the sending or receiving side of an endpoint.
+
+~~~ cddl
+Direction = "sending" /
+            "receiving"
+~~~
+{: #direction-def title="Direction definition"}
 
 ## IPAddress
 
