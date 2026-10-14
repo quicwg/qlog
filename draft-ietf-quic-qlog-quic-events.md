@@ -261,10 +261,8 @@ level.
 
 ~~~ cddl
 QUICServerListening = {
-    ? ip_v4: IPAddress
-    ? port_v4: uint16
-    ? ip_v6: IPAddress
-    ? port_v6: uint16
+    ? ip_v4: IPAddressPort
+    ? ip_v6: IPAddressPort
 
     ; the server will always answer client initials with a retry
     ; (no 1-RTT connection setups by choice)
@@ -729,10 +727,8 @@ QUICParametersSet = {
 }
 
 PreferredAddress = {
-    ? ip_v4: IPAddress
-    ? port_v4: uint16
-    ? ip_v6: IPAddress
-    ? port_v6: uint16
+    ? ip_v4: IPAddressPort
+    ? ip_v6: IPAddressPort
     connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
 }
@@ -1780,19 +1776,21 @@ Initiator = "local" /
 ~~~
 {: #initiator-def title="Initiator definition"}
 
-## IPAddress
+## IPAddressPort
 
 ~~~ cddl
-; an IPAddress can either be a "human readable" form
+; an IP address can either be a "human readable" form
 ; (e.g., "127.0.0.1" for v4 or
 ; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
 ; use a raw byte-form (as the string forms can be ambiguous).
-; Additionally, a hash-based or redacted representation
-; can be used if needed for privacy or security reasons.
-IPAddress = text /
-            hexstring
+; Additionally, the IP address and port pair can be logged as an
+; application-defined redacted string for privacy or security reasons.
+IPAddressPort = {
+    ip: text / hexstring
+    port: uint16
+} / text
 ~~~
-{: #ipaddress-def title="IPAddress definition"}
+{: #ipaddressport-def title="IPAddressPort definition"}
 
 ## TupleEndpointInfo
 
@@ -1806,10 +1804,8 @@ TupleEndpointInfo instances, one for each half of the tuple.
 
 ~~~ cddl
 TupleEndpointInfo = {
-    ? ip_v4: IPAddress
-    ? port_v4: uint16
-    ? ip_v6: IPAddress
-    ? port_v6: uint16
+    ? ip_v4: IPAddressPort
+    ? ip_v6: IPAddressPort
 
     ; Even though usually only a single ConnectionID
     ; is associated with a given tuple/path at a time,
