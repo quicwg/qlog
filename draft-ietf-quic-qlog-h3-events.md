@@ -106,6 +106,7 @@ the http namespace in this specification.
 |:-----------------------------|:-----------|:------------|
 | http:capsule_created         | Core       | {{http-capsulecreated}} |
 | http:capsule_parsed          | Core       | {{http-capsuleparsed}} |
+| http:capsule_parse_error     | Base       | {{http-capsuleparseerror}} |
 {: #http-events title="HTTP Events"}
 
 ## Usage with QUIC
@@ -801,7 +802,8 @@ described in {{Section 8.2 of QLOG-MAIN}}.
 
 ~~~ cddl
 HTTPEventData = HTTPCapsuleCreated /
-                HTTPCapsuleParsed
+                HTTPCapsuleParsed /
+                HTTPCapsuleParseError
 
 $ProtocolEventData /= HTTPEventData
 ~~~
@@ -812,8 +814,8 @@ is the heading name.
 
 ## capsule_created {#http-capsulecreated}
 
-The `capsule_created` event is emitted when a Capsule is created (see
-{{Section 3 of DGRAM-AND-CAPSULE}}). It has Core importance level.
+The `capsule_created` event is emitted when a DATAGRAM capsule is created (see
+{{Section 3.5 of DGRAM-AND-CAPSULE}}). It has Core importance level.
 
 This event does not necessarily coincide with data getting passed to the
 transport layer. In HTTP/3, capsules are sent inside DATA frames, so the
@@ -823,7 +825,7 @@ frame_created event would be logged separately.
 HTTPCapsuleCreated = {
     stream_id: uint64
 
-    capsule: $HTTPCapsule
+    capsule: HTTPCapsuleDatagram
 
     * $$http-capsulecreated-extension
 }
@@ -832,8 +834,8 @@ HTTPCapsuleCreated = {
 
 ## capsule_parsed {#http-capsuleparsed}
 
-The `capsule_parsed` event is emitted when a Capsule is parsed (see
-{{Section 3 of DGRAM-AND-CAPSULE}}). It has Core importance level.
+The `capsule_parsed` event is emitted when a DATAGRAM capsule is parsed (see
+{{Section 3.5 of DGRAM-AND-CAPSULE}}). It has Core importance level.
 
 This event is not necessarily the same as when the data is actually received on
 the transport layer. In HTTP/3, capsules are received inside DATA frames, so the
@@ -843,41 +845,42 @@ frame_parsed event would be logged separately.
 HTTPCapsuleParsed = {
     stream_id: uint64
 
-    capsule: $HTTPCapsule
+    capsule: HTTPCapsuleDatagram
 
     * $$http-capsuleparsed-extension
 }
 ~~~
 {: #http-capsuleparsed-def title="HTTPCapsuleParsed definition"}
 
+## capsule_parse_error {#http-capsuleparseerror}
+
+The `capsule_parse_error` event is emitted when a stream ends with incomplete
+Capsule Protocol framing. It has Base importance level. Errors in capsule
+contents are logged using events defined by the respective application protocol.
+
+~~~ cddl
+HTTPCapsuleParseError = {
+    stream_id: uint64
+
+    error: "incomplete_type" /
+           "incomplete_length" /
+           "incomplete_payload"
+    ? capsule_type_value: uint64 ; if the type could be parsed
+    ? raw: RawInfo
+
+    * $$http-capsuleparseerror-extension
+}
+~~~
+{: #http-capsuleparseerror-def title="HTTPCapsuleParseError definition"}
+
 # HTTP Data Type Definitions
 
 The following data type definitions can be used in HTTP events.
 
-## HTTPCapsule
+## HTTPCapsuleDatagram
 
-The generic `$HTTPCapsule` is defined here as a CDDL "type socket" extension
-point. It can be extended to support additional capsule types.
-
-~~~~~~
-; The HTTPCapsule is any key-value map (e.g., JSON object)
-$HTTPCapsule /= {
-    * text => any
-}
-~~~~~~
-{: #http-capsule-def title="HTTPCapsule type socket definition"}
-
-The capsule types defined in this document are as follows:
-
-~~~ cddl
-HTTPBaseCapsules = HTTPCapsuleDatagram /
-                   HTTPCapsuleUnknown
-
-$HTTPCapsule /= HTTPBaseCapsules
-~~~
-{: #httpbasecapsule-def title="HTTPBaseCapsules definition"}
-
-### HTTPCapsuleDatagram
+Other capsule types are logged using events defined by the respective application
+protocol.
 
 ~~~ cddl
 HTTPCapsuleDatagram = {
@@ -886,21 +889,6 @@ HTTPCapsuleDatagram = {
 }
 ~~~
 {: #httpcapsuledatagram-def title="HTTPCapsuleDatagram definition"}
-
-### HTTPCapsuleUnknown
-
-The capsule_type_value field is the numerical value without variable-length
-integer encoding.
-
-~~~ cddl
-HTTPCapsuleUnknown = {
-    capsule_type: "unknown"
-
-    ? capsule_type_value: uint64
-    ? raw: RawInfo
-}
-~~~
-{: #httpcapsuleunknown-def title="HTTPCapsuleUnknown definition"}
 
 # Security and Privacy Considerations
 
@@ -943,7 +931,7 @@ Namespace
 : http
 
 Event Types
-: capsule_created,capsule_parsed
+: capsule_created,capsule_parsed,capsule_parse_error
 
 Description:
 : Event definitions for the Capsule Protocol.
@@ -966,6 +954,12 @@ their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
+
+## Since draft-ietf-quic-qlog-h3-events-13:
+{:numbered="false"}
+
+* Removed the extensibility of capsule events
+* Added capsule_parse_error for Capsule Protocol framing errors
 
 ## Since draft-ietf-quic-qlog-h3-events-12:
 {:numbered="false"}
