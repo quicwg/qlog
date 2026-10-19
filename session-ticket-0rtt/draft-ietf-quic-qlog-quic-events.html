@@ -2534,21 +2534,14 @@ are stored up-front at the client and used for the initial connection startup.
 They are later updated with the server's reply. In these cases, utilize the
 separate <code>parameters_restored</code> event to indicate the initial values, and this
 event to indicate the updated values, as normal.<a href="#section-5.3-6" class="pilcrow">¶</a></p>
-<p id="section-5.3-7">The <code>session_ticket</code> field indicates that a TLS session ticket was sent or
-received; see <a href="#session-ticket" class="auto internal xref">Section 8.10</a>. With an <code>initiator</code> of <code>local</code>, a server
-issued the ticket in a NewSessionTicket message, or a client offered it in its
-ClientHello. With an <code>initiator</code> of <code>remote</code>, the ticket was received from the
-peer.<a href="#section-5.3-7" class="pilcrow">¶</a></p>
-<p id="section-5.3-8">The <code>early_data_enabled</code> field indicates whether 0-RTT is enabled: by a server
-in a NewSessionTicket message, or by a client offering 0-RTT in its ClientHello;
-see <span><a href="https://rfc-editor.org/rfc/rfc9001#section-4.6.1" class="relref">Section 4.6.1</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>. The <code>early_data_accepted</code> field indicates
-whether the server accepted (true) or rejected (false) 0-RTT; see <span><a href="https://rfc-editor.org/rfc/rfc9001#section-4.6.2" class="relref">Section 4.6.2</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>. A server logs <code>early_data_accepted</code> with an <code>initiator</code> of
-<code>local</code>, and a client with an <code>initiator</code> of <code>remote</code>. The
-<code>early_data_rejection_reason</code> field contains an implementation-defined
-description of why 0-RTT was rejected, for example because the restored
-transport parameters cannot be supported or because the server sent a
-HelloRetryRequest. Usually only the server knows the reason, as rejection is not
-signaled with a reason on the wire.<a href="#section-5.3-8" class="pilcrow">¶</a></p>
+<p id="section-5.3-7">The <code>session_ticket</code> field (<a href="#session-ticket" class="auto internal xref">Section 8.10</a>) logs a session ticket that a
+server issued or a client offered (<code>initiator</code> of <code>local</code>), or that was received
+from the peer (<code>initiator</code> of <code>remote</code>).<a href="#section-5.3-7" class="pilcrow">¶</a></p>
+<p id="section-5.3-8">The <code>early_data_enabled</code> field is true if a server enabled 0-RTT in a
+NewSessionTicket message, or a client offered 0-RTT in its ClientHello; see
+<span><a href="https://rfc-editor.org/rfc/rfc9001#section-4.6.1" class="relref">Section 4.6.1</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>. The <code>early_data_accepted</code> field is true if the
+server accepted 0-RTT and false if it rejected it; see <span><a href="https://rfc-editor.org/rfc/rfc9001#section-4.6.2" class="relref">Section 4.6.2</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>. The <code>early_data_rejection_reason</code> field describes why 0-RTT was
+rejected; usually only the server knows this.<a href="#section-5.3-8" class="pilcrow">¶</a></p>
 <span id="name-quicparametersset-definitio"></span><div id="quic-parametersset-def">
 <figure id="figure-12">
           <div class="breakable lang-cddl sourcecode" id="section-5.3-9.1">
@@ -2631,9 +2624,9 @@ UnknownParameter = {
 <a href="#section-5.4" class="section-number selfRef">5.4. </a><a href="#name-parameters_restored" class="section-name selfRef">parameters_restored</a>
         </h3>
 <p id="section-5.4-1">When using QUIC 0-RTT, clients are expected to remember and restore the server's
-transport parameters from the previous connection. Servers can similarly recover
-the transport parameters they previously sent, for example from a session
-ticket; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-7.4.1" class="relref">Section 7.4.1</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. The <code>parameters_restored</code>
+transport parameters from the previous connection. Servers can also restore the
+transport parameters they previously sent, for example from a session ticket;
+see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-7.4.1" class="relref">Section 7.4.1</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. The <code>parameters_restored</code>
 event is used to indicate which parameters were restored and to which values
 when utilizing 0-RTT. It has Base importance level.<a href="#section-5.4-1" class="pilcrow">¶</a></p>
 <p id="section-5.4-2">Note that not all transport parameters should be restored (many are even
@@ -4195,15 +4188,12 @@ SessionTicket = {
 <a href="#name-sessionticket-definition" class="selfRef">SessionTicket definition</a>
           </figcaption></figure>
 </div>
-<p id="section-8.10-2">QUIC associates transport state with a session ticket, and the application
-protocol can associate its own state; see <span><a href="https://rfc-editor.org/rfc/rfc9001#section-4.6.3" class="relref">Section 4.6.3</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>.
-<code>SessionTicket</code> represents this associated state, not the TLS ticket itself.
+<p id="section-8.10-2"><code>SessionTicket</code> represents the QUIC and application state associated with a
+session ticket (see <span><a href="https://rfc-editor.org/rfc/rfc9001#section-4.6.3" class="relref">Section 4.6.3</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>), not the TLS ticket itself.
 Its format is implementation specific, so <code>SessionTicket</code> includes a
-general-purpose <code>details</code> field. Transport parameters and HTTP/3 settings
-recovered from a ticket can also be logged using the <code>parameters_restored</code>
-events.<a href="#section-8.10-2" class="pilcrow">¶</a></p>
-<p id="section-8.10-3">Session tickets can contain sensitive information; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-14.1" class="relref">Section 14.1</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>. The <code>raw</code> field allows logging only the length of the state, or a
-truncated value; see <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-11.4" class="relref">Section 11.4</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-8.10-3" class="pilcrow">¶</a></p>
+general-purpose <code>details</code> field. Session tickets can contain sensitive
+information (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-14.1" class="relref">Section 14.1</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>), so the <code>raw</code> field can be
+truncated or reduced to its length (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-11.4" class="relref">Section 11.4</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>).<a href="#section-8.10-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="stateless-reset-token">

@@ -881,24 +881,17 @@ Table of Contents
    indicate the initial values, and this event to indicate the updated
    values, as normal.
 
-   The session_ticket field indicates that a TLS session ticket was sent
-   or received; see Section 8.10.  With an initiator of local, a server
-   issued the ticket in a NewSessionTicket message, or a client offered
-   it in its ClientHello.  With an initiator of remote, the ticket was
-   received from the peer.
+   The session_ticket field (Section 8.10) logs a session ticket that a
+   server issued or a client offered (initiator of local), or that was
+   received from the peer (initiator of remote).
 
-   The early_data_enabled field indicates whether 0-RTT is enabled: by a
-   server in a NewSessionTicket message, or by a client offering 0-RTT
-   in its ClientHello; see Section 4.6.1 of [QUIC-TLS].  The
-   early_data_accepted field indicates whether the server accepted
-   (true) or rejected (false) 0-RTT; see Section 4.6.2 of [QUIC-TLS].  A
-   server logs early_data_accepted with an initiator of local, and a
-   client with an initiator of remote.  The early_data_rejection_reason
-   field contains an implementation-defined description of why 0-RTT was
-   rejected, for example because the restored transport parameters
-   cannot be supported or because the server sent a HelloRetryRequest.
-   Usually only the server knows the reason, as rejection is not
-   signaled with a reason on the wire.
+   The early_data_enabled field is true if a server enabled 0-RTT in a
+   NewSessionTicket message, or a client offered 0-RTT in its
+   ClientHello; see Section 4.6.1 of [QUIC-TLS].  The
+   early_data_accepted field is true if the server accepted 0-RTT and
+   false if it rejected it; see Section 4.6.2 of [QUIC-TLS].  The
+   early_data_rejection_reason field describes why 0-RTT was rejected;
+   usually only the server knows this.
 
    QUICParametersSet = {
        ? initiator: Initiator
@@ -971,11 +964,11 @@ Table of Contents
 
    When using QUIC 0-RTT, clients are expected to remember and restore
    the server's transport parameters from the previous connection.
-   Servers can similarly recover the transport parameters they
-   previously sent, for example from a session ticket; see Section 7.4.1
-   of [QUIC-TRANSPORT].  The parameters_restored event is used to
-   indicate which parameters were restored and to which values when
-   utilizing 0-RTT.  It has Base importance level.
+   Servers can also restore the transport parameters they previously
+   sent, for example from a session ticket; see Section 7.4.1 of
+   [QUIC-TRANSPORT].  The parameters_restored event is used to indicate
+   which parameters were restored and to which values when utilizing
+   0-RTT.  It has Base importance level.
 
    Note that not all transport parameters should be restored (many are
    even prohibited from being re-utilized).  The ones listed here are
@@ -2192,17 +2185,13 @@ Table of Contents
 
                     Figure 49: SessionTicket definition
 
-   QUIC associates transport state with a session ticket, and the
-   application protocol can associate its own state; see Section 4.6.3
-   of [QUIC-TLS].  SessionTicket represents this associated state, not
-   the TLS ticket itself.  Its format is implementation specific, so
-   SessionTicket includes a general-purpose details field.  Transport
-   parameters and HTTP/3 settings recovered from a ticket can also be
-   logged using the parameters_restored events.
-
-   Session tickets can contain sensitive information; see Section 14.1
-   of [QLOG-MAIN].  The raw field allows logging only the length of the
-   state, or a truncated value; see Section 11.4 of [QLOG-MAIN].
+   SessionTicket represents the QUIC and application state associated
+   with a session ticket (see Section 4.6.3 of [QUIC-TLS]), not the TLS
+   ticket itself.  Its format is implementation specific, so
+   SessionTicket includes a general-purpose details field.  Session
+   tickets can contain sensitive information (Section 14.1 of
+   [QLOG-MAIN]), so the raw field can be truncated or reduced to its
+   length (Section 11.4 of [QLOG-MAIN]).
 
 8.11.  Stateless Reset Token
 
