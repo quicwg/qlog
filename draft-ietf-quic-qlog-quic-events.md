@@ -29,9 +29,10 @@ author:
     name: Marten Seemann
     email: martenseemann@gmail.com
     role: editor
-  - ins: L. Pardue
+  -
+    ins: L. Pardue
     name: Lucas Pardue
-    org: Cloudflare
+    org: Apple
     email: lucas@lucaspardue.com
     role: editor
 
