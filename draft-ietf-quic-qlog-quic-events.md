@@ -682,15 +682,31 @@ They are later updated with the server's reply. In these cases, utilize the
 separate `parameters_restored` event to indicate the initial values, and this
 event to indicate the updated values, as normal.
 
+The `session_ticket` field ({{session-ticket}}) logs a session ticket that a
+server issued or a client offered (`initiator` of `local`), or that was received
+from the peer (`initiator` of `remote`).
+
+The `early_data_enabled` field is true if a server enabled 0-RTT in a
+NewSessionTicket message, or a client offered 0-RTT in its ClientHello; see
+{{Section 4.6.1 of QUIC-TLS}}. The `early_data_accepted` field is true if the
+server accepted 0-RTT and false if it rejected it; see {{Section 4.6.2 of
+QUIC-TLS}}. The `early_data_rejection_reason` field describes why 0-RTT was
+rejected; usually only the server knows this.
+
 ~~~ cddl
 QUICParametersSet = {
     ? initiator: Initiator
 
-    ; true if valid session ticket was received
-    ? resumption_allowed: bool
+    ? session_ticket: SessionTicket
 
-    ; true if early data extension was enabled on the TLS layer
+    ; RFC 9001 Section 4.6.1
     ? early_data_enabled: bool
+
+    ; RFC 9001 Section 4.6.2
+    ? early_data_accepted: bool
+
+    ; implementation-defined
+    ? early_data_rejection_reason: text
 
     ; e.g., "AES_128_GCM_SHA256"
     ? tls_cipher: text
@@ -748,36 +764,20 @@ UnknownParameter = {
 ## parameters_restored {#quic-parametersrestored}
 
 When using QUIC 0-RTT, clients are expected to remember and restore the server's
-transport parameters from the previous connection. The `parameters_restored`
+transport parameters from the previous connection. Servers can also restore the
+transport parameters they previously sent, for example from a session ticket;
+see {{Section 7.4.1 of QUIC-TRANSPORT}}. The `parameters_restored`
 event is used to indicate which parameters were restored and to which values
 when utilizing 0-RTT. It has Base importance level.
 
 Note that not all transport parameters should be restored (many are even
-prohibited from being re-utilized). The ones listed here are the ones expected
-to be useful for correct 0-RTT usage.
+prohibited from being re-utilized). The `transport_parameters` field lists the
+ones expected to be useful for correct 0-RTT usage; see
+{{remembered-transport-parameters}}.
 
 ~~~ cddl
 QUICParametersRestored = {
-
-    ; RFC9000
-    ? disable_active_migration: bool
-    ? max_idle_timeout: uint64
-    ? max_udp_payload_size: uint64
-    ? active_connection_id_limit: uint64
-    ? initial_max_data: uint64
-    ? initial_max_stream_data_bidi_local: uint64
-    ? initial_max_stream_data_bidi_remote: uint64
-    ? initial_max_stream_data_uni: uint64
-    ? initial_max_streams_bidi: uint64
-    ? initial_max_streams_uni: uint64
-
-    ; RFC9221
-    ? max_datagram_frame_size: uint64
-
-    ; RFC9287
-    ; can only be restored at the client.
-    ; servers MUST NOT restore this parameter!
-    ? grease_quic_bit: bool
+    transport_parameters: RememberedTransportParameters
 
     * $$quic-parametersrestored-extension
 }
@@ -1938,6 +1938,59 @@ resuming a connection (e.g., for address validation purposes). Retry and
 resumption tokens typically contain encoded metadata to check the token's
 validity when it is used, but this metadata and its format is implementation
 specific. For that, `Token` includes a general-purpose `details` field.
+
+## RememberedTransportParameters {#remembered-transport-parameters}
+
+~~~ cddl
+RememberedTransportParameters = {
+    ; RFC9000
+    ? disable_active_migration: bool
+    ? max_idle_timeout: uint64
+    ? max_udp_payload_size: uint64
+    ? active_connection_id_limit: uint64
+    ? initial_max_data: uint64
+    ? initial_max_stream_data_bidi_local: uint64
+    ? initial_max_stream_data_bidi_remote: uint64
+    ? initial_max_stream_data_uni: uint64
+    ? initial_max_streams_bidi: uint64
+    ? initial_max_streams_uni: uint64
+
+    ; RFC9221
+    ? max_datagram_frame_size: uint64
+
+    ; RFC9287
+    ; can only be restored at the client.
+    ; servers MUST NOT restore this parameter!
+    ? grease_quic_bit: bool
+
+    * $$quic-rememberedtransportparameters-extension
+}
+~~~
+{: #remembered-transport-parameters-def title="RememberedTransportParameters definition"}
+
+`RememberedTransportParameters` contains the transport parameters that are
+stored for use with 0-RTT; see {{Section 7.4.1 of QUIC-TRANSPORT}}. It is used
+by the `parameters_restored` event and by `SessionTicket`.
+
+## SessionTicket {#session-ticket}
+
+~~~ cddl
+SessionTicket = {
+    ? transport_parameters: RememberedTransportParameters
+    ? raw: RawInfo
+
+    * $$quic-sessionticket-extension
+}
+~~~
+{: #session-ticket-def title="SessionTicket definition"}
+
+`SessionTicket` represents the QUIC and application state associated with a
+session ticket (see {{Section 4.6.3 of QUIC-TLS}}), not the TLS ticket itself.
+The `transport_parameters` field contains the transport parameters stored with
+the ticket; other state can be added using the `$$quic-sessionticket-extension`
+socket. Session tickets can contain sensitive information ({{Section 14.1 of
+QLOG-MAIN}}), so the `raw` field can be truncated or reduced to its length
+({{Section 11.4 of QLOG-MAIN}}).
 
 ## Stateless Reset Token
 

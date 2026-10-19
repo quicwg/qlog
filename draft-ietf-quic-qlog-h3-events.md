@@ -250,7 +250,9 @@ for extension settings that do not have a related qlog schema definition.
 ## parameters_restored {#h3-parametersrestored}
 
 When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
-server's SETTINGs from the previous connection. The `parameters_restored` event
+server's SETTINGs from the previous connection. Servers can also restore the
+SETTINGS they previously sent, for example from a session ticket; see
+{{Section 7.2.4.2 of RFC9114}}. The `parameters_restored` event
 is used to indicate which HTTP/3 settings were restored and to which values when
 utilizing 0-RTT. It has Base importance level.
 
