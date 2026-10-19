@@ -125,37 +125,38 @@ Table of Contents
      8.7.  PacketNumberSpace
      8.8.  PacketHeader
      8.9.  Token
-     8.10. SessionTicket
-     8.11. Stateless Reset Token
-     8.12. KeyType
-     8.13. ECN
-     8.14. QUIC Frames
-       8.14.1.  PaddingFrame
-       8.14.2.  PingFrame
-       8.14.3.  AckFrame
-       8.14.4.  ResetStreamFrame
-       8.14.5.  ResetStreamAtFrame
-       8.14.6.  StopSendingFrame
-       8.14.7.  CryptoFrame
-       8.14.8.  NewTokenFrame
-       8.14.9.  StreamFrame
-       8.14.10. MaxDataFrame
-       8.14.11. MaxStreamDataFrame
-       8.14.12. MaxStreamsFrame
-       8.14.13. DataBlockedFrame
-       8.14.14. StreamDataBlockedFrame
-       8.14.15. StreamsBlockedFrame
-       8.14.16. NewConnectionIDFrame
-       8.14.17. RetireConnectionIDFrame
-       8.14.18. PathChallengeFrame
-       8.14.19. PathResponseFrame
-       8.14.20. ConnectionCloseFrame
-       8.14.21. HandshakeDoneFrame
-       8.14.22. UnknownFrame
-       8.14.23. DatagramFrame
-       8.14.24. TransportError
-       8.14.25. ApplicationError
-       8.14.26. CryptoError
+     8.10. RememberedTransportParameters
+     8.11. SessionTicket
+     8.12. Stateless Reset Token
+     8.13. KeyType
+     8.14. ECN
+     8.15. QUIC Frames
+       8.15.1.  PaddingFrame
+       8.15.2.  PingFrame
+       8.15.3.  AckFrame
+       8.15.4.  ResetStreamFrame
+       8.15.5.  ResetStreamAtFrame
+       8.15.6.  StopSendingFrame
+       8.15.7.  CryptoFrame
+       8.15.8.  NewTokenFrame
+       8.15.9.  StreamFrame
+       8.15.10. MaxDataFrame
+       8.15.11. MaxStreamDataFrame
+       8.15.12. MaxStreamsFrame
+       8.15.13. DataBlockedFrame
+       8.15.14. StreamDataBlockedFrame
+       8.15.15. StreamsBlockedFrame
+       8.15.16. NewConnectionIDFrame
+       8.15.17. RetireConnectionIDFrame
+       8.15.18. PathChallengeFrame
+       8.15.19. PathResponseFrame
+       8.15.20. ConnectionCloseFrame
+       8.15.21. HandshakeDoneFrame
+       8.15.22. UnknownFrame
+       8.15.23. DatagramFrame
+       8.15.24. TransportError
+       8.15.25. ApplicationError
+       8.15.26. CryptoError
    9.  Handling Packet Coalescing
    10. Security and Privacy Considerations
    11. IANA Considerations
@@ -881,7 +882,7 @@ Table of Contents
    indicate the initial values, and this event to indicate the updated
    values, as normal.
 
-   The session_ticket field (Section 8.10) logs a session ticket that a
+   The session_ticket field (Section 8.11) logs a session ticket that a
    server issued or a client offered (initiator of local), or that was
    received from the peer (initiator of remote).
 
@@ -971,30 +972,12 @@ Table of Contents
    0-RTT.  It has Base importance level.
 
    Note that not all transport parameters should be restored (many are
-   even prohibited from being re-utilized).  The ones listed here are
-   the ones expected to be useful for correct 0-RTT usage.
+   even prohibited from being re-utilized).  The transport_parameters
+   field lists the ones expected to be useful for correct 0-RTT usage;
+   see Section 8.10.
 
    QUICParametersRestored = {
-
-       ; RFC9000
-       ? disable_active_migration: bool
-       ? max_idle_timeout: uint64
-       ? max_udp_payload_size: uint64
-       ? active_connection_id_limit: uint64
-       ? initial_max_data: uint64
-       ? initial_max_stream_data_bidi_local: uint64
-       ? initial_max_stream_data_bidi_remote: uint64
-       ? initial_max_stream_data_uni: uint64
-       ? initial_max_streams_bidi: uint64
-       ? initial_max_streams_uni: uint64
-
-       ; RFC9221
-       ? max_datagram_frame_size: uint64
-
-       ; RFC9287
-       ; can only be restored at the client.
-       ; servers MUST NOT restore this parameter!
-       ? grease_quic_bit: bool
+       transport_parameters: RememberedTransportParameters
 
        * $$quic-parametersrestored-extension
    }
@@ -2170,11 +2153,45 @@ Table of Contents
    this metadata and its format is implementation specific.  For that,
    Token includes a general-purpose details field.
 
-8.10.  SessionTicket
+8.10.  RememberedTransportParameters
+
+   RememberedTransportParameters = {
+       ; RFC9000
+       ? disable_active_migration: bool
+       ? max_idle_timeout: uint64
+       ? max_udp_payload_size: uint64
+       ? active_connection_id_limit: uint64
+       ? initial_max_data: uint64
+       ? initial_max_stream_data_bidi_local: uint64
+       ? initial_max_stream_data_bidi_remote: uint64
+       ? initial_max_stream_data_uni: uint64
+       ? initial_max_streams_bidi: uint64
+       ? initial_max_streams_uni: uint64
+
+       ; RFC9221
+       ? max_datagram_frame_size: uint64
+
+       ; RFC9287
+       ; can only be restored at the client.
+       ; servers MUST NOT restore this parameter!
+       ? grease_quic_bit: bool
+
+       * $$quic-rememberedtransportparameters-extension
+   }
+
+            Figure 49: RememberedTransportParameters definition
+
+   RememberedTransportParameters contains the transport parameters that
+   are stored for use with 0-RTT; see Section 7.4.1 of [QUIC-TRANSPORT].
+   It is used by the parameters_restored event and by SessionTicket.
+
+8.11.  SessionTicket
 
    SessionTicket = {
-       ; decoded fields of the state associated with the ticket
-       ; (typically: transport parameters, application settings)
+       ? transport_parameters: RememberedTransportParameters
+
+       ; other decoded fields of the state associated with the ticket
+       ; (e.g., application settings)
        ? details: {
          * text => any
        }
@@ -2183,26 +2200,27 @@ Table of Contents
        * $$quic-sessionticket-extension
    }
 
-                    Figure 49: SessionTicket definition
+                    Figure 50: SessionTicket definition
 
    SessionTicket represents the QUIC and application state associated
    with a session ticket (see Section 4.6.3 of [QUIC-TLS]), not the TLS
-   ticket itself.  Its format is implementation specific, so
-   SessionTicket includes a general-purpose details field.  Session
-   tickets can contain sensitive information (Section 14.1 of
-   [QLOG-MAIN]), so the raw field can be truncated or reduced to its
-   length (Section 11.4 of [QLOG-MAIN]).
+   ticket itself.  The transport_parameters field contains the transport
+   parameters stored with the ticket.  The format of other state is
+   implementation specific, so SessionTicket includes a general-purpose
+   details field.  Session tickets can contain sensitive information
+   (Section 14.1 of [QLOG-MAIN]), so the raw field can be truncated or
+   reduced to its length (Section 11.4 of [QLOG-MAIN]).
 
-8.11.  Stateless Reset Token
+8.12.  Stateless Reset Token
 
    StatelessResetToken = hexstring .size 16
 
-                Figure 50: Stateless Reset Token definition
+                Figure 51: Stateless Reset Token definition
 
    The stateless reset token is carried in stateless reset packets, in
    transport parameters and in NEW_CONNECTION_ID frames.
 
-8.12.  KeyType
+8.13.  KeyType
 
    $KeyType /= "server_initial_secret" /
                "client_initial_secret" /
@@ -2213,17 +2231,17 @@ Table of Contents
                "server_1rtt_secret" /
                "client_1rtt_secret"
 
-                       Figure 51: KeyType definition
+                       Figure 52: KeyType definition
 
-8.13.  ECN
+8.14.  ECN
 
    ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 
-                         Figure 52: ECN definition
+                         Figure 53: ECN definition
 
    The ECN bits carried in the IP header.
 
-8.14.  QUIC Frames
+8.15.  QUIC Frames
 
    The generic $QuicFrame is defined here as a CDDL "type socket"
    extension point.  It can be extended to support additional QUIC frame
@@ -2234,7 +2252,7 @@ Table of Contents
        * text => any
    }
 
-                Figure 53: QuicFrame type socket definition
+                Figure 54: QuicFrame type socket definition
 
    The QUIC frame types defined in this document are as follows:
 
@@ -2264,9 +2282,9 @@ Table of Contents
 
    $QuicFrame /= QuicBaseFrames
 
-                    Figure 54: QuicBaseFrames definition
+                    Figure 55: QuicBaseFrames definition
 
-8.14.1.  PaddingFrame
+8.15.1.  PaddingFrame
 
    In QUIC, PADDING frames are simply identified as a single byte of
    value 0.  As such, each padding byte could be theoretically
@@ -2282,18 +2300,18 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 55: PaddingFrame definition
+                     Figure 56: PaddingFrame definition
 
-8.14.2.  PingFrame
+8.15.2.  PingFrame
 
    PingFrame = {
        frame_type: "ping"
        ? raw: RawInfo
    }
 
-                      Figure 56: PingFrame definition
+                      Figure 57: PingFrame definition
 
-8.14.3.  AckFrame
+8.15.3.  AckFrame
 
    ; either a single number (e.g., [1]) or two numbers (e.g., [1,2]).
    ; For two numbers:
@@ -2319,7 +2337,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                       Figure 57: AckFrame definition
+                       Figure 58: AckFrame definition
 
    Note that the packet ranges in AckFrame.acked_ranges do not
    necessarily have to be ordered (e.g., [[5,9],[1,4]] is a valid
@@ -2330,7 +2348,7 @@ Table of Contents
    that case, implementers SHOULD log [120] instead and tools MUST be
    able to deal with both notations.
 
-8.14.4.  ResetStreamFrame
+8.15.4.  ResetStreamFrame
 
    If the error numerical value does not map to a known ApplicationError
    string, the error value of "unknown" can be used and the raw value
@@ -2350,9 +2368,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 58: ResetStreamFrame definition
+                   Figure 59: ResetStreamFrame definition
 
-8.14.5.  ResetStreamAtFrame
+8.15.5.  ResetStreamAtFrame
 
    If the error_code numerical value does not map to a known
    ApplicationError string, the error_code value of "unknown" can be
@@ -2376,9 +2394,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 59: ResetStreamAtFrame definition
+                  Figure 60: ResetStreamAtFrame definition
 
-8.14.6.  StopSendingFrame
+8.15.6.  StopSendingFrame
 
    If the error numerical value does not map to a known ApplicationError
    string, the error value of "unknown" can be used and the raw value
@@ -2396,9 +2414,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 60: StopSendingFrame definition
+                   Figure 61: StopSendingFrame definition
 
-8.14.7.  CryptoFrame
+8.15.7.  CryptoFrame
 
    The length field of the Crypto frame MUST be logged in the qlog
    raw.length field.  The other sub-fields of the raw field are
@@ -2410,9 +2428,9 @@ Table of Contents
        raw: RawInfo
    }
 
-                     Figure 61: CryptoFrame definition
+                     Figure 62: CryptoFrame definition
 
-8.14.8.  NewTokenFrame
+8.15.8.  NewTokenFrame
 
    NewTokenFrame = {
      frame_type: "new_token"
@@ -2420,9 +2438,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                    Figure 62: NewTokenFrame definition
+                    Figure 63: NewTokenFrame definition
 
-8.14.9.  StreamFrame
+8.15.9.  StreamFrame
 
    If the stream frame contains a length field, it MUST be logged in the
    qlog raw.length field.  If it does not, the implementation MAY
@@ -2437,9 +2455,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 63: StreamFrame definition
+                     Figure 64: StreamFrame definition
 
-8.14.10.  MaxDataFrame
+8.15.10.  MaxDataFrame
 
    MaxDataFrame = {
      frame_type: "max_data"
@@ -2447,9 +2465,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                     Figure 64: MaxDataFrame definition
+                     Figure 65: MaxDataFrame definition
 
-8.14.11.  MaxStreamDataFrame
+8.15.11.  MaxStreamDataFrame
 
    MaxStreamDataFrame = {
      frame_type: "max_stream_data"
@@ -2458,9 +2476,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 65: MaxStreamDataFrame definition
+                  Figure 66: MaxStreamDataFrame definition
 
-8.14.12.  MaxStreamsFrame
+8.15.12.  MaxStreamsFrame
 
    MaxStreamsFrame = {
      frame_type: "max_streams"
@@ -2469,9 +2487,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                   Figure 66: MaxStreamsFrame definition
+                   Figure 67: MaxStreamsFrame definition
 
-8.14.13.  DataBlockedFrame
+8.15.13.  DataBlockedFrame
 
    DataBlockedFrame = {
      frame_type: "data_blocked"
@@ -2479,9 +2497,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                   Figure 67: DataBlockedFrame definition
+                   Figure 68: DataBlockedFrame definition
 
-8.14.14.  StreamDataBlockedFrame
+8.15.14.  StreamDataBlockedFrame
 
    StreamDataBlockedFrame = {
      frame_type: "stream_data_blocked"
@@ -2490,9 +2508,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                Figure 68: StreamDataBlockedFrame definition
+                Figure 69: StreamDataBlockedFrame definition
 
-8.14.15.  StreamsBlockedFrame
+8.15.15.  StreamsBlockedFrame
 
    StreamsBlockedFrame = {
      frame_type: "streams_blocked"
@@ -2501,9 +2519,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                 Figure 69: StreamsBlockedFrame definition
+                 Figure 70: StreamsBlockedFrame definition
 
-8.14.16.  NewConnectionIDFrame
+8.15.16.  NewConnectionIDFrame
 
    NewConnectionIDFrame = {
      frame_type: "new_connection_id"
@@ -2518,9 +2536,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                 Figure 70: NewConnectionIDFrame definition
+                 Figure 71: NewConnectionIDFrame definition
 
-8.14.17.  RetireConnectionIDFrame
+8.15.17.  RetireConnectionIDFrame
 
    RetireConnectionIDFrame = {
      frame_type: "retire_connection_id"
@@ -2528,9 +2546,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-               Figure 71: RetireConnectionIDFrame definition
+               Figure 72: RetireConnectionIDFrame definition
 
-8.14.18.  PathChallengeFrame
+8.15.18.  PathChallengeFrame
 
    PathChallengeFrame = {
      frame_type: "path_challenge"
@@ -2540,9 +2558,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 72: PathChallengeFrame definition
+                  Figure 73: PathChallengeFrame definition
 
-8.14.19.  PathResponseFrame
+8.15.19.  PathResponseFrame
 
    PathResponseFrame = {
      frame_type: "path_response"
@@ -2552,9 +2570,9 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 73: PathResponseFrame definition
+                  Figure 74: PathResponseFrame definition
 
-8.14.20.  ConnectionCloseFrame
+8.15.20.  ConnectionCloseFrame
 
    An endpoint that receives unknown error codes can record it in the
    error_code field using the numerical value without variable-length
@@ -2595,18 +2613,18 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 74: ConnectionCloseFrame definition
+                 Figure 75: ConnectionCloseFrame definition
 
-8.14.21.  HandshakeDoneFrame
+8.15.21.  HandshakeDoneFrame
 
    HandshakeDoneFrame = {
      frame_type: "handshake_done"
      ? raw: RawInfo
    }
 
-                  Figure 75: HandshakeDoneFrame definition
+                  Figure 76: HandshakeDoneFrame definition
 
-8.14.22.  UnknownFrame
+8.15.22.  UnknownFrame
 
    The frame_type_bytes field is the numerical value without variable-
    length integer encoding.
@@ -2617,9 +2635,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 76: UnknownFrame definition
+                     Figure 77: UnknownFrame definition
 
-8.14.23.  DatagramFrame
+8.15.23.  DatagramFrame
 
    The QUIC DATAGRAM frame is defined in Section 4 of [RFC9221].
 
@@ -2633,9 +2651,9 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 77: DatagramFrame definition
+                    Figure 78: DatagramFrame definition
 
-8.14.24.  TransportError
+8.15.24.  TransportError
 
    The generic $TransportError is defined here as a CDDL "type socket"
    extension point.  It can be extended to support additional Transport
@@ -2662,9 +2680,9 @@ Table of Contents
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
-                    Figure 78: TransportError definition
+                    Figure 79: TransportError definition
 
-8.14.25.  ApplicationError
+8.15.25.  ApplicationError
 
    By definition, an application error is defined by the application-
    level protocol running on top of QUIC (e.g., HTTP/3).
@@ -2675,7 +2693,7 @@ Table of Contents
 
    $ApplicationError /= "unknown"
 
-                   Figure 79: ApplicationError definition
+                   Figure 80: ApplicationError definition
 
    Application-level qlog definitions that wish to define new
    ApplicationError strings MUST do so by extending the
@@ -2684,7 +2702,7 @@ Table of Contents
    $ApplicationError /= "new_error_name" /
                         "another_new_error_name"
 
-8.14.26.  CryptoError
+8.15.26.  CryptoError
 
    These errors are defined in the TLS document as "A TLS alert is
    turned into a QUIC connection error by converting the one-byte alert
@@ -2700,7 +2718,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 80: CryptoError definition
+                     Figure 81: CryptoError definition
 
 9.  Handling Packet Coalescing
 
