@@ -123,7 +123,7 @@ in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{Section 1.2 of QLOG-MAIN}}.
 
 The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
-type, data, tuple, group_id, RawInfo, and time-related fields.
+type, data, TupleID, group_id, RawInfo, and time-related fields.
 
 Events are defined with an importance level as described in {{Section 8.3 of
 QLOG-MAIN}}.
@@ -496,13 +496,18 @@ states in a similar way to the pre-defined states in this document.
 This event is used to associate a single TupleID's value with other parameters
 that describe a unique network tuple. It has Base importance level.
 
-As described in {{Section 7.2 of QLOG-MAIN}}, each qlog event can be linked to a single network
-tuple by means of the top-level "tuple" field, whose value is a TupleID. However,
-since it can be cumbersome to encode additional tuple metadata (such as IP
-addresses or Connection IDs) directly into the TupleID, this event allows such an
-association to happen separately. As such, TupleIDs can be short and unique, and
-can even be updated to be associated with new metadata as the connection's state
-evolves.
+As described in {{Section 8.2.2 of QLOG-MAIN}}, an event can be linked to a
+single network tuple by means of a "tuple" field in its data, whose value is a
+TupleID. However, since it can be cumbersome to encode additional tuple metadata
+(such as IP addresses or Connection IDs) directly into the TupleID, this event
+allows such an association to happen separately. As such, TupleIDs can be short
+and unique, and can even be updated to be associated with new metadata as the
+connection's state evolves.
+
+The `packet_sent`, `packet_received`, `packet_dropped`, `packet_buffered`, and
+`packet_lost` events define an optional `tuple` field, which identifies the tuple
+the packet was sent or received on. An event that omits the `tuple` field is
+associated with the initial tuple, as described below.
 
 Definition:
 
@@ -803,6 +808,7 @@ QUICPacketSent = {
     ? raw: RawInfo
     ? datagram_payload_checksum: uint32
     ? is_mtu_probe_packet: bool .default false
+    ? tuple: TupleID
 
     ? trigger:
       ; RFC 9002 Section 6.1.1
@@ -847,6 +853,7 @@ QUICPacketReceived = {
     ? supported_versions: [+ QuicVersion]
     ? raw: RawInfo
     ? datagram_payload_checksum: uint32
+    ? tuple: TupleID
 
     ? trigger:
         ; if packet was buffered because it couldn't be
@@ -883,6 +890,7 @@ QUICPacketDropped = {
     ? raw: RawInfo
     ? datagram_payload_checksum: uint32
     ? details: {* text => any}
+    ? tuple: TupleID
     ? trigger:
         "internal_error" /
         "rejected" /
@@ -929,6 +937,7 @@ QUICPacketBuffered = {
     ? header: PacketHeader
     ? raw: RawInfo
     ? datagram_payload_checksum: uint32
+    ? tuple: TupleID
     ? trigger:
         ; indicates the parser cannot keep up, temporarily buffers
         ; packet for later processing
@@ -1686,6 +1695,7 @@ QUICPacketLost = {
     ; packets, so these are optional
     ? frames: [* $QuicFrame]
     ? is_mtu_probe_packet: bool .default false
+    ? tuple: TupleID
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
