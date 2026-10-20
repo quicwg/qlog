@@ -223,12 +223,12 @@ the log file schemas they are contained in; see ({{traces}}, {{trace}}, and
 
 Events are logged at a time instant and convey specific details of the logging
 use case. For example, a network packet being sent or received. This document
-declares an abstract Event class ({{abstract-event}}) containing common fields,
-which all concrete events derive from. Concrete events are defined by event
-schemas that declare or extend a namespace, which contains one or more related
-event types or their extensions. For example, this document defines two event
-schemas for two generic event namespaces `loglevel` and `simulation` (see
-{{generic-event-schema}}).
+declares an abstract Event class ({{abstract-event}}) containing fields common
+to all events, which all concrete events derive from. Concrete events are
+defined by event schemas that declare or extend a namespace, which contains one
+or more related event types or their extensions. For example, this document
+defines two event schemas for two generic event namespaces `loglevel` and
+`simulation` (see {{generic-event-schema}}).
 
 # Abstract LogFile Class {#abstract-logfile}
 
@@ -618,8 +618,9 @@ Each qlog event MUST contain the mandatory fields: "time"
 
 Each qlog event is an instance of a concrete event type that derives from the
 abstract Event class; see {{event-types-and-schema}}. They extend it by defining
-the specific values and semantics of common fields, in particular the `name` and
-`data` fields. Furthermore, they can optionally add custom fields.
+the specific values and semantics of the fields common to all events, in
+particular the `name` and `data` fields. Furthermore, they can optionally add
+custom fields.
 
 Each qlog event MAY contain the optional fields: "time_format"
 ({{time-based-fields}}), "tuple" ({{tuple-field}}), "group_id"
