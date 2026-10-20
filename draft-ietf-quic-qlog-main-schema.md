@@ -1965,7 +1965,7 @@ sources (e.g., captures of encrypted packets):
 * IP addresses and transport protocol port numbers.
 
 * Session, Connection, or User identifiers e.g., QUIC Connection IDs ({{Section
-  9.5 of !RFC9000}}).
+  9.5 of ?RFC9000}}).
 
 * System-level information e.g., CPU, process, or thread identifiers.
 
@@ -2031,13 +2031,13 @@ equivalent to not logging it. qlog implementations should offer fine-grained
 control for this on a per-use-case or per-connection basis.
 
 Data can undergo anonymization, pseudonymization, permutation, truncation,
-re-encryption, or aggregation; see {{Appendix B of !DNS-PRIVACY=RFC8932}} for
+re-encryption, or aggregation; see {{Appendix B of ?DNS-PRIVACY=RFC8932}} for
 techniques, especially regarding IP addresses. However, operators should be
 cautious because many anonymization methods have been shown to be insufficient to safeguard
 user privacy or identity, particularly with large or easily correlated data sets.
 
 Operators should consider end user rights and preferences. Active user participation (as
-indicated by {{!RFC6973}}) on a per-qlog basis is challenging but aligning qlog
+indicated by {{?RFC6973}}) on a per-qlog basis is challenging but aligning qlog
 capture, storage, and removal with existing user preference and privacy controls
 is crucial. Operators should consider aggressive approaches to deletion or
 aggregation.
