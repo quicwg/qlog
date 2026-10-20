@@ -342,11 +342,10 @@ JSON serialization example:
 
 ## Traces {#traces}
 
-It can be advantageous to group several related qlog traces together in a single
-file. For example, it is possible to simultaneously perform logging on the
-client, on the server, and on a single point on their common network path. For
-analysis, it is useful to aggregate these three individual traces together into
-a single file, so it can be uniquely stored, transferred, and annotated.
+It can be useful to group several related qlog traces in a single file. For
+example, logging can happen simultaneously on the client, on the server, and at
+a point on their common network path. Combining these three traces in one file
+makes them easier to analyze, store, transfer, and annotate as a set.
 
 The QlogFile "traces" field is an array that contains a list of individual qlog
 traces. When capturing a qlog at a vantage point, it is expected that the traces
