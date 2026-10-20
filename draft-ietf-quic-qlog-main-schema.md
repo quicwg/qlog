@@ -1097,7 +1097,7 @@ URI MUST include the namespace identifier. Event schemas that extend an existing
 namespace MUST furthermore include a non-empty globally-unique "extension"
 identifier using a URI fragment (characters after a "#" in the URI) using only
 characters in the URI unreserved range; see {{Section 2.3 of RFC3986}}.
-Registration guidance and requirement for event schema URIs are provided in
+Registration guidance and requirements for event schema URIs are provided in
 {{event-schema-reg}}. Event schemas by themselves are immutable once defined and
 MUST NOT be extended.
 
