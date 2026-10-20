@@ -1274,9 +1274,9 @@ for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
 ~~~~~~~~
 ; defined in the main QUIC event schema
 QUICPacketSent = {
-    ? packet_size: uint16
     header: PacketHeader
     ? frames: [* $QuicFrame]
+    ? raw: RawInfo
 
     * $$quic-packetsent-extension
 }
@@ -1298,7 +1298,6 @@ $$quic-packetsent-extension //= (
   "time": 123456,
   "name": "quic:packet_sent",
   "data": {
-      "packet_size": 1280,
       "header": {
           "packet_type": "1RTT",
           "packet_number": 123
@@ -1306,12 +1305,16 @@ $$quic-packetsent-extension //= (
       "frames": [
           {
               "frame_type": "stream",
+              "stream_id": 0,
               "offset": 456
           },
           {
               "frame_type": "padding"
           }
       ],
+      "raw": {
+          "length": 1280
+      },
       "additional_field": true
   }
 }
