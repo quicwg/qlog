@@ -2104,10 +2104,10 @@ schema URIs" registry:
 Event schema URI:
 : urn:ietf:params:qlog:events:loglevel
 
-Namespace
+Namespace:
 : loglevel
 
-Event Types
+Event Types:
 : error,warning,info,debug,verbose
 
 Description:
@@ -2120,10 +2120,10 @@ Reference:
 Event schema URI:
 : urn:ietf:params:qlog:events:simulation
 
-Namespace
+Namespace:
 : simulation
 
-Event Types
+Event Types:
 : scenario,marker
 
 Description:
