@@ -284,7 +284,7 @@ log file schema and assignment of the URI MUST have been authorized by the owner
 of the domain name on or very close to that date. This avoids problems when
 domain names change ownership. The URI does not need to be dereferenceable,
 allowing for confidential use or to cover the case where the log file schema
-continues to be used after the organization that defined them ceases to exist.
+continues to be used after the organization that defined it ceases to exist.
 
 The "qlog log file schema URIs" registry operates under the Expert Review
 policy, per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert
