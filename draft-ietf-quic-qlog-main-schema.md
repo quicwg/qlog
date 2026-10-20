@@ -1391,12 +1391,12 @@ implementation, rather than the protocol. They allow more fine-grained tracking
 of internal behavior. As such, they MAY be present in qlog files and tool
 implementers MAY add support for these, but they are not required to.
 
-Note that in some cases, implementers might not want to log for example data
-content details in Core-level events due to performance or privacy considerations.
-In this case, they SHOULD use (a subset of) relevant Base-level events instead to
-ensure usability of the qlog output. As an example, implementations that do not
-log QUIC `packet_received` events and thus also not which (if any) ACK frames the
-packet contains, SHOULD log `packets_acked` events instead.
+Implementers might choose not to log some details in Core-level events, such as
+data content, for performance or privacy reasons (see {{privacy}}). In that
+case, they SHOULD log relevant Base-level events instead, so that the qlog
+output remains usable. For example, a QUIC implementation can omit the details
+of STREAM frames from its `packet_received` events and log
+`stream_state_updated` events instead.
 
 Finally, for event types whose data (partially) overlap with other event types'
 definitions, where necessary the document defining them should include explicit
