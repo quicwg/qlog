@@ -1573,8 +1573,7 @@ The event types are further defined below, their identifier is the heading name.
 
 Used to specify which specific scenario is being tested at this particular
 instance. This supports, for example, aggregation of several simulations into
-one trace (e.g., split by `group_id`). It has Extra importance level; see
-{{importance}}.
+one trace (e.g., split by `group_id`). It has Extra importance level.
 
 ~~~ cddl
 SimulationScenario = {
