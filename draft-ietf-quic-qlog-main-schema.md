@@ -708,13 +708,14 @@ TimeFormat = "relative_to_epoch" /
 {: #time-format-def title="TimeFormat definition"}
 
 relative_to_epoch:
-: A duration relative to the ReferenceTime "epoch" field. This approach uses the
-  largest amount of characters. It is good for stateless loggers. This is the default value of the "time_format" field.
+: A duration relative to the ReferenceTime "epoch" field. This approach produces
+  the largest values. It is suitable for stateless loggers. This is the default
+  value of the "time_format" field.
 
 relative_to_previous_event:
 : A delta-encoded value, based on the previously logged value. The first event
-  in a trace is always relative to the ReferenceTime. This approach uses the
-  least amount of characters. It is suitable for stateful loggers.
+  in a trace is always relative to the ReferenceTime. This approach produces the
+  smallest values. It is suitable for stateful loggers.
 
 Events in each individual trace SHOULD be logged in strictly ascending timestamp
 order (though not necessarily absolute value, for the "relative_to_previous_event"
