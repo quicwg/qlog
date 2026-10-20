@@ -1890,7 +1890,7 @@ just a single connection and then exits.
 Command: QLOGDIR=/srv/qlogs/ quicserverbinary
 
 Should result in the quicserverbinary executable generating
-several logs files, one for each QUIC connection.
+several log files, one for each QUIC connection.
 Given two QUIC connections, with ODCID values "abcde" and
 "12345" respectively, this would result in two files:
 /srv/qlogs/abcde_server.qlog
