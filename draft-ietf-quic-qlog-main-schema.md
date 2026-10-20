@@ -1241,13 +1241,13 @@ two types.
 
 ~~~~~~~~
 ; We define two new concrete events in a new event schema
-MyNSEvent1 /= {
+MyNSEvent1 = {
     field_1: uint8
 
     * $$myns-event1-extension
 }
 
-MyNSEvent2 /= {
+MyNSEvent2 = {
     field_2: bool
 
     * $$myns-event2-extension
