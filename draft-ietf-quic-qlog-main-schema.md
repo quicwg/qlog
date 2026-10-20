@@ -212,7 +212,7 @@ This is achieved by a logical logging hierarchy of:
 
 An abstract LogFile class is declared ({{abstract-logfile}}), from which all
 concrete log file formats derive using log file schemas. This document defines
-the QLogFile ({{qlog-file-schema}}) and QLogFileSeq ({{qlog-file-seq-schema}})
+the QlogFile ({{qlog-file-schema}}) and QlogFileSeq ({{qlog-file-seq-schema}})
 log file schemas.
 
 A trace is conceptually fluid but the conventional use case is to group events
