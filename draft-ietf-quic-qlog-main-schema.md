@@ -282,7 +282,7 @@ SHOULD also contain a month-date in the form mmyyyy. For example,
 "https://example.org/072024/globallyuniquelogfileschema". The definition of the
 log file schema and assignment of the URI MUST have been authorized by the owner
 of the domain name on or very close to that date. This avoids problems when
-domain names change ownership. The URI does not need to be dereferencable,
+domain names change ownership. The URI does not need to be dereferenceable,
 allowing for confidential use or to cover the case where the log file schema
 continues to be used after the organization that defined them ceases to exist.
 
@@ -1164,7 +1164,7 @@ For example, "https://example.org/072024/customeventschema#customextension". The
 definition of the event schema and assignment of the URI MUST have been
 authorized by the owner of the domain name on or very close to that date. This
 avoids problems when domain names change ownership. The URI does not need to be
-dereferencable, allowing for confidential use or to cover the case where the
+dereferenceable, allowing for confidential use or to cover the case where the
 event schemas continue to be used after the organization that defined them
 ceases to exist.
 
