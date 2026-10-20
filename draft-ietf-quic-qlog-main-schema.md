@@ -1070,10 +1070,9 @@ URI `urn:ietf:params:qlog:events:quic`. A later extension that adds a new QUIC
 frame `QUICNewFrame` would also be part of the `quic` namespace, but defined in
 a new event schema with URI
 `urn:ietf:params:qlog:events:quic#new-frame-extension`. Similarly, the first
-document containing qlog event definitions for a new hypothetical protocol
-called "IPoAC" would be part of the new event namespace `ipoac` which is defined
-as part of the new Event Schema URI `urn:ietf:params:qlog:events:ipoac`, both of
-which are defined and registered in that first document.
+document that defines qlog events for a new hypothetical protocol called "IPoAC"
+would define and register both the new event namespace `ipoac` and the event
+schema URI `urn:ietf:params:qlog:events:ipoac`.
 
 Concrete event types MUST belong to a single event namespace and MUST have a
 registered non-empty identifier of type `text`.
