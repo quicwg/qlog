@@ -340,7 +340,7 @@ JSON serialization example:
 ~~~
 {: #qlog-file-ex title="QlogFile example"}
 
-## Traces
+## Traces {#traces}
 
 It can be advantageous to group several related qlog traces together in a single
 file. For example, it is possible to simultaneously perform logging on the
@@ -877,7 +877,7 @@ first packet on a new path is sent/received) and omit it when not.
 
 ## Grouping {#group-ids}
 
-As discussed in {{trace}}, a single qlog file can contain several traces taken
+As discussed in {{traces}}, a single qlog file can contain several traces taken
 from different vantage points. However, a single trace from one endpoint can also
 contain events from a variety of sources. For example, a server implementation
 might choose to log events for all incoming connections in a single large
