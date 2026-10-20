@@ -1955,7 +1955,7 @@ entities expect protocol features to ensure data privacy, logging might
 unknowingly be subject to broader privacy risks, undermining their ability to
 assess or respond effectively.
 
-## Data at risk
+## Data at risk {#data-at-risk}
 
 qlog operators and implementers need to consider security and privacy risks when
 handling qlog data, including logging, storage, usage, and more. The
@@ -2047,9 +2047,10 @@ capture, storage, and removal with existing user preference and privacy controls
 is crucial. Operators should consider aggressive approaches to deletion or
 aggregation.
 
-The most sensitive data in qlog is typically contained in RawInfo type fields
-(see {{raw-info}}). Therefore, qlog users should exercise caution and limit the
-inclusion of such fields for all but the most stringent use cases.
+Some of the most sensitive data in qlog is contained in RawInfo fields (see
+{{raw-info}}), which can hold full packet and frame contents, and in fields
+that log keys or plaintext application data; see {{data-at-risk}}. qlog users
+are advised to include such fields only when a use case needs them.
 
 # IANA Considerations {#iana}
 
