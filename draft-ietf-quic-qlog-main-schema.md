@@ -2063,7 +2063,10 @@ IANA Registry Reference:
 
 IANA is requested to create the "qlog log file schema URIs" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
-log file schemas. It has the following format/template:
+log file schemas. Registrations use the Expert Review policy
+({{Section 4.5 of RFC8126}}); {{schema-uri}} gives the registration
+requirements and the instructions for the designated expert. The registry has
+the following format/template:
 
 Log File Schema URI:
 : \[the log file schema identifier\]
@@ -2084,7 +2087,10 @@ file schema URIs" registry:
 
 IANA is requested to create the "qlog event schema URIs" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
-event schemas. It has the following format/template:
+event schemas. Registrations use the Expert Review policy
+({{Section 4.5 of RFC8126}}); {{event-schema-reg}} gives the registration
+requirements and the instructions for the designated expert. The registry has
+the following format/template:
 
 Event schema URI:
 : \[the event schema identifier\]
