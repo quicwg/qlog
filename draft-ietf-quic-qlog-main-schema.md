@@ -165,9 +165,9 @@ Other qlog documents can define their own CDDL-compatible (struct) types
 The ordering of member fields in qlog CDDL type definitions is not significant.
 The ordering of member fields in the serialization formats defined in this
 document, JSON ({{format-json}}) and JSON Text Sequences ({{format-json-seq}}),
-is not significant and qlog tools MUST NOT assume so. Other qlog serialization
-formats MAY define field order significance, if they do they MUST define
-requirements for qlog tools supporting those formats.
+is also not significant, and qlog tools MUST NOT depend on it. Other qlog
+serialization formats MAY define field order as significant; if they do, they
+MUST define requirements for qlog tools supporting those formats.
 
 > Note to RFC editor: Please remove the following text in this section before
 publication.
