@@ -1841,9 +1841,9 @@ and optimization options were assessed and the results are [summarized on the ql
 github
 repository](https://github.com/quiclog/internet-drafts/issues/30#issuecomment-617675097).
 
-Formal definition of additional qlog formats or encodings that use the
-optimization techniques described here, or any other optimization technique is
-left to future activity that can apply the following guidelines.
+Formal definition of additional qlog formats or encodings that use these or any
+other optimization techniques is left to future activity, which can apply the
+following guideline.
 
 In order to help tools correctly parse and process serialized qlog, it is
 RECOMMENDED that new formats also define suitable file extensions and media
