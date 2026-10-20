@@ -2022,10 +2022,10 @@ potential risks of voluntary or involuntary disclosure to trusted or untrusted
 entities. Importantly, both the breadth and depth of the data needed to make it
  useful, as well as the definition of entities depend greatly on the intended
 use cases. For example, a research project might be tightly scoped, time bound,
-and require participants to explicitly opt in to having their data collected
-with the intention for this to be shared in a publication. Conversely, a server
-administrator might desire to collect telemetry, from users whom they have no
-relationship with, for continuing operational needs.
+and require participants to explicitly opt in to having their data collected and
+shared in a publication. Conversely, a server administrator might collect
+telemetry on an ongoing basis for operational needs, from users with whom they
+have no relationship.
 
 The most extreme form of minimization or anonymization is deleting a field,
 equivalent to not logging it. qlog implementations should offer fine-grained
