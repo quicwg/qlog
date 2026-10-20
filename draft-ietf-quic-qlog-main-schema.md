@@ -1882,7 +1882,7 @@ the logging endpoint. Examples of all options for QUIC are shown in
 ~~~~~~~~
 Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
 
-Should result in the the quicclientbinary executable logging a
+Should result in the quicclientbinary executable logging a
 single qlog file named client.qlog in the /srv/qlogs directory.
 This is for example useful in tests when the client sets up
 just a single connection and then exits.
@@ -1898,7 +1898,7 @@ Given two QUIC connections, with ODCID values "abcde" and
 
 Command: QLOGFILE=/srv/qlogs/server.qlog quicserverbinary
 
-Should result in the the quicserverbinary executable logging
+Should result in the quicserverbinary executable logging
 a single qlog file named server.qlog in the /srv/qlogs directory.
 Given that the server handled two QUIC connections before it was
 shut down, with ODCID values "abcde" and "12345" respectively,
