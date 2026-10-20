@@ -360,8 +360,8 @@ The exact conceptual definition of a Trace can be fluid. For example, a trace
 could contain all events for a single connection, for a single endpoint, for a
 single measurement interval, for a single protocol, etc. In the normal use case
 however, a trace is a log of a single data flow collected at a single location
-or vantage point. For example, for QUIC, a single trace only contains events for
-a single logical QUIC connection for either the client or the server.
+or vantage point. For example, for QUIC, a single trace typically contains
+events for a single logical QUIC connection for either the client or the server.
 
 A Trace contains some metadata in addition to qlog events, defined in
 {{trace-def}} as:
