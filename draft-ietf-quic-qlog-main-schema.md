@@ -351,8 +351,8 @@ a single file, so it can be uniquely stored, transferred, and annotated.
 The QlogFile "traces" field is an array that contains a list of individual qlog
 traces. When capturing a qlog at a vantage point, it is expected that the traces
 field contains a single entry. Files can be aggregated, for example as part of a
-post-processing operation, by copying the traces in component to files into the
-combined "traces" array of a new, aggregated qlog file.
+post-processing operation, by copying the traces from the component files into
+the combined "traces" array of a new, aggregated qlog file.
 
 ## Trace {#trace}
 
