@@ -951,11 +951,12 @@ diversity.
 
 ~~~ cddl
 SystemInformation = {
-  ? processor_id: uint32
-  ? process_id: uint32
-  ? thread_id: uint32
+    ? processor_id: uint32
+    ? process_id: uint32
+    ? thread_id: uint32
 }
 ~~~
+{: #system-info-def title="SystemInformation definition"}
 
 ## CommonFields {#common-fields}
 
