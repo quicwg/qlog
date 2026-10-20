@@ -1083,7 +1083,7 @@ quic:packet_sent). The resulting concatenation MUST be globally unique, so log
 files can contain events from multiple event schemas without the risk of name
 collisions.
 
-A single event schema can contain exactly one of the below:
+A single event schema contains exactly one of the following:
 
 * A definition for a new event namespace
 * An extension of an existing namespace (adding new events/data types and/or
