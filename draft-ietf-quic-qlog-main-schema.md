@@ -1186,16 +1186,15 @@ their semantics are defined per concrete event type. For example, data field
 definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
 
 To keep qlog fully extensible, data fields are defined using two kinds of CDDL
-extension point, called sockets, which other definitions extend with plugs; see
-{{Section 3.9 of CDDL}}.
+extension point, called "sockets", which other definitions extend with "plugs";
+see {{Section 3.9 of CDDL}}.
 
-Firstly, to allow existing data field definitions to be extended (for example by
-adding an additional field needed for a new protocol feature), a CDDL "group
-socket" is used. This takes the form of a subfield with a name of `*
-$$NAMESPACE-EVENTTYPE-extension`. This field acts as a placeholder that can
-later be replaced with newly defined fields by assigning them to the socket with
-the `//=` operator. Multiple extensions can be assigned to the same group
-socket. An example is shown in {{groupsocket-extension-example}}.
+Firstly, a "group socket" allows existing event data definitions to be extended,
+for example with a field needed for a new protocol feature. An event data
+definition includes the socket as an entry of the form
+`* $$NAMESPACE-EVENTTYPE-extension`. Other event schemas add fields to it with
+plugs that use the `//=` operator, and several plugs can extend the same socket.
+An example is shown in {{groupsocket-extension-example}}.
 
 ~~~~~~~~
 ; original definition in event schema A
@@ -1226,16 +1225,13 @@ MyNSEventX = {
 ~~~~~~~~
 {: #groupsocket-extension-example title="Example of using a generic CDDL group socket to extend an existing event data definition"}
 
-Secondly, to allow documents to define fully new event data field definitions
-(as opposed to extend existing ones), a CDDL "type socket" is used. For this
-purpose, the type of the "data" field in the qlog Event type (see {{event-def}})
-is the extensible `$ProtocolEventData` type. This field acts as an open enum of
-possible types that are allowed for the data field. As such, any new event data
-field is defined as its own CDDL type and later merged with the existing
-`$ProtocolEventData` enum using the `/=` extension operator. Any generic
-key-value map type can be assigned to `$ProtocolEventData`. The example in
-{{protocoleventdata-def}} demonstrates `$ProtocolEventData` being extended with
-two types.
+Secondly, a "type socket" allows documents to define entirely new event data
+definitions. The type of the "data" field in the qlog Event type (see
+{{event-def}}) is the type socket `$ProtocolEventData`, which acts as an open
+enum of the types allowed for the data field. Each new event data definition is
+its own CDDL type, added to `$ProtocolEventData` with a plug that uses the `/=`
+operator. Any generic key-value map type can be added this way. The example in
+{{protocoleventdata-def}} shows `$ProtocolEventData` extended with two types.
 
 ~~~~~~~~
 ; We define two new concrete events in a new event schema
