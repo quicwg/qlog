@@ -354,6 +354,9 @@ field contains a single entry. Files can be aggregated, for example as part of a
 post-processing operation, by copying the traces from the component files into
 the combined "traces" array of a new, aggregated qlog file.
 
+Note that another way to combine events of different traces in a single qlog
+file is through the use of the "group_id" field, discussed in {{group-ids}}.
+
 ## Trace {#trace}
 
 The exact conceptual definition of a Trace can be fluid. For example, a trace
@@ -444,9 +447,6 @@ JSON serialization example:
 }
 ~~~~~~~
 {: #trace-error-ex title="TraceError example"}
-
-Note that another way to combine events of different traces in a single qlog file
-is through the use of the "group_id" field, discussed in {{group-ids}}.
 
 # QlogFileSeq schema {#qlog-file-seq-schema}
 
