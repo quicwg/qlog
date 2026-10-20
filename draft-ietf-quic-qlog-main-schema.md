@@ -427,7 +427,7 @@ qlog file as an entry in the "traces" array, defined in {{trace-error-def}} as:
 TraceError = {
     error_description: text
 
-    ; the original URI used for attempted find of the file
+    ; the original URI used in the attempt to find the file
     ? uri: text
     ? vantage_point: VantagePoint
 }
