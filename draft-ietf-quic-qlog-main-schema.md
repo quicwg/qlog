@@ -1359,8 +1359,8 @@ Depending on how events are designed, it may be that several events allow the
 logging of similar or overlapping data. For example the separate QUIC
 `connection_started` event overlaps with the more generic
 `connection_state_updated`. In these cases, it is not always clear which event
-should be logged or used, and which event should take precedence if e.g., both are
-present and provide conflicting information.
+should be logged or used, and which event should take precedence if, for
+example, both are present and provide conflicting information.
 
 To aid in this decision making, qlog defines three event importance levels, in
 decreasing order of importance and expected usage:
