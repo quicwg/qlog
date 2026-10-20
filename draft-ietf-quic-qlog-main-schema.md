@@ -1425,25 +1425,22 @@ otherwise they MUST ignore it.
 ## Further Design Guidance
 
 There are several ways of defining concrete event types. In practice, two main
-types of approach have been observed: a) those that map directly to concepts
-seen in the protocols (e.g., `packet_sent`) and b) those that act as aggregating
-events that combine data from several possible protocol behaviors or code paths
-into one (e.g., `parameters_set`). The latter are typically used as a means to
-reduce the amount of unique event definitions, as reflecting each possible
-protocol event as a separate qlog entity would cause an explosion of event
-types.
+approaches have been observed. In the first, event types map directly to
+protocol concepts (e.g., `packet_sent`). In the second, event types aggregate
+data from several protocol behaviors or code paths (e.g., `parameters_set`).
+Aggregation keeps the number of definitions manageable, as a separate definition
+for every protocol behavior would cause an explosion of event types.
 
-Additionally, logging duplicate data is typically prevented as much as possible.
-For example, packet header values that remain consistent across many packets are
-split into separate events (for example `spin_bit_updated` or
-`connection_id_updated` for QUIC).
+Event schemas also avoid duplicate data as much as possible. For example, QUIC
+packet header values that stay the same across many packets have their own
+events, logged only when a value changes (e.g., `spin_bit_updated` or
+`connection_id_updated`).
 
-Finally, when logging additional state change events, those state changes can
-often be directly inferred from data on the wire (for example flow control limit
-changes). As such, if the implementation is bug-free and spec-compliant, logging
-additional events is typically avoided. Exceptions have been made for common
-events that benefit from being easily identifiable or individually logged (for
-example `packets_acked`).
+Finally, many state changes can be inferred from data on the wire (e.g., flow
+control limit changes). Event schemas typically do not define events for these,
+because a bug-free and spec-compliant implementation already reveals the change
+on the wire. Exceptions have been made for common events that benefit from being
+easy to identify or log individually (e.g., `packets_acked`).
 
 # The Generic Event Schemas {#generic-event-schema}
 
