@@ -889,7 +889,8 @@ each event that indicates to which conceptual "group" each event belongs. A
 post-processing step can then extract events per group. However, this group
 identifier can be highly protocol and context-specific. In the example above,
 the QUIC "Original Destination Connection ID" could be used to uniquely identify
-a connection. As such, they might add an "odcid" field to each event.
+a connection. As such, the server implementation might add an "odcid" field to
+each event.
 Additionally, a service providing different levels of Quality of Service (QoS)
 to their users might wish to group connections per QoS level applied. They might
 instead prefer a "qos" field.
