@@ -1912,9 +1912,9 @@ tagged with the "group_id" field with values "abcde" and "12345".
 
 # Tooling requirements {#tooling}
 
-Tools ingesting qlog MUST indicate which qlog version(s), qlog format(s), qlog
-file and event schema(s), compression methods and potentially other input file
-formats (for example .pcap) they support. Tools SHOULD at least support .qlog
+Tools ingesting qlog MUST indicate which serialization format(s), qlog file and
+event schema(s), compression methods and potentially other input file formats
+(for example .pcap) they support. Tools SHOULD at least support .qlog
 files in the default JSON format ({{format-json}}). Additionally, they SHOULD
 indicate exactly which values for and properties of the name
 (namespace:event_type) and data fields they look for to execute their logic.
