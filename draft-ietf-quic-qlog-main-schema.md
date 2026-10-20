@@ -1126,8 +1126,8 @@ In the following hypothetical example, a qlog trace contains events belonging to
 * Events from three private event schemas, detailing definitions for and
   extensions to two namespaces (`pickle` and `cucumber`)
 
-The standardized schema URIs use a URN format, the private schemas use a URI
-with domain name.
+The standardized schema URIs use a URN format; the private schemas use a URI
+with a domain name.
 
 ~~~
 "event_schemas": [
