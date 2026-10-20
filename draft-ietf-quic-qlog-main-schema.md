@@ -1950,10 +1950,10 @@ correlated across data sources.
 qlog permits logging of a broad and detailed range of data. Operators and
 implementers are responsible for deciding what data is logged to address their
 requirements and constraints. As per {{?RFC6973}}, operators must be aware that
-data could be compromised, risking the privacy of all participants. Where
-entities expect protocol features to ensure data privacy, logging might
-unknowingly be subject to broader privacy risks, undermining their ability to
-assess or respond effectively.
+data could be compromised, risking the privacy of all participants.
+Participants who rely on protocol features, such as encryption, to protect
+their data can be exposed through logging to privacy risks that they are unaware
+of and cannot assess or respond to.
 
 ## Data at risk {#data-at-risk}
 
