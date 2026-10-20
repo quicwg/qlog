@@ -1547,12 +1547,15 @@ All these settings are typically set once and never change. Implementations that
 do, for some reason, change these parameters during execution, MAY emit the
 `recovery_parameters_set` event more than once.
 
+The `reordering_threshold` field contains the packet threshold for loss detection,
+or `"disabled"` if packet-threshold loss detection is disabled.
+
 ~~~ cddl
 QUICRecoveryParametersSet = {
 
     ; Loss detection, see RFC 9002 Appendix A.2
     ; in amount of packets
-    ? reordering_threshold: uint16
+    ? reordering_threshold: uint16 / "disabled"
 
     ; as RTT multiplier
     ? time_threshold: float32
