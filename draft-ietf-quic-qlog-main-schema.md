@@ -1112,8 +1112,8 @@ in the `event_schemas` field of the Trace ({{trace}}) and TraceSeq
 ({{traceseq}}) types. The `event_schemas` field is a hint to tools about which
 event namespaces, extensions, event types, and data types a trace might contain.
 The trace MAY still contain event types that do not belong to a listed event
-schema. Inversely, not all event types associated with an event schema listed in
-`event_schemas` are guaranteed to be logged in a qlog trace. Tools MUST NOT
+schema. Conversely, not all event types associated with an event schema listed
+in `event_schemas` are guaranteed to be logged in a qlog trace. Tools MUST NOT
 treat either of these as an error; see {{tooling}}.
 
 In the following hypothetical example, a qlog trace contains events belonging to:
