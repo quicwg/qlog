@@ -473,14 +473,11 @@ related to this trace; see {{traceseq}}.
 See {{format-json-seq}} for guidance on populating the "serialization_format"
 field and other serialization considerations.
 
-JSON-SEQ serialization example:
+JSON-SEQ serialization example, showing a QlogFileSeq header record followed
+by qlog event records. Each record starts with a Record Separator character,
+shown as \<RS\>, and ends with a newline; see {{RFC7464}}.
 
 ~~~~~~~~
-// list of qlog events, serialized in accordance with RFC 7464,
-// starting with a Record Separator character and ending with a
-// newline.
-// For display purposes, Record Separators are rendered as <RS>
-
 <RS>{
     "file_schema": "urn:ietf:params:qlog:file:sequential",
     "serialization_format": "application/qlog+json-seq",
@@ -507,7 +504,7 @@ JSON-SEQ serialization example:
 <RS>{"time": 7, "name": "quic:packet_sent", "data": { ... } }
 ...
 ~~~~~~~~
-{: #json-seq-ex title="Top-level element"}
+{: #json-seq-ex title="QlogFileSeq example"}
 
 ## TraceSeq {#traceseq}
 
