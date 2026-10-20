@@ -2155,10 +2155,10 @@ Subtype name:
 : qlog+json
 
 Required parameters:
-: n/a
+: N/A
 
 Optional parameters:
-: n/a
+: N/A
 
 Encoding considerations:
 : binary; see {{format-json}}
@@ -2184,25 +2184,25 @@ Fragment identifier considerations:
 Additional information:
 
   Deprecated alias names for this type:
-  : n/a
+  : N/A
 
   Magic number(s):
-  : n/a
+  : N/A
 
   File extension(s):
   : .qlog
 
   Macintosh file type code(s):
-  : n/a
+  : N/A
 
-Person to contact for further information:
+Person & email address to contact for further information:
 : QUIC WG, quic@ietf.org
 
 Intended usage:
 : COMMON
 
 Restrictions on usage:
-: n/a
+: N/A
 
 Author:
 : QUIC WG, quic@ietf.org
@@ -2219,10 +2219,10 @@ Subtype name:
 : qlog+json-seq
 
 Required parameters:
-: n/a
+: N/A
 
 Optional parameters:
-: n/a
+: N/A
 
 Encoding considerations:
 : binary; see {{format-json-seq}}
@@ -2248,25 +2248,25 @@ Fragment identifier considerations:
 Additional information:
 
   Deprecated alias names for this type:
-  : n/a
+  : N/A
 
   Magic number(s):
-  : n/a
+  : N/A
 
   File extension(s):
   : .sqlog
 
   Macintosh file type code(s):
-  : n/a
+  : N/A
 
-Person to contact for further information:
+Person & email address to contact for further information:
 : QUIC WG, quic@ietf.org
 
 Intended usage:
 : COMMON
 
 Restrictions on usage:
-: n/a
+: N/A
 
 Author:
 : QUIC WG, quic@ietf.org
