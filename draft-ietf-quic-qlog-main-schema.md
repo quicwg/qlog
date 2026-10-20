@@ -315,8 +315,9 @@ The QlogFile schema URI is `urn:ietf:params:qlog:file:contained`.
 
 QlogFile extends LogFile using the CDDL unwrap operator (~), which copies the
 fields presented in {{abstract-logfile}}. Additionally, the optional "traces"
-field contains an array of qlog traces ({{trace}}), each of which contain
-metadata and an array of qlog events ({{abstract-event}}).
+field contains an array of qlog traces ({{trace}}) or trace errors
+({{trace-error}}). Each trace contains metadata and an array of qlog events
+({{abstract-event}}).
 
 This document defines a JSON serialization for QlogFile; see {{format-json}} for
 guidance on populating the "serialization_format" field and other
@@ -415,7 +416,7 @@ JSON serialization example:
 ~~~~~~~~
 {: #trace-ex title="Trace example"}
 
-## TraceError
+## TraceError {#trace-error}
 
 A TraceError indicates that an attempt to find/convert a file for inclusion in
 the aggregated qlog was made, but there was an error during the process. Rather
