@@ -1964,7 +1964,7 @@ sources (e.g., captures of encrypted packets):
 
 * IP addresses and transport protocol port numbers.
 
-* Session, Connection, or User identifiers e.g., QUIC Connection IDs {{Section
+* Session, Connection, or User identifiers e.g., QUIC Connection IDs ({{Section
   9.5 of !RFC9000}}).
 
 * System-level information e.g., CPU, process, or thread identifiers.
