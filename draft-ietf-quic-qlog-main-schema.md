@@ -1989,29 +1989,28 @@ sources (e.g., captures of encrypted packets):
 
 ## Operational implications and recommendations
 
-Operational considerations should focus on authorizing capture and access to logs. Logging of
-Internet protocols using qlog can be equivalent to the ability to store or read plaintext
-communications. Without a more detailed analysis, all of the security considerations of plaintext access apply.
+Operational considerations focus on authorizing capture and access to logs.
+Logging of Internet protocols using qlog can be equivalent to the ability to
+store or read plaintext communications. Without a more detailed analysis, all of
+the security considerations of plaintext access apply. End users might not
+understand the implications of qlog for security or privacy, and their
+environments might limit access control techniques. Operators and implementers
+are advised to:
 
-It is recommended that qlog capture is subject to access control and auditing.
-These controls should support granular levels of information capture based on
-role and permissions (e.g., capture of more-sensitive data requires higher
-privileges).
+* Subject qlog capture to access control and auditing, with controls that
+  support granular levels of information capture based on role and permissions
+  (e.g., capture of more-sensitive data requires higher privileges).
 
-It is recommended that access to stored qlogs is subject to access control and
-auditing.
+* Subject access to stored qlog files to access control and auditing.
 
-End users might not understand the implications of qlog to security or privacy,
-and their environments might limit access control techniques. Implementations should
-make enabling qlog conspicuous (e.g., requiring clear and explicit actions to
-start a capture) and resistant to social engineering, automation, or drive-by
-attacks; for example, isolation or sandboxing of capture from other activities
-in the same process or component.
+* Make enabling qlog conspicuous (e.g., requiring clear and explicit actions to
+  start a capture) and resistant to social engineering, automation, or drive-by
+  attacks (e.g., by isolating or sandboxing capture from other activities in the
+  same process or component).
 
-It is recommended that data retention policies are defined for the storage of
-qlog files.
+* Define data retention policies for the storage of qlog files.
 
-It is recommended that qlog files are encrypted in transit and at rest.
+* Encrypt qlog files in transit and at rest.
 
 ## Data minimization or anonymization
 
