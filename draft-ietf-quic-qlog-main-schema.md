@@ -1093,8 +1093,9 @@ A single event schema contains exactly one of the following:
 * An extension of an existing namespace (adding new events/data types and/or
   extending existing events/data types within the namespace with new fields)
 
-A single document can define multiple event schemas (for example see
-{{generic-event-schema}}).
+A single document can define multiple event schemas. For example, this document
+defines the `loglevel` and `simulation` event schemas; see {{loglevel-events}}
+and {{sim-events}} respectively.
 
 An event schema MUST have a single URI {{RFC3986}} that MUST be absolute. The
 URI MUST include the namespace identifier. Event schemas that extend an existing
@@ -1150,11 +1151,8 @@ types they contain in the "qlog event schema URIs" registry.
 
 Event schemas that define a new namespace SHOULD use a URN of the form
 `urn:ietf:params:qlog:events:<namespace identifier>`, where `<namespace
-identifier>` is globally unique. For example, this document defines two event
-schemas ({{generic-event-schema}}) for two namespaces: `loglevel` and
-`simulation`.
-Other documents also define event schemas, such as {{QLOG-QUIC}} for the `quic`
-namespace and {{QLOG-H3}} for the `http3` namespace.
+identifier>` is globally unique. For example, the `loglevel` event schema uses
+`urn:ietf:params:qlog:events:loglevel`.
 
 Event schemas that extend an existing namespace SHOULD use a URN of the form
 `urn:ietf:params:qlog:events:<namespace identifier>#<extension identifier>`,
