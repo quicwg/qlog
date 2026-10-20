@@ -404,7 +404,7 @@ JSON serialization example:
         "reference_time": {
             "clock_type": "system",
             "epoch": "1970-01-01T00:00:00.000Z"
-        },
+        }
     },
     "vantage_point": {
         "name": "backend-67",
@@ -440,7 +440,7 @@ JSON serialization example:
 {
     "error_description": "File could not be found",
     "uri": "/srv/traces/today/latest.qlog",
-    "vantage_point": { type: "server" }
+    "vantage_point": { "type": "server" }
 }
 ~~~~~~~
 {: #trace-error-ex title="TraceError example"}
@@ -493,7 +493,7 @@ JSON-SEQ serialization example:
         "reference_time": {
             "clock_type": "system",
             "epoch": "1970-01-01T00:00:00.000Z"
-        },
+        }
       },
       "vantage_point": {
         "name":"backend-67",
@@ -740,29 +740,29 @@ Example of a log using the relative_to_epoch format:
     "reference_time": {
           "clock_type": "system",
           "epoch": "1970-01-01T00:00:00.000Z"
-    },
+    }
 },
 "events": [
   {
     "time": 1553986553572,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 1553986553577,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 1553986553587,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 1553986553597,
     "name": "quic:packet_received",
-    "data": { ... },
-  },
+    "data": { ... }
+  }
 ]
 ~~~
 {: #rel-epoch-time-ex title="Relative to epoch timestamps"}
@@ -775,29 +775,29 @@ Example of a log using the relative_to_previous_event format:
     "reference_time": {
           "clock_type": "system",
           "epoch": "1970-01-01T00:00:00.000Z"
-    },
+    }
 },
 "events": [
   {
     "time": 1553986553572,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 5,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 10,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 10,
     "name": "quic:packet_received",
-    "data": { ... },
-  },
+    "data": { ... }
+  }
 ]
 ~~~
 {: #rel-last-event-time-ex title="Relative-to-previous-event timestamps"}
@@ -811,29 +811,29 @@ Example of a monotonic log using the relative_to_epoch format:
           "clock_type": "monotonic",
           "epoch": "unknown",
           "wall_clock_time": "2024-10-10T10:10:10.000Z"
-    },
+    }
 },
 "events": [
   {
     "time": 0,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 5,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 15,
     "name": "quic:packet_received",
-    "data": { ... },
+    "data": { ... }
   },
   {
     "time": 25,
     "name": "quic:packet_received",
-    "data": { ... },
-  },
+    "data": { ... }
+  }
 ]
 ~~~
 {: #mono-time-ex title="Monotonic timestamps"}
@@ -1013,7 +1013,7 @@ extracted to common_fields:
         "reference_time": {
             "clock_type": "system",
             "epoch": "2019-03-29T22:55:53.572Z"
-        },
+        }
     },
     "events": [
         {
@@ -1311,7 +1311,7 @@ $$quic-packetsent-extension //= (
               "frame_type": "padding"
           }
       ],
-      additional_field: true
+      "additional_field": true
   }
 }
 ~~~~~~~~
@@ -1811,7 +1811,7 @@ permutations are shown by example in {{truncated-values-ex}}.
 // only the length is present, meaning the value
 // was omitted
 {
-    "content_length": 5,
+    "content_length": 5
 }
 
 // both value and length are present, but the lengths
