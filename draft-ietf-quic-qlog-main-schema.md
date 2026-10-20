@@ -1938,10 +1938,11 @@ still provide adequate output for incomplete logs.
 
 # Security and privacy considerations {#privacy}
 
-Protocols such as TLS {{?RFC8446}} and QUIC {{?RFC9000}} offer secure protection
-for the wire image {{?RFC8546}}. Logging can reveal aspects of the wire image
-that would ordinarily be protected, creating tension between observability,
-security and privacy, especially if data can be correlated across data sources.
+Protocols such as TLS {{?RFC8446}} and QUIC {{?RFC9000}} encrypt much of what
+they send, which limits what their wire image {{?RFC8546}} reveals to observers.
+Logging can record information that the wire image does not reveal, creating
+tension between observability, security and privacy, especially if data can be
+correlated across data sources.
 
 qlog permits logging of a broad and detailed range of data. Operators and
 implementers are responsible for deciding what data is logged to address their
