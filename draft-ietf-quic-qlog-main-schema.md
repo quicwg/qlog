@@ -1761,9 +1761,9 @@ is that it cannot represent full 64-bit integers in standard operating mode
 (i.e., without using BigInt extensions), instead being limited to the range
 -(2<sup>53</sup>)+1 to (2<sup>53</sup>)-1.
 
-To accommodate such constraints in CDDL, {{Appendix E of CDDL}} recommends
-defining new CDDL types for int64 and uint64 that limit their values to the
-restricted 64-bit integer range. However, some of the protocols that qlog is
+To accommodate such constraints in CDDL, {{Appendix E of CDDL}} suggests
+defining integer types that restrict 64-bit values to the range in which I-JSON
+can represent integers exactly. However, some of the protocols that qlog is
 intended to support (e.g., QUIC, HTTP/3), can use the full range of uint64
 values.
 
