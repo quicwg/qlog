@@ -1584,8 +1584,8 @@ SimulationScenario = {
 ### marker
 
 Used to indicate when specific emulation conditions are triggered at set times
-(e.g., at 3 seconds in 2% packet loss is introduced, at 10s a NAT rebind is
-triggered). It has Extra importance level.
+(e.g., at 3 seconds, 2% packet loss is introduced; at 10 seconds, a NAT
+rebinding is triggered). It has Extra importance level.
 
 ~~~ cddl
 SimulationMarker = {
