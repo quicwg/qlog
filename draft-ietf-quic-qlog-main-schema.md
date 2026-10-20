@@ -2177,6 +2177,10 @@ Applications that use this media type:
   logs, such as protocol analyzers, debugging tools, and performance monitoring
   systems.
 
+Fragment identifier considerations:
+: The syntax and semantics of fragment identifiers are as specified for
+  "application/json"; see {{Section 3.1 of RFC6839}}.
+
 Additional information:
 
   Deprecated alias names for this type:
@@ -2236,6 +2240,10 @@ Applications that use this media type:
 : Applications that generate, consume, or process qlog-format network protocol
   logs in a streaming fashion, such as protocol analyzers, debugging tools, and
   performance monitoring systems.
+
+Fragment identifier considerations:
+: The syntax and semantics of fragment identifiers are as specified for
+  "application/json-seq"; see {{Section 4 of RFC8091}}.
 
 Additional information:
 
