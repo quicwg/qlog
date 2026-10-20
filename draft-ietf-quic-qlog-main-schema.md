@@ -1062,7 +1062,7 @@ fields are "time" and "data", which are divergent by nature.
 Concrete event types, as well as related data types, are grouped in event
 namespaces which in turn are defined in one or multiple event schemas.
 
-As an example, the `QUICPacketSent` and `QUICPacketHeader` event and data types
+As an example, the `QUICPacketSent` and `PacketHeader` event and data types
 would be part of the `quic` namespace, which is defined in an event schema with
 URI `urn:ietf:params:qlog:events:quic`. A later extension that adds a new QUIC
 frame `QUICNewFrame` would also be part of the `quic` namespace, but defined in
@@ -1274,8 +1274,8 @@ for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
 ; defined in the main QUIC event schema
 QUICPacketSent = {
     ? packet_size: uint16
-    header: QUICPacketHeader
-    ? frames:[* QUICFrame]
+    header: PacketHeader
+    ? frames: [* $QuicFrame]
 
     * $$quic-packetsent-extension
 }
