@@ -622,8 +622,8 @@ the specific values and semantics of common fields, in particular the `name` and
 `data` fields. Furthermore, they can optionally add custom fields.
 
 Each qlog event MAY contain the optional fields: "time_format"
-({{time-based-fields}}), tuple ({{tuple-field}}), and "group_id"
-({{group-ids}}).
+({{time-based-fields}}), "tuple" ({{tuple-field}}), "group_id"
+({{group-ids}}), and "system_info" ({{system-info}}).
 
 Multiple events can appear in a Trace or TraceSeq and they might contain fields
 with identical values. It is possible to optimize out this duplication using
@@ -938,7 +938,7 @@ instead of logging the "group_id" field with an identical value for each event
 instance, this field is typically logged once in "common_fields", see
 {{common-fields}}.
 
-## SystemInformation
+## SystemInformation {#system-info}
 
 The "system_info" field can be used to record system-specific details related to an
 event. This is useful, for instance, where an application splits work across
