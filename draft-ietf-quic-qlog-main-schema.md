@@ -114,16 +114,16 @@ As such, qlog provides versioning, metadata inclusion, log aggregation, event
 grouping and log file size reduction techniques.
 
 All qlog schemas can be serialized in many ways (e.g., JSON, CBOR, protobuf,
-etc). This document describes only how to employ {{!JSON=RFC8259}}, its subset
-{{!I-JSON=RFC7493}}, and its streamable derivative
-{{!JSON-Text-Sequences=RFC7464}}.
+etc). This document describes only how to employ JSON {{!RFC8259}}, its subset
+I-JSON {{!RFC7493}}, and its streamable derivative JSON Text Sequences
+{{!RFC7464}}.
 
 
 ## Conventions and Terminology
 
 {::boilerplate bcp14-tagged}
 
-Serialization examples in this document use JSON ({{!JSON=RFC8259}}) unless
+Serialization examples in this document use JSON ({{RFC8259}}) unless
 otherwise indicated.
 
 Events are defined with an importance level as described in {{importance}}.
@@ -1755,7 +1755,7 @@ as each record by itself is a valid JSON object).
 Some JSON implementations have issues with the full JSON format, especially those
 integrated within a JavaScript environment (e.g., Web browsers, NodeJS). I-JSON
 (Internet-JSON) is a subset of JSON for such environments; see
-{{!I-JSON=RFC7493}}. One of the key limitations of JavaScript, and thus I-JSON,
+{{RFC7493}}. One of the key limitations of JavaScript, and thus I-JSON,
 is that it cannot represent full 64-bit integers in standard operating mode
 (i.e., without using BigInt extensions), instead being limited to the range
 -(2<sup>53</sup>)+1 to (2<sup>53</sup>)-1.
