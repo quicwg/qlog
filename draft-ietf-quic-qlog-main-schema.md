@@ -1333,18 +1333,13 @@ the event data definition contains an optional field named "trigger", holding a
 string value.
 
 For example, the QUIC "packet_dropped" event ({{Section 5.7 of QLOG-QUIC}})
-includes a trigger field that identifies the precise reason why a QUIC packet
-was dropped:
+includes a trigger field that identifies the general reason category for
+dropping a QUIC packet. {{trigger-ex}} shows this field; the event's other
+fields are omitted for clarity.
 
 ~~~~~~~~
 QUICPacketDropped = {
-
-    ; Primarily packet_type should be filled here,
-    ; as other fields might not be decryptable or parsable
-    ? header: PacketHeader
-    ? raw: RawInfo
-    ? datagram_id: uint32
-    ? details: {* text => any}
+    ...
     ? trigger:
         "internal_error" /
         "rejected" /
@@ -1355,8 +1350,7 @@ QUICPacketDropped = {
         "decryption_failure" /
         "key_unavailable" /
         "general"
-
-    * $$quic-packetdropped-extension
+    ...
 }
 ~~~~~~~~
 {: #trigger-ex title="Trigger example"}
