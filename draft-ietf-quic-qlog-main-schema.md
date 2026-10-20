@@ -1150,8 +1150,8 @@ Event schemas that define a new namespace SHOULD use a URN of the form
 identifier>` is globally unique. For example, this document defines two event
 schemas ({{generic-event-schema}}) for two namespaces: `loglevel` and
 `simulation`.
-Other examples of event schema define the `quic` {{QLOG-QUIC}} and `http3`
-{{QLOG-H3}} namespaces.
+Other documents also define event schemas, such as {{QLOG-QUIC}} for the `quic`
+namespace and {{QLOG-H3}} for the `http3` namespace.
 
 Event schemas that extend an existing namespace SHOULD use a URN of the form
 `urn:ietf:params:qlog:events:<namespace identifier>#<extension identifier>`,
