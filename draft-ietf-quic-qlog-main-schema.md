@@ -2020,31 +2020,32 @@ without sufficient care might not enhance privacy or security and
 could diminish the utility of qlog data.
 
 
-Operators and implementers should balance the value of logged data with the
-potential risks of voluntary or involuntary disclosure to trusted or untrusted
-entities. Importantly, both the breadth and depth of the data needed to make it
- useful, as well as the definition of entities depend greatly on the intended
-use cases. For example, a research project might be tightly scoped, time bound,
-and require participants to explicitly opt in to having their data collected and
-shared in a publication. Conversely, a server administrator might collect
-telemetry on an ongoing basis for operational needs, from users with whom they
-have no relationship.
+Operators and implementers are advised to balance the value of logged data
+against the potential risks of voluntary or involuntary disclosure to trusted or
+untrusted entities. Importantly, both the breadth and depth of the data needed
+to make it useful, as well as the definition of entities depend greatly on the
+intended use cases. For example, a research project might be tightly scoped,
+time bound, and require participants to explicitly opt in to having their data
+collected and shared in a publication. Conversely, a server administrator might
+collect telemetry on an ongoing basis for operational needs, from users with
+whom they have no relationship.
 
 The most extreme form of minimization or anonymization is deleting a field,
-equivalent to not logging it. qlog implementations should offer fine-grained
-control for this on a per-use-case or per-connection basis.
+equivalent to not logging it. qlog implementations are advised to offer
+fine-grained control over this on a per-use-case or per-connection basis.
 
 Data can undergo anonymization, pseudonymization, permutation, truncation,
 re-encryption, or aggregation; see {{Appendix B of ?DNS-PRIVACY=RFC8932}} for
-techniques, especially regarding IP addresses. However, operators should be
-cautious because many anonymization methods have been shown to be insufficient to safeguard
-user privacy or identity, particularly with large or easily correlated data sets.
+techniques, especially regarding IP addresses. However, operators are advised to
+be cautious, because many anonymization methods have been shown to be
+insufficient to safeguard user privacy or identity, particularly with large or
+easily correlated data sets.
 
-Operators should consider end user rights and preferences. Active user participation (as
-indicated by {{?RFC6973}}) on a per-qlog basis is challenging but aligning qlog
-capture, storage, and removal with existing user preference and privacy controls
-is crucial. Operators should consider aggressive approaches to deletion or
-aggregation.
+Operators are advised to consider end user rights and preferences. Active user
+participation (as indicated by {{?RFC6973}}) on a per-qlog basis is challenging
+but aligning qlog capture, storage, and removal with existing user preference
+and privacy controls is crucial. Operators are advised to consider aggressive
+approaches to deletion or aggregation.
 
 Some of the most sensitive data in qlog is contained in RawInfo fields (see
 {{raw-info}}), which can hold full packet and frame contents, and in fields
