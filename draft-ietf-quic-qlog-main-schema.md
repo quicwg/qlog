@@ -1108,7 +1108,7 @@ MUST NOT be extended.
 Implementations that record concrete event types SHOULD list all event schemas
 in use in a specific trace. This is achieved by including the appropriate URIs
 in the `event_schemas` field of the Trace ({{trace}}) and TraceSeq
-({{traceseq}}) classes. The `event_schemas` is a hint to tools about the
+({{traceseq}}) types. The `event_schemas` is a hint to tools about the
 possible event namespaces, their extensions, and the event types/data types
 contained therein, that a qlog trace might contain. The trace MAY still contain
 event types that do not belong to a listed event schema. Inversely, not all
