@@ -1406,7 +1406,7 @@ log QUIC `packet_received` events and thus also not which (if any) ACK frames th
 packet contains, SHOULD log `packets_acked` events instead.
 
 Finally, for event types whose data (partially) overlap with other event types'
-definitions, where necessary the event definition document should include explicit
+definitions, where necessary the document defining them should include explicit
 guidance on which to use in specific situations.
 
 ## Tooling Expectations
@@ -1645,8 +1645,8 @@ consistency and prevent data duplication.
 This document does not specify explicit header_length or trailer_length fields.
 In protocols without trailers, header_length can be calculated by subtracting
 the payload_length from the length. In protocols with trailers (e.g., QUIC's
-AEAD tag), event definition documents SHOULD define how to support header_length
-calculation.
+AEAD tag), documents that define event schemas SHOULD specify how to support
+header_length calculation.
 
 # Serializing qlog {#concrete-formats}
 
