@@ -318,7 +318,7 @@ fields presented in {{abstract-logfile}}. Additionally, the optional "traces"
 field contains an array of qlog traces ({{trace}}), each of which contain
 metadata and an array of qlog events ({{abstract-event}}).
 
-The default serialization format for QlogFile is JSON; see {{format-json}} for
+This document defines a JSON serialization for QlogFile; see {{format-json}} for
 guidance on populating the "serialization_format" field and other
 considerations. Where a qlog file is serialized to a JSON format, one of the
 downsides is that it is inherently a non-streamable format. Put differently, it
@@ -1684,7 +1684,6 @@ chosen serialization format.
 
 ## qlog to JSON mapping {#format-json}
 
-As described in {{qlog-file-schema}}, JSON is the default qlog serialization.
 When mapping qlog to normal JSON, QlogFile ({{qlog-file-def}}) is used. The
 Media Type is "application/qlog+json" per {{!RFC6839}}. The file
 extension/suffix SHOULD be ".qlog".
@@ -1915,7 +1914,7 @@ tagged with the "group_id" field with values "abcde" and "12345".
 Tools ingesting qlog MUST indicate which serialization format(s), qlog file and
 event schema(s), compression methods and potentially other input file formats
 (for example .pcap) they support. Tools SHOULD at least support .qlog
-files in the default JSON format ({{format-json}}). Additionally, they SHOULD
+files in the JSON format ({{format-json}}). Additionally, they SHOULD
 indicate exactly which values for and properties of the name
 (namespace:event_type) and data fields they look for to execute their logic.
 Tools SHOULD perform a (high-level) check if an input qlog file adheres to the
