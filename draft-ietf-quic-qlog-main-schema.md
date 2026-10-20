@@ -1605,7 +1605,7 @@ encoding/framing overheads. However, these fields are not always necessary, can
 take up considerable space, and can have a considerable privacy and security
 impact (see {{privacy}}). Where applicable, these fields are grouped in a
 separate, optional, field named "raw" of type RawInfo. The exact definition of
-entities, headers, trailers and payloads depend on the protocol used.
+entities, headers, trailers and payloads depends on the protocol used.
 
 ~~~ cddl
 RawInfo = {
