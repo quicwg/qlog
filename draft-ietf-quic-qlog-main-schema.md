@@ -1258,11 +1258,11 @@ $ProtocolEventData /= MyNSEvent1 / MyNSEvent2
 ~~~~~~~~
 {: #protocoleventdata-def title="ProtocolEventData extension"}
 
-Event schema defining new qlog events MUST properly extend `$ProtocolEventData`
+Event schemas defining new qlog events MUST properly extend `$ProtocolEventData`
 when defining data fields to enable automated validation of aggregated qlog
 schemas. Furthermore, they SHOULD add a `* $$NAMESPACE-EVENTTYPE-extension`
 extension field to newly defined event data to allow the new events to be
-properly extended by other event schema.
+properly extended by other event schemas.
 
 A combined but purely illustrative example of the use of both extension points
 for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
@@ -1403,7 +1403,7 @@ guidance on which to use in specific situations.
 
 ## Tooling Expectations
 
-qlog is an extensible format and it is expected that new event schema will
+qlog is an extensible format and it is expected that new event schemas will
 emerge that define new namespaces, event types, event fields (e.g., a field
 indicating an event's privacy properties), as well as values for the "trigger"
 property within the "data" field, or other member fields of the "data" field, as
@@ -2060,7 +2060,7 @@ IANA Registry Reference:
 
 IANA is requested to create the "qlog log file schema URIs" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
-log file schema. It has the following format/template:
+log file schemas. It has the following format/template:
 
 Log File Schema URI:
 : \[the log file schema identifier\]
@@ -2081,7 +2081,7 @@ file schema URIs" registry:
 
 IANA is requested to create the "qlog event schema URIs" registry
 at [](https://www.iana.org/assignments/qlog) for the purpose of registering
-event schema. It has the following format/template:
+event schemas. It has the following format/template:
 
 Event schema URI:
 : \[the event schema identifier\]
