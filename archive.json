@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-10-15T02:47:15.444632+00:00",
+  "timestamp": "2026-10-20T03:00:39.478900+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10038,7 +10038,7 @@
       "labels": [],
       "body": "The tuple is currently a property of the `Event`. I'm not sure if that makes sense. At the very least, it would complicate the data structures used in my implementation quite significantly.\n\nFor example, it doesn't really make sense to set the tuple on the `QUICKeyUpdated` event. With the exception of a few events like `QUICPacketSent`, `QUICPacketReceived`, `QUICPacketDropped`, etc., most events are connection-level events. This applies even more so when moving up the application stack: No HTTP/3 event benefits from specifying the tuple.\n\nI suggest:\n\n1. Moving the `TupleID` definition to the QUIC document.\n2. Making it a field in the few events where it actually applies.",
       "createdAt": "2025-12-03T05:08:43Z",
-      "updatedAt": "2026-07-06T08:15:11Z",
+      "updatedAt": "2026-10-19T18:59:43Z",
       "closedAt": null,
       "comments": [
         {
@@ -10068,6 +10068,13 @@
           "body": "> In that light, you probably also want to know the TupleID for things like QUICFramesProcessed to see on which Tuple a multipath-specific frame (MP_ACK or whatever it's called today) was received etc. Similar for congestion control stuff where you're managing multiple paths etc.\n\nYou'd get that from the `quic:packet_received` event, don't you?\n\nI don't think that #514 actually resolved this issue, and that the current design is pretty much impossible for me to implement in my QUIC stack.",
           "createdAt": "2026-07-06T08:15:11Z",
           "updatedAt": "2026-07-06T08:15:11Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "We seem blocked on this, so I prepped https://github.com/quicwg/qlog/pull/559 to implement what I suggested on https://github.com/quicwg/qlog/issues/501#issuecomment-3610016357 and target a limited number of QUIC events.",
+          "createdAt": "2026-10-19T18:59:43Z",
+          "updatedAt": "2026-10-19T18:59:43Z"
         }
       ]
     },
@@ -10239,25 +10246,41 @@
       "labels": [],
       "body": "In quic-go, we drop received DATAGRAM payloads when the receive queue is full, i.e. when the application isn't reading datagrams fast enough. It would be useful to log this in qlog: https://github.com/quic-go/quic-go/issues/5877.\n\n`packet_dropped` doesn't fit, since the packet was successfully received and is still acknowledged. `udp_datagram_dropped` is about UDP datagrams, and `datagram_data_moved` doesn't have a way to indicate that the data was discarded.\n\nShould we add a `datagram_data_dropped` event?",
       "createdAt": "2026-09-24T01:17:19Z",
-      "updatedAt": "2026-09-24T01:17:19Z",
+      "updatedAt": "2026-10-19T14:43:12Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I think there is a use case for recorded dropped data as you describe. We also discussed this for streams on https://github.com/quicwg/qlog/issues/186. The quiche implementation uses a custom extension to the `$DataLocation` field to indicate `dropped` when stream data is acked and then dropped on the sender side. In theory that could be used for resets too.\n\nAdding this logging capability for just datagrams feels a bit asymmetrical, even if the reasons for dropping are different.\n\nI think your proposal in https://github.com/quicwg/qlog/pull/551 is potentially clearer because it captures the `direction` of the drop. Maybe we could add a similar event for streams in the same PR?",
+          "createdAt": "2026-10-19T14:43:12Z",
+          "updatedAt": "2026-10-19T14:43:12Z"
+        }
+      ]
     },
     {
       "number": 552,
       "id": "I_kwDOCrLn6M8AAAABWZmeCw",
       "title": "disabling of reordering threshold",
       "url": "https://github.com/quicwg/qlog/issues/552",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "I recently implemented adaptive loss thresholds in QUIC stack based on the detection of spurious losses. Under certain conditions, I now disable packet-threshold loss recovery. The `QUICRecoveryParametersSet` allows implementations to log when these parameters are adjusted, but the `reordering_threshold` is a `uint16`, so it's not possible to log that it was disabled.",
       "createdAt": "2026-10-11T05:15:03Z",
-      "updatedAt": "2026-10-11T05:15:03Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2026-10-20T01:33:00Z",
+      "closedAt": "2026-10-20T01:33:00Z",
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "quiche has an optional flag to enable a similar behaviour. Supporting the notion in qlog seems helpful so I support the idea",
+          "createdAt": "2026-10-19T17:30:24Z",
+          "updatedAt": "2026-10-19T17:30:24Z"
+        }
+      ]
     },
     {
       "number": 554,
@@ -10271,24 +10294,32 @@
       "labels": [],
       "body": "I'm adding address redaction in quic-go. Applications might want to replace an IP:port pair with a prefix, hash, or arbitrary string.\n\nSince IP addresses are always used with ports, should we introduce an `IPAddressPort` type and use it in `TupleEndpointInfo` and `PreferredAddress`?\n\n```cddl\nIPAddressPort = { ip: IPAddress, port: uint16 } / text\n```\n\nThis would allow either a structured address or a redacted string.",
       "createdAt": "2026-10-14T08:27:49Z",
-      "updatedAt": "2026-10-14T08:27:49Z",
+      "updatedAt": "2026-10-19T18:08:47Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "This seems like a good direction to go in. It also removes ambiguity in the current design around whether a logged IP string is a real IP address in a funky format, or a redacted string.",
+          "createdAt": "2026-10-19T18:08:47Z",
+          "updatedAt": "2026-10-19T18:08:47Z"
+        }
+      ]
     },
     {
       "number": 555,
       "id": "I_kwDOCrLn6M8AAAABXF7jNQ",
       "title": "remove the extensibility of $HTTPCapsule",
       "url": "https://github.com/quicwg/qlog/issues/555",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "This seems to have the same layering problem as [#494](https://github.com/quicwg/qlog/issues/494). HTTP/3 doesn't know how to interpret application-specific capsules. The application protocol would have to log them anyway.\n\nI suggest removing the extensibility of $HTTPCapsule and only defining the DATAGRAM capsule type and Capsule Protocol parsing errors here. Logging of all other capsule types would belong to the respective application protocol's qlog definitions.",
       "createdAt": "2026-10-14T08:41:36Z",
-      "updatedAt": "2026-10-14T08:59:48Z",
-      "closedAt": null,
+      "updatedAt": "2026-10-20T01:31:19Z",
+      "closedAt": "2026-10-20T01:31:18Z",
       "comments": [
         {
           "author": "LPardue",
@@ -10296,6 +10327,13 @@
           "body": "I don't follow. Capsules are defined in the HTTP namespace and therefore are not part of the HTTP/3 concerns. Folks logging their own capsule types would extend $HTTPCapsule to do so",
           "createdAt": "2026-10-14T08:59:48Z",
           "updatedAt": "2026-10-14T08:59:48Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "You're right, I must have missed that. Sorry for the noise.",
+          "createdAt": "2026-10-20T01:31:18Z",
+          "updatedAt": "2026-10-20T01:31:18Z"
         }
       ]
     }
@@ -31215,47 +31253,63 @@
       "id": "PR_kwDOCrLn6M8AAAABHxqLAQ",
       "title": "disable the reordering_threshold on QUICRecoveryParametersSet",
       "url": "https://github.com/quicwg/qlog/pull/553",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #552.",
       "createdAt": "2026-10-11T05:23:03Z",
-      "updatedAt": "2026-10-11T05:23:04Z",
+      "updatedAt": "2026-10-20T01:33:01Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f8dfcfcb3d53bb6ec1f1d6c0beb4734005ac6424",
       "headRepository": "quicwg/qlog",
       "headRefName": "packet-threshold-disabled",
       "headRefOid": "560bf4df341542d57281ceebb891ce33b698e2ec",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-10-20T01:32:59Z",
+      "mergedAt": "2026-10-20T01:32:59Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "28696df84e13cccea68de05a3978e9064e698dc9"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABTFA88g",
+          "commit": {
+            "abbreviatedOid": "560bf4d"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-10-19T17:31:10Z",
+          "updatedAt": "2026-10-19T17:31:10Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 556,
       "id": "PR_kwDOCrLn6M8AAAABIWbDWw",
       "title": "remove capsule extensibility and add capsule parsing errors",
       "url": "https://github.com/quicwg/qlog/pull/556",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #555.",
       "createdAt": "2026-10-14T08:50:36Z",
-      "updatedAt": "2026-10-14T08:50:36Z",
+      "updatedAt": "2026-10-20T01:31:25Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f8dfcfcb3d53bb6ec1f1d6c0beb4734005ac6424",
       "headRepository": "quicwg/qlog",
       "headRefName": "remove-capsule-extensibility",
       "headRefOid": "43ece7fb6b2aaa533356c877eae58de267573d60",
-      "closedAt": null,
+      "closedAt": "2026-10-20T01:31:25Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -31274,13 +31328,161 @@
       "labels": [],
       "body": "Fixes #554.",
       "createdAt": "2026-10-14T09:04:30Z",
-      "updatedAt": "2026-10-14T09:04:31Z",
+      "updatedAt": "2026-10-19T18:07:29Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f8dfcfcb3d53bb6ec1f1d6c0beb4734005ac6424",
       "headRepository": "quicwg/qlog",
       "headRefName": "ip-address-redaction",
       "headRefOid": "65dd381da3a048f64ad62e730a243c72c1c8f9a3",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABTFUnbA",
+          "commit": {
+            "abbreviatedOid": "65dd381"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-19T17:59:31Z",
+          "updatedAt": "2026-10-19T17:59:32Z",
+          "comments": [
+            {
+              "originalPosition": 9,
+              "body": "nit: since these fields might not carry an IP, consider naming them as an address. E.g.,\n\n```suggestion\n    ? addr_v6: IPAddressPort\n```",
+              "createdAt": "2026-10-19T17:59:31Z",
+              "updatedAt": "2026-10-19T17:59:32Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABTFZIqw",
+          "commit": {
+            "abbreviatedOid": "65dd381"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-19T18:06:19Z",
+          "updatedAt": "2026-10-19T18:06:20Z",
+          "comments": [
+            {
+              "originalPosition": 47,
+              "body": "This makes the IP and port both mandatory, whereas previously the IP and port were independently optional. \n\nDoing a brief survey of 8 implementations, none depend on the independence that the current qlog allows. So this seems like a positive improvement ",
+              "createdAt": "2026-10-19T18:06:19Z",
+              "updatedAt": "2026-10-19T18:06:20Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABTFaDAA",
+          "commit": {
+            "abbreviatedOid": "65dd381"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "I think this is a good direction to go in",
+          "createdAt": "2026-10-19T18:07:29Z",
+          "updatedAt": "2026-10-19T18:07:29Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 558,
+      "id": "PR_kwDOCrLn6M8AAAABJWg77A",
+      "title": "Update author details",
+      "url": "https://github.com/quicwg/qlog/pull/558",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2026-10-19T14:28:50Z",
+      "updatedAt": "2026-10-19T14:51:24Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f8dfcfcb3d53bb6ec1f1d6c0beb4734005ac6424",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "update-lucas",
+      "headRefOid": "716c3aebc80c2ebcbe3792f1a3de9349af3a8933",
+      "closedAt": "2026-10-19T14:51:21Z",
+      "mergedAt": "2026-10-19T14:51:21Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "aa3348d94cdd63aae929245c3a7eb88b28e266bb"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABTC9Tlw",
+          "commit": {
+            "abbreviatedOid": "f70785e"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-10-19T14:32:49Z",
+          "updatedAt": "2026-10-19T14:32:49Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 559,
+      "id": "PR_kwDOCrLn6M8AAAABJZsCyQ",
+      "title": "Move tuple into QUIC packet event data",
+      "url": "https://github.com/quicwg/qlog/pull/559",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Drafted with AI assistance; reviewed and edited by me.\n\nFixes #501.\n\nPlacing a tuple field in every event might not be practical. Even if it's optional, the notion that every extension schema needs to worry about path awareness seems a bit heavy handed. Practically, anything above the transport will likely struggle to carry path information around internally. \n\nFrom a brief survey of implementations, none are using the `tuple` as currently defined. The closest thing ins picoquic, which is based on qlog 00 and defines its own `path_id`; it can still carry on doing that as a custom extension if it wants (including extending `Event` to do it). \n\nThis PR moves `tuple` out of the abstract `Event` class and `CommonFields`, using the same approach as `trigger`: the main schema recommends naming the field `tuple` in event data, and the QUIC document defines `? tuple: TupleID` on `packet_sent`, `packet_received`, `packet_dropped`, `packet_buffered` and `packet_lost`.\n\n`TupleID` keeps its `\"\"` default, so a packet event without `tuple` is still associated with the initial tuple. The guidance added in #514 to log the field only when salient is removed, since omitting the field on a packet that uses a different tuple would attribute it to the initial tuple.\n\n`frames_created` and `frames_parsed` don't get the field, since they link to packet events through `packet_numbers`. \n\nThe current approach was motivated by supporting multipath. A multipath extension can add `tuple` to other events through the existing extension sockets. In other words, punt the job of figuring out if anything more is useful  to someone else rather than block progress on core.\n",
+      "createdAt": "2026-10-19T18:58:36Z",
+      "updatedAt": "2026-10-19T18:58:37Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "aa3348d94cdd63aae929245c3a7eb88b28e266bb",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "tuple-in-event-data",
+      "headRefOid": "83df879244fc9fb60285b6a977ea91b9ec37b796",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 561,
+      "id": "PR_kwDOCrLn6M8AAAABJcShOA",
+      "title": "Log session tickets and 0-RTT acceptance in parameters_set",
+      "url": "https://github.com/quicwg/qlog/pull/561",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Drafted with AI assistance; reviewed and edited by me.\n\nFixes #27. Fixes #121. \n\nApologies for the wall of slop but it's a way of being super comprehensive. Reviewers can just look at the fairly straightforward diff and see if they think it covers the issues\n\n### Notable changes \n\nChanges to QUICParametersSet:\n\n    ? session_ticket: SessionTicket       ; replaces ? resumption_allowed: bool\n    ? early_data_enabled: bool            ; unchanged type, semantics clarified\n    ? early_data_accepted: bool           ; new\n    ? early_data_rejection_reason: text   ; new\n\nChanges to QUICParametersRestored (its transport parameters move into a shared type):\n\n    QUICParametersRestored = {\n        transport_parameters: RememberedTransportParameters\n        * $$quic-parametersrestored-extension\n    }\n\nNew types:\n\n    RememberedTransportParameters = {\n        ; the fields previously in QUICParametersRestored, unchanged\n        * $$quic-rememberedtransportparameters-extension\n    }\n\n    SessionTicket = {\n        ? transport_parameters: RememberedTransportParameters\n        ? raw: RawInfo\n        * $$quic-sessionticket-extension\n    }\n\n### Deets\n- session_ticket: a ticket was sent or received. The direction comes from the existing initiator field: local means a server issued the ticket in NewSessionTicket or a client offered it in ClientHello; remote means it was received from the peer. SessionTicket holds the QUIC and application state associated with the ticket (RFC 9001 Section 4.6.3), not the TLS ticket itself; state other than transport parameters can be added through $$quic-sessionticket-extension.\n- early_data_enabled: true if a server enabled 0-RTT in NewSessionTicket (for a future connection), or a client offered 0-RTT in ClientHello (on this connection); RFC 9001 Section 4.6.1.\n- early_data_accepted: true if the server accepted 0-RTT, false if it rejected it; RFC 9001 Section 4.6.2. The server logs it with initiator local, the client with initiator remote.\n- early_data_rejection_reason: implementation-defined free text describing why 0-RTT was rejected, for example a transport parameter mismatch (RFC 9000 Section 7.4.1) or a HelloRetryRequest (RFC 9001 Section 4.6.2). Rejection carries no reason on the wire, so usually only the server can log it. Free text rather than an enumeration, because implementations distinguish different and overlapping sets of reasons: BoringSSL has 13, mvfst distinguishes each transport parameter check, and quic-go has two.\n- RememberedTransportParameters: the transport parameters stored for 0-RTT (RFC 9000 Section 7.4.1). The same type is used for what a client restores (QUICParametersRestored.transport_parameters) and for what is stored with a ticket (SessionTicket.transport_parameters), so a transport parameter added by an extension appears in both.\n- QUICParametersRestored and HTTP3ParametersRestored: the text now says servers can also use them for the transport parameters or SETTINGS they recover from a ticket (RFC 9000 Section 7.4.1, RFC 9114 Section 7.2.4.2). HTTP3ParametersRestored has no CDDL change.\n\n### The long and winding history of discussions\nRequests on #27:\n\n- 2019-10-15, rmarx (relaying jlaine): resumption_allowed: bool and early_data_enabled: bool don't distinguish 0-RTT used now from 0-RTT enabled for later. early_data_enabled is now defined for each case, and early_data_accepted: bool records the outcome.\n- 2021-10-04, marten-seemann: no way to log whether 0-RTT was accepted or rejected. Added as early_data_accepted: bool, with early_data_rejection_reason: text for why.\n- 2024-10-21, marten-seemann: separate resumption events, with QUICParametersSet kept for transport parameters. Not taken; this follows the 2025-10-14 interim outcome on #121 below.\n- 2025-10-14 interim (interim-2025-quic-02):\n  - Kazuho: \"For a Server, you either just accept 0-RTT or not\". Marten: \"at client-side we do want to be able to log that, since that influences how we re-use the stream etc.\" early_data_accepted: bool is logged by both: the server with initiator local, the client with initiator remote.\n  - Outcome: \"logging 0-rtt accepting / rejection seems useful; @marten-seemann will prepare a PR for that.\" Covered by early_data_accepted: bool and early_data_rejection_reason: text.\n- 2025-10-14, kazuho (on #27 after the interim): scope this to 0-RTT, not resumption, which is internal to TLS. No resumption-outcome field is added.\n- 2025-10-18, kazuho: resumption_allowed is misnamed and lacks the reverse direction. Replaced by session_ticket: SessionTicket; initiator local covers a ticket the endpoint sends.\n- 2026-07-02, rmarx: the presence of a ticket can replace resumption_allowed, without forcing the raw ticket into logs. SessionTicket.raw is a RawInfo, so raw.length alone is enough (QLOG-MAIN Section 11.4).\n\nRequests on #121:\n\n- 2020-11-02, rmarx: no way to log ticket contents when sent or received, or a 0-RTT rejection caused by a mismatch. SessionTicket.transport_parameters and SessionTicket.raw carry the contents. early_data_rejection_reason: text records why 0-RTT was rejected, and a server can compare QUICParametersRestored.transport_parameters with its current QUICParametersSet to see which values differ.\n- 2021-10-04, marten-seemann: parameters_saved and parameters_restored events; clients may also save RTT. What is saved with a ticket is SessionTicket.transport_parameters, what is restored is QUICParametersRestored.transport_parameters, both of type RememberedTransportParameters. Saved RTT and congestion window are left to draft-ietf-tsvwg-careful-resume-qlog, which defines saved_rtt and saved_congestion_window and can add them through $$quic-sessionticket-extension.\n- 2022-12-28, marten-seemann: a TLS event holding the QUIC parts of the ticket and the 0-RTT state. Same content, placed in QUICParametersSet per the 2025-10-14 interim outcome.\n- 2025-10-14 interim (interim-2025-quic-02; notes reposted on #121 by rmarx on 2026-07-02):\n  - Marten: \"We could replicate that for the SessionTicket\", referring to Token and StatelessResetToken. SessionTicket keeps Token's raw field; a typed transport_parameters field replaces Token's free-form details, since transport parameters are what every implementation stores with a ticket.\n  - Mirja: \"logging session ticket is useful, not sure where to put it\". Lucas: \"maybe useful to separate out\". The outcome placed it in parameters_set, which this PR follows.\n  - Kazuho: \"maybe only log QUIC-accessible part of the session ticket blob\", and in the chat, \"It'd be useful (thinks about Careful Resume)\" and \"So logging the QUIC-part of session ticket makes sense.\" SessionTicket is the state associated with the ticket (RFC 9001 Section 4.6.3), not the TLS ticket. Its one concrete field is the part every implementation stores, the transport parameters; careful resume state can be added through $$quic-sessionticket-extension.\n  - Mirja: \"things that are only in RFC9001 should not be in here ,but things that might be in 9000 might make sense\", and in the chat, \"yes if at all tLS would be an extension\". RememberedTransportParameters and server-side restoring cite RFC 9000 Section 7.4.1, and no TLS fields are added. early_data_enabled and early_data_accepted cite RFC 9001 Section 4.6 because QUIC 0-RTT is defined there; like the existing tls_cipher: text, they record TLS outcomes that change QUIC behaviour (marten-seemann on #59, 2024-10-21). early_data_rejection_reason: text does not enumerate TLS-level reasons.\n  - Outcome: \"Marten to propose a PR\". This PR does that; happy to defer if Marten has one in progress.\n- 2026-07-02, rmarx: \"we just want to log the QUIC-accessible part of the session ticket blog as part of `parameters_set`\", and allow \"logging a bogus/encoded value for implementations that dont' want to expose the raw data\". SessionTicket.raw follows the RawInfo truncation rules (QLOG-MAIN Section 11.4), and session tickets are already listed as sensitive (QLOG-MAIN Section 14.1).\n\n#59 (TLS specifics) was closed as a duplicate of #121. This PR adds only TLS outcomes that change QUIC behaviour.",
+      "createdAt": "2026-10-19T23:09:02Z",
+      "updatedAt": "2026-10-19T23:13:54Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "aa3348d94cdd63aae929245c3a7eb88b28e266bb",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "session-ticket-0rtt",
+      "headRefOid": "d6b98f3c0046cd02fced7d83af4110a2f0ae1a07",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
