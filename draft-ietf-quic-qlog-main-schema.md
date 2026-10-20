@@ -1686,7 +1686,7 @@ chosen serialization format.
 
 ## qlog to JSON mapping {#format-json}
 
-When mapping qlog to normal JSON, QlogFile ({{qlog-file-def}}) is used. The
+When mapping qlog to JSON, QlogFile ({{qlog-file-def}}) is used. The
 Media Type is "application/qlog+json" per {{!RFC6839}}. The file
 extension/suffix SHOULD be ".qlog".
 
@@ -1700,7 +1700,7 @@ definitions to JSON, the official CDDL-to-JSON mapping defined in
 
 ## qlog to JSON Text Sequences mapping {#format-json-seq}
 
-One of the downsides of using normal JSON is that it is inherently a
+One of the downsides of using JSON is that it is inherently a
 non-streamable format. A qlog serializer could work around this by opening a
 file, writing the required opening data, streaming qlog events by appending
 them, and then finalizing the log by appending appropriate closing brackets,
@@ -1721,7 +1721,7 @@ it ends with a newline character before the next \<RS\> character.
 In order to leverage the streaming capability, each qlog event is serialized and
 interpreted as an individual JSON Text Sequence record, that is appended as a
 new object to the back of an event stream or log file. Put differently, unlike
-default JSON, it does not require a document to be wrapped as a full object with
+JSON, it does not require a document to be wrapped as a full object with
 "{ ... }" or "\[... \]".
 
 This alternative record streaming approach cannot be accommodated by QlogFile
@@ -1746,11 +1746,11 @@ definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
 ### Supporting JSON Text Sequences in tooling
 
 Note that JSON Text Sequences are not supported in most default programming
-environments (unlike normal JSON). However, several custom JSON-SEQ parsing
+environments (unlike JSON). However, several custom JSON-SEQ parsing
 libraries exist in most programming languages that can be used and the format is
 easy enough to parse with existing implementations (i.e., by splitting the file
-into its component records and feeding them to a normal JSON parser individually,
-as each record by itself is a valid JSON object).
+into its component records and feeding them to a standard JSON parser
+individually, as each record by itself is a valid JSON object).
 
 ## JSON Interoperability {#json-interop}
 
