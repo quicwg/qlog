@@ -467,8 +467,8 @@ The QlogFileSeq schema URI is `urn:ietf:params:qlog:file:sequential`.
 
 QlogFileSeq extends LogFile using the CDDL unwrap operator (~), which copies the
 fields presented in {{abstract-logfile}}. Additionally, the required "trace"
-field contains a singular trace ({{trace}}). All qlog events in the file are
-related to this trace; see {{traceseq}}.
+field contains a single TraceSeq ({{traceseq}}), which all qlog events in the
+file are related to.
 
 See {{format-json-seq}} for guidance on populating the "serialization_format"
 field and other serialization considerations.
