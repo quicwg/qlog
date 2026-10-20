@@ -399,7 +399,7 @@ JSON serialization example:
     "title": "Name of this particular trace (short)",
     "description": "Description for this trace (long)",
     "common_fields": {
-        "ODCID": "abcde1234",
+        "odcid": "abcde1234",
         "time_format": "relative_to_epoch",
         "reference_time": {
             "clock_type": "system",
@@ -645,7 +645,7 @@ Example qlog event:
 
     "time_format": "relative_to_epoch",
 
-    "ODCID": "127ecc830d98f9d54a42c4f0842aa87e181a"
+    "odcid": "127ecc830d98f9d54a42c4f0842aa87e181a"
 }
 ~~~~~~~~
 {: #event-ex title="Event example"}
@@ -892,7 +892,7 @@ each event that indicates to which conceptual "group" each event belongs. A
 post-processing step can then extract events per group. However, this group
 identifier can be highly protocol and context-specific. In the example above,
 the QUIC "Original Destination Connection ID" could be used to uniquely identify
-a connection. As such, they might add a "ODCID" field to each event.
+a connection. As such, they might add an "odcid" field to each event.
 Additionally, a service providing different levels of Quality of Service (QoS)
 to their users might wish to group connections per QoS level applied. They might
 instead prefer a "qos" field.
