@@ -323,9 +323,9 @@ guidance on populating the "serialization_format" field and other
 considerations. Where a qlog file is serialized to a JSON format, one of the
 downsides is that it is inherently a non-streamable format. Put differently, it
 is not possible to simply append new qlog events to a log file without "closing"
-this file at the end by appending "]}]}". Without these closing tags, most JSON
-parsers will be unable to parse the file entirely. The alternative QlogFileSeq
-({{qlog-file-seq-schema}}) is better suited to streaming use cases.
+this file at the end by appending "]}]}". Without these closing brackets, most
+JSON parsers will be unable to parse the file entirely. The alternative
+QlogFileSeq ({{qlog-file-seq-schema}}) is better suited to streaming use cases.
 
 JSON serialization example:
 
@@ -1700,11 +1700,11 @@ definitions to JSON, the official CDDL-to-JSON mapping defined in
 One of the downsides of using normal JSON is that it is inherently a
 non-streamable format. A qlog serializer could work around this by opening a
 file, writing the required opening data, streaming qlog events by appending
-them, and then finalizing the log by appending appropriate closing tags e.g.,
-"]}]}". However, failure to append closing tags, could lead to problems because
-most JSON parsers will fail if a document is malformed. Some streaming JSON
-parsers are able to handle missing closing tags, however they are not widely
-deployed in popular environments (e.g., Web browsers)
+them, and then finalizing the log by appending appropriate closing brackets,
+e.g., "]}]}". However, failure to append closing brackets could lead to problems
+because most JSON parsers will fail if a document is malformed. Some streaming
+JSON parsers are able to handle missing closing brackets; however, they are not
+widely deployed in popular environments (e.g., Web browsers).
 
 To overcome the issues related to JSON streaming, a qlog mapping to a streamable
 JSON format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}) is provided.
