@@ -997,7 +997,7 @@ per-event instance:
             },
 
             "time": 7,
-            "name": "http:frame_parsed",
+            "name": "http3:frame_parsed",
             "data": { ... }
         }
     ]
@@ -1022,7 +1022,7 @@ extracted to common_fields:
             "data": { ... }
         },{
             "time": 7,
-            "name": "http:frame_parsed",
+            "name": "http3:frame_parsed",
             "data": { ... }
         }
     ]
