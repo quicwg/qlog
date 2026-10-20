@@ -1185,8 +1185,9 @@ defines the per-event metadata that is to be logged. Its specific subfields and
 their semantics are defined per concrete event type. For example, data field
 definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
 
-In order to keep qlog fully extensible, two separate CDDL extension points
-("sockets" or "plugs") are used to fully define data fields.
+To keep qlog fully extensible, data fields are defined using two kinds of CDDL
+extension point, called sockets, which other definitions extend with plugs; see
+{{Section 3.9 of CDDL}}.
 
 Firstly, to allow existing data field definitions to be extended (for example by
 adding an additional field needed for a new protocol feature), a CDDL "group
