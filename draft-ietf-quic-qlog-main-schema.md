@@ -713,9 +713,10 @@ relative_to_epoch:
   value of the "time_format" field.
 
 relative_to_previous_event:
-: A delta-encoded value, based on the previously logged value. The first event
-  in a trace is always relative to the ReferenceTime. This approach produces the
-  smallest values. It is suitable for stateful loggers.
+: A delta-encoded value: the duration since the time of the previously logged
+  event. The first event in a trace is always relative to the ReferenceTime.
+  This approach produces the smallest values. It is suitable for stateful
+  loggers.
 
 Events in each individual trace SHOULD be logged in strictly ascending timestamp
 order (though not necessarily absolute value, for the "relative_to_previous_event"
