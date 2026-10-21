@@ -2056,9 +2056,9 @@ Reference:
 IANA Registry Reference:
 : [](https://www.iana.org/assignments/qlog){: brackets="angle"}
 
-IANA is requested to create the "qlog log file schema URIs" registry
-at [](https://www.iana.org/assignments/qlog) for the purpose of registering
-log file schemas. Registrations use the Expert Review policy
+IANA is requested to create the "qlog log file schema URIs" registry under a
+new "qlog" heading at [](https://www.iana.org/assignments/qlog) for the purpose
+of registering log file schemas. Registrations use the Expert Review policy
 ({{Section 4.5 of RFC8126}}); {{schema-uri}} gives the registration
 requirements and the instructions for the designated expert. The registry has
 the following format/template:
@@ -2080,9 +2080,9 @@ file schema URIs" registry:
 | urn:ietf:params:qlog:file:contained | Concrete log file schema that can contain several traces from multiple vantage points. | {{qlog-file-schema}} |
 | urn:ietf:params:qlog:file:sequential | Concrete log file schema containing a single trace, optimized for sequential read and write access. | {{qlog-file-seq-schema}} |
 
-IANA is requested to create the "qlog event schema URIs" registry
-at [](https://www.iana.org/assignments/qlog) for the purpose of registering
-event schemas. Registrations use the Expert Review policy
+IANA is requested to create the "qlog event schema URIs" registry under the
+"qlog" heading at [](https://www.iana.org/assignments/qlog) for the purpose of
+registering event schemas. Registrations use the Expert Review policy
 ({{Section 4.5 of RFC8126}}); {{event-schema-reg}} gives the registration
 requirements and the instructions for the designated expert. The registry has
 the following format/template:
