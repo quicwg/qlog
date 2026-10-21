@@ -1766,6 +1766,10 @@ parsing of uint64 values from JSON strings or JSON numbers unless there is out-o
 information indicating that neither the serializer nor parser are constrained by
 I-JSON.
 
+The CDDL definitions describe uint64 values as numbers. A log that encodes them
+as JSON strings needs those values converted to numbers before it can be
+validated against the CDDL.
+
 ## Truncated values {#truncated-values}
 
 For some use cases (e.g., limiting file size, privacy), it can be necessary not
