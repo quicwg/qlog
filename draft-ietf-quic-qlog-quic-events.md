@@ -1901,7 +1901,7 @@ PacketHeader = {
     ? length: uint16
 
     ; only if present in the header.
-    ; if correctly using transport:connection_id_updated events,
+    ; if correctly using connection_id_updated events,
     ; dcid can be skipped for 1RTT packets
     ? version: QuicVersion
     ? scil: uint8
