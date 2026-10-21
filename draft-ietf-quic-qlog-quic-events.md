@@ -1111,7 +1111,6 @@ GranularStreamStates =
     "send" /
     "data_sent" /
     "reset_sent" /
-    "reset_received" /
     ; receive-side stream states, RFC 9000 Section 3.2.
     "receive" /
     "size_known" /
@@ -1119,6 +1118,7 @@ GranularStreamStates =
     "reset_read" /
     ; both-side states
     "data_received" /
+    "reset_received" /
     ; qlog-defined: memory actually freed
     "destroyed"
 
