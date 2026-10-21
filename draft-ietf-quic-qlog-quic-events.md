@@ -562,13 +562,11 @@ QUICMTUUpdated = {
 The `version_information` event supports QUIC version negotiation; see {{Section
 6 of QUIC-TRANSPORT}}. It has Core importance level.
 
-QUIC endpoints each have their own list of QUIC versions they support. The
-client uses the most likely version in their first initial. If the server does
-not support that version, it replies with a Version Negotiation packet, which
-contains its supported versions. From this, the client selects a version. The
-`version_information` event aggregates all this information in a single event
-type. It also allows logging of supported versions at an endpoint without actual
-version negotiation needing to happen.
+Each QUIC endpoint supports one or more versions. The client sends its first
+Initial packet using one of them. A server that does not support that version
+can reply with a Version Negotiation packet, which lists the versions the
+server supports. This event records the versions that each endpoint supports,
+and the chosen version if there is one.
 
 ~~~ cddl
 QUICVersionInformation = {
@@ -581,22 +579,25 @@ QUICVersionInformation = {
 ~~~
 {: #quic-versioninformation-def title="QUICVersionInformation definition"}
 
-Intended use:
+A client logs this event when it sends its first Initial packet. The event
+includes `client_versions`, and `chosen_version` holds the version used in that
+packet.
 
-- When sending an initial, the client logs this event with `client_versions` and
-  `chosen_version` set
-- Upon receiving a client initial with a supported version, the server logs this
-  event with `server_versions` and `chosen_version` set
-- Upon receiving a client initial with an unsupported version, the server logs
-  this event with `server_versions` set and `client_versions` to the
-  single-element array containing the client's attempted version. The absence of
-  chosen_version implies no overlap was found
-- Upon receiving a version negotiation packet from the server, the client logs
-  this event with `client_versions` set and `server_versions` to the versions in
-  the version negotiation packet and chosen_version to the version it will use
-  for the next initial packet. If the client receives a set of `server_versions`
-  with no viable overlap with its own supported versions, this event should be
-  logged without the `chosen_version` set
+If the client then processes a Version Negotiation packet, it logs this event
+again with `client_versions`. The event also includes `server_versions`, which
+holds the versions from that packet. If the client selects one of them,
+`chosen_version` holds it; otherwise, `chosen_version` is absent.
+
+A Version Negotiation packet can also list reserved versions, which an endpoint
+adds to check that its peer ignores unknown versions; see {{Section 6.3 of
+QUIC-TRANSPORT}}. Because `server_versions` holds the versions from the packet,
+it can include reserved versions.
+
+A server logs this event when it receives a client's first Initial packet. The
+event includes `server_versions`. If the server supports the client's version,
+`chosen_version` holds the version that the server uses for the connection.
+Otherwise, `chosen_version` is absent, and `client_versions` holds the version
+the client used.
 
 ## alpn_information {#quic-alpninformation}
 
