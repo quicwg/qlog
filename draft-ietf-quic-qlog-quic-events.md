@@ -184,6 +184,7 @@ this specification.
 | quic:frames_parsed            | Extra      | {{quic-framesparsed}} |
 | quic:stream_data_moved                | Base       | {{quic-streamdatamoved}} |
 | quic:datagram_data_moved              | Base       | {{quic-datagramdatamoved}} |
+| quic:datagram_dropped            | Base       | {{quic-datagramdropped}} |
 | quic:connection_data_blocked_updated              | Extra       | {{quic-connectiondatablockedupdated}} |
 | quic:stream_data_blocked_updated              | Extra       | {{quic-streamdatablockedupdated}} |
 | quic:datagram_data_blocked_updated              | Extra       | {{quic-datagramdatablockedupdated}} |
@@ -230,6 +231,7 @@ QuicEventData = QUICServerListening /
                 QUICFramesParsed /
                 QUICStreamDataMoved /
                 QUICDatagramDataMoved /
+                QUICDatagramDropped /
                 QUICConnectionDataBlockedUpdated /
                 QUICStreamDataBlockedUpdated /
                 QUICDatagramDataBlockedUpdated /
@@ -1087,8 +1089,7 @@ QUICStreamStateUpdated = {
     ? stream_type: StreamType
     ? old: $StreamState
     new: $StreamState
-    stream_side: "sending" /
-                 "receiving"
+    stream_side: Direction
     ? trigger:
       ; stream state change was initiated by a local action
       "local" /
@@ -1298,6 +1299,35 @@ QUICDatagramDataMoved = {
 }
 ~~~
 {: #quic-datagramdatamoved-def title="QUICDatagramDataMoved definition"}
+
+## datagram_dropped {#quic-datagramdropped}
+
+The `datagram_dropped` event indicates that QUIC DATAGRAM data (see
+{{!RFC9221}}) was discarded locally, before sending or after reception. It has
+Base importance level.
+
+The `direction` field identifies the sending or receiving side, and `trigger`
+indicates the reason for discarding the data. The `raw.length` field MUST count
+discarded payload bytes, excluding packet and frame headers.
+
+Received DATAGRAM data can be discarded while its packet is still acknowledged.
+For drops of entire QUIC packets, use `packet_dropped` ({{quic-packetdropped}}).
+
+~~~ cddl
+QUICDatagramDropped = {
+    ? direction: Direction
+    ? raw: RawInfo
+    ? trigger:
+        ; insufficient space in a send or receive buffer
+        "buffer_full" /
+        ; datagram data exceeds the maximum payload size
+        "too_large" /
+        text
+
+    * $$quic-datagramdropped-extension
+}
+~~~
+{: #quic-datagramdropped-def title="QUICDatagramDropped definition"}
 
 ## connection_data_blocked_updated {#quic-connectiondatablockedupdated}
 
@@ -1783,6 +1813,16 @@ Initiator = "local" /
             "remote"
 ~~~
 {: #initiator-def title="Initiator definition"}
+
+## Direction
+
+Direction identifies the sending or receiving side of an endpoint.
+
+~~~ cddl
+Direction = "sending" /
+            "receiving"
+~~~
+{: #direction-def title="Direction definition"}
 
 ## IPAddress
 
@@ -2518,6 +2558,7 @@ Event Types
   frames_parsed,
   stream_data_moved,
   datagram_data_moved,
+  datagram_dropped,
   connection_data_blocked_updated,
   stream_data_blocked_updated,
   datagram_data_blocked_updated,
@@ -2553,6 +2594,11 @@ Oku, and Jonathan Lennox for their feedback and suggestions.
 
 # Change Log
 {:numbered="false" removeinrfc="true"}
+
+## Since draft-ietf-qlog-quic-events-13:
+{:numbered="false"}
+
+* Added datagram_dropped (#550)
 
 ## Since draft-ietf-qlog-quic-events-12:
 {:numbered="false"}
