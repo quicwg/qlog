@@ -1856,9 +1856,9 @@ string, the `packet_type` value of "unknown" can be used and the raw value
 captured in the `packet_type_bytes` field; a numerical value without
 variable-length integer encoding.
 
-The fixed and reserved bits are omitted here because they must be 0; see
-{{QUIC-TRANSPORT}}. If these bits have an invalid value, the raw values can be
-captured in the `raw.data` field of the event logging the PacketHeader.
+PacketHeader omits the fixed bit and the reserved bits because QUIC version 1
+gives them fixed values; see {{Section 17 of QUIC-TRANSPORT}}. Their values can
+be logged in the `raw.data` field of the event that logs the PacketHeader.
 
 QUIC extensions that do utilize these bits are expected to create new events
 (analogous to `spin_bit_updated`) or use qlog extension mechanisms to reflect
