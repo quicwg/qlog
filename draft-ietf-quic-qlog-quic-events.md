@@ -1643,17 +1643,13 @@ unspecified fields to support different recovery approaches.
 ## congestion_state_updated {#quic-congestionstateupdated}
 
 The `congestion_state_updated` event indicates when the congestion controller
-enters a significant new state and changes its behaviour. It has Base importance
-level.
+enters a new state that changes its behavior. It has Base importance level.
 
-The values of the event's fields are intentionally unspecified here in order to
-support different Congestion Control algorithms, as these typically have
-different states and even different implementations of these states across
-stacks. For example, for the algorithm defined in the QUIC Recovery RFC
-("enhanced" New Reno), the following states are used: Slow Start, Congestion
-Avoidance, Application Limited and Recovery. Similarly, states can be triggered
-by a variety of events, including detection of Persistent Congestion or receipt
-of ECN markings.
+This document does not define values for the event's fields. Congestion
+control algorithms have different states and different causes for moving
+between them, and stacks can implement the same algorithm differently. For
+example, the NewReno controller in {{Section 7.3 of QUIC-RECOVERY}} has three
+states: slow start, recovery, and congestion avoidance.
 
 ~~~ cddl
 QUICCongestionStateUpdated = {
@@ -1666,10 +1662,10 @@ QUICCongestionStateUpdated = {
 ~~~
 {: #quic-congestionstateupdated-def title="QUICCongestionStateUpdated definition"}
 
-The `trigger` field SHOULD be logged if there are multiple ways in which a state
-change can occur but MAY be omitted if a given state can only be due to a single
-event occurring (for example Slow Start is often exited only when ssthresh is
-exceeded).
+The `trigger` field SHOULD be logged if a state change can have more than one
+cause. For example, NewReno enters recovery when it detects packet loss or
+when the ECN-CE count increases, so the `trigger` field shows which of the two
+caused the change.
 
 ## packet_lost {#quic-packetlost}
 
