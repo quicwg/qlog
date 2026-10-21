@@ -2106,10 +2106,9 @@ ResetStreamFrame = {
 
 ### ResetStreamAtFrame
 
-If the error_code numerical value does not map to a known ApplicationError string,
-the error_code value of "unknown" can be used and the raw value captured in the
-error_code_bytes field; a numerical value without variable-length integer
-encoding.
+If the error numerical value does not map to a known ApplicationError string,
+the error value of "unknown" can be used and the raw value captured in the
+error_code field; a numerical value without variable-length integer encoding.
 
 ~~~ cddl
 ResetStreamAtFrame = {
