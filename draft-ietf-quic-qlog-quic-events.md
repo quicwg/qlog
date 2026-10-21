@@ -605,11 +605,15 @@ The `alpn_information` event supports Application-Layer Protocol Negotiation
 (ALPN) over the QUIC transport; see {{?RFC7301}} and {{Section 8.1 of
 QUIC-TLS}}. It has Core importance level.
 
-QUIC endpoints are configured with a list of supported ALPN identifiers. Clients send the list in a TLS ClientHello, and servers match against their list. On success, a single ALPN identifier is chosen and sent back in a TLS ServerHello. If no match is found, the connection is closed.
+QUIC endpoints are configured with a list of supported ALPN identifiers. During
+the TLS handshake, the client sends its list, and the server chooses one
+identifier from both lists and sends it back. If no match is found, the
+connection is closed.
 
-ALPN identifiers are byte sequences that may be presentable as UTF-8.
-The `ALPNIdentifier` type supports either format. Implementations SHOULD log at
-least one format, but MAY log both or none.
+ALPN identifiers are byte sequences, which are often valid UTF-8. The
+`ALPNIdentifier` type can hold either form: `byte_value` holds the raw bytes,
+and `string_value` holds the identifier as text. Implementations SHOULD log at
+least one form and MAY log both.
 
 ~~~ cddl
 QUICALPNInformation = {
@@ -627,17 +631,12 @@ ALPNIdentifier = {
 ~~~
 {: #quic-alpninformation-def title="QUICALPNInformation definition"}
 
-Intended use:
+A client usually logs this event twice: first with `client_alpns` when it
+offers its list, then with `chosen_alpn` when it learns the server's choice. It
+can instead log a single event with both fields once it learns the choice.
 
-- When sending an initial, the client logs this event with `client_alpns` set
-- When receiving an initial with a supported alpn, the server logs this event
-  with `server_alpns` set, `client_alpns` equalling the client-provided list,
-  and chosen_alpn to the value it will send back to the client.
-- When receiving an initial with an alpn, the client logs this event with
-  `chosen_alpn` to the received value.
-- Alternatively, a client can choose to not log the first event, but wait for
-  the receipt of the server initial to log this event with both `client_alpns`
-  and `chosen_alpn` set.
+A server logs this event once, after it chooses, with `client_alpns`,
+`server_alpns`, and `chosen_alpn`.
 
 ## parameters_set {#quic-parametersset}
 
