@@ -2323,11 +2323,11 @@ PathResponseFrame = {
 An endpoint that receives unknown error codes can record it in the error_code
 field using the numerical value without variable-length integer encoding.
 
-When the connection is closed due a connection-level error, the
-`trigger_frame_type` field can be used to log the frame that triggered the
-error. For known frame types, the appropriate string value is used in the error field. For
-unknown frame types, the error field has the value "unknown" and the numerical
-value without variable-length integer encoding can be logged in error_code.
+The `trigger_frame_type` field logs the Frame Type field, which only the
+transport variant of CONNECTION_CLOSE (type 0x1c) carries; see {{Section 19.19
+of QUIC-TRANSPORT}}. A known frame type is logged as its frame type string,
+such as "stream". An unknown frame type is logged as the numerical value
+without variable-length integer encoding.
 
 The CONNECTION_CLOSE reason phrase is a byte sequence. It is likely that this
 sequence is presentable as UTF-8, in which case it can be logged in the `reason`
