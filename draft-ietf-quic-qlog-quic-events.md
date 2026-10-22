@@ -536,8 +536,8 @@ abandoned.
 ## mtu_updated {#quic-mtuupdated}
 
 The `mtu_updated` event indicates that the estimated Path MTU was updated. This
-happens as part of the Path MTU discovery process. It has Extra importance
-level.
+happens as part of Path MTU discovery; see {{Section 14 of QUIC-TRANSPORT}}. It
+has Extra importance level.
 
 ~~~ cddl
 QUICMTUUpdated = {
