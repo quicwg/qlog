@@ -305,34 +305,33 @@ addresses or ports. All fields of TupleEndpointInfo
 
 ## connection_closed {#quic-connectionclosed}
 
-The `connection_closed` event is used for logging when a connection was closed,
-typically when an error or timeout occurred. It has Base importance level.
+The `connection_closed` event is emitted when a connection closes, typically
+because of an error or a timeout. It has Base importance level.
 
-Note that this event has overlap with the `connection_state_updated` event, as
-well as the CONNECTION_CLOSE frame. However, in practice, when analyzing large
-deployments, it can be useful to have a single event representing a
-`connection_closed` event, which also includes an additional reason field to
-provide more information. Furthermore, it is useful to log closures due to
-timeouts or explicit application actions (such as racing multiple connections
-and aborting the slowest), which are difficult to reflect using the other
-options.
+This event overlaps with the `connection_state_updated` event and the
+CONNECTION_CLOSE frame. However, when analyzing large deployments, it can be
+useful to have a single event for each closure, with a `reason` field for more
+detail. This event can also log closures due to timeouts or explicit
+application actions, such as racing several connections and aborting the
+slowest, which the other events cannot easily capture.
 
-The `connection_closed` event is intended to be logged either when the local
-endpoint silently discards the connection due to an idle timeout, when a
-CONNECTION_CLOSE frame is sent (the connection enters the 'closing' state on the
-sender side), when a CONNECTION_CLOSE frame is received (the connection enters
-the 'draining' state on the receiver side) or when a Stateless Reset packet is
-received (the connection is discarded at the receiver side).
-Connectivity-related updates after this point (e.g., exiting a 'closing' or
-'draining' state), should be logged using the `connection_state_updated` event
-instead.
+The `connection_closed` event is logged when the local endpoint does one of the
+following; see {{Section 10 of QUIC-TRANSPORT}}:
 
-In QUIC there are two main connection-closing error categories: connection and
-application errors. They have well-defined error codes and semantics. Next to
-these however, there can be internal errors that occur that may or may not get
-mapped to the official error codes in implementation-specific ways. As such,
-multiple error codes can be set on the same event to reflect this, and more
-fine-grained internal error codes can be reflected in the internal_code field.
+* silently discards the connection after an idle timeout;
+* sends a CONNECTION_CLOSE frame, and enters the closing state;
+* receives a CONNECTION_CLOSE frame, and enters the draining state; or
+* receives a Stateless Reset, and enters the draining state.
+
+Later changes, such as leaving the closing or draining state, are logged with
+the `connection_state_updated` event.
+
+QUIC has two kinds of connection error, transport errors and application
+errors, each with defined codes and semantics; see {{Section 20 of
+QUIC-TRANSPORT}}. An implementation can also have internal errors, which it
+might or might not map to these codes. So this event can carry two levels of
+error: `connection_error` or `application_error` for the QUIC error, and
+`internal_code` for a more specific internal error.
 
 If the error code does not map to a known error string, the connection_error or
 application_error value of "unknown" type can be used and the raw value captured
@@ -369,10 +368,9 @@ QUICConnectionClosed = {
 ~~~
 {: #quic-connectionclosed-def title="QUICConnectionClosed definition"}
 
-Loggers SHOULD use the most descriptive trigger for a `connection_closed` event
-that they are able to deduce. This is often clear at the peer closing the
-connection (and sending the CONNECTION_CLOSE), but can sometimes be more opaque
-at the receiving end.
+Implementations SHOULD use the most descriptive `trigger` value that they can
+determine. This is often clear at the endpoint that closes the connection, but
+can be less clear at the endpoint that receives the CONNECTION_CLOSE frame.
 
 
 ## connection_id_updated {#quic-connectionidupdated}
