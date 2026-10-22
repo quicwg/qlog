@@ -283,11 +283,10 @@ addresses or ports.
 
 ## connection_started {#quic-connectionstarted}
 
-The `connection_started` event is used for both attempting (client-perspective)
-and accepting (server-perspective) new connections. Note that while there is
-overlap with the `connection_state_updated` event, this is a separate event
-in order to capture additional data that can be useful to log. It has Base
-importance level.
+The `connection_started` event is emitted when a client attempts a new
+connection, or when a server accepts one. It overlaps with the
+`connection_state_updated` event, but it also logs the local and remote
+endpoint information. It has Base importance level.
 
 ~~~ cddl
 QUICConnectionStarted = {
@@ -299,8 +298,10 @@ QUICConnectionStarted = {
 ~~~
 {: #quic-connectionstarted-def title="QUICConnectionStarted definition"}
 
-Some QUIC stacks do not handle sockets directly and are thus unable to log
-IP and/or port information.
+Some QUIC stacks do not handle sockets directly, so they cannot log IP
+addresses or ports. All fields of TupleEndpointInfo
+({{tupleendpointinfo-def}}) are optional, so such a stack can log `local` and
+`remote` with only the fields it knows, such as `connection_ids`.
 
 ## connection_closed {#quic-connectionclosed}
 
