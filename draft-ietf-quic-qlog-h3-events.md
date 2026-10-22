@@ -278,8 +278,8 @@ HTTP3ParametersRestored = {
 
 ## stream_type_set {#h3-streamtypeset}
 
-The `stream_type_set` event conveys when a HTTP/3 stream type becomes known; see
-{{Sections 6.1 and 6.2 of RFC9114}}. It has Base importance level.
+The `stream_type_set` event is emitted when the type of an HTTP/3 stream becomes
+known; see {{Sections 6.1 and 6.2 of RFC9114}}. It has Base importance level.
 
 Client bidirectional streams always have a stream_type value of "request".
 Server bidirectional streams have no defined use, although extensions could
