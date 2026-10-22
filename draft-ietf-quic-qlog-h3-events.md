@@ -208,7 +208,7 @@ The `parameters_set` event contains HTTP/3 and QPACK-level settings, mostly
 those received from the HTTP/3 SETTINGS frame. It has Base importance level.
 
 All these parameters are typically set once and never change. However, they
-might be set at different times during the connection, therefore a qlog can have
+might be set at different times during the connection, so a trace can contain
 multiple instances of `parameters_set` with different fields set.
 
 The `initiator` field is "local" for settings that this endpoint sent, and
