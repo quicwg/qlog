@@ -555,10 +555,10 @@ For example, the HTTP field section
 would be represented in a JSON serialization as:
 
 ~~~
-headers: [
+"headers": [
   {
     "name": ":path",
-    "value": "/"
+    "value": "/index.html"
   },
   {
     "name": ":method",
