@@ -354,10 +354,10 @@ HTTP3PriorityUpdated = {
 
 ## frame_created {#h3-framecreated}
 
-The `frame_created` event is emitted when the HTTP/3 framing actually happens.
-It has Core importance level.
+The `frame_created` event is emitted when an HTTP/3 frame is created. It has
+Core importance level.
 
-This event does not necessarily coincide with HTTP/3 data getting passed to the
+This event does not necessarily coincide with HTTP/3 data being passed to the
 QUIC layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 
 ~~~ cddl
@@ -372,12 +372,11 @@ HTTP3FrameCreated = {
 
 ## frame_parsed {#h3-frameparsed}
 
-The `frame_parsed` event is emitted when the HTTP/3 frame is parsed. It has Core
+The `frame_parsed` event is emitted when an HTTP/3 frame is parsed. It has Core
 importance level.
 
-This event is not necessarily the same as when the HTTP/3 data is actually
-received on the QUIC layer. For that, see the `stream_data_moved` event in
-{{QLOG-QUIC}}.
+This event does not necessarily coincide with HTTP/3 data being passed from the
+QUIC layer. For that, see the `stream_data_moved` event in {{QLOG-QUIC}}.
 
 ~~~ cddl
 HTTP3FrameParsed = {
@@ -399,7 +398,7 @@ Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
 defined by the concrete protocol using HTTP datagrams. The HTTP3DatagramCreated event
 can be extended through the $$http3-datagramcreated-extension socket to support logging of such information.
 
-This event does not necessarily coincide with the HTTP/3 Datagram getting passed
+This event does not necessarily coincide with the HTTP/3 Datagram being passed
 to the QUIC layer. For that, see the `datagram_data_moved` event in
 {{QLOG-QUIC}}.
 
@@ -422,8 +421,8 @@ Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
 defined by the concrete protocol using HTTP datagrams. The HTTP3DatagramParsed event
 can be extended through the $$http3-datagramparsed-extension socket to support logging of such information.
 
-This event is not necessarily the same as when the HTTP/3 Datagram is actually
-received on the QUIC layer. For that, see the `datagram_data_moved` event in
+This event does not necessarily coincide with the HTTP/3 Datagram being passed
+from the QUIC layer. For that, see the `datagram_data_moved` event in
 {{QLOG-QUIC}}.
 
 ~~~ cddl
