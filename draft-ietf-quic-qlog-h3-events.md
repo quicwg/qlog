@@ -324,12 +324,10 @@ The `priority_updated` event is emitted when the priority of a request stream or
 push stream is initialized or updated through mechanisms defined in
 {{PRIORITIZATION}}. It has Base importance level.
 
-There can be several reasons why a `priority_updated` occurs, and why a
-particular value was chosen. For example, the priority can be updated through
-signals received from client and/or server (e.g., in HTTP/3 HEADERS or
-PRIORITY_UPDATE frames) or it can be changed or overridden due to local
-policies. The `trigger` and `reason` fields can be used to optionally
-capture such details.
+There can be several reasons why a `priority_updated` event occurs, and why a
+particular value was chosen. For example, the priority can follow signals from
+the client or server (see {{PRIORITIZATION}}), or local policy can change or
+override it. The `trigger` and `reason` fields can capture these details.
 
 ~~~ cddl
 HTTP3PriorityUpdated = {
