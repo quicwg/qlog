@@ -412,19 +412,18 @@ QUICSpinBitUpdated = {
 
 ## connection_state_updated {#quic-connectionstateupdated}
 
-The `connection_state_updated` event is used to track progress through QUIC's
-complex handshake and connection close procedures. It has Base importance
-level.
+The `connection_state_updated` event is emitted when the connection changes
+state, to track progress through the QUIC handshake and connection close. It
+has Base importance level.
 
-{{!QUIC-TRANSPORT}} does not contain an exhaustive flow diagram with possible
-connection states nor their transitions (though some are explicitly mentioned,
-like the 'closing' and 'draining' states). As such, this document
-**non-exhaustively** defines those states that are most likely to be useful for
-debugging QUIC connections.
+{{QUIC-TRANSPORT}} does not define a complete set of connection states or their
+transitions, though it names some, such as the closing and draining states.
+This document defines the states most likely to be useful for debugging QUIC
+connections; the list is not exhaustive.
 
-QUIC implementations SHOULD mainly log the simplified BaseConnectionStates,
-adding the more fine-grained GranularConnectionStates when more in-depth
-debugging is required. Tools SHOULD be able to deal with both types equally.
+QUIC implementations SHOULD log the BaseConnectionStates, and can add the
+GranularConnectionStates when more in-depth debugging is required. Tools
+SHOULD handle both kinds equally.
 
 ~~~ cddl
 QUICConnectionStateUpdated = {
@@ -470,7 +469,7 @@ GranularConnectionStates =
     ; CONNECTION_CLOSE sent
     "closing" /
 
-    ; CONNECTION_CLOSE received
+    ; CONNECTION_CLOSE or Stateless Reset received
     "draining" /
 
     ; draining or closing period done, connection state discarded
@@ -480,14 +479,13 @@ $ConnectionState /= BaseConnectionStates / GranularConnectionStates
 ~~~
 {: #quic-connectionstateupdated-def title="QUICConnectionStateUpdated definition"}
 
-The `connection_state_updated` event has some overlap with the
-`connection_closed` and `connection_started` events, and the handling of various
-frames (for example in a `packet_received` event). Still, it can be useful to
-log these logical state transitions separately, especially if they map to an
-internal implementation state machine, to explicitly track progress. As such,
-implementations are allowed to use other ConnectionState values that adhere more
-closely to their internal logic. Tools SHOULD be able to deal with these custom
-states in a similar way to the pre-defined states in this document.
+The `connection_state_updated` event overlaps with the `connection_closed` and
+`connection_started` events, and with the frames logged in events such as
+`packet_received`. Still, it can be useful to log state transitions separately,
+especially if they map to an internal state machine. Implementations can
+therefore use other ConnectionState values that match their internal logic.
+Tools SHOULD handle these custom states in a similar way to the states defined
+in this document.
 
 ## tuple_assigned {#quic-tupleassigned}
 
