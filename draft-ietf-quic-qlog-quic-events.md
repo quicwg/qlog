@@ -252,8 +252,8 @@ $ProtocolEventData /= QuicEventData
 extension"}
 
 The concrete QUIC event types are further defined below, their type identifier
-is the heading name. The subdivisions in sections on Connectivity, Security,
-Transport and Recovery are purely for readability.
+is the heading name. The subdivisions in sections on Connectivity, Transport,
+Security, and Recovery are purely for readability.
 
 # Connectivity events {#conn-ev}
 
