@@ -257,8 +257,8 @@ Transport and Recovery are purely for readability.
 
 ## server_listening {#quic-serverlistening}
 
-Emitted when the server starts accepting connections. It has Extra importance
-level.
+The `server_listening` event is emitted when the server starts accepting
+connections. It has Extra importance level.
 
 ~~~ cddl
 QUICServerListening = {
@@ -267,8 +267,8 @@ QUICServerListening = {
     ? ip_v6: IPAddress
     ? port_v6: uint16
 
-    ; the server will always answer client initials with a retry
-    ; (no 1-RTT connection setups by choice)
+    ; the server will always answer client Initial packets with a Retry
+    ; packet (no 1-RTT connection setups by choice)
     ? retry_required: bool
 
     * $$quic-serverlistening-extension
@@ -276,8 +276,8 @@ QUICServerListening = {
 ~~~
 {: #quic-serverlistening-def title="QUICServerListening definition"}
 
-Some QUIC stacks do not handle sockets directly and are thus unable to log
-IP and/or port information.
+Some QUIC stacks do not handle sockets directly, so they cannot log IP
+addresses or ports.
 
 ## connection_started {#quic-connectionstarted}
 
