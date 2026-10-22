@@ -89,11 +89,11 @@ contain the server-side trace of the connection with ODCID abcd1234.
 
 ## Raw packet and frame information
 
-QUIC packets always include an AEAD authentication tag at the end. In general,
-the length of the AEAD tag depends on the TLS cipher suite, although all cipher
-suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
-lengths in fields of type RawInfo (as defined in {{Section 10 of QLOG-MAIN}}) related to QUIC
-packets, the AEAD tag is regarded as a trailer with a fixed size of 16 bytes.
+Protected QUIC packets (Initial, 0-RTT, Handshake, and 1-RTT) end with an AEAD
+authentication tag. Every cipher suite that QUIC version 1 can use has a
+16-byte tag; see {{Section 5.3 of QUIC-TLS}}. When calculating the lengths in
+RawInfo fields ({{Section 10 of QLOG-MAIN}}) for these packets, the tag is
+treated as a 16-byte trailer.
 
 ## Events not belonging to a single connection {#handling-unknown-connections}
 
