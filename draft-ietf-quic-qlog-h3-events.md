@@ -184,20 +184,20 @@ $ProtocolEventData /= HTTP3EventData
 {: #h3-events-def title="HTTP3EventData definition and ProtocolEventData
 extension"}
 
-HTTP events are logged when a certain condition happens at the application
-layer, and there isn't always a one to one mapping between HTTP and QUIC events.
-The exchange of data between the HTTP and QUIC layer is logged via the
-"stream_data_moved" and "datagram_data_moved" events in {{QLOG-QUIC}}.
+HTTP/3 events describe what happens at the HTTP/3 layer, and they don't always
+map one-to-one to QUIC events. Data exchanged between the HTTP/3 and QUIC
+layers is logged with the `stream_data_moved` and `datagram_data_moved` events
+in {{QLOG-QUIC}}.
 
 HTTP/3 frames are transmitted on QUIC streams, which allows them to span
 multiple QUIC packets. Some implementations might send a single large frame,
 rather than a sequence of smaller frames, in order to amortize frame header
-overhead. HTTP/3 frame headers are represented by the frame_created
-({{h3-framecreated}}) and frame_parsed ({{h3-frameparsed}}) events. Subsequent
-frame payload data transfer is indicated by stream_data_moved events.
-Furthermore, stream_data_moved events can appear before frame_parsed events
-because implementations need to read data from a stream in order to parse the
-frame header.
+overhead. HTTP/3 frame headers are represented by the `frame_created`
+({{h3-framecreated}}) and `frame_parsed` ({{h3-frameparsed}}) events.
+Subsequent frame payload data transfer is indicated by `stream_data_moved`
+events. Furthermore, `stream_data_moved` events can appear before
+`frame_parsed` events because implementations need to read data from a stream
+in order to parse the frame header.
 
 The concrete HTTP/3 event types are further defined below, their type identifier
 is the heading name.
