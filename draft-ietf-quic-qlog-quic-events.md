@@ -373,16 +373,15 @@ can be less clear at the endpoint that receives the CONNECTION_CLOSE frame.
 
 ## connection_id_updated {#quic-connectionidupdated}
 
-The `connection_id_updated` event is emitted when either party updates their
-current Connection ID. As this typically happens only sparingly over the course
-of a connection, using this event is more efficient than logging the observed
-CID with each and every `packet_sent` or `packet_received` events. It has Base
-importance level.
+The `connection_id_updated` event is emitted when either endpoint updates its
+current connection ID. This typically happens rarely during a connection, so
+logging this event is more efficient than logging the connection ID in every
+`packet_sent` or `packet_received` event. It has Base importance level.
 
-The `connection_id_updated` event is viewed from the perspective of the endpoint
-applying the new ID. As such, when the endpoint receives a new connection ID
-from the peer, the initiator field will be "remote". When the endpoint updates its
-own connection ID, the initiator field will be "local".
+The `connection_id_updated` event is viewed from the perspective of the
+endpoint applying the new ID. When the endpoint receives a new connection ID
+from the peer, the `initiator` field is "remote". When the endpoint updates its
+own connection ID, the `initiator` field is "local".
 
 ~~~ cddl
 QUICConnectionIDUpdated = {
