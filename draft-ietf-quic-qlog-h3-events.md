@@ -394,7 +394,7 @@ HTTP3FrameParsed = {
 ## datagram_created {#h3-datagramcreated}
 
 The `datagram_created` event is emitted when an HTTP/3 Datagram ({{Section 2.1
-of !RFC9297}}) is created. It has Base importance level.
+of DGRAM-AND-CAPSULE}}) is created. It has Base importance level.
 
 Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
 defined by the concrete protocol using HTTP datagrams. The HTTP3DatagramCreated event
@@ -417,7 +417,7 @@ HTTP3DatagramCreated = {
 ## datagram_parsed {#h3-datagramparsed}
 
 The `datagram_parsed` event is emitted when an HTTP/3 Datagram ({{Section 2.1 of
-!RFC9297}}) is parsed. It has Base importance level.
+DGRAM-AND-CAPSULE}}) is parsed. It has Base importance level.
 
 Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
 defined by the concrete protocol using HTTP datagrams. The HTTP3DatagramParsed event
