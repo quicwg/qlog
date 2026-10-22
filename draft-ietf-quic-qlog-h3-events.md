@@ -212,9 +212,8 @@ All these parameters are typically set once and never change. However, they
 might be set at different times during the connection, therefore a qlog can have
 multiple instances of `parameters_set` with different fields set.
 
-The "initiator" field reflects how Settings are exchanged on a connection. Sent
-settings have the value "local" and received settings have the value
-"received".
+The `initiator` field is "local" for settings that this endpoint sent, and
+"remote" for settings that it received.
 
 ~~~ cddl
 HTTP3ParametersSet = {
