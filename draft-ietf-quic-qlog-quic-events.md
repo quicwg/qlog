@@ -398,10 +398,10 @@ QUICConnectionIDUpdated = {
 
 ## spin_bit_updated {#quic-spinbitupdated}
 
-The `spin_bit_updated` event conveys information about the QUIC latency spin
-bit; see {{Section 17.4 of QUIC-TRANSPORT}}. The event is emitted when the spin
-bit changes value, it SHOULD NOT be emitted if the spin bit is set without
-changing its value. It has Base importance level.
+The `spin_bit_updated` event is emitted when the value of the QUIC latency spin
+bit changes; see {{Section 17.4 of QUIC-TRANSPORT}}. It SHOULD NOT be emitted
+when the spin bit is set to the value it already has. It has Base importance
+level.
 
 ~~~ cddl
 QUICSpinBitUpdated = {
