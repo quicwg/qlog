@@ -506,7 +506,7 @@ HTTP3ExtensionFrames = HTTP3PriorityUpdateFrame /
 
 $HTTP3Frame /= HTTP3BaseFrames / HTTP3ExtensionFrames
 ~~~
-{: #h3baseframe-def title="HTTP3BaseFrames definition"}
+{: #h3baseframe-def title="HTTP3BaseFrames and HTTP3ExtensionFrames definition"}
 
 ### HTTP3DataFrame
 
