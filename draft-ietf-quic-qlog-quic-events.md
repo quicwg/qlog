@@ -646,35 +646,34 @@ Intended use:
 
 ## parameters_set {#quic-parametersset}
 
-The `parameters_set` event groups settings from several different sources
-(transport parameters, TLS ciphers, etc.) into a single event. This is done to
-minimize the amount of events and to decouple conceptual setting impacts from
-their underlying mechanism for easier high-level reasoning. The event has Core
-importance level.
+The `parameters_set` event groups settings from several sources, such as
+transport parameters and the TLS cipher suite, into a single event. This keeps
+the number of events low, and lets a reader reason about what the settings do
+without needing to know which mechanism set each one. It has Core importance
+level.
 
-Most of these settings are typically set once and never change. However, they
-are usually set at different times during the connection, so there will
-regularly be several instances of this event with different fields set.
+Most of these settings are set once and never change. However, they are often
+set at different times during the connection, so a trace can contain several
+`parameters_set` events with different fields set.
 
-Note that some settings have two variations (one set locally, one requested by
-the remote peer). This is reflected in the `initiator` field. As such, this
-field MUST be correct for all settings included in a single event instance. If the
-settings from two sides are required, they MUST be logged as two separate event
-instances. If the local peer decides to change its behavior based on remote
-peer's settings, a new event type can be used to reflect the outcome.
+Some settings have two values: one set by the local endpoint, and one requested
+by the peer. The `initiator` field says which side the settings in an event
+come from, so it MUST be correct for every setting in that event. Local and
+remote settings MUST be logged in separate events. If the local endpoint
+changes its behavior based on the peer's settings, the outcome can be logged
+with a new event type, or with fields added through
+`$$quic-parametersset-extension`; see {{Section 8.2 of QLOG-MAIN}}.
 
-By default, each setting is assumed to either be absent (has an `undefined`
-value) or have its default value (if it exists) at the start of the connection.
-Subsequently, each setting's value in a `parameters_set` event supersedes the
-previous value of that parameter if present. If a setting does not appear in a
-given `parameters_set` event, its value is unchanged.
+Each setting starts the connection with its default value, or with no value if
+it has no default. A `parameters_set` event that includes a setting replaces
+its previous value; settings that the event omits keep their values.
 
-Implementations are not required to recognize, process or support every
-setting/parameter received in all situations. For example, QUIC implementations
-MUST discard transport parameters that they do not understand {{Section 7.4.2 of
-QUIC-TRANSPORT}}. The `unknown_parameters` field can be used to log the raw
-values of any unknown parameters (e.g., GREASE, private extensions, peer-side
-experimentation).
+Implementations are not required to recognize, process, or support every
+parameter that they receive. For example, QUIC implementations ignore
+transport parameters that they do not support; see {{Section 7.4.2 of
+QUIC-TRANSPORT}}. The `unknown_parameters` field can log the raw values of such
+parameters, for example reserved (GREASE) parameters, private extensions, or
+experiments.
 
 In the case of connection resumption and 0-RTT, some of the server's parameters
 are stored up-front at the client and used for the initial connection startup.
