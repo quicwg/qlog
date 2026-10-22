@@ -72,9 +72,8 @@ containing concrete events for the core QUIC protocol (see
 The event namespace with identifier `quic` is defined; see {{schema-def}}. In
 this namespace multiple events derive from the qlog abstract Event class
 ({{Section 7 of QLOG-MAIN}}), each extending the "data" field and defining their
-"name" field values and semantics. Some event data fields use complex data
-types. These are represented as enums or re-usable definitions, which are
-grouped together on the bottom of this document for clarity.
+"name" field values and semantics. The data types that the events use are
+defined in {{quic-data-types}}.
 
 ## Use of group IDs
 
@@ -1761,7 +1760,7 @@ ECNState =
 {: #quic-ecnstateupdated-def title="QUICECNStateUpdated definition"}
 
 
-# QUIC data type definitions
+# QUIC data type definitions {#quic-data-types}
 
 ## QuicVersion
 
