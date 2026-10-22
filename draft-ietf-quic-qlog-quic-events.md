@@ -77,14 +77,15 @@ defined in {{quic-data-types}}.
 
 ## Use of group IDs
 
-When the qlog `group_id` field is used, it is recommended to use QUIC's Original
-Destination Connection ID (ODCID, the CID chosen by the client when first
-contacting the server), as this is the only value that does not change over the
-course of the connection and can be used to link more advanced QUIC packets (e.g.,
-Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
-used as the qlog filename or file identifier, potentially suffixed by the
-vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
-trace of the connection with ODCID abcd1234).
+QUIC's Original Destination Connection ID (ODCID) can be used as the value of
+the qlog `group_id` field. The ODCID is the connection ID that the client
+chooses for its first Initial packet. It stays the same for the whole
+connection, unlike the connection IDs that endpoints use, which can change. It
+can also link packets such as Retry and Version Negotiation to the connection.
+
+The ODCID can also be used as the qlog filename or file identifier, optionally
+suffixed by the vantage point type. For example, abcd1234_server.qlog would
+contain the server-side trace of the connection with ODCID abcd1234.
 
 ## Raw packet and frame information
 
