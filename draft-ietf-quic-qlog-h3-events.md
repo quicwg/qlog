@@ -130,9 +130,9 @@ The event and data structure definitions in this document are expressed
 in the Concise Data Definition Language {{!CDDL=RFC8610}} and its
 extensions described in {{Section 1.2 of QLOG-MAIN}}.
 
-The following fields from {{QLOG-MAIN}} are imported and used: name, namespace,
-type, data, group_id, RawInfo, and time-related
-fields.
+This document uses the following from {{QLOG-MAIN}}: the event namespace and
+event type concepts; the name, data, group_id, and time-related fields; and the
+RawInfo type.
 
 Events are defined with an importance level as described in {{Section 8.3 of
 QLOG-MAIN}}.
