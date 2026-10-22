@@ -82,10 +82,9 @@ this namespace multiple events derive from the qlog abstract Event class
 ({{Section 7 of QLOG-MAIN}}), each extending the "data" field and defining
 their "name" field values and semantics.
 
-{{h3-events}} summarizes the name value of each event type that is defined in
-this specification. Some event data fields use complex data types. These are
-represented as enums or re-usable definitions, which are grouped together on the
-bottom of this document for clarity.
+{{h3-events}} summarizes the name value of each event type in the `http3`
+namespace. The data types that the events use are defined in {{h3-data-types}}
+and {{http-data-types}}.
 
 | Name value                   | Importance |  Definition |
 |:-----------------------------|:-----------|:------------|
@@ -462,7 +461,7 @@ HTTP3PushDecision = "claimed" /
 ~~~
 {: #h3-pushresolved-def title="HTTP3PushResolved definition"}
 
-# HTTP/3 Data Type Definitions
+# HTTP/3 Data Type Definitions {#h3-data-types}
 
 The following data type definitions can be used in HTTP/3 events.
 
@@ -850,7 +849,7 @@ HTTPCapsuleParsed = {
 ~~~
 {: #http-capsuleparsed-def title="HTTPCapsuleParsed definition"}
 
-# HTTP Data Type Definitions
+# HTTP Data Type Definitions {#http-data-types}
 
 The following data type definitions can be used in HTTP events.
 
