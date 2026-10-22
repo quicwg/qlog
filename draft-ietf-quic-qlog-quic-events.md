@@ -491,18 +491,16 @@ in this document.
 
 ## tuple_assigned {#quic-tupleassigned}
 
-This event is used to associate a single TupleID's value with other parameters
-that describe a unique network tuple. It has Base importance level.
+The `tuple_assigned` event associates a TupleID with the details of a network
+tuple, such as its IP addresses, ports, and connection IDs. It has Base
+importance level.
 
-As described in {{Section 7.2 of QLOG-MAIN}}, each qlog event can be linked to a single network
-tuple by means of the top-level "tuple" field, whose value is a TupleID. However,
-since it can be cumbersome to encode additional tuple metadata (such as IP
-addresses or Connection IDs) directly into the TupleID, this event allows such an
-association to happen separately. As such, TupleIDs can be short and unique, and
-can even be updated to be associated with new metadata as the connection's state
+As described in {{Section 7.2 of QLOG-MAIN}}, each qlog event can be linked to
+a single network tuple by its top-level `tuple` field, whose value is a
+TupleID. Encoding tuple details, such as IP addresses or connection IDs, into
+the TupleID itself can be cumbersome. This event records them separately, so
+TupleIDs can stay short, and their details can be updated as the connection
 evolves.
-
-Definition:
 
 ~~~ cddl
 QUICTupleAssigned = {
@@ -519,25 +517,23 @@ QUICTupleAssigned = {
 ~~~
 {: #quic-tupleassigned-def title="QUICTupleAssigned definition"}
 
-Choosing the different `tuple_id` values is left up to the implementation. Some
-options include using a uniquely incrementing integer, using the (first)
-Destination Connection ID associated with a tuple (or its sequence number), or
-using (a hash of) the two endpoint IP addresses.
+Implementations choose their own `tuple_id` values. For example, a TupleID can
+be an incrementing integer, the first Destination Connection ID associated with
+the tuple (or its sequence number), or the two endpoint IP addresses or a hash
+of them.
 
-It is important to note that the empty string ("") is a valid TupleID and that
-it is the default assigned to events that do not explicitly set a "tuple" field.
-Put differently, the initial tuple of a QUIC connection on which the handshake
-occurs (see also {{quic-connectionstarted}}) is implicitly associated with the
-TupleID with value "". Associating metadata with this default tuple is possible by
-logging the QUICTupleAssigned event with a value of "" for the `tuple_id` field.
+The empty string ("") is a valid TupleID, and it is the default for events that
+do not set the `tuple` field. So the initial tuple of a QUIC connection, on
+which the handshake occurs (see {{quic-connectionstarted}}), is implicitly
+associated with the TupleID "". Details for this default tuple can be logged
+with a `tuple_assigned` event whose `tuple_id` is "".
 
-As the usage of TupleIDs and their metadata can evolve over time, multiple
-QUICTupleAssigned events can be emitted for each unique TupleID. The latest
-event contains the most up-to-date information for that TupleID. As such, the
-first time a TupleID is seen in a QUICTupleAssigned event, it is an indication
-that the TupleID is created. Subsequent occurrences indicate the TupleID is
-updated, while a final occurrence with both `tuple_local` and `tuple_remote`
-fields omitted implicitly indicates the TupleID has been abandoned.
+Because a tuple's details can change during the connection, a TupleID can
+appear in several `tuple_assigned` events, and the latest one holds its current
+details. The first `tuple_assigned` event for a TupleID indicates that the
+TupleID was created, and later ones indicate updates. An event with both
+`tuple_local` and `tuple_remote` omitted indicates that the TupleID was
+abandoned.
 
 ## mtu_updated {#quic-mtuupdated}
 
