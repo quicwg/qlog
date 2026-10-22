@@ -762,8 +762,8 @@ HTTP3ApplicationError = "http_no_error" /
 ~~~
 {: #h3-applicationerror-def title="HTTP3ApplicationError definition"}
 
-The HTTP3ApplicationError extends the general $ApplicationError
-definition in the qlog QUIC document, see {{QLOG-QUIC}}.
+HTTP3ApplicationError extends the `$ApplicationError` type socket defined in
+{{QLOG-QUIC}}.
 
 ~~~ cddl
 ; ensure HTTP errors are properly validated in QUIC events as well
