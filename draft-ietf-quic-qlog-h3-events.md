@@ -816,9 +816,9 @@ is the heading name.
 The `capsule_created` event is emitted when a Capsule is created (see
 {{Section 3 of DGRAM-AND-CAPSULE}}). It has Core importance level.
 
-This event does not necessarily coincide with data getting passed to the
+This event does not necessarily coincide with data being passed to the
 transport layer. In HTTP/3, capsules are sent inside DATA frames, so the
-frame_created event would be logged separately.
+`frame_created` event can be logged separately.
 
 ~~~ cddl
 HTTPCapsuleCreated = {
@@ -836,9 +836,9 @@ HTTPCapsuleCreated = {
 The `capsule_parsed` event is emitted when a Capsule is parsed (see
 {{Section 3 of DGRAM-AND-CAPSULE}}). It has Core importance level.
 
-This event is not necessarily the same as when the data is actually received on
-the transport layer. In HTTP/3, capsules are received inside DATA frames, so the
-frame_parsed event would be logged separately.
+This event does not necessarily coincide with data being passed from the
+transport layer. In HTTP/3, capsules are received inside DATA frames, so the
+`frame_parsed` event can be logged separately.
 
 ~~~ cddl
 HTTPCapsuleParsed = {
