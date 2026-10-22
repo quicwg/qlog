@@ -118,7 +118,7 @@ setups.
 If used without QUIC events, it is recommended that the implementation assign a
 globally unique identifier to each HTTP/3 connection. This ID can then be used as
 the value of the qlog "group_id" field, as well as the qlog filename or file
-identifier, potentially suffixed by the vantagepoint type (For example,
+identifier, potentially suffixed by the vantage point type (for example,
 abcd1234_server.qlog would contain the server-side trace of the connection with
 GUID abcd1234).
 
