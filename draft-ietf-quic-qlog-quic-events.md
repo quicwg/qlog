@@ -95,24 +95,25 @@ authentication tag. Every cipher suite that QUIC version 1 can use has a
 RawInfo fields ({{Section 10 of QLOG-MAIN}}) for these packets, the tag is
 treated as a 16-byte trailer.
 
-## Events not belonging to a single connection {#handling-unknown-connections}
+## Events without a known connection {#handling-unknown-connections}
 
-A single qlog event trace is typically associated with a single QUIC connection.
-However, for several types of events (for example, a {{quic-packetdropped}}
-event with trigger value of `connection_unknown`), it can be impossible to tie
-them to a specific QUIC connection, especially on the server.
+A qlog trace is typically associated with a single QUIC connection. However,
+some events cannot be tied to a specific connection, especially on the server.
+For example, a `packet_dropped` event ({{quic-packetdropped}}) with the trigger
+`connection_unknown` is for a packet that matches no known connection.
 
-There are various ways to handle these events, each making certain tradeoffs
-between file size overhead, flexibility, ease of use, or ease of
-implementation. Some options include:
+There are various ways to handle these events, each with tradeoffs between file
+size overhead, flexibility, ease of use, and ease of implementation. Some
+options include:
 
-* Log them in a separate endpoint-wide trace (or use a special `group_id` value)
+* Log them in a separate endpoint-wide trace, or use a special `group_id` value,
   not associated with a single connection.
 * Log them in the most recently used trace.
-* Use additional heuristics for connection identification (for example use the
-  four-tuple in addition to the Connection ID).
-* Buffer events until they can be assigned to a connection (for example for
-  version negotiation and retry events).
+* Use additional heuristics to identify the connection, for example the
+  four-tuple in addition to the connection ID.
+* Buffer events until they can be assigned to a connection, for example events
+  about the Version Negotiation and Retry packets that a server sends before it
+  creates connection state.
 
 ## Notational Conventions
 
