@@ -960,9 +960,9 @@ packet number space that most packets in a typical QUIC connection use.
 
 ## udp_datagrams_sent {#quic-udpdatagramssent}
 
-The `udp_datagrams_sent` event indicates when one or more UDP-level datagrams are
-passed to the underlying network socket. This is useful for determining how QUIC
-packet buffers are drained to the OS. The event has Extra importance level.
+The `udp_datagrams_sent` event indicates that one or more UDP datagrams were
+passed to the network socket. It can show how QUIC packet buffers are drained
+to the operating system. It has Extra importance level.
 
 ~~~ cddl
 QUICUDPDatagramsSent = {
@@ -986,16 +986,16 @@ QUICUDPDatagramsSent = {
 ~~~
 {: #quic-udpdatagramssent-def title="QUICUDPDatagramsSent definition"}
 
-Since QUIC implementations rarely control UDP logic directly, the raw data
-excludes UDP-level headers in all RawInfo fields.
+The RawInfo fields exclude UDP headers, because QUIC implementations do not
+always handle UDP directly.
 
 The `datagram_payload_checksums` field is described in {{packet-coalescing}}.
 
 ## udp_datagrams_received {#quic-udpdatagramsreceived}
 
-When one or more UDP-level datagrams are received from the socket. This is
-useful for determining how datagrams are passed to the user space stack from the
-OS. The event has Extra importance level.
+The `udp_datagrams_received` event indicates that one or more UDP datagrams
+were received from the network socket. It can show how the operating system
+passes datagrams to the user-space stack. It has Extra importance level.
 
 ~~~ cddl
 QUICUDPDatagramsReceived = {
@@ -1023,10 +1023,11 @@ The `datagram_payload_checksums` field is described in {{packet-coalescing}}.
 
 ## udp_datagram_dropped {#quic-udpdatagramdropped}
 
-When a UDP-level datagram is dropped. This is typically done if it does not
-contain a valid QUIC packet. If it does, but the QUIC packet is dropped for
-other reasons, the `packet_dropped` event ({{quic-packetdropped}}) should be
-used instead. The event has Extra importance level.
+The `udp_datagram_dropped` event indicates that a UDP datagram was dropped,
+typically because it does not contain a valid QUIC packet. If the datagram
+contains a valid QUIC packet that is dropped for another reason, the
+`packet_dropped` event ({{quic-packetdropped}}) is used instead. It has Extra
+importance level.
 
 ~~~ cddl
 QUICUDPDatagramDropped = {
