@@ -1358,22 +1358,22 @@ QUICDatagramDataBlockedUpdated = {
 
 ## migration_state_updated {#quic-migrationstateupdated}
 
-Use to provide additional information when attempting (client-side) connection
-migration. While most details of the QUIC connection migration process can be
-inferred by observing the PATH_CHALLENGE and PATH_RESPONSE frames, in
-combination with the QUICTupleAssigned event, it can be useful to explicitly log
-the progression of the migration and potentially made decisions in a single
-location/event. The event has Extra importance level.
+The `migration_state_updated` event logs the progress of a connection migration
+by a client; see {{Section 9 of QUIC-TRANSPORT}}. It has Extra importance level.
 
-Generally speaking, connection migration goes through two phases: a probing
-phase (which is not always needed/present), and a migration phase (which can be
-abandoned upon error).
+Most details of a migration can be inferred from PATH_CHALLENGE and
+PATH_RESPONSE frames, together with `tuple_assigned` events. However, it can
+be useful to log the progress of the migration, and any decisions made, in a
+single event.
 
-Implementations that log per-path information in a QUICMigrationStateUpdated,
-SHOULD also emit QUICTupleAssigned events, to serve as a ground-truth source of
-information.
+The MigrationState values follow the steps in {{Section 9 of QUIC-TRANSPORT}}:
+the `probing_*` values cover probing a new path ({{Section 9.1 of
+QUIC-TRANSPORT}}), and the `migration_*` values cover migrating the connection
+({{Section 9.2 of QUIC-TRANSPORT}}).
 
-Definition:
+Implementations that log per-path information in `migration_state_updated`
+events SHOULD also emit `tuple_assigned` events, to serve as the ground truth
+for tuple information.
 
 ~~~ cddl
 QUICMigrationStateUpdated = {
