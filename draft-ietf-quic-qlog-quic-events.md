@@ -1929,22 +1929,21 @@ $TokenType /= "retry" /
 ~~~
 {: #token-def title="Token definition"}
 
-The token carried in an Initial packet can either be a retry token from a Retry
-packet, or one originally provided by the server in a NEW_TOKEN frame used when
-resuming a connection (e.g., for address validation purposes). Retry and
-resumption tokens typically contain encoded metadata to check the token's
-validity when it is used, but this metadata and its format is implementation
-specific. For that, `Token` includes a general-purpose `details` field.
+The token carried in an Initial packet is either a token from a Retry packet,
+or one that the server provided earlier in a NEW_TOKEN frame, for address
+validation in a later connection; see {{Section 8.1.3 of QUIC-TRANSPORT}}.
+Both kinds typically encode metadata that the server uses to check the token,
+but the metadata and its format are implementation-specific. The `details`
+field can log that metadata.
 
-## Stateless Reset Token
+## StatelessResetToken
 
 ~~~ cddl
 StatelessResetToken = hexstring .size 16
 ~~~
-{: #stateless-reset-token-def title="Stateless Reset Token definition"}
+{: #stateless-reset-token-def title="StatelessResetToken definition"}
 
-The stateless reset token is carried in stateless reset packets, in transport
-parameters and in NEW_CONNECTION_ID frames.
+The stateless reset token is defined in {{Section 10.3 of QUIC-TRANSPORT}}.
 
 ## KeyType
 
