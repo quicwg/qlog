@@ -284,9 +284,9 @@ Server bidirectional streams have no defined use, although extensions could
 change that.
 
 Unidirectional streams in either direction begin with a variable-length
-integer type. Where the type is not known, the stream_type value of "unknown"
-type can be used and the value captured in the `stream_type_bytes` field; a
-numerical value without variable-length integer encoding.
+integer type. If the type has no known string, `stream_type` can be "unknown",
+and `stream_type_bytes` then holds the numerical value without variable-length
+integer encoding.
 
 The generic `$HTTP3StreamType` is defined here as a CDDL "type socket" extension
 point. It can be extended to support additional HTTP/3 stream types.
@@ -603,9 +603,8 @@ field, which corresponds to Setting Name as defined (or as would be defined if
 registered) in the "HTTP/3 Settings" registry maintained at
 <https://www.iana.org/assignments/http3-parameters>.
 
-An endpoint that receives unknown settings is not able to log a specific name.
-Instead, the name value of "unknown" can be used and the value captured in the
-`name_bytes` field; a numerical value without variable-length integer encoding.
+If a setting has no known name, `name` can be "unknown", and `name_bytes` then
+holds the numerical value without variable-length integer encoding.
 
 ~~~ cddl
 HTTP3SettingsFrame = {
@@ -671,8 +670,8 @@ HTTP3MaxPushIDFrame = {
 
 ### HTTP3ReservedFrame
 
-The `frame_type_bytes` field is the numerical value without variable-length
-integer encoding.
+The `frame_type_bytes` field holds the numerical value of the frame type
+without variable-length integer encoding.
 
 ~~~ cddl
 HTTP3ReservedFrame = {
@@ -685,8 +684,8 @@ HTTP3ReservedFrame = {
 
 ### HTTP3UnknownFrame
 
-The `frame_type_bytes` field is the numerical value without variable-length
-integer encoding.
+The `frame_type_bytes` field holds the numerical value of the frame type
+without variable-length integer encoding.
 
 ~~~ cddl
 HTTP3UnknownFrame = {
@@ -888,8 +887,8 @@ HTTPCapsuleDatagram = {
 
 ### HTTPCapsuleUnknown
 
-The `capsule_type_value` field is the numerical value without variable-length
-integer encoding.
+The `capsule_type_value` field holds the numerical value of the capsule type
+without variable-length integer encoding.
 
 ~~~ cddl
 HTTPCapsuleUnknown = {

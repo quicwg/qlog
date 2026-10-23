@@ -334,10 +334,9 @@ might or might not map to these codes. So this event can carry two levels of
 error: `connection_error` or `application_error` for the QUIC error, and
 `internal_code` for a more specific internal error.
 
-If the error code does not map to a known error string, the connection_error or
-application_error value of "unknown" type can be used and the raw value captured
-in the `error_code` field; a numerical value without variable-length integer
-encoding.
+If an error code has no known string, `connection_error` or `application_error`
+can be "unknown", and `error_code` then holds the numerical value without
+variable-length integer encoding.
 
 ~~~ cddl
 QUICConnectionClosed = {
@@ -1845,9 +1844,8 @@ $PacketNumberSpace /= "initial" /
 
 ## PacketHeader
 
-If the `packet_type` numerical value does not map to a known `$PacketType`
-string, the `packet_type` value of "unknown" can be used and the raw value
-captured in the `packet_type_bytes` field; a numerical value without
+If a packet type has no known `$PacketType` string, `packet_type` can be
+"unknown", and `packet_type_bytes` then holds the numerical value without
 variable-length integer encoding.
 
 PacketHeader omits the fixed bit and the reserved bits because QUIC version 1
@@ -2079,9 +2077,9 @@ instead, and tools MUST handle both forms.
 
 ### ResetStreamFrame
 
-If the error numerical value does not map to a known ApplicationError string,
-the error value of "unknown" can be used and the raw value captured in the
-error_code field; a numerical value without variable-length integer encoding.
+If an error code has no known ApplicationError string, `error` can be
+"unknown", and `error_code` then holds the numerical value without
+variable-length integer encoding.
 
 ~~~ cddl
 ResetStreamFrame = {
@@ -2103,9 +2101,9 @@ ResetStreamFrame = {
 
 The RESET_STREAM_AT frame is defined in {{Section 4 of RESET-STREAM-AT}}.
 
-If the error numerical value does not map to a known ApplicationError string,
-the error value of "unknown" can be used and the raw value captured in the
-error_code field; a numerical value without variable-length integer encoding.
+If an error code has no known ApplicationError string, `error` can be
+"unknown", and `error_code` then holds the numerical value without
+variable-length integer encoding.
 
 ~~~ cddl
 ResetStreamAtFrame = {
@@ -2130,9 +2128,9 @@ ResetStreamAtFrame = {
 
 ### StopSendingFrame
 
-If the error numerical value does not map to a known ApplicationError string,
-the error value of "unknown" can be used and the raw value captured in the
-error_code field; a numerical value without variable-length integer encoding.
+If an error code has no known ApplicationError string, `error` can be
+"unknown", and `error_code` then holds the numerical value without
+variable-length integer encoding.
 
 ~~~ cddl
 StopSendingFrame = {
@@ -2317,8 +2315,9 @@ PathResponseFrame = {
 
 ### ConnectionCloseFrame
 
-An endpoint that receives unknown error codes can record it in the error_code
-field using the numerical value without variable-length integer encoding.
+If an error code has no known string, `error` can be "unknown", and
+`error_code` then holds the numerical value without variable-length integer
+encoding.
 
 The `trigger_frame_type` field logs the Frame Type field, which only the
 transport variant of CONNECTION_CLOSE (type 0x1c) carries; see {{Section 19.19
@@ -2368,8 +2367,8 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
-The `frame_type_bytes` field is the numerical value without variable-length
-integer encoding.
+The `frame_type_bytes` field holds the numerical value of the frame type
+without variable-length integer encoding.
 
 ~~~ cddl
 UnknownFrame = {
