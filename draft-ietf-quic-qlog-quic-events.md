@@ -2471,8 +2471,8 @@ field.
 
 # Security and Privacy Considerations
 
-The security and privacy considerations discussed in {{Section 14 of QLOG-MAIN}} apply to this
-document as well.
+The security and privacy considerations discussed in {{Section 14 of
+QLOG-MAIN}} apply to this document as well.
 
 # IANA Considerations
 
