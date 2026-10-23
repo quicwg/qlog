@@ -1043,26 +1043,20 @@ QUICUDPDatagramDropped = {
 
 ## stream_state_updated {#quic-streamstateupdated}
 
-The `stream_state_updated` event is emitted whenever the internal state of a
-QUIC stream is updated; see {{Section 3 of QUIC-TRANSPORT}}. Most of this can be
-inferred from several types of frames going over the wire, but it's often easier
-to have explicit signals for these state changes. The event has Base importance
-level.
+The `stream_state_updated` event is emitted when the state of a QUIC stream
+changes; see {{Section 3 of QUIC-TRANSPORT}}. Most state changes can be
+inferred from the frames that are sent and received, but an explicit event can
+be easier to use. It has Base importance level.
 
-While QUIC stream IDs encode the type of stream, (see {{Section 2.1 of
-QUIC-TRANSPORT}}), the optional `stream_type` field can be used to provide a
-more-accessible form of the information.
+QUIC stream IDs encode whether a stream is unidirectional or bidirectional
+(see {{Section 2.1 of QUIC-TRANSPORT}}), but the optional `stream_type` field
+states it directly.
 
-{{Section 3 of QUIC-TRANSPORT}} describes streams in terms of their send and
-receive components, with a state machine for each. The `stream_side` field is
-used to indicate which side's state is updated in the logged event. In case both
-sides of the stream change state at the same time (for example both become
-`closed`), two separate events with different `stream_side` fields SHOULD be
-logged.
-
-In cases where it is useful to know which side of the connection initiated a
-state change (for example, closed due to either RESET_STREAM or STOP_SENDING),
-this can be reflected using the `trigger` field.
+{{Section 3 of QUIC-TRANSPORT}} describes the sending and receiving parts of a
+stream, each with its own state machine. The `stream_side` field says which
+part's state changed. If both parts change state at the same time, for example
+when both become `closed`, two events with different `stream_side` values
+SHOULD be logged.
 
 ~~~ cddl
 StreamType = "unidirectional" /
@@ -1112,9 +1106,13 @@ $StreamState /= BaseStreamStates / GranularStreamStates
 ~~~
 {: #quic-streamstateupdated-def title="QUICStreamStateUpdated definition"}
 
-QUIC implementations SHOULD mainly log the simplified BaseStreamStates instead
-of the more fine-grained GranularStreamStates. These latter ones are mainly for
-more in-depth debugging. Tools SHOULD be able to deal with both types equally.
+QUIC implementations SHOULD log the BaseStreamStates, and can add the
+GranularStreamStates when more in-depth debugging is required. Tools SHOULD
+handle both kinds equally.
+
+The `trigger` field can show which endpoint initiated a state change, for
+example when a stream is closed because of a RESET_STREAM or STOP_SENDING
+frame.
 
 ## Frame-related events
 
