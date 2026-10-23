@@ -2395,7 +2395,7 @@ DatagramFrame = {
 ~~~
 {: #datagramframe-def title="DatagramFrame definition"}
 
-### TransportError
+## TransportError
 
 The generic `$TransportError` is defined here as a CDDL "type socket" extension
 point. It can be extended to support additional transport errors.
@@ -2424,7 +2424,7 @@ $TransportError /= "no_error" /
 ~~~
 {: #transporterror-def title="TransportError definition"}
 
-### ApplicationError
+## ApplicationError
 
 Application errors are defined by the application protocol that runs on top of
 QUIC, such as HTTP/3, so this document cannot list them. `$ApplicationError` is
@@ -2439,7 +2439,7 @@ $ApplicationError /= "unknown"
 Event schemas for application protocols MUST add their error strings by
 extending the `$ApplicationError` socket; see {{Section 8.2 of QLOG-MAIN}}.
 
-### CryptoError
+## CryptoError
 
 RFC 9001 converts a TLS alert into a QUIC error code by adding the alert's
 AlertDescription value to 0x0100; see {{Section 4.8 of QUIC-TLS}}.
