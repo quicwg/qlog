@@ -1404,25 +1404,25 @@ MigrationState =
 The `timer_updated` event is emitted when a timer changes state. It has Extra
 importance level.
 
-The three main event types are:
+The `event_type` field takes one of three values:
 
-* set: the timer is set with a delta timeout for when it will trigger next
-* expired: when the timer effectively expires after the delta timeout
-* cancelled: when a timer is cancelled
+* `set`: the timer is set, and `delta` gives the time until it triggers
+* `expired`: the timer expired
+* `cancelled`: the timer was cancelled
 
-In order to indicate an active timer's timeout update, a new `set` event is used.
+An update to an active timer's timeout is logged as a new `set` event.
 
-QUICTimerUpdated events with the `timer_type` set to `ack` or `pto` indicate
-changes to the individual timeouts defined by RFC 9002: the threshold loss
-detection timeout (see {{Section 6.1.2 of QUIC-RECOVERY}}) and the probe timeout
-(see {{Section 6.2 of QUIC-RECOVERY}}). Those set to `loss_timeout` represent
-changes to the multi-modal loss detection timer (see {{Appendix A.8 of
-QUIC-RECOVERY}}).
+The recovery timer types correspond to timers in {{Section 6 of
+QUIC-RECOVERY}} and {{Appendix A.8 of QUIC-RECOVERY}}:
 
-The QUIC protocol conceptually employs a variety of timers, but their usage can
-be implementation-dependent. Implementers can add additional fields to this
-event if needed via `$$quic-timerupdated-extension` or specify other/additional
-timer types via `$TimerType`.
+* `ack`: the time threshold loss detection timeout
+* `pto`: the probe timeout
+* `loss_timeout`: the single, multi-modal loss detection timer that covers
+  both
+
+QUIC uses a variety of timers, and how they are used can depend on the
+implementation. Implementers can add fields to this event through
+`$$quic-timerupdated-extension`, or add timer types through `$TimerType`.
 
 ~~~ cddl
 ; a non-exhaustive list of typically employed timers
