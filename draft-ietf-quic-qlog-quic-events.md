@@ -2459,13 +2459,15 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
 # Handling Packet Coalescing {#packet-coalescing}
 
-Multiple QUIC packets can be coalesced in a single UDP datagram, especially
-during the handshake (see {{Section 12.2 of QUIC-TRANSPORT}}). However, neither
-QUIC nor UDP themselves provide an explicit mechanism to track this behaviour.
-To make it possible for implementations to track coalescing across QUIC
-packet-level and UDP datagram-level qlog events, the optional
-`datagram_payload_checksum` field is defined. It carries a 32-bit CRC32c value that is
-calculated on the UDP user data payload as described in {{Section 11.3 of !RFC9868}}.
+Multiple QUIC packets can be coalesced into a single UDP datagram, especially
+during the handshake; see {{Section 12.2 of QUIC-TRANSPORT}}. Neither QUIC nor
+UDP provides a way to tell which packets shared a datagram.
+
+To let tools match QUIC packet events to UDP datagram events, the optional
+`datagram_payload_checksum` field carries a 32-bit CRC32c of the UDP payload,
+calculated as described in {{Section 11.3 of !RFC9868}}. The UDP datagram
+events carry one checksum per datagram, in their `datagram_payload_checksums`
+field.
 
 # Security and Privacy Considerations
 
