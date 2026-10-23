@@ -2326,11 +2326,11 @@ of QUIC-TRANSPORT}}. A known frame type is logged as its frame type string,
 such as "stream". An unknown frame type is logged as the numerical value
 without variable-length integer encoding.
 
-The CONNECTION_CLOSE reason phrase is a byte sequence. It is likely that this
-sequence is presentable as UTF-8, in which case it can be logged in the `reason`
-field. The `reason_bytes` field supports logging the raw bytes, which can be useful
-when the value is not UTF-8 or when an endpoint does not want to decode it.
-Implementations SHOULD log at least one format, but MAY log both or none.
+The reason phrase in a CONNECTION_CLOSE frame is a byte sequence, which RFC
+9000 recommends be UTF-8; see {{Section 19.19 of QUIC-TRANSPORT}}. The `reason`
+field holds the reason phrase as text, and `reason_bytes` holds the raw bytes,
+for example when the value is not UTF-8 or when an endpoint does not want to
+decode it. Implementations SHOULD log at least one form and MAY log both.
 
 ~~~ cddl
 ErrorSpace = "transport" /
