@@ -2149,7 +2149,7 @@ StopSendingFrame = {
 
 ### CryptoFrame
 
-The length field of the Crypto frame MUST be logged in the qlog `raw.length`
+The length field of the CRYPTO frame MUST be logged in the qlog `raw.length`
 field. The other sub-fields of the `raw` field are optional.
 
 ~~~ cddl
@@ -2174,7 +2174,7 @@ NewTokenFrame = {
 
 ### StreamFrame
 
-If the stream frame contains a length field, it MUST be logged in the qlog
+If the STREAM frame contains a length field, it MUST be logged in the qlog
 `raw.length` field. If it does not, the implementation MAY calculate the actual
 frame byte length itself and log that in `raw.length` if necessary.
 
