@@ -1294,6 +1294,8 @@ QUICConnectionDataBlockedUpdated = {
     new: $BlockedState
 
     ? reason: $BlockedReason
+
+    * $$quic-connectiondatablockedupdated-extension
 }
 
 $BlockedState /= "blocked" /
@@ -1323,6 +1325,8 @@ QUICStreamDataBlockedUpdated = {
     stream_id: uint64
 
     ? reason: $BlockedReason
+
+    * $$quic-streamdatablockedupdated-extension
 }
 ~~~
 {: #quic-streamdatablockedupdated-def title="QUICStreamDataBlockedUpdated definition"}
@@ -1338,6 +1342,8 @@ QUICDatagramDataBlockedUpdated = {
     new: $BlockedState
 
     ? reason: $BlockedReason
+
+    * $$quic-datagramdatablockedupdated-extension
 }
 ~~~
 {: #quic-datagramdatablockedupdated-def title="QUICDatagramDataBlockedUpdated definition"}
