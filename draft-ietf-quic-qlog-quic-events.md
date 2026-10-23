@@ -66,7 +66,8 @@ This document defines a qlog event schema ({{Section 8 of QLOG-MAIN}})
 containing concrete events for the core QUIC protocol (see
 {{!QUIC-TRANSPORT=RFC9000}}, {{!QUIC-RECOVERY=RFC9002}}, and
 {{!QUIC-TLS=RFC9001}}) and some of its extensions (see
-{{!QUIC-DATAGRAM=RFC9221}} and {{!GREASEBIT=RFC9287}}).
+{{!QUIC-DATAGRAM=RFC9221}}, {{!GREASEBIT=RFC9287}}, and
+{{!RESET-STREAM-AT=I-D.ietf-quic-reliable-stream-reset}}).
 
 
 The event namespace with identifier `quic` is defined; see {{schema-def}}. In
@@ -2098,6 +2099,8 @@ ResetStreamFrame = {
 {: #resetstreamframe-def title="ResetStreamFrame definition"}
 
 ### ResetStreamAtFrame
+
+The RESET_STREAM_AT frame is defined in {{Section 4 of RESET-STREAM-AT}}.
 
 If the error numerical value does not map to a known ApplicationError string,
 the error value of "unknown" can be used and the raw value captured in the
