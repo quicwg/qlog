@@ -1121,20 +1121,20 @@ While the `packet_sent` ({{quic-packetsent}}) and `packet_received`
 QUIC packet, some implementations might not be able or willing to include frame
 information at the moment either event is logged.
 
-In order to support logging frame-related operations independent of packets, the
-`frames_created` and `frames_parsed` events are defined.
+The `frames_created` and `frames_parsed` events log frames independently of
+packets.
 
-A qlog trace can contain both packet and frame-related events. However, it is
+A qlog trace can contain both packet- and frame-related events. However, it is
 RECOMMENDED that implementations avoid generating events with duplicate or
 redundant frame information, since doing so inflates the size of logs.
 
-Where an implementation logs both packet and frame-related events, the optional
-`packet_numbers` field in frame-related events can be used to explicitly link
-frames to packets. The field is an array, which supports using a single event
-for multiple frames related to multiple packets. To map between the two, the
-position and order of entries in the `frames` and `packet_numbers` is used. If
-the `packet_numbers` field is logged, each and every frame MUST have a
-corresponding packet number at the same index.
+Where an implementation logs both packet- and frame-related events, the
+optional `packet_numbers` field in frame-related events can be used to link
+frames to packets explicitly. The field is an array so that a single event can
+log frames that belong to different packets. The `frames` and `packet_numbers`
+arrays are mapped to each other by the position and order of their entries. If
+the `packet_numbers` field is logged, every frame MUST have a corresponding
+packet number at the same index.
 
 For example, an instance of the `frames_parsed` event that represents four
 STREAM frames received over two packets can be serialized as:
@@ -1145,7 +1145,7 @@ STREAM frames received over two packets can be serialized as:
   {"frame_type":"stream","stream_id":0,"offset":5,"raw":{"length":5}},
   {"frame_type":"stream","stream_id":1,"offset":0,"raw":{"length":9}},
   {"frame_type":"stream","stream_id":1,"offset":9,"raw":{"length":9}}
-  ],
+],
 "packet_numbers":[
   1,
   1,
@@ -1154,18 +1154,18 @@ STREAM frames received over two packets can be serialized as:
 ]
 ~~~
 
-Frame-related events omit information that is available in the `packet_received`
-or `packet_sent` event. For instance, the packet encryption level. For use
-cases that require such information, the packet events are preferable.
+Frame-related events omit information that is available in the
+`packet_received` or `packet_sent` event, such as the packet's encryption
+level. Use cases that need such information are better served by those events.
 
-Frame-related events make it possible to log, in extensions, information that is
-otherwise not available at the moment a packet event occurs. For instance, if
-frame processing was deferred for any reason.
+Extensions can use frame-related events to log information that is not
+available when a packet event is logged, for example because frame processing
+was deferred.
 
 ### frames_created {#quic-framescreated}
 
-The `frames_created` event indicates when a set of QUIC frames have been
-created. It has Extra importance level.
+The `frames_created` event indicates that a set of QUIC frames was created. It
+has Extra importance level.
 
 ~~~ cddl
 QUICFramesCreated = {
@@ -1180,8 +1180,8 @@ QUICFramesCreated = {
 
 ### frames_parsed {#quic-framesparsed}
 
-The `frames_parsed` event indicates when a set of QUIC frames have been parsed.
-It has Extra importance level.
+The `frames_parsed` event indicates that a set of QUIC frames was parsed. It has
+Extra importance level.
 
 ~~~ cddl
 QUICFramesParsed = {
