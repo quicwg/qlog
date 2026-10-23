@@ -830,39 +830,36 @@ Table of Contents
 
 5.3.  parameters_set
 
-   The parameters_set event groups settings from several different
-   sources (transport parameters, TLS ciphers, etc.) into a single
-   event.  This is done to minimize the amount of events and to decouple
-   conceptual setting impacts from their underlying mechanism for easier
-   high-level reasoning.  The event has Core importance level.
+   The parameters_set event groups settings from several sources, such
+   as transport parameters and the TLS cipher suite, into a single
+   event.  This keeps the number of events low, and lets a reader reason
+   about what the settings do without needing to know which mechanism
+   set each one.  It has Core importance level.
 
-   Most of these settings are typically set once and never change.
-   However, they are usually set at different times during the
-   connection, so there will regularly be several instances of this
-   event with different fields set.
+   Most of these settings are set once and never change.  However, they
+   are often set at different times during the connection, so a trace
+   can contain several parameters_set events with different fields set.
 
-   Note that some settings have two variations (one set locally, one
-   requested by the remote peer).  This is reflected in the initiator
-   field.  As such, this field MUST be correct for all settings included
-   in a single event instance.  If the settings from two sides are
-   required, they MUST be logged as two separate event instances.  If
-   the local peer decides to change its behavior based on remote peer's
-   settings, a new event type can be used to reflect the outcome.
+   Some settings have two values: one set by the local endpoint, and one
+   requested by the peer.  The initiator field says which side the
+   settings in an event come from, so it MUST be correct for every
+   setting in that event.  Local and remote settings MUST be logged in
+   separate events.  If the local endpoint changes its behavior based on
+   the peer's settings, the outcome can be logged with a new event type,
+   or with fields added through $$quic-parametersset-extension; see
+   Section 8.2 of [QLOG-MAIN].
 
-   By default, each setting is assumed to either be absent (has an
-   undefined value) or have its default value (if it exists) at the
-   start of the connection.  Subsequently, each setting's value in a
-   parameters_set event supersedes the previous value of that parameter
-   if present.  If a setting does not appear in a given parameters_set
-   event, its value is unchanged.
+   Each setting starts the connection with its default value, or with no
+   value if it has no default.  A parameters_set event that includes a
+   setting replaces its previous value; settings that the event omits
+   keep their values.
 
-   Implementations are not required to recognize, process or support
-   every setting/parameter received in all situations.  For example,
-   QUIC implementations MUST discard transport parameters that they do
-   not understand Section 7.4.2 of [QUIC-TRANSPORT].  The
-   unknown_parameters field can be used to log the raw values of any
-   unknown parameters (e.g., GREASE, private extensions, peer-side
-   experimentation).
+   Implementations are not required to recognize, process, or support
+   every parameter that they receive.  For example, QUIC implementations
+   ignore transport parameters that they do not support; see
+   Section 7.4.2 of [QUIC-TRANSPORT].  The unknown_parameters field can
+   log the raw values of such parameters, for example reserved (GREASE)
+   parameters, private extensions, or experiments.
 
    In the case of connection resumption and 0-RTT, some of the server's
    parameters are stored up-front at the client and used for the initial
@@ -974,7 +971,7 @@ Table of Contents
 
 5.5.  packet_sent
 
-   The packet_sent event indicates a QUIC-level packet was sent.  It has
+   The packet_sent event indicates that a QUIC packet was sent.  It has
    Core importance level.
 
    QUICPacketSent = {
@@ -1009,16 +1006,15 @@ Table of Contents
 
                     Figure 14: QUICPacketSent definition
 
-   The encryption_level and packet_number_space are not logged
-   explicitly: the header.packet_type specifies this by inference
-   (assuming correct implementation)
+   The encryption level and packet number space are not logged
+   explicitly, because header.packet_type implies them for the packet
+   types that have them.
 
-   The datagram_payload_checksum field is used to track packet
-   coalescing, see Section 9.
+   The datagram_payload_checksum field is described in Section 9.
 
 5.6.  packet_received
 
-   The packet_received event indicates a QUIC-level packet was received.
+   The packet_received event indicates that a QUIC packet was received.
    It has Core importance level.
 
    QUICPacketReceived = {
@@ -1044,21 +1040,16 @@ Table of Contents
 
                   Figure 15: QUICPacketReceived definition
 
-   The encryption_level and packet_number_space are not logged
-   explicitly: the header.packet_type specifies this by inference
-   (assuming correct implementation).
+   The encryption level and packet number space are not logged
+   explicitly, because header.packet_type implies them for the packet
+   types that have them.
 
-   The datagram_payload_checksum field is used to track packet
-   coalescing, see Section 9.
+   The datagram_payload_checksum field is described in Section 9.
 
 5.7.  packet_dropped
 
-   The packet_dropped event indicates a QUIC-level packet was dropped.
+   The packet_dropped event indicates that a QUIC packet was dropped.
    It has Base importance level.
-
-   The trigger field indicates a general reason category for dropping
-   the packet, while the details field can contain additional
-   implementation-specific information.
 
    QUICPacketDropped = {
 
@@ -1084,22 +1075,23 @@ Table of Contents
 
                   Figure 16: QUICPacketDropped definition
 
-   Some example situations for each of the trigger categories include:
+   The trigger field gives a general reason for dropping the packet, and
+   the details field can hold additional implementation-specific
+   information.  Some example situations for each trigger value include:
 
    *  internal_error: not initialized, out of memory
 
    *  rejected: limits reached, DDoS protection, unwilling to track more
-      paths, duplicate packet
+      paths
 
-   *  unsupported: unknown or unsupported version.  See also
-      Section 1.3.
+   *  unsupported: unknown or unsupported version
 
    *  invalid: packet parsing or validation error
 
    *  duplicate: duplicate packet
 
    *  connection_unknown: packet does not relate to a known connection
-      or Connection ID
+      or connection ID
 
    *  decryption_failure: decryption failed
 
@@ -1107,16 +1099,18 @@ Table of Contents
 
    *  general: situations not clearly covered in the other categories
 
-   The datagram_payload_checksum field is used to track packet
-   coalescing, see Section 9.
+   Packets dropped as unsupported or connection_unknown often cannot be
+   tied to a connection; see Section 1.3.
+
+   The datagram_payload_checksum field is described in Section 9.
 
 5.8.  packet_buffered
 
    The packet_buffered event is emitted when a packet is buffered
-   because it cannot be processed yet.  Typically, this is because the
-   packet cannot be parsed yet, and thus only the full packet contents
-   can be logged when it was parsed in a packet_received event.  The
-   event has Base importance level.
+   because it cannot be processed yet, for example because the keys to
+   decrypt it are not yet available.  Its full contents can be logged
+   later, in a packet_received event, once it is processed.  It has Base
+   importance level.
 
    QUICPacketBuffered = {
 
@@ -1138,21 +1132,20 @@ Table of Contents
 
                   Figure 17: QUICPacketBuffered definition
 
-   The datagram_payload_checksum field is used to track packet
-   coalescing, see Section 9.
+   The datagram_payload_checksum field is described in Section 9.
 
 5.9.  packets_acked
 
-   The packets_acked event is emitted when a (group of) sent packet(s)
-   is acknowledged by the remote peer _for the first time_. It has Extra
-   importance level.
+   The packets_acked event is emitted when one or more sent packets are
+   acknowledged by the peer for the first time.  It has Extra importance
+   level.
 
-   This information could also be deduced from the contents of received
-   ACK frames.  However, ACK frames require additional processing logic
-   to determine when a given packet is acknowledged for the first time,
-   as QUIC uses ACK ranges which can include repeated ACKs.
-   Additionally, this event can be used by implementations that do not
-   log frame contents.
+   Successive ACK frames can acknowledge the same packet, but this event
+   is emitted only for the first acknowledgment of each packet.  This
+   information can also be deduced from received ACK frames, though
+   finding the first acknowledgment needs extra processing.
+   Implementations that do not log frame contents can use this event
+   instead.
 
    QUICPacketsAcked = {
        ? packet_number_space: $PacketNumberSpace
@@ -1163,16 +1156,16 @@ Table of Contents
 
                    Figure 18: QUICPacketsAcked definition
 
-   If packet_number_space is omitted, it assumes the default value of
-   application_data, as this is by far the most prevalent packet number
-   space a typical QUIC connection will use.
+   If packet_number_space is omitted, its value is application_data, the
+   packet number space that most packets in a typical QUIC connection
+   use.
 
 5.10.  udp_datagrams_sent
 
-   The udp_datagrams_sent event indicates when one or more UDP-level
-   datagrams are passed to the underlying network socket.  This is
-   useful for determining how QUIC packet buffers are drained to the OS.
-   The event has Extra importance level.
+   The udp_datagrams_sent event indicates that one or more UDP datagrams
+   were passed to the network socket.  It can show how QUIC packet
+   buffers are drained to the operating system.  It has Extra importance
+   level.
 
    QUICUDPDatagramsSent = {
 
@@ -1195,17 +1188,17 @@ Table of Contents
 
                  Figure 19: QUICUDPDatagramsSent definition
 
-   Since QUIC implementations rarely control UDP logic directly, the raw
-   data excludes UDP-level headers in all RawInfo fields.
+   The RawInfo fields exclude UDP headers, because QUIC implementations
+   do not always handle UDP directly.
 
-   The datagram_payload_checksums field is used to track packet
-   coalescing, see Section 9.
+   The datagram_payload_checksums field is described in Section 9.
 
 5.11.  udp_datagrams_received
 
-   When one or more UDP-level datagrams are received from the socket.
-   This is useful for determining how datagrams are passed to the user
-   space stack from the OS.  The event has Extra importance level.
+   The udp_datagrams_received event indicates that one or more UDP
+   datagrams were received from the network socket.  It can show how the
+   operating system passes datagrams to the user-space stack.  It has
+   Extra importance level.
 
    QUICUDPDatagramsReceived = {
 
@@ -1228,16 +1221,15 @@ Table of Contents
 
                Figure 20: QUICUDPDatagramsReceived definition
 
-   The datagram_payload_checksums field is used to track packet
-   coalescing, see Section 9.
+   The datagram_payload_checksums field is described in Section 9.
 
 5.12.  udp_datagram_dropped
 
-   When a UDP-level datagram is dropped.  This is typically done if it
-   does not contain a valid QUIC packet.  If it does, but the QUIC
-   packet is dropped for other reasons, the packet_dropped event
-   (Section 5.7) should be used instead.  The event has Extra importance
-   level.
+   The udp_datagram_dropped event indicates that a UDP datagram was
+   dropped, typically because it does not contain a valid QUIC packet.
+   If the datagram contains a valid QUIC packet that is dropped for
+   another reason, the packet_dropped event (Section 5.7) is used
+   instead.  It has Extra importance level.
 
    QUICUDPDatagramDropped = {
 
