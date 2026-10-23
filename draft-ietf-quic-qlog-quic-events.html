@@ -3514,10 +3514,13 @@ QUICTimerUpdated = {
         <h3 id="name-key_updated">
 <a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-key_updated" class="section-name selfRef">key_updated</a>
         </h3>
-<p id="section-6.1-1">The <code>key_updated</code> event has Base importance level.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<p id="section-6.1-1">The <code>key_updated</code> event indicates that a key was installed or updated. It has
+Base importance level.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<p id="section-6.1-2">This happens when TLS provides new keys during the handshake, and at each 1-RTT
+key update; see <span><a href="https://rfc-editor.org/rfc/rfc9001#section-6" class="relref">Section 6</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>.<a href="#section-6.1-2" class="pilcrow">¶</a></p>
 <span id="name-quickeyupdated-definition"></span><div id="quic-keyupdated-def">
 <figure id="figure-32">
-          <div class="lang-cddl sourcecode" id="section-6.1-2.1">
+          <div class="lang-cddl sourcecode" id="section-6.1-3.1">
 <pre>
 QUICKeyUpdated = {
     key_type: $KeyType
@@ -3541,9 +3544,9 @@ QUICKeyUpdated = {
 <a href="#name-quickeyupdated-definition" class="selfRef">QUICKeyUpdated definition</a>
           </figcaption></figure>
 </div>
-<p id="section-6.1-3">Note that the key_phase is the full value of the key phase (as indicated by
-@M and @N in Figure 9 of <span>[<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>). The key phase bit used on
-the packet header is the least significant bit of the key phase.<a href="#section-6.1-3" class="pilcrow">¶</a></p>
+<p id="section-6.1-4">The <code>key_phase</code> field holds the full key phase, which identifies the
+generation of keys; it corresponds to @M and @N in Figure 9 of <span><a href="https://rfc-editor.org/rfc/rfc9001#section-6" class="relref">Section 6</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>. The Key Phase bit in the packet header is the least significant
+bit of this value.<a href="#section-6.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-keydiscarded">
@@ -3551,10 +3554,13 @@ the packet header is the least significant bit of the key phase.<a href="#sectio
         <h3 id="name-key_discarded">
 <a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-key_discarded" class="section-name selfRef">key_discarded</a>
         </h3>
-<p id="section-6.2-1">The <code>key_discarded</code> event has Base importance level.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-1">The <code>key_discarded</code> event indicates that a key was discarded. It has Base
+importance level.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">Keys are discarded, for example, when the connection moves to a new encryption
+level during the handshake, or after a key update; see <span><a href="https://rfc-editor.org/rfc/rfc9001#section-4.9" class="relref">Section 4.9</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
 <span id="name-quickeydiscarded-definition"></span><div id="quic-keydiscarded-def">
 <figure id="figure-33">
-          <div class="lang-cddl sourcecode" id="section-6.2-2.1">
+          <div class="lang-cddl sourcecode" id="section-6.2-3.1">
 <pre>
 QUICKeyDiscarded = {
     key_type: $KeyType
@@ -3586,10 +3592,13 @@ QUICKeyDiscarded = {
       <h2 id="name-recovery-events">
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-recovery-events" class="section-name selfRef">Recovery events</a>
       </h2>
-<p id="section-7-1">Most of the events in this category are kept generic to support different
-recovery approaches and various congestion control algorithms. Tool creators
-<span class="bcp14">SHOULD</span> make an effort to support and visualize even unknown data in these events
-(e.g., plot unknown congestion states by name on a timeline visualization).<a href="#section-7-1" class="pilcrow">¶</a></p>
+<p id="section-7-1">Most of the events in this section are kept generic to support different
+recovery approaches and congestion control algorithms. The <code>old</code>, <code>new</code>, and
+<code>trigger</code> fields of <code>congestion_state_updated</code>, for instance, are free text, so
+their values depend on the algorithm.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<p id="section-7-2">Tools that process these events <span class="bcp14">SHOULD</span> try to handle such values even when they
+don't recognize them. For example, a tool that plots congestion states on a
+timeline can label an unknown state with the value of the <code>new</code> field.<a href="#section-7-2" class="pilcrow">¶</a></p>
 <div id="quic-recoveryparametersset">
 <section id="section-7.1">
         <h3 id="name-recovery_parameters_set">
@@ -3598,9 +3607,9 @@ recovery approaches and various congestion control algorithms. Tool creators
 <p id="section-7.1-1">The <code>recovery_parameters_set</code> event groups initial parameters from both loss
 detection and congestion control into a single event. It has Base importance
 level.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
-<p id="section-7.1-2">All these settings are typically set once and never change. Implementations that
-do, for some reason, change these parameters during execution, <span class="bcp14">MAY</span> emit the
-<code>recovery_parameters_set</code> event more than once.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
+<p id="section-7.1-2">These parameters are typically set once and never change. Implementations that
+change them during the connection <span class="bcp14">MAY</span> emit the <code>recovery_parameters_set</code> event
+more than once.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
 <p id="section-7.1-3">The <code>reordering_threshold</code> field contains the packet threshold for loss detection,
 or <code>"disabled"</code> if packet-threshold loss detection is disabled.<a href="#section-7.1-3" class="pilcrow">¶</a></p>
 <span id="name-quicrecoveryparametersset-d"></span><div id="quic-recoveryparametersset-def">
@@ -3645,8 +3654,9 @@ QUICRecoveryParametersSet = {
 <a href="#name-quicrecoveryparametersset-d" class="selfRef">QUICRecoveryParametersSet definition</a>
           </figcaption></figure>
 </div>
-<p id="section-7.1-5">Additionally, this event can contain any number of unspecified fields to support
-different recovery approaches.<a href="#section-7.1-5" class="pilcrow">¶</a></p>
+<p id="section-7.1-5">Parameters that this document does not define, such as those of other loss
+detection and recovery algorithms, can be added through
+<code>$$quic-recoveryparametersset-extension</code>.<a href="#section-7.1-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-recoverymetricsupdated">
@@ -3654,13 +3664,13 @@ different recovery approaches.<a href="#section-7.1-5" class="pilcrow">¶</a></p
         <h3 id="name-recovery_metrics_updated">
 <a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-recovery_metrics_updated" class="section-name selfRef">recovery_metrics_updated</a>
         </h3>
-<p id="section-7.2-1">The <code>recovery_metrics_updated</code> event is emitted when one or more of the observable
-recovery metrics changes value. It has Core importance level.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
-<p id="section-7.2-2">This event <span class="bcp14">SHOULD</span> group all possible metric updates that happen at or around the
-same time in a single event (e.g., if <code>min_rtt</code> and <code>smoothed_rtt</code> change at the
-same time, they should be bundled in a single <code>recovery_metrics_updated</code> entry,
-rather than split out into two). Consequently, a <code>recovery_metrics_updated</code>
-event is only guaranteed to contain at least one of the listed metrics.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
+<p id="section-7.2-1">The <code>recovery_metrics_updated</code> event is emitted when one or more of the
+observable recovery metrics change value. It has Core importance level.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+<p id="section-7.2-2">Implementations <span class="bcp14">SHOULD</span> group all metric updates that happen at or around the
+same time into a single <code>recovery_metrics_updated</code> event. For example, if
+<code>min_rtt</code> and <code>smoothed_rtt</code> change at the same time, they are logged in one
+event, not two. Each event is only guaranteed to contain at least one of the
+listed metrics.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
 <span id="name-quicrecoverymetricsupdated-"></span><div id="quic-recoverymetricsupdated-def">
 <figure id="figure-35">
           <div class="lang-cddl sourcecode" id="section-7.2-3.1">
@@ -3698,13 +3708,13 @@ QUICRecoveryMetricsUpdated = {
 <a href="#name-quicrecoverymetricsupdated-" class="selfRef">QUICRecoveryMetricsUpdated definition</a>
           </figcaption></figure>
 </div>
-<p id="section-7.2-4">In order to make logging easier, implementations <span class="bcp14">MAY</span> log values even if they are
-the same as previously reported values (e.g., two subsequent
-QUICRecoveryMetricsUpdated entries can both report the exact same value for
-<code>min_rtt</code>). However, applications <span class="bcp14">SHOULD</span> try to log only actual updates to
-values.<a href="#section-7.2-4" class="pilcrow">¶</a></p>
-<p id="section-7.2-5">Additionally, the <code>recovery_metrics_updated</code> event can contain any number of
-unspecified fields to support different recovery approaches.<a href="#section-7.2-5" class="pilcrow">¶</a></p>
+<p id="section-7.2-4">To make logging easier, implementations <span class="bcp14">MAY</span> log values that are the same as
+previously reported values; for example, two consecutive
+<code>recovery_metrics_updated</code> events can report the same <code>min_rtt</code>. However,
+implementations <span class="bcp14">SHOULD</span> try to log only values that changed.<a href="#section-7.2-4" class="pilcrow">¶</a></p>
+<p id="section-7.2-5">Metrics that this document does not define, such as those of other loss
+detection and recovery algorithms, can be added through
+<code>$$quic-recoverymetricsupdated-extension</code>.<a href="#section-7.2-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-congestionstateupdated">

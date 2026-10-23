@@ -1662,7 +1662,11 @@ Table of Contents
 
 6.1.  key_updated
 
-   The key_updated event has Base importance level.
+   The key_updated event indicates that a key was installed or updated.
+   It has Base importance level.
+
+   This happens when TLS provides new keys during the handshake, and at
+   each 1-RTT key update; see Section 6 of [QUIC-TLS].
 
    QUICKeyUpdated = {
        key_type: $KeyType
@@ -1683,14 +1687,19 @@ Table of Contents
 
                     Figure 32: QUICKeyUpdated definition
 
-   Note that the key_phase is the full value of the key phase (as
-   indicated by @M and @N in Figure 9 of [QUIC-TLS]).  The key phase bit
-   used on the packet header is the least significant bit of the key
-   phase.
+   The key_phase field holds the full key phase, which identifies the
+   generation of keys; it corresponds to @M and @N in Figure 9 of
+   Section 6 of [QUIC-TLS].  The Key Phase bit in the packet header is
+   the least significant bit of this value.
 
 6.2.  key_discarded
 
-   The key_discarded event has Base importance level.
+   The key_discarded event indicates that a key was discarded.  It has
+   Base importance level.
+
+   Keys are discarded, for example, when the connection moves to a new
+   encryption level during the handshake, or after a key update; see
+   Section 4.9 of [QUIC-TLS].
 
    QUICKeyDiscarded = {
        key_type: $KeyType
@@ -1712,11 +1721,15 @@ Table of Contents
 
 7.  Recovery events
 
-   Most of the events in this category are kept generic to support
-   different recovery approaches and various congestion control
-   algorithms.  Tool creators SHOULD make an effort to support and
-   visualize even unknown data in these events (e.g., plot unknown
-   congestion states by name on a timeline visualization).
+   Most of the events in this section are kept generic to support
+   different recovery approaches and congestion control algorithms.  The
+   old, new, and trigger fields of congestion_state_updated, for
+   instance, are free text, so their values depend on the algorithm.
+
+   Tools that process these events SHOULD try to handle such values even
+   when they don't recognize them.  For example, a tool that plots
+   congestion states on a timeline can label an unknown state with the
+   value of the new field.
 
 7.1.  recovery_parameters_set
 
@@ -1724,10 +1737,9 @@ Table of Contents
    loss detection and congestion control into a single event.  It has
    Base importance level.
 
-   All these settings are typically set once and never change.
-   Implementations that do, for some reason, change these parameters
-   during execution, MAY emit the recovery_parameters_set event more
-   than once.
+   These parameters are typically set once and never change.
+   Implementations that change them during the connection MAY emit the
+   recovery_parameters_set event more than once.
 
    The reordering_threshold field contains the packet threshold for loss
    detection, or "disabled" if packet-threshold loss detection is
@@ -1768,21 +1780,21 @@ Table of Contents
 
               Figure 34: QUICRecoveryParametersSet definition
 
-   Additionally, this event can contain any number of unspecified fields
-   to support different recovery approaches.
+   Parameters that this document does not define, such as those of other
+   loss detection and recovery algorithms, can be added through $$quic-
+   recoveryparametersset-extension.
 
 7.2.  recovery_metrics_updated
 
    The recovery_metrics_updated event is emitted when one or more of the
-   observable recovery metrics changes value.  It has Core importance
+   observable recovery metrics change value.  It has Core importance
    level.
 
-   This event SHOULD group all possible metric updates that happen at or
-   around the same time in a single event (e.g., if min_rtt and
-   smoothed_rtt change at the same time, they should be bundled in a
-   single recovery_metrics_updated entry, rather than split out into
-   two).  Consequently, a recovery_metrics_updated event is only
-   guaranteed to contain at least one of the listed metrics.
+   Implementations SHOULD group all metric updates that happen at or
+   around the same time into a single recovery_metrics_updated event.
+   For example, if min_rtt and smoothed_rtt change at the same time,
+   they are logged in one event, not two.  Each event is only guaranteed
+   to contain at least one of the listed metrics.
 
    QUICRecoveryMetricsUpdated = {
 
@@ -1814,15 +1826,14 @@ Table of Contents
 
               Figure 35: QUICRecoveryMetricsUpdated definition
 
-   In order to make logging easier, implementations MAY log values even
-   if they are the same as previously reported values (e.g., two
-   subsequent QUICRecoveryMetricsUpdated entries can both report the
-   exact same value for min_rtt).  However, applications SHOULD try to
-   log only actual updates to values.
+   To make logging easier, implementations MAY log values that are the
+   same as previously reported values; for example, two consecutive
+   recovery_metrics_updated events can report the same min_rtt.
+   However, implementations SHOULD try to log only values that changed.
 
-   Additionally, the recovery_metrics_updated event can contain any
-   number of unspecified fields to support different recovery
-   approaches.
+   Metrics that this document does not define, such as those of other
+   loss detection and recovery algorithms, can be added through $$quic-
+   recoverymetricsupdated-extension.
 
 7.3.  congestion_state_updated
 
