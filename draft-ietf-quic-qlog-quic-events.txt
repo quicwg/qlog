@@ -434,8 +434,8 @@ Table of Contents
 
 4.1.  server_listening
 
-   Emitted when the server starts accepting connections.  It has Extra
-   importance level.
+   The server_listening event is emitted when the server starts
+   accepting connections.  It has Extra importance level.
 
    QUICServerListening = {
        ? ip_v4: IPAddress
@@ -443,8 +443,8 @@ Table of Contents
        ? ip_v6: IPAddress
        ? port_v6: uint16
 
-       ; the server will always answer client initials with a retry
-       ; (no 1-RTT connection setups by choice)
+       ; the server will always answer client Initial packets with a Retry
+       ; packet (no 1-RTT connection setups by choice)
        ? retry_required: bool
 
        * $$quic-serverlistening-extension
@@ -452,16 +452,15 @@ Table of Contents
 
                   Figure 2: QUICServerListening definition
 
-   Some QUIC stacks do not handle sockets directly and are thus unable
-   to log IP and/or port information.
+   Some QUIC stacks do not handle sockets directly, so they cannot log
+   IP addresses or ports.
 
 4.2.  connection_started
 
-   The connection_started event is used for both attempting (client-
-   perspective) and accepting (server-perspective) new connections.
-   Note that while there is overlap with the connection_state_updated
-   event, this is a separate event in order to capture additional data
-   that can be useful to log.  It has Base importance level.
+   The connection_started event is emitted when a client attempts a new
+   connection, or when a server accepts one.  It overlaps with the
+   connection_state_updated event, but it also logs the local and remote
+   endpoint information.  It has Base importance level.
 
    QUICConnectionStarted = {
        local: TupleEndpointInfo
@@ -472,43 +471,47 @@ Table of Contents
 
                  Figure 3: QUICConnectionStarted definition
 
-   Some QUIC stacks do not handle sockets directly and are thus unable
-   to log IP and/or port information.
+   Some QUIC stacks do not handle sockets directly, so they cannot log
+   IP addresses or ports.  All fields of TupleEndpointInfo (Figure 44)
+   are optional, so such a stack can log local and remote with only the
+   fields it knows, such as connection_ids.
 
 4.3.  connection_closed
 
-   The connection_closed event is used for logging when a connection was
-   closed, typically when an error or timeout occurred.  It has Base
-   importance level.
+   The connection_closed event is emitted when a connection closes,
+   typically because of an error or a timeout.  It has Base importance
+   level.
 
-   Note that this event has overlap with the connection_state_updated
-   event, as well as the CONNECTION_CLOSE frame.  However, in practice,
-   when analyzing large deployments, it can be useful to have a single
-   event representing a connection_closed event, which also includes an
-   additional reason field to provide more information.  Furthermore, it
-   is useful to log closures due to timeouts or explicit application
-   actions (such as racing multiple connections and aborting the
-   slowest), which are difficult to reflect using the other options.
+   This event overlaps with the connection_state_updated event and the
+   CONNECTION_CLOSE frame.  However, when analyzing large deployments,
+   it can be useful to have a single event for each closure, with a
+   reason field for more detail.  This event can also log closures due
+   to timeouts or explicit application actions, such as racing several
+   connections and aborting the slowest, which the other events cannot
+   easily capture.
 
-   The connection_closed event is intended to be logged either when the
-   local endpoint silently discards the connection due to an idle
-   timeout, when a CONNECTION_CLOSE frame is sent (the connection enters
-   the 'closing' state on the sender side), when a CONNECTION_CLOSE
-   frame is received (the connection enters the 'draining' state on the
-   receiver side) or when a Stateless Reset packet is received (the
-   connection is discarded at the receiver side).  Connectivity-related
-   updates after this point (e.g., exiting a 'closing' or 'draining'
-   state), should be logged using the connection_state_updated event
-   instead.
+   The connection_closed event is logged when the local endpoint does
+   one of the following; see Section 10 of [QUIC-TRANSPORT]:
 
-   In QUIC there are two main connection-closing error categories:
-   connection and application errors.  They have well-defined error
-   codes and semantics.  Next to these however, there can be internal
-   errors that occur that may or may not get mapped to the official
-   error codes in implementation-specific ways.  As such, multiple error
-   codes can be set on the same event to reflect this, and more fine-
-   grained internal error codes can be reflected in the internal_code
-   field.
+   *  silently discards the connection after an idle timeout;
+
+   *  sends a CONNECTION_CLOSE frame, and enters the closing state;
+
+   *  receives a CONNECTION_CLOSE frame, and enters the draining state;
+      or
+
+   *  receives a Stateless Reset, and enters the draining state.
+
+   Later changes, such as leaving the closing or draining state, are
+   logged with the connection_state_updated event.
+
+   QUIC has two kinds of connection error, transport errors and
+   application errors, each with defined codes and semantics; see
+   Section 20 of [QUIC-TRANSPORT].  An implementation can also have
+   internal errors, which it might or might not map to these codes.  So
+   this event can carry two levels of error: connection_error or
+   application_error for the QUIC error, and internal_code for a more
+   specific internal error.
 
    If the error code does not map to a known error string, the
    connection_error or application_error value of "unknown" type can be
@@ -544,25 +547,24 @@ Table of Contents
 
                  Figure 4: QUICConnectionClosed definition
 
-   Loggers SHOULD use the most descriptive trigger for a
-   connection_closed event that they are able to deduce.  This is often
-   clear at the peer closing the connection (and sending the
-   CONNECTION_CLOSE), but can sometimes be more opaque at the receiving
-   end.
+   Implementations SHOULD use the most descriptive trigger value that
+   they can determine.  This is often clear at the endpoint that closes
+   the connection, but can be less clear at the endpoint that receives
+   the CONNECTION_CLOSE frame.
 
 4.4.  connection_id_updated
 
-   The connection_id_updated event is emitted when either party updates
-   their current Connection ID.  As this typically happens only
-   sparingly over the course of a connection, using this event is more
-   efficient than logging the observed CID with each and every
-   packet_sent or packet_received events.  It has Base importance level.
+   The connection_id_updated event is emitted when either endpoint
+   updates its current connection ID.  This typically happens rarely
+   during a connection, so logging this event is more efficient than
+   logging the connection ID in every packet_sent or packet_received
+   event.  It has Base importance level.
 
    The connection_id_updated event is viewed from the perspective of the
-   endpoint applying the new ID.  As such, when the endpoint receives a
-   new connection ID from the peer, the initiator field will be
-   "remote".  When the endpoint updates its own connection ID, the
-   initiator field will be "local".
+   endpoint applying the new ID.  When the endpoint receives a new
+   connection ID from the peer, the initiator field is "remote".  When
+   the endpoint updates its own connection ID, the initiator field is
+   "local".
 
    QUICConnectionIDUpdated = {
        initiator: Initiator
@@ -576,10 +578,10 @@ Table of Contents
 
 4.5.  spin_bit_updated
 
-   The spin_bit_updated event conveys information about the QUIC latency
-   spin bit; see Section 17.4 of [QUIC-TRANSPORT].  The event is emitted
-   when the spin bit changes value, it SHOULD NOT be emitted if the spin
-   bit is set without changing its value.  It has Base importance level.
+   The spin_bit_updated event is emitted when the value of the QUIC
+   latency spin bit changes; see Section 17.4 of [QUIC-TRANSPORT].  It
+   SHOULD NOT be emitted when the spin bit is set to the value it
+   already has.  It has Base importance level.
 
    QUICSpinBitUpdated = {
        state: bool
@@ -591,20 +593,18 @@ Table of Contents
 
 4.6.  connection_state_updated
 
-   The connection_state_updated event is used to track progress through
-   QUIC's complex handshake and connection close procedures.  It has
-   Base importance level.
+   The connection_state_updated event is emitted when the connection
+   changes state, to track progress through the QUIC handshake and
+   connection close.  It has Base importance level.
 
-   [QUIC-TRANSPORT] does not contain an exhaustive flow diagram with
-   possible connection states nor their transitions (though some are
-   explicitly mentioned, like the 'closing' and 'draining' states).  As
-   such, this document *non-exhaustively* defines those states that are
-   most likely to be useful for debugging QUIC connections.
+   [QUIC-TRANSPORT] does not define a complete set of connection states
+   or their transitions, though it names some, such as the closing and
+   draining states.  This document defines the states most likely to be
+   useful for debugging QUIC connections; the list is not exhaustive.
 
-   QUIC implementations SHOULD mainly log the simplified
-   BaseConnectionStates, adding the more fine-grained
-   GranularConnectionStates when more in-depth debugging is required.
-   Tools SHOULD be able to deal with both types equally.
+   QUIC implementations SHOULD log the BaseConnectionStates, and can add
+   the GranularConnectionStates when more in-depth debugging is
+   required.  Tools SHOULD handle both kinds equally.
 
    QUICConnectionStateUpdated = {
        ? old: $ConnectionState
@@ -649,7 +649,7 @@ Table of Contents
        ; CONNECTION_CLOSE sent
        "closing" /
 
-       ; CONNECTION_CLOSE received
+       ; CONNECTION_CLOSE or Stateless Reset received
        "draining" /
 
        ; draining or closing period done, connection state discarded
@@ -659,32 +659,27 @@ Table of Contents
 
               Figure 7: QUICConnectionStateUpdated definition
 
-   The connection_state_updated event has some overlap with the
-   connection_closed and connection_started events, and the handling of
-   various frames (for example in a packet_received event).  Still, it
-   can be useful to log these logical state transitions separately,
-   especially if they map to an internal implementation state machine,
-   to explicitly track progress.  As such, implementations are allowed
-   to use other ConnectionState values that adhere more closely to their
-   internal logic.  Tools SHOULD be able to deal with these custom
-   states in a similar way to the pre-defined states in this document.
+   The connection_state_updated event overlaps with the
+   connection_closed and connection_started events, and with the frames
+   logged in events such as packet_received.  Still, it can be useful to
+   log state transitions separately, especially if they map to an
+   internal state machine.  Implementations can therefore use other
+   ConnectionState values that match their internal logic.  Tools SHOULD
+   handle these custom states in a similar way to the states defined in
+   this document.
 
 4.7.  tuple_assigned
 
-   This event is used to associate a single TupleID's value with other
-   parameters that describe a unique network tuple.  It has Base
-   importance level.
+   The tuple_assigned event associates a TupleID with the details of a
+   network tuple, such as its IP addresses, ports, and connection IDs.
+   It has Base importance level.
 
    As described in Section 7.2 of [QLOG-MAIN], each qlog event can be
-   linked to a single network tuple by means of the top-level "tuple"
-   field, whose value is a TupleID.  However, since it can be cumbersome
-   to encode additional tuple metadata (such as IP addresses or
-   Connection IDs) directly into the TupleID, this event allows such an
-   association to happen separately.  As such, TupleIDs can be short and
-   unique, and can even be updated to be associated with new metadata as
-   the connection's state evolves.
-
-   Definition:
+   linked to a single network tuple by its top-level tuple field, whose
+   value is a TupleID.  Encoding tuple details, such as IP addresses or
+   connection IDs, into the TupleID itself can be cumbersome.  This
+   event records them separately, so TupleIDs can stay short, and their
+   details can be updated as the connection evolves.
 
    QUICTupleAssigned = {
        tuple_id: TupleID
@@ -700,34 +695,29 @@ Table of Contents
 
                    Figure 8: QUICTupleAssigned definition
 
-   Choosing the different tuple_id values is left up to the
-   implementation.  Some options include using a uniquely incrementing
-   integer, using the (first) Destination Connection ID associated with
-   a tuple (or its sequence number), or using (a hash of) the two
-   endpoint IP addresses.
+   Implementations choose their own tuple_id values.  For example, a
+   TupleID can be an incrementing integer, the first Destination
+   Connection ID associated with the tuple (or its sequence number), or
+   the two endpoint IP addresses or a hash of them.
 
-   It is important to note that the empty string ("") is a valid TupleID
-   and that it is the default assigned to events that do not explicitly
-   set a "tuple" field.  Put differently, the initial tuple of a QUIC
-   connection on which the handshake occurs (see also Section 4.2) is
-   implicitly associated with the TupleID with value "".  Associating
-   metadata with this default tuple is possible by logging the
-   QUICTupleAssigned event with a value of "" for the tuple_id field.
+   The empty string ("") is a valid TupleID, and it is the default for
+   events that do not set the tuple field.  So the initial tuple of a
+   QUIC connection, on which the handshake occurs (see Section 4.2), is
+   implicitly associated with the TupleID "".  Details for this default
+   tuple can be logged with a tuple_assigned event whose tuple_id is "".
 
-   As the usage of TupleIDs and their metadata can evolve over time,
-   multiple QUICTupleAssigned events can be emitted for each unique
-   TupleID.  The latest event contains the most up-to-date information
-   for that TupleID.  As such, the first time a TupleID is seen in a
-   QUICTupleAssigned event, it is an indication that the TupleID is
-   created.  Subsequent occurrences indicate the TupleID is updated,
-   while a final occurrence with both tuple_local and tuple_remote
-   fields omitted implicitly indicates the TupleID has been abandoned.
+   Because a tuple's details can change during the connection, a TupleID
+   can appear in several tuple_assigned events, and the latest one holds
+   its current details.  The first tuple_assigned event for a TupleID
+   indicates that the TupleID was created, and later ones indicate
+   updates.  An event with both tuple_local and tuple_remote omitted
+   indicates that the TupleID was abandoned.
 
 4.8.  mtu_updated
 
    The mtu_updated event indicates that the estimated Path MTU was
-   updated.  This happens as part of the Path MTU discovery process.  It
-   has Extra importance level.
+   updated.  This happens as part of Path MTU discovery; see Section 14
+   of [QUIC-TRANSPORT].  It has Extra importance level.
 
    QUICMTUUpdated = {
        ? old: uint32
