@@ -907,9 +907,9 @@ The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
 ## packet_buffered {#quic-packetbuffered}
 
 The `packet_buffered` event is emitted when a packet is buffered because it
-cannot be processed yet. Typically, this is because the packet cannot be parsed
-yet, and thus only the full packet contents can be logged when it was parsed in
-a `packet_received` event. The event has Base importance level.
+cannot be processed yet, for example because the keys to decrypt it are not
+yet available. Its full contents can be logged later, in a `packet_received`
+event, once it is processed. It has Base importance level.
 
 ~~~ cddl
 QUICPacketBuffered = {
