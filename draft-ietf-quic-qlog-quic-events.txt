@@ -1315,7 +1315,6 @@ Table of Contents
        "send" /
        "data_sent" /
        "reset_sent" /
-       "reset_received" /
        ; receive-side stream states, RFC 9000 Section 3.2.
        "receive" /
        "size_known" /
@@ -1323,6 +1322,7 @@ Table of Contents
        "reset_read" /
        ; both-side states
        "data_received" /
+       "reset_received" /
        ; qlog-defined: memory actually freed
        "destroyed"
 
@@ -2067,10 +2067,10 @@ Table of Contents
    and the raw value captured in the packet_type_bytes field; a
    numerical value without variable-length integer encoding.
 
-   The fixed and reserved bits are omitted here because they must be 0;
-   see [QUIC-TRANSPORT].  If these bits have an invalid value, the raw
-   values can be captured in the raw.data field of the event logging the
-   PacketHeader.
+   PacketHeader omits the fixed bit and the reserved bits because QUIC
+   version 1 gives them fixed values; see Section 17 of
+   [QUIC-TRANSPORT].  Their values can be logged in the raw.data field
+   of the event that logs the PacketHeader.
 
    QUIC extensions that do utilize these bits are expected to create new
    events (analogous to spin_bit_updated) or use qlog extension
@@ -2113,7 +2113,7 @@ Table of Contents
        ? length: uint16
 
        ; only if present in the header.
-       ; if correctly using transport:connection_id_updated events,
+       ; if correctly using connection_id_updated events,
        ; dcid can be skipped for 1RTT packets
        ? version: QuicVersion
        ? scil: uint8
@@ -2315,10 +2315,10 @@ Table of Contents
 
 8.13.5.  ResetStreamAtFrame
 
-   If the error_code numerical value does not map to a known
-   ApplicationError string, the error_code value of "unknown" can be
-   used and the raw value captured in the error_code_bytes field; a
-   numerical value without variable-length integer encoding.
+   If the error numerical value does not map to a known ApplicationError
+   string, the error value of "unknown" can be used and the raw value
+   captured in the error_code field; a numerical value without variable-
+   length integer encoding.
 
    ResetStreamAtFrame = {
        frame_type: "reset_stream_at"
@@ -2521,12 +2521,12 @@ Table of Contents
    error_code field using the numerical value without variable-length
    integer encoding.
 
-   When the connection is closed due a connection-level error, the
-   trigger_frame_type field can be used to log the frame that triggered
-   the error.  For known frame types, the appropriate string value is
-   used in the error field.  For unknown frame types, the error field
-   has the value "unknown" and the numerical value without variable-
-   length integer encoding can be logged in error_code.
+   The trigger_frame_type field logs the Frame Type field, which only
+   the transport variant of CONNECTION_CLOSE (type 0x1c) carries; see
+   Section 19.19 of [QUIC-TRANSPORT].  A known frame type is logged as
+   its frame type string, such as "stream".  An unknown frame type is
+   logged as the numerical value without variable-length integer
+   encoding.
 
    The CONNECTION_CLOSE reason phrase is a byte sequence.  It is likely
    that this sequence is presentable as UTF-8, in which case it can be
