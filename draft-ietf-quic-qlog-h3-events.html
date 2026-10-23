@@ -1381,10 +1381,9 @@ a schema for the HTTP Capsule Protocol (<span><a href="https://rfc-editor.org/rf
 this namespace multiple events derive from the qlog abstract Event class
 (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-7" class="relref">Section 7</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>), each extending the "data" field and defining
 their "name" field values and semantics.<a href="#section-1-2" class="pilcrow">¶</a></p>
-<p id="section-1-3"><a href="#h3-events" class="auto internal xref">Table 1</a> summarizes the name value of each event type that is defined in
-this specification. Some event data fields use complex data types. These are
-represented as enums or re-usable definitions, which are grouped together on the
-bottom of this document for clarity.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<p id="section-1-3"><a href="#h3-events" class="auto internal xref">Table 1</a> summarizes the name value of each event type in the <code>http3</code>
+namespace. The data types that the events use are defined in <a href="#h3-data-types" class="auto internal xref">Section 4</a>
+and <a href="#http-data-types" class="auto internal xref">Section 7</a>.<a href="#section-1-3" class="pilcrow">¶</a></p>
 <span id="name-http-3-events"></span><div id="h3-events">
 <table class="center" id="table-1">
         <caption>
@@ -1510,7 +1509,7 @@ setups.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
 <p id="section-1.1-2">If used without QUIC events, it is recommended that the implementation assign a
 globally unique identifier to each HTTP/3 connection. This ID can then be used as
 the value of the qlog "group_id" field, as well as the qlog filename or file
-identifier, potentially suffixed by the vantagepoint type (For example,
+identifier, potentially suffixed by the vantage point type (for example,
 abcd1234_server.qlog would contain the server-side trace of the connection with
 GUID abcd1234).<a href="#section-1.1-2" class="pilcrow">¶</a></p>
 </section>
@@ -1527,9 +1526,9 @@ appear in all capitals, as shown here.<a href="#section-1.2-1" class="pilcrow">�
 <p id="section-1.2-2">The event and data structure definitions in this document are expressed
 in the Concise Data Definition Language <span>[<a href="#CDDL" class="cite xref">CDDL</a>]</span> and its
 extensions described in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-1.2" class="relref">Section 1.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.2-2" class="pilcrow">¶</a></p>
-<p id="section-1.2-3">The following fields from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> are imported and used: name, namespace,
-type, data, group_id, RawInfo, and time-related
-fields.<a href="#section-1.2-3" class="pilcrow">¶</a></p>
+<p id="section-1.2-3">This document uses the following from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>: the event namespace and
+event type concepts; the name, data, group_id, and time-related fields; and the
+RawInfo type.<a href="#section-1.2-3" class="pilcrow">¶</a></p>
 <p id="section-1.2-4">Events are defined with an importance level as described in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-8.3" class="relref">Section 8.3</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.2-4" class="pilcrow">¶</a></p>
 <p id="section-1.2-5">As is the case for <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog schema definitions in this document
 are intentionally agnostic to serialization formats. The choice of format is an
@@ -1594,19 +1593,19 @@ $ProtocolEventData /= HTTP3EventData
 <a href="#name-http3eventdata-definition-a" class="selfRef">HTTP3EventData definition and ProtocolEventData extension</a>
         </figcaption></figure>
 </div>
-<p id="section-3-3">HTTP events are logged when a certain condition happens at the application
-layer, and there isn't always a one to one mapping between HTTP and QUIC events.
-The exchange of data between the HTTP and QUIC layer is logged via the
-"stream_data_moved" and "datagram_data_moved" events in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3-3" class="pilcrow">¶</a></p>
+<p id="section-3-3">HTTP/3 events describe what happens at the HTTP/3 layer, and they don't always
+map one-to-one to QUIC events. Data exchanged between the HTTP/3 and QUIC
+layers is logged with the <code>stream_data_moved</code> and <code>datagram_data_moved</code> events
+in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3-3" class="pilcrow">¶</a></p>
 <p id="section-3-4">HTTP/3 frames are transmitted on QUIC streams, which allows them to span
 multiple QUIC packets. Some implementations might send a single large frame,
 rather than a sequence of smaller frames, in order to amortize frame header
-overhead. HTTP/3 frame headers are represented by the frame_created
-(<a href="#h3-framecreated" class="auto internal xref">Section 3.5</a>) and frame_parsed (<a href="#h3-frameparsed" class="auto internal xref">Section 3.6</a>) events. Subsequent
-frame payload data transfer is indicated by stream_data_moved events.
-Furthermore, stream_data_moved events can appear before frame_parsed events
-because implementations need to read data from a stream in order to parse the
-frame header.<a href="#section-3-4" class="pilcrow">¶</a></p>
+overhead. HTTP/3 frame headers are represented by the <code>frame_created</code>
+(<a href="#h3-framecreated" class="auto internal xref">Section 3.5</a>) and <code>frame_parsed</code> (<a href="#h3-frameparsed" class="auto internal xref">Section 3.6</a>) events.
+Subsequent frame payload data transfer is indicated by <code>stream_data_moved</code>
+events. Furthermore, <code>stream_data_moved</code> events can appear before
+<code>frame_parsed</code> events because implementations need to read data from a stream
+in order to parse the frame header.<a href="#section-3-4" class="pilcrow">¶</a></p>
 <p id="section-3-5">The concrete HTTP/3 event types are further defined below, their type identifier
 is the heading name.<a href="#section-3-5" class="pilcrow">¶</a></p>
 <div id="h3-parametersset">
@@ -1617,11 +1616,10 @@ is the heading name.<a href="#section-3-5" class="pilcrow">¶</a></p>
 <p id="section-3.1-1">The <code>parameters_set</code> event contains HTTP/3 and QPACK-level settings, mostly
 those received from the HTTP/3 SETTINGS frame. It has Base importance level.<a href="#section-3.1-1" class="pilcrow">¶</a></p>
 <p id="section-3.1-2">All these parameters are typically set once and never change. However, they
-might be set at different times during the connection, therefore a qlog can have
+might be set at different times during the connection, so a trace can contain
 multiple instances of <code>parameters_set</code> with different fields set.<a href="#section-3.1-2" class="pilcrow">¶</a></p>
-<p id="section-3.1-3">The "initiator" field reflects how Settings are exchanged on a connection. Sent
-settings have the value "local" and received settings have the value
-"received".<a href="#section-3.1-3" class="pilcrow">¶</a></p>
+<p id="section-3.1-3">The <code>initiator</code> field is "local" for settings that this endpoint sent, and
+"remote" for settings that it received.<a href="#section-3.1-3" class="pilcrow">¶</a></p>
 <span id="name-http3parametersset-definiti"></span><div id="h3-parametersset-def">
 <figure id="figure-2">
           <div class="lang-cddl sourcecode" id="section-3.1-4.1">
@@ -1665,13 +1663,14 @@ for extension settings that do not have a related qlog schema definition.<a href
         <h3 id="name-parameters_restored">
 <a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-parameters_restored" class="section-name selfRef">parameters_restored</a>
         </h3>
-<p id="section-3.2-1">When using QUIC 0-RTT, HTTP/3 clients are expected to remember and reuse the
-server's SETTINGs from the previous connection. The <code>parameters_restored</code> event
-is used to indicate which HTTP/3 settings were restored and to which values when
-utilizing 0-RTT. It has Base importance level.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-1">The <code>parameters_restored</code> event indicates which of the server's settings a
+client restored from a previous connection to use for 0-RTT, and their values;
+see <span><a href="https://rfc-editor.org/rfc/rfc9114#section-7.2.4.2" class="relref">Section 7.2.4.2</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>. It has Base importance level.<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">When the server's SETTINGS frame arrives, the settings it carries can be logged
+with the <code>parameters_set</code> event (<a href="#h3-parametersset" class="auto internal xref">Section 3.1</a>).<a href="#section-3.2-2" class="pilcrow">¶</a></p>
 <span id="name-http3parametersrestored-def"></span><div id="h3-parametersrestored-def">
 <figure id="figure-3">
-          <div class="lang-cddl sourcecode" id="section-3.2-2.1">
+          <div class="lang-cddl sourcecode" id="section-3.2-3.1">
 <pre>
 HTTP3ParametersRestored = {
     ; RFC9114
@@ -1702,8 +1701,8 @@ HTTP3ParametersRestored = {
         <h3 id="name-stream_type_set">
 <a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-stream_type_set" class="section-name selfRef">stream_type_set</a>
         </h3>
-<p id="section-3.3-1">The <code>stream_type_set</code> event conveys when a HTTP/3 stream type becomes known; see
-Sections <a href="https://rfc-editor.org/rfc/rfc9114#section-6.1" class="relref">6.1</a> and <a href="https://rfc-editor.org/rfc/rfc9114#section-6.2" class="relref">6.2</a> of <span>[<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>. It has Base importance level.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-1">The <code>stream_type_set</code> event is emitted when the type of an HTTP/3 stream becomes
+known; see Sections <a href="https://rfc-editor.org/rfc/rfc9114#section-6.1" class="relref">6.1</a> and <a href="https://rfc-editor.org/rfc/rfc9114#section-6.2" class="relref">6.2</a> of <span>[<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>. It has Base importance level.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
 <p id="section-3.3-2">Client bidirectional streams always have a stream_type value of "request".
 Server bidirectional streams have no defined use, although extensions could
 change that.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
@@ -1754,12 +1753,10 @@ $HTTP3StreamType /=   "request" /
 <p id="section-3.4-1">The <code>priority_updated</code> event is emitted when the priority of a request stream or
 push stream is initialized or updated through mechanisms defined in
 <span>[<a href="#PRIORITIZATION" class="cite xref">PRIORITIZATION</a>]</span>. It has Base importance level.<a href="#section-3.4-1" class="pilcrow">¶</a></p>
-<p id="section-3.4-2">There can be several reasons why a <code>priority_updated</code> occurs, and why a
-particular value was chosen. For example, the priority can be updated through
-signals received from client and/or server (e.g., in HTTP/3 HEADERS or
-PRIORITY_UPDATE frames) or it can be changed or overridden due to local
-policies. The <code>trigger</code> and <code>reason</code> fields can be used to optionally
-capture such details.<a href="#section-3.4-2" class="pilcrow">¶</a></p>
+<p id="section-3.4-2">There can be several reasons why a <code>priority_updated</code> event occurs, and why a
+particular value was chosen. For example, the priority can follow signals from
+the client or server (see <span>[<a href="#PRIORITIZATION" class="cite xref">PRIORITIZATION</a>]</span>), or local policy can change or
+override it. The <code>trigger</code> and <code>reason</code> fields can capture these details.<a href="#section-3.4-2" class="pilcrow">¶</a></p>
 <span id="name-http3priorityupdated-defini"></span><div id="h3-priorityupdated-def">
 <figure id="figure-5">
           <div class="lang-cddl sourcecode" id="section-3.4-3.1">
@@ -1798,9 +1795,9 @@ HTTP3PriorityUpdated = {
         <h3 id="name-frame_created">
 <a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-frame_created" class="section-name selfRef">frame_created</a>
         </h3>
-<p id="section-3.5-1">The <code>frame_created</code> event is emitted when the HTTP/3 framing actually happens.
-It has Core importance level.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
-<p id="section-3.5-2">This event does not necessarily coincide with HTTP/3 data getting passed to the
+<p id="section-3.5-1">The <code>frame_created</code> event is emitted when an HTTP/3 frame is created. It has
+Core importance level.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
+<p id="section-3.5-2">This event does not necessarily coincide with HTTP/3 data being passed to the
 QUIC layer. For that, see the <code>stream_data_moved</code> event in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.5-2" class="pilcrow">¶</a></p>
 <span id="name-http3framecreated-definitio"></span><div id="h3-framecreated-def">
 <figure id="figure-6">
@@ -1825,11 +1822,10 @@ HTTP3FrameCreated = {
         <h3 id="name-frame_parsed">
 <a href="#section-3.6" class="section-number selfRef">3.6. </a><a href="#name-frame_parsed" class="section-name selfRef">frame_parsed</a>
         </h3>
-<p id="section-3.6-1">The <code>frame_parsed</code> event is emitted when the HTTP/3 frame is parsed. It has Core
+<p id="section-3.6-1">The <code>frame_parsed</code> event is emitted when an HTTP/3 frame is parsed. It has Core
 importance level.<a href="#section-3.6-1" class="pilcrow">¶</a></p>
-<p id="section-3.6-2">This event is not necessarily the same as when the HTTP/3 data is actually
-received on the QUIC layer. For that, see the <code>stream_data_moved</code> event in
-<span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.6-2" class="pilcrow">¶</a></p>
+<p id="section-3.6-2">This event does not necessarily coincide with HTTP/3 data being passed from the
+QUIC layer. For that, see the <code>stream_data_moved</code> event in <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.6-2" class="pilcrow">¶</a></p>
 <span id="name-http3frameparsed-definition"></span><div id="h3-frameparsed-def">
 <figure id="figure-7">
           <div class="lang-cddl sourcecode" id="section-3.6-3.1">
@@ -1853,11 +1849,12 @@ HTTP3FrameParsed = {
         <h3 id="name-datagram_created">
 <a href="#section-3.7" class="section-number selfRef">3.7. </a><a href="#name-datagram_created" class="section-name selfRef">datagram_created</a>
         </h3>
-<p id="section-3.7-1">The <code>datagram_created</code> event is emitted when an HTTP/3 Datagram (<span><a href="https://rfc-editor.org/rfc/rfc9297#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9297" class="cite xref">RFC9297</a>]</span>) is created. It has Base importance level.<a href="#section-3.7-1" class="pilcrow">¶</a></p>
+<p id="section-3.7-1">The <code>datagram_created</code> event is emitted when an HTTP/3 Datagram (<span><a href="https://rfc-editor.org/rfc/rfc9297#section-2.1" class="relref">Section 2.1</a> of [<a href="#DGRAM-AND-CAPSULE" class="cite xref">DGRAM-AND-CAPSULE</a>]</span>) is created. It has Base importance level.<a href="#section-3.7-1" class="pilcrow">¶</a></p>
 <p id="section-3.7-2">Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
-defined by the concrete protocol using HTTP datagrams. The HTTP3DatagramCreated event
-can be extended through the $$http3-datagramcreated-extension socket to support logging of such information.<a href="#section-3.7-2" class="pilcrow">¶</a></p>
-<p id="section-3.7-3">This event does not necessarily coincide with the HTTP/3 Datagram getting passed
+defined by the protocol that uses them. The <code>datagram_created</code> event can be
+extended through the <code>$$http3-datagramcreated-extension</code> socket to log that
+information.<a href="#section-3.7-2" class="pilcrow">¶</a></p>
+<p id="section-3.7-3">This event does not necessarily coincide with the HTTP/3 Datagram being passed
 to the QUIC layer. For that, see the <code>datagram_data_moved</code> event in
 <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.7-3" class="pilcrow">¶</a></p>
 <span id="name-http3datagramcreated-defini"></span><div id="h3-datagramcreated-def">
@@ -1883,12 +1880,13 @@ HTTP3DatagramCreated = {
         <h3 id="name-datagram_parsed">
 <a href="#section-3.8" class="section-number selfRef">3.8. </a><a href="#name-datagram_parsed" class="section-name selfRef">datagram_parsed</a>
         </h3>
-<p id="section-3.8-1">The <code>datagram_parsed</code> event is emitted when an HTTP/3 Datagram (<span><a href="https://rfc-editor.org/rfc/rfc9297#section-2.1" class="relref">Section 2.1</a> of [<a href="#RFC9297" class="cite xref">RFC9297</a>]</span>) is parsed. It has Base importance level.<a href="#section-3.8-1" class="pilcrow">¶</a></p>
+<p id="section-3.8-1">The <code>datagram_parsed</code> event is emitted when an HTTP/3 Datagram (<span><a href="https://rfc-editor.org/rfc/rfc9297#section-2.1" class="relref">Section 2.1</a> of [<a href="#DGRAM-AND-CAPSULE" class="cite xref">DGRAM-AND-CAPSULE</a>]</span>) is parsed. It has Base importance level.<a href="#section-3.8-1" class="pilcrow">¶</a></p>
 <p id="section-3.8-2">Beyond the Quarter Stream ID field, the remaining contents of HTTP Datagrams are
-defined by the concrete protocol using HTTP datagrams. The HTTP3DatagramParsed event
-can be extended through the $$http3-datagramparsed-extension socket to support logging of such information.<a href="#section-3.8-2" class="pilcrow">¶</a></p>
-<p id="section-3.8-3">This event is not necessarily the same as when the HTTP/3 Datagram is actually
-received on the QUIC layer. For that, see the <code>datagram_data_moved</code> event in
+defined by the protocol that uses them. The <code>datagram_parsed</code> event can be
+extended through the <code>$$http3-datagramparsed-extension</code> socket to log that
+information.<a href="#section-3.8-2" class="pilcrow">¶</a></p>
+<p id="section-3.8-3">This event does not necessarily coincide with the HTTP/3 Datagram being passed
+from the QUIC layer. For that, see the <code>datagram_data_moved</code> event in
 <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-3.8-3" class="pilcrow">¶</a></p>
 <span id="name-http3datagramparsed-definit"></span><div id="h3-datagramparsed-def">
 <figure id="figure-9">
@@ -1913,10 +1911,10 @@ HTTP3DatagramParsed = {
         <h3 id="name-push_resolved">
 <a href="#section-3.9" class="section-number selfRef">3.9. </a><a href="#name-push_resolved" class="section-name selfRef">push_resolved</a>
         </h3>
-<p id="section-3.9-1">The <code>push_resolved</code> event is emitted when a pushed resource (<span><a href="https://rfc-editor.org/rfc/rfc9114#section-4.6" class="relref">Section 4.6</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>) is successfully claimed (used) or, conversely, abandoned (rejected)
-by the application on top of HTTP/3 (e.g., the web browser). This event provides
-additional context that can aid debugging issues related to server push. It
-has Extra importance level.<a href="#section-3.9-1" class="pilcrow">¶</a></p>
+<p id="section-3.9-1">The <code>push_resolved</code> event is emitted when a resource sent with server push
+(<span><a href="https://rfc-editor.org/rfc/rfc9114#section-4.6" class="relref">Section 4.6</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>) is claimed (used) or abandoned (rejected) by the
+application on top of HTTP/3, such as a web browser. It has Extra importance
+level.<a href="#section-3.9-1" class="pilcrow">¶</a></p>
 <span id="name-http3pushresolved-definitio"></span><div id="h3-pushresolved-def">
 <figure id="figure-10">
           <div class="lang-cddl sourcecode" id="section-3.9-2.1">
@@ -1944,7 +1942,7 @@ HTTP3PushDecision = "claimed" /
 </div>
 </section>
 </div>
-<div id="http3-data-type-definitions">
+<div id="h3-data-types">
 <section id="section-4">
       <h2 id="name-http-3-data-type-definition">
 <a href="#section-4" class="section-number selfRef">4. </a><a href="#name-http-3-data-type-definition" class="section-name selfRef">HTTP/3 Data Type Definitions</a>
@@ -1991,7 +1989,7 @@ $HTTP3Frame /= {
           </figcaption></figure>
 </div>
 <p id="section-4.2-3">The HTTP/3 frame types defined in this document are as follows:<a href="#section-4.2-3" class="pilcrow">¶</a></p>
-<span id="name-http3baseframes-definition"></span><div id="h3baseframe-def">
+<span id="name-http3baseframes-and-http3ex"></span><div id="h3baseframe-def">
 <figure id="figure-13">
           <div class="lang-cddl sourcecode" id="section-4.2-4.1">
 <pre>
@@ -2012,7 +2010,7 @@ $HTTP3Frame /= HTTP3BaseFrames / HTTP3ExtensionFrames
 </pre>
 </div>
 <figcaption><a href="#figure-13" class="selfRef">Figure 13</a>:
-<a href="#name-http3baseframes-definition" class="selfRef">HTTP3BaseFrames definition</a>
+<a href="#name-http3baseframes-and-http3ex" class="selfRef">HTTP3BaseFrames and HTTP3ExtensionFrames definition</a>
           </figcaption></figure>
 </div>
 <div id="http3dataframe">
@@ -2089,10 +2087,10 @@ HTTP3HeadersFrame = {
 <figure id="figure-17">
             <div class="alignLeft art-text artwork" id="section-4.2.2-7.1">
 <pre>
-headers: [
+"headers": [
   {
     "name": ":path",
-    "value": "/"
+    "value": "/index.html"
   },
   {
     "name": ":method",
@@ -2406,8 +2404,8 @@ HTTP3ApplicationError = "http_no_error" /
 <a href="#name-http3applicationerror-defin" class="selfRef">HTTP3ApplicationError definition</a>
           </figcaption></figure>
 </div>
-<p id="section-4.3-2">The HTTP3ApplicationError extends the general $ApplicationError
-definition in the qlog QUIC document, see <span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
+<p id="section-4.3-2">HTTP3ApplicationError extends the <code>$ApplicationError</code> type socket defined in
+<span>[<a href="#QLOG-QUIC" class="cite xref">QLOG-QUIC</a>]</span>.<a href="#section-4.3-2" class="pilcrow">¶</a></p>
 <div class="lang-cddl sourcecode" id="section-4.3-3">
 <pre>
 ; ensure HTTP errors are properly validated in QUIC events as well
@@ -2476,9 +2474,9 @@ is the heading name.<a href="#section-6-3" class="pilcrow">¶</a></p>
         </h3>
 <p id="section-6.1-1">The <code>capsule_created</code> event is emitted when a Capsule is created (see
 <span><a href="https://rfc-editor.org/rfc/rfc9297#section-3" class="relref">Section 3</a> of [<a href="#DGRAM-AND-CAPSULE" class="cite xref">DGRAM-AND-CAPSULE</a>]</span>). It has Core importance level.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
-<p id="section-6.1-2">This event does not necessarily coincide with data getting passed to the
+<p id="section-6.1-2">This event does not necessarily coincide with data being passed to the
 transport layer. In HTTP/3, capsules are sent inside DATA frames, so the
-frame_created event would be logged separately.<a href="#section-6.1-2" class="pilcrow">¶</a></p>
+<code>frame_created</code> event can be logged separately.<a href="#section-6.1-2" class="pilcrow">¶</a></p>
 <span id="name-httpcapsulecreated-definiti"></span><div id="http-capsulecreated-def">
 <figure id="figure-29">
           <div class="lang-cddl sourcecode" id="section-6.1-3.1">
@@ -2505,9 +2503,9 @@ HTTPCapsuleCreated = {
         </h3>
 <p id="section-6.2-1">The <code>capsule_parsed</code> event is emitted when a Capsule is parsed (see
 <span><a href="https://rfc-editor.org/rfc/rfc9297#section-3" class="relref">Section 3</a> of [<a href="#DGRAM-AND-CAPSULE" class="cite xref">DGRAM-AND-CAPSULE</a>]</span>). It has Core importance level.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
-<p id="section-6.2-2">This event is not necessarily the same as when the data is actually received on
-the transport layer. In HTTP/3, capsules are received inside DATA frames, so the
-frame_parsed event would be logged separately.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">This event does not necessarily coincide with data being passed from the
+transport layer. In HTTP/3, capsules are received inside DATA frames, so the
+<code>frame_parsed</code> event can be logged separately.<a href="#section-6.2-2" class="pilcrow">¶</a></p>
 <span id="name-httpcapsuleparsed-definitio"></span><div id="http-capsuleparsed-def">
 <figure id="figure-30">
           <div class="lang-cddl sourcecode" id="section-6.2-3.1">
@@ -2529,7 +2527,7 @@ HTTPCapsuleParsed = {
 </div>
 </section>
 </div>
-<div id="http-data-type-definitions">
+<div id="http-data-types">
 <section id="section-7">
       <h2 id="name-http-data-type-definitions">
 <a href="#section-7" class="section-number selfRef">7. </a><a href="#name-http-data-type-definitions" class="section-name selfRef">HTTP Data Type Definitions</a>
@@ -2748,12 +2746,8 @@ push_resolved<a href="#section-9-2.6.1" class="pilcrow">¶</a></p>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
-      <dd>
-<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
-<dd class="break"></dd>
-<dt id="RFC9297">[RFC9297]</dt>
     <dd>
-<span class="refAuthor">Schinazi, D.</span> and <span class="refAuthor">L. Pardue</span>, <span class="refTitle">"HTTP Datagrams and the Capsule Protocol"</span>, <span class="seriesInfo">RFC 9297</span>, <span class="seriesInfo">DOI 10.17487/RFC9297</span>, <time datetime="2022-08" class="refDate">August 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9297">https://www.rfc-editor.org/rfc/rfc9297</a>&gt;</span>. </dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
