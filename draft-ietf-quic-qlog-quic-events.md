@@ -1853,9 +1853,10 @@ PacketHeader omits the fixed bit and the reserved bits because QUIC version 1
 gives them fixed values; see {{Section 17 of QUIC-TRANSPORT}}. Their values can
 be logged in the `raw.data` field of the event that logs the PacketHeader.
 
-QUIC extensions that do utilize these bits are expected to create new events
-(analogous to `spin_bit_updated`) or use qlog extension mechanisms to reflect
-that usage.
+QUIC extensions that use these bits, such as the QUIC Bit greasing extension
+({{GREASEBIT}}), can log that use with new events, similar to
+`spin_bit_updated`, or with fields added to PacketHeader through
+`$$quic-packetheader-extension`.
 
 For long header packets of type initial, handshake, and 0RTT, the length field
 of the packet header is logged in the qlog `raw.length` field, and the value
