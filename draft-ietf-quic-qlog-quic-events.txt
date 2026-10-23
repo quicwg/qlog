@@ -152,9 +152,9 @@ Table of Contents
        8.13.21. HandshakeDoneFrame
        8.13.22. UnknownFrame
        8.13.23. DatagramFrame
-       8.13.24. TransportError
-       8.13.25. ApplicationError
-       8.13.26. CryptoError
+     8.14. TransportError
+     8.15. ApplicationError
+     8.16. CryptoError
    9.  Handling Packet Coalescing
    10. Security and Privacy Considerations
    11. IANA Considerations
@@ -185,7 +185,7 @@ Table of Contents
    This document defines a qlog event schema (Section 8 of [QLOG-MAIN])
    containing concrete events for the core QUIC protocol (see
    [QUIC-TRANSPORT], [QUIC-RECOVERY], and [QUIC-TLS]) and some of its
-   extensions (see [QUIC-DATAGRAM] and [GREASEBIT]).
+   extensions (see [QUIC-DATAGRAM], [GREASEBIT], and [RESET-STREAM-AT]).
 
    The event namespace with identifier quic is defined; see Section 2.
    In this namespace multiple events derive from the qlog abstract Event
@@ -2289,6 +2289,9 @@ Table of Contents
 
 8.13.5.  ResetStreamAtFrame
 
+   The RESET_STREAM_AT frame is defined in Section 4 of
+   [RESET-STREAM-AT].
+
    If the error numerical value does not map to a known ApplicationError
    string, the error value of "unknown" can be used and the raw value
    captured in the error_code field; a numerical value without variable-
@@ -2335,7 +2338,7 @@ Table of Contents
 
 8.13.7.  CryptoFrame
 
-   The length field of the Crypto frame MUST be logged in the qlog
+   The length field of the CRYPTO frame MUST be logged in the qlog
    raw.length field.  The other sub-fields of the raw field are
    optional.
 
@@ -2359,7 +2362,7 @@ Table of Contents
 
 8.13.9.  StreamFrame
 
-   If the stream frame contains a length field, it MUST be logged in the
+   If the STREAM frame contains a length field, it MUST be logged in the
    qlog raw.length field.  If it does not, the implementation MAY
    calculate the actual frame byte length itself and log that in
    raw.length if necessary.
@@ -2502,12 +2505,12 @@ Table of Contents
    logged as the numerical value without variable-length integer
    encoding.
 
-   The CONNECTION_CLOSE reason phrase is a byte sequence.  It is likely
-   that this sequence is presentable as UTF-8, in which case it can be
-   logged in the reason field.  The reason_bytes field supports logging
-   the raw bytes, which can be useful when the value is not UTF-8 or
-   when an endpoint does not want to decode it.  Implementations SHOULD
-   log at least one format, but MAY log both or none.
+   The reason phrase in a CONNECTION_CLOSE frame is a byte sequence,
+   which RFC 9000 recommends be UTF-8; see Section 19.19 of
+   [QUIC-TRANSPORT].  The reason field holds the reason phrase as text,
+   and reason_bytes holds the raw bytes, for example when the value is
+   not UTF-8 or when an endpoint does not want to decode it.
+   Implementations SHOULD log at least one form and MAY log both.
 
    ErrorSpace = "transport" /
                 "application"
@@ -2556,9 +2559,9 @@ Table of Contents
 
 8.13.23.  DatagramFrame
 
-   The QUIC DATAGRAM frame is defined in Section 4 of [RFC9221].
+   The QUIC DATAGRAM frame is defined in Section 4 of [QUIC-DATAGRAM].
 
-   If the datagram frame contains a length field, it MUST be logged in
+   If the DATAGRAM frame contains a length field, it MUST be logged in
    the qlog raw.length field.  If it does not, the implementation MAY
    calculate the actual datagram byte length itself and log that in
    raw.length if necessary.
@@ -2570,10 +2573,10 @@ Table of Contents
 
                     Figure 76: DatagramFrame definition
 
-8.13.24.  TransportError
+8.14.  TransportError
 
    The generic $TransportError is defined here as a CDDL "type socket"
-   extension point.  It can be extended to support additional Transport
+   extension point.  It can be extended to support additional transport
    errors.
 
    $TransportError /= "no_error" /
@@ -2599,38 +2602,32 @@ Table of Contents
 
                     Figure 77: TransportError definition
 
-8.13.25.  ApplicationError
+8.15.  ApplicationError
 
-   By definition, an application error is defined by the application-
-   level protocol running on top of QUIC (e.g., HTTP/3).
-
-   As such, it cannot be defined here completely.  It is instead defined
-   as a CDDL "type socket" extension point, with a single "unknown"
-   value.
+   Application errors are defined by the application protocol that runs
+   on top of QUIC, such as HTTP/3, so this document cannot list them.
+   $ApplicationError is instead defined as a CDDL "type socket"
+   extension point, with a single "unknown" value.
 
    $ApplicationError /= "unknown"
 
                    Figure 78: ApplicationError definition
 
-   Application-level qlog definitions that wish to define new
-   ApplicationError strings MUST do so by extending the
-   $ApplicationError socket as such:
+   Event schemas for application protocols MUST add their error strings
+   by extending the $ApplicationError socket; see Section 8.2 of
+   [QLOG-MAIN].
 
-   $ApplicationError /= "new_error_name" /
-                        "another_new_error_name"
+8.16.  CryptoError
 
-8.13.26.  CryptoError
+   RFC 9001 converts a TLS alert into a QUIC error code by adding the
+   alert's AlertDescription value to 0x0100; see Section 4.8 of
+   [QUIC-TLS].
 
-   These errors are defined in the TLS document as "A TLS alert is
-   turned into a QUIC connection error by converting the one-byte alert
-   description into a QUIC error code.  The alert description is added
-   to 0x100 to produce a QUIC error code from the range reserved for
-   CRYPTO_ERROR."
-
-   This approach maps badly to a pre-defined enum.  As such, the
-   crypto_error string is defined as having a dynamic component here,
-   which should include the hex-encoded and zero-padded value of the TLS
-   alert description.
+   A fixed list of strings does not fit this range well, so a
+   CryptoError value is crypto_error_ followed by the resulting QUIC
+   error code in lowercase hexadecimal, from crypto_error_0x100 to
+   crypto_error_0x1ff.  For example, a handshake_failure alert, which is
+   0x0128 in QUIC, is logged as crypto_error_0x128.
 
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
@@ -2726,6 +2723,13 @@ Table of Contents
               DOI 10.17487/RFC9000, May 2021,
               <https://www.rfc-editor.org/rfc/rfc9000>.
 
+   [RESET-STREAM-AT]
+              Seemann, M. and K. Oku, "QUIC Stream Resets with Partial
+              Delivery", Work in Progress, Internet-Draft, draft-ietf-
+              quic-reliable-stream-reset-11, 6 September 2026,
+              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
+              reliable-stream-reset-11>.
+
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
               DOI 10.17487/RFC2119, March 1997,
@@ -2734,11 +2738,6 @@ Table of Contents
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
-
-   [RFC9221]  Pauly, T., Kinnear, E., and D. Schinazi, "An Unreliable
-              Datagram Extension to QUIC", RFC 9221,
-              DOI 10.17487/RFC9221, March 2022,
-              <https://www.rfc-editor.org/rfc/rfc9221>.
 
    [RFC9868]  Touch, J. and C. Heard, Ed., "Transport Options for UDP",
               RFC 9868, DOI 10.17487/RFC9868, October 2025,
