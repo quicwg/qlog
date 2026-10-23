@@ -1209,34 +1209,32 @@ QUICFramesParsed = {
 
 ## stream_data_moved {#quic-streamdatamoved}
 
-The `stream_data_moved` event is used to indicate when QUIC stream data moves
-between the different layers. This helps make clear the flow of data, how long
-data remains in various buffers, and the overheads introduced by individual
-layers. The event has Base importance level.
+The `stream_data_moved` event indicates that QUIC stream data moved between
+layers. It has Base importance level.
 
-The `raw.length` field is used to reflect how many bytes were moved. As this
-event relates to stream data only, there are no packet or frame headers and the
-`raw.length` field MUST reflect that.
+For example, data can move from an application protocol such as HTTP/3 to QUIC
+stream buffers, or the other way. Logging these moves can show the flow of
+data, how long data stays in each buffer, and the overhead introduced by each
+layer.
 
-For example, it can be useful to understand when data moves from an
-application protocol (e.g., HTTP) to QUIC stream buffers and vice versa.
+This event can also show whether received stream data is passed to the
+application protocol immediately or in batches. Data can be passed, for
+example, once per received packet, or in a batch after all received packets
+are processed. This can help identify bottlenecks, flow control issues, or
+scheduling problems.
 
-The `stream_data_moved` event can provide insight into whether received data on
-a QUIC stream is moved to the application protocol immediately (for example per
-received packet) or in larger batches (for example, all QUIC packets are
-processed first and afterwards the application layer reads from the streams with
-newly available data). This can help identify bottlenecks, flow control issues,
-or scheduling problems.
+The `raw.length` field gives the number of bytes moved. Because this event
+covers stream data only, there are no packet or frame headers, and
+`raw.length` MUST reflect that.
 
-The `additional_info` field supports optional logging of information related to
-the stream state. For example, an application layer that moves data into
-transport and simultaneously ends the stream, can log `fin_set`. As another
-example, a transport layer that has received an instruction to reset a stream
-can indicate this to the application layer using `stream_reset`. In both cases,
-the `raw.length` field can be omitted or have a zero value.
+The `additional_info` field can log information about the stream state. For
+example, an application that moves data into the transport and ends the stream
+at the same time can log `fin_set`. A transport that has received an
+instruction to reset a stream can tell the application with `stream_reset`. In
+both cases, `raw.length` can be omitted or be zero.
 
-This event is only for data in QUIC streams. For data in QUIC Datagram Frames,
-see the `datagram_data_moved` event defined in {{quic-datagramdatamoved}}.
+This event covers only data in QUIC streams. For data in QUIC datagrams, see
+the `datagram_data_moved` event ({{quic-datagramdatamoved}}).
 
 ~~~ cddl
 QUICStreamDataMoved = {
@@ -1264,27 +1262,24 @@ $DataMovedAdditionalInfo /= "fin_set" /
 
 ## datagram_data_moved {#quic-datagramdatamoved}
 
-The `datagram_data_moved` event is used to indicate when QUIC Datagram Frame
-data (see {{!RFC9221}}) moves between the different layers. This helps make
-clear the flow of data, how long data remains in various buffers, and the
-overheads introduced by individual layers. The event has Base importance level.
+The `datagram_data_moved` event indicates that QUIC datagram data (see
+{{QUIC-DATAGRAM}}) moved between layers. It has Base importance level.
 
-The `raw.length` field is used to reflect how many bytes were moved. As this
-event relates to datagram data only, there are no packet or frame headers and
-the `raw.length` field MUST reflect that.
+For example, data can move from an application protocol such as WebTransport to
+QUIC buffers, or the other way. Logging these moves can show the flow of data,
+how long data stays in each buffer, and the overhead introduced by each layer.
 
-For example, passing from the application protocol (e.g., WebTransport) to QUIC
-Datagram Frame buffers and vice versa.
+This event can also show whether received datagram data is passed to the
+application protocol immediately or in batches. Data can be passed, for
+example, once per received packet, or in a batch after all received packets
+are processed. This can help identify bottlenecks or scheduling problems.
 
-The `datagram_data_moved` event can provide insight into whether received data
-in a QUIC Datagram Frame is moved to the application protocol immediately (for
-example per received packet) or in larger batches (for example, all QUIC packets
-are processed first and afterwards the application layer reads all Datagrams at
-once). This can help identify bottlenecks, flow control issues, or scheduling
-problems.
+The `raw.length` field gives the number of bytes moved. Because this event
+covers datagram data only, there are no packet or frame headers, and
+`raw.length` MUST reflect that.
 
-This event is only for data in QUIC Datagram Frames. For data in QUIC streams,
-see the `stream_data_moved` event defined in {{quic-streamdatamoved}}.
+This event covers only data in QUIC datagrams. For data in QUIC streams, see
+the `stream_data_moved` event ({{quic-streamdatamoved}}).
 
 ~~~ cddl
 QUICDatagramDataMoved = {
