@@ -101,7 +101,7 @@ treated as a 16-byte trailer.
 A qlog trace is typically associated with a single QUIC connection. However,
 some events cannot be tied to a specific connection, especially on the server.
 For example, a `packet_dropped` event ({{quic-packetdropped}}) with the trigger
-`connection_unknown` is for a packet that matches no known connection.
+"connection_unknown" is for a packet that matches no known connection.
 
 There are various ways to handle these events, each with tradeoffs between file
 size overhead, flexibility, ease of use, and ease of implementation. Some
@@ -889,18 +889,18 @@ The `trigger` field gives a general reason for dropping the packet, and the
 `details` field can hold additional implementation-specific information. Some
 example situations for each trigger value include:
 
-- `internal_error`: not initialized, out of memory
-- `rejected`: limits reached, DDoS protection, unwilling to track more paths
-- `unsupported`: unknown or unsupported version
-- `invalid`: packet parsing or validation error
-- `duplicate`: duplicate packet
-- `connection_unknown`: packet does not relate to a known connection or
+- "internal_error": not initialized, out of memory
+- "rejected": limits reached, DDoS protection, unwilling to track more paths
+- "unsupported": unknown or unsupported version
+- "invalid": packet parsing or validation error
+- "duplicate": duplicate packet
+- "connection_unknown": packet does not relate to a known connection or
   connection ID
-- `decryption_failure`: decryption failed
-- `key_unavailable`: decryption key was unavailable
-- `general`: situations not clearly covered in the other categories
+- "decryption_failure": decryption failed
+- "key_unavailable": decryption key was unavailable
+- "general": situations not clearly covered in the other categories
 
-Packets dropped as `unsupported` or `connection_unknown` often cannot be tied to
+Packets dropped as "unsupported" or "connection_unknown" often cannot be tied to
 a connection; see {{handling-unknown-connections}}.
 
 The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
@@ -956,7 +956,7 @@ QUICPacketsAcked = {
 ~~~
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
 
-If `packet_number_space` is omitted, its value is `application_data`, the
+If `packet_number_space` is omitted, its value is "application_data", the
 packet number space that most packets in a typical QUIC connection use.
 
 ## udp_datagrams_sent {#quic-udpdatagramssent}
@@ -1056,7 +1056,7 @@ states it directly.
 {{Section 3 of QUIC-TRANSPORT}} describes the sending and receiving parts of a
 stream, each with its own state machine. The `stream_side` field says which
 part's state changed. If both parts change state at the same time, for example
-when both become `closed`, two events with different `stream_side` values
+when both become "closed", two events with different `stream_side` values
 SHOULD be logged.
 
 ~~~ cddl
@@ -1216,8 +1216,8 @@ covers stream data only, there are no packet or frame headers, and
 
 The `additional_info` field can log information about the stream state. For
 example, an application that moves data into the transport and ends the stream
-at the same time can log `fin_set`. A transport that has received an
-instruction to reset a stream can tell the application with `stream_reset`. In
+at the same time can log "fin_set". A transport that has received an
+instruction to reset a stream can tell the application with "stream_reset". In
 both cases, `raw.length` can be omitted or be zero.
 
 This event covers only data in QUIC streams. For data in QUIC datagrams, see
@@ -1407,18 +1407,18 @@ importance level.
 
 The `event_type` field takes one of three values:
 
-* `set`: the timer is set, and `delta` gives the time until it triggers
-* `expired`: the timer expired
-* `cancelled`: the timer was cancelled
+* "set": the timer is set, and `delta` gives the time until it triggers
+* "expired": the timer expired
+* "cancelled": the timer was cancelled
 
-An update to an active timer's timeout is logged as a new `set` event.
+An update to an active timer's timeout is logged as a new "set" event.
 
 The recovery timer types correspond to timers in {{Section 6 of
 QUIC-RECOVERY}} and {{Appendix A.8 of QUIC-RECOVERY}}:
 
-* `ack`: the time threshold loss detection timeout
-* `pto`: the probe timeout
-* `loss_timeout`: the single, multi-modal loss detection timer that covers
+* "ack": the time threshold loss detection timeout
+* "pto": the probe timeout
+* "loss_timeout": the single, multi-modal loss detection timer that covers
   both
 
 QUIC uses a variety of timers, and how they are used can depend on the
@@ -1541,7 +1541,7 @@ change them during the connection MAY emit the `recovery_parameters_set` event
 more than once.
 
 The `reordering_threshold` field contains the packet threshold for loss detection,
-or `"disabled"` if packet-threshold loss detection is disabled.
+or "disabled" if packet-threshold loss detection is disabled.
 
 ~~~ cddl
 QUICRecoveryParametersSet = {
