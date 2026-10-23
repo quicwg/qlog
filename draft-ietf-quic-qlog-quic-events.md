@@ -1280,13 +1280,13 @@ QUICDatagramDataMoved = {
 
 ## connection_data_blocked_updated {#quic-connectiondatablockedupdated}
 
-The `connection_data_blocked_updated` event is used to indicate when the QUIC
-connection becomes blocked or unblocked for sending data. When a connection is
-"blocked", data can't be sent in streams and/or datagrams until the blocking
-reason has been resolved. The event has Extra importance level.
+The `connection_data_blocked_updated` event indicates that the QUIC connection
+became blocked or unblocked for sending data. It has Extra importance level.
 
-Use the `stream_data_blocked_updated` or `datagram_data_blocked_updated` event to
-provide more fine-grained information for individual data types.
+Depending on the reason, a blocked connection cannot send stream data, datagram
+data, or both, until that reason is resolved. The `stream_data_blocked_updated`
+and `datagram_data_blocked_updated` events give more detail for each type of
+data.
 
 ~~~ cddl
 QUICConnectionDataBlockedUpdated = {
@@ -1312,8 +1312,8 @@ $BlockedReason /= "scheduling" /
 
 ## stream_data_blocked_updated {#quic-streamdatablockedupdated}
 
-The `stream_data_blocked_updated` event is used to indicate when a QUIC stream
-becomes blocked or unblocked for sending. The event has Extra importance level.
+The `stream_data_blocked_updated` event indicates that a QUIC stream became
+blocked or unblocked for sending. It has Extra importance level.
 
 ~~~ cddl
 QUICStreamDataBlockedUpdated = {
@@ -1329,9 +1329,8 @@ QUICStreamDataBlockedUpdated = {
 
 ## datagram_data_blocked_updated {#quic-datagramdatablockedupdated}
 
-The `datagram_data_blocked_updated` event is used to indicate when QUIC
-datagrams become blocked or unblocked for sending. The event has Extra
-importance level.
+The `datagram_data_blocked_updated` event indicates that QUIC datagrams became
+blocked or unblocked for sending. It has Extra importance level.
 
 ~~~ cddl
 QUICDatagramDataBlockedUpdated = {
