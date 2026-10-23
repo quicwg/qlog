@@ -1793,12 +1793,12 @@ IPAddress = text /
 
 ## TupleEndpointInfo
 
-TupleEndpointInfo indicates a single half/direction of a four-tuple. A full tuple
-is comprised of two halves. Firstly: the server sends to the remote client IP
-+ port using a specific destination Connection ID. Secondly: the client sends to
-the remote server IP + port using a different destination Connection ID.
+TupleEndpointInfo describes one half, or direction, of a four-tuple. A full
+tuple has two halves: the server sends to the client's IP address and port,
+and the client sends to the server's IP address and port. Each direction uses
+its own destination connection ID.
 
-As such, structures logging tuple information SHOULD include two different
+Structures that log tuple information SHOULD therefore include two
 TupleEndpointInfo instances, one for each half of the tuple.
 
 ~~~ cddl
