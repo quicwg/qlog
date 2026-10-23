@@ -824,8 +824,7 @@ QUICPacketSent = {
 The encryption level and packet number space are not logged explicitly,
 because `header.packet_type` implies them for the packet types that have them.
 
-The `datagram_payload_checksum` field is used to track packet coalescing, see
-{{packet-coalescing}}.
+The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
 
 ## packet_received {#quic-packetreceived}
 
@@ -859,8 +858,7 @@ QUICPacketReceived = {
 The encryption level and packet number space are not logged explicitly,
 because `header.packet_type` implies them for the packet types that have them.
 
-The `datagram_payload_checksum` field is used to track packet coalescing, see
-{{packet-coalescing}}.
+The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
 
 ## packet_dropped {#quic-packetdropped}
 
@@ -908,8 +906,7 @@ Some example situations for each of the trigger categories include:
 - `key_unavailable`: decryption key was unavailable
 - `general`: situations not clearly covered in the other categories
 
-The `datagram_payload_checksum` field is used to track packet coalescing, see
-{{packet-coalescing}}.
+The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
 
 ## packet_buffered {#quic-packetbuffered}
 
@@ -939,8 +936,7 @@ QUICPacketBuffered = {
 ~~~
 {: #quic-packetbuffered-def title="QUICPacketBuffered definition"}
 
-The `datagram_payload_checksum` field is used to track packet coalescing, see
-{{packet-coalescing}}.
+The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
 
 ## packets_acked {#quic-packetsacked}
 
@@ -999,8 +995,7 @@ QUICUDPDatagramsSent = {
 Since QUIC implementations rarely control UDP logic directly, the raw data
 excludes UDP-level headers in all RawInfo fields.
 
-The `datagram_payload_checksums` field is used to track packet coalescing, see
-{{packet-coalescing}}.
+The `datagram_payload_checksums` field is described in {{packet-coalescing}}.
 
 ## udp_datagrams_received {#quic-udpdatagramsreceived}
 
@@ -1030,8 +1025,7 @@ QUICUDPDatagramsReceived = {
 ~~~
 {: #quic-udpdatagramsreceived-def title="QUICUDPDatagramsReceived definition"}
 
-The `datagram_payload_checksums` field is used to track packet coalescing, see
-{{packet-coalescing}}.
+The `datagram_payload_checksums` field is described in {{packet-coalescing}}.
 
 ## udp_datagram_dropped {#quic-udpdatagramdropped}
 
