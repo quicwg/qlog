@@ -1481,7 +1481,11 @@ QUICTimerUpdated = {
 
 ## key_updated {#quic-keyupdated}
 
-The `key_updated` event has Base importance level.
+The `key_updated` event indicates that a key was installed or updated. It has
+Base importance level.
+
+This happens when TLS provides new keys during the handshake, and at each 1-RTT
+key update; see {{Section 6 of QUIC-TLS}}.
 
 ~~~ cddl
 QUICKeyUpdated = {
@@ -1503,13 +1507,19 @@ QUICKeyUpdated = {
 ~~~
 {: #quic-keyupdated-def title="QUICKeyUpdated definition"}
 
-Note that the key_phase is the full value of the key phase (as indicated by
-@M and @N in Figure 9 of {{QUIC-TLS}}). The key phase bit used on
-the packet header is the least significant bit of the key phase.
+The `key_phase` field holds the full key phase, which identifies the
+generation of keys; it corresponds to @M and @N in Figure 9 of {{Section 6 of
+QUIC-TLS}}. The Key Phase bit in the packet header is the least significant
+bit of this value.
 
 ## key_discarded {#quic-keydiscarded}
 
-The `key_discarded` event has Base importance level.
+The `key_discarded` event indicates that a key was discarded. It has Base
+importance level.
+
+Keys are discarded, for example, when the connection moves to a new encryption
+level during the handshake, or after a key update; see {{Section 4.9 of
+QUIC-TLS}}.
 
 ~~~ cddl
 QUICKeyDiscarded = {
