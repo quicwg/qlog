@@ -248,19 +248,19 @@ LogFile = {
 ~~~
 {: #abstract-logfile-def title="LogFile definition"}
 
-The required "file_schema" field identifies the concrete log file schema. It
+The required `file_schema` field identifies the concrete log file schema. It
 MUST have a value that is an absolute URI; see {{schema-uri}} for rules and
 guidance.
 
-The required "serialization_format" field indicates the serialization
+The required `serialization_format` field indicates the serialization
 format using a media type {{!RFC2046}}. It is case-insensitive.
 
 In order to make it easier to parse and identify qlog files and their
-serialization format, the "file_schema" and "serialization_format" fields and
+serialization format, the `file_schema` and `serialization_format` fields and
 their values SHOULD be in the first 256 characters/bytes of the resulting log
 file.
 
-The optional "title" and "description" fields provide additional free-text
+The optional `title` and `description` fields provide additional free-text
 information about the file.
 
 ## Concrete Log File Schema URIs {#schema-uri}
@@ -314,13 +314,13 @@ QlogFile = {
 The QlogFile schema URI is `urn:ietf:params:qlog:file:contained`.
 
 QlogFile extends LogFile using the CDDL unwrap operator (~), which copies the
-fields presented in {{abstract-logfile}}. Additionally, the optional "traces"
+fields presented in {{abstract-logfile}}. Additionally, the optional `traces`
 field contains an array of qlog traces ({{trace}}) or trace errors
 ({{trace-error}}). Each trace contains metadata and an array of qlog events
 ({{abstract-event}}).
 
 This document defines a JSON serialization for QlogFile; see {{format-json}} for
-guidance on populating the "serialization_format" field and other
+guidance on populating the `serialization_format` field and other
 considerations. Where a qlog file is serialized to a JSON format, one of the
 downsides is that it is inherently a non-streamable format. Put differently, it
 is not possible to simply append new qlog events to a log file without "closing"
@@ -348,14 +348,14 @@ example, logging can happen simultaneously on the client, on the server, and at
 a point on their common network path. Combining these three traces in one file
 makes them easier to analyze, store, transfer, and annotate as a set.
 
-The QlogFile "traces" field is an array that contains a list of individual qlog
+The QlogFile `traces` field is an array that contains a list of individual qlog
 traces. When capturing a qlog at a vantage point, it is expected that the traces
 field contains a single entry. Files can be aggregated, for example as part of a
 post-processing operation, by copying the traces from the component files into
-the combined "traces" array of a new, aggregated qlog file.
+the combined `traces` array of a new, aggregated qlog file.
 
 Note that another way to combine events of different traces in a single qlog
-file is through the use of the "group_id" field, discussed in {{group-ids}}.
+file is through the use of the `group_id` field, discussed in {{group-ids}}.
 
 ## Trace {#trace}
 
@@ -381,19 +381,19 @@ Trace = {
 ~~~
 {: #trace-def title="Trace definition"}
 
-The optional "title" and "description" fields provide additional free-text
+The optional `title` and `description` fields provide additional free-text
 information about the trace.
 
-The optional "common_fields" field is described in {{common-fields}}.
+The optional `common_fields` field is described in {{common-fields}}.
 
-The optional "vantage_point" field is described in {{vantage-point}}.
+The optional `vantage_point` field is described in {{vantage-point}}.
 
-The required "event_schemas" field contains event schema URIs that identify
-concrete event namespaces and their associated types recorded in the "events"
+The required `event_schemas` field contains event schema URIs that identify
+concrete event namespaces and their associated types recorded in the `events`
 field. Requirements and guidelines are defined in {{event-types-and-schema}}.
 
 The semantics and context of the trace can mainly be deduced from the entries in
-the "common_fields" list and "vantage_point" field.
+the `common_fields` list and `vantage_point` field.
 
 JSON serialization example:
 
@@ -424,7 +424,7 @@ JSON serialization example:
 A TraceError indicates that an attempt to find/convert a file for inclusion in
 the aggregated qlog was made, but there was an error during the process. Rather
 than silently dropping the erroneous file, it can be explicitly included in the
-qlog file as an entry in the "traces" array, defined in {{trace-error-def}} as:
+qlog file as an entry in the `traces` array, defined in {{trace-error-def}} as:
 
 ~~~ cddl
 TraceError = {
@@ -466,11 +466,11 @@ QlogFileSeq = {
 The QlogFileSeq schema URI is `urn:ietf:params:qlog:file:sequential`.
 
 QlogFileSeq extends LogFile using the CDDL unwrap operator (~), which copies the
-fields presented in {{abstract-logfile}}. Additionally, the required "trace"
+fields presented in {{abstract-logfile}}. Additionally, the required `trace`
 field contains a single TraceSeq ({{traceseq}}), which all qlog events in the
 file are related to.
 
-See {{format-json-seq}} for guidance on populating the "serialization_format"
+See {{format-json-seq}} for guidance on populating the `serialization_format`
 field and other serialization considerations.
 
 JSON-SEQ serialization example, showing a QlogFileSeq header record followed
@@ -570,13 +570,13 @@ JSON serialization examples:
 ~~~~~~~~
 {: #vantage-point-ex title="VantagePoint example"}
 
-The flow field is only required if the type is "network" (for example, the trace
-is generated from a packet capture). It is used to disambiguate events like
-"packet sent" and "packet received". This is indicated explicitly because for
-multiple reasons (e.g., privacy) data from which the flow direction can be
+The `flow` field is only required if the type is "network" (for example, the
+trace is generated from a packet capture). It is used to disambiguate events
+like "packet sent" and "packet received". This is indicated explicitly because
+for multiple reasons (e.g., privacy) data from which the flow direction can be
 otherwise inferred (e.g., IP addresses) might not be present in the logs.
 
-Meaning of the different values for the flow field:
+Meaning of the different values for the `flow` field:
 
   * "client" indicates that this vantage point follows client data flow semantics (a
     "packet sent" event goes in the direction of the server).
@@ -612,8 +612,8 @@ Event = {
 ~~~
 {: #event-def title="Event definition"}
 
-Each qlog event MUST contain the mandatory fields: "time"
-({{time-based-fields}}), "name" ({{event-types-and-schema}}), and "data"
+Each qlog event MUST contain the mandatory fields: `time`
+({{time-based-fields}}), `name` ({{event-types-and-schema}}), and `data`
 ({{data-field}}).
 
 Each qlog event is an instance of a concrete event type that derives from the
@@ -622,13 +622,13 @@ the specific values and semantics of the fields common to all events, in
 particular the `name` and `data` fields. Furthermore, they can optionally add
 custom fields.
 
-Each qlog event MAY contain the optional fields: "time_format"
-({{time-based-fields}}), "tuple" ({{tuple-field}}), "group_id"
-({{group-ids}}), and "system_info" ({{system-info}}).
+Each qlog event MAY contain the optional fields: `time_format`
+({{time-based-fields}}), `tuple` ({{tuple-field}}), `group_id`
+({{group-ids}}), and `system_info` ({{system-info}}).
 
 Multiple events can appear in a Trace or TraceSeq and they might contain fields
 with identical values. It is possible to optimize out this duplication using
-"common_fields" ({{common-fields}}).
+`common_fields` ({{common-fields}}).
 
 Example qlog event:
 
@@ -650,23 +650,24 @@ Example qlog event:
 
 ## Timestamps {#time-based-fields}
 
-Each event MUST include a "time" field to indicate the timestamp that it
+Each event MUST include a `time` field to indicate the timestamp that it
 occurred. It is a duration measured from some point in time; its units depend on
-the type of clock chosen and system used. The time field is a float64 and it is
-typically used to represent a duration in milliseconds, with a fractional component
-to microsecond or nanosecond resolution.
+the type of clock chosen and system used. The `time` field is a float64 and it
+is typically used to represent a duration in milliseconds, with a fractional
+component to microsecond or nanosecond resolution.
 
 There are several options for generating and logging timestamps, these are
-governed by the ReferenceTime type (optionally included in the "reference_time"
-field contained in a trace's "common_fields" ({{common-fields}})) and TimeFormat
-type (optionally included in the "time_format" field contained in the event
-itself, or a trace's "common_fields").
+governed by the ReferenceTime type (optionally included in the `reference_time`
+field contained in a trace's `common_fields` ({{common-fields}})) and TimeFormat
+type (optionally included in the `time_format` field contained in the event
+itself, or a trace's `common_fields`).
 
 There is no requirement that events in the same trace use the same time format.
 However, using a single time format for related events can make them easier to
 analyze.
 
-The reference time governs from which point in time the "time" field values are measured and is defined as:
+The reference time governs from which point in time the `time` field values are
+measured and is defined as:
 
 ~~~ cddl
 ReferenceTime = {
@@ -680,26 +681,26 @@ RFC3339DateTime = text .default "1970-01-01T00:00:00.000Z"
 ~~~
 {: #reference-time-def title="ReferenceTime definition"}
 
-The required "clock_type" field represents the type of clock used for time
+The required `clock_type` field represents the type of clock used for time
 measurements. The value "system" represents a clock that uses system time,
 commonly measured against a chosen or well-known epoch. However, depending on
 the system, system time can potentially jump forward or back. In contrast, a
 clock using monotonic time is generally guaranteed to never go backwards. The
 value "monotonic" represents such a clock.
 
-The required "epoch" field is the start of the ReferenceTime. When using the
-"system" clock type, the epoch field SHOULD have a date/time value using the
+The required `epoch` field is the start of the ReferenceTime. When using the
+"system" clock type, the `epoch` field SHOULD have a date/time value using the
 format defined in {{!RFC3339}}. However, the value "unknown" MAY be used.
 
-When using the "monotonic" clock type, the epoch field MUST have the value
+When using the "monotonic" clock type, the `epoch` field MUST have the value
 "unknown".
 
-The optional "wall_clock_time" field can be used to provide an approximate
+The optional `wall_clock_time` field can be used to provide an approximate
 date/time value that logging commenced at if the epoch value is "unknown". It
 uses the format defined in {{!RFC3339}}. Note that conversion of timestamps to
 calendar time based on wall clock times cannot be safely relied on.
 
-The time format details how "time" values are encoded relative to the reference
+The time format details how `time` values are encoded relative to the reference
 time and is defined as:
 
 ~~~ cddl
@@ -709,9 +710,9 @@ TimeFormat = "relative_to_epoch" /
 {: #time-format-def title="TimeFormat definition"}
 
 relative_to_epoch:
-: A duration relative to the ReferenceTime "epoch" field. This approach produces
+: A duration relative to the ReferenceTime `epoch` field. This approach produces
   the largest values. It is suitable for stateless loggers. This is the default
-  value of the "time_format" field.
+  value of the `time_format` field.
 
 relative_to_previous_event:
 : A delta-encoded value: the duration since the time of the previously logged
@@ -843,7 +844,7 @@ Example of a monotonic log using the relative_to_epoch format:
 
 A qlog event is typically associated with a single network "path", which is
 usually aligned with a four-tuple of IP addresses and ports. The optional
-"tuple" field (of type TupleID) identifies a single network four-tuple and can
+`tuple` field (of type TupleID) identifies a single network four-tuple and can
 be used to associate individual events with a specific "path".
 
 Definition:
@@ -857,13 +858,13 @@ Because tuple definitions can depend and vary based on the underlying protocols
 and mechanisms used, this document intentionally does not define further how to
 choose this identifier's value per tuple or how to log other parameters that can
 be associated with such a tuple. This is expected to be defined by extension
-schemas that want to use the tuple field. Implementers are for example free to
+schemas that want to use the `tuple` field. Implementers are for example free to
 encode or serialize tuple information directly into the TupleID's contents or to
 log associated info in a separate event. For example, QUIC has the
-"tuple_assigned" event to couple the TupleID contents to a specific tuple
+`tuple_assigned` event to couple the TupleID contents to a specific tuple
 configuration, see {{Section 4.7 of QLOG-QUIC}}.
 
-The "tuple" field is intentionally marked as optional, as there can be many
+The `tuple` field is intentionally marked as optional, as there can be many
 practical or logical reasons why implementations might not want to log it for
 every event. For example, the TupleID contents will usually be the same for all
 events in a single connection and bears no repeating. Similarly, application
@@ -874,7 +875,7 @@ However, in some situations, such as during QUIC's Connection Migration or when
 a transport protocol can use multiple paths, it is useful to be able to split
 events across multiple (concurrent) tuples and/or paths, especially for
 packet-level events. Even in those cases however, it is allowed to log the
-"tuple" field only for some events in the trace when salient (for example only
+`tuple` field only for some events in the trace when salient (for example only
 when QUIC PATH_CHALLENGE and PATH_RESPONSE frames are involved, or when the
 first packet on a new path is sent/received) and omit it when not.
 
@@ -892,14 +893,14 @@ each event that indicates to which conceptual "group" each event belongs. A
 post-processing step can then extract events per group. However, this group
 identifier can be highly protocol and context-specific. In the example above,
 the QUIC "Original Destination Connection ID" could be used to uniquely identify
-a connection. As such, the server implementation might add an "odcid" field to
+a connection. As such, the server implementation might add an `odcid` field to
 each event.
 Additionally, a service providing different levels of Quality of Service (QoS)
 to their users might wish to group connections per QoS level applied. They might
-instead prefer a "qos" field.
+instead prefer a `qos` field.
 
 As such, to provide consistency and ease of tooling in cross-protocol and
-cross-context setups, qlog instead defines the common "group_id" field, which
+cross-context setups, qlog instead defines the common `group_id` field, which
 contains a string value. Implementations are free to use their preferred string
 serialization for this field, so long as it contains a unique value per logical
 group. Some examples can be seen in {{group-id-ex}}.
@@ -938,14 +939,14 @@ field for that purpose.
 
 Note also that, typically, a single trace only contains events belonging to a
 single logical group (for example, an individual QUIC connection). As such,
-instead of logging the "group_id" field with an identical value for each event
-instance, this field is typically logged once in "common_fields", see
+instead of logging the `group_id` field with an identical value for each event
+instance, this field is typically logged once in `common_fields`, see
 {{common-fields}}.
 
 ## SystemInformation {#system-info}
 
-The "system_info" field can be used to record system-specific details related to an
-event. This is useful, for instance, where an application splits work across
+The `system_info` field can be used to record system-specific details related to
+an event. This is useful, for instance, where an application splits work across
 CPUs, processes, or threads and events for a single trace occur on potentially
 different combinations thereof. Each field is optional to support deployment
 diversity.
@@ -962,14 +963,14 @@ SystemInformation = {
 ## CommonFields {#common-fields}
 
 As discussed in the previous sections, information for a typical qlog event
-varies in three main fields: "time", "name" and associated data. Additionally,
+varies in three main fields: `time`, `name` and associated data. Additionally,
 there are also several more advanced fields that allow mixing events from
 different protocols and contexts inside of the same trace (for example
-"group_id"). In most "normal" use cases however, the values of these advanced
+`group_id`). In most "normal" use cases however, the values of these advanced
 fields are consistent for each event instance (for example, a single trace
 contains events for a single QUIC connection).
 
-To reduce file size and make logging easier, qlog uses the "common_fields" list
+To reduce file size and make logging easier, qlog uses the `common_fields` list
 to indicate those fields and their values that are shared by all events in this
 component trace. This prevents these fields from being logged for each individual
 event. An example of this is shown in {{common-fields-ex}}.
@@ -1032,7 +1033,7 @@ extracted to common_fields:
 ~~~~~~~~
 {: #common-fields-ex title="CommonFields example"}
 
-The "common_fields" field is a generic dictionary of key-value pairs, where the
+The `common_fields` field is a generic dictionary of key-value pairs, where the
 key is always a string and the value can be of any type, but is typically also a
 string or number. As such, unknown entries in this dictionary MUST be disregarded
 by the user and tools (i.e., the presence of an unknown field is explicitly NOT an
@@ -1057,7 +1058,7 @@ Tools MUST be able to deal with these fields being defined either on each event
 individually or combined in common_fields. Note that if at least one event in a
 trace has a different value for a given field, this field MUST NOT be added to
 common_fields but instead defined on each event individually. Good examples of such
-fields are "time" and "data", which are divergent by nature.
+fields are `time` and `data`, which are divergent by nature.
 
 # Concrete Event Types and Event Schemas {#event-types-and-schema}
 
@@ -1180,7 +1181,7 @@ Registration requests should use the template defined in {{iana}}.
 
 ## Extending the Data Field {#data-field}
 
-An event's "data" field is a generic key-value map (e.g., JSON object). It
+An event's `data` field is a generic key-value map (e.g., JSON object). It
 defines the per-event metadata that is to be logged. Its specific subfields and
 their semantics are defined per concrete event type. For example, data field
 definitions for QUIC and HTTP/3 can be found in {{QLOG-QUIC}} and {{QLOG-H3}}.
@@ -1226,12 +1227,12 @@ MyNSEventX = {
 {: #groupsocket-extension-example title="Example of using a generic CDDL group socket to extend an existing event data definition"}
 
 Secondly, a "type socket" allows documents to define entirely new event data
-definitions. The type of the "data" field in the qlog Event type (see
+definitions. The type of the `data` field in the qlog Event type (see
 {{event-def}}) is the type socket `$ProtocolEventData`, which acts as an open
-enum of the types allowed for the data field. Each new event data definition is
-its own CDDL type, added to `$ProtocolEventData` with a plug that uses the `/=`
-operator. Any generic key-value map type can be added this way. The example in
-{{protocoleventdata-def}} shows `$ProtocolEventData` extended with two types.
+enum of the types allowed for the `data` field. Each new event data definition
+is its own CDDL type, added to `$ProtocolEventData` with a plug that uses the
+`/=` operator. Any generic key-value map type can be added this way. The example
+in {{protocoleventdata-def}} shows `$ProtocolEventData` extended with two types.
 
 ~~~~~~~~
 ; We define two new concrete events in a new event schema
@@ -1263,7 +1264,7 @@ extension field to newly defined event data to allow the new events to be
 properly extended by other event schemas.
 
 A combined but purely illustrative example of the use of both extension points
-for a conceptual QUIC "packet_sent" event is shown in {{data-ex}}:
+for a conceptual QUIC `packet_sent` event is shown in {{data-ex}}:
 
 ~~~~~~~~
 ; defined in the main QUIC event schema
@@ -1324,13 +1325,13 @@ log messages gives a hint about the cause. However, in highly-parallel and
 optimized implementations, corresponding log messages might be separated in
 time, making it difficult to build an accurate context.
 
-Including a "trigger" as part of the event itself is one method for providing
+Including a `trigger` as part of the event itself is one method for providing
 fine-grained information without much additional overhead. In circumstances
 where a trigger is useful, it is RECOMMENDED for the purpose of consistency that
-the event data definition contains an optional field named "trigger", holding a
+the event data definition contains an optional field named `trigger`, holding a
 string value.
 
-For example, the QUIC "packet_dropped" event ({{Section 5.7 of QLOG-QUIC}})
+For example, the QUIC `packet_dropped` event ({{Section 5.7 of QLOG-QUIC}})
 includes a trigger field that identifies the general reason category for
 dropping a QUIC packet. {{trigger-ex}} shows this field; the event's other
 fields are omitted for clarity.
@@ -1406,8 +1407,8 @@ guidance on which to use in specific situations.
 
 qlog is an extensible format and it is expected that new event schemas will
 emerge that define new namespaces, event types, event fields (e.g., a field
-indicating an event's privacy properties), as well as values for the "trigger"
-property within the "data" field, or other member fields of the "data" field, as
+indicating an event's privacy properties), as well as values for the `trigger`
+property within the `data` field, or other member fields of the `data` field, as
 they see fit.
 
 It SHOULD NOT be expected that general-purpose tools will recognize or visualize
@@ -1601,7 +1602,7 @@ when for example investigating or tuning packetization behavior or determining
 encoding/framing overheads. However, these fields are not always necessary, can
 take up considerable space, and can have a considerable privacy and security
 impact (see {{privacy}}). Where applicable, these fields are grouped in a
-separate, optional, field named "raw" of type RawInfo. The exact definition of
+separate, optional, field named `raw` of type RawInfo. The exact definition of
 entities, headers, trailers and payloads depends on the protocol used.
 
 ~~~ cddl
@@ -1623,9 +1624,9 @@ RawInfo = {
 {: #raw-info-def title="RawInfo definition"}
 
 All fields in RawInfo are defined as optional. It is acceptable to log any field
-without the others. Logging length related fields and omitting the data field
+without the others. Logging length related fields and omitting the `data` field
 permits protocol debugging without the risk of logging potentially sensitive
-data. The data field, if logged, is not required to contain the contents of a
+data. The `data` field, if logged, is not required to contain the contents of a
 full entity and can be truncated, see {{truncated-values}}. The length fields,
 if logged, should indicate the actual lengths as defined above, even if the
 data field is omitted or truncated.
@@ -1673,7 +1674,7 @@ interoperability considerations for both formats, and {{optimizations}} presents
 potential optimizations.
 
 Serialization formats require appropriate deserializers/parsers. The
-"serialization_format" field ({{abstract-logfile}}) is used to indicate the
+`serialization_format` field ({{abstract-logfile}}) is used to indicate the
 chosen serialization format.
 
 ## qlog to JSON mapping {#format-json}
@@ -1719,7 +1720,7 @@ JSON, it does not require a document to be wrapped as a full object with
 This alternative record streaming approach cannot be accommodated by QlogFile
 ({{qlog-file-def}}). Instead, QlogFileSeq is defined in {{qlog-file-seq-def}},
 which notably includes only a single trace (TraceSeq) and omits an explicit
-"events" array. An example is provided in {{json-seq-ex}}. The "group_id" field
+`events` array. An example is provided in {{json-seq-ex}}. The `group_id` field
 can still be used on a per-event basis to include events from conceptually
 different sources in a single JSON-SEQ qlog file.
 
@@ -1866,7 +1867,7 @@ In general, QLOGDIR should be preferred over QLOGFILE if an endpoint is prone to
 generate multiple qlog files. This can for example be the case for a QUIC server
 implementation that logs each QUIC connection in a separate qlog file. An
 alternative that uses QLOGFILE would be a QUIC server that logs all connections in
-a single file and uses the "group_id" field ({{group-ids}}) to allow post-hoc
+a single file and uses the `group_id` field ({{group-ids}}) to allow post-hoc
 separation of events.
 
 Implementations SHOULD provide support for QLOGDIR and MAY provide support for
