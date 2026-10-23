@@ -734,6 +734,7 @@ HTTP3OriginFrame = {
   frame_type: "origin"
 
   origin_entries: [* HTTP3OriginEntry]
+  ? raw: RawInfo
 }
 ~~~
 {: #h3originframe-def title="HTTP3OriginFrame definition"}
