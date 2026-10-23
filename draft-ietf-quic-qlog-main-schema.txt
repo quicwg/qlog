@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 24 April 2027                                              Meta
+Expires: 26 April 2027                                              Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                                    Apple
-                                                         21 October 2026
+                                                         23 October 2026
 
 
              qlog: Structured Logging for Network Protocols
@@ -52,7 +52,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 24 April 2027.
+   This Internet-Draft will expire on 26 April 2027.
 
 Copyright Notice
 
@@ -180,9 +180,9 @@ Table of Contents
    aggregation, event grouping and log file size reduction techniques.
 
    All qlog schemas can be serialized in many ways (e.g., JSON, CBOR,
-   protobuf, etc).  This document describes only how to employ [JSON],
-   its subset [I-JSON], and its streamable derivative
-   [JSON-Text-Sequences].
+   protobuf, etc).  This document describes only how to employ JSON
+   [RFC8259], its subset I-JSON [RFC7493], and its streamable derivative
+   JSON Text Sequences [RFC7464].
 
 1.1.  Conventions and Terminology
 
@@ -192,7 +192,7 @@ Table of Contents
    BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all
    capitals, as shown here.
 
-   Serialization examples in this document use JSON ([JSON]) unless
+   Serialization examples in this document use JSON ([RFC8259]) unless
    otherwise indicated.
 
    Events are defined with an importance level as described in
@@ -236,10 +236,10 @@ Table of Contents
    The ordering of member fields in qlog CDDL type definitions is not
    significant.  The ordering of member fields in the serialization
    formats defined in this document, JSON (Section 11.1) and JSON Text
-   Sequences (Section 11.2), is not significant and qlog tools MUST NOT
-   assume so.  Other qlog serialization formats MAY define field order
-   significance, if they do they MUST define requirements for qlog tools
-   supporting those formats.
+   Sequences (Section 11.2), is also not significant, and qlog tools
+   MUST NOT depend on it.  Other qlog serialization formats MAY define
+   field order as significant; if they do, they MUST define requirements
+   for qlog tools supporting those formats.
 
       Note to RFC editor: Please remove the following text in this
       section before publication.
@@ -312,11 +312,12 @@ Table of Contents
    Events are logged at a time instant and convey specific details of
    the logging use case.  For example, a network packet being sent or
    received.  This document declares an abstract Event class (Section 7)
-   containing common fields, which all concrete events derive from.
-   Concrete events are defined by event schemas that declare or extend a
-   namespace, which contains one or more related event types or their
-   extensions.  For example, this document defines two event schemas for
-   two generic event namespaces loglevel and simulation (see Section 9).
+   containing fields common to all events, which all concrete events
+   derive from.  Concrete events are defined by event schemas that
+   declare or extend a namespace, which contains one or more related
+   event types or their extensions.  For example, this document defines
+   two event schemas for two generic event namespaces loglevel and
+   simulation (see Section 9).
 
 3.  Abstract LogFile Class
 
@@ -406,10 +407,11 @@ Table of Contents
 
    QlogFile extends LogFile using the CDDL unwrap operator (~), which
    copies the fields presented in Section 3.  Additionally, the optional
-   "traces" field contains an array of qlog traces (Section 4.2), each
-   of which contain metadata and an array of qlog events (Section 7).
+   "traces" field contains an array of qlog traces (Section 4.2) or
+   trace errors (Section 4.3).  Each trace contains metadata and an
+   array of qlog events (Section 7).
 
-   The default serialization format for QlogFile is JSON; see
+   This document defines a JSON serialization for QlogFile; see
    Section 11.1 for guidance on populating the "serialization_format"
    field and other considerations.  Where a qlog file is serialized to a
    JSON format, one of the downsides is that it is inherently a non-
@@ -434,12 +436,11 @@ Table of Contents
 
 4.1.  Traces
 
-   It can be advantageous to group several related qlog traces together
-   in a single file.  For example, it is possible to simultaneously
-   perform logging on the client, on the server, and on a single point
-   on their common network path.  For analysis, it is useful to
-   aggregate these three individual traces together into a single file,
-   so it can be uniquely stored, transferred, and annotated.
+   It can be useful to group several related qlog traces in a single
+   file.  For example, logging can happen simultaneously on the client,
+   on the server, and at a point on their common network path.
+   Combining these three traces in one file makes them easier to
+   analyze, store, transfer, and annotate as a set.
 
    The QlogFile "traces" field is an array that contains a list of
    individual qlog traces.  When capturing a qlog at a vantage point, it
@@ -448,6 +449,10 @@ Table of Contents
    copying the traces from the component files into the combined
    "traces" array of a new, aggregated qlog file.
 
+   Note that another way to combine events of different traces in a
+   single qlog file is through the use of the "group_id" field,
+   discussed in Section 7.3.
+
 4.2.  Trace
 
    The exact conceptual definition of a Trace can be fluid.  For
@@ -455,9 +460,9 @@ Table of Contents
    for a single endpoint, for a single measurement interval, for a
    single protocol, etc.  In the normal use case however, a trace is a
    log of a single data flow collected at a single location or vantage
-   point.  For example, for QUIC, a single trace only contains events
-   for a single logical QUIC connection for either the client or the
-   server.
+   point.  For example, for QUIC, a single trace typically contains
+   events for a single logical QUIC connection for either the client or
+   the server.
 
    A Trace contains some metadata in addition to qlog events, defined in
    Figure 5 as:
@@ -538,10 +543,6 @@ Table of Contents
    }
 
                         Figure 8: TraceError example
-
-   Note that another way to combine events of different traces in a
-   single qlog file is through the use of the "group_id" field,
-   discussed in Section 7.3.
 
 5.  QlogFileSeq schema
 
@@ -713,9 +714,9 @@ Table of Contents
 
    Each qlog event is an instance of a concrete event type that derives
    from the abstract Event class; see Section 8.  They extend it by
-   defining the specific values and semantics of common fields, in
-   particular the name and data fields.  Furthermore, they can
-   optionally add custom fields.
+   defining the specific values and semantics of the fields common to
+   all events, in particular the name and data fields.  Furthermore,
+   they can optionally add custom fields.
 
    Each qlog event MAY contain the optional fields: "time_format"
    (Section 7.1), "tuple" (Section 7.2), "group_id" (Section 7.3), and
@@ -811,10 +812,11 @@ Table of Contents
       for stateless loggers.  This is the default value of the
       "time_format" field.
 
-   relative_to_previous_event:  A delta-encoded value, based on the
-      previously logged value.  The first event in a trace is always
-      relative to the ReferenceTime.  This approach produces the
-      smallest values.  It is suitable for stateful loggers.
+   relative_to_previous_event:  A delta-encoded value: the duration
+      since the time of the previously logged event.  The first event in
+      a trace is always relative to the ReferenceTime.  This approach
+      produces the smallest values.  It is suitable for stateful
+      loggers.
 
    Events in each individual trace SHOULD be logged in strictly
    ascending timestamp order (though not necessarily absolute value, for
@@ -1049,10 +1051,12 @@ Table of Contents
    thereof.  Each field is optional to support deployment diversity.
 
    SystemInformation = {
-     ? processor_id: uint32
-     ? process_id: uint32
-     ? thread_id: uint32
+       ? processor_id: uint32
+       ? process_id: uint32
+       ? thread_id: uint32
    }
+
+                  Figure 24: SystemInformation definition
 
 7.5.  CommonFields
 
@@ -1069,7 +1073,7 @@ Table of Contents
    "common_fields" list to indicate those fields and their values that
    are shared by all events in this component trace.  This prevents
    these fields from being logged for each individual event.  An example
-   of this is shown in Figure 24.
+   of this is shown in Figure 25.
 
    JSON serialization with repeated field values
    per-event instance:
@@ -1126,7 +1130,7 @@ Table of Contents
        ]
    }
 
-                      Figure 24: CommonFields example
+                      Figure 25: CommonFields example
 
    The "common_fields" field is a generic dictionary of key-value pairs,
    where the key is always a string and the value can be of any type,
@@ -1146,7 +1150,7 @@ Table of Contents
        * text => any
    }
 
-                     Figure 25: CommonFields definition
+                     Figure 26: CommonFields definition
 
    Tools MUST be able to deal with these fields being defined either on
    each event individually or combined in common_fields.  Note that if
@@ -1167,11 +1171,10 @@ Table of Contents
    extension that adds a new QUIC frame QUICNewFrame would also be part
    of the quic namespace, but defined in a new event schema with URI
    urn:ietf:params:qlog:events:quic#new-frame-extension.  Similarly, the
-   first document containing qlog event definitions for a new
-   hypothetical protocol called "IPoAC" would be part of the new event
-   namespace ipoac which is defined as part of the new Event Schema URI
-   urn:ietf:params:qlog:events:ipoac, both of which are defined and
-   registered in that first document.
+   first document that defines qlog events for a new hypothetical
+   protocol called "IPoAC" would define and register both the new event
+   namespace ipoac and the event schema URI
+   urn:ietf:params:qlog:events:ipoac.
 
    Concrete event types MUST belong to a single event namespace and MUST
    have a registered non-empty identifier of type text.
@@ -1195,8 +1198,9 @@ Table of Contents
       types and/or extending existing events/data types within the
       namespace with new fields)
 
-   A single document can define multiple event schemas (for example see
-   Section 9).
+   A single document can define multiple event schemas.  For example,
+   this document defines the loglevel and simulation event schemas; see
+   Section 9.1 and Section 9.2 respectively.
 
    An event schema MUST have a single URI [RFC3986] that MUST be
    absolute.  The URI MUST include the namespace identifier.  Event
@@ -1211,14 +1215,14 @@ Table of Contents
    Implementations that record concrete event types SHOULD list all
    event schemas in use in a specific trace.  This is achieved by
    including the appropriate URIs in the event_schemas field of the
-   Trace (Section 4.2) and TraceSeq (Section 5.1) classes.  The
-   event_schemas is a hint to tools about the possible event namespaces,
-   their extensions, and the event types/data types contained therein,
-   that a qlog trace might contain.  The trace MAY still contain event
-   types that do not belong to a listed event schema.  Inversely, not
-   all event types associated with an event schema listed in
-   event_schemas are guaranteed to be logged in a qlog trace.  Tools
-   MUST NOT treat either of these as an error; see Section 13.
+   Trace (Section 4.2) and TraceSeq (Section 5.1) types.  The
+   event_schemas field is a hint to tools about which event namespaces,
+   extensions, event types, and data types a trace might contain.  The
+   trace MAY still contain event types that do not belong to a listed
+   event schema.  Conversely, not all event types associated with an
+   event schema listed in event_schemas are guaranteed to be logged in a
+   qlog trace.  Tools MUST NOT treat either of these as an error; see
+   Section 13.
 
    In the following hypothetical example, a qlog trace contains events
    belonging to:
@@ -1234,8 +1238,8 @@ Table of Contents
    *  Events from three private event schemas, detailing definitions for
       and extensions to two namespaces (pickle and cucumber)
 
-   The standardized schema URIs use a URN format, the private schemas
-   use a URI with domain name.
+   The standardized schema URIs use a URN format; the private schemas
+   use a URI with a domain name.
 
    "event_schemas": [
      "urn:ietf:params:qlog:events:loglevel",
@@ -1248,7 +1252,7 @@ Table of Contents
      "https://example.com/032025/cucumber.html"
    ]
 
-               Figure 26: Example event_schemas serialization
+               Figure 27: Example event_schemas serialization
 
 8.1.  Event Schema URIs
 
@@ -1258,11 +1262,8 @@ Table of Contents
 
    Event schemas that define a new namespace SHOULD use a URN of the
    form urn:ietf:params:qlog:events:<namespace identifier>, where
-   <namespace identifier> is globally unique.  For example, this
-   document defines two event schemas (Section 9) for two namespaces:
-   loglevel and simulation.  Other documents also define event schemas,
-   such as [QLOG-QUIC] for the quic namespace and [QLOG-H3] for the
-   http3 namespace.
+   <namespace identifier> is globally unique.  For example, the loglevel
+   event schema uses urn:ietf:params:qlog:events:loglevel.
 
    Event schemas that extend an existing namespace SHOULD use a URN of
    the form urn:ietf:params:qlog:events:<namespace
@@ -1300,17 +1301,16 @@ Table of Contents
    event type.  For example, data field definitions for QUIC and HTTP/3
    can be found in [QLOG-QUIC] and [QLOG-H3].
 
-   In order to keep qlog fully extensible, two separate CDDL extension
-   points ("sockets" or "plugs") are used to fully define data fields.
+   To keep qlog fully extensible, data fields are defined using two
+   kinds of CDDL extension point, called "sockets", which other
+   definitions extend with "plugs"; see Section 3.9 of [CDDL].
 
-   Firstly, to allow existing data field definitions to be extended (for
-   example by adding an additional field needed for a new protocol
-   feature), a CDDL "group socket" is used.  This takes the form of a
-   subfield with a name of * $$NAMESPACE-EVENTTYPE-extension.  This
-   field acts as a placeholder that can later be replaced with newly
-   defined fields by assigning them to the socket with the //= operator.
-   Multiple extensions can be assigned to the same group socket.  An
-   example is shown in Figure 27.
+   Firstly, a "group socket" allows existing event data definitions to
+   be extended, for example with a field needed for a new protocol
+   feature.  An event data definition includes the socket as an entry of
+   the form * $$NAMESPACE-EVENTTYPE-extension.  Other event schemas add
+   fields to it with plugs that use the //= operator, and several plugs
+   can extend the same socket.  An example is shown in Figure 28.
 
    ; original definition in event schema A
    MyNSEventX = {
@@ -1338,29 +1338,26 @@ Table of Contents
        ? additional_field_c: text
    }
 
-     Figure 27: Example of using a generic CDDL group socket to extend
+     Figure 28: Example of using a generic CDDL group socket to extend
                      an existing event data definition
 
-   Secondly, to allow documents to define fully new event data field
-   definitions (as opposed to extend existing ones), a CDDL "type
-   socket" is used.  For this purpose, the type of the "data" field in
-   the qlog Event type (see Figure 14) is the extensible
-   $ProtocolEventData type.  This field acts as an open enum of possible
-   types that are allowed for the data field.  As such, any new event
-   data field is defined as its own CDDL type and later merged with the
-   existing $ProtocolEventData enum using the /= extension operator.
-   Any generic key-value map type can be assigned to $ProtocolEventData.
-   The example in Figure 28 demonstrates $ProtocolEventData being
-   extended with two types.
+   Secondly, a "type socket" allows documents to define entirely new
+   event data definitions.  The type of the "data" field in the qlog
+   Event type (see Figure 14) is the type socket $ProtocolEventData,
+   which acts as an open enum of the types allowed for the data field.
+   Each new event data definition is its own CDDL type, added to
+   $ProtocolEventData with a plug that uses the /= operator.  Any
+   generic key-value map type can be added this way.  The example in
+   Figure 29 shows $ProtocolEventData extended with two types.
 
    ; We define two new concrete events in a new event schema
-   MyNSEvent1 /= {
+   MyNSEvent1 = {
        field_1: uint8
 
        * $$myns-event1-extension
    }
 
-   MyNSEvent2 /= {
+   MyNSEvent2 = {
        field_2: bool
 
        * $$myns-event2-extension
@@ -1373,7 +1370,7 @@ Table of Contents
    ; the "data" field of a qlog event can now also be of type
    ; MyNSEvent1 and MyNSEvent2
 
-                   Figure 28: ProtocolEventData extension
+                   Figure 29: ProtocolEventData extension
 
    Event schemas defining new qlog events MUST properly extend
    $ProtocolEventData when defining data fields to enable automated
@@ -1384,13 +1381,13 @@ Table of Contents
 
    A combined but purely illustrative example of the use of both
    extension points for a conceptual QUIC "packet_sent" event is shown
-   in Figure 29:
+   in Figure 30:
 
    ; defined in the main QUIC event schema
    QUICPacketSent = {
-       ? packet_size: uint16
        header: PacketHeader
        ? frames: [* $QuicFrame]
+       ? raw: RawInfo
 
        * $$quic-packetsent-extension
    }
@@ -1412,7 +1409,6 @@ Table of Contents
      "time": 123456,
      "name": "quic:packet_sent",
      "data": {
-         "packet_size": 1280,
          "header": {
              "packet_type": "1RTT",
              "packet_number": 123
@@ -1420,17 +1416,21 @@ Table of Contents
          "frames": [
              {
                  "frame_type": "stream",
+                 "stream_id": 0,
                  "offset": 456
              },
              {
                  "frame_type": "padding"
              }
          ],
+         "raw": {
+             "length": 1280
+         },
          "additional_field": true
      }
    }
 
-      Figure 29: Example of an extended 'data' field for a conceptual
+      Figure 30: Example of an extended 'data' field for a conceptual
                            QUIC packet_sent event
 
 8.2.1.  Triggers
@@ -1451,7 +1451,7 @@ Table of Contents
 
    For example, the QUIC "packet_dropped" event (Section 5.7 of
    [QLOG-QUIC]) includes a trigger field that identifies the general
-   reason category for dropping a QUIC packet.  Figure 30 shows this
+   reason category for dropping a QUIC packet.  Figure 31 shows this
    field; the event's other fields are omitted for clarity.
 
    QUICPacketDropped = {
@@ -1469,7 +1469,7 @@ Table of Contents
        ...
    }
 
-                         Figure 30: Trigger example
+                         Figure 31: Trigger example
 
 8.3.  Event Importance Levels
 
@@ -1478,7 +1478,7 @@ Table of Contents
    separate QUIC connection_started event overlaps with the more generic
    connection_state_updated.  In these cases, it is not always clear
    which event should be logged or used, and which event should take
-   precedence if e.g., both are present and provide conflicting
+   precedence if, for example, both are present and provide conflicting
    information.
 
    To aid in this decision making, qlog defines three event importance
@@ -1515,17 +1515,16 @@ Table of Contents
    MAY be present in qlog files and tool implementers MAY add support
    for these, but they are not required to.
 
-   Note that in some cases, implementers might not want to log for
-   example data content details in Core-level events due to performance
-   or privacy considerations.  In this case, they SHOULD use (a subset
-   of) relevant Base-level events instead to ensure usability of the
-   qlog output.  As an example, implementations that do not log QUIC
-   packet_received events and thus also not which (if any) ACK frames
-   the packet contains, SHOULD log packets_acked events instead.
+   Implementers might choose not to log some details in Core-level
+   events, such as data content, for performance or privacy reasons (see
+   Section 14).  In that case, they SHOULD log relevant Base-level
+   events instead, so that the qlog output remains usable.  For example,
+   a QUIC implementation can omit the details of STREAM frames from its
+   packet_received events and log stream_state_updated events instead.
 
    Finally, for event types whose data (partially) overlap with other
-   event types' definitions, where necessary the event definition
-   document should include explicit guidance on which to use in specific
+   event types' definitions, where necessary the document defining them
+   should include explicit guidance on which to use in specific
    situations.
 
 8.4.  Tooling Expectations
@@ -1544,27 +1543,24 @@ Table of Contents
 8.5.  Further Design Guidance
 
    There are several ways of defining concrete event types.  In
-   practice, two main types of approach have been observed: a) those
-   that map directly to concepts seen in the protocols (e.g.,
-   packet_sent) and b) those that act as aggregating events that combine
-   data from several possible protocol behaviors or code paths into one
-   (e.g., parameters_set).  The latter are typically used as a means to
-   reduce the amount of unique event definitions, as reflecting each
-   possible protocol event as a separate qlog entity would cause an
-   explosion of event types.
+   practice, two main approaches have been observed.  In the first,
+   event types map directly to protocol concepts (e.g., packet_sent).
+   In the second, event types aggregate data from several protocol
+   behaviors or code paths (e.g., parameters_set).  Aggregation keeps
+   the number of definitions manageable, as a separate definition for
+   every protocol behavior would cause an explosion of event types.
 
-   Additionally, logging duplicate data is typically prevented as much
-   as possible.  For example, packet header values that remain
-   consistent across many packets are split into separate events (for
-   example spin_bit_updated or connection_id_updated for QUIC).
+   Event schemas also avoid duplicate data as much as possible.  For
+   example, QUIC packet header values that stay the same across many
+   packets have their own events, logged only when a value changes
+   (e.g., spin_bit_updated or connection_id_updated).
 
-   Finally, when logging additional state change events, those state
-   changes can often be directly inferred from data on the wire (for
-   example flow control limit changes).  As such, if the implementation
-   is bug-free and spec-compliant, logging additional events is
-   typically avoided.  Exceptions have been made for common events that
-   benefit from being easily identifiable or individually logged (for
-   example packets_acked).
+   Finally, many state changes can be inferred from data on the wire
+   (e.g., flow control limit changes).  Event schemas typically do not
+   define events for these, because a bug-free and spec-compliant
+   implementation already reveals the change on the wire.  Exceptions
+   have been made for common events that benefit from being easy to
+   identify or log individually (e.g., packets_acked).
 
 9.  The Generic Event Schemas
 
@@ -1591,7 +1587,7 @@ Table of Contents
 
    $ProtocolEventData /= LogLevelEventData
 
-        Figure 31: LogLevelEventData and ProtocolEventData extension
+        Figure 32: LogLevelEventData and ProtocolEventData extension
 
    The event types are further defined below, their identifier is the
    heading name.
@@ -1608,7 +1604,7 @@ Table of Contents
        * $$loglevel-error-extension
    }
 
-                    Figure 32: LogLevelError definition
+                    Figure 33: LogLevelError definition
 
 9.1.2.  warning
 
@@ -1622,7 +1618,7 @@ Table of Contents
        * $$loglevel-warning-extension
    }
 
-                   Figure 33: LogLevelWarning definition
+                   Figure 34: LogLevelWarning definition
 
 9.1.3.  info
 
@@ -1636,7 +1632,7 @@ Table of Contents
        * $$loglevel-info-extension
    }
 
-                     Figure 34: LogLevelInfo definition
+                     Figure 35: LogLevelInfo definition
 
 9.1.4.  debug
 
@@ -1650,7 +1646,7 @@ Table of Contents
        * $$loglevel-debug-extension
    }
 
-                    Figure 35: LogLevelDebug definition
+                    Figure 36: LogLevelDebug definition
 
 9.1.5.  verbose
 
@@ -1664,7 +1660,7 @@ Table of Contents
        * $$loglevel-verbose-extension
    }
 
-                   Figure 36: LogLevelVerbose definition
+                   Figure 37: LogLevelVerbose definition
 
 9.2.  Simulation Events
 
@@ -1684,7 +1680,7 @@ Table of Contents
 
    $ProtocolEventData /= SimulationEventData
 
-       Figure 37: SimulationEventData and ProtocolEventData extension
+       Figure 38: SimulationEventData and ProtocolEventData extension
 
    The event types are further defined below, their identifier is the
    heading name.
@@ -1694,7 +1690,7 @@ Table of Contents
    Used to specify which specific scenario is being tested at this
    particular instance.  This supports, for example, aggregation of
    several simulations into one trace (e.g., split by group_id).  It has
-   Extra importance level; see Section 8.3.
+   Extra importance level.
 
    SimulationScenario = {
        ? name: text
@@ -1703,12 +1699,12 @@ Table of Contents
        * $$simulation-scenario-extension
    }
 
-                  Figure 38: SimulationScenario definition
+                  Figure 39: SimulationScenario definition
 
 9.2.2.  marker
 
-   Used to indicate when specific emulation conditions are triggered at
-   set times (e.g., at 3 seconds, 2% packet loss is introduced; at 10
+   Used to indicate when specific test conditions are triggered at set
+   times (e.g., at 3 seconds, 2% packet loss is introduced; at 10
    seconds, a NAT rebinding is triggered).  It has Extra importance
    level.
 
@@ -1719,7 +1715,7 @@ Table of Contents
        * $$simulation-marker-extension
    }
 
-                   Figure 39: SimulationMarker definition
+                   Figure 40: SimulationMarker definition
 
 10.  Raw packet and frame information
 
@@ -1749,7 +1745,7 @@ Table of Contents
        ? data: hexstring
    }
 
-                       Figure 40: RawInfo definition
+                       Figure 41: RawInfo definition
 
    All fields in RawInfo are defined as optional.  It is acceptable to
    log any field without the others.  Logging length related fields and
@@ -1757,8 +1753,8 @@ Table of Contents
    of logging potentially sensitive data.  The data field, if logged, is
    not required to contain the contents of a full entity and can be
    truncated, see Section 11.4.  The length fields, if logged, should
-   indicate the length of the full entity, even if the data field is
-   omitted or truncated.
+   indicate the actual lengths as defined above, even if the data field
+   is omitted or truncated.
 
    Protocol entities containing an on-the-wire length field (for example
    a packet header or QUIC's stream frame) are strongly recommended to
@@ -1768,8 +1764,9 @@ Table of Contents
    This document does not specify explicit header_length or
    trailer_length fields.  In protocols without trailers, header_length
    can be calculated by subtracting the payload_length from the length.
-   In protocols with trailers (e.g., QUIC's AEAD tag), event definition
-   documents SHOULD define how to support header_length calculation.
+   In protocols with trailers (e.g., QUIC's AEAD tag), documents that
+   define event schemas SHOULD specify how to support header_length
+   calculation.
 
 11.  Serializing qlog
 
@@ -1813,10 +1810,9 @@ Table of Contents
 
 11.1.  qlog to JSON mapping
 
-   As described in Section 4, JSON is the default qlog serialization.
-   When mapping qlog to normal JSON, QlogFile (Figure 3) is used.  The
-   Media Type is "application/qlog+json" per [RFC6839].  The file
-   extension/suffix SHOULD be ".qlog".
+   When mapping qlog to JSON, QlogFile (Figure 3) is used.  The Media
+   Type is "application/qlog+json" per [RFC6839].  The file extension/
+   suffix SHOULD be ".qlog".
 
    In accordance with Section 8.1 of [RFC8259], JSON files are required
    to use UTF-8 both for the file itself and the string values it
@@ -1829,8 +1825,8 @@ Table of Contents
 
 11.2.  qlog to JSON Text Sequences mapping
 
-   One of the downsides of using normal JSON is that it is inherently a
-   non-streamable format.  A qlog serializer could work around this by
+   One of the downsides of using JSON is that it is inherently a non-
+   streamable format.  A qlog serializer could work around this by
    opening a file, writing the required opening data, streaming qlog
    events by appending them, and then finalizing the log by appending
    appropriate closing brackets, e.g., "]}]}".  However, failure to
@@ -1853,9 +1849,9 @@ Table of Contents
    In order to leverage the streaming capability, each qlog event is
    serialized and interpreted as an individual JSON Text Sequence
    record, that is appended as a new object to the back of an event
-   stream or log file.  Put differently, unlike default JSON, it does
-   not require a document to be wrapped as a full object with "{ ... }"
-   or "[... ]".
+   stream or log file.  Put differently, unlike JSON, it does not
+   require a document to be wrapped as a full object with "{ ... }" or
+   "[... ]".
 
    This alternative record streaming approach cannot be accommodated by
    QlogFile (Figure 3).  Instead, QlogFileSeq is defined in Figure 9,
@@ -1879,11 +1875,11 @@ Table of Contents
 11.2.1.  Supporting JSON Text Sequences in tooling
 
    Note that JSON Text Sequences are not supported in most default
-   programming environments (unlike normal JSON).  However, several
-   custom JSON-SEQ parsing libraries exist in most programming languages
-   that can be used and the format is easy enough to parse with existing
+   programming environments (unlike JSON).  However, several custom
+   JSON-SEQ parsing libraries exist in most programming languages that
+   can be used and the format is easy enough to parse with existing
    implementations (i.e., by splitting the file into its component
-   records and feeding them to a normal JSON parser individually, as
+   records and feeding them to a standard JSON parser individually, as
    each record by itself is a valid JSON object).
 
 11.3.  JSON Interoperability
@@ -1891,15 +1887,15 @@ Table of Contents
    Some JSON implementations have issues with the full JSON format,
    especially those integrated within a JavaScript environment (e.g.,
    Web browsers, NodeJS).  I-JSON (Internet-JSON) is a subset of JSON
-   for such environments; see [I-JSON].  One of the key limitations of
+   for such environments; see [RFC7493].  One of the key limitations of
    JavaScript, and thus I-JSON, is that it cannot represent full 64-bit
    integers in standard operating mode (i.e., without using BigInt
    extensions), instead being limited to the range -(2^53)+1 to (2^53)-
    1.
 
    To accommodate such constraints in CDDL, Appendix E of [CDDL]
-   recommends defining new CDDL types for int64 and uint64 that limit
-   their values to the restricted 64-bit integer range.  However, some
+   suggests defining integer types that restrict 64-bit values to the
+   range in which I-JSON can represent integers exactly.  However, some
    of the protocols that qlog is intended to support (e.g., QUIC,
    HTTP/3), can use the full range of uint64 values.
 
@@ -1908,6 +1904,10 @@ Table of Contents
    SHOULD support parsing of uint64 values from JSON strings or JSON
    numbers unless there is out-of-band information indicating that
    neither the serializer nor parser are constrained by I-JSON.
+
+   The CDDL definitions describe uint64 values as numbers.  A log that
+   encodes them as JSON strings needs those values converted to numbers
+   before it can be validated against the CDDL.
 
 11.4.  Truncated values
 
@@ -1930,7 +1930,7 @@ Table of Contents
    tools SHOULD be able to deal with this situation and derive the
    length of the field from the raw value if no separate length-
    indicating field is present.  The main possible permutations are
-   shown by example in Figure 41.
+   shown by example in Figure 42.
 
    // both the content's value and its length are present
    // (length is redundant)
@@ -1960,7 +1960,7 @@ Table of Contents
        "content": "051428"
    }
 
-          Figure 41: Example for serializing truncated hexstrings
+          Figure 42: Example for serializing truncated hexstrings
 
 11.5.  Optimization of serialized data
 
@@ -1980,9 +1980,8 @@ Table of Contents
    drafts/issues/30#issuecomment-617675097).
 
    Formal definition of additional qlog formats or encodings that use
-   the optimization techniques described here, or any other optimization
-   technique is left to future activity that can apply the following
-   guidelines.
+   these or any other optimization techniques is left to future
+   activity, which can apply the following guideline.
 
    In order to help tools correctly parse and process serialized qlog,
    it is RECOMMENDED that new formats also define suitable file
@@ -2024,7 +2023,7 @@ Table of Contents
    example, for QUIC, it is recommended to use the Original Destination
    Connection ID (ODCID), followed by the vantage point type of the
    logging endpoint.  Examples of all options for QUIC are shown in
-   Figure 42.
+   Figure 43.
 
    Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
 
@@ -2051,22 +2050,21 @@ Table of Contents
    this would result in event instances in the qlog file being
    tagged with the "group_id" field with values "abcde" and "12345".
 
-     Figure 42: Environment variable examples for a QUIC implementation
+     Figure 43: Environment variable examples for a QUIC implementation
 
 13.  Tooling requirements
 
-   Tools ingesting qlog MUST indicate which qlog version(s), qlog
-   format(s), qlog file and event schema(s), compression methods and
-   potentially other input file formats (for example .pcap) they
-   support.  Tools SHOULD at least support .qlog files in the default
-   JSON format (Section 11.1).  Additionally, they SHOULD indicate
-   exactly which values for and properties of the name
-   (namespace:event_type) and data fields they look for to execute their
-   logic.  Tools SHOULD perform a (high-level) check if an input qlog
-   file adheres to the expected qlog file and event schemas.  If a tool
-   determines a qlog file does not contain enough supported information
-   to correctly execute the tool's logic, it SHOULD generate a clear
-   error message to this effect.
+   Tools ingesting qlog MUST indicate which serialization format(s),
+   qlog file and event schema(s), compression methods and potentially
+   other input file formats (for example .pcap) they support.  Tools
+   SHOULD at least support .qlog files in the JSON format
+   (Section 11.1).  Additionally, they SHOULD indicate exactly which
+   values for and properties of the name (namespace:event_type) and data
+   fields they look for to execute their logic.  Tools SHOULD perform a
+   (high-level) check if an input qlog file adheres to the expected qlog
+   file and event schemas.  If a tool determines a qlog file does not
+   contain enough supported information to correctly execute the tool's
+   logic, it SHOULD generate a clear error message to this effect.
 
    Tools MUST NOT produce breaking errors for any field names and/or
    values in the qlog format that they do not recognize.  Tools SHOULD
@@ -2085,20 +2083,20 @@ Table of Contents
 
 14.  Security and privacy considerations
 
-   Protocols such as TLS [RFC8446] and QUIC [RFC9000] offer secure
-   protection for the wire image [RFC8546].  Logging can reveal aspects
-   of the wire image that would ordinarily be protected, creating
-   tension between observability, security and privacy, especially if
-   data can be correlated across data sources.
+   Protocols such as TLS [RFC8446] and QUIC [RFC9000] encrypt much of
+   what they send, which limits what their wire image [RFC8546] reveals
+   to observers.  Logging can record information that the wire image
+   does not reveal, creating tension between observability, security and
+   privacy, especially if data can be correlated across data sources.
 
-   qlog permits logging of a broad and detailed range of data.
-   Operators and implementers are responsible for deciding what data is
-   logged to address their requirements and constraints.  As per
-   [RFC6973], operators must be aware that data could be compromised,
-   risking the privacy of all participants.  Where entities expect
-   protocol features to ensure data privacy, logging might unknowingly
-   be subject to broader privacy risks, undermining their ability to
-   assess or respond effectively.
+   qlog can record a broad and detailed range of data.  Operators and
+   implementers are responsible for deciding what to log, based on their
+   requirements and constraints.  Logged data can be compromised
+   (Section 5.1.2 of [RFC6973]), which risks the privacy of all
+   participants.  Participants who rely on protocol features, such as
+   encryption, to protect their data can be exposed through logging to
+   privacy risks that they are unaware of and cannot assess or respond
+   to.
 
 14.1.  Data at risk
 
@@ -2116,7 +2114,7 @@ Table of Contents
    *  IP addresses and transport protocol port numbers.
 
    *  Session, Connection, or User identifiers e.g., QUIC Connection IDs
-      Section 9.5 of [RFC9000]).
+      (Section 9.5 of [RFC9000]).
 
    *  System-level information e.g., CPU, process, or thread
       identifiers.
@@ -2138,33 +2136,31 @@ Table of Contents
 
 14.2.  Operational implications and recommendations
 
-   Operational considerations should focus on authorizing capture and
-   access to logs.  Logging of Internet protocols using qlog can be
-   equivalent to the ability to store or read plaintext communications.
-   Without a more detailed analysis, all of the security considerations
-   of plaintext access apply.
+   Operational considerations focus on authorizing capture and access to
+   logs.  Logging of Internet protocols using qlog can be equivalent to
+   the ability to store or read plaintext communications.  Without a
+   more detailed analysis, all of the security considerations of
+   plaintext access apply.  End users might not understand the
+   implications of qlog for security or privacy, and their environments
+   might limit access control techniques.  Operators and implementers
+   are advised to:
 
-   It is recommended that qlog capture is subject to access control and
-   auditing.  These controls should support granular levels of
-   information capture based on role and permissions (e.g., capture of
-   more-sensitive data requires higher privileges).
+   *  Subject qlog capture to access control and auditing, with controls
+      that support granular levels of information capture based on role
+      and permissions (e.g., capture of more-sensitive data requires
+      higher privileges).
 
-   It is recommended that access to stored qlogs is subject to access
-   control and auditing.
+   *  Subject access to stored qlog files to access control and
+      auditing.
 
-   End users might not understand the implications of qlog to security
-   or privacy, and their environments might limit access control
-   techniques.  Implementations should make enabling qlog conspicuous
-   (e.g., requiring clear and explicit actions to start a capture) and
-   resistant to social engineering, automation, or drive-by attacks; for
-   example, isolation or sandboxing of capture from other activities in
-   the same process or component.
+   *  Make enabling qlog conspicuous (e.g., requiring clear and explicit
+      actions to start a capture) and resistant to social engineering,
+      automation, or drive-by attacks (e.g., by isolating or sandboxing
+      capture from other activities in the same process or component).
 
-   It is recommended that data retention policies are defined for the
-   storage of qlog files.
+   *  Define data retention policies for the storage of qlog files.
 
-   It is recommended that qlog files are encrypted in transit and at
-   rest.
+   *  Encrypt qlog files in transit and at rest.
 
 14.3.  Data minimization or anonymization
 
@@ -2173,40 +2169,42 @@ Table of Contents
    anonymizing data without sufficient care might not enhance privacy or
    security and could diminish the utility of qlog data.
 
-   Operators and implementers should balance the value of logged data
-   with the potential risks of voluntary or involuntary disclosure to
-   trusted or untrusted entities.  Importantly, both the breadth and
-   depth of the data needed to make it useful, as well as the definition
-   of entities depend greatly on the intended use cases.  For example, a
-   research project might be tightly scoped, time bound, and require
-   participants to explicitly opt in to having their data collected with
-   the intention for this to be shared in a publication.  Conversely, a
-   server administrator might desire to collect telemetry, from users
-   whom they have no relationship with, for continuing operational
-   needs.
+   Operators and implementers are advised to balance the value of logged
+   data against the potential risks of voluntary or involuntary
+   disclosure to trusted or untrusted entities.  Importantly, both the
+   breadth and depth of the data needed to make it useful, as well as
+   the definition of entities depend greatly on the intended use cases.
+   For example, a research project might be tightly scoped, time bound,
+   and require participants to explicitly opt in to having their data
+   collected and shared in a publication.  Conversely, a server
+   administrator might collect telemetry on an ongoing basis for
+   operational needs, from users with whom they have no relationship.
 
    The most extreme form of minimization or anonymization is deleting a
-   field, equivalent to not logging it. qlog implementations should
-   offer fine-grained control for this on a per-use-case or per-
+   field, equivalent to not logging it. qlog implementations are advised
+   to offer fine-grained control over this on a per-use-case or per-
    connection basis.
 
    Data can undergo anonymization, pseudonymization, permutation,
    truncation, re-encryption, or aggregation; see Appendix B of
    [DNS-PRIVACY] for techniques, especially regarding IP addresses.
-   However, operators should be cautious because many anonymization
-   methods have been shown to be insufficient to safeguard user privacy
-   or identity, particularly with large or easily correlated data sets.
+   However, operators are advised to be cautious, because many
+   anonymization methods have been shown to be insufficient to safeguard
+   user privacy or identity, particularly with large or easily
+   correlated data sets.
 
-   Operators should consider end user rights and preferences.  Active
-   user participation (as indicated by [RFC6973]) on a per-qlog basis is
-   challenging but aligning qlog capture, storage, and removal with
-   existing user preference and privacy controls is crucial.  Operators
-   should consider aggressive approaches to deletion or aggregation.
+   Operators are advised to consider end user rights and preferences.
+   Active user participation (as indicated by [RFC6973]) on a per-qlog
+   basis is challenging but aligning qlog capture, storage, and removal
+   with existing user preference and privacy controls is crucial.
+   Operators are advised to consider aggressive approaches to deletion
+   or aggregation.
 
-   The most sensitive data in qlog is typically contained in RawInfo
-   type fields (see Section 10).  Therefore, qlog users should exercise
-   caution and limit the inclusion of such fields for all but the most
-   stringent use cases.
+   Some of the most sensitive data in qlog is contained in RawInfo
+   fields (see Section 10), which can hold full packet and frame
+   contents, and in fields that log keys or plaintext application data;
+   see Section 14.1. qlog users are advised to include such fields only
+   when a use case needs them.
 
 15.  IANA Considerations
 
@@ -2221,8 +2219,11 @@ Table of Contents
    IANA Registry Reference:  <https://www.iana.org/assignments/qlog>
 
    IANA is requested to create the "qlog log file schema URIs" registry
-   at https://www.iana.org/assignments/qlog for the purpose of
-   registering log file schemas.  It has the following format/template:
+   under a new "qlog" heading at https://www.iana.org/assignments/qlog
+   for the purpose of registering log file schemas.  Registrations use
+   the Expert Review policy (Section 4.5 of [RFC8126]); Section 3.1
+   gives the registration requirements and the instructions for the
+   designated expert.  The registry has the following format/template:
 
    Log File Schema URI:  [the log file schema identifier]
 
@@ -2258,9 +2259,12 @@ Table of Contents
 
                                   Table 1
 
-   IANA is requested to create the "qlog event schema URIs" registry at
-   https://www.iana.org/assignments/qlog for the purpose of registering
-   event schemas.  It has the following format/template:
+   IANA is requested to create the "qlog event schema URIs" registry
+   under the "qlog" heading at https://www.iana.org/assignments/qlog for
+   the purpose of registering event schemas.  Registrations use the
+   Expert Review policy (Section 4.5 of [RFC8126]); Section 8.1 gives
+   the registration requirements and the instructions for the designated
+   expert.  The registry has the following format/template:
 
    Event schema URI:  [the event schema identifier]
 
@@ -2308,9 +2312,9 @@ Table of Contents
 
    Subtype name:  qlog+json
 
-   Required parameters:  n/a
+   Required parameters:  N/A
 
-   Optional parameters:  n/a
+   Optional parameters:  N/A
 
    Encoding considerations:  binary; see Section 11.1
 
@@ -2325,21 +2329,26 @@ Table of Contents
       protocol analyzers, debugging tools, and performance monitoring
       systems.
 
+   Fragment identifier considerations:  The syntax and semantics of
+      fragment identifiers are as specified for "application/json"; see
+      Section 3.1 of [RFC6839].
+
    Additional information:
 
-   Deprecated alias names for this type:  n/a
+   Deprecated alias names for this type:  N/A
 
-   Magic number(s):  n/a
+   Magic number(s):  N/A
 
    File extension(s):  .qlog
 
-   Macintosh file type code(s):  n/a
+   Macintosh file type code(s):  N/A
 
-   Person to contact for further information:  QUIC WG, quic@ietf.org
+   Person & email address to contact for further information:  QUIC WG,
+      quic@ietf.org
 
    Intended usage:  COMMON
 
-   Restrictions on usage:  n/a
+   Restrictions on usage:  N/A
 
    Author:  QUIC WG, quic@ietf.org
 
@@ -2351,9 +2360,9 @@ Table of Contents
 
    Subtype name:  qlog+json-seq
 
-   Required parameters:  n/a
+   Required parameters:  N/A
 
-   Optional parameters:  n/a
+   Optional parameters:  N/A
 
    Encoding considerations:  binary; see Section 11.2
 
@@ -2368,21 +2377,26 @@ Table of Contents
       streaming fashion, such as protocol analyzers, debugging tools,
       and performance monitoring systems.
 
+   Fragment identifier considerations:  The syntax and semantics of
+      fragment identifiers are as specified for "application/json-seq";
+      see Section 4 of [RFC8091].
+
    Additional information:
 
-   Deprecated alias names for this type:  n/a
+   Deprecated alias names for this type:  N/A
 
-   Magic number(s):  n/a
+   Magic number(s):  N/A
 
    File extension(s):  .sqlog
 
-   Macintosh file type code(s):  n/a
+   Macintosh file type code(s):  N/A
 
-   Person to contact for further information:  QUIC WG, quic@ietf.org
+   Person & email address to contact for further information:  QUIC WG,
+      quic@ietf.org
 
    Intended usage:  COMMON
 
-   Restrictions on usage:  n/a
+   Restrictions on usage:  N/A
 
    Author:  QUIC WG, quic@ietf.org
 
@@ -2397,26 +2411,6 @@ Table of Contents
               Express Concise Binary Object Representation (CBOR) and
               JSON Data Structures", RFC 8610, DOI 10.17487/RFC8610,
               June 2019, <https://www.rfc-editor.org/rfc/rfc8610>.
-
-   [DNS-PRIVACY]
-              Dickinson, S., Overeinder, B., van Rijswijk-Deij, R., and
-              A. Mankin, "Recommendations for DNS Privacy Service
-              Operators", BCP 232, RFC 8932, DOI 10.17487/RFC8932,
-              October 2020, <https://www.rfc-editor.org/rfc/rfc8932>.
-
-   [I-JSON]   Bray, T., Ed., "The I-JSON Message Format", RFC 7493,
-              DOI 10.17487/RFC7493, March 2015,
-              <https://www.rfc-editor.org/rfc/rfc7493>.
-
-   [JSON]     Bray, T., Ed., "The JavaScript Object Notation (JSON) Data
-              Interchange Format", STD 90, RFC 8259,
-              DOI 10.17487/RFC8259, December 2017,
-              <https://www.rfc-editor.org/rfc/rfc8259>.
-
-   [JSON-Text-Sequences]
-              Williams, N., "JavaScript Object Notation (JSON) Text
-              Sequences", RFC 7464, DOI 10.17487/RFC7464, February 2015,
-              <https://www.rfc-editor.org/rfc/rfc7464>.
 
    [RFC2046]  Freed, N. and N. Borenstein, "Multipurpose Internet Mail
               Extensions (MIME) Part Two: Media Types", RFC 2046,
@@ -2447,15 +2441,13 @@ Table of Contents
               DOI 10.17487/RFC6839, January 2013,
               <https://www.rfc-editor.org/rfc/rfc6839>.
 
-   [RFC6973]  Cooper, A., Tschofenig, H., Aboba, B., Peterson, J.,
-              Morris, J., Hansen, M., and R. Smith, "Privacy
-              Considerations for Internet Protocols", RFC 6973,
-              DOI 10.17487/RFC6973, July 2013,
-              <https://www.rfc-editor.org/rfc/rfc6973>.
-
    [RFC7464]  Williams, N., "JavaScript Object Notation (JSON) Text
               Sequences", RFC 7464, DOI 10.17487/RFC7464, February 2015,
               <https://www.rfc-editor.org/rfc/rfc7464>.
+
+   [RFC7493]  Bray, T., Ed., "The I-JSON Message Format", RFC 7493,
+              DOI 10.17487/RFC7493, March 2015,
+              <https://www.rfc-editor.org/rfc/rfc7493>.
 
    [RFC8091]  Wilde, E., "A Media Type Structured Syntax Suffix for JSON
               Text Sequences", RFC 8091, DOI 10.17487/RFC8091, February
@@ -2475,17 +2467,18 @@ Table of Contents
               DOI 10.17487/RFC8259, December 2017,
               <https://www.rfc-editor.org/rfc/rfc8259>.
 
-   [RFC9000]  Iyengar, J., Ed. and M. Thomson, Ed., "QUIC: A UDP-Based
-              Multiplexed and Secure Transport", RFC 9000,
-              DOI 10.17487/RFC9000, May 2021,
-              <https://www.rfc-editor.org/rfc/rfc9000>.
-
 16.2.  Informative References
 
    [ANRW-2020]
               Marx, R., Piraux, M., Quax, P., and W. Lamotte, "Debugging
               QUIC and HTTP/3 with qlog and qvis", September 2020,
               <https://qlog.edm.uhasselt.be/anrw/>.
+
+   [DNS-PRIVACY]
+              Dickinson, S., Overeinder, B., van Rijswijk-Deij, R., and
+              A. Mankin, "Recommendations for DNS Privacy Service
+              Operators", BCP 232, RFC 8932, DOI 10.17487/RFC8932,
+              October 2020, <https://www.rfc-editor.org/rfc/rfc8932>.
 
    [QLOG-H3]  Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
               "HTTP/3 qlog event definitions", Work in Progress,
@@ -2500,6 +2493,12 @@ Table of Contents
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
               qlog-quic-events-13>.
 
+   [RFC6973]  Cooper, A., Tschofenig, H., Aboba, B., Peterson, J.,
+              Morris, J., Hansen, M., and R. Smith, "Privacy
+              Considerations for Internet Protocols", RFC 6973,
+              DOI 10.17487/RFC6973, July 2013,
+              <https://www.rfc-editor.org/rfc/rfc6973>.
+
    [RFC8446]  Rescorla, E., "The Transport Layer Security (TLS) Protocol
               Version 1.3", RFC 8446, DOI 10.17487/RFC8446, August 2018,
               <https://www.rfc-editor.org/rfc/rfc8446>.
@@ -2507,6 +2506,11 @@ Table of Contents
    [RFC8546]  Trammell, B. and M. Kuehlewind, "The Wire Image of a
               Network Protocol", RFC 8546, DOI 10.17487/RFC8546, April
               2019, <https://www.rfc-editor.org/rfc/rfc8546>.
+
+   [RFC9000]  Iyengar, J., Ed. and M. Thomson, Ed., "QUIC: A UDP-Based
+              Multiplexed and Secure Transport", RFC 9000,
+              DOI 10.17487/RFC9000, May 2021,
+              <https://www.rfc-editor.org/rfc/rfc9000>.
 
 Acknowledgements
 
