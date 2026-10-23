@@ -1750,7 +1750,7 @@ QUICMarkedForRetransmit = {
 ## ecn_state_updated {#quic-ecnstateupdated}
 
 The `ecn_state_updated` event indicates a progression in the ECN state machine
-as described in {{Section A.4 of QUIC-TRANSPORT}}. It has Extra importance
+as described in {{Appendix A.4 of QUIC-TRANSPORT}}. It has Extra importance
 level.
 
 ~~~ cddl
