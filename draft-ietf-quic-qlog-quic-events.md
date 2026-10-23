@@ -1960,12 +1960,14 @@ $KeyType /= "server_initial_secret" /
 {: #keytype-def title="KeyType definition"}
 
 ## ECN
+
+ECN holds the ECN codepoint carried in the IP header; see {{Section 13.4 of
+QUIC-TRANSPORT}}.
+
 ~~~ cddl
 ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 ~~~
 {: #ecn-def title="ECN definition"}
-
-The ECN bits carried in the IP header.
 
 ## QUIC Frames
 
@@ -2013,13 +2015,12 @@ $QuicFrame /= QuicBaseFrames
 
 ### PaddingFrame
 
-In QUIC, PADDING frames are simply identified as a single byte of value 0. As
-such, each padding byte could be theoretically interpreted and logged as an
-individual PaddingFrame.
-
-However, as this leads to heavy logging overhead, implementations SHOULD instead
-emit just a single PaddingFrame and set the `raw.payload_length` property to the
-amount of PADDING bytes/frames included in the packet.
+A PADDING frame is a single byte with the value 0, so each padding byte is its
+own frame; see {{Section 19.1 of QUIC-TRANSPORT}}. Logging each one as a
+separate PaddingFrame could add hundreds of entries to a single packet event,
+for example when a client pads an Initial packet to 1200 bytes. Implementations
+SHOULD instead log a single PaddingFrame for the packet, and set its
+`raw.payload_length` field to the number of PADDING frames in the packet.
 
 ~~~ cddl
 PaddingFrame = {
