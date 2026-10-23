@@ -2636,15 +2636,16 @@ Table of Contents
 
 9.  Handling Packet Coalescing
 
-   Multiple QUIC packets can be coalesced in a single UDP datagram,
-   especially during the handshake (see Section 12.2 of
-   [QUIC-TRANSPORT]).  However, neither QUIC nor UDP themselves provide
-   an explicit mechanism to track this behaviour.  To make it possible
-   for implementations to track coalescing across QUIC packet-level and
-   UDP datagram-level qlog events, the optional
-   datagram_payload_checksum field is defined.  It carries a 32-bit
-   CRC32c value that is calculated on the UDP user data payload as
-   described in Section 11.3 of [RFC9868].
+   Multiple QUIC packets can be coalesced into a single UDP datagram,
+   especially during the handshake; see Section 12.2 of
+   [QUIC-TRANSPORT].  Neither QUIC nor UDP provides a way to tell which
+   packets shared a datagram.
+
+   To let tools match QUIC packet events to UDP datagram events, the
+   optional datagram_payload_checksum field carries a 32-bit CRC32c of
+   the UDP payload, calculated as described in Section 11.3 of
+   [RFC9868].  The UDP datagram events carry one checksum per datagram,
+   in their datagram_payload_checksums field.
 
 10.  Security and Privacy Considerations
 
@@ -2654,30 +2655,32 @@ Table of Contents
 11.  IANA Considerations
 
    This document registers a new entry in the "qlog event schema URIs"
-   registry (created in Section 15 of [QLOG-MAIN]):
+   registry, which was created in Section 15 of [QLOG-MAIN]:
 
    Event schema URI:  urn:ietf:params:qlog:events:quic
 
-   Namespace  quic
+   Namespace:  quic
 
-   Event Types  server_listening, connection_started, connection_closed,
-      connection_id_updated, spin_bit_updated, connection_state_updated,
-      tuple_assigned, mtu_updated, version_information,
-      alpn_information, parameters_set, parameters_restored,
-      packet_sent, packet_received, packet_dropped, packet_buffered,
-      packets_acked, udp_datagrams_sent, udp_datagrams_received,
-      udp_datagram_dropped, stream_state_updated, frames_created,
-      frames_parsed, stream_data_moved, datagram_data_moved,
+   Event Types:  server_listening, connection_started,
+      connection_closed, connection_id_updated, spin_bit_updated,
+      connection_state_updated, tuple_assigned, mtu_updated,
+      version_information, alpn_information, parameters_set,
+      parameters_restored, packet_sent, packet_received, packet_dropped,
+      packet_buffered, packets_acked, udp_datagrams_sent,
+      udp_datagrams_received, udp_datagram_dropped,
+      stream_state_updated, frames_created, frames_parsed,
+      stream_data_moved, datagram_data_moved,
       connection_data_blocked_updated, stream_data_blocked_updated,
       datagram_data_blocked_updated, migration_state_updated,
-      key_updated, key_discarded, recovery_parameters_set,
-      recovery_metrics_updated, congestion_state_updated, timer_updated,
-      packet_lost, marked_for_retransmit, ecn_state_updated
+      timer_updated, key_updated, key_discarded,
+      recovery_parameters_set, recovery_metrics_updated,
+      congestion_state_updated, packet_lost, marked_for_retransmit,
+      ecn_state_updated
 
    Description:  Event definitions related to the QUIC transport
       protocol.
 
-   Reference:  This Document
+   Reference:  This document
 
 12.  References
 

@@ -4987,13 +4987,14 @@ CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
       <h2 id="name-handling-packet-coalescing">
 <a href="#section-9" class="section-number selfRef">9. </a><a href="#name-handling-packet-coalescing" class="section-name selfRef">Handling Packet Coalescing</a>
       </h2>
-<p id="section-9-1">Multiple QUIC packets can be coalesced in a single UDP datagram, especially
-during the handshake (see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-12.2" class="relref">Section 12.2</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>). However, neither
-QUIC nor UDP themselves provide an explicit mechanism to track this behaviour.
-To make it possible for implementations to track coalescing across QUIC
-packet-level and UDP datagram-level qlog events, the optional
-<code>datagram_payload_checksum</code> field is defined. It carries a 32-bit CRC32c value that is
-calculated on the UDP user data payload as described in <span><a href="https://rfc-editor.org/rfc/rfc9868#section-11.3" class="relref">Section 11.3</a> of [<a href="#RFC9868" class="cite xref">RFC9868</a>]</span>.<a href="#section-9-1" class="pilcrow">¶</a></p>
+<p id="section-9-1">Multiple QUIC packets can be coalesced into a single UDP datagram, especially
+during the handshake; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-12.2" class="relref">Section 12.2</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. Neither QUIC nor
+UDP provides a way to tell which packets shared a datagram.<a href="#section-9-1" class="pilcrow">¶</a></p>
+<p id="section-9-2">To let tools match QUIC packet events to UDP datagram events, the optional
+<code>datagram_payload_checksum</code> field carries a 32-bit CRC32c of the UDP payload,
+calculated as described in <span><a href="https://rfc-editor.org/rfc/rfc9868#section-11.3" class="relref">Section 11.3</a> of [<a href="#RFC9868" class="cite xref">RFC9868</a>]</span>. The UDP datagram
+events carry one checksum per datagram, in their <code>datagram_payload_checksums</code>
+field.<a href="#section-9-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="security-and-privacy-considerations">
@@ -5001,8 +5002,7 @@ calculated on the UDP user data payload as described in <span><a href="https://r
       <h2 id="name-security-and-privacy-consid">
 <a href="#section-10" class="section-number selfRef">10. </a><a href="#name-security-and-privacy-consid" class="section-name selfRef">Security and Privacy Considerations</a>
       </h2>
-<p id="section-10-1">The security and privacy considerations discussed in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-14" class="relref">Section 14</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> apply to this
-document as well.<a href="#section-10-1" class="pilcrow">¶</a></p>
+<p id="section-10-1">The security and privacy considerations discussed in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-14" class="relref">Section 14</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> apply to this document as well.<a href="#section-10-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iana-considerations">
@@ -5010,19 +5010,20 @@ document as well.<a href="#section-10-1" class="pilcrow">¶</a></p>
       <h2 id="name-iana-considerations">
 <a href="#section-11" class="section-number selfRef">11. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
       </h2>
-<p id="section-11-1">This document registers a new entry in the "qlog event schema URIs" registry (created in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-15" class="relref">Section 15</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>):<a href="#section-11-1" class="pilcrow">¶</a></p>
+<p id="section-11-1">This document registers a new entry in the "qlog event schema URIs" registry,
+which was created in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-15" class="relref">Section 15</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>:<a href="#section-11-1" class="pilcrow">¶</a></p>
 <span class="break"></span><dl class="dlParallel" id="section-11-2">
         <dt id="section-11-2.1">Event schema URI:</dt>
         <dd style="margin-left: 1.5em" id="section-11-2.2">
           <p id="section-11-2.2.1">urn:ietf:params:qlog:events:quic<a href="#section-11-2.2.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-11-2.3">Namespace</dt>
+<dt id="section-11-2.3">Namespace:</dt>
         <dd style="margin-left: 1.5em" id="section-11-2.4">
           <p id="section-11-2.4.1">quic<a href="#section-11-2.4.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-11-2.5">Event Types</dt>
+<dt id="section-11-2.5">Event Types:</dt>
         <dd style="margin-left: 1.5em" id="section-11-2.6">
           <p id="section-11-2.6.1">server_listening,
 connection_started,
@@ -5053,12 +5054,12 @@ connection_data_blocked_updated,
 stream_data_blocked_updated,
 datagram_data_blocked_updated,
 migration_state_updated,
+timer_updated,
 key_updated,
 key_discarded,
 recovery_parameters_set,
 recovery_metrics_updated,
 congestion_state_updated,
-timer_updated,
 packet_lost,
 marked_for_retransmit,
 ecn_state_updated<a href="#section-11-2.6.1" class="pilcrow">¶</a></p>
@@ -5071,7 +5072,7 @@ ecn_state_updated<a href="#section-11-2.6.1" class="pilcrow">¶</a></p>
         <dd class="break"></dd>
 <dt id="section-11-2.9">Reference:</dt>
         <dd style="margin-left: 1.5em" id="section-11-2.10">
-          <p id="section-11-2.10.1">This Document<a href="#section-11-2.10.1" class="pilcrow">¶</a></p>
+          <p id="section-11-2.10.1">This document<a href="#section-11-2.10.1" class="pilcrow">¶</a></p>
 </dd>
       <dd class="break"></dd>
 </dl>
