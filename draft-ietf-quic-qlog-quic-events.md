@@ -1520,10 +1520,14 @@ QUICKeyDiscarded = {
 
 # Recovery events {#rec-ev}
 
-Most of the events in this category are kept generic to support different
-recovery approaches and various congestion control algorithms. Tool creators
-SHOULD make an effort to support and visualize even unknown data in these events
-(e.g., plot unknown congestion states by name on a timeline visualization).
+Most of the events in this section are kept generic to support different
+recovery approaches and congestion control algorithms. The `old`, `new`, and
+`trigger` fields of `congestion_state_updated`, for instance, are free text, so
+their values depend on the algorithm.
+
+Tools that process these events SHOULD try to handle such values even when they
+don't recognize them. For example, a tool that plots congestion states on a
+timeline can label an unknown state with the value of the `new` field.
 
 ## recovery_parameters_set {#quic-recoveryparametersset}
 
@@ -1531,9 +1535,9 @@ The `recovery_parameters_set` event groups initial parameters from both loss
 detection and congestion control into a single event. It has Base importance
 level.
 
-All these settings are typically set once and never change. Implementations that
-do, for some reason, change these parameters during execution, MAY emit the
-`recovery_parameters_set` event more than once.
+These parameters are typically set once and never change. Implementations that
+change them during the connection MAY emit the `recovery_parameters_set` event
+more than once.
 
 The `reordering_threshold` field contains the packet threshold for loss detection,
 or `"disabled"` if packet-threshold loss detection is disabled.
