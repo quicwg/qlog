@@ -1172,7 +1172,7 @@ of this document.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
                 <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-raw-packet-and-frame-inform" class="internal xref">Raw packet and frame information</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3">
-                <p id="section-toc.1-1.1.2.3.1" class="keepWithNext"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-events-not-belonging-to-a-s" class="internal xref">Events not belonging to a single connection</a></p>
+                <p id="section-toc.1-1.1.2.3.1" class="keepWithNext"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-events-without-a-known-conn" class="internal xref">Events without a known connection</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.4">
                 <p id="section-toc.1-1.1.2.4.1"><a href="#section-1.4" class="auto internal xref">1.4</a>.  <a href="#name-notational-conventions" class="internal xref">Notational Conventions</a></p>
@@ -1546,22 +1546,21 @@ containing concrete events for the core QUIC protocol (see
 <p id="section-1-2">The event namespace with identifier <code>quic</code> is defined; see <a href="#schema-def" class="auto internal xref">Section 2</a>. In
 this namespace multiple events derive from the qlog abstract Event class
 (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-7" class="relref">Section 7</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>), each extending the "data" field and defining their
-"name" field values and semantics. Some event data fields use complex data
-types. These are represented as enums or re-usable definitions, which are
-grouped together on the bottom of this document for clarity.<a href="#section-1-2" class="pilcrow">¶</a></p>
+"name" field values and semantics. The data types that the events use are
+defined in <a href="#quic-data-types" class="auto internal xref">Section 8</a>.<a href="#section-1-2" class="pilcrow">¶</a></p>
 <div id="use-of-group-ids">
 <section id="section-1.1">
         <h3 id="name-use-of-group-ids">
 <a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-use-of-group-ids" class="section-name selfRef">Use of group IDs</a>
         </h3>
-<p id="section-1.1-1">When the qlog <code>group_id</code> field is used, it is recommended to use QUIC's Original
-Destination Connection ID (ODCID, the CID chosen by the client when first
-contacting the server), as this is the only value that does not change over the
-course of the connection and can be used to link more advanced QUIC packets (e.g.,
-Retry, Version Negotiation) to a given connection. Similarly, the ODCID should be
-used as the qlog filename or file identifier, potentially suffixed by the
-vantagepoint type (For example, abcd1234_server.qlog would contain the server-side
-trace of the connection with ODCID abcd1234).<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.1-1">QUIC's Original Destination Connection ID (ODCID) can be used as the value of
+the qlog <code>group_id</code> field. The ODCID is the connection ID that the client
+chooses for its first Initial packet. It stays the same for the whole
+connection, unlike the connection IDs that endpoints use, which can change. It
+can also link packets such as Retry and Version Negotiation to the connection.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.1-2">The ODCID can also be used as the qlog filename or file identifier, optionally
+suffixed by the vantage point type. For example, abcd1234_server.qlog would
+contain the server-side trace of the connection with ODCID abcd1234.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="raw-packet-and-frame-information">
@@ -1569,40 +1568,41 @@ trace of the connection with ODCID abcd1234).<a href="#section-1.1-1" class="pil
         <h3 id="name-raw-packet-and-frame-inform">
 <a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-raw-packet-and-frame-inform" class="section-name selfRef">Raw packet and frame information</a>
         </h3>
-<p id="section-1.2-1">QUIC packets always include an AEAD authentication tag at the end. In general,
-the length of the AEAD tag depends on the TLS cipher suite, although all cipher
-suites used in QUIC v1 use a 16 byte tag. For the purposes of calculating the
-lengths in fields of type RawInfo (as defined in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-10" class="relref">Section 10</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>) related to QUIC
-packets, the AEAD tag is regarded as a trailer with a fixed size of 16 bytes.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
+<p id="section-1.2-1">Protected QUIC packets (Initial, 0-RTT, Handshake, and 1-RTT) end with an AEAD
+authentication tag. Every cipher suite that QUIC version 1 can use has a
+16-byte tag; see <span><a href="https://rfc-editor.org/rfc/rfc9001#section-5.3" class="relref">Section 5.3</a> of [<a href="#QUIC-TLS" class="cite xref">QUIC-TLS</a>]</span>. When calculating the lengths in
+RawInfo fields (<span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-10" class="relref">Section 10</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>) for these packets, the tag is
+treated as a 16-byte trailer.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="handling-unknown-connections">
 <section id="section-1.3">
-        <h3 id="name-events-not-belonging-to-a-s">
-<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-events-not-belonging-to-a-s" class="section-name selfRef">Events not belonging to a single connection</a>
+        <h3 id="name-events-without-a-known-conn">
+<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-events-without-a-known-conn" class="section-name selfRef">Events without a known connection</a>
         </h3>
-<p id="section-1.3-1">A single qlog event trace is typically associated with a single QUIC connection.
-However, for several types of events (for example, a <a href="#quic-packetdropped" class="auto internal xref">Section 5.7</a>
-event with trigger value of <code>connection_unknown</code>), it can be impossible to tie
-them to a specific QUIC connection, especially on the server.<a href="#section-1.3-1" class="pilcrow">¶</a></p>
-<p id="section-1.3-2">There are various ways to handle these events, each making certain tradeoffs
-between file size overhead, flexibility, ease of use, or ease of
-implementation. Some options include:<a href="#section-1.3-2" class="pilcrow">¶</a></p>
+<p id="section-1.3-1">A qlog trace is typically associated with a single QUIC connection. However,
+some events cannot be tied to a specific connection, especially on the server.
+For example, a <code>packet_dropped</code> event (<a href="#quic-packetdropped" class="auto internal xref">Section 5.7</a>) with the trigger
+<code>connection_unknown</code> is for a packet that matches no known connection.<a href="#section-1.3-1" class="pilcrow">¶</a></p>
+<p id="section-1.3-2">There are various ways to handle these events, each with tradeoffs between file
+size overhead, flexibility, ease of use, and ease of implementation. Some
+options include:<a href="#section-1.3-2" class="pilcrow">¶</a></p>
 <ul class="normal">
 <li class="normal" id="section-1.3-3.1">
-            <p id="section-1.3-3.1.1">Log them in a separate endpoint-wide trace (or use a special <code>group_id</code> value)
+            <p id="section-1.3-3.1.1">Log them in a separate endpoint-wide trace, or use a special <code>group_id</code> value,
 not associated with a single connection.<a href="#section-1.3-3.1.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-1.3-3.2">
             <p id="section-1.3-3.2.1">Log them in the most recently used trace.<a href="#section-1.3-3.2.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-1.3-3.3">
-            <p id="section-1.3-3.3.1">Use additional heuristics for connection identification (for example use the
-four-tuple in addition to the Connection ID).<a href="#section-1.3-3.3.1" class="pilcrow">¶</a></p>
+            <p id="section-1.3-3.3.1">Use additional heuristics to identify the connection, for example the
+four-tuple in addition to the connection ID.<a href="#section-1.3-3.3.1" class="pilcrow">¶</a></p>
 </li>
           <li class="normal" id="section-1.3-3.4">
-            <p id="section-1.3-3.4.1">Buffer events until they can be assigned to a connection (for example for
-version negotiation and retry events).<a href="#section-1.3-3.4.1" class="pilcrow">¶</a></p>
+            <p id="section-1.3-3.4.1">Buffer events until they can be assigned to a connection, for example events
+about the Version Negotiation and Retry packets that a server sends before it
+creates connection state.<a href="#section-1.3-3.4.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
 </section>
@@ -1619,8 +1619,9 @@ appear in all capitals, as shown here.<a href="#section-1.4-1" class="pilcrow">�
 <p id="section-1.4-2">The event and data structure definitions in this document are expressed
 in the Concise Data Definition Language <span>[<a href="#CDDL" class="cite xref">CDDL</a>]</span> and its
 extensions described in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-1.2" class="relref">Section 1.2</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.4-2" class="pilcrow">¶</a></p>
-<p id="section-1.4-3">The following fields from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span> are imported and used: name, namespace,
-type, data, tuple, group_id, RawInfo, and time-related fields.<a href="#section-1.4-3" class="pilcrow">¶</a></p>
+<p id="section-1.4-3">This document uses the following from <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>: the event namespace and
+event type concepts; the name, data, tuple, group_id, and time-related fields;
+and the RawInfo type.<a href="#section-1.4-3" class="pilcrow">¶</a></p>
 <p id="section-1.4-4">Events are defined with an importance level as described in <span><a href="https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-main-schema-14#section-8.3" class="relref">Section 8.3</a> of [<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>.<a href="#section-1.4-4" class="pilcrow">¶</a></p>
 <p id="section-1.4-5">As is the case for <span>[<a href="#QLOG-MAIN" class="cite xref">QLOG-MAIN</a>]</span>, the qlog schema definitions in this document
 are intentionally agnostic to serialization formats. The choice of format is an
@@ -2000,8 +2001,8 @@ $ProtocolEventData /= QuicEventData
         </figcaption></figure>
 </div>
 <p id="section-3-5">The concrete QUIC event types are further defined below, their type identifier
-is the heading name. The subdivisions in sections on Connectivity, Security,
-Transport and Recovery are purely for readability.<a href="#section-3-5" class="pilcrow">¶</a></p>
+is the heading name. The subdivisions in sections on Connectivity, Transport,
+Security, and Recovery are purely for readability.<a href="#section-3-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="conn-ev">
@@ -3870,7 +3871,7 @@ ECNState =
 </div>
 </section>
 </div>
-<div id="quic-data-type-definitions">
+<div id="quic-data-types">
 <section id="section-8">
       <h2 id="name-quic-data-type-definitions">
 <a href="#section-8" class="section-number selfRef">8. </a><a href="#name-quic-data-type-definitions" class="section-name selfRef">QUIC data type definitions</a>
