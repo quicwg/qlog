@@ -936,15 +936,14 @@ The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
 
 ## packets_acked {#quic-packetsacked}
 
-The `packets_acked` event is emitted when a (group of) sent packet(s) is
-acknowledged by the remote peer _for the first time_. It has Extra importance
-level.
+The `packets_acked` event is emitted when one or more sent packets are
+acknowledged by the peer for the first time. It has Extra importance level.
 
-This information could also be deduced from the contents of received ACK frames.
-However, ACK frames require additional processing logic to determine when a
-given packet is acknowledged for the first time, as QUIC uses ACK ranges which
-can include repeated ACKs. Additionally, this event can be used by
-implementations that do not log frame contents.
+Successive ACK frames can acknowledge the same packet, but this event is
+emitted only for the first acknowledgment of each packet. This information can
+also be deduced from received ACK frames, though finding the first
+acknowledgment needs extra processing. Implementations that do not log frame
+contents can use this event instead.
 
 ~~~ cddl
 QUICPacketsAcked = {
@@ -956,9 +955,8 @@ QUICPacketsAcked = {
 ~~~
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
 
-If `packet_number_space` is omitted, it assumes the default value of
-`application_data`, as this is by far the most prevalent packet
-number space a typical QUIC connection will use.
+If `packet_number_space` is omitted, its value is `application_data`, the
+packet number space that most packets in a typical QUIC connection use.
 
 ## udp_datagrams_sent {#quic-udpdatagramssent}
 
