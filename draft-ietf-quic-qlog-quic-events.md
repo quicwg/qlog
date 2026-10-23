@@ -76,7 +76,7 @@ this namespace multiple events derive from the qlog abstract Event class
 `name` field values and semantics. The data types that the events use are
 defined in {{quic-data-types}}.
 
-## Use of group IDs
+## Use of Group IDs
 
 QUIC's Original Destination Connection ID (ODCID) can be used as the value of
 the qlog `group_id` field. The ODCID is the connection ID that the client
@@ -88,7 +88,7 @@ The ODCID can also be used as the qlog filename or file identifier, optionally
 suffixed by the vantage point type. For example, abcd1234_server.qlog would
 contain the server-side trace of the connection with ODCID abcd1234.
 
-## Raw packet and frame information
+## Raw Packet and Frame Information
 
 Protected QUIC packets (Initial, 0-RTT, Handshake, and 1-RTT) end with an AEAD
 authentication tag. Every cipher suite that QUIC version 1 can use has a
@@ -96,7 +96,7 @@ authentication tag. Every cipher suite that QUIC version 1 can use has a
 RawInfo fields ({{Section 10 of QLOG-MAIN}}) for these packets, the tag is
 treated as a 16-byte trailer.
 
-## Events without a known connection {#handling-unknown-connections}
+## Events without a Known Connection {#handling-unknown-connections}
 
 A qlog trace is typically associated with a single QUIC connection. However,
 some events cannot be tied to a specific connection, especially on the server.
@@ -256,7 +256,7 @@ The concrete QUIC event types are further defined below, their type identifier
 is the heading name. The subdivisions in sections on Connectivity, Transport,
 Security, and Recovery are purely for readability.
 
-# Connectivity events {#conn-ev}
+# Connectivity Events {#conn-ev}
 
 ## server_listening {#quic-serverlistening}
 
@@ -556,7 +556,7 @@ QUICMTUUpdated = {
 ~~~
 {: #quic-mtuupdated-def title="QUICMTUUpdated definition"}
 
-# Transport events  {#quic-ev}
+# Transport Events {#quic-ev}
 
 ## version_information {#quic-versioninformation}
 
@@ -1115,7 +1115,7 @@ The `trigger` field can show which endpoint initiated a state change, for
 example when a stream is closed because of a RESET_STREAM or STOP_SENDING
 frame.
 
-## Frame-related events
+## Frame-Related Events
 
 While the `packet_sent` ({{quic-packetsent}}) and `packet_received`
 ({{quic-packetreceived}}) events can convey all frames contained in a single
@@ -1519,7 +1519,7 @@ QUICKeyDiscarded = {
 ~~~
 {: #quic-keydiscarded-def title="QUICKeyDiscarded definition"}
 
-# Recovery events {#rec-ev}
+# Recovery Events {#rec-ev}
 
 Most of the events in this section are kept generic to support different
 recovery approaches and congestion control algorithms. The `old`, `new`, and
@@ -1754,7 +1754,7 @@ ECNState =
 {: #quic-ecnstateupdated-def title="QUICECNStateUpdated definition"}
 
 
-# QUIC data type definitions {#quic-data-types}
+# QUIC Data Type Definitions {#quic-data-types}
 
 ## QuicVersion
 

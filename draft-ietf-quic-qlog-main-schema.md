@@ -295,7 +295,7 @@ non-standard log file schema URI using a URN of the form
 
 Registration requests should use the template defined in {{iana}}.
 
-# QlogFile schema {#qlog-file-schema}
+# QlogFile Schema {#qlog-file-schema}
 
 A qlog file using the QlogFile schema can contain several individual traces and
 logs from multiple vantage points that are in some way related. The top-level
@@ -448,7 +448,7 @@ JSON serialization example:
 ~~~~~~~
 {: #trace-error-ex title="TraceError example"}
 
-# QlogFileSeq schema {#qlog-file-seq-schema}
+# QlogFileSeq Schema {#qlog-file-seq-schema}
 
 A qlog file using the QlogFileSeq schema can be serialized to a streamable JSON
 format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}). The top-level
@@ -1442,7 +1442,7 @@ The two following generic event schemas define two namespaces and several
 concrete event types that are common across protocols, applications, and use
 cases.
 
-## Loglevel events {#loglevel-events}
+## Loglevel Events {#loglevel-events}
 
 In typical logging setups, users utilize a discrete number of well-defined
 logging categories, levels or severities to log freeform (string) data. The
@@ -1594,7 +1594,7 @@ SimulationMarker = {
 {: #simulation-marker-def title="SimulationMarker definition"}
 
 
-# Raw packet and frame information {#raw-info}
+# Raw Packet and Frame Information {#raw-info}
 
 While qlog is a high-level logging format, it also allows the inclusion of most
 raw wire image information, such as byte lengths and byte values. This is useful
@@ -1677,7 +1677,7 @@ Serialization formats require appropriate deserializers/parsers. The
 `serialization_format` field ({{abstract-logfile}}) is used to indicate the
 chosen serialization format.
 
-## qlog to JSON mapping {#format-json}
+## qlog to JSON Mapping {#format-json}
 
 When mapping qlog to JSON, QlogFile ({{qlog-file-def}}) is used. The
 Media Type is "application/qlog+json" per {{!RFC6839}}. The file
@@ -1691,7 +1691,7 @@ In order to serialize CDDL-based qlog event and data structure
 definitions to JSON, the official CDDL-to-JSON mapping defined in
 {{Appendix E of CDDL}} SHOULD be employed.
 
-## qlog to JSON Text Sequences mapping {#format-json-seq}
+## qlog to JSON Text Sequences Mapping {#format-json-seq}
 
 One of the downsides of using JSON is that it is inherently a
 non-streamable format. A qlog serializer could work around this by opening a
@@ -1736,7 +1736,7 @@ definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
 {{Appendix E of CDDL}} SHOULD be employed.
 
 
-### Supporting JSON Text Sequences in tooling
+### Supporting JSON Text Sequences in Tooling
 
 Note that JSON Text Sequences are not supported in most default programming
 environments (unlike JSON). However, several custom JSON-SEQ parsing
@@ -1771,7 +1771,7 @@ The CDDL definitions describe uint64 values as numbers. A log that encodes them
 as JSON strings needs those values converted to numbers before it can be
 validated against the CDDL.
 
-## Truncated values {#truncated-values}
+## Truncated Values {#truncated-values}
 
 For some use cases (e.g., limiting file size, privacy), it can be necessary not
 to log a full raw blob (using the `hexstring` type) but instead a truncated
@@ -1823,7 +1823,7 @@ permutations are shown by example in {{truncated-values-ex}}.
 {: #truncated-values-ex title="Example for serializing truncated
 hexstrings"}
 
-## Optimization of serialized data {#optimizations}
+## Optimization of Serialized Data {#optimizations}
 
 Both the JSON and JSON-SEQ formatting options described above are serviceable in
 general small to medium scale (debugging) setups. However, these approaches tend
@@ -1848,13 +1848,13 @@ RECOMMENDED that new formats also define suitable file extensions and media
 types. This provides a clear signal and avoids the need to provide out-of-band
 information or to rely on heuristic fallbacks; see {{tooling}}.
 
-# Methods of access and generation
+# Methods of Access and Generation
 
 Different implementations will have different ways of generating and storing
 qlogs. However, there is still value in defining a few default ways in which to
 steer this generation and access of the results.
 
-## Set file output destination via an environment variable
+## Set File Output Destination via an Environment Variable
 
 To provide users control over where and how qlog files are created, two
 environment variables are defined. The first, QLOGFILE, indicates a full path to
@@ -1908,7 +1908,7 @@ tagged with the "group_id" field with values "abcde" and "12345".
 ~~~~~~~~
 {: #qlogdir-example title="Environment variable examples for a QUIC implementation"}
 
-# Tooling requirements {#tooling}
+# Tooling Requirements {#tooling}
 
 Tools ingesting qlog MUST indicate which serialization format(s), qlog file and
 event schema(s), compression methods and potentially other input file formats
@@ -1934,7 +1934,7 @@ some events can be intentionally omitted out of privacy or file size
 considerations. Tool authors are encouraged to make their tools robust enough to
 still provide adequate output for incomplete logs.
 
-# Security and privacy considerations {#privacy}
+# Security and Privacy Considerations {#privacy}
 
 Protocols such as TLS {{?RFC8446}} and QUIC {{?RFC9000}} encrypt much of what
 they send, which limits what their wire image {{?RFC8546}} reveals to observers.
@@ -1950,7 +1950,7 @@ features, such as encryption, to protect their data can be exposed through
 logging to privacy risks that they are unaware of and cannot assess or respond
 to.
 
-## Data at risk {#data-at-risk}
+## Data at Risk {#data-at-risk}
 
 qlog operators and implementers need to consider security and privacy risks when
 handling qlog data, including logging, storage, usage, and more. The
@@ -1982,7 +1982,7 @@ sources (e.g., captures of encrypted packets):
 * Full or partial raw packet and frame payloads that are plaintext e.g., HTTP Field
   values, HTTP response data, or TLS SNI field values.
 
-## Operational implications and recommendations
+## Operational Implications and Recommendations
 
 Operational considerations focus on authorizing capture and access to logs.
 Logging of Internet protocols using qlog can be equivalent to the ability to
@@ -2007,7 +2007,7 @@ are advised to:
 
 * Encrypt qlog files in transit and at rest.
 
-## Data minimization or anonymization
+## Data Minimization or Anonymization
 
 Applying data minimization or anonymization techniques to qlog might help
 address some security and privacy risks. However, removing or anonymizing data
