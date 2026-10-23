@@ -1875,10 +1875,10 @@ QLOGFILE.
 
 When using QLOGDIR, it is up to the implementation to choose an appropriate naming
 scheme for the qlog files themselves. The chosen scheme will typically depend on
-the context or protocols used. For example, for QUIC, it is recommended to use the
-Original Destination Connection ID (ODCID), followed by the vantage point type of
-the logging endpoint. Examples of all options for QUIC are shown in
-{{qlogdir-example}}.
+the context or protocols used. For example, a QUIC implementation can use the
+Original Destination Connection ID (ODCID), followed by the vantage point type
+of the logging endpoint; see {{Section 1.1 of QLOG-QUIC}}. Examples of all
+options for QUIC are shown in {{qlogdir-example}}.
 
 ~~~~~~~~
 Command: QLOGFILE=/srv/qlogs/client.qlog quicclientbinary
