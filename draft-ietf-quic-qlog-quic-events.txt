@@ -125,7 +125,7 @@ Table of Contents
      8.7.  PacketNumberSpace
      8.8.  PacketHeader
      8.9.  Token
-     8.10. Stateless Reset Token
+     8.10. StatelessResetToken
      8.11. KeyType
      8.12. ECN
      8.13. QUIC Frames
@@ -1990,15 +1990,13 @@ Table of Contents
 
 8.5.  TupleEndpointInfo
 
-   TupleEndpointInfo indicates a single half/direction of a four-tuple.
-   A full tuple is comprised of two halves.  Firstly: the server sends
-   to the remote client IP + port using a specific destination
-   Connection ID.  Secondly: the client sends to the remote server IP +
-   port using a different destination Connection ID.
+   TupleEndpointInfo describes one half, or direction, of a four-tuple.
+   A full tuple has two halves: the server sends to the client's IP
+   address and port, and the client sends to the server's IP address and
+   port.  Each direction uses its own destination connection ID.
 
-   As such, structures logging tuple information SHOULD include two
-   different TupleEndpointInfo instances, one for each half of the
-   tuple.
+   Structures that log tuple information SHOULD therefore include two
+   TupleEndpointInfo instances, one for each half of the tuple.
 
    TupleEndpointInfo = {
        ? ip_v4: IPAddress
@@ -2050,9 +2048,10 @@ Table of Contents
    [QUIC-TRANSPORT].  Their values can be logged in the raw.data field
    of the event that logs the PacketHeader.
 
-   QUIC extensions that do utilize these bits are expected to create new
-   events (analogous to spin_bit_updated) or use qlog extension
-   mechanisms to reflect that usage.
+   QUIC extensions that use these bits, such as the QUIC Bit greasing
+   extension ([GREASEBIT]), can log that use with new events, similar to
+   spin_bit_updated, or with fields added to PacketHeader through
+   $$quic-packetheader-extension.
 
    For long header packets of type initial, handshake, and 0RTT, the
    length field of the packet header is logged in the qlog raw.length
@@ -2124,22 +2123,21 @@ Table of Contents
 
                         Figure 48: Token definition
 
-   The token carried in an Initial packet can either be a retry token
-   from a Retry packet, or one originally provided by the server in a
-   NEW_TOKEN frame used when resuming a connection (e.g., for address
-   validation purposes).  Retry and resumption tokens typically contain
-   encoded metadata to check the token's validity when it is used, but
-   this metadata and its format is implementation specific.  For that,
-   Token includes a general-purpose details field.
+   The token carried in an Initial packet is either a token from a Retry
+   packet, or one that the server provided earlier in a NEW_TOKEN frame,
+   for address validation in a later connection; see Section 8.1.3 of
+   [QUIC-TRANSPORT].  Both kinds typically encode metadata that the
+   server uses to check the token, but the metadata and its format are
+   implementation-specific.  The details field can log that metadata.
 
-8.10.  Stateless Reset Token
+8.10.  StatelessResetToken
 
    StatelessResetToken = hexstring .size 16
 
-                Figure 49: Stateless Reset Token definition
+                 Figure 49: StatelessResetToken definition
 
-   The stateless reset token is carried in stateless reset packets, in
-   transport parameters and in NEW_CONNECTION_ID frames.
+   The stateless reset token is defined in Section 10.3 of
+   [QUIC-TRANSPORT].
 
 8.11.  KeyType
 
@@ -2156,11 +2154,12 @@ Table of Contents
 
 8.12.  ECN
 
+   ECN holds the ECN codepoint carried in the IP header; see
+   Section 13.4 of [QUIC-TRANSPORT].
+
    ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 
                          Figure 51: ECN definition
-
-   The ECN bits carried in the IP header.
 
 8.13.  QUIC Frames
 
@@ -2207,14 +2206,13 @@ Table of Contents
 
 8.13.1.  PaddingFrame
 
-   In QUIC, PADDING frames are simply identified as a single byte of
-   value 0.  As such, each padding byte could be theoretically
-   interpreted and logged as an individual PaddingFrame.
-
-   However, as this leads to heavy logging overhead, implementations
-   SHOULD instead emit just a single PaddingFrame and set the
-   raw.payload_length property to the amount of PADDING bytes/frames
-   included in the packet.
+   A PADDING frame is a single byte with the value 0, so each padding
+   byte is its own frame; see Section 19.1 of [QUIC-TRANSPORT].  Logging
+   each one as a separate PaddingFrame could add hundreds of entries to
+   a single packet event, for example when a client pads an Initial
+   packet to 1200 bytes.  Implementations SHOULD instead log a single
+   PaddingFrame for the packet, and set its raw.payload_length field to
+   the number of PADDING frames in the packet.
 
    PaddingFrame = {
        frame_type: "padding"
@@ -2260,14 +2258,12 @@ Table of Contents
 
                        Figure 56: AckFrame definition
 
-   Note that the packet ranges in AckFrame.acked_ranges do not
-   necessarily have to be ordered (e.g., [[5,9],[1,4]] is a valid
-   value).
+   The ranges in acked_ranges do not have to be in order; for example,
+   [[5,9],[1,4]] is valid.
 
-   Note that the two numbers in the packet range can be the same (e.g.,
-   [120,120] means that packet with number 120 was ACKed).  However, in
-   that case, implementers SHOULD log [120] instead and tools MUST be
-   able to deal with both notations.
+   The two numbers in a range can be equal; for example, [120,120] means
+   that packet 120 was acknowledged.  In that case, implementations
+   SHOULD log [120] instead, and tools MUST handle both forms.
 
 8.13.4.  ResetStreamFrame
 
