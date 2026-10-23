@@ -2382,9 +2382,9 @@ UnknownFrame = {
 
 ### DatagramFrame
 
-The QUIC DATAGRAM frame is defined in {{Section 4 of !RFC9221}}.
+The QUIC DATAGRAM frame is defined in {{Section 4 of QUIC-DATAGRAM}}.
 
-If the datagram frame contains a length field, it MUST be logged in the qlog
+If the DATAGRAM frame contains a length field, it MUST be logged in the qlog
 `raw.length` field. If it does not, the implementation MAY calculate the actual
 datagram byte length itself and log that in `raw.length` if necessary.
 
