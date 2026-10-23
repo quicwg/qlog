@@ -785,7 +785,7 @@ QUICParametersRestored = {
 
 ## packet_sent {#quic-packetsent}
 
-The `packet_sent` event indicates a QUIC-level packet was sent. It has Core
+The `packet_sent` event indicates that a QUIC packet was sent. It has Core
 importance level.
 
 ~~~ cddl
@@ -821,16 +821,15 @@ QUICPacketSent = {
 ~~~
 {: #quic-packetsent-def title="QUICPacketSent definition"}
 
-The `encryption_level` and `packet_number_space` are not logged explicitly:
-the `header.packet_type` specifies this by inference (assuming correct
-implementation)
+The encryption level and packet number space are not logged explicitly,
+because `header.packet_type` implies them for the packet types that have them.
 
 The `datagram_payload_checksum` field is used to track packet coalescing, see
 {{packet-coalescing}}.
 
 ## packet_received {#quic-packetreceived}
 
-The `packet_received` event indicates a QUIC-level packet was received. It has
+The `packet_received` event indicates that a QUIC packet was received. It has
 Core importance level.
 
 ~~~ cddl
@@ -857,9 +856,8 @@ QUICPacketReceived = {
 ~~~
 {: #quic-packetreceived-def title="QUICPacketReceived definition"}
 
-The `encryption_level` and `packet_number_space` are not logged explicitly: the
-`header.packet_type` specifies this by inference (assuming correct
-implementation).
+The encryption level and packet number space are not logged explicitly,
+because `header.packet_type` implies them for the packet types that have them.
 
 The `datagram_payload_checksum` field is used to track packet coalescing, see
 {{packet-coalescing}}.
