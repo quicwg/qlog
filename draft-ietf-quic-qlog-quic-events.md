@@ -1578,19 +1578,20 @@ QUICRecoveryParametersSet = {
 ~~~
 {: #quic-recoveryparametersset-def title="QUICRecoveryParametersSet definition"}
 
-Additionally, this event can contain any number of unspecified fields to support
-different recovery approaches.
+Parameters that this document does not define, such as those of other loss
+detection and recovery algorithms, can be added through
+`$$quic-recoveryparametersset-extension`.
 
 ## recovery_metrics_updated {#quic-recoverymetricsupdated}
 
-The `recovery_metrics_updated` event is emitted when one or more of the observable
-recovery metrics changes value. It has Core importance level.
+The `recovery_metrics_updated` event is emitted when one or more of the
+observable recovery metrics change value. It has Core importance level.
 
-This event SHOULD group all possible metric updates that happen at or around the
-same time in a single event (e.g., if `min_rtt` and `smoothed_rtt` change at the
-same time, they should be bundled in a single `recovery_metrics_updated` entry,
-rather than split out into two). Consequently, a `recovery_metrics_updated`
-event is only guaranteed to contain at least one of the listed metrics.
+Implementations SHOULD group all metric updates that happen at or around the
+same time into a single `recovery_metrics_updated` event. For example, if
+`min_rtt` and `smoothed_rtt` change at the same time, they are logged in one
+event, not two. Each event is only guaranteed to contain at least one of the
+listed metrics.
 
 ~~~ cddl
 QUICRecoveryMetricsUpdated = {
@@ -1623,14 +1624,14 @@ QUICRecoveryMetricsUpdated = {
 ~~~
 {: #quic-recoverymetricsupdated-def title="QUICRecoveryMetricsUpdated definition"}
 
-In order to make logging easier, implementations MAY log values even if they are
-the same as previously reported values (e.g., two subsequent
-QUICRecoveryMetricsUpdated entries can both report the exact same value for
-`min_rtt`). However, applications SHOULD try to log only actual updates to
-values.
+To make logging easier, implementations MAY log values that are the same as
+previously reported values; for example, two consecutive
+`recovery_metrics_updated` events can report the same `min_rtt`. However,
+implementations SHOULD try to log only values that changed.
 
-Additionally, the `recovery_metrics_updated` event can contain any number of
-unspecified fields to support different recovery approaches.
+Metrics that this document does not define, such as those of other loss
+detection and recovery algorithms, can be added through
+`$$quic-recoverymetricsupdated-extension`.
 
 ## congestion_state_updated {#quic-congestionstateupdated}
 
