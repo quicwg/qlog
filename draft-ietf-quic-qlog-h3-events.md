@@ -908,15 +908,16 @@ document as well.
 
 # IANA Considerations
 
-This document registers a new entry in the "qlog event schema URIs" registry (created in {{Section 15 of QLOG-MAIN}}).
+This document registers two new entries in the "qlog event schema URIs"
+registry, which was created in {{Section 15 of QLOG-MAIN}}:
 
 Event schema URI:
 : urn:ietf:params:qlog:events:http3
 
-Namespace
+Namespace:
 : http3
 
-Event Types
+Event Types:
 : parameters_set,
   parameters_restored,
   stream_type_set,
@@ -931,24 +932,23 @@ Description:
 : Event definitions related to the HTTP/3 application protocol.
 
 Reference:
-: This Document
-
-This document registers a new entry in the "qlog event schema URIs" registry.
+: This document
 
 Event schema URI:
 : urn:ietf:params:qlog:events:http
 
-Namespace
+Namespace:
 : http
 
-Event Types
-: capsule_created,capsule_parsed
+Event Types:
+: capsule_created,
+  capsule_parsed
 
 Description:
 : Event definitions for the Capsule Protocol.
 
 Reference:
-: This Document
+: This document
 
 --- back
 
