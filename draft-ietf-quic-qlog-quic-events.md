@@ -2441,14 +2441,14 @@ extending the `$ApplicationError` socket; see {{Section 8.2 of QLOG-MAIN}}.
 
 ### CryptoError
 
-These errors are defined in the TLS document as "A TLS alert is turned into a QUIC
-connection error by converting the one-byte alert description into a QUIC error
-code. The alert description is added to 0x100 to produce a QUIC error code from
-the range reserved for CRYPTO_ERROR."
+RFC 9001 converts a TLS alert into a QUIC error code by adding the alert's
+AlertDescription value to 0x0100; see {{Section 4.8 of QUIC-TLS}}.
 
-This approach maps badly to a pre-defined enum. As such, the crypto_error
-string is defined as having a dynamic component here, which should include the
-hex-encoded and zero-padded value of the TLS alert description.
+A fixed list of strings does not fit this range well, so a CryptoError value
+is `crypto_error_` followed by the resulting QUIC error code in lowercase
+hexadecimal, from `crypto_error_0x100` to `crypto_error_0x1ff`. For example, a
+handshake_failure alert, which is 0x0128 in QUIC, is logged as
+`crypto_error_0x128`.
 
 ~~~ cddl
 ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
