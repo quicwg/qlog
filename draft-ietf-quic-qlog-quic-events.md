@@ -2476,15 +2476,16 @@ QLOG-MAIN}} apply to this document as well.
 
 # IANA Considerations
 
-This document registers a new entry in the "qlog event schema URIs" registry (created in {{Section 15 of QLOG-MAIN}}):
+This document registers a new entry in the "qlog event schema URIs" registry,
+which was created in {{Section 15 of QLOG-MAIN}}:
 
 Event schema URI:
 : urn:ietf:params:qlog:events:quic
 
-Namespace
+Namespace:
 : quic
 
-Event Types
+Event Types:
 : server_listening,
   connection_started,
   connection_closed,
@@ -2514,12 +2515,12 @@ Event Types
   stream_data_blocked_updated,
   datagram_data_blocked_updated,
   migration_state_updated,
+  timer_updated,
   key_updated,
   key_discarded,
   recovery_parameters_set,
   recovery_metrics_updated,
   congestion_state_updated,
-  timer_updated,
   packet_lost,
   marked_for_retransmit,
   ecn_state_updated
@@ -2528,7 +2529,7 @@ Description:
 : Event definitions related to the QUIC transport protocol.
 
 Reference:
-: This Document
+: This document
 
 --- back
 
