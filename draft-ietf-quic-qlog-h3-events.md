@@ -226,10 +226,10 @@ HTTP3ParametersSet = {
     ? blocked_streams_count: uint64
 
     ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
-    ? extended_connect: uint16
+    ? extended_connect: uint64
 
     ; RFC9297 (SETTINGS_H3_DATAGRAM)
-    ? h3_datagram: uint16
+    ? h3_datagram: uint64
 
     ; qlog-specific
     ; indicates whether this implementation waits for a SETTINGS
@@ -264,10 +264,10 @@ HTTP3ParametersRestored = {
     ? blocked_streams_count: uint64
 
     ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
-    ? extended_connect: uint16
+    ? extended_connect: uint64
 
     ; RFC9297 (SETTINGS_H3_DATAGRAM)
-    ? h3_datagram: uint16
+    ? h3_datagram: uint64
 
     * $$http3-parametersrestored-extension
 }
