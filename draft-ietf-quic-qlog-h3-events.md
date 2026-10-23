@@ -79,8 +79,8 @@ a schema for the HTTP Capsule Protocol ({{Section 3 of DGRAM-AND-CAPSULE}}).
 
 The event namespace with identifier `http3` is defined; see {{schema-def}}. In
 this namespace multiple events derive from the qlog abstract Event class
-({{Section 7 of QLOG-MAIN}}), each extending the "data" field and defining
-their "name" field values and semantics.
+({{Section 7 of QLOG-MAIN}}), each extending the `data` field and defining
+their `name` field values and semantics.
 
 {{h3-events}} summarizes the name value of each event type in the `http3`
 namespace. The data types that the events use are defined in {{h3-data-types}}
@@ -285,7 +285,7 @@ change that.
 
 Unidirectional streams in either direction begin with a variable-length
 integer type. Where the type is not known, the stream_type value of "unknown"
-type can be used and the value captured in the stream_type_bytes field; a
+type can be used and the value captured in the `stream_type_bytes` field; a
 numerical value without variable-length integer encoding.
 
 The generic `$HTTP3StreamType` is defined here as a CDDL "type socket" extension
@@ -671,7 +671,7 @@ HTTP3MaxPushIDFrame = {
 
 ### HTTP3ReservedFrame
 
-The frame_type_bytes field is the numerical value without variable-length
+The `frame_type_bytes` field is the numerical value without variable-length
 integer encoding.
 
 ~~~ cddl
@@ -685,7 +685,7 @@ HTTP3ReservedFrame = {
 
 ### HTTP3UnknownFrame
 
-The frame_type_bytes field is the numerical value without variable-length
+The `frame_type_bytes` field is the numerical value without variable-length
 integer encoding.
 
 ~~~ cddl
@@ -888,7 +888,7 @@ HTTPCapsuleDatagram = {
 
 ### HTTPCapsuleUnknown
 
-The capsule_type_value field is the numerical value without variable-length
+The `capsule_type_value` field is the numerical value without variable-length
 integer encoding.
 
 ~~~ cddl

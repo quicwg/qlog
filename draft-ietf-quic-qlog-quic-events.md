@@ -72,8 +72,8 @@ containing concrete events for the core QUIC protocol (see
 
 The event namespace with identifier `quic` is defined; see {{schema-def}}. In
 this namespace multiple events derive from the qlog abstract Event class
-({{Section 7 of QLOG-MAIN}}), each extending the "data" field and defining their
-"name" field values and semantics. The data types that the events use are
+({{Section 7 of QLOG-MAIN}}), each extending the `data` field and defining their
+`name` field values and semantics. The data types that the events use are
 defined in {{quic-data-types}}.
 
 ## Use of group IDs
@@ -336,7 +336,7 @@ error: `connection_error` or `application_error` for the QUIC error, and
 
 If the error code does not map to a known error string, the connection_error or
 application_error value of "unknown" type can be used and the raw value captured
-in the error_code field; a numerical value without variable-length integer
+in the `error_code` field; a numerical value without variable-length integer
 encoding.
 
 ~~~ cddl
@@ -2368,7 +2368,7 @@ HandshakeDoneFrame = {
 
 ### UnknownFrame
 
-The frame_type_bytes field is the numerical value without variable-length
+The `frame_type_bytes` field is the numerical value without variable-length
 integer encoding.
 
 ~~~ cddl
