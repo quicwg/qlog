@@ -2399,7 +2399,7 @@ DatagramFrame = {
 ### TransportError
 
 The generic `$TransportError` is defined here as a CDDL "type socket" extension
-point. It can be extended to support additional Transport errors.
+point. It can be extended to support additional transport errors.
 
 ~~~ cddl
 $TransportError /= "no_error" /
