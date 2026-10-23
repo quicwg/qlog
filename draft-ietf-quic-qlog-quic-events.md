@@ -2069,12 +2069,12 @@ AckFrame = {
 ~~~
 {: #ackframe-def title="AckFrame definition"}
 
-Note that the packet ranges in AckFrame.acked_ranges do not necessarily have to be
-ordered (e.g., \[\[5,9\],\[1,4\]\] is a valid value).
+The ranges in `acked_ranges` do not have to be in order; for example,
+`[[5,9],[1,4]]` is valid.
 
-Note that the two numbers in the packet range can be the same (e.g., \[120,120\] means
-that packet with number 120 was ACKed). However, in that case, implementers SHOULD
-log \[120\] instead and tools MUST be able to deal with both notations.
+The two numbers in a range can be equal; for example, `[120,120]` means that
+packet 120 was acknowledged. In that case, implementations SHOULD log `[120]`
+instead, and tools MUST handle both forms.
 
 ### ResetStreamFrame
 
