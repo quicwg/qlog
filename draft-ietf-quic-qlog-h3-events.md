@@ -77,10 +77,10 @@ extensions: Extended CONNECT ({{!EXTENDED-CONNECT=RFC9220}}), PRIORITY_UPDATE
 HTTP/3 Datagrams ({{Section 2.1 of !DGRAM-AND-CAPSULE=RFC9297}}). It also defines
 a schema for the HTTP Capsule Protocol ({{Section 3 of DGRAM-AND-CAPSULE}}).
 
-The event namespace with identifier `http3` is defined; see {{schema-def}}. In
-this namespace multiple events derive from the qlog abstract Event class
-({{Section 7 of QLOG-MAIN}}), each extending the `data` field and defining
-their `name` field values and semantics.
+This document defines two event namespaces: `http3` ({{schema-def}}) and
+`http` ({{http-schema-def}}). In each namespace, multiple events derive from
+the qlog abstract Event class ({{Section 7 of QLOG-MAIN}}), each extending the
+`data` field and defining their `name` field values and semantics.
 
 {{h3-events}} summarizes the name value of each event type in the `http3`
 namespace. The data types that the events use are defined in {{h3-data-types}}
@@ -99,8 +99,8 @@ and {{http-data-types}}.
 | http3:push_resolved          | Extra      | {{h3-pushresolved}} |
 {: #h3-events title="HTTP/3 Events"}
 
-{{http-events}} summarizes the name value of each event type that is defined in
-the http namespace in this specification.
+{{http-events}} summarizes the name value of each event type in the `http`
+namespace.
 
 | Name value                   | Importance |  Definition |
 |:-----------------------------|:-----------|:------------|
