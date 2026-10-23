@@ -862,12 +862,8 @@ The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
 
 ## packet_dropped {#quic-packetdropped}
 
-The `packet_dropped` event indicates a QUIC-level packet was dropped. It has
+The `packet_dropped` event indicates that a QUIC packet was dropped. It has
 Base importance level.
-
-The trigger field indicates a general reason category for dropping the packet,
-while the details field can contain additional implementation-specific
-information.
 
 ~~~ cddl
 QUICPacketDropped = {
@@ -894,17 +890,23 @@ QUICPacketDropped = {
 ~~~
 {: #quic-packetdropped-def title="QUICPacketDropped definition"}
 
-Some example situations for each of the trigger categories include:
+The `trigger` field gives a general reason for dropping the packet, and the
+`details` field can hold additional implementation-specific information. Some
+example situations for each trigger value include:
 
 - `internal_error`: not initialized, out of memory
-- `rejected`: limits reached, DDoS protection, unwilling to track more paths, duplicate packet
-- `unsupported`: unknown or unsupported version. See also {{handling-unknown-connections}}.
+- `rejected`: limits reached, DDoS protection, unwilling to track more paths
+- `unsupported`: unknown or unsupported version
 - `invalid`: packet parsing or validation error
 - `duplicate`: duplicate packet
-- `connection_unknown`: packet does not relate to a known connection or Connection ID
+- `connection_unknown`: packet does not relate to a known connection or
+  connection ID
 - `decryption_failure`: decryption failed
 - `key_unavailable`: decryption key was unavailable
 - `general`: situations not clearly covered in the other categories
+
+Packets dropped as `unsupported` or `connection_unknown` often cannot be tied to
+a connection; see {{handling-unknown-connections}}.
 
 The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
 
