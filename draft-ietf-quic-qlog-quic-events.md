@@ -1083,9 +1083,6 @@ BaseStreamStates =  "idle" /
                     "closed"
 
 GranularStreamStates =
-    ; bidirectional stream states, RFC 9000 Section 3.4.
-    "half_closed_local" /
-    "half_closed_remote" /
     ; sending-side stream states, RFC 9000 Section 3.1.
     "ready" /
     "send" /
