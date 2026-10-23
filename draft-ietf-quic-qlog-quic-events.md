@@ -2426,24 +2426,18 @@ $TransportError /= "no_error" /
 
 ### ApplicationError
 
-By definition, an application error is defined by the application-level
-protocol running on top of QUIC (e.g., HTTP/3).
-
-As such, it cannot be defined here completely. It is instead defined as a CDDL
-"type socket" extension point, with a single "unknown" value.
+Application errors are defined by the application protocol that runs on top of
+QUIC, such as HTTP/3, so this document cannot list them. `$ApplicationError` is
+instead defined as a CDDL "type socket" extension point, with a single
+"unknown" value.
 
 ~~~ cddl
 $ApplicationError /= "unknown"
 ~~~
 {: #applicationerror-def title="ApplicationError definition"}
 
-Application-level qlog definitions that wish to define new ApplicationError
-strings MUST do so by extending the $ApplicationError socket as such:
-
-~~~~~~
-$ApplicationError /= "new_error_name" /
-                     "another_new_error_name"
-~~~~~~
+Event schemas for application protocols MUST add their error strings by
+extending the `$ApplicationError` socket; see {{Section 8.2 of QLOG-MAIN}}.
 
 ### CryptoError
 
