@@ -111,16 +111,16 @@ the http namespace in this specification.
 ## Usage with QUIC
 
 The events described in this document can be used with or without logging the
-related QUIC events defined in {{QLOG-QUIC}}. If used with QUIC events, the QUIC
-document takes precedence in terms of recommended filenames and trace separation
-setups.
+related QUIC events defined in {{QLOG-QUIC}}. When they are logged together,
+the guidance in {{QLOG-QUIC}} on group IDs, file names, and events without a
+known connection applies.
 
-If used without QUIC events, it is recommended that the implementation assign a
-globally unique identifier to each HTTP/3 connection. This ID can then be used as
-the value of the qlog "group_id" field, as well as the qlog filename or file
-identifier, potentially suffixed by the vantage point type (for example,
-abcd1234_server.qlog would contain the server-side trace of the connection with
-GUID abcd1234).
+When they are logged without QUIC events, an implementation can assign a
+unique identifier to each HTTP/3 connection and use it as the value of the
+qlog `group_id` field; see {{Section 7.3 of QLOG-MAIN}}. The identifier can
+also be used as the qlog filename or file identifier, optionally suffixed by
+the vantage point type. For example, abcd1234_server.qlog would contain the
+server-side trace of the connection with identifier abcd1234.
 
 ## Notational Conventions
 
