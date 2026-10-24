@@ -261,8 +261,8 @@ level.
 
 ~~~ cddl
 QUICServerListening = {
-    ? ip_v4: IPAddressPort
-    ? ip_v6: IPAddressPort
+    ? addr_v4: IPAddressPort
+    ? addr_v6: IPAddressPort
 
     ; the server will always answer client initials with a retry
     ; (no 1-RTT connection setups by choice)
@@ -727,8 +727,8 @@ QUICParametersSet = {
 }
 
 PreferredAddress = {
-    ? ip_v4: IPAddressPort
-    ? ip_v6: IPAddressPort
+    ? addr_v4: IPAddressPort
+    ? addr_v6: IPAddressPort
     connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
 }
@@ -1804,8 +1804,8 @@ TupleEndpointInfo instances, one for each half of the tuple.
 
 ~~~ cddl
 TupleEndpointInfo = {
-    ? ip_v4: IPAddressPort
-    ? ip_v6: IPAddressPort
+    ? addr_v4: IPAddressPort
+    ? addr_v6: IPAddressPort
 
     ; Even though usually only a single ConnectionID
     ; is associated with a given tuple/path at a time,
