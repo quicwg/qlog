@@ -504,7 +504,7 @@ stay short, and their details can be updated as the connection evolves.
 The `packet_sent`, `packet_received`, `packet_dropped`, `packet_buffered`, and
 `packet_lost` events define an optional `tuple` field, which identifies the tuple
 the packet was sent or received on. An event that omits the `tuple` field is
-associated with the initial tuple, as described below.
+associated with the TupleID "", as described below.
 
 ~~~ cddl
 QUICTupleAssigned = {
@@ -528,9 +528,13 @@ of them.
 
 The empty string ("") is a valid TupleID, and it is the default for events that
 do not set the `tuple` field. So the initial tuple of a QUIC connection, on
-which the handshake occurs (see {{quic-connectionstarted}}), is implicitly
+which the handshake occurs (see {{quic-connectionstarted}}), is initially
 associated with the TupleID "". Details for this default tuple can be logged
-with a `tuple_assigned` event whose `tuple_id` is "".
+with a `tuple_assigned` event whose `tuple_id` is "". When migrating to a new
+tuple, an implementation can log a `tuple_assigned` event for the TupleID ""
+with the details of the new tuple, so that only events on other tuples need to
+set the `tuple` field. The previous tuple then needs a different TupleID, which
+can be assigned with another `tuple_assigned` event.
 
 Because a tuple's details can change during the connection, a TupleID can
 appear in several `tuple_assigned` events, and the latest one holds its current
