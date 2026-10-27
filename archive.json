@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-10-25T02:46:57.926109+00:00",
+  "timestamp": "2026-10-27T03:19:19.518483+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10363,9 +10363,17 @@
       "labels": [],
       "body": "Section 7.1 of draft-ietf-quic-qlog-main-schema-14 says:\n\n> Events in each individual trace SHOULD be logged in strictly ascending timestamp order (though not necessarily absolute value, for the \"relative_to_previous_event\" format).\n\n\"Strictly ascending\" could be read to mean no two events in a trace can share a timestamp. That can happen whenever events are logged at the same instant, for example a `packet_received` and the events derived from that packet, especially at millisecond resolution. Under the current text, a trace like that violates the SHOULD.\n\nThe parenthetical is also hard to parse. It means that with `relative_to_previous_event` the logged values need not ascend, only the times they represent.\n\n#66 relaxed this requirement from MUST to SHOULD. \"Strictly\" was kept, but equal timestamps weren't discussed.\n\nOptions:\n\n1. Allow equal timestamps:  e.g. something like \"Events in each individual trace SHOULD be logged in time order, so that no event has an earlier time than the event logged before it. With the \"relative_to_previous_event\" format, this means no logged \"time\" value is negative.\"\n\n2. Keep strict ordering, and say how to log events that happen at the same time (for example, by using fractional precision to separate them).\n\n3. Keep the requirement, and only rewrite the parenthetical.\n",
       "createdAt": "2026-10-21T03:23:45Z",
-      "updatedAt": "2026-10-21T03:23:45Z",
+      "updatedAt": "2026-10-27T00:16:04Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "as an individual I like something like option 1",
+          "createdAt": "2026-10-27T00:16:04Z",
+          "updatedAt": "2026-10-27T00:16:04Z"
+        }
+      ]
     },
     {
       "number": 575,
@@ -10379,9 +10387,17 @@
       "labels": [],
       "body": "draft-ietf-quic-qlog-main-schema-14 is inconsistent about where `reference_time` can go.\n\nSection 7.1 places it only in a trace's `common_fields`, while `time_format` can go in either place:\n\n> \u2026governed by the ReferenceTime type (optionally included in the \"reference_time\" field contained in a trace's \"common_fields\" (Section 7.5)) and TimeFormat type (optionally included in the \"time_format\" field contained in the event itself, or a trace's \"common_fields\").\n\nThe Event definition (Figure 14) agrees: it has `time_format` but no `reference_time`.\n\nSection 7.5 lists `reference_time` among the CommonFields, and then says:\n\n> Tools MUST be able to deal with these fields being defined either on each event individually or combined in common_fields.\n\nThe CommonFields example in Section 7.5 also repeats `reference_time` on every event. A producer following Section 7.5 can therefore set `reference_time` on events, which a tool following the Event definition sees only as an unknown field.\n\nAllowing it per event also raises a question the draft doesn't answer: what timestamps mean when events in one trace have different reference times, especially with `relative_to_previous_event`.\n\nOptions:\n\n1. Trace-only: exclude `reference_time` from the Section 7.5 rule, and move it out of the per-event half of the example into `common_fields`. This matches Section 7.1 and the Event definition.\n\n2. Per event: add `? reference_time: ReferenceTime` to Event, update Section 7.1, and define how differing reference times combine.\n\nOption 1 matches two of the three places and avoids the mixed-reference-time question.",
       "createdAt": "2026-10-21T03:48:51Z",
-      "updatedAt": "2026-10-21T03:48:51Z",
+      "updatedAt": "2026-10-27T00:12:00Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Option 1, probably, does not preclude someone writing an extension later to deal with reference time updates in events.",
+          "createdAt": "2026-10-27T00:12:00Z",
+          "updatedAt": "2026-10-27T00:12:00Z"
+        }
+      ]
     },
     {
       "number": 595,
@@ -10411,9 +10427,17 @@
       "labels": [],
       "body": "quic-events defines:\n\n    StatelessResetToken = hexstring .size 16\n\nA hexstring is text, and `.size` on text counts characters (RFC 8610 Section 3.8.1). So this allows 16 hex characters, which is 8 bytes. A stateless reset token is 16 bytes (RFC 9000 Section 10.3), which takes 32 hex characters. The comments in `packet_sent` and `packet_received` already say the token is 128 bits.\n\nAs a result, a correctly logged token fails validation. The `cddl` gem and cddl-rs both reject it.\n\nCI doesn't catch this, because `cddl_validate.sh` removes `.size` from hexstrings before validating.\n\nNo other hexstring in the drafts has a size limit, even where the size is fixed, for example PATH_CHALLENGE `data` (8 bytes) and `QuicVersion` (4 bytes).\n\nOptions:\n\n1. Change it to `.size 32`.\n2. Remove the `.size` and add a comment, as PATH_CHALLENGE `data` does.\n3. Add size limits to every fixed-size hexstring.",
       "createdAt": "2026-10-23T14:18:51Z",
-      "updatedAt": "2026-10-23T14:18:51Z",
+      "updatedAt": "2026-10-27T00:16:59Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "as an individual I prefer option 2",
+          "createdAt": "2026-10-27T00:16:59Z",
+          "updatedAt": "2026-10-27T00:16:59Z"
+        }
+      ]
     },
     {
       "number": 604,
@@ -32855,25 +32879,35 @@
       "id": "PR_kwDOCrLn6M8AAAABKRbYQw",
       "title": "Match the HTTP/3 error codes to RFC 9114",
       "url": "https://github.com/quicwg/qlog/pull/600",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Changes the CDDL: one value replaced in `HTTP3ApplicationError`.\n\nThe error list was written in 2019 against an early HTTP/3 draft. Since then, H3_EARLY_RESPONSE was removed (draft-ietf-quic-http-25, see quicwg/base-drafts#3130 and quicwg/base-drafts#3208), and H3_MESSAGE_ERROR (0x010e) was added. RFC 9114 Section 8.1 has H3_MESSAGE_ERROR and no early-response code, so:\n\n- add \"http_message_error\", which could otherwise only be logged as \"unknown\"\n- remove \"http_early_response\", which no RFC 9114 implementation can send\n\nThe new value takes the removed one's position, which keeps the list in RFC 9114 code order.\n\nQPACK and HTTP Datagram error codes are not in the list either; that's a separate question about scope.",
       "createdAt": "2026-10-23T14:28:40Z",
-      "updatedAt": "2026-10-23T21:11:38Z",
+      "updatedAt": "2026-10-26T23:46:38Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "555a1fbdf04be6b9a0fc5d7351ef1353dd1578fa",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-events-message-error",
       "headRefOid": "bf3ea5be673224ba0efdfd8fb55073432ee34bdc",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "closedAt": "2026-10-26T23:46:36Z",
+      "mergedAt": "2026-10-26T23:46:36Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "9a604fd255ead7206d7918a5de98691d16ead8a6"
+      },
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Merging this as its trivial",
+          "createdAt": "2026-10-26T23:46:30Z",
+          "updatedAt": "2026-10-26T23:46:30Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M8AAAABT9eGVw",
@@ -32895,25 +32929,35 @@
       "id": "PR_kwDOCrLn6M8AAAABKRg83A",
       "title": "Add extension points to the blocked events",
       "url": "https://github.com/quicwg/qlog/pull/601",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Changes the CDDL, but not what validates.\n\n#417 gave every QUIC event a per-event group socket, and Section 3 says QUIC events \"allow for direct extensibility by their use of per-event extension points\". The three `*_blocked_updated` events were added later, in #467, without one; they are the only QUIC events missing it.\n\nThis adds `$$quic-connectiondatablockedupdated-extension`, `$$quic-streamdatablockedupdated-extension`, and `$$quic-datagramdatablockedupdated-extension`, named like the other sockets.",
       "createdAt": "2026-10-23T14:35:21Z",
-      "updatedAt": "2026-10-24T19:33:15Z",
+      "updatedAt": "2026-10-26T23:47:38Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "555a1fbdf04be6b9a0fc5d7351ef1353dd1578fa",
       "headRepository": "quicwg/qlog",
       "headRefName": "quic-events-blocked-sockets",
       "headRefOid": "6fb1958915afa9689a6b30fc7cc2213cd420ad4a",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "closedAt": "2026-10-26T23:47:36Z",
+      "mergedAt": "2026-10-26T23:47:36Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "90de7137fe808753f902fb55276c2efaa13020cc"
+      },
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Merging this as its trivial",
+          "createdAt": "2026-10-26T23:47:31Z",
+          "updatedAt": "2026-10-26T23:47:31Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M8AAAABUCYLkA",
@@ -32965,25 +33009,35 @@
       "id": "PR_kwDOCrLn6M8AAAABKRpRfQ",
       "title": "Use uint64 for the extended_connect and h3_datagram settings",
       "url": "https://github.com/quicwg/qlog/pull/603",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Changes the CDDL: widens two types.\n\n`extended_connect` and `h3_datagram` are `uint16` in `parameters_set` and `parameters_restored`, while the other settings fields and `HTTP3Setting.value` are `uint64`. HTTP/3 setting values are varints (RFC 9114 Section 7.2.4). Valid values for these two are 0 or 1 (for example, RFC 9297 Section 2.1.1), but as with the transport parameters in #475, a peer can send an invalid value and qlog should be able to log it.\n",
       "createdAt": "2026-10-23T14:45:01Z",
-      "updatedAt": "2026-10-23T21:10:50Z",
+      "updatedAt": "2026-10-26T23:45:37Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-events-settings-uint64",
       "headRefOid": "e9bb373f88d97bb67d402dd271fbc469a14e0122",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "closedAt": "2026-10-26T23:45:34Z",
+      "mergedAt": "2026-10-26T23:45:34Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "11d387124d13fa4b76cdb9943ce6694400dff37f"
+      },
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Merging since this one seems on the trivial end of the scale",
+          "createdAt": "2026-10-26T23:45:26Z",
+          "updatedAt": "2026-10-26T23:45:26Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M8AAAABT9dtBA",
@@ -33045,25 +33099,35 @@
       "id": "PR_kwDOCrLn6M8AAAABKSRPbA",
       "title": "Add the QPACK and HTTP Datagram error codes",
       "url": "https://github.com/quicwg/qlog/pull/609",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Changes the CDDL: adds values to `HTTP3ApplicationError`.\n\nRFC 9204 Section 6 defines three error codes \"for HTTP/3 to indicate failures of QPACK\", and RFC 9297 Section 5.2 registers H3_DATAGRAM_ERROR. They share the HTTP/3 error code space with RFC 9114's codes, and this document already covers QPACK settings and HTTP Datagrams, but these errors could only be logged as \"unknown\". This adds:\n\n- \"qpack_decompression_failed\", \"qpack_encoder_stream_error\", \"qpack_decoder_stream_error\" (RFC 9204)\n- \"http_datagram_error\" (RFC 9297)\n\nThe names follow the list's existing pattern. This touches the end of the list and merges cleanly with #600 in either order.",
       "createdAt": "2026-10-23T15:32:18Z",
-      "updatedAt": "2026-10-24T19:31:08Z",
+      "updatedAt": "2026-10-26T23:48:50Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-events-more-errors",
       "headRefOid": "d52bc684ef8facd4feb24077f1c3f683c7982620",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
-      "comments": [],
+      "closedAt": "2026-10-26T23:48:48Z",
+      "mergedAt": "2026-10-26T23:48:48Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "49004ae9c11514d02729451c602ae1dfd4d640dd"
+      },
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Merging this as its on the trivial end of the scale",
+          "createdAt": "2026-10-26T23:48:43Z",
+          "updatedAt": "2026-10-26T23:48:43Z"
+        }
+      ],
       "reviews": [
         {
           "id": "PRR_kwDOCrLn6M8AAAABUCXXyA",
@@ -33118,7 +33182,7 @@
       "labels": [],
       "body": "Closes #615.\n\n- New Section 8.4, \"Relationship to On-the-Wire Data\": events reflect the view of the implementation that logs them, which can differ from the wire. Event schemas assume a correct implementation when one logged value implies another, or when they leave out data the wire shows.\n- Section 8.6 points to it instead of its own \"bug-free and spec-compliant implementation\" phrasing.\n- Section 13 tells tool authors that a trace can disagree with a packet capture, or with a trace from another vantage point.\n",
       "createdAt": "2026-10-23T18:05:19Z",
-      "updatedAt": "2026-10-23T20:57:59Z",
+      "updatedAt": "2026-10-27T00:01:45Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
@@ -33170,6 +33234,26 @@
               "updatedAt": "2026-10-23T20:57:59Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUWdFEw",
+          "commit": {
+            "abbreviatedOid": "44741db"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-27T00:01:44Z",
+          "updatedAt": "2026-10-27T00:01:45Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "I was attempting to articulate that an implementation might log an event that is \"false\" when compared to ground truth. The last draft insinuated this with easy-to-miss wooly words like https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events.html#section-5.5-3:\n\n> The encryption_level and packet_number_space are not logged explicitly: the header.packet_type specifies this by inference (assuming correct implementation).\n\nor the text removed in this PR:\n\n> a bug-free and spec-compliant implementation already reveals the change\n\nThis PR tries to make it clearer that the loggers can be an unreliable narrator. There could be a bug in the protocol implementation or in the logging code itself. I've seen multiple examples of that:\n\n* a field name is misspelled, stale, omitted unintentionally etc.\n* a field value is misused, or semantically invalid\n* log an event only the one vantage point can claim to know, with a bug in source or derivation of the information\n\nHappy to wordsmith to make that clearer but I think its something worth pointing out",
+              "createdAt": "2026-10-27T00:01:44Z",
+              "updatedAt": "2026-10-27T00:03:01Z"
+            }
+          ]
         }
       ]
     },
@@ -33185,7 +33269,7 @@
       "labels": [],
       "body": "Replaces #559. Fixes #501.\n\nThe first commit is #559, rebased on main. The second commit associates events that omit the `tuple` field with the TupleID `\"\"` instead of the initial tuple. This way, a stack can reassign `\"\"` with a `tuple_assigned` event when it migrates, and only needs to log the `tuple` for packets sent or received on other tuples.",
       "createdAt": "2026-10-24T19:26:31Z",
-      "updatedAt": "2026-10-24T19:26:32Z",
+      "updatedAt": "2026-10-26T23:42:08Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
@@ -33196,7 +33280,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "LGTM but we probably want a cross review from @rmarx ",
+          "createdAt": "2026-10-26T23:42:08Z",
+          "updatedAt": "2026-10-26T23:42:08Z"
+        }
+      ],
       "reviews": []
     }
   ]
