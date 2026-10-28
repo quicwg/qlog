@@ -1642,17 +1642,13 @@ detection and recovery algorithms, can be added through
 ## congestion_state_updated {#quic-congestionstateupdated}
 
 The `congestion_state_updated` event indicates when the congestion controller
-enters a significant new state and changes its behaviour. It has Base importance
-level.
+enters a new state that changes its behavior. It has Base importance level.
 
-The values of the event's fields are intentionally unspecified here in order to
-support different Congestion Control algorithms, as these typically have
-different states and even different implementations of these states across
-stacks. For example, for the algorithm defined in the QUIC Recovery RFC
-("enhanced" New Reno), the following states are used: Slow Start, Congestion
-Avoidance, Application Limited and Recovery. Similarly, states can be triggered
-by a variety of events, including detection of Persistent Congestion or receipt
-of ECN markings.
+This document does not define values for the event's fields. Congestion
+control algorithms have different states and different causes for moving
+between them, and stacks can implement the same algorithm differently. For
+example, the NewReno controller in {{Section 7.3 of QUIC-RECOVERY}} has three
+states: slow start, recovery, and congestion avoidance.
 
 ~~~ cddl
 QUICCongestionStateUpdated = {
@@ -1665,18 +1661,15 @@ QUICCongestionStateUpdated = {
 ~~~
 {: #quic-congestionstateupdated-def title="QUICCongestionStateUpdated definition"}
 
-The `trigger` field SHOULD be logged if there are multiple ways in which a state
-change can occur but MAY be omitted if a given state can only be due to a single
-event occurring (for example Slow Start is often exited only when ssthresh is
-exceeded).
+The `trigger` field SHOULD be logged if a state change can have more than one
+cause. For example, NewReno enters recovery when it detects packet loss or
+when the ECN-CE count increases, so the `trigger` field shows which of the two
+caused the change.
 
 ## packet_lost {#quic-packetlost}
 
-The `packet_lost` event is emitted when a packet is deemed lost by loss
-detection. It has Core importance level.
-
-It is RECOMMENDED to populate the optional `trigger` field in order to help
-disambiguate among the various possible causes of a loss declaration.
+The `packet_lost` event is emitted when loss detection declares a packet lost.
+It has Core importance level.
 
 ~~~ cddl
 QUICPacketLost = {
@@ -1684,14 +1677,11 @@ QUICPacketLost = {
     ; should include at least the packet_type and packet_number
     ? header: PacketHeader
 
-    ; not all implementations will keep track of full
-    ; packets, so these are optional
     ? frames: [* $QuicFrame]
     ? is_mtu_probe_packet: bool .default false
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
-        ; RFC 9002 Section 6.2.4 paragraph 6, MAY
         "pto_expired"
 
     * $$quic-packetlost-extension
@@ -1699,28 +1689,51 @@ QUICPacketLost = {
 ~~~
 {: #quic-packetlost-def title="QUICPacketLost definition"}
 
+The `frames` field lists the frames that the lost packet carried. It is
+optional, because not all implementations keep sent packets in full. The data
+that is then marked for retransmission can be logged with the
+`marked_for_retransmit` event ({{quic-markedforretransmit}}).
+
+The `is_mtu_probe_packet` field marks a packet that was sent as a Path MTU
+probe. The loss of such a packet is not a reliable sign of congestion; see
+{{Section 14.4 of QUIC-TRANSPORT}}.
+
+The `trigger` field SHOULD be logged. Its value shows how loss detection
+declared the packet lost:
+
+- `reordering_threshold`: the packet threshold was exceeded; see {{Section
+  6.1.1 of QUIC-RECOVERY}}.
+- `time_threshold`: the time threshold was exceeded; see {{Section 6.1.2 of
+  QUIC-RECOVERY}}.
+- `pto_expired`: the probe timeout expired, and the sender declared the packet
+  lost instead of sending a probe; see {{Section 6.2.4 of QUIC-RECOVERY}}.
+
 ## marked_for_retransmit {#quic-markedforretransmit}
 
 The `marked_for_retransmit` event indicates which data was marked for
-retransmission upon detection of packet loss (see `packet_lost`). It has Extra
-importance level.
+retransmission after packet loss was detected. It has Extra importance level.
 
-Similar to the reasoning for the `frames_sent` and `frames_parsed` events,
-in order to keep the amount of different events low, this signal is grouped into
-in a single event based on existing QUIC frame definitions for all types of
-retransmittable data.
+This single event covers all types of retransmittable data, which it logs using
+the existing QUIC frame definitions.
 
-Implementations retransmitting full packets or frames directly can just log the
-constituent frames of the lost packet here (or do away with this event and use the
-contents of the `packet_lost` event instead). Conversely, implementations that have
-more complex logic (e.g., marking ranges in a stream's data buffer as in-flight),
-or that do not track sent frames in full (e.g., only stream offset + length), can
-translate their internal behaviour into the appropriate frame instance here even
-if that frame was never or will never be put on the wire.
+A `packet_lost` event ({{quic-packetlost}}) records that a packet was declared
+lost, and can list the frames it carried. A `marked_for_retransmit` event
+records what the implementation then marks for retransmission. The two can
+differ, because not every frame is retransmitted (ACK and PADDING frames never
+are), and retransmitted data need not be sent in the same frames; see
+{{Section 13.3 of QUIC-TRANSPORT}}.
 
-Much of this data can be inferred if implementations log `packet_sent` events
-(e.g., looking at overlapping stream data offsets and length, one can determine
-when data was retransmitted).
+An implementation that retransmits the frames of a lost packet unchanged can
+log them here, or skip this event and use the frames in the `packet_lost` event
+instead. An implementation with more complex logic, such as one that marks
+ranges of a stream's send buffer as in flight, or one that does not keep sent
+frames in full, can log frames that describe the data it marked for
+retransmission. These frames need not match any frame that was sent or will be
+sent.
+
+If an implementation logs `packet_sent` events, tools can infer much of this
+data from them. For example, overlapping stream offsets and lengths show when
+data was retransmitted.
 
 ~~~ cddl
 QUICMarkedForRetransmit = {
