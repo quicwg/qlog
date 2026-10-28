@@ -658,6 +658,9 @@ changes its behavior based on the peer's settings, the outcome can be logged
 with a new event type, or with fields added through
 `$$quic-parametersset-extension`; see {{Section 8.2 of QLOG-MAIN}}.
 
+The `initiator` field is required. Settings that both endpoints negotiate, such
+as `tls_cipher`, are logged in both the local and the remote event.
+
 Each setting starts the connection with its default value, or with no value if
 it has no default. A `parameters_set` event that includes a setting replaces
 its previous value; settings that the event omits keep their values.
@@ -677,7 +680,7 @@ event to indicate the updated values, as normal.
 
 ~~~ cddl
 QUICParametersSet = {
-    ? initiator: Initiator
+    initiator: Initiator
 
     ; true if valid session ticket was received
     ? resumption_allowed: bool
