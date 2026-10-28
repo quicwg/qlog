@@ -548,12 +548,14 @@ QUICMTUUpdated = {
 
     ; at some point, MTU discovery stops, as a "good enough"
     ; packet size has been found
-    ? done: bool .default false
+    ? done: bool
 
     * $$quic-mtuupdated-extension
 }
 ~~~
 {: #quic-mtuupdated-def title="QUICMTUUpdated definition"}
+
+The `done` field defaults to false.
 
 # Transport Events {#quic-ev}
 
@@ -662,6 +664,9 @@ Each setting starts the connection with its default value, or with no value if
 it has no default. A `parameters_set` event that includes a setting replaces
 its previous value; settings that the event omits keep their values.
 
+The `grease_quic_bit` and `reset_stream_at` settings are true if the transport
+parameter is present, and default to false.
+
 Implementations are not required to recognize, process, or support every
 parameter that they receive. For example, QUIC implementations ignore
 transport parameters that they do not support; see {{Section 7.4.2 of
@@ -712,11 +717,9 @@ QUICParametersSet = {
     ? max_datagram_frame_size: uint64
 
     ; RFC9287
-    ; true if present, absent or false if extension not negotiated
     ? grease_quic_bit: bool
 
     ; draft-ietf-quic-reliable-stream-reset
-    ; true if present, absent or false if extension not negotiated
     ? reset_stream_at: bool
 
     * $$quic-parametersset-extension
@@ -795,7 +798,7 @@ QUICPacketSent = {
     ? supported_versions: [+ QuicVersion]
     ? raw: RawInfo
     ? datagram_payload_checksum: uint32
-    ? is_mtu_probe_packet: bool .default false
+    ? is_mtu_probe_packet: bool
 
     ? trigger:
       ; RFC 9002 Section 6.1.1
@@ -819,6 +822,8 @@ The encryption level and packet number space are not logged explicitly,
 because `header.packet_type` implies them for the packet types that have them.
 
 The `datagram_payload_checksum` field is described in {{packet-coalescing}}.
+
+The `is_mtu_probe_packet` field defaults to false.
 
 ## packet_received {#quic-packetreceived}
 
@@ -955,7 +960,7 @@ QUICPacketsAcked = {
 ~~~
 {: #quic-packetsacked-def title="QUICPacketsAcked definition"}
 
-If `packet_number_space` is omitted, its value is "application_data", the
+The `packet_number_space` field defaults to "application_data", the
 packet number space that most packets in a typical QUIC connection use.
 
 ## udp_datagrams_sent {#quic-udpdatagramssent}
@@ -975,8 +980,6 @@ QUICUDPDatagramsSent = {
     ? raw: [+ RawInfo]
 
     ; ECN bits in the IP header
-    ; if not set, defaults to the value used on the last
-    ; QUICUDPDatagramsSent event
     ? ecn: [+ ECN]
 
     ? datagram_payload_checksums: [+ uint32]
@@ -988,6 +991,9 @@ QUICUDPDatagramsSent = {
 
 The RawInfo fields exclude UDP headers, because QUIC implementations do not
 always handle UDP directly.
+
+If an event omits the `ecn` field, the ECN bits are the same as on the last
+`udp_datagrams_sent` event.
 
 The `datagram_payload_checksums` field is described in {{packet-coalescing}}.
 
@@ -1008,8 +1014,6 @@ QUICUDPDatagramsReceived = {
     ? raw: [+ RawInfo]
 
     ; ECN bits in the IP header
-    ; if not set, defaults to the value on the last
-    ; QUICUDPDatagramsReceived event
     ? ecn: [+ ECN]
 
     ? datagram_payload_checksums: [+ uint32]
@@ -1018,6 +1022,9 @@ QUICUDPDatagramsReceived = {
 }
 ~~~
 {: #quic-udpdatagramsreceived-def title="QUICUDPDatagramsReceived definition"}
+
+If an event omits the `ecn` field, the ECN bits are the same as on the last
+`udp_datagrams_received` event.
 
 The `datagram_payload_checksums` field is described in {{packet-coalescing}}.
 
@@ -1678,7 +1685,7 @@ QUICPacketLost = {
     ? header: PacketHeader
 
     ? frames: [* $QuicFrame]
-    ? is_mtu_probe_packet: bool .default false
+    ? is_mtu_probe_packet: bool
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
@@ -1696,7 +1703,7 @@ that is then marked for retransmission can be logged with the
 
 The `is_mtu_probe_packet` field marks a packet that was sent as a Path MTU
 probe. The loss of such a packet is not a reliable sign of congestion; see
-{{Section 14.4 of QUIC-TRANSPORT}}.
+{{Section 14.4 of QUIC-TRANSPORT}}. It defaults to false.
 
 The `trigger` field SHOULD be logged. Its value shows how loss detection
 declared the packet lost:
@@ -2192,12 +2199,14 @@ If the STREAM frame contains a length field, it MUST be logged in the qlog
 `raw.length` field. If it does not, the implementation MAY calculate the actual
 frame byte length itself and log that in `raw.length` if necessary.
 
+The `offset` field defaults to 0, and the `fin` field defaults to false.
+
 ~~~ cddl
 StreamFrame = {
     frame_type: "stream"
     stream_id: uint64
-    ? offset: uint64 .default 0
-    ? fin: bool .default false
+    ? offset: uint64
+    ? fin: bool
     ? raw: RawInfo
 }
 ~~~

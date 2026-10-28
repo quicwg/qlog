@@ -133,7 +133,7 @@ Events are defined with an importance level as described in {{importance}}.
 To define events and data structures, all qlog documents use the Concise Data
 Definition Language {{!CDDL=RFC8610}}. This document uses the basic syntax, the
 specific `text`, `uint`, `float32`, `float64`, `bool`, and `any` types, as well
-as the `.default`, `.size`, and `.regexp` control operators, the `~` unwrapping
+as the `.size` and `.regexp` control operators, the `~` unwrapping
 operator, and the `$` and `$$` extension points syntax from {{CDDL}}.
 
 Additionally, this document defines the following custom types for
@@ -229,6 +229,19 @@ defined by event schemas that declare or extend a namespace, which contains one
 or more related event types or their extensions. For example, this document
 defines two event schemas for two generic event namespaces `loglevel` and
 `simulation` (see {{generic-event-schema}}).
+
+## Default Values {#default-values}
+
+Log files, traces, and events can have optional fields. The definition of an
+optional field can give it a default value. If the field is omitted, it has that
+default value, unless `common_fields` ({{common-fields}}) sets it. Logging the
+default value explicitly means the same as omitting the field.
+
+If an optional field has no default value, omitting it implies nothing about its
+value.
+
+The rules for defaults can be overridden by definitions, for example by saying
+that an omitted field keeps its value from an earlier event.
 
 # Abstract LogFile Class {#abstract-logfile}
 
@@ -671,13 +684,13 @@ measured and is defined as:
 
 ~~~ cddl
 ReferenceTime = {
-    clock_type: "system" / "monotonic" / text .default "system"
+    clock_type: "system" / "monotonic" / text
     epoch: RFC3339DateTime / "unknown"
 
     ? wall_clock_time: RFC3339DateTime
 }
 
-RFC3339DateTime = text .default "1970-01-01T00:00:00.000Z"
+RFC3339DateTime = text
 ~~~
 {: #reference-time-def title="ReferenceTime definition"}
 
@@ -705,14 +718,14 @@ time and is defined as:
 
 ~~~ cddl
 TimeFormat = "relative_to_epoch" /
-             "relative_to_previous_event" .default "relative_to_epoch"
+             "relative_to_previous_event"
 ~~~
 {: #time-format-def title="TimeFormat definition"}
 
 relative_to_epoch:
 : A duration relative to the ReferenceTime `epoch` field. This approach produces
-  the largest values. It is suitable for stateless loggers. This is the default
-  value of the `time_format` field.
+  the largest values. It is suitable for stateless loggers. The `time_format`
+  field defaults to this value.
 
 relative_to_previous_event:
 : A delta-encoded value: the duration since the time of the previously logged
@@ -850,9 +863,11 @@ be used to associate individual events with a specific "path".
 Definition:
 
 ~~~ cddl
-TupleID = text .default ""
+TupleID = text
 ~~~
 {: #tuple-def title="TupleID definition"}
+
+The `tuple` field defaults to "".
 
 Because tuple definitions can depend and vary based on the underlying protocols
 and mechanisms used, this document intentionally does not define further how to
