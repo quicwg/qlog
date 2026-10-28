@@ -1076,17 +1076,19 @@ would define and register both the new event namespace `ipoac` and the event
 schema URI `urn:ietf:params:qlog:events:ipoac`.
 
 Concrete event types MUST belong to a single event namespace and MUST have a
-registered non-empty identifier of type `text`.
+non-empty identifier of type `text`.
 
-New namespaces MUST have a registered non-empty globally-unique text identifier
-using only characters in the URI unreserved range; see {{Section 2.3 of
-RFC3986}}. Namespaces are mutable and MAY be extended with new events.
+New namespaces MUST have a non-empty globally-unique text identifier using only
+characters in the URI unreserved range; see {{Section 2.3 of RFC3986}}.
+Namespaces are mutable and MAY be extended with new events.
 
 The value of a qlog event `name` field MUST be the concatenation of namespace
 identifier, colon (':'), and event type identifier (for example:
 quic:packet_sent). The resulting concatenation MUST be globally unique, so log
 files can contain events from multiple event schemas without the risk of name
-collisions.
+collisions. The designated expert checks this for the event types listed in
+the registry; see {{event-schema-reg}}. A (private or non-standard) event schema that does not list its
+event types there cannot rely on its event names being unique.
 
 A single event schema contains exactly one of the following:
 
@@ -1100,9 +1102,10 @@ and {{sim-events}} respectively.
 
 An event schema MUST have a single URI {{RFC3986}} that MUST be absolute. The
 URI MUST include the namespace identifier. Event schemas that extend an existing
-namespace MUST furthermore include a non-empty globally-unique "extension"
-identifier using a URI fragment (characters after a "#" in the URI) using only
-characters in the URI unreserved range; see {{Section 2.3 of RFC3986}}.
+namespace MUST furthermore include a non-empty "extension" identifier that is
+unique within the namespace. The extension identifier is a URI fragment
+(characters after a "#" in the URI) using only characters in the URI unreserved
+range; see {{Section 2.3 of RFC3986}}.
 Registration guidance and requirements for event schema URIs are provided in
 {{event-schema-reg}}. Event schemas by themselves are immutable once defined and
 MUST NOT be extended.
@@ -2099,7 +2102,8 @@ Namespace:
 : \[the identifier of the namespace that this event schema either defines or extends\]
 
 Event Types:
-: \[a comma-separated list of concrete event types defined in the event schema\]
+: \[a comma-separated list of concrete event types defined in the event schema;
+  a private or non-standard event schema need not list them\]
 
 Description:
 : \[a description of the event schema\]
