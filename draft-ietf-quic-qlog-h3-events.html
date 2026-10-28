@@ -1645,6 +1645,10 @@ HTTP3ParametersSet = {
     ; frame before processing requests
     ? waits_for_settings: bool
 
+    ; settings that this implementation does not recognize, including
+    ; reserved (GREASE) settings
+    ? unknown_settings: [* HTTP3Setting]
+
     * $$http3-parametersset-extension
 }
 </pre>
@@ -1653,9 +1657,11 @@ HTTP3ParametersSet = {
 <a href="#name-http3parametersset-definiti" class="selfRef">HTTP3ParametersSet definition</a>
           </figcaption></figure>
 </div>
-<p id="section-3.1-5">The <code>parameters_set</code> event can contain any number of unspecified fields. This
-allows for representation of reserved settings (aka GREASE) or ad-hoc support
-for extension settings that do not have a related qlog schema definition.<a href="#section-3.1-5" class="pilcrow">¶</a></p>
+<p id="section-3.1-5">The <code>unknown_settings</code> field can log settings that the implementation does not
+recognize, including reserved settings (<span><a href="https://rfc-editor.org/rfc/rfc9114#section-7.2.4.1" class="relref">Section 7.2.4.1</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>). Each
+entry's <code>name</code> is "unknown" or "reserved", and <code>name_bytes</code> holds the setting
+identifier. Settings defined by extensions can instead be added through
+<code>$$http3-parametersset-extension</code>.<a href="#section-3.1-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="h3-parametersrestored">
@@ -1707,9 +1713,10 @@ known; see Sections <a href="https://rfc-editor.org/rfc/rfc9114#section-6.1" cla
 Server bidirectional streams have no defined use, although extensions could
 change that.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
 <p id="section-3.3-3">Unidirectional streams in either direction begin with a variable-length
-integer type. If the type has no known string, <code>stream_type</code> can be "unknown",
-and <code>stream_type_bytes</code> then holds the numerical value without variable-length
-integer encoding.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
+integer type. If the type has no known string, <code>stream_type</code> can be "unknown";
+for a reserved type (<span><a href="https://rfc-editor.org/rfc/rfc9114#section-6.2.3" class="relref">Section 6.2.3</a> of [<a href="#RFC9114" class="cite xref">HTTP/3</a>]</span>), it can be "reserved". In
+both cases, <code>stream_type_bytes</code> then holds the numerical value without
+variable-length integer encoding.<a href="#section-3.3-3" class="pilcrow">¶</a></p>
 <p id="section-3.3-4">The generic <code>$HTTP3StreamType</code> is defined here as a CDDL "type socket" extension
 point. It can be extended to support additional HTTP/3 stream types.<a href="#section-3.3-4" class="pilcrow">¶</a></p>
 <span id="name-http3streamtypeset-definiti"></span><div id="h3-streamtypeset-def">
@@ -1721,7 +1728,7 @@ HTTP3StreamTypeSet = {
     stream_id: uint64
     stream_type: $HTTP3StreamType
 
-    ; only when stream_type === "unknown"
+    ; only when stream_type === "unknown" or "reserved"
     ? stream_type_bytes: uint64
 
     ; only when stream_type === "push"
@@ -2154,8 +2161,9 @@ HTTP3CancelPushFrame = {
 field, which corresponds to Setting Name as defined (or as would be defined if
 registered) in the "HTTP/3 Settings" registry maintained at
 <a href="https://www.iana.org/assignments/http3-parameters">https://www.iana.org/assignments/http3-parameters</a>.<a href="#section-4.2.4-1" class="pilcrow">¶</a></p>
-<p id="section-4.2.4-2">If a setting has no known name, <code>name</code> can be "unknown", and <code>name_bytes</code> then
-holds the numerical value without variable-length integer encoding.<a href="#section-4.2.4-2" class="pilcrow">¶</a></p>
+<p id="section-4.2.4-2">If a setting has no known name, <code>name</code> can be "unknown"; for a reserved
+setting, it can be "reserved". In both cases, <code>name_bytes</code> then holds the
+numerical value without variable-length integer encoding.<a href="#section-4.2.4-2" class="pilcrow">¶</a></p>
 <span id="name-http3settingsframe-definiti"></span><div id="h3settingsframe-def">
 <figure id="figure-19">
             <div class="lang-cddl sourcecode" id="section-4.2.4-3.1">
@@ -2168,7 +2176,7 @@ HTTP3SettingsFrame = {
 
 HTTP3Setting = {
     ? name: $HTTP3SettingsName
-    ; only when name === "unknown"
+    ; only when name === "unknown" or "reserved"
     ? name_bytes: uint64
 
     value: uint64
