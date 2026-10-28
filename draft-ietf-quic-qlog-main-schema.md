@@ -1087,7 +1087,7 @@ identifier, colon (':'), and event type identifier (for example:
 quic:packet_sent). The resulting concatenation MUST be globally unique, so log
 files can contain events from multiple event schemas without the risk of name
 collisions. The designated expert checks this for the event types listed in
-the registry; see {{event-schema-reg}}. An event schema that does not list its
+the registry; see {{event-schema-reg}}. A (private or non-standard) event schema that does not list its
 event types there cannot rely on its event names being unique.
 
 A single event schema contains exactly one of the following:
