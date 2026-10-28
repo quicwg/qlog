@@ -1342,7 +1342,7 @@ of this document.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
                 <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-initiator" class="internal xref">Initiator</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.4">
-                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="auto internal xref">8.4</a>.  <a href="#name-ipaddress" class="internal xref">IPAddress</a></p>
+                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="auto internal xref">8.4</a>.  <a href="#name-ipaddressport" class="internal xref">IPAddressPort</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.5">
                 <p id="section-toc.1-1.8.2.5.1"><a href="#section-8.5" class="auto internal xref">8.5</a>.  <a href="#name-tupleendpointinfo" class="internal xref">TupleEndpointInfo</a></p>
@@ -2023,10 +2023,8 @@ connections. It has Extra importance level.<a href="#section-4.1-1" class="pilcr
           <div class="lang-cddl sourcecode" id="section-4.1-2.1">
 <pre>
 QUICServerListening = {
-    ? ip_v4: IPAddress
-    ? port_v4: uint16
-    ? ip_v6: IPAddress
-    ? port_v6: uint16
+    ? address_v4: IPAddressPort
+    ? address_v6: IPAddressPort
 
     ; the server will always answer client Initial packets with a Retry
     ; packet (no 1-RTT connection setups by choice)
@@ -2559,10 +2557,8 @@ QUICParametersSet = {
 }
 
 PreferredAddress = {
-    ? ip_v4: IPAddress
-    ? port_v4: uint16
-    ? ip_v6: IPAddress
-    ? port_v6: uint16
+    ? address_v4: IPAddressPort
+    ? address_v6: IPAddressPort
     connection_id: ConnectionID
     stateless_reset_token: StatelessResetToken
 }
@@ -3930,27 +3926,29 @@ Initiator = "local" /
 </div>
 </section>
 </div>
-<div id="ipaddress">
+<div id="ipaddressport">
 <section id="section-8.4">
-        <h3 id="name-ipaddress">
-<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-ipaddress" class="section-name selfRef">IPAddress</a>
+        <h3 id="name-ipaddressport">
+<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-ipaddressport" class="section-name selfRef">IPAddressPort</a>
         </h3>
-<span id="name-ipaddress-definition"></span><div id="ipaddress-def">
+<span id="name-ipaddressport-definition"></span><div id="ipaddressport-def">
 <figure id="figure-43">
           <div class="lang-cddl sourcecode" id="section-8.4-1.1">
 <pre>
-; an IPAddress can either be a "human readable" form
+; an IP address can either be a "human readable" form
 ; (e.g., "127.0.0.1" for v4 or
 ; "2001:0db8:85a3:0000:0000:8a2e:0370:7334" for v6) or
 ; use a raw byte-form (as the string forms can be ambiguous).
-; Additionally, a hash-based or redacted representation
-; can be used if needed for privacy or security reasons.
-IPAddress = text /
-            hexstring
+; Additionally, the IP address and port pair can be logged as an
+; application-defined redacted string for privacy or security reasons.
+IPAddressPort = {
+    ip: text / hexstring
+    port: uint16
+} / text
 </pre>
 </div>
 <figcaption><a href="#figure-43" class="selfRef">Figure 43</a>:
-<a href="#name-ipaddress-definition" class="selfRef">IPAddress definition</a>
+<a href="#name-ipaddressport-definition" class="selfRef">IPAddressPort definition</a>
           </figcaption></figure>
 </div>
 </section>
@@ -3971,10 +3969,8 @@ TupleEndpointInfo instances, one for each half of the tuple.<a href="#section-8.
           <div class="lang-cddl sourcecode" id="section-8.5-3.1">
 <pre>
 TupleEndpointInfo = {
-    ? ip_v4: IPAddress
-    ? port_v4: uint16
-    ? ip_v6: IPAddress
-    ? port_v6: uint16
+    ? address_v4: IPAddressPort
+    ? address_v6: IPAddressPort
 
     ; Even though usually only a single ConnectionID
     ; is associated with a given tuple/path at a time,
