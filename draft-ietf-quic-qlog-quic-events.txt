@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 29 April 2027                                              Meta
+Expires: 1 May 2027                                                 Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
                                                                    Apple
-                                                         26 October 2026
+                                                         28 October 2026
 
 
                     QUIC event definitions for qlog
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 29 April 2027.
+   This Internet-Draft will expire on 1 May 2027.
 
 Copyright Notice
 
@@ -738,14 +738,12 @@ Table of Contents
    The version_information event supports QUIC version negotiation; see
    Section 6 of [QUIC-TRANSPORT].  It has Core importance level.
 
-   QUIC endpoints each have their own list of QUIC versions they
-   support.  The client uses the most likely version in their first
-   initial.  If the server does not support that version, it replies
-   with a Version Negotiation packet, which contains its supported
-   versions.  From this, the client selects a version.  The
-   version_information event aggregates all this information in a single
-   event type.  It also allows logging of supported versions at an
-   endpoint without actual version negotiation needing to happen.
+   Each QUIC endpoint supports one or more versions.  The client sends
+   its first Initial packet using one of them.  A server that does not
+   support that version can reply with a Version Negotiation packet,
+   which lists the versions the server supports.  This event records the
+   versions that each endpoint supports, and the chosen version if there
+   is one.
 
    QUICVersionInformation = {
        ? server_versions: [+ QuicVersion]
@@ -757,27 +755,26 @@ Table of Contents
 
                 Figure 10: QUICVersionInformation definition
 
-   Intended use:
+   A client logs this event when it sends its first Initial packet.  The
+   event includes client_versions, and chosen_version holds the version
+   used in that packet.
 
-   *  When sending an initial, the client logs this event with
-      client_versions and chosen_version set
+   If the client then processes a Version Negotiation packet, it logs
+   this event again with client_versions.  The event also includes
+   server_versions, which holds the versions from that packet.  If the
+   client selects one of them, chosen_version holds it; otherwise,
+   chosen_version is absent.
 
-   *  Upon receiving a client initial with a supported version, the
-      server logs this event with server_versions and chosen_version set
+   A Version Negotiation packet can also list reserved versions, which
+   an endpoint adds to check that its peer ignores unknown versions; see
+   Section 6.3 of [QUIC-TRANSPORT].  Because server_versions holds the
+   versions from the packet, it can include reserved versions.
 
-   *  Upon receiving a client initial with an unsupported version, the
-      server logs this event with server_versions set and
-      client_versions to the single-element array containing the
-      client's attempted version.  The absence of chosen_version implies
-      no overlap was found
-
-   *  Upon receiving a version negotiation packet from the server, the
-      client logs this event with client_versions set and
-      server_versions to the versions in the version negotiation packet
-      and chosen_version to the version it will use for the next initial
-      packet.  If the client receives a set of server_versions with no
-      viable overlap with its own supported versions, this event should
-      be logged without the chosen_version set
+   A server logs this event when it receives a client's first Initial
+   packet.  The event includes server_versions.  If the server supports
+   the client's version, chosen_version holds the version that the
+   server uses for the connection.  Otherwise, chosen_version is absent,
+   and client_versions holds the version the client used.
 
 5.2.  alpn_information
 
@@ -786,14 +783,14 @@ Table of Contents
    Section 8.1 of [QUIC-TLS].  It has Core importance level.
 
    QUIC endpoints are configured with a list of supported ALPN
-   identifiers.  Clients send the list in a TLS ClientHello, and servers
-   match against their list.  On success, a single ALPN identifier is
-   chosen and sent back in a TLS ServerHello.  If no match is found, the
-   connection is closed.
+   identifiers.  During the TLS handshake, the client sends its list,
+   and the server chooses one identifier from both lists and sends it
+   back.  If no match is found, the connection is closed.
 
-   ALPN identifiers are byte sequences that may be presentable as UTF-8.
-   The ALPNIdentifier type supports either format.  Implementations
-   SHOULD log at least one format, but MAY log both or none.
+   ALPN identifiers are byte sequences, which are often valid UTF-8.
+   The ALPNIdentifier type can hold either form: byte_value holds the
+   raw bytes, and string_value holds the identifier as text.
+   Implementations SHOULD log at least one form and MAY log both.
 
    QUICALPNInformation = {
        ? server_alpns: [* ALPNIdentifier]
@@ -810,22 +807,13 @@ Table of Contents
 
                  Figure 11: QUICALPNInformation definition
 
-   Intended use:
+   A client usually logs this event twice: first with client_alpns when
+   it offers its list, then with chosen_alpn when it learns the server's
+   choice.  It can instead log a single event with both fields once it
+   learns the choice.
 
-   *  When sending an initial, the client logs this event with
-      client_alpns set
-
-   *  When receiving an initial with a supported alpn, the server logs
-      this event with server_alpns set, client_alpns equalling the
-      client-provided list, and chosen_alpn to the value it will send
-      back to the client.
-
-   *  When receiving an initial with an alpn, the client logs this event
-      with chosen_alpn to the received value.
-
-   *  Alternatively, a client can choose to not log the first event, but
-      wait for the receipt of the server initial to log this event with
-      both client_alpns and chosen_alpn set.
+   A server logs this event once, after it chooses, with client_alpns,
+   server_alpns, and chosen_alpn.
 
 5.3.  parameters_set
 
