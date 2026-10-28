@@ -3706,16 +3706,12 @@ detection and recovery algorithms, can be added through
 <a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-congestion_state_updated" class="section-name selfRef">congestion_state_updated</a>
         </h3>
 <p id="section-7.3-1">The <code>congestion_state_updated</code> event indicates when the congestion controller
-enters a significant new state and changes its behaviour. It has Base importance
-level.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
-<p id="section-7.3-2">The values of the event's fields are intentionally unspecified here in order to
-support different Congestion Control algorithms, as these typically have
-different states and even different implementations of these states across
-stacks. For example, for the algorithm defined in the QUIC Recovery RFC
-("enhanced" New Reno), the following states are used: Slow Start, Congestion
-Avoidance, Application Limited and Recovery. Similarly, states can be triggered
-by a variety of events, including detection of Persistent Congestion or receipt
-of ECN markings.<a href="#section-7.3-2" class="pilcrow">¶</a></p>
+enters a new state that changes its behavior. It has Base importance level.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+<p id="section-7.3-2">This document does not define values for the event's fields. Congestion
+control algorithms have different states and different causes for moving
+between them, and stacks can implement the same algorithm differently. For
+example, the NewReno controller in <span><a href="https://rfc-editor.org/rfc/rfc9002#section-7.3" class="relref">Section 7.3</a> of [<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span> has three
+states: slow start, recovery, and congestion avoidance.<a href="#section-7.3-2" class="pilcrow">¶</a></p>
 <span id="name-quiccongestionstateupdated-"></span><div id="quic-congestionstateupdated-def">
 <figure id="figure-36">
           <div class="lang-cddl sourcecode" id="section-7.3-3.1">
@@ -3733,10 +3729,10 @@ QUICCongestionStateUpdated = {
 <a href="#name-quiccongestionstateupdated-" class="selfRef">QUICCongestionStateUpdated definition</a>
           </figcaption></figure>
 </div>
-<p id="section-7.3-4">The <code>trigger</code> field <span class="bcp14">SHOULD</span> be logged if there are multiple ways in which a state
-change can occur but <span class="bcp14">MAY</span> be omitted if a given state can only be due to a single
-event occurring (for example Slow Start is often exited only when ssthresh is
-exceeded).<a href="#section-7.3-4" class="pilcrow">¶</a></p>
+<p id="section-7.3-4">The <code>trigger</code> field <span class="bcp14">SHOULD</span> be logged if a state change can have more than one
+cause. For example, NewReno enters recovery when it detects packet loss or
+when the ECN-CE count increases, so the <code>trigger</code> field shows which of the two
+caused the change.<a href="#section-7.3-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetlost">
@@ -3744,27 +3740,22 @@ exceeded).<a href="#section-7.3-4" class="pilcrow">¶</a></p>
         <h3 id="name-packet_lost">
 <a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-packet_lost" class="section-name selfRef">packet_lost</a>
         </h3>
-<p id="section-7.4-1">The <code>packet_lost</code> event is emitted when a packet is deemed lost by loss
-detection. It has Core importance level.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
-<p id="section-7.4-2">It is <span class="bcp14">RECOMMENDED</span> to populate the optional <code>trigger</code> field in order to help
-disambiguate among the various possible causes of a loss declaration.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
+<p id="section-7.4-1">The <code>packet_lost</code> event is emitted when loss detection declares a packet lost.
+It has Core importance level.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
 <span id="name-quicpacketlost-definition"></span><div id="quic-packetlost-def">
 <figure id="figure-37">
-          <div class="lang-cddl sourcecode" id="section-7.4-3.1">
+          <div class="lang-cddl sourcecode" id="section-7.4-2.1">
 <pre>
 QUICPacketLost = {
 
     ; should include at least the packet_type and packet_number
     ? header: PacketHeader
 
-    ; not all implementations will keep track of full
-    ; packets, so these are optional
     ? frames: [* $QuicFrame]
     ? is_mtu_probe_packet: bool .default false
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
-        ; RFC 9002 Section 6.2.4 paragraph 6, MAY
         "pto_expired"
 
     * $$quic-packetlost-extension
@@ -3775,6 +3766,27 @@ QUICPacketLost = {
 <a href="#name-quicpacketlost-definition" class="selfRef">QUICPacketLost definition</a>
           </figcaption></figure>
 </div>
+<p id="section-7.4-3">The <code>frames</code> field lists the frames that the lost packet carried. It is
+optional, because not all implementations keep sent packets in full. The data
+that is then marked for retransmission can be logged with the
+<code>marked_for_retransmit</code> event (<a href="#quic-markedforretransmit" class="auto internal xref">Section 7.5</a>).<a href="#section-7.4-3" class="pilcrow">¶</a></p>
+<p id="section-7.4-4">The <code>is_mtu_probe_packet</code> field marks a packet that was sent as a Path MTU
+probe. The loss of such a packet is not a reliable sign of congestion; see
+<span><a href="https://rfc-editor.org/rfc/rfc9000#section-14.4" class="relref">Section 14.4</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>.<a href="#section-7.4-4" class="pilcrow">¶</a></p>
+<p id="section-7.4-5">The <code>trigger</code> field <span class="bcp14">SHOULD</span> be logged. Its value shows how loss detection
+declared the packet lost:<a href="#section-7.4-5" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.4-6.1">
+            <p id="section-7.4-6.1.1"><code>reordering_threshold</code>: the packet threshold was exceeded; see <span><a href="https://rfc-editor.org/rfc/rfc9002#section-6.1.1" class="relref">Section 6.1.1</a> of [<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span>.<a href="#section-7.4-6.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.4-6.2">
+            <p id="section-7.4-6.2.1"><code>time_threshold</code>: the time threshold was exceeded; see <span><a href="https://rfc-editor.org/rfc/rfc9002#section-6.1.2" class="relref">Section 6.1.2</a> of [<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span>.<a href="#section-7.4-6.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-7.4-6.3">
+            <p id="section-7.4-6.3.1"><code>pto_expired</code>: the probe timeout expired, and the sender declared the packet
+lost instead of sending a probe; see <span><a href="https://rfc-editor.org/rfc/rfc9002#section-6.2.4" class="relref">Section 6.2.4</a> of [<a href="#QUIC-RECOVERY" class="cite xref">QUIC-RECOVERY</a>]</span>.<a href="#section-7.4-6.3.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
 </section>
 </div>
 <div id="quic-markedforretransmit">
@@ -3783,25 +3795,28 @@ QUICPacketLost = {
 <a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-marked_for_retransmit" class="section-name selfRef">marked_for_retransmit</a>
         </h3>
 <p id="section-7.5-1">The <code>marked_for_retransmit</code> event indicates which data was marked for
-retransmission upon detection of packet loss (see <code>packet_lost</code>). It has Extra
-importance level.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
-<p id="section-7.5-2">Similar to the reasoning for the <code>frames_sent</code> and <code>frames_parsed</code> events,
-in order to keep the amount of different events low, this signal is grouped into
-in a single event based on existing QUIC frame definitions for all types of
-retransmittable data.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
-<p id="section-7.5-3">Implementations retransmitting full packets or frames directly can just log the
-constituent frames of the lost packet here (or do away with this event and use the
-contents of the <code>packet_lost</code> event instead). Conversely, implementations that have
-more complex logic (e.g., marking ranges in a stream's data buffer as in-flight),
-or that do not track sent frames in full (e.g., only stream offset + length), can
-translate their internal behaviour into the appropriate frame instance here even
-if that frame was never or will never be put on the wire.<a href="#section-7.5-3" class="pilcrow">¶</a></p>
-<p id="section-7.5-4">Much of this data can be inferred if implementations log <code>packet_sent</code> events
-(e.g., looking at overlapping stream data offsets and length, one can determine
-when data was retransmitted).<a href="#section-7.5-4" class="pilcrow">¶</a></p>
+retransmission after packet loss was detected. It has Extra importance level.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
+<p id="section-7.5-2">This single event covers all types of retransmittable data, which it logs using
+the existing QUIC frame definitions.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
+<p id="section-7.5-3">A <code>packet_lost</code> event (<a href="#quic-packetlost" class="auto internal xref">Section 7.4</a>) records that a packet was declared
+lost, and can list the frames it carried. A <code>marked_for_retransmit</code> event
+records what the implementation then marks for retransmission. The two can
+differ, because not every frame is retransmitted (ACK and PADDING frames never
+are), and retransmitted data need not be sent in the same frames; see
+<span><a href="https://rfc-editor.org/rfc/rfc9000#section-13.3" class="relref">Section 13.3</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>.<a href="#section-7.5-3" class="pilcrow">¶</a></p>
+<p id="section-7.5-4">An implementation that retransmits the frames of a lost packet unchanged can
+log them here, or skip this event and use the frames in the <code>packet_lost</code> event
+instead. An implementation with more complex logic, such as one that marks
+ranges of a stream's send buffer as in flight, or one that does not keep sent
+frames in full, can log frames that describe the data it marked for
+retransmission. These frames need not match any frame that was sent or will be
+sent.<a href="#section-7.5-4" class="pilcrow">¶</a></p>
+<p id="section-7.5-5">If an implementation logs <code>packet_sent</code> events, tools can infer much of this
+data from them. For example, overlapping stream offsets and lengths show when
+data was retransmitted.<a href="#section-7.5-5" class="pilcrow">¶</a></p>
 <span id="name-quicmarkedforretransmit-def"></span><div id="quic-markedforretransmit-def">
 <figure id="figure-38">
-          <div class="lang-cddl sourcecode" id="section-7.5-5.1">
+          <div class="lang-cddl sourcecode" id="section-7.5-6.1">
 <pre>
 QUICMarkedForRetransmit = {
     frames: [+ $QuicFrame]
