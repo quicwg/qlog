@@ -1949,7 +1949,8 @@ field can log that metadata.
 ## StatelessResetToken
 
 ~~~ cddl
-StatelessResetToken = hexstring .size 16
+; always 128 bits
+StatelessResetToken = hexstring
 ~~~
 {: #stateless-reset-token-def title="StatelessResetToken definition"}
 
