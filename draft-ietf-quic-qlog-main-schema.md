@@ -720,9 +720,12 @@ relative_to_previous_event:
   This approach produces the smallest values. It is suitable for stateful
   loggers.
 
-Events in each individual trace SHOULD be logged in strictly ascending timestamp
-order (though not necessarily absolute value, for the "relative_to_previous_event"
-format). Tools MAY sort all events on the timestamp before processing them,
+Events in each individual trace SHOULD be logged in time order, so that no event
+has an earlier time than the event logged before it. With the
+"relative_to_previous_event" format, this means that no logged `time` value is
+negative. Several events can have the same time, for example when one received
+packet leads to several events, or when the clock has a low resolution. Tools
+MAY sort all events on the timestamp before processing them,
 though are not required to (as this could impose a significant processing
 overhead). This can be a problem especially for multi-threaded and/or streaming
 loggers, which could consider using a separate post-processor to order qlog events
