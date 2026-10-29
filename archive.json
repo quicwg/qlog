@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-10-27T03:19:19.518483+00:00",
+  "timestamp": "2026-10-29T03:55:52.859881+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10038,7 +10038,7 @@
       "labels": [],
       "body": "The tuple is currently a property of the `Event`. I'm not sure if that makes sense. At the very least, it would complicate the data structures used in my implementation quite significantly.\n\nFor example, it doesn't really make sense to set the tuple on the `QUICKeyUpdated` event. With the exception of a few events like `QUICPacketSent`, `QUICPacketReceived`, `QUICPacketDropped`, etc., most events are connection-level events. This applies even more so when moving up the application stack: No HTTP/3 event benefits from specifying the tuple.\n\nI suggest:\n\n1. Moving the `TupleID` definition to the QUIC document.\n2. Making it a field in the few events where it actually applies.",
       "createdAt": "2025-12-03T05:08:43Z",
-      "updatedAt": "2026-10-19T18:59:43Z",
+      "updatedAt": "2026-10-28T18:20:19Z",
       "closedAt": null,
       "comments": [
         {
@@ -10075,6 +10075,13 @@
           "body": "We seem blocked on this, so I prepped https://github.com/quicwg/qlog/pull/559 to implement what I suggested on https://github.com/quicwg/qlog/issues/501#issuecomment-3610016357 and target a limited number of QUIC events.",
           "createdAt": "2026-10-19T18:59:43Z",
           "updatedAt": "2026-10-19T18:59:43Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Lets put this on the agenda for 127 and then aim to make a final call one way or another soon after",
+          "createdAt": "2026-10-28T18:20:19Z",
+          "updatedAt": "2026-10-28T18:20:19Z"
         }
       ]
     },
@@ -10301,15 +10308,15 @@
       "id": "I_kwDOCrLn6M8AAAABXFwvqQ",
       "title": "How to log redacted addresses?",
       "url": "https://github.com/quicwg/qlog/issues/554",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "I'm adding address redaction in quic-go. Applications might want to replace an IP:port pair with a prefix, hash, or arbitrary string.\n\nSince IP addresses are always used with ports, should we introduce an `IPAddressPort` type and use it in `TupleEndpointInfo` and `PreferredAddress`?\n\n```cddl\nIPAddressPort = { ip: IPAddress, port: uint16 } / text\n```\n\nThis would allow either a structured address or a redacted string.",
       "createdAt": "2026-10-14T08:27:49Z",
-      "updatedAt": "2026-10-19T18:08:47Z",
-      "closedAt": null,
+      "updatedAt": "2026-10-28T23:49:47Z",
+      "closedAt": "2026-10-28T23:49:47Z",
       "comments": [
         {
           "author": "LPardue",
@@ -10359,11 +10366,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "Section 7.1 of draft-ietf-quic-qlog-main-schema-14 says:\n\n> Events in each individual trace SHOULD be logged in strictly ascending timestamp order (though not necessarily absolute value, for the \"relative_to_previous_event\" format).\n\n\"Strictly ascending\" could be read to mean no two events in a trace can share a timestamp. That can happen whenever events are logged at the same instant, for example a `packet_received` and the events derived from that packet, especially at millisecond resolution. Under the current text, a trace like that violates the SHOULD.\n\nThe parenthetical is also hard to parse. It means that with `relative_to_previous_event` the logged values need not ascend, only the times they represent.\n\n#66 relaxed this requirement from MUST to SHOULD. \"Strictly\" was kept, but equal timestamps weren't discussed.\n\nOptions:\n\n1. Allow equal timestamps:  e.g. something like \"Events in each individual trace SHOULD be logged in time order, so that no event has an earlier time than the event logged before it. With the \"relative_to_previous_event\" format, this means no logged \"time\" value is negative.\"\n\n2. Keep strict ordering, and say how to log events that happen at the same time (for example, by using fractional precision to separate them).\n\n3. Keep the requirement, and only rewrite the parenthetical.\n",
       "createdAt": "2026-10-21T03:23:45Z",
-      "updatedAt": "2026-10-27T00:16:04Z",
+      "updatedAt": "2026-10-28T18:21:02Z",
       "closedAt": null,
       "comments": [
         {
@@ -10372,6 +10381,27 @@
           "body": "as an individual I like something like option 1",
           "createdAt": "2026-10-27T00:16:04Z",
           "updatedAt": "2026-10-27T00:16:04Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I think Option 1 best captures my original intent here, so let's go with that.",
+          "createdAt": "2026-10-27T11:20:13Z",
+          "updatedAt": "2026-10-27T11:20:13Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Option 1 sounds reasonable. Some platforms have low-res clocks, so this is unavoidable.",
+          "createdAt": "2026-10-27T11:23:48Z",
+          "updatedAt": "2026-10-27T11:23:48Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I'll make a PR",
+          "createdAt": "2026-10-27T12:06:37Z",
+          "updatedAt": "2026-10-27T12:06:37Z"
         }
       ]
     },
@@ -10383,11 +10413,15 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "LPardue"
+      ],
+      "labels": [
+        "discuss"
+      ],
       "body": "draft-ietf-quic-qlog-main-schema-14 is inconsistent about where `reference_time` can go.\n\nSection 7.1 places it only in a trace's `common_fields`, while `time_format` can go in either place:\n\n> \u2026governed by the ReferenceTime type (optionally included in the \"reference_time\" field contained in a trace's \"common_fields\" (Section 7.5)) and TimeFormat type (optionally included in the \"time_format\" field contained in the event itself, or a trace's \"common_fields\").\n\nThe Event definition (Figure 14) agrees: it has `time_format` but no `reference_time`.\n\nSection 7.5 lists `reference_time` among the CommonFields, and then says:\n\n> Tools MUST be able to deal with these fields being defined either on each event individually or combined in common_fields.\n\nThe CommonFields example in Section 7.5 also repeats `reference_time` on every event. A producer following Section 7.5 can therefore set `reference_time` on events, which a tool following the Event definition sees only as an unknown field.\n\nAllowing it per event also raises a question the draft doesn't answer: what timestamps mean when events in one trace have different reference times, especially with `relative_to_previous_event`.\n\nOptions:\n\n1. Trace-only: exclude `reference_time` from the Section 7.5 rule, and move it out of the per-event half of the example into `common_fields`. This matches Section 7.1 and the Event definition.\n\n2. Per event: add `? reference_time: ReferenceTime` to Event, update Section 7.1, and define how differing reference times combine.\n\nOption 1 matches two of the three places and avoids the mixed-reference-time question.",
       "createdAt": "2026-10-21T03:48:51Z",
-      "updatedAt": "2026-10-27T00:12:00Z",
+      "updatedAt": "2026-10-28T18:21:24Z",
       "closedAt": null,
       "comments": [
         {
@@ -10396,6 +10430,20 @@
           "body": "Option 1, probably, does not preclude someone writing an extension later to deal with reference time updates in events.",
           "createdAt": "2026-10-27T00:12:00Z",
           "updatedAt": "2026-10-27T00:12:00Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "The original intent here is much more aligned with Option 2: common_fields are things that CAN be set per event, but are commonly extracted out. If we go with option 1, it would be the only field that can be ONLY in common_fields (AFAICT at least).\n\nNot sure I see all the edge cases around \"what timestamps mean when events in one trace have different reference times\" that that entails though...\n\nThe `relative_to_previous_event` one is indeed a bit annoying here... I think what would best match the intent there is saying that every new instance of reference_time \"resets\" the logic similar to how the first event of format `relative_to_previous_event` now works. If the logger then emits one for every single event, that's stupid, but it works. If they occasionally emit a new one to prevent the timestamps from growing too large, it also works since it overrides the absolute time of that one event, and then the followers are encoded relative to it again. \n\nConceptually we could also allow this for the `relative_to_epoch` (allowing you to update the epoch)... this then opens a new discussion point about needing a `reference_time_updated` event etc. and why you wouldn't be able to do the same for e.g., `group_id` etc.\n\n___\n\nSOOO after considering all that, I probably wouldn't be opposed to special-casing `reference_time` here with Option 1 and punting reference time updates to an extension if it's really needed later.",
+          "createdAt": "2026-10-27T11:35:21Z",
+          "updatedAt": "2026-10-27T11:35:21Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Seems like a good candidate to present at IETF 127",
+          "createdAt": "2026-10-27T12:06:12Z",
+          "updatedAt": "2026-10-27T12:06:12Z"
         }
       ]
     },
@@ -10411,9 +10459,17 @@
       "labels": [],
       "body": "#473 renamed the integer `error_code_bytes` fields to `error_code` because \"we're not logging bytes, but an integer\". Other fields that hold raw values still use several patterns:\n\n- Integer, `_bytes`: `packet_type_bytes` (PacketHeader), `frame_type_bytes` (UnknownFrame, HTTP3ReservedFrame, HTTP3UnknownFrame), `stream_type_bytes` (HTTP3StreamTypeSet), `name_bytes` (HTTP3Setting)\n- Integer, `_value`: `capsule_type_value` (HTTPCapsuleUnknown)\n- Hexstring, `_bytes`: `reason_bytes` (ConnectionCloseFrame), `name_bytes` and `value_bytes` (HTTP3HTTPField)\n- Hexstring, `_value`: `byte_value`, alongside `string_value` (ALPNIdentifier)\n\nh3-events therefore has two fields called `name_bytes`, one a `uint64` and one a `hexstring`.\n\nIf the group wants one rule, a possible one is `_bytes` for hexstrings and a different suffix for integers, which would rename the integer `_bytes` fields, `capsule_type_value`, and ALPNIdentifier's fields.",
       "createdAt": "2026-10-23T06:53:39Z",
-      "updatedAt": "2026-10-23T06:53:39Z",
+      "updatedAt": "2026-10-28T11:00:00Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "This an annoying one...\n\nI initially thought `_value` for integers, but that messes with `HTTP3HTTPField` (you'd get `value_value` there...).\n\nI personally don't mind going back to _bytes for everything (both hexstring and integers). Sure, it's not super-logical, but at least it's consistent and a clear signal these are raw values. \n\nAnother alternative might be `_raw`, which is in line with our use of that term in general, but might also be confusing in things like `HTTP3ReservedFrame` where you'd have :\n\n```\nHTTP3ReservedFrame = {\n    frame_type: \"reserved\"\n    frame_type_raw: uint64\n    ? raw: RawInfo\n}\n```\n\nYou could imagine other suffixes like `_wire` we can bikeshed on.\n\nIn the end though, I do think it makes most sense to have a single suffix for both kinds of fields and have the type do the differentiating (as we e.g., also have different actual meanings for the `_type` suffix).",
+          "createdAt": "2026-10-28T11:00:00Z",
+          "updatedAt": "2026-10-28T11:00:00Z"
+        }
+      ]
     },
     {
       "number": 598,
@@ -10423,11 +10479,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "quic-events defines:\n\n    StatelessResetToken = hexstring .size 16\n\nA hexstring is text, and `.size` on text counts characters (RFC 8610 Section 3.8.1). So this allows 16 hex characters, which is 8 bytes. A stateless reset token is 16 bytes (RFC 9000 Section 10.3), which takes 32 hex characters. The comments in `packet_sent` and `packet_received` already say the token is 128 bits.\n\nAs a result, a correctly logged token fails validation. The `cddl` gem and cddl-rs both reject it.\n\nCI doesn't catch this, because `cddl_validate.sh` removes `.size` from hexstrings before validating.\n\nNo other hexstring in the drafts has a size limit, even where the size is fixed, for example PATH_CHALLENGE `data` (8 bytes) and `QuicVersion` (4 bytes).\n\nOptions:\n\n1. Change it to `.size 32`.\n2. Remove the `.size` and add a comment, as PATH_CHALLENGE `data` does.\n3. Add size limits to every fixed-size hexstring.",
       "createdAt": "2026-10-23T14:18:51Z",
-      "updatedAt": "2026-10-27T00:16:59Z",
+      "updatedAt": "2026-10-28T18:21:47Z",
       "closedAt": null,
       "comments": [
         {
@@ -10436,6 +10494,13 @@
           "body": "as an individual I prefer option 2",
           "createdAt": "2026-10-27T00:16:59Z",
           "updatedAt": "2026-10-27T00:16:59Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Let's just do Option 2 here yeah :) ",
+          "createdAt": "2026-10-27T11:37:04Z",
+          "updatedAt": "2026-10-27T11:37:04Z"
         }
       ]
     },
@@ -10451,25 +10516,41 @@
       "labels": [],
       "body": "The October 2025 interim decided to log all lengths in RawInfo (#492). This issue is about which RawInfo field to use.\n\nRawInfo has two length fields. The main schema defines them as:\n\n- `length`: the full size of the packet or frame, including headers and trailers\n- `payload_length`: the size of the payload only\n\nIt also says that if a packet or frame has its own Length field, that value goes in `raw.length`. But those Length fields usually count only the payload, so the documents now use the two RawInfo fields in conflicting ways.\n\nIn quic-events:\n\n- STREAM, CRYPTO, and DATAGRAM frames put their Length, which counts only the data, in `raw.length`. When a STREAM or DATAGRAM frame has no Length field, `raw.length` holds the size of the whole frame instead. So the same field means two different things.\n- PaddingFrame puts its size in `raw.payload_length`.\n- Long header packets put their Length in `raw.length`. That Length counts the packet number and payload, not the whole packet. But Section 1.2 says the AEAD tag is a trailer, which only makes sense if `raw.length` is the whole packet.\n- RFC 9000 counts the AEAD tag as part of the payload. Because qlog calls it a trailer, `payload_length` doesn't include it.\n- Retry packets end with an integrity tag. Nothing says whether it's a trailer.\n\nIn h3-events, HTTP/3 frames and capsules have Length fields that count only the payload. The document doesn't say which RawInfo field to use.\n\nOptions:\n\n1. Keep the RawInfo definitions. Put Length fields that count a payload in `raw.payload_length`. Each document then says what counts as header, payload, and trailer for its packets and frames.\n2. Let `raw.length` hold a packet or frame's own Length field where it has one, and change the RawInfo definition to say so.",
       "createdAt": "2026-10-23T14:57:02Z",
-      "updatedAt": "2026-10-23T14:57:02Z",
+      "updatedAt": "2026-10-28T15:22:02Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Interesting... when reading this, I was surprised at the text that said to use the `raw.length` field if there was one in the protocol. That was not the intent after reworking the RawInfo (at least not in my mind), so I was surprised that was still in there and that we still have places it's used that way: \n\n> Protocol entities containing an on-the-wire length field (for example a packet header or QUIC's stream frame) are strongly recommended to re-use the raw.length field instead of defining a separate length field, to maintain consistency and prevent data duplication.\n\nSo conceptually I think we should probably make this Option 3: \n- use RawInfo consistently and add fields (in e.g., STREAM/CRYPTO/DATAGRAM frames) to log the length as present on the wire instead of subsuming the `raw.length` or `raw.payload_length` fields\n\nI could also live with Option 1 if we don't want to introduce additional fields this late. \n\n___\n\n> RFC 9000 counts the AEAD tag as part of the payload. Because qlog calls it a trailer, payload_length doesn't include it\n\nthis was intentional\n\n> Retry packets end with an integrity tag. Nothing says whether it's a trailer.\n\nthis was not and probably needs some text explaining how to handle it (same as the AEAD tag imo)",
+          "createdAt": "2026-10-28T15:22:02Z",
+          "updatedAt": "2026-10-28T15:22:02Z"
+        }
+      ]
     },
     {
       "number": 605,
       "id": "I_kwDOCrLn6M8AAAABZaVCLA",
       "title": "Some reserved and unknown HTTP/3 values can't be logged",
       "url": "https://github.com/quicwg/qlog/issues/605",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "h3-events has three gaps, all for values that qlog has no name for.\n\n1. `parameters_set` says it \"can contain any number of unspecified fields\", for example reserved (GREASE) settings, or extension settings that have no qlog definition. The CDDL doesn't allow this. The only open part of the event is the `$$http3-parametersset-extension` socket, and that accepts nothing until an extension defines fields for it. A GREASE setting has a random identifier, so no extension can define it.\n2. In the SETTINGS frame, a setting can be named \"reserved\", but the comment on `name_bytes` limits it to the name \"unknown\". So the text gives no way to log a reserved setting's identifier.\n3. `stream_type_set` has the same problem: `stream_type` can be \"reserved\", but `stream_type_bytes` is limited to \"unknown\".\n\nReserved frames don't have this problem, because HTTP3ReservedFrame always has `frame_type_bytes`. QUIC's `parameters_set` logs unknown transport parameters in an `unknown_parameters` list (#438).",
       "createdAt": "2026-10-23T15:07:38Z",
-      "updatedAt": "2026-10-23T15:07:38Z",
-      "closedAt": null,
-      "comments": []
+      "updatedAt": "2026-10-28T18:17:41Z",
+      "closedAt": "2026-10-28T18:17:41Z",
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Great catch Lucas! ",
+          "createdAt": "2026-10-27T11:42:38Z",
+          "updatedAt": "2026-10-27T11:42:38Z"
+        }
+      ]
     },
     {
       "number": 607,
@@ -10480,10 +10561,12 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "discuss"
+      ],
       "body": "HTTP3HTTPField can log a field name and value as text (`name`, `value`) or as raw bytes (`name_bytes`, `value_bytes`). The paragraph after the HTTP3HeadersFrame example says when to use which, but its rule doesn't hold:\n\n- It says characters that HTTP allows \"can be safely logged\" as text. But field values can contain bytes 0x80 to 0xFF (obs-text, RFC 9110 Section 5.5). Those are valid HTTP, but they aren't always valid UTF-8, so they can't always be logged as text.\n- It says characters outside the allowed range \"need to be logged\" as bytes. But invalid characters such as NUL, CR, and LF are fine in text, because JSON can escape them.\n\nThe real question is how an implementation turns field bytes into text, and the document doesn't say. Decoding as UTF-8 loses bytes that aren't valid UTF-8, which is the problem #413 set out to fix. Decoding as ISO-8859-1 keeps every byte, but then a tool can't tell whether \"\u00e9\" came from the bytes C3 A9 or E9.\n\nThe paragraph also cites RFC 9110 Section 5.1 for field values. That section only covers field names; values are in Section 5.5.\n\nOptions:\n\n1. Decode as UTF-8, and use the `_bytes` fields whenever a name or value isn't valid UTF-8. This is how quic-events treats the CONNECTION_CLOSE reason phrase and ALPN identifiers.\n2. Use text only for visible ASCII, and the `_bytes` fields for anything else.\n3. Keep both forms optional, and say only that `_bytes` holds the exact bytes received.",
       "createdAt": "2026-10-23T15:16:44Z",
-      "updatedAt": "2026-10-23T18:18:45Z",
+      "updatedAt": "2026-10-28T18:22:15Z",
       "closedAt": null,
       "comments": [
         {
@@ -10492,6 +10575,20 @@
           "body": "@kazuho I wonder if you might have some opinion on this issue",
           "createdAt": "2026-10-23T18:18:44Z",
           "updatedAt": "2026-10-23T18:18:44Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I think Option 1 most aligns with the intent here... \n\nI'd rather not get mired down in encoding minutiae and UTF-8 seems to be mostly what's discussed in https://www.rfc-editor.org/info/rfc8187/#section-3.2 as well (though I didn't really do much sleuthing into this, so don't shoot me).",
+          "createdAt": "2026-10-27T11:50:22Z",
+          "updatedAt": "2026-10-27T11:50:22Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Seems like a good candidate to present at IETF 127",
+          "createdAt": "2026-10-27T12:04:13Z",
+          "updatedAt": "2026-10-27T12:04:13Z"
         }
       ]
     },
@@ -10504,12 +10601,29 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "discuss"
+      ],
       "body": "It's not clear what `connection_id_updated` is for. There are two possible readings:\n\n- It logs when an endpoint **starts using** a different connection ID.\n- It logs when an endpoint **is given** a new connection ID, for example in a NEW_CONNECTION_ID frame.\n\nThese are different things. Being given a connection ID doesn't mean using it. An endpoint can use it later, or never (RFC 9000 Section 5.1.1).\n\nThe text supports both readings. It says the event is for when an endpoint \"updates its current connection ID\", which suggests using. But it also says the event is logged when an endpoint \"receives a new connection ID from the peer\", which suggests being given one.\n\nThe history points to using. The event was added so that implementations don't have to log the connection ID in every packet. Its first version had separate fields for the IDs sent and received in packet headers. Those were merged into `old` and `new` in #45, and that distinction was lost. #404 (fixing #346) removed an example that gave sending NEW_CONNECTION_ID as a trigger. In #373, a request to log where connection IDs come from was answered with \"can/should be inferred from other events ... (e.g., receipt of NCID frames ...)\".\n\nTwo related problems:\n\n- RFC 9000 lets an endpoint use any of its active connection IDs at any time, so more than one can be in use at once. The event assumes there's only one current ID.\n- A comment on PacketHeader says `dcid` can be left out of 1-RTT packets if `connection_id_updated` is logged. That only works if the event tracks exactly which ID each packet uses.\n\nOptions:\n\n1. Make the event about using connection IDs: \"local\" when this endpoint starts sending to a new one, \"remote\" when the peer does. Being given or retiring connection IDs is already visible in the NEW_CONNECTION_ID and RETIRE_CONNECTION_ID frames.\n2. Make the event about being given connection IDs, and remove the PacketHeader comment.\n3. Make the event log the set of active connection IDs for each endpoint, each time the set changes. This covers several IDs in use at once, but it doesn't say which ID a packet used, so the PacketHeader comment would still need removing.",
       "createdAt": "2026-10-23T15:26:26Z",
-      "updatedAt": "2026-10-23T15:26:26Z",
+      "updatedAt": "2026-10-28T18:22:25Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "The intent here is definitely for \"endpoint starts using\" (as you say, NEW_CONNECTION_ID and RETIRE_CONNECTION_ID can be used to indicate \"is given\"). From that perspective, Option 1 is preferred.\n\nI do think I fundamentally misunderstood RFC9000 when designing this then though, as this is clearly not compatible with \"lets an endpoint use any of its active connection IDs at any time, so more than one can be in use at once\". I probably assumed there was always just 1 \"active\" one (though there could of course be some overlap). \n\nThat does make me wonder if we should re-design the setup... Option 3 is a \"fix\" but re-introduces the need to log the CID with every PacketHeader, which also feels non-ideal (though I don't see an easy way to bypass that atm...). \n\nIt does feel like we don't even need `connection_id_updated` if we have to log the CDI with every PacketHeader anyway and have the NEW_CONNECTION_ID and RETIRE_CONNECTION_ID information (active sets can be reconstructed from that). So maybe that's `Option 4` (remove the event + references to it + have PacketHeader log the CID)? \n\n___\n\nDon't have a very strong opinion on the best way forward here. Potentially good to let simmer a while / ask feedback. I also wouldn't have a problem with choosing option 3 or 4 (preference for 4 though)\n\n",
+          "createdAt": "2026-10-27T12:00:28Z",
+          "updatedAt": "2026-10-27T12:00:28Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Seems like a good candidate to present at IETF 127",
+          "createdAt": "2026-10-27T12:02:53Z",
+          "updatedAt": "2026-10-27T12:02:53Z"
+        }
+      ]
     },
     {
       "number": 610,
@@ -10519,11 +10633,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "Three QUIC trigger values describe the same situation, a packet's keys not being available yet, but use two spellings:\n\n- `packet_buffered`: \"keys_unavailable\" (since 2019)\n- `packet_received`: \"keys_available\", for a packet that was buffered for that reason\n- `packet_dropped`: \"key_unavailable\" (re-added in #381; quic-go already used this spelling, per #371)\n\nOptions:\n\n1. Use \"keys_\" everywhere, by renaming `packet_dropped`'s value. This breaks implementations that log \"key_unavailable\", including quic-go.\n2. Use \"key_\" everywhere, by renaming the other two. This breaks implementations that log the plural forms.\n3. Leave them as they are.\n\nImplementation survey: \n\n* quic-go, picoquic, aioquic - log packet_Dropped and packet_buffered only, and use the defined trigger string\n* quiche's qlog crate - non compliant: packet_dropped has no related trigger value, packet_buffered is ok, packet_received uses incorrect \"keys_unavailbe\" trigger name ",
       "createdAt": "2026-10-23T16:00:55Z",
-      "updatedAt": "2026-10-23T16:01:52Z",
+      "updatedAt": "2026-10-28T18:22:36Z",
       "closedAt": null,
       "comments": [
         {
@@ -10532,6 +10648,13 @@
           "body": "As an individual, option 1 seems the simplest to me but I could live with 2. Option 3 is likely to defer the problem for someone to ask again later.",
           "createdAt": "2026-10-23T16:01:52Z",
           "updatedAt": "2026-10-23T16:01:52Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Preference for Option 1 here. ",
+          "createdAt": "2026-10-27T12:07:14Z",
+          "updatedAt": "2026-10-27T12:07:14Z"
         }
       ]
     },
@@ -10543,13 +10666,30 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "In CDDL, `.default` also implies `.ne`: \"the implied .ne control is there to prevent this value from being sent over the wire\" (RFC 8610 Section 3.8.6). So strictly, a field with `.default` must not carry its default value.\n\nThe drafts use `.default` in two ways.\n\n- On optional fields in quic-events: `done`, `is_mtu_probe_packet` (twice), and StreamFrame `offset` and `fin`. Strictly, `\"fin\": false` is invalid. Implementations differ here: aioquic and picoquic log `fin` on every STREAM frame, while quiche and quic-go log it only when it's true.\n- On types and required fields in the main schema: `clock_type`, `RFC3339DateTime`, `TimeFormat`, and `TupleID`. RFC 8610 says `.default` \"is only meaningful when the control type is used in an optional context\". `TupleID` is also the type of the required `tuple_id` in `tuple_assigned`, and quic-events says to log `\"\"` there for the default tuple, which the implied `.ne` forbids.\n\nThe `cddl` gem and cddl-rs both ignore `.default`, so none of this fails validation today.\n\nOptions:\n\n1. Leave it as it is.\n2. Replace every `.default X` with a comment saying the field defaults to X. This keeps the meaning without the implied `.ne`.\n3. Keep `.default` on the optional fields, which is how CDDL intends it, and replace it with a comment on the types and required fields.\n4. Keep `.default`, and say that producers omit fields that have their default value. Implementations that log defaults explicitly would then need to change.",
       "createdAt": "2026-10-23T16:32:51Z",
-      "updatedAt": "2026-10-23T16:32:51Z",
+      "updatedAt": "2026-10-28T18:24:52Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "Aaaargh, what? Why would that be an explicit requirement... aaargh (also: how did you even find this if the validators don't check for it...)\n\nI don't really like any of the options... the intent is that users should be able to still log the default value if that's easier for their implementation (e.g., see aio/pico logging `fin` every time) or wanted for explicit clarity (e.g., clock_type).\n\nI do assume we don't want to create our own CDDL control operator `.defaultButMakeItSensible` in the qlog docs though (we define a few new datatypes, but those are composed of existing CDDL options).\n\nIn that case, I think option 2 is the only \"real\" one, unless we do Option 1 and have some prose in `main schema, section 1.2` that says the .ne requirement is invalid for qlog and implementations are free to log default values and tooling MUST NOT bork on it? (though that lessens compatibility with CDDL tooling ofc)",
+          "createdAt": "2026-10-28T09:52:12Z",
+          "updatedAt": "2026-10-28T09:52:12Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Claude found this with my guidance, so caveats apply. We can try to dig in and speak to CDDL experts but, to be frank, it seems like a potential can of worms. \n\nAs an individual, I'm inclined to do option 2. I'll prepare a PR.",
+          "createdAt": "2026-10-28T18:24:49Z",
+          "updatedAt": "2026-10-28T18:24:49Z"
+        }
+      ]
     },
     {
       "number": 612,
@@ -10559,28 +10699,45 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "`initiator` is optional in `parameters_set`, in both quic-events and h3-events, but neither document says what an event without it means. quic-events also says the field \"MUST be correct for every setting in that event\".\n\nIt used to be explained. The 2019 definition said the field (then called `owner`) \"can be left for bidirectionally negotiated parameters, e.g. ALPN\". That note was removed when ALPN moved to its own event, but the field stayed optional. One negotiated setting is still in `parameters_set`: `tls_cipher`.\n\nIn practice, the implementations I checked set it on every event: quiche (QUIC and HTTP/3), quic-go, neqo, and picoquic (which still uses the old name, `owner`). quiche, the only one that logs `tls_cipher`, includes it in both its \"local\" and its \"remote\" event.\n\nOptions:\n\n1. Make `initiator` required. Negotiated settings such as `tls_cipher` would then appear in the \"local\" or \"remote\" event, as quiche does today.\n2. Keep it optional, and say again that leaving it out means the settings were negotiated by both sides.\n3. Leave it as it is.",
       "createdAt": "2026-10-23T16:45:13Z",
-      "updatedAt": "2026-10-23T16:45:13Z",
+      "updatedAt": "2026-10-28T18:25:51Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "I think Option 1 here makes most sense here",
+          "createdAt": "2026-10-28T09:55:43Z",
+          "updatedAt": "2026-10-28T09:55:43Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "As an individual, I prefer option 1 too. I'll prep a PR.",
+          "createdAt": "2026-10-28T18:25:49Z",
+          "updatedAt": "2026-10-28T18:25:49Z"
+        }
+      ]
     },
     {
       "number": 613,
       "id": "I_kwDOCrLn6M8AAAABZcXppQ",
       "title": "Gaps in how event name uniqueness is guaranteed",
       "url": "https://github.com/quicwg/qlog/issues/613",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Section 8 of the main schema requires event names to be globally unique:\n\n> The resulting concatenation MUST be globally unique, so log files can contain events from multiple event schemas without the risk of name collisions.\n\nFor registered schemas, the registry enforces this. Each entry lists its namespace and event types, and Section 8.1 tells the expert to check the requirements in Section 8. Two gaps remain.\n\n1. Private schemas. Section 8 says concrete event types and new namespaces \"MUST have a registered\" identifier. Section 8.1 says only \"Event schemas defined by RFCs MUST register\", and that private schemas \"MAY be registered\". The two sections disagree.\n\n   Section 8.1 seems right. A private schema can register if it wants. If it doesn't, for example to add an event type to a public namespace without publishing the name, it carries the risk of a collision with a later registration.\n\n2. Extension identifier scope. Section 8 requires a \"globally-unique \"extension\" identifier\". Section 8.1 requires only that \"the combination of `<namespace identifier>` and `<extension identifier>` is globally unique\". The global rule dates from #424, when category identifiers formed the event name prefix and so had to be globally unique. Since #439, the extension identifier appears only in the schema URI, which already includes the namespace. This looks editorial, unless someone relies on the global reading.\n\nProposal:\n\n- For 1: in Section 8, apply the registration requirement to schemas defined by RFCs, matching Section 8.1. Add a sentence saying that unregistered schemas can't rely on their event names being unique. If private registrations don't need to list their event types, say so in the registry template.\n- For 2: use the combination rule in both places.\n",
       "createdAt": "2026-10-23T17:26:23Z",
-      "updatedAt": "2026-10-23T17:26:23Z",
-      "closedAt": null,
+      "updatedAt": "2026-10-28T16:44:02Z",
+      "closedAt": "2026-10-28T16:44:02Z",
       "comments": []
     },
     {
@@ -31496,7 +31653,7 @@
       "labels": [],
       "body": "Fixes #550.",
       "createdAt": "2026-10-03T23:26:52Z",
-      "updatedAt": "2026-10-03T23:38:36Z",
+      "updatedAt": "2026-10-28T16:57:19Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f8dfcfcb3d53bb6ec1f1d6c0beb4734005ac6424",
@@ -31508,7 +31665,81 @@
       "mergedBy": null,
       "mergeCommit": null,
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUbsXuw",
+          "commit": {
+            "abbreviatedOid": "7447cb9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "Let's use Initiator instead of Direction?\n\nRest looks ok",
+          "createdAt": "2026-10-27T11:16:00Z",
+          "updatedAt": "2026-10-27T11:16:17Z",
+          "comments": [
+            {
+              "originalPosition": 75,
+              "body": "I don't like adding another concept for \"who is doing the thing\" just for this.\n\nWe have the `Initiator` type for this and also other events where the prose indicates how it should be used, so I'd prefer to re-use that here. ",
+              "createdAt": "2026-10-27T11:16:00Z",
+              "updatedAt": "2026-10-27T11:16:17Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUbwEtQ",
+          "commit": {
+            "abbreviatedOid": "7447cb9"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-27T11:19:51Z",
+          "updatedAt": "2026-10-27T11:19:51Z",
+          "comments": [
+            {
+              "originalPosition": 75,
+              "body": "Who is the initiator when a received datagram is dropped? The datagram was \"initiated\" by the peer, but the dropping is done by me.",
+              "createdAt": "2026-10-27T11:19:51Z",
+              "updatedAt": "2026-10-27T11:19:52Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUt0F3g",
+          "commit": {
+            "abbreviatedOid": "7447cb9"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-28T15:25:02Z",
+          "updatedAt": "2026-10-28T15:25:02Z",
+          "comments": [
+            {
+              "originalPosition": 75,
+              "body": "You can make an argument for either. I don't really care which, as long as the prose explains it. \r\n\r\n(I agree it's not super-logical to use Initiator for this, but I'd rather not introduce yet another concept that's only used in 1 place in qlog)",
+              "createdAt": "2026-10-28T15:25:02Z",
+              "updatedAt": "2026-10-28T15:25:02Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUvFyoQ",
+          "commit": {
+            "abbreviatedOid": "7447cb9"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "LGTM modulo the same points as Robin",
+          "createdAt": "2026-10-28T16:57:18Z",
+          "updatedAt": "2026-10-28T16:57:18Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 553,
@@ -31583,24 +31814,26 @@
       "id": "PR_kwDOCrLn6M8AAAABIWkrNw",
       "title": "combine IP addresses and ports to support redaction",
       "url": "https://github.com/quicwg/qlog/pull/557",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #554.",
       "createdAt": "2026-10-14T09:04:30Z",
-      "updatedAt": "2026-10-24T18:56:05Z",
+      "updatedAt": "2026-10-28T23:49:48Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f8dfcfcb3d53bb6ec1f1d6c0beb4734005ac6424",
       "headRepository": "quicwg/qlog",
       "headRefName": "ip-address-redaction",
-      "headRefOid": "05e46fa26d1a3e2f2ebe00a6a5e3226090a1204c",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "73d4347187ae4b17d339eeac7c8564a6eb81b31d",
+      "closedAt": "2026-10-28T23:49:46Z",
+      "mergedAt": "2026-10-28T23:49:45Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "01f51ad68f3ddc22012aa856c14890228b408f53"
+      },
       "comments": [],
       "reviews": [
         {
@@ -31675,6 +31908,92 @@
               "updatedAt": "2026-10-24T18:56:05Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUbvHrQ",
+          "commit": {
+            "abbreviatedOid": "05e46fa"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "In general looks ok, but I'd prefer to rename the fields `address_v4` instead of `addr_v4` since we hardly ever abbreviate anything in qlog.",
+          "createdAt": "2026-10-27T11:18:51Z",
+          "updatedAt": "2026-10-27T11:18:51Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUggekA",
+          "commit": {
+            "abbreviatedOid": "05e46fa"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-27T17:04:42Z",
+          "updatedAt": "2026-10-27T17:04:43Z",
+          "comments": [
+            {
+              "originalPosition": 64,
+              "body": "```suggestion\n    ? address_v4: IPAddressPort\n    ? address_v6: IPAddressPort\n```",
+              "createdAt": "2026-10-27T17:04:42Z",
+              "updatedAt": "2026-10-27T17:04:43Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUggo8Q",
+          "commit": {
+            "abbreviatedOid": "05e46fa"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-27T17:04:54Z",
+          "updatedAt": "2026-10-27T17:04:55Z",
+          "comments": [
+            {
+              "originalPosition": 22,
+              "body": "```suggestion\n    ? address_v4: IPAddressPort\n    ? address_v6: IPAddressPort\n```",
+              "createdAt": "2026-10-27T17:04:55Z",
+              "updatedAt": "2026-10-27T17:04:55Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUggxgQ",
+          "commit": {
+            "abbreviatedOid": "05e46fa"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-27T17:05:05Z",
+          "updatedAt": "2026-10-27T17:05:05Z",
+          "comments": [
+            {
+              "originalPosition": 9,
+              "body": "```suggestion\n    ? address_v4: IPAddressPort\n    ? address_v6: IPAddressPort\n```",
+              "createdAt": "2026-10-27T17:05:05Z",
+              "updatedAt": "2026-10-27T17:05:05Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUtx63g",
+          "commit": {
+            "abbreviatedOid": "73d4347"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-10-28T15:22:39Z",
+          "updatedAt": "2026-10-28T15:22:39Z",
+          "comments": []
         }
       ]
     },
@@ -31725,21 +32044,21 @@
       "id": "PR_kwDOCrLn6M8AAAABJZsCyQ",
       "title": "Move tuple into QUIC packet event data",
       "url": "https://github.com/quicwg/qlog/pull/559",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Drafted with AI assistance; reviewed and edited by me.\n\nFixes #501.\n\nPlacing a tuple field in every event might not be practical. Even if it's optional, the notion that every extension schema needs to worry about path awareness seems a bit heavy handed. Practically, anything above the transport will likely struggle to carry path information around internally. \n\nFrom a brief survey of implementations, none are using the `tuple` as currently defined. The closest thing ins picoquic, which is based on qlog 00 and defines its own `path_id`; it can still carry on doing that as a custom extension if it wants (including extending `Event` to do it). \n\nThis PR moves `tuple` out of the abstract `Event` class and `CommonFields`, using the same approach as `trigger`: the main schema recommends naming the field `tuple` in event data, and the QUIC document defines `? tuple: TupleID` on `packet_sent`, `packet_received`, `packet_dropped`, `packet_buffered` and `packet_lost`.\n\n`TupleID` keeps its `\"\"` default, so a packet event without `tuple` is still associated with the initial tuple. The guidance added in #514 to log the field only when salient is removed, since omitting the field on a packet that uses a different tuple would attribute it to the initial tuple.\n\n`frames_created` and `frames_parsed` don't get the field, since they link to packet events through `packet_numbers`. \n\nThe current approach was motivated by supporting multipath. A multipath extension can add `tuple` to other events through the existing extension sockets. In other words, punt the job of figuring out if anything more is useful  to someone else rather than block progress on core.\n",
       "createdAt": "2026-10-19T18:58:36Z",
-      "updatedAt": "2026-10-24T19:25:38Z",
+      "updatedAt": "2026-10-28T18:18:55Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "aa3348d94cdd63aae929245c3a7eb88b28e266bb",
       "headRepository": "quicwg/qlog",
       "headRefName": "tuple-in-event-data",
       "headRefOid": "83df879244fc9fb60285b6a977ea91b9ec37b796",
-      "closedAt": null,
+      "closedAt": "2026-10-28T18:18:55Z",
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
@@ -31764,6 +32083,13 @@
           "body": "PR incoming",
           "createdAt": "2026-10-24T19:25:38Z",
           "updatedAt": "2026-10-24T19:25:38Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "closing in favour of #617",
+          "createdAt": "2026-10-28T18:18:53Z",
+          "updatedAt": "2026-10-28T18:18:53Z"
         }
       ],
       "reviews": [
@@ -32303,50 +32629,68 @@
       "id": "PR_kwDOCrLn6M8AAAABJ6TVmQ",
       "title": "QUIC events: rewrite version_information and alpn_information usage",
       "url": "https://github.com/quicwg/qlog/pull/579",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Rewrites the descriptions of two events. No change to the CDDL definitions.\n\n- version_information: describe each endpoint's events in short sentences instead of the \"Intended use\" list, and say where `chosen_version` is absent. Drop the inference that an absent `chosen_version` means no overlap; it doesn't hold when a client declines a version or discards a Version Negotiation packet. Allow for a server that switches version (RFC 9368), and note that `server_versions` can include reserved versions (RFC 9000 Section 6.3).\n- alpn_information: the server's ALPN choice isn't in ServerHello or in an Initial packet. Drop the TLS message details, which don't affect what is logged, and describe usage per endpoint. Name the ALPNIdentifier fields.\n\nOne change to a requirement: \"SHOULD log at least one format, but MAY log both or none\" becomes \"SHOULD log at least one form and MAY log both\". The \"or none\" cancelled the SHOULD.",
       "createdAt": "2026-10-22T00:12:32Z",
-      "updatedAt": "2026-10-22T00:12:33Z",
+      "updatedAt": "2026-10-28T16:41:09Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2b5d02dfa116dc60ce511aff25811fce68f6f207",
       "headRepository": "quicwg/qlog",
       "headRefName": "quic-events-version-alpn",
       "headRefOid": "07a75bf5320d856bc10478bb2142cfe0b79ec367",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-10-28T16:41:05Z",
+      "mergedAt": "2026-10-28T16:41:05Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "2a488418fd664ddb5ff9780abb7702bebb1174e2"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUt67YA",
+          "commit": {
+            "abbreviatedOid": "07a75bf"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-10-28T15:32:20Z",
+          "updatedAt": "2026-10-28T15:32:20Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 580,
       "id": "PR_kwDOCrLn6M8AAAABJ6VYvQ",
       "title": "QUIC events: rework the recovery event descriptions",
       "url": "https://github.com/quicwg/qlog/pull/580",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Rewrites congestion_state_updated, packet_lost, and marked_for_retransmit. No change to the CDDL definitions; some CDDL comments move into prose.\n\n- congestion_state_updated: list the three NewReno states from RFC 9002 Section 7.3 (application-limited isn't one). Replace the `trigger` example, which was wrong: the first slow start can't be exited by exceeding ssthresh. The rationale for leaving the field values undefined now covers triggers.\n- packet_lost: describe the `frames`, `is_mtu_probe_packet`, and `trigger` fields, with each trigger value's RFC 9002 section.\n- marked_for_retransmit: explain how it relates to packet_lost, and why the two can differ (RFC 9000 Section 13.3). Drop the comparison that named the nonexistent `frames_sent` event.\n\nRequirements: packet_lost's \"It is RECOMMENDED to populate the `trigger` field\" becomes \"The `trigger` field SHOULD be logged\", which RFC 2119 treats as equivalent. congestion_state_updated drops the \"MAY be omitted\" clause, which only restated that the SHOULD doesn't apply.",
       "createdAt": "2026-10-22T00:16:30Z",
-      "updatedAt": "2026-10-24T19:30:47Z",
+      "updatedAt": "2026-10-28T18:13:05Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "2b5d02dfa116dc60ce511aff25811fce68f6f207",
       "headRepository": "quicwg/qlog",
       "headRefName": "quic-events-recovery",
       "headRefOid": "23e1f286d5a06d48068002f051c29ab9ff166c3a",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-10-28T18:13:02Z",
+      "mergedAt": "2026-10-28T18:13:02Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "41ca9bda69c4f580bf8781fd0c26d2a31d23790c"
+      },
       "comments": [],
       "reviews": [
         {
@@ -32360,6 +32704,19 @@
           "body": "",
           "createdAt": "2026-10-24T19:30:47Z",
           "updatedAt": "2026-10-24T19:30:47Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUt76Pw",
+          "commit": {
+            "abbreviatedOid": "23e1f28"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-10-28T15:33:23Z",
+          "updatedAt": "2026-10-28T15:33:23Z",
           "comments": []
         }
       ]
@@ -33059,24 +33416,26 @@
       "id": "PR_kwDOCrLn6M8AAAABKR_NMw",
       "title": "Allow logging reserved and unknown HTTP/3 settings and stream types",
       "url": "https://github.com/quicwg/qlog/pull/606",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Fixes #605.\n\nChanges the CDDL: adds one optional field. Everything that validates today still does.\n\n- `parameters_set`: replace the \"any number of unspecified fields\" promise, which the closed CDDL map never allowed, with an `unknown_settings` list. It reuses `HTTP3Setting`, the type the SETTINGS frame already uses, so each entry has `name` set to \"unknown\" or \"reserved\" and the identifier in `name_bytes`. This mirrors QUIC's `unknown_parameters` (#438). Settings defined by extensions still go through `$$http3-parametersset-extension`.\n- SETTINGS frame and `stream_type_set`: `name_bytes` and `stream_type_bytes` can now also be used when the value is \"reserved\", as `HTTP3ReservedFrame` already does with `frame_type_bytes`. These are CDDL comment and prose changes only.\n\nReusing `HTTP3Setting` keeps the HTTP/3 document consistent and avoids adding another field name while #595 is open. It also allows known setting names in `unknown_settings`, which is harmless but loose; a dedicated type would be the alternative.",
       "createdAt": "2026-10-23T15:10:23Z",
-      "updatedAt": "2026-10-24T19:33:48Z",
+      "updatedAt": "2026-10-28T18:17:42Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
       "headRepository": "quicwg/qlog",
       "headRefName": "h3-events-unknown-settings",
       "headRefOid": "3659c96ccd6c7b183dc7d8232b705011174e358b",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-10-28T18:17:40Z",
+      "mergedAt": "2026-10-28T18:17:40Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "7ca8965b7110725344a5e7001234f8ee8faf18f5"
+      },
       "comments": [],
       "reviews": [
         {
@@ -33091,6 +33450,46 @@
           "createdAt": "2026-10-24T19:33:48Z",
           "updatedAt": "2026-10-24T19:33:48Z",
           "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUb9eAg",
+          "commit": {
+            "abbreviatedOid": "3659c96"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "LGTM with a small nit. ",
+          "createdAt": "2026-10-27T11:39:51Z",
+          "updatedAt": "2026-10-27T11:42:20Z",
+          "comments": [
+            {
+              "originalPosition": 19,
+              "body": "nit: maybe the \"can instead be added\" should be \"SHOULD be added\"? ",
+              "createdAt": "2026-10-27T11:39:51Z",
+              "updatedAt": "2026-10-27T11:42:20Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUwFljw",
+          "commit": {
+            "abbreviatedOid": "3659c96"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-10-28T18:17:12Z",
+          "updatedAt": "2026-10-28T18:17:13Z",
+          "comments": [
+            {
+              "originalPosition": 19,
+              "body": "I don't think we can levy a requirement on an extension to HTTP/3 from here. qlog can capture the unknown value now, that seems good enough.",
+              "createdAt": "2026-10-28T18:17:12Z",
+              "updatedAt": "2026-10-28T18:17:13Z"
+            }
+          ]
         }
       ]
     },
@@ -33149,26 +33548,49 @@
       "id": "PR_kwDOCrLn6M8AAAABKT7Omg",
       "title": "Align event name uniqueness rules with the registry section",
       "url": "https://github.com/quicwg/qlog/pull/614",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Closes #613.\n\n- Section 8 no longer requires every namespace and event type to be registered. It defers to Section 8.1, which requires registration only for schemas defined by RFCs.\n- Section 8 says the designated expert checks uniqueness for the event types listed in the registry, and that a schema whose event types aren't listed can't rely on its event names being unique.\n- The registry template lets a private or non-standard schema omit event types.\n- Extension identifiers must be unique within the namespace, matching Section 8.1, instead of globally unique. The global rule dates from categories (#424), when the identifier formed the event name prefix.\n",
       "createdAt": "2026-10-23T17:46:29Z",
-      "updatedAt": "2026-10-23T17:46:30Z",
+      "updatedAt": "2026-10-28T16:44:03Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
       "headRepository": "quicwg/qlog",
       "headRefName": "main-schema-uniqueness",
-      "headRefOid": "0393e44616f691fe33f3e2014901bdb9ff6c2e43",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "headRefOid": "de874007941bafa45582cd9f0c1cd55673d7023b",
+      "closedAt": "2026-10-28T16:44:00Z",
+      "mergedAt": "2026-10-28T16:44:00Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "91406332d22c265244c23d4757a49ddc549723cc"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUprpHw",
+          "commit": {
+            "abbreviatedOid": "0393e44"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "LGTM with the small (optional) nit. ",
+          "createdAt": "2026-10-28T10:02:30Z",
+          "updatedAt": "2026-10-28T10:02:43Z",
+          "comments": [
+            {
+              "originalPosition": 20,
+              "body": "```suggestion\nthe registry; see {{event-schema-reg}}. A (private or non-standard) event schema that does not list its\n```\n\nNit: Just to align a bit better with the change on line 2102 below and make it a bit clearer when this might happen in practice. ",
+              "createdAt": "2026-10-28T10:02:30Z",
+              "updatedAt": "2026-10-28T10:02:43Z"
+            }
+          ]
+        }
+      ]
     },
     {
       "number": 616,
@@ -33182,7 +33604,7 @@
       "labels": [],
       "body": "Closes #615.\n\n- New Section 8.4, \"Relationship to On-the-Wire Data\": events reflect the view of the implementation that logs them, which can differ from the wire. Event schemas assume a correct implementation when one logged value implies another, or when they leave out data the wire shows.\n- Section 8.6 points to it instead of its own \"bug-free and spec-compliant implementation\" phrasing.\n- Section 13 tells tool authors that a trace can disagree with a packet capture, or with a trace from another vantage point.\n",
       "createdAt": "2026-10-23T18:05:19Z",
-      "updatedAt": "2026-10-27T00:01:45Z",
+      "updatedAt": "2026-10-28T10:29:16Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
@@ -33254,6 +33676,32 @@
               "updatedAt": "2026-10-27T00:03:01Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABUp8LlA",
+          "commit": {
+            "abbreviatedOid": "44741db"
+          },
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "state": "APPROVED",
+          "body": "LGTM. I agree we need to be clearer about this + think the newly proposed text achieves that. ",
+          "createdAt": "2026-10-28T10:24:13Z",
+          "updatedAt": "2026-10-28T10:29:16Z",
+          "comments": [
+            {
+              "originalPosition": 7,
+              "body": "I agree with Lucas here that this is worth pointing out in general.\n\nI also feel that the text as a whole is clear enough (e.g., the example below about quic:packet_sent)",
+              "createdAt": "2026-10-28T10:24:13Z",
+              "updatedAt": "2026-10-28T10:29:16Z"
+            },
+            {
+              "originalPosition": 36,
+              "body": "Correct, that's the point Lucas is trying to make in {{on-the-wire}}.\n\nGiven that qlog originated as a debugging tool for in-progress implementations (and hopefully will be used as such for new standards such as moq etc.) this seems like a sensible thing to keep in + call out explicitly. ",
+              "createdAt": "2026-10-28T10:28:48Z",
+              "updatedAt": "2026-10-28T10:29:16Z"
+            }
+          ]
         }
       ]
     },
@@ -33269,7 +33717,7 @@
       "labels": [],
       "body": "Replaces #559. Fixes #501.\n\nThe first commit is #559, rebased on main. The second commit associates events that omit the `tuple` field with the TupleID `\"\"` instead of the initial tuple. This way, a stack can reassign `\"\"` with a `tuple_assigned` event when it migrates, and only needs to log the `tuple` for packets sent or received on other tuples.",
       "createdAt": "2026-10-24T19:26:31Z",
-      "updatedAt": "2026-10-26T23:42:08Z",
+      "updatedAt": "2026-10-28T15:29:16Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
@@ -33287,8 +33735,41 @@
           "body": "LGTM but we probably want a cross review from @rmarx ",
           "createdAt": "2026-10-26T23:42:08Z",
           "updatedAt": "2026-10-26T23:42:08Z"
+        },
+        {
+          "author": "rmarx",
+          "authorAssociation": "CONTRIBUTOR",
+          "body": "As I said in #501 I'd rather not touch this as it would require double-checking if all logic around multipath-capabilities hold.\r\n\r\nAt first glance, this seems to be a safe approach, but I can't be sure and don't have cycles atm to really think through everything and lookup the old issues etc.\r\n\r\nSo either we keep this open until after the current cutoff and I have time to properly evaluate, or you two verify you think this is \"safe\" and have thought through the implications and then you can feel free to merge it. ",
+          "createdAt": "2026-10-28T15:29:16Z",
+          "updatedAt": "2026-10-28T15:29:16Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 618,
+      "id": "PR_kwDOCrLn6M8AAAABLV5yCA",
+      "title": "Require initiator in parameters_set",
+      "url": "https://github.com/quicwg/qlog/pull/618",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Make `initiator` required in `parameters_set` for QUIC and HTTP/3, following option 1 in #612. A negotiated setting such as `tls_cipher` is logged in both the local and the remote event.\n\nCloses #612",
+      "createdAt": "2026-10-28T19:05:01Z",
+      "updatedAt": "2026-10-28T19:05:05Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "7ca8965b7110725344a5e7001234f8ee8faf18f5",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "require-parameters-set-initiator",
+      "headRefOid": "284ee91be057c690c2967e48b27e01e05f374729",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
