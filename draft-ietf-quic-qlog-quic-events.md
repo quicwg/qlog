@@ -872,7 +872,7 @@ QUICPacketDropped = {
         "duplicate" /
         "connection_unknown" /
         "decryption_failure" /
-        "key_unavailable" /
+        "keys_unavailable" /
         "general"
 
     * $$quic-packetdropped-extension
@@ -892,7 +892,7 @@ example situations for each trigger value include:
 - "connection_unknown": packet does not relate to a known connection or
   connection ID
 - "decryption_failure": decryption failed
-- "key_unavailable": decryption key was unavailable
+- "keys_unavailable": decryption keys were unavailable
 - "general": situations not clearly covered in the other categories
 
 Packets dropped as "unsupported" or "connection_unknown" often cannot be tied to

@@ -1350,7 +1350,7 @@ QUICPacketDropped = {
         "duplicate" /
         "connection_unknown" /
         "decryption_failure" /
-        "key_unavailable" /
+        "keys_unavailable" /
         "general"
     ...
 }
