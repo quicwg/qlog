@@ -1160,12 +1160,13 @@ with a domain name.
 Event schemas defined by RFCs MUST register all namespaces and concrete event
 types they contain in the "qlog event schema URIs" registry.
 
-Event schemas that define a new namespace SHOULD use a URN of the form
-`urn:ietf:params:qlog:events:<namespace identifier>`, where `<namespace
-identifier>` is globally unique. For example, the `loglevel` event schema uses
-`urn:ietf:params:qlog:events:loglevel`.
+If an event schema defined by an RFC defines a new namespace, it SHOULD use a
+URN of the form `urn:ietf:params:qlog:events:<namespace identifier>`, where
+`<namespace identifier>` is globally unique. For example, the `loglevel` event
+schema uses `urn:ietf:params:qlog:events:loglevel`.
 
-Event schemas that extend an existing namespace SHOULD use a URN of the form
+If an event schema defined by an RFC extends an existing namespace, it SHOULD
+use a URN of the form
 `urn:ietf:params:qlog:events:<namespace identifier>#<extension identifier>`,
 where the combination of `<namespace identifier>` and `<extension identifier>`
 is globally unique.
