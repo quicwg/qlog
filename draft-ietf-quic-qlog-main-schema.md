@@ -233,14 +233,14 @@ defines two event schemas for two generic event namespaces `loglevel` and
 ## Default Values {#default-values}
 
 Log files, traces, and events can have optional fields. The definition of an
-optional field can give it a default value. If the field is omitted, it has that
+optional field can give it a default value. If the field is omitted in a logged event, it has that
 default value, unless `common_fields` ({{common-fields}}) sets it. Logging the
 default value explicitly means the same as omitting the field.
 
 If an optional field has no default value, omitting it implies nothing about its
 value.
 
-The rules for defaults can be overridden by definitions, for example by saying
+The rules for default values can be overridden by definitions, for example by saying
 that an omitted field keeps its value from an earlier event.
 
 # Abstract LogFile Class {#abstract-logfile}
