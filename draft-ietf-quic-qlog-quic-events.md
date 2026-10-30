@@ -784,7 +784,6 @@ QUICPacketSent = {
     ? frames: [* $QuicFrame]
 
     ; only if header.packet_type === "stateless_reset"
-    ; is always 128 bits in length.
     ? stateless_reset_token: StatelessResetToken
 
     ; only if header.packet_type === "version_negotiation"
@@ -827,7 +826,6 @@ QUICPacketReceived = {
     ? frames: [* $QuicFrame]
 
     ; only if header.packet_type === "stateless_reset"
-    ; Is always 128 bits in length.
     ? stateless_reset_token: StatelessResetToken
 
     ; only if header.packet_type === "version_negotiation"
@@ -1949,7 +1947,7 @@ field can log that metadata.
 ## StatelessResetToken
 
 ~~~ cddl
-; always 128 bits
+; always 16 bytes
 StatelessResetToken = hexstring
 ~~~
 {: #stateless-reset-token-def title="StatelessResetToken definition"}
@@ -2305,7 +2303,7 @@ RetireConnectionIDFrame = {
 PathChallengeFrame = {
   frame_type: "path_challenge"
 
-  ; always 64 bits
+  ; always 8 bytes
   ? data: hexstring
   ? raw: RawInfo
 }
@@ -2318,7 +2316,7 @@ PathChallengeFrame = {
 PathResponseFrame = {
   frame_type: "path_response"
 
-  ; always 64 bits
+  ; always 8 bytes
   ? data: hexstring
   ? raw: RawInfo
 }
