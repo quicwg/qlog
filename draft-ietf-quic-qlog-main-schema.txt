@@ -818,14 +818,23 @@ Table of Contents
       produces the smallest values.  It is suitable for stateful
       loggers.
 
-   Events in each individual trace SHOULD be logged in strictly
-   ascending timestamp order (though not necessarily absolute value, for
-   the "relative_to_previous_event" format).  Tools MAY sort all events
-   on the timestamp before processing them, though are not required to
-   (as this could impose a significant processing overhead).  This can
-   be a problem especially for multi-threaded and/or streaming loggers,
-   which could consider using a separate post-processor to order qlog
-   events in time if a tool does not provide this feature.
+   Events in each individual trace SHOULD be logged in time order, so
+   that no event has an earlier time than the event logged before it.
+   With the "relative_to_previous_event" format, this means that no
+   logged time value is negative.  Loggers could choose to log events
+   out of order for reasons such as supporting multi-threaded or
+   streaming implementations.
+
+   Tools cannot rely on logs containing traces with events in time
+   order.  A qlog trace can be sorted, for example, as a post-processing
+   step by the logger, or a pre-processing step for a tool.
+
+   Several events can have the same time, for example when one received
+   packet leads to several events, or when the clock has a low
+   resolution.  The logged order of these events can still matter, for
+   example to show a packet before the events it caused.  A stable sort,
+   which keeps events with the same time in their logged order,
+   preserves it.
 
    Tools SHOULD NOT assume the ability to derive the absolute calendar
    timestamp of an event from qlog traces.  Tools should not rely on
@@ -1468,7 +1477,7 @@ Table of Contents
            "duplicate" /
            "connection_unknown" /
            "decryption_failure" /
-           "key_unavailable" /
+           "keys_unavailable" /
            "general"
        ...
    }
