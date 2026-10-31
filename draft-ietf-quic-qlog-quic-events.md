@@ -1770,8 +1770,20 @@ ECNState =
 
 ## QuicVersion
 
+The `version` field holds an interpreted QUIC version number. QUIC version 1
+({{QUIC-TRANSPORT}}) is logged as 1, and QUIC version 2 ({{!QUIC-V2=RFC9369}})
+is logged as 2, rather than its wire value of 0x6b3343cf. The value 0 represents
+the zero version field in a Version Negotiation packet.
+
+The `version_bytes` field holds the wire value as a hexadecimal string. For
+unknown versions, including reserved versions, `version` is omitted and
+`version_bytes` holds the wire value instead.
+
 ~~~ cddl
-QuicVersion = hexstring
+QuicVersion = {
+    ? version: uint32
+    ? version_bytes: hexstring
+}
 ~~~
 {: #quicversion-def title="QuicVersion definition"}
 
