@@ -1748,6 +1748,7 @@ level.
 QUICECNStateUpdated = {
    ? old: ECNState
     new: ECNState
+    ? trigger: text
 
     * $$quic-ecnstateupdated-extension
 }
@@ -1764,6 +1765,9 @@ ECNState =
   "capable"
 ~~~
 {: #quic-ecnstateupdated-def title="QUICECNStateUpdated definition"}
+
+The `trigger` field can be used to log why the state changed, for example which
+ECN validation check in {{Section 13.4.2 of QUIC-TRANSPORT}} failed.
 
 
 # QUIC Data Type Definitions {#quic-data-types}
