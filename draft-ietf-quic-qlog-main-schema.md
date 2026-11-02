@@ -388,6 +388,7 @@ Trace = {
     ? description: text
     ? common_fields: CommonFields
     ? vantage_point: VantagePoint
+    ? implementation: Implementation
     event_schemas: [+text]
     events: [* Event]
 }
@@ -400,6 +401,8 @@ information about the trace.
 The optional `common_fields` field is described in {{common-fields}}.
 
 The optional `vantage_point` field is described in {{vantage-point}}.
+
+The optional `implementation` field is described in {{implementation}}.
 
 The required `event_schemas` field contains event schema URIs that identify
 concrete event namespaces and their associated types recorded in the `events`
@@ -425,6 +428,10 @@ JSON serialization example:
     "vantage_point": {
         "name": "backend-67",
         "type": "server"
+    },
+    "implementation": {
+        "name": "example-quic",
+        "version": "1.2.3"
     },
     "event_schemas": ["urn:ietf:params:qlog:events:quic"],
     "events": [...]
@@ -531,6 +538,7 @@ TraceSeq = {
     ? description: text
     ? common_fields: CommonFields
     ? vantage_point: VantagePoint
+    ? implementation: Implementation
     event_schemas: [+text]
 }
 ~~~
@@ -602,6 +610,37 @@ vantage_point can either try to heuristically infer the semantics from
 protocol-level domain knowledge (e.g., in QUIC, the client always sends the
 first packet) or give the user the option to switch between client and server
 perspectives manually.
+
+# Implementation {#implementation}
+
+An Implementation describes properties of a logger, defined in
+{{implementation-def}} as:
+
+~~~ cddl
+Implementation = {
+    ? name: text
+    ? version: text
+    * text => any
+}
+~~~
+{: #implementation-def title="Implementation definition"}
+
+The optional `name` field contains the name of the implementation. The optional
+`version` field contains its version, in a format the implementation chooses,
+for example a release number or a commit hash.
+
+The Implementation can contain other fields, for example build or configuration
+details.
+
+JSON serialization example:
+
+~~~~~~~~
+{
+    "name": "example-quic",
+    "version": "1.2.3"
+}
+~~~~~~~~
+{: #implementation-ex title="Implementation example"}
 
 # Abstract Event Class {#abstract-event}
 
