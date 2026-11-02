@@ -100,11 +100,12 @@ Table of Contents
        5.14.2.  frames_parsed
      5.15. stream_data_moved
      5.16. datagram_data_moved
-     5.17. connection_data_blocked_updated
-     5.18. stream_data_blocked_updated
-     5.19. datagram_data_blocked_updated
-     5.20. migration_state_updated
-     5.21. timer_updated
+     5.17. datagram_dropped
+     5.18. connection_data_blocked_updated
+     5.19. stream_data_blocked_updated
+     5.20. datagram_data_blocked_updated
+     5.21. migration_state_updated
+     5.22. timer_updated
    6.  Security Events
      6.1.  key_updated
      6.2.  key_discarded
@@ -163,6 +164,7 @@ Table of Contents
      12.2.  Informative References
    Acknowledgements
    Change Log
+     Since draft-ietf-qlog-quic-events-13:
      Since draft-ietf-qlog-quic-events-12:
      Since draft-ietf-qlog-quic-events-11:
      Since draft-ietf-qlog-quic-events-09:
@@ -347,15 +349,17 @@ Table of Contents
    +--------------------------------------+------------+--------------+
    | quic:datagram_data_moved             | Base       | Section 5.16 |
    +--------------------------------------+------------+--------------+
-   | quic:connection_data_blocked_updated | Extra      | Section 5.17 |
+   | quic:datagram_dropped                | Base       | Section 5.17 |
    +--------------------------------------+------------+--------------+
-   | quic:stream_data_blocked_updated     | Extra      | Section 5.18 |
+   | quic:connection_data_blocked_updated | Extra      | Section 5.18 |
    +--------------------------------------+------------+--------------+
-   | quic:datagram_data_blocked_updated   | Extra      | Section 5.19 |
+   | quic:stream_data_blocked_updated     | Extra      | Section 5.19 |
    +--------------------------------------+------------+--------------+
-   | quic:migration_state_updated         | Extra      | Section 5.20 |
+   | quic:datagram_data_blocked_updated   | Extra      | Section 5.20 |
    +--------------------------------------+------------+--------------+
-   | quic:timer_updated                   | Extra      | Section 5.21 |
+   | quic:migration_state_updated         | Extra      | Section 5.21 |
+   +--------------------------------------+------------+--------------+
+   | quic:timer_updated                   | Extra      | Section 5.22 |
    +--------------------------------------+------------+--------------+
    | quic:key_updated                     | Base       | Section 6.1  |
    +--------------------------------------+------------+--------------+
@@ -407,6 +411,7 @@ Table of Contents
                    QUICFramesParsed /
                    QUICStreamDataMoved /
                    QUICDatagramDataMoved /
+                   QUICDatagramDropped /
                    QUICConnectionDataBlockedUpdated /
                    QUICStreamDataBlockedUpdated /
                    QUICDatagramDataBlockedUpdated /
@@ -470,7 +475,7 @@ Table of Contents
                  Figure 3: QUICConnectionStarted definition
 
    Some QUIC stacks do not handle sockets directly, so they cannot log
-   IP addresses or ports.  All fields of TupleEndpointInfo (Figure 44)
+   IP addresses or ports.  All fields of TupleEndpointInfo (Figure 45)
    are optional, so such a stack can log local and remote with only the
    fields it knows, such as connection_ids.
 
@@ -1470,7 +1475,38 @@ Table of Contents
 
                 Figure 26: QUICDatagramDataMoved definition
 
-5.17.  connection_data_blocked_updated
+5.17.  datagram_dropped
+
+   The datagram_dropped event indicates that QUIC DATAGRAM data (see
+   [RFC9221]) was discarded locally, before sending or after reception.
+   It has Base importance level.
+
+   The direction field identifies the sending or receiving side, and
+   trigger indicates the reason for discarding the data.  The raw.length
+   field MUST count discarded payload bytes, excluding packet and frame
+   headers.
+
+   Received DATAGRAM data can be discarded while its packet is still
+   acknowledged.  For drops of entire QUIC packets, use packet_dropped
+   (Section 5.7).
+
+   QUICDatagramDropped = {
+       ? direction: "sending" /
+                    "receiving"
+       ? raw: RawInfo
+       ? trigger:
+           ; insufficient space in a send or receive buffer
+           "buffer_full" /
+           ; datagram data exceeds the maximum payload size
+           "too_large" /
+           text
+
+       * $$quic-datagramdropped-extension
+   }
+
+                 Figure 27: QUICDatagramDropped definition
+
+5.18.  connection_data_blocked_updated
 
    The connection_data_blocked_updated event indicates that the QUIC
    connection became blocked or unblocked for sending data.  It has
@@ -1502,9 +1538,9 @@ Table of Contents
                      "stream_id" /
                      "application"
 
-           Figure 27: QUICConnectionDataBlockedUpdated definition
+           Figure 28: QUICConnectionDataBlockedUpdated definition
 
-5.18.  stream_data_blocked_updated
+5.19.  stream_data_blocked_updated
 
    The stream_data_blocked_updated event indicates that a QUIC stream
    became blocked or unblocked for sending.  It has Extra importance
@@ -1521,9 +1557,9 @@ Table of Contents
        * $$quic-streamdatablockedupdated-extension
    }
 
-             Figure 28: QUICStreamDataBlockedUpdated definition
+             Figure 29: QUICStreamDataBlockedUpdated definition
 
-5.19.  datagram_data_blocked_updated
+5.20.  datagram_data_blocked_updated
 
    The datagram_data_blocked_updated event indicates that QUIC datagrams
    became blocked or unblocked for sending.  It has Extra importance
@@ -1538,9 +1574,9 @@ Table of Contents
        * $$quic-datagramdatablockedupdated-extension
    }
 
-            Figure 29: QUICDatagramDataBlockedUpdated definition
+            Figure 30: QUICDatagramDataBlockedUpdated definition
 
-5.20.  migration_state_updated
+5.21.  migration_state_updated
 
    The migration_state_updated event logs the progress of a connection
    migration by a client; see Section 9 of [QUIC-TRANSPORT].  It has
@@ -1594,9 +1630,9 @@ Table of Contents
        ; new path is now fully used, old path is discarded
        "migration_complete"
 
-              Figure 30: QUICMigrationStateUpdated definition
+              Figure 31: QUICMigrationStateUpdated definition
 
-5.21.  timer_updated
+5.22.  timer_updated
 
    The timer_updated event is emitted when a timer changes state.  It
    has Extra importance level.
@@ -1656,7 +1692,7 @@ Table of Contents
        * $$quic-timerupdated-extension
    }
 
-                   Figure 31: QUICTimerUpdated definition
+                   Figure 32: QUICTimerUpdated definition
 
 6.  Security Events
 
@@ -1685,7 +1721,7 @@ Table of Contents
        * $$quic-keyupdated-extension
    }
 
-                    Figure 32: QUICKeyUpdated definition
+                    Figure 33: QUICKeyUpdated definition
 
    The key_phase field holds the full key phase, which identifies the
    generation of keys; it corresponds to @M and @N in Figure 9 of
@@ -1717,7 +1753,7 @@ Table of Contents
        * $$quic-keydiscarded-extension
    }
 
-                   Figure 33: QUICKeyDiscarded definition
+                   Figure 34: QUICKeyDiscarded definition
 
 7.  Recovery Events
 
@@ -1778,7 +1814,7 @@ Table of Contents
        * $$quic-recoveryparametersset-extension
    }
 
-              Figure 34: QUICRecoveryParametersSet definition
+              Figure 35: QUICRecoveryParametersSet definition
 
    Parameters that this document does not define, such as those of other
    loss detection and recovery algorithms, can be added through $$quic-
@@ -1824,7 +1860,7 @@ Table of Contents
        * $$quic-recoverymetricsupdated-extension
    }
 
-              Figure 35: QUICRecoveryMetricsUpdated definition
+              Figure 36: QUICRecoveryMetricsUpdated definition
 
    To make logging easier, implementations MAY log values that are the
    same as previously reported values; for example, two consecutive
@@ -1856,7 +1892,7 @@ Table of Contents
        * $$quic-congestionstateupdated-extension
    }
 
-              Figure 36: QUICCongestionStateUpdated definition
+              Figure 37: QUICCongestionStateUpdated definition
 
    The trigger field SHOULD be logged if a state change can have more
    than one cause.  For example, NewReno enters recovery when it detects
@@ -1883,7 +1919,7 @@ Table of Contents
        * $$quic-packetlost-extension
    }
 
-                    Figure 37: QUICPacketLost definition
+                    Figure 38: QUICPacketLost definition
 
    The frames field lists the frames that the lost packet carried.  It
    is optional, because not all implementations keep sent packets in
@@ -1942,7 +1978,7 @@ Table of Contents
        * $$quic-markedforretransmit-extension
    }
 
-               Figure 38: QUICMarkedForRetransmit definition
+               Figure 39: QUICMarkedForRetransmit definition
 
 7.6.  ecn_state_updated
 
@@ -1969,7 +2005,7 @@ Table of Contents
      ; testing was successful
      "capable"
 
-                 Figure 39: QUICECNStateUpdated definition
+                 Figure 40: QUICECNStateUpdated definition
 
    The trigger field can be used to log why the state changed, for
    example which ECN validation check in Section 13.4.2 of
@@ -1981,20 +2017,20 @@ Table of Contents
 
    QuicVersion = hexstring
 
-                     Figure 40: QuicVersion definition
+                     Figure 41: QuicVersion definition
 
 8.2.  ConnectionID
 
    ConnectionID = hexstring
 
-                     Figure 41: ConnectionID definition
+                     Figure 42: ConnectionID definition
 
 8.3.  Initiator
 
    Initiator = "local" /
                "remote"
 
-                      Figure 42: Initiator definition
+                      Figure 43: Initiator definition
 
 8.4.  IPAddressPort
 
@@ -2009,7 +2045,7 @@ Table of Contents
        port: uint16
    } / text
 
-                    Figure 43: IPAddressPort definition
+                    Figure 44: IPAddressPort definition
 
 8.5.  TupleEndpointInfo
 
@@ -2034,7 +2070,7 @@ Table of Contents
        * $$quic-tupleendpointinfo-extension
    }
 
-                  Figure 44: TupleEndpointInfo definition
+                  Figure 45: TupleEndpointInfo definition
 
 8.6.  PacketType
 
@@ -2047,7 +2083,7 @@ Table of Contents
                    "stateless_reset" /
                    "unknown"
 
-                      Figure 45: PacketType definition
+                      Figure 46: PacketType definition
 
 8.7.  PacketNumberSpace
 
@@ -2055,7 +2091,7 @@ Table of Contents
                          "handshake" /
                          "application_data"
 
-                  Figure 46: PacketNumberSpace definition
+                  Figure 47: PacketNumberSpace definition
 
 8.8.  PacketHeader
 
@@ -2117,7 +2153,7 @@ Table of Contents
        * $$quic-packetheader-extension
    }
 
-                     Figure 47: PacketHeader definition
+                     Figure 48: PacketHeader definition
 
 8.9.  Token
 
@@ -2137,7 +2173,7 @@ Table of Contents
    $TokenType /= "retry" /
                  "resumption"
 
-                        Figure 48: Token definition
+                        Figure 49: Token definition
 
    The token carried in an Initial packet is either a token from a Retry
    packet, or one that the server provided earlier in a NEW_TOKEN frame,
@@ -2151,7 +2187,7 @@ Table of Contents
    ; always 16 bytes
    StatelessResetToken = hexstring
 
-                 Figure 49: StatelessResetToken definition
+                 Figure 50: StatelessResetToken definition
 
    The stateless reset token is defined in Section 10.3 of
    [QUIC-TRANSPORT].
@@ -2167,7 +2203,7 @@ Table of Contents
                "server_1rtt_secret" /
                "client_1rtt_secret"
 
-                       Figure 50: KeyType definition
+                       Figure 51: KeyType definition
 
 8.12.  ECN
 
@@ -2176,7 +2212,7 @@ Table of Contents
 
    ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 
-                         Figure 51: ECN definition
+                         Figure 52: ECN definition
 
 8.13.  QUIC Frames
 
@@ -2189,7 +2225,7 @@ Table of Contents
        * text => any
    }
 
-                Figure 52: QuicFrame type socket definition
+                Figure 53: QuicFrame type socket definition
 
    The QUIC frame types defined in this document are as follows:
 
@@ -2219,7 +2255,7 @@ Table of Contents
 
    $QuicFrame /= QuicBaseFrames
 
-                    Figure 53: QuicBaseFrames definition
+                    Figure 54: QuicBaseFrames definition
 
 8.13.1.  PaddingFrame
 
@@ -2236,7 +2272,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 54: PaddingFrame definition
+                     Figure 55: PaddingFrame definition
 
 8.13.2.  PingFrame
 
@@ -2245,7 +2281,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                      Figure 55: PingFrame definition
+                      Figure 56: PingFrame definition
 
 8.13.3.  AckFrame
 
@@ -2273,7 +2309,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                       Figure 56: AckFrame definition
+                       Figure 57: AckFrame definition
 
    The ranges in acked_ranges do not have to be in order; for example,
    [[5,9],[1,4]] is valid.
@@ -2301,7 +2337,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 57: ResetStreamFrame definition
+                   Figure 58: ResetStreamFrame definition
 
 8.13.5.  ResetStreamAtFrame
 
@@ -2329,7 +2365,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 58: ResetStreamAtFrame definition
+                  Figure 59: ResetStreamAtFrame definition
 
 8.13.6.  StopSendingFrame
 
@@ -2348,7 +2384,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 59: StopSendingFrame definition
+                   Figure 60: StopSendingFrame definition
 
 8.13.7.  CryptoFrame
 
@@ -2362,7 +2398,7 @@ Table of Contents
        raw: RawInfo
    }
 
-                     Figure 60: CryptoFrame definition
+                     Figure 61: CryptoFrame definition
 
 8.13.8.  NewTokenFrame
 
@@ -2372,7 +2408,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                    Figure 61: NewTokenFrame definition
+                    Figure 62: NewTokenFrame definition
 
 8.13.9.  StreamFrame
 
@@ -2391,7 +2427,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 62: StreamFrame definition
+                     Figure 63: StreamFrame definition
 
 8.13.10.  MaxDataFrame
 
@@ -2401,7 +2437,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                     Figure 63: MaxDataFrame definition
+                     Figure 64: MaxDataFrame definition
 
 8.13.11.  MaxStreamDataFrame
 
@@ -2412,7 +2448,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 64: MaxStreamDataFrame definition
+                  Figure 65: MaxStreamDataFrame definition
 
 8.13.12.  MaxStreamsFrame
 
@@ -2423,7 +2459,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                   Figure 65: MaxStreamsFrame definition
+                   Figure 66: MaxStreamsFrame definition
 
 8.13.13.  DataBlockedFrame
 
@@ -2433,7 +2469,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                   Figure 66: DataBlockedFrame definition
+                   Figure 67: DataBlockedFrame definition
 
 8.13.14.  StreamDataBlockedFrame
 
@@ -2444,7 +2480,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                Figure 67: StreamDataBlockedFrame definition
+                Figure 68: StreamDataBlockedFrame definition
 
 8.13.15.  StreamsBlockedFrame
 
@@ -2455,7 +2491,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                 Figure 68: StreamsBlockedFrame definition
+                 Figure 69: StreamsBlockedFrame definition
 
 8.13.16.  NewConnectionIDFrame
 
@@ -2472,7 +2508,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                 Figure 69: NewConnectionIDFrame definition
+                 Figure 70: NewConnectionIDFrame definition
 
 8.13.17.  RetireConnectionIDFrame
 
@@ -2482,7 +2518,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-               Figure 70: RetireConnectionIDFrame definition
+               Figure 71: RetireConnectionIDFrame definition
 
 8.13.18.  PathChallengeFrame
 
@@ -2494,7 +2530,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 71: PathChallengeFrame definition
+                  Figure 72: PathChallengeFrame definition
 
 8.13.19.  PathResponseFrame
 
@@ -2506,7 +2542,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 72: PathResponseFrame definition
+                  Figure 73: PathResponseFrame definition
 
 8.13.20.  ConnectionCloseFrame
 
@@ -2549,7 +2585,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 73: ConnectionCloseFrame definition
+                 Figure 74: ConnectionCloseFrame definition
 
 8.13.21.  HandshakeDoneFrame
 
@@ -2558,7 +2594,7 @@ Table of Contents
      ? raw: RawInfo
    }
 
-                  Figure 74: HandshakeDoneFrame definition
+                  Figure 75: HandshakeDoneFrame definition
 
 8.13.22.  UnknownFrame
 
@@ -2571,7 +2607,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                     Figure 75: UnknownFrame definition
+                     Figure 76: UnknownFrame definition
 
 8.13.23.  DatagramFrame
 
@@ -2587,7 +2623,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 76: DatagramFrame definition
+                    Figure 77: DatagramFrame definition
 
 8.14.  TransportError
 
@@ -2616,7 +2652,7 @@ Table of Contents
                     ; there is no value to reflect CRYPTO_ERROR
                     ; use the CryptoError type instead
 
-                    Figure 77: TransportError definition
+                    Figure 78: TransportError definition
 
 8.15.  ApplicationError
 
@@ -2627,7 +2663,7 @@ Table of Contents
 
    $ApplicationError /= "unknown"
 
-                   Figure 78: ApplicationError definition
+                   Figure 79: ApplicationError definition
 
    Event schemas for application protocols MUST add their error strings
    by extending the $ApplicationError socket; see Section 8.2 of
@@ -2648,7 +2684,7 @@ Table of Contents
    ; all strings from "crypto_error_0x100" to "crypto_error_0x1ff"
    CryptoError = text .regexp "crypto_error_0x1[0-9a-f][0-9a-f]"
 
-                     Figure 79: CryptoError definition
+                     Figure 80: CryptoError definition
 
 9.  Handling Packet Coalescing
 
@@ -2685,7 +2721,7 @@ Table of Contents
       packet_buffered, packets_acked, udp_datagrams_sent,
       udp_datagrams_received, udp_datagram_dropped,
       stream_state_updated, frames_created, frames_parsed,
-      stream_data_moved, datagram_data_moved,
+      stream_data_moved, datagram_data_moved, datagram_dropped,
       connection_data_blocked_updated, stream_data_blocked_updated,
       datagram_data_blocked_updated, migration_state_updated,
       timer_updated, key_updated, key_discarded,
@@ -2758,6 +2794,11 @@ Table of Contents
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
 
+   [RFC9221]  Pauly, T., Kinnear, E., and D. Schinazi, "An Unreliable
+              Datagram Extension to QUIC", RFC 9221,
+              DOI 10.17487/RFC9221, March 2022,
+              <https://www.rfc-editor.org/rfc/rfc9221>.
+
    [RFC9868]  Touch, J. and C. Heard, Ed., "Transport Options for UDP",
               RFC 9868, DOI 10.17487/RFC9868, October 2025,
               <https://www.rfc-editor.org/rfc/rfc9868>.
@@ -2783,6 +2824,10 @@ Acknowledgements
 Change Log
 
    This section is to be removed before publishing as an RFC.
+
+Since draft-ietf-qlog-quic-events-13:
+
+   *  Added datagram_dropped (#550)
 
 Since draft-ietf-qlog-quic-events-12:
 
