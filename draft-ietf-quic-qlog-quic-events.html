@@ -2365,7 +2365,7 @@ QUICMTUUpdated = {
 
     ; at some point, MTU discovery stops, as a "good enough"
     ; packet size has been found
-    ? done: bool .default false
+    ? done: bool
 
     * $$quic-mtuupdated-extension
 }
@@ -2375,6 +2375,7 @@ QUICMTUUpdated = {
 <a href="#name-quicmtuupdated-definition" class="selfRef">QUICMTUUpdated definition</a>
           </figcaption></figure>
 </div>
+<p id="section-4.8-3">The <code>done</code> field defaults to false.<a href="#section-4.8-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2498,19 +2499,21 @@ as <code>tls_cipher</code>, are logged in both the local and the remote event.<a
 <p id="section-5.3-5">Each setting starts the connection with its default value, or with no value if
 it has no default. A <code>parameters_set</code> event that includes a setting replaces
 its previous value; settings that the event omits keep their values.<a href="#section-5.3-5" class="pilcrow">¶</a></p>
-<p id="section-5.3-6">Implementations are not required to recognize, process, or support every
+<p id="section-5.3-6">The <code>grease_quic_bit</code> and <code>reset_stream_at</code> settings are true if the transport
+parameter is present, and default to false.<a href="#section-5.3-6" class="pilcrow">¶</a></p>
+<p id="section-5.3-7">Implementations are not required to recognize, process, or support every
 parameter that they receive. For example, QUIC implementations ignore
 transport parameters that they do not support; see <span><a href="https://rfc-editor.org/rfc/rfc9000#section-7.4.2" class="relref">Section 7.4.2</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. The <code>unknown_parameters</code> field can log the raw values of such
 parameters, for example reserved (GREASE) parameters, private extensions, or
-experiments.<a href="#section-5.3-6" class="pilcrow">¶</a></p>
-<p id="section-5.3-7">In the case of connection resumption and 0-RTT, some of the server's parameters
+experiments.<a href="#section-5.3-7" class="pilcrow">¶</a></p>
+<p id="section-5.3-8">In the case of connection resumption and 0-RTT, some of the server's parameters
 are stored up-front at the client and used for the initial connection startup.
 They are later updated with the server's reply. In these cases, utilize the
 separate <code>parameters_restored</code> event to indicate the initial values, and this
-event to indicate the updated values, as normal.<a href="#section-5.3-7" class="pilcrow">¶</a></p>
+event to indicate the updated values, as normal.<a href="#section-5.3-8" class="pilcrow">¶</a></p>
 <span id="name-quicparametersset-definitio"></span><div id="quic-parametersset-def">
 <figure id="figure-12">
-          <div class="breakable lang-cddl sourcecode" id="section-5.3-8.1">
+          <div class="breakable lang-cddl sourcecode" id="section-5.3-9.1">
 <pre>
 QUICParametersSet = {
     initiator: Initiator
@@ -2548,11 +2551,9 @@ QUICParametersSet = {
     ? max_datagram_frame_size: uint64
 
     ; RFC9287
-    ; true if present, absent or false if extension not negotiated
     ? grease_quic_bit: bool
 
     ; draft-ietf-quic-reliable-stream-reset
-    ; true if present, absent or false if extension not negotiated
     ? reset_stream_at: bool
 
     * $$quic-parametersset-extension
@@ -2647,7 +2648,7 @@ QUICPacketSent = {
     ? supported_versions: [+ QuicVersion]
     ? raw: RawInfo
     ? datagram_payload_checksum: uint32
-    ? is_mtu_probe_packet: bool .default false
+    ? is_mtu_probe_packet: bool
 
     ? trigger:
       ; RFC 9002 Section 6.1.1
@@ -2673,6 +2674,7 @@ QUICPacketSent = {
 <p id="section-5.5-3">The encryption level and packet number space are not logged explicitly,
 because <code>header.packet_type</code> implies them for the packet types that have them.<a href="#section-5.5-3" class="pilcrow">¶</a></p>
 <p id="section-5.5-4">The <code>datagram_payload_checksum</code> field is described in <a href="#packet-coalescing" class="auto internal xref">Section 9</a>.<a href="#section-5.5-4" class="pilcrow">¶</a></p>
+<p id="section-5.5-5">The <code>is_mtu_probe_packet</code> field defaults to false.<a href="#section-5.5-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-packetreceived">
@@ -2859,7 +2861,7 @@ QUICPacketsAcked = {
 <a href="#name-quicpacketsacked-definition" class="selfRef">QUICPacketsAcked definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.9-4">If <code>packet_number_space</code> is omitted, its value is "application_data", the
+<p id="section-5.9-4">The <code>packet_number_space</code> field defaults to "application_data", the
 packet number space that most packets in a typical QUIC connection use.<a href="#section-5.9-4" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2885,8 +2887,6 @@ QUICUDPDatagramsSent = {
     ? raw: [+ RawInfo]
 
     ; ECN bits in the IP header
-    ; if not set, defaults to the value used on the last
-    ; QUICUDPDatagramsSent event
     ? ecn: [+ ECN]
 
     ? datagram_payload_checksums: [+ uint32]
@@ -2901,7 +2901,9 @@ QUICUDPDatagramsSent = {
 </div>
 <p id="section-5.10-3">The RawInfo fields exclude UDP headers, because QUIC implementations do not
 always handle UDP directly.<a href="#section-5.10-3" class="pilcrow">¶</a></p>
-<p id="section-5.10-4">The <code>datagram_payload_checksums</code> field is described in <a href="#packet-coalescing" class="auto internal xref">Section 9</a>.<a href="#section-5.10-4" class="pilcrow">¶</a></p>
+<p id="section-5.10-4">If an event omits the <code>ecn</code> field, the ECN bits are the same as on the last
+<code>udp_datagrams_sent</code> event.<a href="#section-5.10-4" class="pilcrow">¶</a></p>
+<p id="section-5.10-5">The <code>datagram_payload_checksums</code> field is described in <a href="#packet-coalescing" class="auto internal xref">Section 9</a>.<a href="#section-5.10-5" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-udpdatagramsreceived">
@@ -2926,8 +2928,6 @@ QUICUDPDatagramsReceived = {
     ? raw: [+ RawInfo]
 
     ; ECN bits in the IP header
-    ; if not set, defaults to the value on the last
-    ; QUICUDPDatagramsReceived event
     ? ecn: [+ ECN]
 
     ? datagram_payload_checksums: [+ uint32]
@@ -2940,7 +2940,9 @@ QUICUDPDatagramsReceived = {
 <a href="#name-quicudpdatagramsreceived-de" class="selfRef">QUICUDPDatagramsReceived definition</a>
           </figcaption></figure>
 </div>
-<p id="section-5.11-3">The <code>datagram_payload_checksums</code> field is described in <a href="#packet-coalescing" class="auto internal xref">Section 9</a>.<a href="#section-5.11-3" class="pilcrow">¶</a></p>
+<p id="section-5.11-3">If an event omits the <code>ecn</code> field, the ECN bits are the same as on the last
+<code>udp_datagrams_received</code> event.<a href="#section-5.11-3" class="pilcrow">¶</a></p>
+<p id="section-5.11-4">The <code>datagram_payload_checksums</code> field is described in <a href="#packet-coalescing" class="auto internal xref">Section 9</a>.<a href="#section-5.11-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="quic-udpdatagramdropped">
@@ -3748,7 +3750,7 @@ QUICPacketLost = {
     ? header: PacketHeader
 
     ? frames: [* $QuicFrame]
-    ? is_mtu_probe_packet: bool .default false
+    ? is_mtu_probe_packet: bool
     ? trigger:
         "reordering_threshold" /
         "time_threshold" /
@@ -3768,7 +3770,7 @@ that is then marked for retransmission can be logged with the
 <code>marked_for_retransmit</code> event (<a href="#quic-markedforretransmit" class="auto internal xref">Section 7.5</a>).<a href="#section-7.4-3" class="pilcrow">¶</a></p>
 <p id="section-7.4-4">The <code>is_mtu_probe_packet</code> field marks a packet that was sent as a Path MTU
 probe. The loss of such a packet is not a reliable sign of congestion; see
-<span><a href="https://rfc-editor.org/rfc/rfc9000#section-14.4" class="relref">Section 14.4</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>.<a href="#section-7.4-4" class="pilcrow">¶</a></p>
+<span><a href="https://rfc-editor.org/rfc/rfc9000#section-14.4" class="relref">Section 14.4</a> of [<a href="#QUIC-TRANSPORT" class="cite xref">QUIC-TRANSPORT</a>]</span>. It defaults to false.<a href="#section-7.4-4" class="pilcrow">¶</a></p>
 <p id="section-7.4-5">The <code>trigger</code> field <span class="bcp14">SHOULD</span> be logged. Its value shows how loss detection
 declared the packet lost:<a href="#section-7.4-5" class="pilcrow">¶</a></p>
 <ul class="normal">
@@ -4509,15 +4511,16 @@ NewTokenFrame = {
 <p id="section-8.13.9-1">If the STREAM frame contains a length field, it <span class="bcp14">MUST</span> be logged in the qlog
 <code>raw.length</code> field. If it does not, the implementation <span class="bcp14">MAY</span> calculate the actual
 frame byte length itself and log that in <code>raw.length</code> if necessary.<a href="#section-8.13.9-1" class="pilcrow">¶</a></p>
+<p id="section-8.13.9-2">The <code>offset</code> field defaults to 0, and the <code>fin</code> field defaults to false.<a href="#section-8.13.9-2" class="pilcrow">¶</a></p>
 <span id="name-streamframe-definition"></span><div id="streamframe-def">
 <figure id="figure-62">
-            <div class="lang-cddl sourcecode" id="section-8.13.9-2.1">
+            <div class="lang-cddl sourcecode" id="section-8.13.9-3.1">
 <pre>
 StreamFrame = {
     frame_type: "stream"
     stream_id: uint64
-    ? offset: uint64 .default 0
-    ? fin: bool .default false
+    ? offset: uint64
+    ? fin: bool
     ? raw: RawInfo
 }
 </pre>
