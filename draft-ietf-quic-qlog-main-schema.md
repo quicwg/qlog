@@ -1414,6 +1414,16 @@ Finally, for event types whose data (partially) overlap with other event types'
 definitions, where necessary the document defining them should include explicit
 guidance on which to use in specific situations.
 
+## Relationship to On-the-Wire Data {#on-the-wire}
+
+Events reflect the view of the implementation that logs them. This can differ
+from what was sent or received on the wire, for example because of a bug.
+
+Event schemas assume a correct implementation when they let one logged value
+imply another, or when they leave out data that the wire already shows. For
+example, the QUIC `packet_sent` event does not log the encryption level, because
+the packet type implies it {{QLOG-QUIC}}.
+
 ## Tooling Expectations
 
 qlog is an extensible format and it is expected that new event schemas will
@@ -1443,9 +1453,9 @@ events, logged only when a value changes (e.g., `spin_bit_updated` or
 
 Finally, many state changes can be inferred from data on the wire (e.g., flow
 control limit changes). Event schemas typically do not define events for these,
-because a bug-free and spec-compliant implementation already reveals the change
-on the wire. Exceptions have been made for common events that benefit from being
-easy to identify or log individually (e.g., `packets_acked`).
+because the data on the wire already reveals the change; see {{on-the-wire}}.
+Exceptions have been made for common events that benefit from being easy to
+identify or log individually (e.g., `packets_acked`).
 
 # The Generic Event Schemas {#generic-event-schema}
 
@@ -1944,6 +1954,10 @@ connection setup events) are later overwritten by "newer" events. Alternatively,
 some events can be intentionally omitted out of privacy or file size
 considerations. Tool authors are encouraged to make their tools robust enough to
 still provide adequate output for incomplete logs.
+
+Tool authors should also be aware that events reflect the view of the logging
+implementation; see {{on-the-wire}}. A trace can therefore disagree with a
+packet capture, or with a trace from another vantage point.
 
 # Security and Privacy Considerations {#privacy}
 
