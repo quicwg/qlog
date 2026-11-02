@@ -613,7 +613,7 @@ perspectives manually.
 
 # Implementation {#implementation}
 
-An Implementation describes the software that generated a trace, defined in
+An Implementation describes properties of a logger, defined in
 {{implementation-def}} as:
 
 ~~~ cddl
