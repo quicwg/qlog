@@ -630,7 +630,7 @@ The optional `name` field contains the name of the implementation. The optional
 for example a release number or a commit hash.
 
 The Implementation can contain other fields, for example build or configuration
-details. Tools MUST ignore fields they do not recognize.
+details.
 
 JSON serialization example:
 
