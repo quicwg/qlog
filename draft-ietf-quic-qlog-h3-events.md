@@ -213,10 +213,11 @@ multiple instances of `parameters_set` with different fields set.
 
 The `initiator` field is "local" for settings that this endpoint sent, and
 "remote" for settings that it received.
+The `initiator` field is required.
 
 ~~~ cddl
 HTTP3ParametersSet = {
-    ? initiator: Initiator
+    initiator: Initiator
 
     ; RFC9114
     ? max_field_section_size: uint64
