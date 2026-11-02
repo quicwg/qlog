@@ -981,6 +981,11 @@ their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-h3-events-13:
+{:numbered="false"}
+
+* Wide range of editorial and consistency changes
+
 ## Since draft-ietf-quic-qlog-h3-events-12:
 {:numbered="false"}
 

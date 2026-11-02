@@ -2332,6 +2332,11 @@ Oku, and Jonathan Lennox for their feedback and suggestions.
 # Change Log
 {:numbered="false" removeinrfc="true"}
 
+## Since draft-ietf-quic-qlog-main-schema-14:
+{:numbered="false"}
+
+* Wide range of editorial and consistency changes
+
 ## Since draft-ietf-quic-qlog-main-schema-13:
 {:numbered="false"}
 

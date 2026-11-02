@@ -2609,6 +2609,7 @@ Oku, and Jonathan Lennox for their feedback and suggestions.
 {:numbered="false"}
 
 * Added datagram_dropped (#550)
+* Wide range of editorial and consistency changes
 
 ## Since draft-ietf-qlog-quic-events-12:
 {:numbered="false"}
