@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-01T03:50:14.764455+00:00",
+  "timestamp": "2026-11-03T04:56:21.536049+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10246,15 +10246,15 @@
       "id": "I_kwDOCrLn6M8AAAABS39jFA",
       "title": "How to log dropped QUIC datagrams?",
       "url": "https://github.com/quicwg/qlog/issues/550",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "In quic-go, we drop received DATAGRAM payloads when the receive queue is full, i.e. when the application isn't reading datagrams fast enough. It would be useful to log this in qlog: https://github.com/quic-go/quic-go/issues/5877.\n\n`packet_dropped` doesn't fit, since the packet was successfully received and is still acknowledged. `udp_datagram_dropped` is about UDP datagrams, and `datagram_data_moved` doesn't have a way to indicate that the data was discarded.\n\nShould we add a `datagram_data_dropped` event?",
       "createdAt": "2026-09-24T01:17:19Z",
-      "updatedAt": "2026-10-24T19:24:12Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-02T10:04:21Z",
+      "closedAt": "2026-11-02T10:04:21Z",
       "comments": [
         {
           "author": "LPardue",
@@ -10684,7 +10684,7 @@
       "id": "I_kwDOCrLn6M8AAAABZbnsbQ",
       "title": "`.default` forbids sending the default value",
       "url": "https://github.com/quicwg/qlog/issues/611",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -10693,8 +10693,8 @@
       "labels": [],
       "body": "In CDDL, `.default` also implies `.ne`: \"the implied .ne control is there to prevent this value from being sent over the wire\" (RFC 8610 Section 3.8.6). So strictly, a field with `.default` must not carry its default value.\n\nThe drafts use `.default` in two ways.\n\n- On optional fields in quic-events: `done`, `is_mtu_probe_packet` (twice), and StreamFrame `offset` and `fin`. Strictly, `\"fin\": false` is invalid. Implementations differ here: aioquic and picoquic log `fin` on every STREAM frame, while quiche and quic-go log it only when it's true.\n- On types and required fields in the main schema: `clock_type`, `RFC3339DateTime`, `TimeFormat`, and `TupleID`. RFC 8610 says `.default` \"is only meaningful when the control type is used in an optional context\". `TupleID` is also the type of the required `tuple_id` in `tuple_assigned`, and quic-events says to log `\"\"` there for the default tuple, which the implied `.ne` forbids.\n\nThe `cddl` gem and cddl-rs both ignore `.default`, so none of this fails validation today.\n\nOptions:\n\n1. Leave it as it is.\n2. Replace every `.default X` with a comment saying the field defaults to X. This keeps the meaning without the implied `.ne`.\n3. Keep `.default` on the optional fields, which is how CDDL intends it, and replace it with a comment on the types and required fields.\n4. Keep `.default`, and say that producers omit fields that have their default value. Implementations that log defaults explicitly would then need to change.",
       "createdAt": "2026-10-23T16:32:51Z",
-      "updatedAt": "2026-10-28T18:24:52Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-02T09:57:46Z",
+      "closedAt": "2026-11-02T09:57:46Z",
       "comments": [
         {
           "author": "rmarx",
@@ -10717,7 +10717,7 @@
       "id": "I_kwDOCrLn6M8AAAABZbyzww",
       "title": "What does a `parameters_set` event without `initiator` mean?",
       "url": "https://github.com/quicwg/qlog/issues/612",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -10726,8 +10726,8 @@
       "labels": [],
       "body": "`initiator` is optional in `parameters_set`, in both quic-events and h3-events, but neither document says what an event without it means. quic-events also says the field \"MUST be correct for every setting in that event\".\n\nIt used to be explained. The 2019 definition said the field (then called `owner`) \"can be left for bidirectionally negotiated parameters, e.g. ALPN\". That note was removed when ALPN moved to its own event, but the field stayed optional. One negotiated setting is still in `parameters_set`: `tls_cipher`.\n\nIn practice, the implementations I checked set it on every event: quiche (QUIC and HTTP/3), quic-go, neqo, and picoquic (which still uses the old name, `owner`). quiche, the only one that logs `tls_cipher`, includes it in both its \"local\" and its \"remote\" event.\n\nOptions:\n\n1. Make `initiator` required. Negotiated settings such as `tls_cipher` would then appear in the \"local\" or \"remote\" event, as quiche does today.\n2. Keep it optional, and say again that leaving it out means the settings were negotiated by both sides.\n3. Leave it as it is.",
       "createdAt": "2026-10-23T16:45:13Z",
-      "updatedAt": "2026-10-28T18:25:51Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-02T09:56:37Z",
+      "closedAt": "2026-11-02T09:56:37Z",
       "comments": [
         {
           "author": "rmarx",
@@ -10766,15 +10766,15 @@
       "id": "I_kwDOCrLn6M8AAAABZcyFlQ",
       "title": "Say that events reflect the logger's view",
       "url": "https://github.com/quicwg/qlog/issues/615",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "This is common sense but we don't state it plainly in one place. A qlog event records what the logging implementation did or believes, which can differ from what was on the wire. A trace from one endpoint can disagree with a packet capture or with a trace from another vantage point, that's a feature not a bug!\n\nThe main schema doesn't anything but several definitions rely on it:\n\n- QUIC `packet_sent` and `packet_received` don't log the encryption level or packet number space, because `header.packet_type` implies them. If an implementation has a bug, the two can differ. The QUIC document used to add \"(assuming correct implementation)\"; ae9dda0 dropped that, because it applies to every event.\n- QUIC `marked_for_retransmit` lets implementations log \"the appropriate frame instance here even if that frame was never or will never be put on the wire\".\n- Section 8.5 of the main schema leaves out events for state changes that are visible on the wire, \"because a bug-free and spec-compliant implementation already reveals the change on the wire\".\n\nOptions:\n\n1. State it once in Section 8, which introduces concrete event types, so event schemas can rely on it instead of repeating a caveat per event. Section 8.5 can then point to that statement instead of its own \"bug-free and spec-compliant\" phrasing.\n2. Also add a paragraph to Section 13 (Tooling Requirements), next to the one about missing events, so tools don't treat such a disagreement as an error.\n3. No change.\n",
       "createdAt": "2026-10-23T17:56:18Z",
-      "updatedAt": "2026-10-23T17:56:18Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-02T09:56:02Z",
+      "closedAt": "2026-11-02T09:56:02Z",
       "comments": []
     },
     {
@@ -10870,15 +10870,15 @@
       "id": "I_kwDOCrLn6M8AAAABbSnLIg",
       "title": "Event schema URN SHOULDs apply to private schemas, which MUST NOT use them",
       "url": "https://github.com/quicwg/qlog/issues/630",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Event Schema URIs says:\n\n> Event schemas that define a new namespace SHOULD use a URN of the form `urn:ietf:params:qlog:events:<namespace identifier>` \u2026\n>\n> Event schemas that extend an existing namespace SHOULD use a URN of the form `urn:ietf:params:qlog:events:<namespace identifier>#<extension identifier>` \u2026\n>\n> Private or non-standard event schemas MAY be registered in the \"qlog event schema URIs\" registry but MUST NOT use a URN of the forms outlined above.\n\nThe two SHOULDs apply to every event schema, so a private schema is told both to use the URN and not to use it. Lol. The expert review text then rejects URNs \"reserved for schemas defined by an RFC above\", but nothing above reserves them.\n\nProposal: limit the two event SHOULDs to event schemas defined by RFCs, as in the log file section. This doesn't change what any schema can do, because the MUST NOT already applies to private schemas.\n",
       "createdAt": "2026-10-30T20:24:52Z",
-      "updatedAt": "2026-10-30T20:24:52Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-02T09:59:08Z",
+      "closedAt": "2026-11-02T09:59:08Z",
       "comments": []
     },
     {
@@ -10983,6 +10983,37 @@
       "updatedAt": "2026-10-31T13:08:37Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 641,
+      "id": "I_kwDOCrLn6M8AAAABb5E2RA",
+      "title": "Trace and TraceSeq have no extension points",
+      "url": "https://github.com/quicwg/qlog/issues/641",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "While https://github.com/quicwg/qlog/pull/640 seeks to add a new field to Trace/TraceSeq it also highlights that qlog lacks flexibility in this area, which is a weird gap to leave.\n\n`Trace` and `TraceSeq` are closed CDDL maps, so any field the main schema doesn't define fails validation. `Event` and `CommonFields` allow custom fields via `* text => any`.\n\n#136 (code version on Trace) was closed because the Trace `configuration` field covered it. #308 then removed `configuration`, expecting implementations to add their own fields, which the CDDL doesn't allow. Derp(?)\n\nOptions:\n\n1. Add `* text => any` to `Trace` and `TraceSeq`, like `Event`.\n2. Add a group socket, e.g. `* $$trace-extension`, like the event extension points from #417.\n3. Leave both closed.\n\n`LogFile` is closed in the same way, not sure if that needs the flexibility too\n",
+      "createdAt": "2026-11-02T16:38:27Z",
+      "updatedAt": "2026-11-02T16:53:42Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I think we should do either (1) or (2), in addition to #640.",
+          "createdAt": "2026-11-02T16:48:57Z",
+          "updatedAt": "2026-11-02T16:48:57Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "agree. either (1) or (2) feels right to me, along with 640",
+          "createdAt": "2026-11-02T16:53:18Z",
+          "updatedAt": "2026-11-02T16:53:42Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -31874,24 +31905,26 @@
       "id": "PR_kwDOCrLn6M8AAAABGfZPMA",
       "title": "add quic:datagram_dropped event",
       "url": "https://github.com/quicwg/qlog/pull/551",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "Fixes #550.",
       "createdAt": "2026-10-03T23:26:52Z",
-      "updatedAt": "2026-10-31T09:28:04Z",
+      "updatedAt": "2026-11-02T10:04:23Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f8dfcfcb3d53bb6ec1f1d6c0beb4734005ac6424",
       "headRepository": "quicwg/qlog",
       "headRefName": "datagram-dropped",
       "headRefOid": "23410beb61e7e10bda5c03ea616f8884c3dcd450",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-02T10:04:20Z",
+      "mergedAt": "2026-11-02T10:04:20Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "1630334badbdbd6a38f8396eff77104b3578e074"
+      },
       "comments": [],
       "reviews": [
         {
@@ -32368,7 +32401,7 @@
       "labels": [],
       "body": "Drafted with AI assistance; reviewed and edited by me.\n\nFixes #27. Fixes #121. \n\nApologies for the wall of slop but it's a way of being super comprehensive. Reviewers can just look at the fairly straightforward diff and see if they think it covers the issues\n\n### Notable changes \n\nChanges to QUICParametersSet:\n\n    ? session_ticket: SessionTicket       ; replaces ? resumption_allowed: bool\n    ? early_data_enabled: bool            ; unchanged type, semantics clarified\n    ? early_data_accepted: bool           ; new\n    ? early_data_rejection_reason: text   ; new\n\nChanges to QUICParametersRestored (its transport parameters move into a shared type):\n\n    QUICParametersRestored = {\n        transport_parameters: RememberedTransportParameters\n        * $$quic-parametersrestored-extension\n    }\n\nNew types:\n\n    RememberedTransportParameters = {\n        ; the fields previously in QUICParametersRestored, unchanged\n        * $$quic-rememberedtransportparameters-extension\n    }\n\n    SessionTicket = {\n        ? transport_parameters: RememberedTransportParameters\n        ? raw: RawInfo\n        * $$quic-sessionticket-extension\n    }\n\n### Deets\n- session_ticket: a ticket was sent or received. The direction comes from the existing initiator field: local means a server issued the ticket in NewSessionTicket or a client offered it in ClientHello; remote means it was received from the peer. SessionTicket holds the QUIC and application state associated with the ticket (RFC 9001 Section 4.6.3), not the TLS ticket itself; state other than transport parameters can be added through $$quic-sessionticket-extension.\n- early_data_enabled: true if a server enabled 0-RTT in NewSessionTicket (for a future connection), or a client offered 0-RTT in ClientHello (on this connection); RFC 9001 Section 4.6.1.\n- early_data_accepted: true if the server accepted 0-RTT, false if it rejected it; RFC 9001 Section 4.6.2. The server logs it with initiator local, the client with initiator remote.\n- early_data_rejection_reason: implementation-defined free text describing why 0-RTT was rejected, for example a transport parameter mismatch (RFC 9000 Section 7.4.1) or a HelloRetryRequest (RFC 9001 Section 4.6.2). Rejection carries no reason on the wire, so usually only the server can log it. Free text rather than an enumeration, because implementations distinguish different and overlapping sets of reasons: BoringSSL has 13, mvfst distinguishes each transport parameter check, and quic-go has two.\n- RememberedTransportParameters: the transport parameters stored for 0-RTT (RFC 9000 Section 7.4.1). The same type is used for what a client restores (QUICParametersRestored.transport_parameters) and for what is stored with a ticket (SessionTicket.transport_parameters), so a transport parameter added by an extension appears in both.\n- QUICParametersRestored and HTTP3ParametersRestored: the text now says servers can also use them for the transport parameters or SETTINGS they recover from a ticket (RFC 9000 Section 7.4.1, RFC 9114 Section 7.2.4.2). HTTP3ParametersRestored has no CDDL change.\n\n### The long and winding history of discussions\nRequests on #27:\n\n- 2019-10-15, rmarx (relaying jlaine): resumption_allowed: bool and early_data_enabled: bool don't distinguish 0-RTT used now from 0-RTT enabled for later. early_data_enabled is now defined for each case, and early_data_accepted: bool records the outcome.\n- 2021-10-04, marten-seemann: no way to log whether 0-RTT was accepted or rejected. Added as early_data_accepted: bool, with early_data_rejection_reason: text for why.\n- 2024-10-21, marten-seemann: separate resumption events, with QUICParametersSet kept for transport parameters. Not taken; this follows the 2025-10-14 interim outcome on #121 below.\n- 2025-10-14 interim (interim-2025-quic-02):\n  - Kazuho: \"For a Server, you either just accept 0-RTT or not\". Marten: \"at client-side we do want to be able to log that, since that influences how we re-use the stream etc.\" early_data_accepted: bool is logged by both: the server with initiator local, the client with initiator remote.\n  - Outcome: \"logging 0-rtt accepting / rejection seems useful; @marten-seemann will prepare a PR for that.\" Covered by early_data_accepted: bool and early_data_rejection_reason: text.\n- 2025-10-14, kazuho (on #27 after the interim): scope this to 0-RTT, not resumption, which is internal to TLS. No resumption-outcome field is added.\n- 2025-10-18, kazuho: resumption_allowed is misnamed and lacks the reverse direction. Replaced by session_ticket: SessionTicket; initiator local covers a ticket the endpoint sends.\n- 2026-07-02, rmarx: the presence of a ticket can replace resumption_allowed, without forcing the raw ticket into logs. SessionTicket.raw is a RawInfo, so raw.length alone is enough (QLOG-MAIN Section 11.4).\n\nRequests on #121:\n\n- 2020-11-02, rmarx: no way to log ticket contents when sent or received, or a 0-RTT rejection caused by a mismatch. SessionTicket.transport_parameters and SessionTicket.raw carry the contents. early_data_rejection_reason: text records why 0-RTT was rejected, and a server can compare QUICParametersRestored.transport_parameters with its current QUICParametersSet to see which values differ.\n- 2021-10-04, marten-seemann: parameters_saved and parameters_restored events; clients may also save RTT. What is saved with a ticket is SessionTicket.transport_parameters, what is restored is QUICParametersRestored.transport_parameters, both of type RememberedTransportParameters. Saved RTT and congestion window are left to draft-ietf-tsvwg-careful-resume-qlog, which defines saved_rtt and saved_congestion_window and can add them through $$quic-sessionticket-extension.\n- 2022-12-28, marten-seemann: a TLS event holding the QUIC parts of the ticket and the 0-RTT state. Same content, placed in QUICParametersSet per the 2025-10-14 interim outcome.\n- 2025-10-14 interim (interim-2025-quic-02; notes reposted on #121 by rmarx on 2026-07-02):\n  - Marten: \"We could replicate that for the SessionTicket\", referring to Token and StatelessResetToken. SessionTicket keeps Token's raw field; a typed transport_parameters field replaces Token's free-form details, since transport parameters are what every implementation stores with a ticket.\n  - Mirja: \"logging session ticket is useful, not sure where to put it\". Lucas: \"maybe useful to separate out\". The outcome placed it in parameters_set, which this PR follows.\n  - Kazuho: \"maybe only log QUIC-accessible part of the session ticket blob\", and in the chat, \"It'd be useful (thinks about Careful Resume)\" and \"So logging the QUIC-part of session ticket makes sense.\" SessionTicket is the state associated with the ticket (RFC 9001 Section 4.6.3), not the TLS ticket. Its one concrete field is the part every implementation stores, the transport parameters; careful resume state can be added through $$quic-sessionticket-extension.\n  - Mirja: \"things that are only in RFC9001 should not be in here ,but things that might be in 9000 might make sense\", and in the chat, \"yes if at all tLS would be an extension\". RememberedTransportParameters and server-side restoring cite RFC 9000 Section 7.4.1, and no TLS fields are added. early_data_enabled and early_data_accepted cite RFC 9001 Section 4.6 because QUIC 0-RTT is defined there; like the existing tls_cipher: text, they record TLS outcomes that change QUIC behaviour (marten-seemann on #59, 2024-10-21). early_data_rejection_reason: text does not enumerate TLS-level reasons.\n  - Outcome: \"Marten to propose a PR\". This PR does that; happy to defer if Marten has one in progress.\n- 2026-07-02, rmarx: \"we just want to log the QUIC-accessible part of the session ticket blog as part of `parameters_set`\", and allow \"logging a bogus/encoded value for implementations that dont' want to expose the raw data\". SessionTicket.raw follows the RawInfo truncation rules (QLOG-MAIN Section 11.4), and session tickets are already listed as sensitive (QLOG-MAIN Section 14.1).\n\n#59 (TLS specifics) was closed as a duplicate of #121. This PR adds only TLS outcomes that change QUIC behaviour.",
       "createdAt": "2026-10-19T23:09:02Z",
-      "updatedAt": "2026-10-29T11:13:34Z",
+      "updatedAt": "2026-11-02T03:47:13Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "aa3348d94cdd63aae929245c3a7eb88b28e266bb",
@@ -32392,6 +32425,19 @@
           "body": "Generally LGTM.\n\nHowever, as I indicated in the linked tickets this solves, I'm far from an expert on Session Ticket usage and don't know if this is sufficient for most debugging use cases. So I'd like another approval from someone else like Marten or Mirja/Kazuho before merging. ",
           "createdAt": "2026-10-29T11:13:34Z",
           "updatedAt": "2026-10-29T11:13:34Z",
+          "comments": []
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABVaXAGA",
+          "commit": {
+            "abbreviatedOid": "d6b98f3"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "CHANGES_REQUESTED",
+          "body": "I'm still not a fan of it. These are *not* QUIC parameters. I'm aware that I don't have to log them in the same event as the QUIC transport parameters, and I can emit this event multiple times, but it feels like the wrong abstraction.\n\nI'd prefer to have a separate event for these. I will raise a PR with a concrete proposal in a bit.",
+          "createdAt": "2026-11-02T03:47:13Z",
+          "updatedAt": "2026-11-02T03:47:13Z",
           "comments": []
         }
       ]
@@ -33859,24 +33905,26 @@
       "id": "PR_kwDOCrLn6M8AAAABKUJf6Q",
       "title": "Say that events reflect the logger's view",
       "url": "https://github.com/quicwg/qlog/pull/616",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Closes #615.\n\n- New Section 8.4, \"Relationship to On-the-Wire Data\": events reflect the view of the implementation that logs them, which can differ from the wire. Event schemas assume a correct implementation when one logged value implies another, or when they leave out data the wire shows.\n- Section 8.6 points to it instead of its own \"bug-free and spec-compliant implementation\" phrasing.\n- Section 13 tells tool authors that a trace can disagree with a packet capture, or with a trace from another vantage point.\n",
       "createdAt": "2026-10-23T18:05:19Z",
-      "updatedAt": "2026-10-28T10:29:16Z",
+      "updatedAt": "2026-11-02T09:56:03Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
       "headRepository": "quicwg/qlog",
       "headRefName": "main-schema-logger-view",
       "headRefOid": "44741dbfddef455d771e9a7eaf147c6a256329e6",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-02T09:56:00Z",
+      "mergedAt": "2026-11-02T09:56:00Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "6274af1d92973483a568939e0dc7ec149c888e51"
+      },
       "comments": [],
       "reviews": [
         {
@@ -34013,24 +34061,26 @@
       "id": "PR_kwDOCrLn6M8AAAABLV5yCA",
       "title": "Require initiator in parameters_set",
       "url": "https://github.com/quicwg/qlog/pull/618",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Make `initiator` required in `parameters_set` for QUIC and HTTP/3, following option 1 in #612. A negotiated setting such as `tls_cipher` is logged in both the local and the remote event.\n\nCloses #612",
       "createdAt": "2026-10-28T19:05:01Z",
-      "updatedAt": "2026-10-29T11:07:34Z",
+      "updatedAt": "2026-11-02T09:56:38Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "7ca8965b7110725344a5e7001234f8ee8faf18f5",
       "headRepository": "quicwg/qlog",
       "headRefName": "require-parameters-set-initiator",
       "headRefOid": "284ee91be057c690c2967e48b27e01e05f374729",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-02T09:56:36Z",
+      "mergedAt": "2026-11-02T09:56:36Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "356223b19a1b4d27a10f45d9dd00610807dd4e58"
+      },
       "comments": [],
       "reviews": [
         {
@@ -34053,24 +34103,26 @@
       "id": "PR_kwDOCrLn6M8AAAABLgjFxw",
       "title": "Replace .default with prose",
       "url": "https://github.com/quicwg/qlog/pull/619",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "CDDL seems weird wrt the use of `.default` and how we expect people to use qlog. See #611 for AI's analysis of the problem.\n\nThis PR sidesteps the issue by eliminating use of `.default` (option 2 proposed on #611). I think this approach actually makes it much clearer what our overall design vision / philosophy around defaults is. As such a new subsection in the main schema design overview is added to explain it. Defaults only apply to optional fields; we adapt a new convention that default value (if any) are defined in prose - \"The `X` field defaults to Y.\"\n\nThis conflict with TupleID, but nothing too difficult to deal with later. The high order bit is to decide if we agree with this approach.\n\nCloses #611",
       "createdAt": "2026-10-29T11:38:51Z",
-      "updatedAt": "2026-10-30T13:47:19Z",
+      "updatedAt": "2026-11-02T09:57:46Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "01f51ad68f3ddc22012aa856c14890228b408f53",
       "headRepository": "quicwg/qlog",
       "headRefName": "replace-cddl-default",
       "headRefOid": "f42fc5ad52836bfe9b0a9f001470b4bc4c3b4945",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-02T09:57:44Z",
+      "mergedAt": "2026-11-02T09:57:44Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "6ab7edd53804894e1d3b60fedf1c3931c6561d11"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -34404,7 +34456,7 @@
       "id": "PR_kwDOCrLn6M8AAAABL2S6ng",
       "title": "Main schema: drop the duplicate MUST for the time field",
       "url": "https://github.com/quicwg/qlog/pull/628",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -34413,17 +34465,19 @@
       ],
       "body": "The `time` field is required twice: in Abstract Event Class (\"Each qlog event MUST contain the mandatory fields: `time` \u2026\", added in #322 for the secdir early review) and again at the start of Timestamps (\"Each event MUST include a `time` field\u2026\"). This keeps the first and makes the second descriptive with no normative change.\n",
       "createdAt": "2026-10-30T19:41:15Z",
-      "updatedAt": "2026-10-31T13:19:54Z",
+      "updatedAt": "2026-11-02T09:58:10Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "4bddbbe56a0dbe710ef649668064e3d86f927b25",
       "headRepository": "quicwg/qlog",
       "headRefName": "main-schema-time-must",
       "headRefOid": "6683b0cf7987cc4ea10ed25a47be998d4c5835c4",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-02T09:58:08Z",
+      "mergedAt": "2026-11-02T09:58:08Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "d950f5a1bd245ddf46ec3cd837d256349cec69a7"
+      },
       "comments": [],
       "reviews": [
         {
@@ -34446,24 +34500,26 @@
       "id": "PR_kwDOCrLn6M8AAAABL2xIKw",
       "title": "Main schema: scope the event schema URN forms to RFC-defined schemas",
       "url": "https://github.com/quicwg/qlog/pull/631",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "Closes #630.\n\nThe two SHOULDs in Event Schema URIs that recommend the `urn:ietf:params:qlog:events:` forms apply to every event schema, while private schemas MUST NOT use those forms. OOOPS.\n\nThis PR limits both SHOULDs to event schemas defined by RFCs, as Concrete Log File Schema URIs already does.",
       "createdAt": "2026-10-30T20:26:23Z",
-      "updatedAt": "2026-10-30T20:26:26Z",
+      "updatedAt": "2026-11-02T09:59:08Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "4bddbbe56a0dbe710ef649668064e3d86f927b25",
       "headRepository": "quicwg/qlog",
       "headRefName": "main-schema-event-urn-scope",
       "headRefOid": "4cd499a0248a611be303ee4533acb298d479e95d",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-02T09:59:06Z",
+      "mergedAt": "2026-11-02T09:59:06Z",
+      "mergedBy": "rmarx",
+      "mergeCommit": {
+        "oid": "9f5c8f46a5e06d1db0e9b9b57ddbe98032ad0d4f"
+      },
       "comments": [],
       "reviews": []
     },
@@ -34532,6 +34588,113 @@
           "createdAt": "2026-10-31T18:25:09Z",
           "updatedAt": "2026-10-31T18:25:09Z",
           "comments": []
+        }
+      ]
+    },
+    {
+      "number": 639,
+      "id": "PR_kwDOCrLn6M8AAAABMQpFjQ",
+      "title": "add reset_stream_at to parameters_restored",
+      "url": "https://github.com/quicwg/qlog/pull/639",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "#482 added reset_stream_at to parameters_set, but missed parameters_restored. draft-ietf-quic-reliable-stream-reset requires both endpoints to remember it for 0-RTT.",
+      "createdAt": "2026-11-02T09:07:04Z",
+      "updatedAt": "2026-11-02T09:07:07Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "71e035856d0d3d6bf12a83302d42f04e9c39c194",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "parameters-restored-reset-stream-at",
+      "headRefOid": "524ae15da1dbd6e2e71f6cbcdaa654f974d6cb80",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 640,
+      "id": "PR_kwDOCrLn6M8AAAABMVQ7yw",
+      "title": "add an implementation field to Trace and TraceSeq",
+      "url": "https://github.com/quicwg/qlog/pull/640",
+      "state": "OPEN",
+      "author": "marten-seemann",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "#136 asked for a way to log which implementation and version produced a trace, and was closed in favor of the `configuration` field. #187 then removed `configuration`, assuming that implementations could add such fields themselves. However, `Trace` and `TraceSeq` don't allow custom fields, so there's currently no valid place for this information, and implementations resort to free-text fields like `title` or `vantage_point.name`.\n\nI'd argue that this information is really useful. When looking at a qlog, the first thing I want to know is which stack I'm debugging. The version is just as valuable: it tells me whether a suspected bug might already have been fixed in a later release.",
+      "createdAt": "2026-11-02T15:10:27Z",
+      "updatedAt": "2026-11-02T16:33:38Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "1630334badbdbd6a38f8396eff77104b3578e074",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "trace-implementation",
+      "headRefOid": "def605045131e8e202f3e201aabd9d17b09f45fd",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> However, Trace and TraceSeq don't allow custom fields\r\n\r\nThat seems like an oversight.",
+          "createdAt": "2026-11-02T16:33:38Z",
+          "updatedAt": "2026-11-02T16:33:38Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABVh0chw",
+          "commit": {
+            "abbreviatedOid": "f733c78"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-11-02T16:23:07Z",
+          "updatedAt": "2026-11-02T16:23:53Z",
+          "comments": [
+            {
+              "originalPosition": 42,
+              "body": "nit: we don't use software in the doc already, and logger seems to be a more established convention that incorporates the build or config stuff mention below.\n\n```suggestion\nAn Implementation describes properties of a logger, defined in\n```",
+              "createdAt": "2026-11-02T16:23:07Z",
+              "updatedAt": "2026-11-02T16:23:54Z"
+            },
+            {
+              "originalPosition": 59,
+              "body": "The MUST requirement seems like something we can state once for every event and data type a tool has to deal with?",
+              "createdAt": "2026-11-02T16:23:49Z",
+              "updatedAt": "2026-11-02T16:23:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABVh7zlw",
+          "commit": {
+            "abbreviatedOid": "fe4fbba"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2026-11-02T16:32:17Z",
+          "updatedAt": "2026-11-02T16:32:17Z",
+          "comments": [
+            {
+              "originalPosition": 59,
+              "body": "Right. Let's remove this sentence.\n```suggestion\ndetails.\n```",
+              "createdAt": "2026-11-02T16:32:17Z",
+              "updatedAt": "2026-11-02T16:32:17Z"
+            }
+          ]
         }
       ]
     }
