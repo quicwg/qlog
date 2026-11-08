@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-03T04:56:21.536049+00:00",
+  "timestamp": "2026-11-08T03:53:49.454908+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -695,12 +695,11 @@
       ],
       "labels": [
         "design",
-        "quic-http3-fields",
-        "current-version"
+        "discuss"
       ],
       "body": "using transport.parameters_set there are two parameters to signal 0-RTT:\r\n- resumption_allowed\r\n- early_data_enabled\r\n\r\nAs pointed out by @jlaine, these are a bit ambiguous, as 0-RTT can either be used for the current connection or enabled for a future connection.\r\n\r\nSolution 1:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new events: session_ticket_sent/received (with early_data_enabled?:boolean member)\r\n\r\nSolution 2:\r\n- Rename parameters to resumption_accepted and early_data_accepted\r\n- Add new parameters: resumption_offered and early_data_offered",
       "createdAt": "2019-10-15T09:03:47Z",
-      "updatedAt": "2026-07-02T11:32:09Z",
+      "updatedAt": "2026-11-07T15:30:29Z",
       "closedAt": null,
       "comments": [
         {
@@ -3555,12 +3554,11 @@
       ],
       "labels": [
         "design",
-        "quic-http3-fields",
-        "current-version"
+        "discuss"
       ],
       "body": "Currently, we can log which params/settings were restored upon attempting 0-RTT, but not which ones were actually stored at the end of a connection (though we might assume it were the correct ones, using the values from `parameters_set`).\r\n\r\nFor a server which encodes this information in for example the SessionTicket, we also cannot log which values are in the ticket when sending it, nor when receiving it, nor if early data was denied because of a mismatch therein. ",
       "createdAt": "2020-11-02T23:14:15Z",
-      "updatedAt": "2026-07-02T11:33:01Z",
+      "updatedAt": "2026-11-07T15:30:38Z",
       "closedAt": null,
       "comments": [
         {
@@ -10786,10 +10784,12 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "design"
+      ],
       "body": "Many optional fields have a CDDL comment that says when the field applies. For example, in quic-events:\n\n    ; only if packet_type === \"1RTT\"\n    ? spin_bit: bool\n\n    ; if error === \"unknown\"\n    ? error_code: uint64\n\nThe main schema does the same in prose: \"The `flow` field is only required if the type is \"network\"\", while the CDDL makes `flow` optional for every type.\n\nIts unclear if these conditions are a rule. \"only if\" reads as \"don't log the field otherwise\". \"if\" and \"needed for\" read as \"log the field when this holds\": an \"unknown\" error without `error_code` loses the error.  CDDL validators ignore comments. And BCP 14 keywords don't belong in CDDL. \n\nThere are almost 30 such comments across quic-events and h3-events.\n\n#619 moves defaults out of the CDDL by removing `.default` and using prose to specify things. We can do the same for these. `PacketHeader` is the most egregious with eight conditions. A PR has a lot of work to do, but I think it can be done.\n\nPreppring a PR for this will raise some questions around BCP 14 keywords. Maybe some SHOULDs will be required because absences loses important information. Candidates:\n\n- `error_code` when `error` is \"unknown\" (connection_closed and four frame types)\n- `trigger_frame_type` for a transport CONNECTION_CLOSE\n- `key_phase` for 1-RTT key updates (key_updated, key_discarded)\n- `delta` when a recovery timer is set\n- HTTP/3 priority `stream_id` or `push_id`, depending on the prioritized element\n- `flow` for a network vantage point\n",
       "createdAt": "2026-10-30T18:31:18Z",
-      "updatedAt": "2026-10-30T18:31:18Z",
+      "updatedAt": "2026-11-07T15:35:31Z",
       "closedAt": null,
       "comments": []
     },
@@ -10802,10 +10802,12 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "discuss"
+      ],
       "body": "The main schema and quic-events place over 20 MUST/SHOULD/MAY requirements on tools. Some of them are needed for interoperability; many describe what a good tool does. I suspect many don't meet the bar for BCP language\n\nSome requirements follow from a freedom that loggers have, so a tool that ignores them misreads valid logs (lets call these group 1). For example:\n\n- \"qlog tools MUST NOT depend on\" field order (main schema, Use of CDDL)\n- \"Tools MUST be able to deal with these fields being defined either on each event individually or combined in common_fields\" (main schema, CommonFields)\n\nOthers describe features or documentation (group 2). A tool that skips them still reads every log correctly:\n\n- \"Tool implementers SHOULD at least add support for showing the contents of these events\" (Base importance level)\n- \"Tools ingesting qlog MUST indicate which serialization format(s), qlog file and event schema(s), compression methods and potentially other input file formats (for example .pcap) they support\" (Tooling Requirements). This doesn't say whom the tool tells, so it can't be tested.\n\nThere's a few cases of keywords used for an expectation rather than on behaviour, such as \"It SHOULD NOT be expected that general-purpose tools will recognize or visualize all forms of qlog extension\" (group 3). This is not a valid use of keywords.\n\nThe rule for unknown data appears in five places with different strengths: unknown `common_fields` entries \"MUST be disregarded by the user and tools\", tools \"MUST ignore\" what they can't visualize, and tools \"SHOULD indicate even unknown event occurrences\".\n\nThe documents also give the consumer several names: tools, tool implementers, tool authors, qlog parsers, and the user. None of these is defined.\n\nProposal:\n\n1. Group 1 - Keep BCP 14 keywords\n2. Group 2 - Write feature, user-interface, and documentation guidance as prose.\n3. Group 3 - Rewrite each expectation as the behaviour it implies or as a plain statement of fact.\n4. State the rules for unknown data and missing events once, in Tooling Requirements, and point to it from elsewhere. The main schema has two tooling sections far apart, Tooling Expectations (8.4) and Tooling Requirements (13); consider merging them at the same time\n5. Use one name for the consumer role.\n\n\n",
       "createdAt": "2026-10-30T18:56:09Z",
-      "updatedAt": "2026-10-30T20:51:47Z",
+      "updatedAt": "2026-11-07T15:34:59Z",
       "closedAt": null,
       "comments": [
         {
@@ -10826,12 +10828,22 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "editorial"
+      ],
       "body": "We have consensus on sniffing and I don't want to question that. However, there is a bit of ambiguity we can tighten up.\n\nFirst, there requirements that have some tension. These are compatible requirements but tool developers might miss the chance of a problem.\n\n- Abstract LogFile Class: \"the `file_schema` and `serialization_format` fields and their values SHOULD be in the first 256 characters/bytes of the resulting log file\".\n- Use of CDDL: the order of fields in JSON and JSON-SEQ \"is also not significant, and qlog tools MUST NOT depend on it\".\n\nSecond, \"characters/bytes\" are not the same thing and being non-specific doesn't help.\n\nOptions:\n\n1. Add something like this after the SHOULD: \"Tools can look for these fields before parsing the whole file. Because field order is not significant, a tool that does not find them there falls back to other information, such as the file extension, or to parsing the file.\"\n2. Change \"characters/bytes\" to \"bytes\". Byte-based sniffing matches common practice.\n3. Leave the text as it is.",
       "createdAt": "2026-10-30T19:23:52Z",
-      "updatedAt": "2026-10-30T19:23:52Z",
+      "updatedAt": "2026-11-07T15:33:12Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "As an individual, I prefer option 2",
+          "createdAt": "2026-11-07T15:33:12Z",
+          "updatedAt": "2026-11-07T15:33:12Z"
+        }
+      ]
     },
     {
       "number": 627,
@@ -10842,10 +10854,12 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "design"
+      ],
       "body": "The secdir early review of -05 asked for \"Each trace MUST have a single vantage_point\" ([review](https://datatracker.ietf.org/doc/review-ietf-quic-qlog-main-schema-05-secdir-early-harkins-2023-04-26/)). #322 added that sentence. The main-schema reflow in #331 removed it, and I can't find a discussion of the removal. \n\nNothing seems to have replaced the MUST requirement. The main schema now only says that a trace is \"conventionally\" or \"in the normal use case\" collected at a single vantage point (Design Overview, Trace). `vantage_point` is optional in Trace and TraceSeq.\n\nOptions:\n\n1. Restore the rule: \"Each trace MUST have a single vantage point.\" `vantage_point` stays optional, so a trace can leave its vantage point unstated, but can't mix them.\n2. Restore the rule and make `vantage_point` required. The \"unknown\" type covers loggers that don't know their vantage point. This changes the CDDL.\n",
       "createdAt": "2026-10-30T19:36:12Z",
-      "updatedAt": "2026-10-30T19:36:12Z",
+      "updatedAt": "2026-11-07T15:31:03Z",
       "closedAt": null,
       "comments": []
     },
@@ -10906,10 +10920,12 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "design"
+      ],
       "body": "JSON Interoperability says:\n\n> serializers MAY encode uint64 values using JSON strings. qlog parsers, therefore, SHOULD support parsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band information indicating that neither the serializer nor parser are constrained by I-JSON.\n\nThe \"unless\u2026\" clause is pretty weird. Maybe its original intent got corrupted but for where we stand now:\n\n- There's no standard way to share either in-band or out-of-band information like this. For example, nothing in a qlog file says which form the serializer used. (not withstanding the JSON itself)\n- serializer's can do what they like due to the MAY, I-JSON isn't much of a reason as it reads\n- RFC 7493 Section 2.2 recommends strings when numbers need exact values beyond double precision, with 64-bit integers as its example, and says this \"requires that the receiving program understand the intended semantic of the value\". For fields defined in a qlog schema, the CDDL gives that meaning.\n\nOptions:\n\n1. Delete it, so parsers SHOULD accept uint64 values as strings or numbers. The SHOULD still lets a closed setup skip strings.\n2. Reword it to the real condition: \"unless out-of-band information says the serializer writes uint64 values as numbers\".\n3. Leave it.\n\nSeparately, both JSON mapping sections say \"the official CDDL-to-JSON mapping defined in Appendix E of CDDL SHOULD be employed\". Appendix E says a uint is a JSON number, so uint64 strings depart from it. The text doesn't say so. Was there a reason we didn't make Appendix E a MUST requirement?\n\nOptions compatible with above\"\n\n1. Keep the SHOULD and add a pointer: \"\u2026except that uint64 values can be strings; see JSON Interoperability\".\n2. Make it a MUST, with uint64 strings as the only allowed departure.",
       "createdAt": "2026-10-30T21:20:58Z",
-      "updatedAt": "2026-10-30T21:20:58Z",
+      "updatedAt": "2026-11-07T15:33:45Z",
       "closedAt": null,
       "comments": []
     },
@@ -10993,10 +11009,12 @@
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "design"
+      ],
       "body": "While https://github.com/quicwg/qlog/pull/640 seeks to add a new field to Trace/TraceSeq it also highlights that qlog lacks flexibility in this area, which is a weird gap to leave.\n\n`Trace` and `TraceSeq` are closed CDDL maps, so any field the main schema doesn't define fails validation. `Event` and `CommonFields` allow custom fields via `* text => any`.\n\n#136 (code version on Trace) was closed because the Trace `configuration` field covered it. #308 then removed `configuration`, expecting implementations to add their own fields, which the CDDL doesn't allow. Derp(?)\n\nOptions:\n\n1. Add `* text => any` to `Trace` and `TraceSeq`, like `Event`.\n2. Add a group socket, e.g. `* $$trace-extension`, like the event extension points from #417.\n3. Leave both closed.\n\n`LogFile` is closed in the same way, not sure if that needs the flexibility too\n",
       "createdAt": "2026-11-02T16:38:27Z",
-      "updatedAt": "2026-11-02T16:53:42Z",
+      "updatedAt": "2026-11-07T15:34:13Z",
       "closedAt": null,
       "comments": [
         {
