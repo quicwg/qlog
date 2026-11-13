@@ -391,6 +391,9 @@ Trace = {
     ? implementation: Implementation
     event_schemas: [+text]
     events: [* Event]
+
+    ; traces can contain any amount of custom fields
+    * text => any
 }
 ~~~
 {: #trace-def title="Trace definition"}
@@ -407,6 +410,9 @@ The optional `implementation` field is described in {{implementation}}.
 The required `event_schemas` field contains event schema URIs that identify
 concrete event namespaces and their associated types recorded in the `events`
 field. Requirements and guidelines are defined in {{event-types-and-schema}}.
+
+A Trace can contain custom fields. Tools that do not recognize a custom field
+can ignore it; see {{tooling}}.
 
 The semantics and context of the trace can mainly be deduced from the entries in
 the `common_fields` list and `vantage_point` field.
@@ -540,9 +546,14 @@ TraceSeq = {
     ? vantage_point: VantagePoint
     ? implementation: Implementation
     event_schemas: [+text]
+
+    ; traces can contain any amount of custom fields
+    * text => any
 }
 ~~~
 {: #trace-seq-def title="TraceSeq definition"}
+
+Like a Trace, a TraceSeq can contain custom fields.
 
 # VantagePoint {#vantage-point}
 
