@@ -2026,16 +2026,9 @@ ECN = "Not-ECT" / "ECT(1)" / "ECT(0)" / "CE"
 
 ## QUIC Frames
 
-The generic `$QuicFrame` is defined here as a CDDL "type socket" extension
-point. It can be extended to support additional QUIC frame types.
-
-~~~~~~
-; The QuicFrame is any key-value map (e.g., JSON object)
-$QuicFrame /= {
-    * text => any
-}
-~~~~~~
-{: #quicframe-def title="QuicFrame type socket definition"}
+The generic `$QuicFrame` is defined as a CDDL "type socket" extension
+point. Event schemas add QUIC frame types to it with the `/=` operator; see
+{{Section 8.2 of QLOG-MAIN}}.
 
 The QUIC frame types defined in this document are as follows:
 
