@@ -489,7 +489,7 @@ It can be extended to support additional HTTP/3 frame types.
 ~~~~~~
 ; The HTTP3Frame is any key-value map (e.g., JSON object)
 $HTTP3Frame /= {
-    * text => any
+    * identifier => any
 }
 ~~~~~~
 {: #h3-frame-def title="HTTP3Frame type socket definition"}
@@ -876,7 +876,7 @@ point. It can be extended to support additional capsule types.
 ~~~~~~
 ; The HTTPCapsule is any key-value map (e.g., JSON object)
 $HTTPCapsule /= {
-    * text => any
+    * identifier => any
 }
 ~~~~~~
 {: #http-capsule-def title="HTTPCapsule type socket definition"}
