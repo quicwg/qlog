@@ -5,12 +5,12 @@
 QUIC                                                        R. Marx, Ed.
 Internet-Draft                                                    Akamai
 Intended status: Standards Track                       L. Niccolini, Ed.
-Expires: 17 April 2027                                              Meta
+Expires: 17 May 2027                                                Meta
                                                          M. Seemann, Ed.
                                                                         
                                                           L. Pardue, Ed.
-                                                              Cloudflare
-                                                         14 October 2026
+                                                                   Apple
+                                                        13 November 2026
 
 
                      HTTP/3 qlog event definitions
@@ -46,7 +46,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 17 April 2027.
+   This Internet-Draft will expire on 17 May 2027.
 
 Copyright Notice
 
@@ -99,15 +99,15 @@ Table of Contents
    6.  HTTP Events
      6.1.  capsule_created
      6.2.  capsule_parsed
-     6.3.  capsule_parse_error
    7.  HTTP Data Type Definitions
-     7.1.  HTTPCapsuleDatagram
+     7.1.  HTTPCapsule
+       7.1.1.  HTTPCapsuleDatagram
+       7.1.2.  HTTPCapsuleUnknown
    8.  Security and Privacy Considerations
    9.  IANA Considerations
    10. Normative References
    Acknowledgements
    Change Log
-     Since draft-ietf-quic-qlog-h3-events-13:
      Since draft-ietf-quic-qlog-h3-events-12:
      Since draft-ietf-quic-qlog-h3-events-11:
      Since draft-ietf-quic-qlog-h3-events-09:
@@ -135,16 +135,14 @@ Table of Contents
    defines a schema for the HTTP Capsule Protocol (Section 3 of
    [DGRAM-AND-CAPSULE]).
 
-   The event namespace with identifier http3 is defined; see Section 2.
-   In this namespace multiple events derive from the qlog abstract Event
-   class (Section 7 of [QLOG-MAIN]), each extending the "data" field and
-   defining their "name" field values and semantics.
+   This document defines two event namespaces: http3 (Section 2) and
+   http (Section 5).  In each namespace, multiple events derive from the
+   qlog abstract Event class (Section 7 of [QLOG-MAIN]), each extending
+   the data field and defining their name field values and semantics.
 
-   Table 1 summarizes the name value of each event type that is defined
-   in this specification.  Some event data fields use complex data
-   types.  These are represented as enums or re-usable definitions,
-   which are grouped together on the bottom of this document for
-   clarity.
+   Table 1 summarizes the name value of each event type in the http3
+   namespace.  The data types that the events use are defined in
+   Section 4 and Section 7.
 
          +===========================+============+=============+
          | Name value                | Importance | Definition  |
@@ -170,35 +168,33 @@ Table of Contents
 
                           Table 1: HTTP/3 Events
 
-   Table 2 summarizes the name value of each event type that is defined
-   in the http namespace in this specification.
+   Table 2 summarizes the name value of each event type in the http
+   namespace.
 
-          +==========================+============+=============+
-          | Name value               | Importance | Definition  |
-          +==========================+============+=============+
-          | http:capsule_created     | Core       | Section 6.1 |
-          +--------------------------+------------+-------------+
-          | http:capsule_parsed      | Core       | Section 6.2 |
-          +--------------------------+------------+-------------+
-          | http:capsule_parse_error | Base       | Section 6.3 |
-          +--------------------------+------------+-------------+
+            +======================+============+=============+
+            | Name value           | Importance | Definition  |
+            +======================+============+=============+
+            | http:capsule_created | Core       | Section 6.1 |
+            +----------------------+------------+-------------+
+            | http:capsule_parsed  | Core       | Section 6.2 |
+            +----------------------+------------+-------------+
 
                             Table 2: HTTP Events
 
 1.1.  Usage with QUIC
 
    The events described in this document can be used with or without
-   logging the related QUIC events defined in [QLOG-QUIC].  If used with
-   QUIC events, the QUIC document takes precedence in terms of
-   recommended filenames and trace separation setups.
+   logging the related QUIC events defined in [QLOG-QUIC].  When they
+   are logged together, the guidance in [QLOG-QUIC] on group IDs, file
+   names, and events without a known connection applies.
 
-   If used without QUIC events, it is recommended that the
-   implementation assign a globally unique identifier to each HTTP/3
-   connection.  This ID can then be used as the value of the qlog
-   "group_id" field, as well as the qlog filename or file identifier,
-   potentially suffixed by the vantagepoint type (For example,
-   abcd1234_server.qlog would contain the server-side trace of the
-   connection with GUID abcd1234).
+   When they are logged without QUIC events, an implementation can
+   assign a unique identifier to each HTTP/3 connection and use it as
+   the value of the qlog group_id field; see Section 7.3 of [QLOG-MAIN].
+   The identifier can also be used as the qlog filename or file
+   identifier, optionally suffixed by the vantage point type.  For
+   example, abcd1234_server.qlog would contain the server-side trace of
+   the connection with identifier abcd1234.
 
 1.2.  Notational Conventions
 
@@ -212,8 +208,9 @@ Table of Contents
    expressed in the Concise Data Definition Language [CDDL] and its
    extensions described in Section 1.2 of [QLOG-MAIN].
 
-   The following fields from [QLOG-MAIN] are imported and used: name,
-   namespace, type, data, group_id, RawInfo, and time-related fields.
+   This document uses the following from [QLOG-MAIN]: the event
+   namespace and event type concepts; the name, data, group_id, and
+   time-related fields; and the RawInfo type.
 
    Events are defined with an importance level as described in
    Section 8.3 of [QLOG-MAIN].
@@ -268,11 +265,10 @@ Table of Contents
 
     Figure 1: HTTP3EventData definition and ProtocolEventData extension
 
-   HTTP events are logged when a certain condition happens at the
-   application layer, and there isn't always a one to one mapping
-   between HTTP and QUIC events.  The exchange of data between the HTTP
-   and QUIC layer is logged via the "stream_data_moved" and
-   "datagram_data_moved" events in [QLOG-QUIC].
+   HTTP/3 events describe what happens at the HTTP/3 layer, and they
+   don't always map one-to-one to QUIC events.  Data exchanged between
+   the HTTP/3 and QUIC layers is logged with the stream_data_moved and
+   datagram_data_moved events in [QLOG-QUIC].
 
    HTTP/3 frames are transmitted on QUIC streams, which allows them to
    span multiple QUIC packets.  Some implementations might send a single
@@ -295,15 +291,15 @@ Table of Contents
 
    All these parameters are typically set once and never change.
    However, they might be set at different times during the connection,
-   therefore a qlog can have multiple instances of parameters_set with
+   so a trace can contain multiple instances of parameters_set with
    different fields set.
 
-   The "initiator" field reflects how Settings are exchanged on a
-   connection.  Sent settings have the value "local" and received
-   settings have the value "received".
+   The initiator field is "local" for settings that this endpoint sent,
+   and "remote" for settings that it received.  The initiator field is
+   required.
 
    HTTP3ParametersSet = {
-       ? initiator: Initiator
+       initiator: Initiator
 
        ; RFC9114
        ? max_field_section_size: uint64
@@ -313,33 +309,41 @@ Table of Contents
        ? blocked_streams_count: uint64
 
        ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
-       ? extended_connect: uint16
+       ? extended_connect: uint64
 
        ; RFC9297 (SETTINGS_H3_DATAGRAM)
-       ? h3_datagram: uint16
+       ? h3_datagram: uint64
 
        ; qlog-specific
        ; indicates whether this implementation waits for a SETTINGS
        ; frame before processing requests
        ? waits_for_settings: bool
 
+       ; settings that this implementation does not recognize, including
+       ; reserved (GREASE) settings
+       ? unknown_settings: [* HTTP3Setting]
+
        * $$http3-parametersset-extension
    }
 
                   Figure 2: HTTP3ParametersSet definition
 
-   The parameters_set event can contain any number of unspecified
-   fields.  This allows for representation of reserved settings (aka
-   GREASE) or ad-hoc support for extension settings that do not have a
-   related qlog schema definition.
+   The unknown_settings field can log settings that the implementation
+   does not recognize, including reserved settings (Section 7.2.4.1 of
+   [HTTP/3]).  Each entry's name is "unknown" or "reserved", and
+   name_bytes holds the setting identifier.  Settings defined by
+   extensions can instead be added through $$http3-parametersset-
+   extension.
 
 3.2.  parameters_restored
 
-   When using QUIC 0-RTT, HTTP/3 clients are expected to remember and
-   reuse the server's SETTINGs from the previous connection.  The
-   parameters_restored event is used to indicate which HTTP/3 settings
-   were restored and to which values when utilizing 0-RTT.  It has Base
-   importance level.
+   The parameters_restored event indicates which of the server's
+   settings a client restored from a previous connection to use for
+   0-RTT, and their values; see Section 7.2.4.2 of [HTTP/3].  It has
+   Base importance level.
+
+   When the server's SETTINGS frame arrives, the settings it carries can
+   be logged with the parameters_set event (Section 3.1).
 
    HTTP3ParametersRestored = {
        ; RFC9114
@@ -350,10 +354,10 @@ Table of Contents
        ? blocked_streams_count: uint64
 
        ; RFC9220 (SETTINGS_ENABLE_CONNECT_PROTOCOL)
-       ? extended_connect: uint16
+       ? extended_connect: uint64
 
        ; RFC9297 (SETTINGS_H3_DATAGRAM)
-       ? h3_datagram: uint16
+       ? h3_datagram: uint64
 
        * $$http3-parametersrestored-extension
    }
@@ -362,19 +366,19 @@ Table of Contents
 
 3.3.  stream_type_set
 
-   The stream_type_set event conveys when a HTTP/3 stream type becomes
-   known; see Sections 6.1 and 6.2 of [HTTP/3].  It has Base importance
-   level.
+   The stream_type_set event is emitted when the type of an HTTP/3
+   stream becomes known; see Sections 6.1 and 6.2 of [HTTP/3].  It has
+   Base importance level.
 
    Client bidirectional streams always have a stream_type value of
    "request".  Server bidirectional streams have no defined use,
    although extensions could change that.
 
    Unidirectional streams in either direction begin with a variable-
-   length integer type.  Where the type is not known, the stream_type
-   value of "unknown" type can be used and the value captured in the
-   stream_type_bytes field; a numerical value without variable-length
-   integer encoding.
+   length integer type.  If the type has no known string, stream_type
+   can be "unknown"; for a reserved type (Section 6.2.3 of [HTTP/3]), it
+   can be "reserved".  In both cases, stream_type_bytes then holds the
+   numerical value without variable-length integer encoding.
 
    The generic $HTTP3StreamType is defined here as a CDDL "type socket"
    extension point.  It can be extended to support additional HTTP/3
@@ -385,7 +389,7 @@ Table of Contents
        stream_id: uint64
        stream_type: $HTTP3StreamType
 
-       ; only when stream_type === "unknown"
+       ; only when stream_type === "unknown" or "reserved"
        ? stream_type_bytes: uint64
 
        ; only when stream_type === "push"
@@ -410,12 +414,11 @@ Table of Contents
    stream or push stream is initialized or updated through mechanisms
    defined in [PRIORITIZATION].  It has Base importance level.
 
-   There can be several reasons why a priority_updated occurs, and why a
-   particular value was chosen.  For example, the priority can be
-   updated through signals received from client and/or server (e.g., in
-   HTTP/3 HEADERS or PRIORITY_UPDATE frames) or it can be changed or
-   overridden due to local policies.  The trigger and reason fields can
-   be used to optionally capture such details.
+   There can be several reasons why a priority_updated event occurs, and
+   why a particular value was chosen.  For example, the priority can
+   follow signals from the client or server (see [PRIORITIZATION]), or
+   local policy can change or override it.  The trigger and reason
+   fields can capture these details.
 
    HTTP3PriorityUpdated = {
        ; if the prioritized element is a request stream
@@ -443,10 +446,10 @@ Table of Contents
 
 3.5.  frame_created
 
-   The frame_created event is emitted when the HTTP/3 framing actually
-   happens.  It has Core importance level.
+   The frame_created event is emitted when an HTTP/3 frame is created.
+   It has Core importance level.
 
-   This event does not necessarily coincide with HTTP/3 data getting
+   This event does not necessarily coincide with HTTP/3 data being
    passed to the QUIC layer.  For that, see the stream_data_moved event
    in [QLOG-QUIC].
 
@@ -461,12 +464,12 @@ Table of Contents
 
 3.6.  frame_parsed
 
-   The frame_parsed event is emitted when the HTTP/3 frame is parsed.
-   It has Core importance level.
+   The frame_parsed event is emitted when an HTTP/3 frame is parsed.  It
+   has Core importance level.
 
-   This event is not necessarily the same as when the HTTP/3 data is
-   actually received on the QUIC layer.  For that, see the
-   stream_data_moved event in [QLOG-QUIC].
+   This event does not necessarily coincide with HTTP/3 data being
+   passed from the QUIC layer.  For that, see the stream_data_moved
+   event in [QLOG-QUIC].
 
    HTTP3FrameParsed = {
        stream_id: uint64
@@ -480,16 +483,16 @@ Table of Contents
 3.7.  datagram_created
 
    The datagram_created event is emitted when an HTTP/3 Datagram
-   (Section 2.1 of [RFC9297]) is created.  It has Base importance level.
+   (Section 2.1 of [DGRAM-AND-CAPSULE]) is created.  It has Base
+   importance level.
 
    Beyond the Quarter Stream ID field, the remaining contents of HTTP
-   Datagrams are defined by the concrete protocol using HTTP datagrams.
-   The HTTP3DatagramCreated event can be extended through the $$http3-
-   datagramcreated-extension socket to support logging of such
-   information.
+   Datagrams are defined by the protocol that uses them.  The
+   datagram_created event can be extended through the $$http3-
+   datagramcreated-extension socket to log that information.
 
    This event does not necessarily coincide with the HTTP/3 Datagram
-   getting passed to the QUIC layer.  For that, see the
+   being passed to the QUIC layer.  For that, see the
    datagram_data_moved event in [QLOG-QUIC].
 
    HTTP3DatagramCreated = {
@@ -504,16 +507,16 @@ Table of Contents
 3.8.  datagram_parsed
 
    The datagram_parsed event is emitted when an HTTP/3 Datagram
-   (Section 2.1 of [RFC9297]) is parsed.  It has Base importance level.
+   (Section 2.1 of [DGRAM-AND-CAPSULE]) is parsed.  It has Base
+   importance level.
 
    Beyond the Quarter Stream ID field, the remaining contents of HTTP
-   Datagrams are defined by the concrete protocol using HTTP datagrams.
-   The HTTP3DatagramParsed event can be extended through the $$http3-
-   datagramparsed-extension socket to support logging of such
-   information.
+   Datagrams are defined by the protocol that uses them.  The
+   datagram_parsed event can be extended through the $$http3-
+   datagramparsed-extension socket to log that information.
 
-   This event is not necessarily the same as when the HTTP/3 Datagram is
-   actually received on the QUIC layer.  For that, see the
+   This event does not necessarily coincide with the HTTP/3 Datagram
+   being passed from the QUIC layer.  For that, see the
    datagram_data_moved event in [QLOG-QUIC].
 
    HTTP3DatagramParsed = {
@@ -527,12 +530,10 @@ Table of Contents
 
 3.9.  push_resolved
 
-   The push_resolved event is emitted when a pushed resource
-   (Section 4.6 of [HTTP/3]) is successfully claimed (used) or,
-   conversely, abandoned (rejected) by the application on top of HTTP/3
-   (e.g., the web browser).  This event provides additional context that
-   can aid debugging issues related to server push.  It has Extra
-   importance level.
+   The push_resolved event is emitted when a resource sent with server
+   push (Section 4.6 of [HTTP/3]) is claimed (used) or abandoned
+   (rejected) by the application on top of HTTP/3, such as a web
+   browser.  It has Extra importance level.
 
    HTTP3PushResolved = {
        ? push_id: uint64
@@ -563,16 +564,9 @@ Table of Contents
 
 4.2.  HTTP3Frame
 
-   The generic $HTTP3Frame is defined here as a CDDL "type socket"
-   extension point.  It can be extended to support additional HTTP/3
-   frame types.
-
-   ; The HTTP3Frame is any key-value map (e.g., JSON object)
-   $HTTP3Frame /= {
-       * text => any
-   }
-
-                Figure 12: HTTP3Frame type socket definition
+   The generic $HTTP3Frame is defined as a CDDL "type socket" extension
+   point.  Event schemas add HTTP/3 frame types to it with the /=
+   operator; see Section 8.2 of [QLOG-MAIN].
 
    The HTTP/3 frame types defined in this document are as follows:
 
@@ -591,7 +585,7 @@ Table of Contents
 
    $HTTP3Frame /= HTTP3BaseFrames / HTTP3ExtensionFrames
 
-                   Figure 13: HTTP3BaseFrames definition
+       Figure 12: HTTP3BaseFrames and HTTP3ExtensionFrames definition
 
 4.2.1.  HTTP3DataFrame
 
@@ -600,7 +594,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                    Figure 14: HTTP3DataFrame definition
+                    Figure 13: HTTP3DataFrame definition
 
 4.2.2.  HTTP3HeadersFrame
 
@@ -616,7 +610,7 @@ Table of Contents
        ? value_bytes: hexstring
    }
 
-                    Figure 15: HTTP3HTTPField definition
+                    Figure 14: HTTP3HTTPField definition
 
    HTTP3HeadersFrame = {
        frame_type: "headers"
@@ -624,7 +618,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 16: HTTP3HeadersFrame definition
+                  Figure 15: HTTP3HeadersFrame definition
 
    For example, the HTTP field section
 
@@ -635,10 +629,10 @@ Table of Contents
 
    would be represented in a JSON serialization as:
 
-   headers: [
+   "headers": [
      {
        "name": ":path",
-       "value": "/"
+       "value": "/index.html"
      },
      {
        "name": ":method",
@@ -654,7 +648,7 @@ Table of Contents
      }
    ]
 
-                    Figure 17: HTTP3HeadersFrame example
+                    Figure 16: HTTP3HeadersFrame example
 
    Section 4.2 of [HTTP/3] and Section 5.1 of [HTTP] define rules for
    the characters used in HTTP field section names and values.
@@ -676,7 +670,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 18: HTTP3CancelPushFrame definition
+                 Figure 17: HTTP3CancelPushFrame definition
 
 4.2.4.  HTTP3SettingsFrame
 
@@ -686,10 +680,9 @@ Table of Contents
    maintained at https://www.iana.org/assignments/http3-parameters
    (https://www.iana.org/assignments/http3-parameters).
 
-   An endpoint that receives unknown settings is not able to log a
-   specific name.  Instead, the name value of "unknown" can be used and
-   the value captured in the name_bytes field; a numerical value without
-   variable-length integer encoding.
+   If a setting has no known name, name can be "unknown"; for a reserved
+   setting, it can be "reserved".  In both cases, name_bytes then holds
+   the numerical value without variable-length integer encoding.
 
    HTTP3SettingsFrame = {
        frame_type: "settings"
@@ -699,7 +692,7 @@ Table of Contents
 
    HTTP3Setting = {
        ? name: $HTTP3SettingsName
-       ; only when name === "unknown"
+       ; only when name === "unknown" or "reserved"
        ? name_bytes: uint64
 
        value: uint64
@@ -713,7 +706,7 @@ Table of Contents
                       "reserved" /
                       "unknown"
 
-                  Figure 19: HTTP3SettingsFrame definition
+                  Figure 18: HTTP3SettingsFrame definition
 
 4.2.5.  HTTP3PushPromiseFrame
 
@@ -724,7 +717,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                Figure 20: HTTP3PushPromiseFrame definition
+                Figure 19: HTTP3PushPromiseFrame definition
 
 4.2.6.  HTTP3GoawayFrame
 
@@ -737,7 +730,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                   Figure 21: HTTP3GoawayFrame definition
+                   Figure 20: HTTP3GoawayFrame definition
 
 4.2.7.  HTTP3MaxPushIDFrame
 
@@ -747,12 +740,12 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                 Figure 22: HTTP3MaxPushIDFrame definition
+                 Figure 21: HTTP3MaxPushIDFrame definition
 
 4.2.8.  HTTP3ReservedFrame
 
-   The frame_type_bytes field is the numerical value without variable-
-   length integer encoding.
+   The frame_type_bytes field holds the numerical value of the frame
+   type without variable-length integer encoding.
 
    HTTP3ReservedFrame = {
        frame_type: "reserved"
@@ -760,12 +753,12 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 23: HTTP3ReservedFrame definition
+                  Figure 22: HTTP3ReservedFrame definition
 
 4.2.9.  HTTP3UnknownFrame
 
-   The frame_type_bytes field is the numerical value without variable-
-   length integer encoding.
+   The frame_type_bytes field holds the numerical value of the frame
+   type without variable-length integer encoding.
 
    HTTP3UnknownFrame = {
        frame_type: "unknown"
@@ -773,7 +766,7 @@ Table of Contents
        ? raw: RawInfo
    }
 
-                  Figure 24: HTTP3UnknownFrame definition
+                  Figure 23: HTTP3UnknownFrame definition
 
 4.2.10.  HTTP3PriorityUpdateFrame
 
@@ -797,7 +790,7 @@ Table of Contents
    ; Example: u=5, i
    HTTP3Priority = text
 
-               Figure 25: HTTP3PriorityUpdateFrame definition
+               Figure 24: HTTP3PriorityUpdateFrame definition
 
 4.2.11.  HTTP3OriginFrame
 
@@ -812,9 +805,10 @@ Table of Contents
      frame_type: "origin"
 
      origin_entries: [* HTTP3OriginEntry]
+     ? raw: RawInfo
    }
 
-                   Figure 26: HTTP3OriginFrame definition
+                   Figure 25: HTTP3OriginFrame definition
 
 4.3.  HTTP3ApplicationError
 
@@ -832,14 +826,20 @@ Table of Contents
                           "http_request_rejected" /
                           "http_request_cancelled" /
                           "http_request_incomplete" /
-                          "http_early_response" /
+                          "http_message_error" /
                           "http_connect_error" /
-                          "http_version_fallback"
+                          "http_version_fallback" /
+                          ; RFC9204
+                          "qpack_decompression_failed" /
+                          "qpack_encoder_stream_error" /
+                          "qpack_decoder_stream_error" /
+                          ; RFC9297
+                          "http_datagram_error"
 
-                Figure 27: HTTP3ApplicationError definition
+                Figure 26: HTTP3ApplicationError definition
 
-   The HTTP3ApplicationError extends the general $ApplicationError
-   definition in the qlog QUIC document, see [QLOG-QUIC].
+   HTTP3ApplicationError extends the $ApplicationError type socket
+   defined in [QLOG-QUIC].
 
    ; ensure HTTP errors are properly validated in QUIC events as well
    ; e.g., QUIC's ConnectionClose Frame
@@ -877,93 +877,94 @@ Table of Contents
    [QLOG-MAIN].
 
    HTTPEventData = HTTPCapsuleCreated /
-                   HTTPCapsuleParsed /
-                   HTTPCapsuleParseError
+                   HTTPCapsuleParsed
 
    $ProtocolEventData /= HTTPEventData
 
-    Figure 28: HTTPEventData definition and ProtocolEventData extension
+    Figure 27: HTTPEventData definition and ProtocolEventData extension
 
    The concrete HTTP event types are further defined below, their type
    identifier is the heading name.
 
 6.1.  capsule_created
 
-   The capsule_created event is emitted when a DATAGRAM capsule is
-   created (see Section 3.5 of [DGRAM-AND-CAPSULE]).  It has Core
-   importance level.
+   The capsule_created event is emitted when a Capsule is created (see
+   Section 3 of [DGRAM-AND-CAPSULE]).  It has Core importance level.
 
-   This event does not necessarily coincide with data getting passed to
+   This event does not necessarily coincide with data being passed to
    the transport layer.  In HTTP/3, capsules are sent inside DATA
-   frames, so the frame_created event would be logged separately.
+   frames, so the frame_created event can be logged separately.
 
    HTTPCapsuleCreated = {
        stream_id: uint64
 
-       capsule: HTTPCapsuleDatagram
+       capsule: $HTTPCapsule
 
        * $$http-capsulecreated-extension
    }
 
-                  Figure 29: HTTPCapsuleCreated definition
+                  Figure 28: HTTPCapsuleCreated definition
 
 6.2.  capsule_parsed
 
-   The capsule_parsed event is emitted when a DATAGRAM capsule is parsed
-   (see Section 3.5 of [DGRAM-AND-CAPSULE]).  It has Core importance
-   level.
+   The capsule_parsed event is emitted when a Capsule is parsed (see
+   Section 3 of [DGRAM-AND-CAPSULE]).  It has Core importance level.
 
-   This event is not necessarily the same as when the data is actually
-   received on the transport layer.  In HTTP/3, capsules are received
-   inside DATA frames, so the frame_parsed event would be logged
-   separately.
+   This event does not necessarily coincide with data being passed from
+   the transport layer.  In HTTP/3, capsules are received inside DATA
+   frames, so the frame_parsed event can be logged separately.
 
    HTTPCapsuleParsed = {
        stream_id: uint64
 
-       capsule: HTTPCapsuleDatagram
+       capsule: $HTTPCapsule
 
        * $$http-capsuleparsed-extension
    }
 
-                  Figure 30: HTTPCapsuleParsed definition
-
-6.3.  capsule_parse_error
-
-   The capsule_parse_error event is emitted when a stream ends with
-   incomplete Capsule Protocol framing.  It has Base importance level.
-   Errors in capsule contents are logged using events defined by the
-   respective application protocol.
-
-   HTTPCapsuleParseError = {
-       stream_id: uint64
-
-       error: "incomplete_type" /
-              "incomplete_length" /
-              "incomplete_payload"
-       ? capsule_type_value: uint64 ; if the type could be parsed
-       ? raw: RawInfo
-
-       * $$http-capsuleparseerror-extension
-   }
-
-                Figure 31: HTTPCapsuleParseError definition
+                  Figure 29: HTTPCapsuleParsed definition
 
 7.  HTTP Data Type Definitions
 
    The following data type definitions can be used in HTTP events.
 
-7.1.  HTTPCapsuleDatagram
+7.1.  HTTPCapsule
 
-   Other capsule types are logged using events defined by the respective
-   application protocol.
+   The generic $HTTPCapsule is defined as a CDDL "type socket" extension
+   point.  Event schemas add capsule types to it with the /= operator;
+   see Section 8.2 of [QLOG-MAIN].
+
+   The capsule types defined in this document are as follows:
+
+   HTTPBaseCapsules = HTTPCapsuleDatagram /
+                      HTTPCapsuleUnknown
+
+   $HTTPCapsule /= HTTPBaseCapsules
+
+                   Figure 30: HTTPBaseCapsules definition
+
+7.1.1.  HTTPCapsuleDatagram
 
    HTTPCapsuleDatagram = {
        capsule_type: "datagram"
        ? raw: RawInfo
    }
 
-                 Figure 32: HTTPCapsuleDatagram definition
+                 Figure 31: HTTPCapsuleDatagram definition
+
+7.1.2.  HTTPCapsuleUnknown
+
+   The capsule_type_value field holds the numerical value of the capsule
+   type without variable-length integer encoding.
+
+   HTTPCapsuleUnknown = {
+       capsule_type: "unknown"
+
+       ? capsule_type_value: uint64
+       ? raw: RawInfo
+   }
+
+                  Figure 32: HTTPCapsuleUnknown definition
 
 8.  Security and Privacy Considerations
 
@@ -972,34 +973,31 @@ Table of Contents
 
 9.  IANA Considerations
 
-   This document registers a new entry in the "qlog event schema URIs"
-   registry (created in Section 15 of [QLOG-MAIN]).
+   This document registers two new entries in the "qlog event schema
+   URIs" registry, which was created in Section 15 of [QLOG-MAIN]:
 
    Event schema URI:  urn:ietf:params:qlog:events:http3
 
-   Namespace  http3
+   Namespace:  http3
 
-   Event Types  parameters_set, parameters_restored, stream_type_set,
+   Event Types:  parameters_set, parameters_restored, stream_type_set,
       priority_updated, frame_created, frame_parsed, datagram_created,
       datagram_parsed, push_resolved
 
    Description:  Event definitions related to the HTTP/3 application
       protocol.
 
-   Reference:  This Document
-
-   This document registers a new entry in the "qlog event schema URIs"
-   registry.
+   Reference:  This document
 
    Event schema URI:  urn:ietf:params:qlog:events:http
 
-   Namespace  http
+   Namespace:  http
 
-   Event Types  capsule_created,capsule_parsed,capsule_parse_error
+   Event Types:  capsule_created, capsule_parsed
 
    Description:  Event definitions for the Capsule Protocol.
 
-   Reference:  This Document
+   Reference:  This document
 
 10.  Normative References
 
@@ -1040,16 +1038,16 @@ Table of Contents
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue,
               "qlog: Structured Logging for Network Protocols", Work in
               Progress, Internet-Draft, draft-ietf-quic-qlog-main-
-              schema-14, 6 July 2026,
+              schema-15, 2 November 2026,
               <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-main-schema-14>.
+              qlog-main-schema-15>.
 
    [QLOG-QUIC]
               Marx, R., Niccolini, L., Seemann, M., and L. Pardue, "QUIC
               event definitions for qlog", Work in Progress, Internet-
-              Draft, draft-ietf-quic-qlog-quic-events-13, 6 July 2026,
-              <https://datatracker.ietf.org/doc/html/draft-ietf-quic-
-              qlog-quic-events-13>.
+              Draft, draft-ietf-quic-qlog-quic-events-14, 2 November
+              2026, <https://datatracker.ietf.org/doc/html/draft-ietf-
+              quic-qlog-quic-events-14>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
@@ -1059,10 +1057,6 @@ Table of Contents
    [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
               2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
               May 2017, <https://www.rfc-editor.org/rfc/rfc8174>.
-
-   [RFC9297]  Schinazi, D. and L. Pardue, "HTTP Datagrams and the
-              Capsule Protocol", RFC 9297, DOI 10.17487/RFC9297, August
-              2022, <https://www.rfc-editor.org/rfc/rfc9297>.
 
 Acknowledgements
 
@@ -1077,12 +1071,6 @@ Acknowledgements
 Change Log
 
    This section is to be removed before publishing as an RFC.
-
-Since draft-ietf-quic-qlog-h3-events-13:
-
-   *  Removed the extensibility of capsule events
-
-   *  Added capsule_parse_error for Capsule Protocol framing errors
 
 Since draft-ietf-quic-qlog-h3-events-12:
 
@@ -1295,5 +1283,5 @@ Authors' Addresses
 
 
    Lucas Pardue (editor)
-   Cloudflare
+   Apple
    Email: lucas@lucaspardue.com
