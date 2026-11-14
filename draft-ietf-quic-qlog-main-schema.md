@@ -1169,8 +1169,8 @@ unique within the namespace. The extension identifier is a URI fragment
 (characters after a "#" in the URI) using only characters in the URI unreserved
 range; see {{Section 2.3 of RFC3986}}.
 Registration guidance and requirements for event schema URIs are provided in
-{{event-schema-reg}}. Event schemas by themselves are immutable once defined and
-MUST NOT be extended.
+{{event-schema-reg}}. Event schemas are immutable once defined: new event types
+or fields MUST be defined in a new event schema with its own URI.
 
 Implementations that record concrete event types SHOULD list all event schemas
 in use in a specific trace. This is achieved by including the appropriate URIs
