@@ -84,9 +84,13 @@ chooses for its first Initial packet. It stays the same for the whole
 connection, unlike the connection IDs that endpoints use, which can change. It
 can also link packets such as Retry and Version Negotiation to the connection.
 
-The ODCID can also be used as the qlog filename or file identifier, optionally
-suffixed by the vantage point type. For example, abcd1234_server.qlog would
-contain the server-side trace of the connection with ODCID abcd1234.
+The ODCID can also be used as part of the qlog filename or file identifier,
+optionally suffixed by the vantage point type. For example,
+abcd1234_server_e5f30a7c.qlog could contain the server-side trace of the
+connection with ODCID abcd1234. The client chooses the ODCID. A locally
+generated random value in the filename, such as e5f30a7c in the example, avoids
+collisions between connections that share one. See
+{{Section 15.3 of QLOG-MAIN}}.
 
 ## Raw Packet and Frame Information
 
