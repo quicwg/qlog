@@ -270,8 +270,7 @@ format using a media type {{!RFC2046}}. It is case-insensitive.
 
 In order to make it easier to parse and identify qlog files and their
 serialization format, the `file_schema` and `serialization_format` fields and
-their values SHOULD be in the first 256 characters/bytes of the resulting log
-file.
+their values SHOULD be in the first 256 bytes of the resulting log file.
 
 The optional `title` and `description` fields provide additional free-text
 information about the file.
