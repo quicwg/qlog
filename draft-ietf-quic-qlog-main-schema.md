@@ -400,7 +400,9 @@ information about the trace.
 
 The optional `common_fields` field is described in {{common-fields}}.
 
-The optional `vantage_point` field is described in {{vantage-point}}.
+The optional `vantage_point` field is described in {{vantage-point}}. All
+events in a trace MUST be logged from a single vantage point, whether or not
+the trace includes this field.
 
 The optional `implementation` field is described in {{implementation}}.
 
