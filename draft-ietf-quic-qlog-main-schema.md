@@ -1765,7 +1765,8 @@ all qlog field names MUST be lowercase when serialized to JSON.
 
 In order to serialize CDDL-based qlog event and data structure
 definitions to JSON, the official CDDL-to-JSON mapping defined in
-{{Appendix E of CDDL}} SHOULD be employed.
+{{Appendix E of CDDL}} SHOULD be employed, except that uint64 values can be
+encoded as JSON strings; see {{json-interop}}.
 
 ## qlog to JSON Text Sequences Mapping {#format-json-seq}
 
@@ -1807,9 +1808,10 @@ qlog).
 While not specifically required by the JSON-SEQ specification, all qlog field
 names MUST be lowercase when serialized to JSON-SEQ.
 
-In order to serialize all other CDDL-based qlog event and data structure
+In order to serialize CDDL-based qlog event and data structure
 definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
-{{Appendix E of CDDL}} SHOULD be employed.
+{{Appendix E of CDDL}} SHOULD be employed, except that uint64 values can be
+encoded as JSON strings; see {{json-interop}}.
 
 
 ### Supporting JSON Text Sequences in Tooling
@@ -1823,29 +1825,24 @@ individually, as each record by itself is a valid JSON object).
 
 ## JSON Interoperability {#json-interop}
 
-Some JSON implementations have issues with the full JSON format, especially those
-integrated within a JavaScript environment (e.g., Web browsers, NodeJS). I-JSON
-(Internet-JSON) is a subset of JSON for such environments; see
-{{RFC7493}}. One of the key limitations of JavaScript, and thus I-JSON,
-is that it cannot represent full 64-bit integers in standard operating mode
-(i.e., without using BigInt extensions), instead being limited to the range
--(2<sup>53</sup>)+1 to (2<sup>53</sup>)-1.
+Many JSON parsers, including those in JavaScript environments such as Web
+browsers and NodeJS, map numbers to IEEE 754 binary64 values. Such parsers
+cannot represent every integer outside the range -(2<sup>53</sup>)+1 to
+(2<sup>53</sup>)-1 exactly. {{Section 2.2 of RFC7493}} states that an I-JSON
+sender cannot expect integers outside this range to be treated as exact values.
 
-To accommodate such constraints in CDDL, {{Appendix E of CDDL}} suggests
-defining integer types that restrict 64-bit values to the range in which I-JSON
-can represent integers exactly. However, some of the protocols that qlog is
-intended to support (e.g., QUIC, HTTP/3), can use the full range of uint64
-values.
+For applications that stay compatible with I-JSON, {{Appendix E of CDDL}}
+suggests defining integer types restricted to that range. However, some of the
+protocols that qlog is intended to support (e.g., QUIC, HTTP/3) use values up
+to (2<sup>62</sup>)-1.
 
-As such, to support situations where I-JSON is in use, serializers MAY encode
-uint64 values using JSON strings. qlog parsers, therefore, SHOULD support
-parsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band
-information indicating that neither the serializer nor parser are constrained by
-I-JSON.
-
-The CDDL definitions describe uint64 values as numbers. A log that encodes them
-as JSON strings needs those values converted to numbers before it can be
-validated against the CDDL.
+For exact interchange of such values, {{Section 2.2 of RFC7493}} recommends
+JSON strings, which requires that the receiver know the intended type of the
+value. In qlog, the CDDL definitions provide this. Therefore, serializers MAY
+encode a uint64 value as a JSON string that contains its decimal
+representation. qlog parsers SHOULD support parsing uint64 values from both
+JSON strings and JSON numbers. String-encoded values need converting to numbers
+before a log can be validated against the CDDL.
 
 ## Truncated Values {#truncated-values}
 
