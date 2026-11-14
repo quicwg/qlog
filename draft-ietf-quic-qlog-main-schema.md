@@ -1422,15 +1422,8 @@ QUICPacketDropped = {
 
 ## Event Importance Levels {#importance}
 
-Depending on how events are designed, it may be that several events allow the
-logging of similar or overlapping data. For example the separate QUIC
-`connection_started` event overlaps with the more generic
-`connection_state_updated`. In these cases, it is not always clear which event
-should be logged or used, and which event should take precedence if, for
-example, both are present and provide conflicting information.
-
-To aid in this decision making, qlog defines three event importance levels, in
-decreasing order of importance and expected usage:
+qlog defines three event importance levels, in decreasing order of importance
+and expected usage:
 
 * Core
 * Base
@@ -1438,36 +1431,31 @@ decreasing order of importance and expected usage:
 
 Concrete event types SHOULD define an importance level.
 
-Core-level events SHOULD be present in all qlog files for a given protocol.
-These are typically tied to basic packet and frame parsing and creation, as well
-as listing basic internal metrics. Tool implementers SHOULD expect and add
-support for these events, though SHOULD NOT expect all Core events to be present
-in each qlog trace.
+Core-level events are the most useful for understanding how the protocol
+behaves. They typically cover packet and frame parsing and creation, and basic
+internal metrics.
 
-Base-level events add additional debugging options and MAY be present in qlog
-files. Most of these can be implicitly inferred from data in Core events (if
-those contain all their properties), but for many it is better to log the events
-explicitly as well, making it clearer how the implementation behaves. These
-events are for example tied to passing data around in buffers, to how internal
-state machines change, and used to help show when decisions are actually made
-based on received data. Tool implementers SHOULD at least add support for
-showing the contents of these events, if they do not handle them explicitly.
+Base-level events add detail for debugging. They typically cover passing data
+around in buffers, changes to internal state machines, and when decisions are
+made based on received data. Most can be inferred from Core-level events that
+include all their properties, but explicit logging often makes it clearer how
+the implementation behaves.
 
-Extra-level events are considered mostly useful for low-level debugging of the
-implementation, rather than the protocol. They allow more fine-grained tracking
-of internal behavior. As such, they MAY be present in qlog files and tool
-implementers MAY add support for these, but they are not required to.
+Extra-level events are mostly useful for low-level debugging of the
+implementation, rather than the protocol. They allow fine-grained tracking of
+internal behavior.
 
-Implementers might choose not to log some details in Core-level events, such as
-data content, for performance or privacy reasons (see {{privacy}}). In that
-case, they SHOULD log relevant Base-level events instead, so that the qlog
-output remains usable. For example, a QUIC implementation can omit the details
-of STREAM frames from its `packet_received` events and log
-`stream_state_updated` events instead.
+Implementations might omit some details from events, such as frame contents,
+for performance or privacy reasons (see {{privacy}}). In that case, logging
+other events can recover some of the missing information. For example, a QUIC
+implementation can omit the details of STREAM frames from its `packet_received`
+events and log `stream_state_updated` events instead.
 
-Finally, for event types whose data (partially) overlap with other event types'
-definitions, where necessary the document defining them should include explicit
-guidance on which to use in specific situations.
+Several event types can log similar or overlapping data. For example, the QUIC
+`connection_started` event overlaps with the more generic
+`connection_state_updated`. The document that defines overlapping event types
+can say which to use in which situations, and which takes precedence if both are
+present and conflict.
 
 ## Relationship to On-the-Wire Data {#on-the-wire}
 
