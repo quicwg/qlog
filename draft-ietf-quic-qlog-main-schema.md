@@ -2062,7 +2062,7 @@ sources (e.g., captures of encrypted packets):
 * Full or partial raw packet and frame payloads that are plaintext e.g., HTTP Field
   values, HTTP response data, or TLS SNI field values.
 
-## Operational Implications and Recommendations
+## Operational Implications and Recommendations {#ops}
 
 Operational considerations focus on authorizing capture and access to logs.
 Logging of Internet protocols using qlog can be equivalent to the ability to
@@ -2086,6 +2086,43 @@ are advised to:
 * Define data retention policies for the storage of qlog files.
 
 * Encrypt qlog files in transit and at rest.
+
+## File Naming and Creation {#file-naming}
+
+Implementations that write qlog files might derive file names using properties
+of the network protocol. This can help link an observed interaction with its
+corresponding qlog. For example, a qlog for a QUIC connection could use one of
+its Connection ID values in the filename.
+
+However, using property values this way carries risks because they might not
+have sufficient uniqueness to avoid naming collisions, and they might be
+controlled by the peer. Risks include:
+
+* Two connections with the same identifier write to the same file, which can
+  overwrite or interleave their traces.
+
+* A malicious peer can choose an identifier that collides with another
+  connection's trace, causing that trace to be lost or corrupted.
+
+* If a file name includes peer-supplied bytes that are not restricted to a safe
+  character set, a peer might influence the path of the file.
+
+Implementers can mitigate such risks by:
+
+* Including a random value, generated locally and not derived from peer input,
+  in file names. At least 64 bits of randomness reduces the chance of accidental
+  collision to a negligible level.
+
+* Encoding any identifier in a file name using a restricted character set such
+  as hexadecimal.
+
+A file name does not identify a trace. Tools that correlate traces, for example
+from both ends of one connection, are advised to use the `group_id` and
+`vantage_point` fields in the qlog data and not the file name.
+
+Connection IDs and other identifiers in file names are visible to anyone who can
+list the directory. Access control for stored qlog files ({{ops}}) applies to
+file names as well as file contents.
 
 ## Data Minimization or Anonymization
 
