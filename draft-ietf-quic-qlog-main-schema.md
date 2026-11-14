@@ -1855,11 +1855,11 @@ value. For example, one might only store the first 100 bytes of an HTTP response
 body to be able to discern which file it actually contained. In these cases, the
 original byte-size length cannot be obtained from the serialized value directly.
 
-As such, all qlog schema definitions SHOULD include a separate,
-length-indicating field for all fields of type `hexstring` they specify, see for
-example {{raw-info}}. This not only ensures the original length can always be
-retrieved, but also allows the omission of any raw value bytes of the field
-completely (e.g., out of privacy or security considerations).
+A schema definition can pair a field of type `hexstring` with a separate,
+length-indicating field, as RawInfo does ({{raw-info}}). The length field
+preserves the original length when the value is truncated, and also allows the
+value to be omitted completely (e.g., out of privacy or security
+considerations).
 
 To reduce overhead however and in the case the full raw value is logged, the
 extra length-indicating field can be left out. As such, tools SHOULD be able to
