@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-08T03:53:49.454908+00:00",
+  "timestamp": "2026-11-15T04:22:01.097837+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10033,10 +10033,12 @@
       "assignees": [
         "rmarx"
       ],
-      "labels": [],
+      "labels": [
+        "discuss"
+      ],
       "body": "The tuple is currently a property of the `Event`. I'm not sure if that makes sense. At the very least, it would complicate the data structures used in my implementation quite significantly.\n\nFor example, it doesn't really make sense to set the tuple on the `QUICKeyUpdated` event. With the exception of a few events like `QUICPacketSent`, `QUICPacketReceived`, `QUICPacketDropped`, etc., most events are connection-level events. This applies even more so when moving up the application stack: No HTTP/3 event benefits from specifying the tuple.\n\nI suggest:\n\n1. Moving the `TupleID` definition to the QUIC document.\n2. Making it a field in the few events where it actually applies.",
       "createdAt": "2025-12-03T05:08:43Z",
-      "updatedAt": "2026-10-28T18:20:19Z",
+      "updatedAt": "2026-11-14T15:14:55Z",
       "closedAt": null,
       "comments": [
         {
@@ -10801,13 +10803,15 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [
         "discuss"
       ],
       "body": "The main schema and quic-events place over 20 MUST/SHOULD/MAY requirements on tools. Some of them are needed for interoperability; many describe what a good tool does. I suspect many don't meet the bar for BCP language\n\nSome requirements follow from a freedom that loggers have, so a tool that ignores them misreads valid logs (lets call these group 1). For example:\n\n- \"qlog tools MUST NOT depend on\" field order (main schema, Use of CDDL)\n- \"Tools MUST be able to deal with these fields being defined either on each event individually or combined in common_fields\" (main schema, CommonFields)\n\nOthers describe features or documentation (group 2). A tool that skips them still reads every log correctly:\n\n- \"Tool implementers SHOULD at least add support for showing the contents of these events\" (Base importance level)\n- \"Tools ingesting qlog MUST indicate which serialization format(s), qlog file and event schema(s), compression methods and potentially other input file formats (for example .pcap) they support\" (Tooling Requirements). This doesn't say whom the tool tells, so it can't be tested.\n\nThere's a few cases of keywords used for an expectation rather than on behaviour, such as \"It SHOULD NOT be expected that general-purpose tools will recognize or visualize all forms of qlog extension\" (group 3). This is not a valid use of keywords.\n\nThe rule for unknown data appears in five places with different strengths: unknown `common_fields` entries \"MUST be disregarded by the user and tools\", tools \"MUST ignore\" what they can't visualize, and tools \"SHOULD indicate even unknown event occurrences\".\n\nThe documents also give the consumer several names: tools, tool implementers, tool authors, qlog parsers, and the user. None of these is defined.\n\nProposal:\n\n1. Group 1 - Keep BCP 14 keywords\n2. Group 2 - Write feature, user-interface, and documentation guidance as prose.\n3. Group 3 - Rewrite each expectation as the behaviour it implies or as a plain statement of fact.\n4. State the rules for unknown data and missing events once, in Tooling Requirements, and point to it from elsewhere. The main schema has two tooling sections far apart, Tooling Expectations (8.4) and Tooling Requirements (13); consider merging them at the same time\n5. Use one name for the consumer role.\n\n\n",
       "createdAt": "2026-10-30T18:56:09Z",
-      "updatedAt": "2026-11-07T15:34:59Z",
+      "updatedAt": "2026-11-14T15:14:26Z",
       "closedAt": null,
       "comments": [
         {
@@ -10816,6 +10820,13 @@
           "body": "One more for the second group, in quic-events Recovery Events: \"Tools that process these events SHOULD try to handle such values even when they don't recognize them.\" \"Try\" weakens the SHOULD further.",
           "createdAt": "2026-10-30T20:51:47Z",
           "updatedAt": "2026-10-30T20:51:47Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Probably bet to punt on this until several other PRs are landed",
+          "createdAt": "2026-11-14T15:14:26Z",
+          "updatedAt": "2026-11-14T15:14:26Z"
         }
       ]
     },
@@ -10824,7 +10835,7 @@
       "id": "I_kwDOCrLn6M8AAAABbR2FVQ",
       "title": "Small issues with \"256 characters/bytes\" rule for sniffing",
       "url": "https://github.com/quicwg/qlog/issues/626",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
@@ -10833,8 +10844,8 @@
       ],
       "body": "We have consensus on sniffing and I don't want to question that. However, there is a bit of ambiguity we can tighten up.\n\nFirst, there requirements that have some tension. These are compatible requirements but tool developers might miss the chance of a problem.\n\n- Abstract LogFile Class: \"the `file_schema` and `serialization_format` fields and their values SHOULD be in the first 256 characters/bytes of the resulting log file\".\n- Use of CDDL: the order of fields in JSON and JSON-SEQ \"is also not significant, and qlog tools MUST NOT depend on it\".\n\nSecond, \"characters/bytes\" are not the same thing and being non-specific doesn't help.\n\nOptions:\n\n1. Add something like this after the SHOULD: \"Tools can look for these fields before parsing the whole file. Because field order is not significant, a tool that does not find them there falls back to other information, such as the file extension, or to parsing the file.\"\n2. Change \"characters/bytes\" to \"bytes\". Byte-based sniffing matches common practice.\n3. Leave the text as it is.",
       "createdAt": "2026-10-30T19:23:52Z",
-      "updatedAt": "2026-11-07T15:33:12Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-14T17:14:05Z",
+      "closedAt": "2026-11-14T17:14:05Z",
       "comments": [
         {
           "author": "LPardue",
@@ -10853,13 +10864,15 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [
         "design"
       ],
       "body": "The secdir early review of -05 asked for \"Each trace MUST have a single vantage_point\" ([review](https://datatracker.ietf.org/doc/review-ietf-quic-qlog-main-schema-05-secdir-early-harkins-2023-04-26/)). #322 added that sentence. The main-schema reflow in #331 removed it, and I can't find a discussion of the removal. \n\nNothing seems to have replaced the MUST requirement. The main schema now only says that a trace is \"conventionally\" or \"in the normal use case\" collected at a single vantage point (Design Overview, Trace). `vantage_point` is optional in Trace and TraceSeq.\n\nOptions:\n\n1. Restore the rule: \"Each trace MUST have a single vantage point.\" `vantage_point` stays optional, so a trace can leave its vantage point unstated, but can't mix them.\n2. Restore the rule and make `vantage_point` required. The \"unknown\" type covers loggers that don't know their vantage point. This changes the CDDL.\n",
       "createdAt": "2026-10-30T19:36:12Z",
-      "updatedAt": "2026-11-07T15:31:03Z",
+      "updatedAt": "2026-11-14T15:10:56Z",
       "closedAt": null,
       "comments": []
     },
@@ -10868,15 +10881,19 @@
       "id": "I_kwDOCrLn6M8AAAABbSQfHA",
       "title": "\"Event schemas \u2026 MUST NOT be extended\" reads as forbidding extension schemas",
       "url": "https://github.com/quicwg/qlog/issues/629",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
-      "labels": [],
+      "assignees": [
+        "LPardue"
+      ],
+      "labels": [
+        "editorial"
+      ],
       "body": "This is mostly wordsmithing but since we keep bumping up to this area, creating an issue:\n\nConcrete Event Types and Event Schemas says \"Namespaces are mutable and MAY be extended with new events\", and later:\n\n> Event schemas by themselves are immutable once defined and MUST NOT be extended.\n\nThe same section describes how one event schema adds fields to an event that another schema defined, through a `$$\u2026-extension` group socket. Read literally, that extends the first schema, which the MUST NOT forbids.\n\nThe intent, from #424, is narrower: once an event schema has its URI, its contents are fixed, and new events or fields go in a new event schema with its own URI. #424's earlier wording, \"MUST NOT be extended with events\", said this more clearly.\n\nOptions:\n\n1. Keep the requirement and say what it forbids: \"Event schemas are immutable once defined: new event types or fields MUST be defined in a new event schema with its own URI.\"\n2. Say the same thing without a keyword: \"An event schema doesn't change once defined. New event types or fields go in a new event schema with its own URI.\"\n",
       "createdAt": "2026-10-30T19:56:08Z",
-      "updatedAt": "2026-10-30T19:56:08Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-14T17:14:38Z",
+      "closedAt": "2026-11-14T17:14:38Z",
       "comments": []
     },
     {
@@ -10903,11 +10920,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "This has some overlap with #625.\n\nEvent Importance Levels says:\n\n> Core-level events SHOULD be present in all qlog files for a given protocol.\n\n> Base-level events add additional debugging options and MAY be present in qlog files.\n\n> As such, [Extra-level events] MAY be present in qlog files\n\nSome Core events only happen sometimes;  a QUIC connection without loss can't log `packet_lost`. Stating it SHOULD be present in all logs is a bit nonsensical (even if we believe there's always risk of loss). The likely intent is that implementations SHOULD log Core events when they occur. And of course, a logger might have good reason not to log an event (custom sampling rates or event filters come to mind)\n\nThe Base and Extra MAYs are fluff requirements because logging any event is optional. The original text said both \"CAN be present\"; lol. #328 changed CAN to MAY across the whole document after the secdir early review.\n\nOptions:\n\n1. \"Implementations SHOULD log Core events when they occur.\" Base and Extra go back to describing when the events are useful, without a keyword.\n",
       "createdAt": "2026-10-30T20:35:15Z",
-      "updatedAt": "2026-10-30T20:35:15Z",
+      "updatedAt": "2026-11-14T14:07:52Z",
       "closedAt": null,
       "comments": []
     },
@@ -10919,13 +10938,15 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [
         "design"
       ],
       "body": "JSON Interoperability says:\n\n> serializers MAY encode uint64 values using JSON strings. qlog parsers, therefore, SHOULD support parsing of uint64 values from JSON strings or JSON numbers unless there is out-of-band information indicating that neither the serializer nor parser are constrained by I-JSON.\n\nThe \"unless\u2026\" clause is pretty weird. Maybe its original intent got corrupted but for where we stand now:\n\n- There's no standard way to share either in-band or out-of-band information like this. For example, nothing in a qlog file says which form the serializer used. (not withstanding the JSON itself)\n- serializer's can do what they like due to the MAY, I-JSON isn't much of a reason as it reads\n- RFC 7493 Section 2.2 recommends strings when numbers need exact values beyond double precision, with 64-bit integers as its example, and says this \"requires that the receiving program understand the intended semantic of the value\". For fields defined in a qlog schema, the CDDL gives that meaning.\n\nOptions:\n\n1. Delete it, so parsers SHOULD accept uint64 values as strings or numbers. The SHOULD still lets a closed setup skip strings.\n2. Reword it to the real condition: \"unless out-of-band information says the serializer writes uint64 values as numbers\".\n3. Leave it.\n\nSeparately, both JSON mapping sections say \"the official CDDL-to-JSON mapping defined in Appendix E of CDDL SHOULD be employed\". Appendix E says a uint is a JSON number, so uint64 strings depart from it. The text doesn't say so. Was there a reason we didn't make Appendix E a MUST requirement?\n\nOptions compatible with above\"\n\n1. Keep the SHOULD and add a pointer: \"\u2026except that uint64 values can be strings; see JSON Interoperability\".\n2. Make it a MUST, with uint64 strings as the only allowed departure.",
       "createdAt": "2026-10-30T21:20:58Z",
-      "updatedAt": "2026-11-07T15:33:45Z",
+      "updatedAt": "2026-11-14T15:10:51Z",
       "closedAt": null,
       "comments": []
     },
@@ -10937,11 +10958,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "The main schema, in Section 11.4 (Truncated Values), says \"all qlog schema definitions SHOULD include a separate, length-indicating field for all fields of type `hexstring` they specify\". The reason given is that a truncated or omitted value still shows its original length.\n\nquic-events and h3-events mostly don't do this.\n\nFixed-size values are already settled: #621 states their length in a comment (\"always 16 bytes\") instead of a length field. The rule doesn't allow for that.\n\nThese variable-size values have no length field:\n\n- quic-events: ALPN `byte_value`, unknown transport parameter `value`, key `old`/`new`/`key`, CONNECTION_CLOSE `reason_bytes`, and connection IDs outside the packet header and NEW_CONNECTION_ID\n- h3-events: HTTP field `name_bytes` and `value_bytes`\n\nOptions:\n\n1. Remove the SHOULD. Keep the explanation of why a length field helps with truncated values, with RawInfo as the example to follow.\n2. Change the rule so it doesn't cover fixed-size values, whose length the documents already state (for example \"always 16 bytes\", from #621). Apply it only to values that can be truncated or omitted, and add length fields to those.\n3. Keep the rule, and add length fields to the values above.\n",
       "createdAt": "2026-10-30T21:31:45Z",
-      "updatedAt": "2026-10-30T21:37:57Z",
+      "updatedAt": "2026-11-14T14:07:44Z",
       "closedAt": null,
       "comments": [
         {
@@ -10968,11 +10991,13 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [],
       "body": "The main schema has three different naming rules, and states one of them in terms of JSON.\n\n**Field names.** The only rule is \"all qlog field names MUST be lowercase when serialized to JSON\" (Section 11.1), repeated for JSON-SEQ (Section 11.2). Field names are part of the schema: the CDDL defines them, whatever the serialization. As written, a CBOR serialization wouldn't be bound.\n\n**Namespace identifiers** are limited to URI unreserved characters (Section 8).\n\n**Event type identifiers** are only \"a non-empty identifier of type `text`\", so they can contain a colon, a space, or a comma. That causes small problems:\n\n- `name` is namespace, colon, event type, so a tool has to split at the first colon. The text doesn't say so.\n- The recommended `$$NAMESPACE-EVENTTYPE-extension` socket only works if both identifiers use characters allowed in CDDL names. A space in an event type, or a `~` in a namespace, breaks it.\n- The registry lists event types as \"a comma-separated list\". If an event contains a comma - OOPS\n- Nothing says whether `quic:Packet_Sent` and `quic:packet_sent` are the same event, which matters for the rule that names are globally unique.\n\n#321 also left open what a tool does with a malformed name. Section 13 (Tooling Requirements) already says tools mustn't break on values they don't recognise. If we can lock down the definition of a malformed name, it can be ignored like an unknown event.\n\nIn addition to above, the designated expert hung out to dry. Their instructions requires checking the schema URI and the uniqueness of listed event types (Sections 8 and 8.1). Nothing asks them to check identifier syntax. Currently if an expert applied common sense and attempted to reject a request to register an event named `ha, , , , , ha,`, they don't have technical grounds for it. This sort of thing can end up being abused and waste IETF time.\n\nToday, all existing field names, namespaces, and event types in the three documents use only lowercase letters, digits, and \"_\". We are already using common sense, lets codify it.\n\nOptions:\n\n1. One schema rule for field names, namespace identifiers, and event type identifiers: lowercase letters, digits, and \"_\". Replace the two JSON sentences with it. Names compare exactly, and an event name that doesn't match is treated as an unknown event. The designated expert checks registered namespace and event type identifiers, and the field names in the referenced specification, against the rule.\n2. As option 1, but custom fields keep any name; the rule covers only names that schemas define.\n3. Keep the current rules, and add only that tools split `name` at the first colon.\n4. Watch the world burn\n",
       "createdAt": "2026-10-30T22:05:12Z",
-      "updatedAt": "2026-10-30T22:06:39Z",
+      "updatedAt": "2026-11-14T14:07:38Z",
       "closedAt": null,
       "comments": [
         {
@@ -10996,9 +11021,17 @@
       "labels": [],
       "body": "`QuicVersion` is a hex string, so QUIC v2 gets logged as `6b3343cf` ([[RFC 9369, Section 3.1](https://www.rfc-editor.org/rfc/rfc9369.html#section-3.1)](https://www.rfc-editor.org/rfc/rfc9369.html#section-3.1)). This isn't particularly readable.\n\nShould we log the interpreted version number for versions we recognize, and use a separate hex field for unknown versions? For example, `PacketHeader` could have:\n\n```cddl\n? version: uint32\n? version_bytes: hexstring\n```\n\nBoth fields would be optional. We'd log `version: 1` or `version: 2` for known versions, and the wire value in `version_bytes` for unknown ones. This is similar to how we distinguish `packet_type` from `packet_type_bytes`.\n\nWe'd also need to cover the version lists in `version_information` and Version Negotiation packets.",
       "createdAt": "2026-10-31T13:08:37Z",
-      "updatedAt": "2026-10-31T13:08:37Z",
+      "updatedAt": "2026-11-13T16:53:36Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "While I agree that `0x6b3343cf` is ugly, that is its formal definition of the QUIC version. The RFC states:\n\n> Note that \"version 2\" is an informal name for this proposal that indicates it is the second version of QUIC to be published as a Standards Track document. The protocol specified here uses a version number other than 2 in the wire image,\n\nI'm not sure we have enough examples of versions as this stage to define a pattern as proposed. For instance, https://www.iana.org/assignments/quic currently has \n\n| Value | Status | Specification | Date | Change Controller | Contact | Notes |\n|---|---|---|---|---|---|---|\n| `0x00000000` | permanent | RFC 9000 | 2021-02-11 | IETF | QUIC working group | Reserved for Version Negotiation |\n| `0x00000001` | permanent | RFC 9000 | 2021-02-11 | IETF | QUIC working group | |\n| `0x51303433` | provisional | | 2021-10-15 | Google | Google | Google QUIC Q043 |\n| `0x51303436` | provisional | | 2021-10-15 | Google | Google | Google QUIC Q046 |\n| `0x51303530` | provisional | | 2021-10-15 | Google | Google | Google QUIC Q050 |\n| `0x6b3343cf` | permanent | RFC 9369 | 2022-12-16 | IETF | QUIC working group | |\n| `0x6f7dc0fd` | provisional | draft-ietf-scone-protocol-04 | 2026-04-16 | IETF | QUIC working group | SCONE Protocol - Even Signal Values |\n| `0x709a50c4` | provisional | RFC 9369 | 2022-12-16 | IETF | QUIC working group | QUIC v2 draft codepoint |\n| `0xef7dc0fd` | provisional | draft-ietf-scone-protocol-04 | 2026-04-16 | IETF | QUIC working group | SCONE Protocol - Odd Signal Values |\n\nAn implementation of a private QUIC version, likely couldn't use a `unit32` to represent its version. \n\nWhat if we did something like this instead?\n\n```\nQuicVersion = {\n    ? value: hexstring\n    ? name: QuicVersionName\n}\n\nQuicVersionName = $QuicVersionName / text\n\n$QuicVersionName /= \"version_negotiation\" /  ; 0x00000000, RFC 8999\n                                       \"v1\" /                   ; 0x00000001, RFC 9000\n                                       \"v2\" /                   ; 0x6b3343cf, RFC 9369\n                                       \"reserved\"               ; 0x?a?a?a?a, RFC 9000\n```\nThat gives us scope to define common version labels in qlog schemas, and it would generate events like\n\n```\n\"header\": {\n  \"packet_type\": \"initial\",\n  \"version\": { \"value\": \"6b3343cf\", \"name\": \"v2\" }\n}\n\n\"supported_versions\": [\n  { \"value\": \"00000001\", \"name\": \"v1\" },\n  { \"value\": \"6b3343cf\", \"name\": \"v2\" },\n  { \"value\": \"1a2a3a4a\", \"name\": \"reserved\" }\n]\n```\n",
+          "createdAt": "2026-11-13T16:53:36Z",
+          "updatedAt": "2026-11-13T16:53:36Z"
+        }
+      ]
     },
     {
       "number": 641,
@@ -11008,13 +11041,15 @@
       "state": "OPEN",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
-      "assignees": [],
+      "assignees": [
+        "LPardue"
+      ],
       "labels": [
         "design"
       ],
       "body": "While https://github.com/quicwg/qlog/pull/640 seeks to add a new field to Trace/TraceSeq it also highlights that qlog lacks flexibility in this area, which is a weird gap to leave.\n\n`Trace` and `TraceSeq` are closed CDDL maps, so any field the main schema doesn't define fails validation. `Event` and `CommonFields` allow custom fields via `* text => any`.\n\n#136 (code version on Trace) was closed because the Trace `configuration` field covered it. #308 then removed `configuration`, expecting implementations to add their own fields, which the CDDL doesn't allow. Derp(?)\n\nOptions:\n\n1. Add `* text => any` to `Trace` and `TraceSeq`, like `Event`.\n2. Add a group socket, e.g. `* $$trace-extension`, like the event extension points from #417.\n3. Leave both closed.\n\n`LogFile` is closed in the same way, not sure if that needs the flexibility too\n",
       "createdAt": "2026-11-02T16:38:27Z",
-      "updatedAt": "2026-11-07T15:34:13Z",
+      "updatedAt": "2026-11-14T14:07:28Z",
       "closedAt": null,
       "comments": [
         {
@@ -11030,8 +11065,100 @@
           "body": "agree. either (1) or (2) feels right to me, along with 640",
           "createdAt": "2026-11-02T16:53:18Z",
           "updatedAt": "2026-11-02T16:53:42Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Looking at this some more, there is currently no way for us to make `* $$trace-extension` work. It works for events because we went and added `event_schemas: [+text]` and defined all the process and paperwork for event extensibility. That effort makes sense because we expect  several schema define their extensions in events. This is supported by evidence of people defining schemas for IETF protocols, where a formal definition of event contents helps logging and tooling intro.\n\nExtending the trace seems like a rarer use case, and needing to formalise standardised fields for a trace extension seems even rarer. Therefore, the overhead of formal extensibility doesn't seem to justify it.\n\nThe answer I think we should pick is option 1 -  * text => any. This loosens qlog to allow loggers to add fields to a trace if they want and tools can safely ignore it. The sprit of qlog. If at some point in the future people want to standardise some fields in Trace or TraceSeq, they can define a new `file_schema` in an RFC to achieve it. That can use the magic `~` that we already use to extend the abstract `LogFile` e.g.\n\n```\n```cddl\n; urn:ietf:params:qlog:file:contained2\nQlogFile2 = {\n    ~LogFile\n    ? traces: [+ Trace2 /\n                TraceError]\n}\n\nTrace2 = {\n    ? new_field_to_standardize: uint\n    ~Trace\n}\n\n; urn:ietf:params:qlog:file:sequential2\nQlogFileSeq2 = {\n    ~LogFile\n    trace: TraceSeq2\n}\n\nTraceSeq2 = {\n    ? new_field_to_standardize: uint\n    ~TraceSeq\n}\n```",
+          "createdAt": "2026-11-13T21:57:40Z",
+          "updatedAt": "2026-11-13T21:57:40Z"
         }
       ]
+    },
+    {
+      "number": 642,
+      "id": "I_kwDOCrLn6M8AAAABe-0cqQ",
+      "title": "Frame and capsule type sockets still show an \"any key-value map\" seed",
+      "url": "https://github.com/quicwg/qlog/issues/642",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [
+        "LPardue"
+      ],
+      "labels": [
+        "editorial"
+      ],
+      "body": "_Drafted with AI assistance; I reviewed the text, the cited history and the CDDL test._\n\n`$QuicFrame`, `$HTTP3Frame` and `$HTTPCapsule` each open with a figure that seeds the socket with any map. For example:\n\n```\n; The QuicFrame is any key-value map (e.g., JSON object)\n$QuicFrame /= {\n    * text => any\n}\n```\n\nThe figures with `* text => any` aren't in `~~~ cddl` fences, so the extracted schema doesn't contain them. The affected types **are** used in `cddl` elsewhere, which formally creates them in the schema:\n\n```\n~~~ cddl\nQuicBaseFrames =  PaddingFrame /\n                  PingFrame /\n                  AckFrame /\n                  ResetStreamFrame /\n                  ResetStreamAtFrame /\n                  StopSendingFrame /\n                  CryptoFrame /\n                  NewTokenFrame /\n                  StreamFrame /\n                  MaxDataFrame /\n                  MaxStreamDataFrame /\n                  MaxStreamsFrame /\n                  DataBlockedFrame /\n                  StreamDataBlockedFrame /\n                  StreamsBlockedFrame /\n                  NewConnectionIDFrame /\n                  RetireConnectionIDFrame /\n                  PathChallengeFrame /\n                  PathResponseFrame /\n                  ConnectionCloseFrame /\n                  HandshakeDoneFrame /\n                  UnknownFrame /\n                  DatagramFrame\n\n$QuicFrame /= QuicBaseFrames\n~~~\n```\n\nThis mismatch creates a problem:  a validator accepts only the listed things, while a human (or clanker) might conclude that any object is a valid frame.\n\nIf we used `cddl` for the the `* text => any` def, the concrete definitions would stop constraining anything. For example, the h3 schema would currently fail `{\"frame_type\": \"goaway\", \"id\": \"oops\"}`. That's expected. But would pass with the `* text => any`.\n\n#192 raised the same problem for `$ProtocolEventBody`, and #417 resolved it by deleting that seed. #417 kept the frame seeds as figures outside the schema. No other type socket in the drafts has a catch-all seed.\n\nProposal: Delete the three figures, and say in prose that event schemas add types with `/=`. This is how `$ApplicationError` already does it.\n\nLocations: quic-events \"QUIC Frames\"; h3-events \"HTTP3Frame\" and \"HTTPCapsule\".\n",
+      "createdAt": "2026-11-13T15:09:38Z",
+      "updatedAt": "2026-11-14T14:07:23Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 647,
+      "id": "I_kwDOCrLn6M8AAAABfG6r2w",
+      "title": "ICID is not enough to build unique file name",
+      "url": "https://github.com/quicwg/qlog/issues/647",
+      "state": "OPEN",
+      "author": "huitema",
+      "authorAssociation": "NONE",
+      "assignees": [
+        "LPardue"
+      ],
+      "labels": [],
+      "body": " draft-ietf-quic-qlog-quic-events-14 describes how to build a qlog file name from a global identifier, which could be derived from the ICID of a QUIC connection, stating for example:\n\n   The ODCID can also be used as the qlog filename or file identifier,\n   optionally suffixed by the vantage point type.  For example,\n   abcd1234_server.qlog would contain the server-side trace of the\n   connection with ODCID abcd1234.\n\nFirst, yes, using the ICID as a file name is really convenient, especially when investigating traces of a specific connection on multiple machines. But the text assumes that the ICID has enough randomness to be unique. But that's not always the case, and we can end up with collisions. If we imagine logs collated in a log folder, that means confusion. Moreover, an attacker could deliberately exploit that confusion to hid its traces.\n\nIn picoquic, we ended up adding a random element to the file name to make it unqiue. This gives us the option of creating names such as \"abcd1234_server_e5ft30a7.qlog\", i.e: \n```\n<global_id> \"_\" ( \"server\" | \"client\" ) \"_\" <random_id> \".qlog\". \n```\nVery useful in practice.",
+      "createdAt": "2026-11-14T00:27:20Z",
+      "updatedAt": "2026-11-14T14:07:15Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Good observation. Feels like some mention of salting would help, I can prep some text",
+          "createdAt": "2026-11-14T00:44:24Z",
+          "updatedAt": "2026-11-14T00:44:24Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "PTAL at https://github.com/quicwg/qlog/pull/649",
+          "createdAt": "2026-11-14T14:07:02Z",
+          "updatedAt": "2026-11-14T14:07:02Z"
+        }
+      ]
+    },
+    {
+      "number": 654,
+      "id": "I_kwDOCrLn6M8AAAABfSI8Bw",
+      "title": "Define qlog extension for QUIC multipath",
+      "url": "https://github.com/quicwg/qlog/issues/654",
+      "state": "OPEN",
+      "author": "huitema",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Not a new problem, of course. We discussed that 5 years ago in issue #134. That was probably premature then, but now that RFC 10069 is published, we can probably arrive at a stable design. Based on the analysis so far, we would need:\n\n1- Add a path identifier to the event header: most events are per path. Packets are sent or received on a path, congestion control is per path, etc. RFC 10069 defines a path_id, and using that is natural -- it is the same at all vantage points. For the few events that are \"global\", the simple solution is to assume that they happen on path_id=0.\n\n2- Add events related to path management, distinct from the path challenge and validation defined in the current draft. The current events happen within \"path_id=0\", but can in fact happen withing any of the paths, especially due to NAT rebinding. At a minimum, we probably need path creation and deletion events.\n\n3- Add definitions for the new frames created in RFC 10069.\n\nI understand that this should be an extension of the current QUIC events definition, but I will need some guidance to do that.",
+      "createdAt": "2026-11-14T18:36:02Z",
+      "updatedAt": "2026-11-14T18:36:02Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 655,
+      "id": "I_kwDOCrLn6M8AAAABfWPDVw",
+      "title": "How is the time stamp precision defined?",
+      "url": "https://github.com/quicwg/qlog/issues/655",
+      "state": "OPEN",
+      "author": "huitema",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "The timestamp section (7.1) says \"_The time field is a float64 and it is typically used to represent a duration in milliseconds, with a fractional component to microsecond or nanosecond resolution._\" In that sentence, \"typically\" does a lot of work. Would it be OK to negotiate somehow that all time stamps are in microseconds, or should we just edit the sentence  \"The time field is a float64 and ~it is typically used to~ *represents* a duration in milliseconds, with a fractional component to microsecond or nanosecond resolution.\" \n\nI could live with either solution, but I think the \"delay in milliseconds\" is good enough as a common point, and would make everybody's life simpler.",
+      "createdAt": "2026-11-15T01:43:03Z",
+      "updatedAt": "2026-11-15T01:43:03Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -34614,50 +34741,68 @@
       "id": "PR_kwDOCrLn6M8AAAABMQpFjQ",
       "title": "add reset_stream_at to parameters_restored",
       "url": "https://github.com/quicwg/qlog/pull/639",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "#482 added reset_stream_at to parameters_set, but missed parameters_restored. draft-ietf-quic-reliable-stream-reset requires both endpoints to remember it for 0-RTT.",
       "createdAt": "2026-11-02T09:07:04Z",
-      "updatedAt": "2026-11-02T09:07:07Z",
+      "updatedAt": "2026-11-13T19:37:04Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "71e035856d0d3d6bf12a83302d42f04e9c39c194",
       "headRepository": "quicwg/qlog",
       "headRefName": "parameters-restored-reset-stream-at",
       "headRefOid": "524ae15da1dbd6e2e71f6cbcdaa654f974d6cb80",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-13T19:37:02Z",
+      "mergedAt": "2026-11-13T19:37:02Z",
+      "mergedBy": "marten-seemann",
+      "mergeCommit": {
+        "oid": "f0b7ae8247c9a85b209177ded17091656abe2aa8"
+      },
       "comments": [],
-      "reviews": []
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABX1ZDbA",
+          "commit": {
+            "abbreviatedOid": "524ae15"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-11-13T16:19:53Z",
+          "updatedAt": "2026-11-13T16:19:53Z",
+          "comments": []
+        }
+      ]
     },
     {
       "number": 640,
       "id": "PR_kwDOCrLn6M8AAAABMVQ7yw",
       "title": "add an implementation field to Trace and TraceSeq",
       "url": "https://github.com/quicwg/qlog/pull/640",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "marten-seemann",
       "authorAssociation": "COLLABORATOR",
       "assignees": [],
       "labels": [],
       "body": "#136 asked for a way to log which implementation and version produced a trace, and was closed in favor of the `configuration` field. #187 then removed `configuration`, assuming that implementations could add such fields themselves. However, `Trace` and `TraceSeq` don't allow custom fields, so there's currently no valid place for this information, and implementations resort to free-text fields like `title` or `vantage_point.name`.\n\nI'd argue that this information is really useful. When looking at a qlog, the first thing I want to know is which stack I'm debugging. The version is just as valuable: it tells me whether a suspected bug might already have been fixed in a later release.",
       "createdAt": "2026-11-02T15:10:27Z",
-      "updatedAt": "2026-11-02T16:33:38Z",
+      "updatedAt": "2026-11-13T16:17:47Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "1630334badbdbd6a38f8396eff77104b3578e074",
       "headRepository": "quicwg/qlog",
       "headRefName": "trace-implementation",
       "headRefOid": "def605045131e8e202f3e201aabd9d17b09f45fd",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-13T16:17:44Z",
+      "mergedAt": "2026-11-13T16:17:44Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "9bac9d9d35a125e444519cc4b46247057da09d4e"
+      },
       "comments": [
         {
           "author": "LPardue",
@@ -34665,6 +34810,13 @@
           "body": "> However, Trace and TraceSeq don't allow custom fields\r\n\r\nThat seems like an oversight.",
           "createdAt": "2026-11-02T16:33:38Z",
           "updatedAt": "2026-11-02T16:33:38Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "LGTM thanks. Merging so I can work on some related followups",
+          "createdAt": "2026-11-13T16:17:14Z",
+          "updatedAt": "2026-11-13T16:17:14Z"
         }
       ],
       "reviews": [
@@ -34713,6 +34865,345 @@
               "updatedAt": "2026-11-02T16:32:17Z"
             }
           ]
+        },
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABX1Wlcw",
+          "commit": {
+            "abbreviatedOid": "def6050"
+          },
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-11-13T16:16:44Z",
+          "updatedAt": "2026-11-13T16:16:44Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 643,
+      "id": "PR_kwDOCrLn6M8AAAABO8rdbw",
+      "title": "Remove catch-all seeds from frame and capsule type sockets",
+      "url": "https://github.com/quicwg/qlog/pull/643",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "_Drafted with AI assistance; I reviewed the diff and the CDDL validation._\n\nFixes #642.\n\nDeletes the `{ * text => any }` figures for `$QuicFrame`, `$HTTP3Frame` and `$HTTPCapsule`, and says in prose that event schemas extend each socket with `/=`. The figures were outside `~~~ cddl` fences, so the extracted schema and validation don't change.\n",
+      "createdAt": "2026-11-13T15:23:02Z",
+      "updatedAt": "2026-11-13T15:23:03Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "1630334badbdbd6a38f8396eff77104b3578e074",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "type-socket-seeds",
+      "headRefOid": "e6bbe2e6cfb645435ba90bd2df7edbf304b3687c",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 644,
+      "id": "PR_kwDOCrLn6M8AAAABPB24NQ",
+      "title": "allow custom fields in Trace and TraceSeq",
+      "url": "https://github.com/quicwg/qlog/pull/644",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "_Drafted with AI assistance; I reviewed the diff, and `make cddl` passes._\n\nCloses #641.\n\n`Trace` and `TraceSeq` gain `* text => any`, like `Event` and `CommonFields`, so loggers can add fields that tools can ignore. Fields the schema defines stay type-checked: a trace with `\"title\": 5` still fails validation.\n\nAs discussed in #641, a future RFC that wants to standardize trace fields can define a new `file_schema` whose trace type unwraps `Trace` or `TraceSeq`.\n",
+      "createdAt": "2026-11-13T22:04:49Z",
+      "updatedAt": "2026-11-13T22:04:51Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "trace-custom-fields",
+      "headRefOid": "9886e7d9b577e84f1f2594207b87e3e5981c4837",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 645,
+      "id": "PR_kwDOCrLn6M8AAAABPDDdzQ",
+      "title": "Define one identifier syntax for field names, namespaces, and event types",
+      "url": "https://github.com/quicwg/qlog/pull/645",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "_Drafted with AI assistance; I chose the design, and reviewed the text._\n\nCloses #635.\n\nField names, namespaces, and event types now share one syntax: `[a-z][a-z0-9]*(_[a-z0-9]+)*`. That's lowercase snake_case, starting with a letter. The CDDL enforces it on every map key and on the event `name`, and the designated expert checks it at registration.\n\nPreviously allowed, now rejected:\n\n| Example | Problem |\n|---|---|\n| `quic:packet sent` | A space breaks the `$$quic-...-extension` socket name |\n| `quic:a,b` | Breaks the comma-separated event type list in the registry |\n| `x:a:b` | Is it namespace `x` with event `a:b`? The split is ambiguous |\n| `quic:Packet_Sent` | Is it the same event as `quic:packet_sent`? The spec doesn't say |\n| `packet__sent`, `_packet_sent` | Distinct names that map to the same socket as `packet_sent` |\n| namespace `my~ns` | Allowed as URI-unreserved, but not legal in a CDDL socket name |\n| custom field `My-Field` | Only the JSON mappings required lowercase, so a CBOR log wasn't bound |\n\nA `name` that breaks the rule is malformed, and tools treat it as an unknown event.\n\nEvery existing name in the three documents already conforms, so nothing is renamed.\n",
+      "createdAt": "2026-11-13T23:59:01Z",
+      "updatedAt": "2026-11-13T23:59:02Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "identifier-syntax-635",
+      "headRefOid": "aa5c00ff5dc3a504df9b6840c50a966c23bd4a20",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 646,
+      "id": "PR_kwDOCrLn6M8AAAABPDJCCg",
+      "title": "Remove the SHOULD for hexstring length-indicating fields",
+      "url": "https://github.com/quicwg/qlog/pull/646",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "*Drafted with AI assistance; reviewed by the author.*\n\nCloses #634.\n\nSection 11.4 said every schema SHOULD give each `hexstring` field a separate length field. quic-events and h3-events mostly don't, and #621 records fixed sizes in comments instead.\n\nAdding length fields would make the data model more complex for little gain. A logger can omit a length field even where the schema defines one, so tools must derive the length from the value either way. Section 11.4 already requires that.\n\nThis PR implements option 1 from the issue: remove the SHOULD, and keep the explanation of why a length field helps, with RawInfo as the example.\n",
+      "createdAt": "2026-11-14T00:08:28Z",
+      "updatedAt": "2026-11-14T00:08:29Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "hexstring-length-634",
+      "headRefOid": "d35a33a47ec1e1fabdb775359b4429e77e7b72ee",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 648,
+      "id": "PR_kwDOCrLn6M8AAAABPDaIdA",
+      "title": "Describe importance levels without keywords",
+      "url": "https://github.com/quicwg/qlog/pull/648",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "*Drafted with AI assistance; reviewed by the author.*\n\nCloses #632. Part of #625.\n\nThis is quite logical to me, if you want more rationale the clanker's slop is below \n \n\n> The section now describes what each importance level is useful for, without BCP 14 keywords. Logging any event is optional, and loggers have good reasons to skip events, such as sampling, filters, or privacy. So \"Core events SHOULD be present in all qlog files\" couldn't always be met, and the Base and Extra MAYs allowed something nothing forbids. #632 suggested \"SHOULD log Core events when they occur\". This PR drops that too, because a qlog without Core events is still valid.\n> \n> The sentences about what tools support or expect are gone too. They had little practical value.\n> \n> Implementations might omit details from any event. The SHOULD to log Base events after omitting Core details is now general prose: other events can recover some of the missing information, but nothing guarantees they recover all of it.\n> \n> The intro presented importance levels as the way to choose between overlapping events, but its own example (`connection_started` and `connection_state_updated`) is two Base events. The overlap discussion now sits in the closing paragraph, which leaves that choice to the document that defines the events.\n",
+      "createdAt": "2026-11-14T00:38:10Z",
+      "updatedAt": "2026-11-14T00:38:11Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "importance-levels-632",
+      "headRefOid": "3cb75e09974e31a0827217f83c6c3a48dd1ba09d",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 649,
+      "id": "PR_kwDOCrLn6M8AAAABPJ-qHA",
+      "title": "Add file naming and creation security considerations",
+      "url": "https://github.com/quicwg/qlog/pull/649",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "Fixes #647\n\nAdds a section to the main schema Security and Privacy Considerations on deriving qlog file names from peer-influenced identifiers such as the ODCID. It advises a locally generated random value and a restricted character set, and points correlation at `group_id` and `vantage_point`.\n\nThe quic-events and h3-events filename examples now include a random value and point at the new section.",
+      "createdAt": "2026-11-14T14:06:15Z",
+      "updatedAt": "2026-11-14T15:56:23Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "filename-uniqueness-647",
+      "headRefOid": "1483ea5a8dcc6ac45ec1ba2f8a3775dacee7b677",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABYABw7g",
+          "commit": {
+            "abbreviatedOid": "1483ea5"
+          },
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "state": "APPROVED",
+          "body": "Thanks, that's very much what I meant.",
+          "createdAt": "2026-11-14T15:56:23Z",
+          "updatedAt": "2026-11-14T15:56:23Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 650,
+      "id": "PR_kwDOCrLn6M8AAAABPKEvvg",
+      "title": "Clarify that event schemas are immutable",
+      "url": "https://github.com/quicwg/qlog/pull/650",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "Event schemas are immutable once defined, but the old wording (\"MUST NOT be extended\") could be read as forbidding extension schemas.\n\nFixes #629",
+      "createdAt": "2026-11-14T14:15:33Z",
+      "updatedAt": "2026-11-14T17:14:39Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "immutable-schemas-629",
+      "headRefOid": "d6c2018ed70062c6063b794b51cbde8ea4bd0a26",
+      "closedAt": "2026-11-14T17:14:37Z",
+      "mergedAt": "2026-11-14T17:14:37Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "c7b6c07461873e85e7f0a3eb645c60da8577a82d"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABX_SqlQ",
+          "commit": {
+            "abbreviatedOid": "d6c2018"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-11-14T14:16:37Z",
+          "updatedAt": "2026-11-14T14:16:37Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 651,
+      "id": "PR_kwDOCrLn6M8AAAABPKWX5g",
+      "title": "Make the uint64-as-JSON-string rule unconditional and say where it departs from Appendix E",
+      "url": "https://github.com/quicwg/qlog/pull/651",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "_Drafted with AI assistance; I reviewed the text._\n\nCloses #633.\n\nThis reworks JSON Interoperability so that it states one rule, and points to that rule from both mapping sections:\n\n- Drops the \"unless\u2026\" clause, so parsers SHOULD accept uint64 values as strings or numbers. Nothing in-band or out-of-band signals the old condition.\n- Says that a string-encoded uint64 holds its decimal representation. No format was given before, so `\"0x1f\"` conformed. This goes beyond #633.\n- The JSON and JSON-SEQ mapping sentences now say that uint64 strings are the exception to Appendix E of CDDL, and the two sentences use the same wording.\n- Corrects the problem statement: binary64 parsing isn't only a JavaScript issue, BigInt is standard JavaScript, and QUIC and HTTP/3 values go up to 2^62-1, not the full uint64 range.\n",
+      "createdAt": "2026-11-14T14:43:27Z",
+      "updatedAt": "2026-11-14T14:43:28Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "uint64-json-strings-633",
+      "headRefOid": "9d9699610d38c24492aeaec45e5394af7b721573",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 652,
+      "id": "PR_kwDOCrLn6M8AAAABPKmJyw",
+      "title": "Require a single vantage point per trace",
+      "url": "https://github.com/quicwg/qlog/pull/652",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "_Drafted with AI assistance; I reviewed the text and the cited history._\n\nCloses #627.\n\nThe CDDL allows only one `vantage_point` field per trace, but events can't name their own vantage point. So the rule constrains the events: all events in a trace MUST be logged from a single vantage point, whether or not the trace includes the field. `vantage_point` stays optional, so the CDDL is unchanged.\n",
+      "createdAt": "2026-11-14T15:07:19Z",
+      "updatedAt": "2026-11-14T17:05:02Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "single-vantage-point-627",
+      "headRefOid": "1fbfc932729bef2ec0442d18aa80400eaa81337c",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABYAY5hA",
+          "commit": {
+            "abbreviatedOid": "1fbfc93"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-11-14T17:05:02Z",
+          "updatedAt": "2026-11-14T17:05:02Z",
+          "comments": []
+        }
+      ]
+    },
+    {
+      "number": 653,
+      "id": "PR_kwDOCrLn6M8AAAABPKqNLQ",
+      "title": "Measure the sniffing window in bytes",
+      "url": "https://github.com/quicwg/qlog/pull/653",
+      "state": "MERGED",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [
+        "editorial"
+      ],
+      "body": "Closes #626, taking option 2.",
+      "createdAt": "2026-11-14T15:13:13Z",
+      "updatedAt": "2026-11-14T17:14:06Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "sniffing-bytes-626",
+      "headRefOid": "52f7eff30815a2afcbf1f81a1e33756817e75dfa",
+      "closedAt": "2026-11-14T17:14:04Z",
+      "mergedAt": "2026-11-14T17:14:04Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "4ff428292d944f5775345635d6c2d6916ab39904"
+      },
+      "comments": [],
+      "reviews": [
+        {
+          "id": "PRR_kwDOCrLn6M8AAAABX_5sSQ",
+          "commit": {
+            "abbreviatedOid": "52f7eff"
+          },
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "state": "APPROVED",
+          "body": "",
+          "createdAt": "2026-11-14T15:39:21Z",
+          "updatedAt": "2026-11-14T15:39:21Z",
+          "comments": []
         }
       ]
     }
