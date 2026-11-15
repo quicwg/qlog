@@ -157,7 +157,7 @@ hexstring = text .regexp "([0-9a-f]{2})*"
 {: #cddl-custom-types-def title="Additional CDDL type definitions"}
 
 All timestamps and time-related values (e.g., offsets) in qlog are
-logged as `float64` in the millisecond resolution.
+logged as `float64` in milliseconds.
 
 Other qlog documents can define their own CDDL-compatible (struct) types
 (e.g., separately for each Packet type that a protocol supports).
@@ -703,11 +703,11 @@ Example qlog event:
 
 ## Timestamps {#time-based-fields}
 
-The `time` field indicates when the event occurred. It is a duration measured
-from some point in time; its units depend on the type of clock chosen and system
-used. The `time` field is a float64 and it is typically used to represent a
-duration in milliseconds, with a fractional component to microsecond or
-nanosecond resolution.
+The `time` field indicates when the event occurred. It is a float64 duration in
+milliseconds, measured from some point in time. A fractional component can
+represent sub-millisecond resolution. The resolution that a float64 can carry
+decreases as the value grows; for example, a duration measured from the Unix
+epoch can represent microseconds but not nanoseconds.
 
 There are several options for generating and logging timestamps, these are
 governed by the ReferenceTime type (optionally included in the `reference_time`
