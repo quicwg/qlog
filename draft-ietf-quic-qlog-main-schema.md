@@ -153,6 +153,11 @@ uint64 = uint .size 8
 ; this is needed because the default CDDL binary string (bytes/bstr)
 ; is only CBOR and not JSON compatible
 hexstring = text .regexp "([0-9a-f]{2})*"
+
+; a field name, namespace identifier, or event type identifier;
+; see the Identifiers section
+; examples: packet_sent, quic, http3
+identifier = text .regexp "[a-z][a-z0-9]*(_[a-z0-9]+)*"
 ~~~
 {: #cddl-custom-types-def title="Additional CDDL type definitions"}
 
@@ -187,9 +192,22 @@ should be aware of for easy reading comprehension are:
 * `EnumName = "entry1" / "entry2" / entry3 / ...`: defines an enum
 * `StructName = { ... }` : defines a new struct type
 * `;` : single-line comment
-* `* text => any` : special syntax to indicate 0 or more fields that
-  have a string key that maps to any value. Used to indicate a generic
+* `* identifier => any` : special syntax to indicate 0 or more fields that
+  have an identifier key that maps to any value. Used to indicate a generic
   JSON object.
+
+## Identifiers {#identifiers}
+
+Field names, namespace identifiers, and event type identifiers
+({{event-types-and-schema}}) MUST use the identifier syntax. An identifier
+consists of lowercase letters, digits, and "_". It starts with a letter, and
+each "_" sits between two letters or digits. The `identifier` type in
+{{cddl-custom-types-def}} defines this syntax.
+
+This requirement applies to every key in a serialized log, including custom
+fields, keys in free-form maps such as `details`, and keys nested inside a value
+of type `any`. CDDL cannot check keys inside a value of type `any`, so for those
+keys only this text applies.
 
 # Design Overview
 
@@ -621,7 +639,7 @@ An Implementation describes properties of a logger, defined in
 Implementation = {
     ? name: text
     ? version: text
-    * text => any
+    * identifier => any
 }
 ~~~
 {: #implementation-def title="Implementation definition"}
@@ -652,7 +670,8 @@ defined in {{event-def}}.
 ~~~ cddl
 Event = {
     time: float64
-    name: text
+    ; namespace identifier ":" event type identifier
+    name: text .regexp "[a-z][a-z0-9]*(_[a-z0-9]+)*:[a-z][a-z0-9]*(_[a-z0-9]+)*"
     data: $ProtocolEventData
     ? tuple: TupleID
     ? time_format: TimeFormat
@@ -660,7 +679,7 @@ Event = {
     ? system_info: SystemInformation
 
     ; events can contain any amount of custom fields
-    * text => any
+    * identifier => any
 }
 ~~~
 {: #event-def title="Event definition"}
@@ -1112,7 +1131,7 @@ CommonFields = {
     ? time_format: TimeFormat
     ? reference_time: ReferenceTime
     ? group_id: GroupID
-    * text => any
+    * identifier => any
 }
 ~~~
 {: #common-fields-def title="CommonFields definition"}
@@ -1138,16 +1157,17 @@ document that defines qlog events for a new hypothetical protocol called "IPoAC"
 would define and register both the new event namespace `ipoac` and the event
 schema URI `urn:ietf:params:qlog:events:ipoac`.
 
-Concrete event types MUST belong to a single event namespace and MUST have a
-non-empty identifier of type `text`.
+Concrete event types MUST belong to a single event namespace and MUST have an
+event type identifier that uses the identifier syntax; see {{identifiers}}.
 
-New namespaces MUST have a non-empty globally-unique text identifier using only
-characters in the URI unreserved range; see {{Section 2.3 of RFC3986}}.
+New namespaces MUST have a globally-unique namespace identifier that uses the
+identifier syntax; see {{identifiers}}.
 Namespaces are mutable and MAY be extended with new events.
 
 The value of a qlog event `name` field MUST be the concatenation of namespace
 identifier, colon (':'), and event type identifier (for example:
-quic:packet_sent). The resulting concatenation MUST be globally unique, so log
+quic:packet_sent). A `name` without this form is malformed; see {{tooling}}. The
+resulting concatenation MUST be globally unique, so log
 files can contain events from multiple event schemas without the risk of name
 collisions. The designated expert checks this for the event types listed in
 the registry; see {{event-schema-reg}}. A (private or non-standard) event schema that does not list its
@@ -1240,9 +1260,11 @@ ceases to exist.
 The "qlog event schema URIs" registry operates under the Expert Review policy,
 per {{Section 4.5 of !RFC8126}}.  When reviewing requests, the expert MUST check
 that the URI is appropriate to the event schema and satisfies the requirements
-in {{event-types-and-schema}} and this section. A request to register a private
-or non-standard schema URI using a URN of the forms reserved for schemas defined
-by an RFC above MUST be rejected.
+in {{event-types-and-schema}} and this section. The expert MUST also check that
+the namespace identifier, each listed event type, and the field names in the
+referenced specification use the identifier syntax; see {{identifiers}}. A
+request to register a private or non-standard schema URI using a URN of the
+forms reserved for schemas defined by an RFC above MUST be rejected.
 
 Registration requests should use the template defined in {{iana}}.
 
@@ -1263,6 +1285,15 @@ definition includes the socket as an entry of the form
 `* $$NAMESPACE-EVENTTYPE-extension`. Other event schemas add fields to it with
 plugs that use the `//=` operator, and several plugs can extend the same socket.
 An example is shown in {{groupsocket-extension-example}}.
+
+By convention, the socket name is the namespace identifier, a hyphen, the event
+type identifier with each "_" removed, and the suffix `-extension`. For example,
+the `quic:packet_sent` event uses `$$quic-packetsent-extension`. A data type
+that is not event data uses its CDDL type name in lowercase in place of the
+event type identifier. For example, `PacketHeader` uses
+`$$quic-packetheader-extension`. A plug uses the socket name that the original
+definition declares, so a definition can use a different name. For example, a
+different name avoids two definitions that share a socket.
 
 ~~~~~~~~
 ; original definition in event schema A
@@ -1647,7 +1678,7 @@ one trace (e.g., split by `group_id`). It has Extra importance level.
 ~~~ cddl
 SimulationScenario = {
     ? name: text
-    ? details: {* text => any }
+    ? details: {* identifier => any }
 
     * $$simulation-scenario-extension
 }
@@ -1761,8 +1792,7 @@ Media Type is "application/qlog+json" per {{!RFC6839}}. The file
 extension/suffix SHOULD be ".qlog".
 
 In accordance with {{Section 8.1 of !RFC8259}}, JSON files are required to use
-UTF-8 both for the file itself and the string values it contains. In addition,
-all qlog field names MUST be lowercase when serialized to JSON.
+UTF-8 both for the file itself and the string values it contains.
 
 In order to serialize CDDL-based qlog event and data structure
 definitions to JSON, the official CDDL-to-JSON mapping defined in
@@ -1804,9 +1834,6 @@ different sources in a single JSON-SEQ qlog file.
 When mapping qlog to JSON-SEQ, the Media Type is "application/qlog+json-seq" per
 {{!RFC8091}}. The file extension/suffix SHOULD be ".sqlog" (for "streaming"
 qlog).
-
-While not specifically required by the JSON-SEQ specification, all qlog field
-names MUST be lowercase when serialized to JSON-SEQ.
 
 In order to serialize all other CDDL-based qlog event and data structure
 definitions to JSON-SEQ, the official CDDL-to-JSON mapping defined in
@@ -2001,7 +2028,8 @@ SHOULD generate a clear error message to this effect.
 Tools MUST NOT produce breaking errors for any field names and/or values in the
 qlog format that they do not recognize. Tools SHOULD indicate even unknown event
 occurrences within their context (e.g., marking unknown events on a timeline for
-manual interpretation by the user).
+manual interpretation by the user). Tools MUST treat an event with a malformed
+`name` ({{event-types-and-schema}}) as an unknown event.
 
 Tool authors should be aware that, depending on the logging implementation, some
 events will not always be present in all traces. For example, using a circular

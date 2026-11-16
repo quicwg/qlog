@@ -874,7 +874,7 @@ QUICPacketDropped = {
     ? header: PacketHeader
     ? raw: RawInfo
     ? datagram_payload_checksum: uint32
-    ? details: {* text => any}
+    ? details: {* identifier => any}
     ? trigger:
         "internal_error" /
         "rejected" /
@@ -1974,7 +1974,7 @@ Token = {
     ; decoded fields included in the token
     ; (typically: peer's IP address, creation time)
     ? details: {
-      * text => any
+      * identifier => any
     }
     ? raw: RawInfo
 
@@ -2035,7 +2035,7 @@ point. It can be extended to support additional QUIC frame types.
 ~~~~~~
 ; The QuicFrame is any key-value map (e.g., JSON object)
 $QuicFrame /= {
-    * text => any
+    * identifier => any
 }
 ~~~~~~
 {: #quicframe-def title="QuicFrame type socket definition"}
