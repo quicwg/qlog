@@ -483,16 +483,9 @@ Initiator = "local" /
 
 ## HTTP3Frame
 
-The generic `$HTTP3Frame` is defined here as a CDDL "type socket" extension point.
-It can be extended to support additional HTTP/3 frame types.
-
-~~~~~~
-; The HTTP3Frame is any key-value map (e.g., JSON object)
-$HTTP3Frame /= {
-    * text => any
-}
-~~~~~~
-{: #h3-frame-def title="HTTP3Frame type socket definition"}
+The generic `$HTTP3Frame` is defined as a CDDL "type socket" extension point.
+Event schemas add HTTP/3 frame types to it with the `/=` operator; see
+{{Section 8.2 of QLOG-MAIN}}.
 
 The HTTP/3 frame types defined in this document are as follows:
 
@@ -870,16 +863,9 @@ The following data type definitions can be used in HTTP events.
 
 ## HTTPCapsule
 
-The generic `$HTTPCapsule` is defined here as a CDDL "type socket" extension
-point. It can be extended to support additional capsule types.
-
-~~~~~~
-; The HTTPCapsule is any key-value map (e.g., JSON object)
-$HTTPCapsule /= {
-    * text => any
-}
-~~~~~~
-{: #http-capsule-def title="HTTPCapsule type socket definition"}
+The generic `$HTTPCapsule` is defined as a CDDL "type socket" extension
+point. Event schemas add capsule types to it with the `/=` operator; see
+{{Section 8.2 of QLOG-MAIN}}.
 
 The capsule types defined in this document are as follows:
 
