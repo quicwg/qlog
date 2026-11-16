@@ -118,9 +118,12 @@ known connection applies.
 When they are logged without QUIC events, an implementation can assign a
 unique identifier to each HTTP/3 connection and use it as the value of the
 qlog `group_id` field; see {{Section 7.3 of QLOG-MAIN}}. The identifier can
-also be used as the qlog filename or file identifier, optionally suffixed by
-the vantage point type. For example, abcd1234_server.qlog would contain the
-server-side trace of the connection with identifier abcd1234.
+also be used as part of the qlog filename or file identifier, optionally
+suffixed by the vantage point type. For example, abcd1234_server_e5f30a7c.qlog
+could contain the server-side trace of the connection with identifier abcd1234.
+A locally generated random value in the filename, such as e5f30a7c in the
+example, avoids collisions between connections that share an identifier. See
+{{Section 15.3 of QLOG-MAIN}}.
 
 ## Notational Conventions
 
