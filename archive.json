@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-15T04:22:01.097837+00:00",
+  "timestamp": "2026-11-17T06:04:33.333810+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10861,7 +10861,7 @@
       "id": "I_kwDOCrLn6M8AAAABbSAQ1Q",
       "title": "Can a trace mix vantage points?",
       "url": "https://github.com/quicwg/qlog/issues/627",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [
@@ -10872,8 +10872,8 @@
       ],
       "body": "The secdir early review of -05 asked for \"Each trace MUST have a single vantage_point\" ([review](https://datatracker.ietf.org/doc/review-ietf-quic-qlog-main-schema-05-secdir-early-harkins-2023-04-26/)). #322 added that sentence. The main-schema reflow in #331 removed it, and I can't find a discussion of the removal. \n\nNothing seems to have replaced the MUST requirement. The main schema now only says that a trace is \"conventionally\" or \"in the normal use case\" collected at a single vantage point (Design Overview, Trace). `vantage_point` is optional in Trace and TraceSeq.\n\nOptions:\n\n1. Restore the rule: \"Each trace MUST have a single vantage point.\" `vantage_point` stays optional, so a trace can leave its vantage point unstated, but can't mix them.\n2. Restore the rule and make `vantage_point` required. The \"unknown\" type covers loggers that don't know their vantage point. This changes the CDDL.\n",
       "createdAt": "2026-10-30T19:36:12Z",
-      "updatedAt": "2026-11-14T15:10:56Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-15T19:56:55Z",
+      "closedAt": "2026-11-15T19:56:55Z",
       "comments": []
     },
     {
@@ -11140,9 +11140,17 @@
       "labels": [],
       "body": "Not a new problem, of course. We discussed that 5 years ago in issue #134. That was probably premature then, but now that RFC 10069 is published, we can probably arrive at a stable design. Based on the analysis so far, we would need:\n\n1- Add a path identifier to the event header: most events are per path. Packets are sent or received on a path, congestion control is per path, etc. RFC 10069 defines a path_id, and using that is natural -- it is the same at all vantage points. For the few events that are \"global\", the simple solution is to assume that they happen on path_id=0.\n\n2- Add events related to path management, distinct from the path challenge and validation defined in the current draft. The current events happen within \"path_id=0\", but can in fact happen withing any of the paths, especially due to NAT rebinding. At a minimum, we probably need path creation and deletion events.\n\n3- Add definitions for the new frames created in RFC 10069.\n\nI understand that this should be an extension of the current QUIC events definition, but I will need some guidance to do that.",
       "createdAt": "2026-11-14T18:36:02Z",
-      "updatedAt": "2026-11-14T18:36:02Z",
+      "updatedAt": "2026-11-16T17:32:00Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Item 1 overlaps with issue #501, which is proposing the opposite to take tuple out of the common event fields and put it only in the QUIC packet events that need it. #617 implements that and is still open. \n\nThe existing tuple field is not a path ID. #487 renamed Path to Tuple because the multipath editors asked for it. A multipath path keeps its ID when its four-tuple changes, for example after NAT rebinding. So a path ID would be a new field alongside tuple, not a replacement for it. Since #501 is fundamentally about whether per-path information belongs in the common event fields at all, that needs to be settled before considering adding a path ID.\n\nItems 2 and 3 can go in an extension without any change to the core drafts.\n\n- Define a new event schema with its own URI, for example urn:ietf:params:qlog:events:quic#multipath.\n- Define path creation and deletion as new event types in that schema.\n- Add the new frames by extending $QuicFrame.\n- Add path_id to existing QUIC events through their extension sockets, for example $$quic-packetsent-extension.",
+          "createdAt": "2026-11-16T17:32:00Z",
+          "updatedAt": "2026-11-16T17:32:00Z"
+        }
+      ]
     },
     {
       "number": 655,
@@ -11156,7 +11164,31 @@
       "labels": [],
       "body": "The timestamp section (7.1) says \"_The time field is a float64 and it is typically used to represent a duration in milliseconds, with a fractional component to microsecond or nanosecond resolution._\" In that sentence, \"typically\" does a lot of work. Would it be OK to negotiate somehow that all time stamps are in microseconds, or should we just edit the sentence  \"The time field is a float64 and ~it is typically used to~ *represents* a duration in milliseconds, with a fractional component to microsecond or nanosecond resolution.\" \n\nI could live with either solution, but I think the \"delay in milliseconds\" is good enough as a common point, and would make everybody's life simpler.",
       "createdAt": "2026-11-15T01:43:03Z",
-      "updatedAt": "2026-11-15T01:43:03Z",
+      "updatedAt": "2026-11-15T21:08:42Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Good spot.\n\nEarlier drafts had time unit \"negotiation\" in the form of the `time_units` field. However, that was removed in 2020 in #95 . The rationale being that a float unit can carry either resolution, and reducing parser state. \n\nI opened to #656 to implement the latter alternative. The actual accuracy of a value depends on some factors, so the PR tries to explain the considerations without forcing anything.",
+          "createdAt": "2026-11-15T21:08:42Z",
+          "updatedAt": "2026-11-15T21:08:42Z"
+        }
+      ]
+    },
+    {
+      "number": 657,
+      "id": "I_kwDOCrLn6M8AAAABf2Xy7w",
+      "title": "Logging of selected SNI",
+      "url": "https://github.com/quicwg/qlog/issues/657",
+      "state": "OPEN",
+      "author": "huitema",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "In my previous \"naive\" implementation of QLOG, I was logging the SNI as another \"transport parameter\", just like the ALPN. The latest draft split that into two events, alpn_information and parameters_set. But the SNI does not fit in any of those -- and yet it is a feature about as important as ALPN. I see the discussion in #85, but it did not touch the SNI. So I wonder what I should do. Write an extension? Wildcat use of an SNI property in the alpn_information? Write an extension? Suggest a \"quic:sni_information\" event?",
+      "createdAt": "2026-11-16T22:37:40Z",
+      "updatedAt": "2026-11-16T22:37:40Z",
       "closedAt": null,
       "comments": []
     }
@@ -35128,24 +35160,26 @@
       "id": "PR_kwDOCrLn6M8AAAABPKmJyw",
       "title": "Require a single vantage point per trace",
       "url": "https://github.com/quicwg/qlog/pull/652",
-      "state": "OPEN",
+      "state": "MERGED",
       "author": "LPardue",
       "authorAssociation": "MEMBER",
       "assignees": [],
       "labels": [],
       "body": "_Drafted with AI assistance; I reviewed the text and the cited history._\n\nCloses #627.\n\nThe CDDL allows only one `vantage_point` field per trace, but events can't name their own vantage point. So the rule constrains the events: all events in a trace MUST be logged from a single vantage point, whether or not the trace includes the field. `vantage_point` stays optional, so the CDDL is unchanged.\n",
       "createdAt": "2026-11-14T15:07:19Z",
-      "updatedAt": "2026-11-14T17:05:02Z",
+      "updatedAt": "2026-11-15T19:56:55Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "f0b7ae8247c9a85b209177ded17091656abe2aa8",
       "headRepository": "quicwg/qlog",
       "headRefName": "single-vantage-point-627",
       "headRefOid": "1fbfc932729bef2ec0442d18aa80400eaa81337c",
-      "closedAt": null,
-      "mergedAt": null,
-      "mergedBy": null,
-      "mergeCommit": null,
+      "closedAt": "2026-11-15T19:56:53Z",
+      "mergedAt": "2026-11-15T19:56:53Z",
+      "mergedBy": "LPardue",
+      "mergeCommit": {
+        "oid": "8ac10602a81d7d61e1adf2142cb1d0e33dbf4943"
+      },
       "comments": [],
       "reviews": [
         {
@@ -35206,6 +35240,32 @@
           "comments": []
         }
       ]
+    },
+    {
+      "number": 656,
+      "id": "PR_kwDOCrLn6M8AAAABPYYO6g",
+      "title": "Fix the time field unit to milliseconds",
+      "url": "https://github.com/quicwg/qlog/pull/656",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "Drafted with AI assistance; reviewed and edited by me.\n\nCloses #655.\n\nSection 1.2 says all timestamps are float64 milliseconds, but the Timestamps section (8.1 in the editor's copy, 7.1 in the published draft) says the units \"depend on the type of clock chosen and system used\" and are \"typically\" milliseconds. This PR removes that hedge so the two sections agree, and makes the fractional part explicitly optional.\n\nIt also replaces the nanosecond claim. A float64 millisecond count since the Unix epoch resolves to about 244 ns today, so nanoseconds only fit when the values are small, such as connection-relative monotonic times.\n\nA check of current-format producers was made (the quiche qlog crate, quic-go, ngtcp2, mvfst, aioquic) all log milliseconds. They differ only in whether they log a fractional part, and both forms remain valid. The CDDL is unchanged.",
+      "createdAt": "2026-11-15T21:02:37Z",
+      "updatedAt": "2026-11-15T21:02:38Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "8ac10602a81d7d61e1adf2142cb1d0e33dbf4943",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "time-units-655",
+      "headRefOid": "42c5a6bf13d94aac11e0abb6e7e2e57d226c0452",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
     }
   ]
 }
