@@ -171,7 +171,6 @@ this specification.
 | quic:tuple_assigned            | Base      | {{quic-tupleassigned}} |
 | quic:mtu_updated              | Extra      | {{quic-mtuupdated}} |
 | quic:version_information      | Core       | {{quic-versioninformation}} |
-| quic:alpn_information         | Core       | {{quic-alpninformation}} |
 | quic:parameters_set           | Core       | {{quic-parametersset}} |
 | quic:parameters_restored         | Base       | {{quic-parametersrestored}} |
 | quic:packet_sent                 | Core       | {{quic-packetsent}} |
@@ -218,7 +217,6 @@ QuicEventData = QUICServerListening /
                 QUICTupleAssigned /
                 QUICMTUUpdated /
                 QUICVersionInformation /
-                QUICALPNInformation /
                 QUICParametersSet /
                 QUICParametersRestored /
                 QUICPacketSent /
@@ -601,52 +599,10 @@ event includes `server_versions`. If the server supports the client's version,
 Otherwise, `chosen_version` is absent, and `client_versions` holds the version
 the client used.
 
-## alpn_information {#quic-alpninformation}
-
-The `alpn_information` event supports Application-Layer Protocol Negotiation
-(ALPN) over the QUIC transport; see {{?RFC7301}} and {{Section 8.1 of
-QUIC-TLS}}. It has Core importance level.
-
-QUIC endpoints are configured with a list of supported ALPN identifiers. During
-the TLS handshake, the client sends its list, and the server chooses one
-identifier from both lists and sends it back. If no match is found, the
-connection is closed.
-
-ALPN identifiers are byte sequences, which are often valid UTF-8. The
-`ALPNIdentifier` type can hold either form: `byte_value` holds the raw bytes,
-and `string_value` holds the identifier as text. Implementations SHOULD log at
-least one form and MAY log both.
-
-~~~ cddl
-QUICALPNInformation = {
-    ? server_alpns: [* ALPNIdentifier]
-    ? client_alpns: [* ALPNIdentifier]
-    ? chosen_alpn: ALPNIdentifier
-
-    * $$quic-alpninformation-extension
-}
-
-ALPNIdentifier = {
-  ? byte_value: hexstring
-  ? string_value: text
-}
-~~~
-{: #quic-alpninformation-def title="QUICALPNInformation definition"}
-
-A client usually logs this event twice: first with `client_alpns` when it
-offers its list, then with `chosen_alpn` when it learns the server's choice. It
-can instead log a single event with both fields once it learns the choice.
-
-A server logs this event once, after it chooses, with `client_alpns`,
-`server_alpns`, and `chosen_alpn`.
-
 ## parameters_set {#quic-parametersset}
 
-The `parameters_set` event groups settings from several sources, such as
-transport parameters and the TLS cipher suite, into a single event. This keeps
-the number of events low, and lets a reader reason about what the settings do
-without needing to know which mechanism set each one. It has Core importance
-level.
+The `parameters_set` event logs connection settings, such as transport
+parameters. It has Core importance level.
 
 Most of these settings are set once and never change. However, they are often
 set at different times during the connection, so a trace can contain several
@@ -660,8 +616,7 @@ changes its behavior based on the peer's settings, the outcome can be logged
 with a new event type, or with fields added through
 `$$quic-parametersset-extension`; see {{Section 8.2 of QLOG-MAIN}}.
 
-The `initiator` field is required. Settings that both endpoints negotiate, such
-as `tls_cipher`, are logged in both the local and the remote event.
+The `initiator` field is required.
 
 Each setting starts the connection with its default value, or with no value if
 it has no default. A `parameters_set` event that includes a setting replaces
@@ -686,15 +641,6 @@ event to indicate the updated values, as normal.
 ~~~ cddl
 QUICParametersSet = {
     initiator: Initiator
-
-    ; true if valid session ticket was received
-    ? resumption_allowed: bool
-
-    ; true if early data extension was enabled on the TLS layer
-    ? early_data_enabled: bool
-
-    ; e.g., "AES_128_GCM_SHA256"
-    ? tls_cipher: text
 
     ; RFC9000
     ? original_destination_connection_id: ConnectionID
@@ -2555,7 +2501,6 @@ Event Types:
   tuple_assigned,
   mtu_updated,
   version_information,
-  alpn_information,
   parameters_set,
   parameters_restored,
   packet_sent,
