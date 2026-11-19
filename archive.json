@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-17T06:04:33.333810+00:00",
+  "timestamp": "2026-11-19T05:31:10.170561+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -11185,12 +11185,36 @@
       "author": "huitema",
       "authorAssociation": "NONE",
       "assignees": [],
-      "labels": [],
+      "labels": [
+        "discuss"
+      ],
       "body": "In my previous \"naive\" implementation of QLOG, I was logging the SNI as another \"transport parameter\", just like the ALPN. The latest draft split that into two events, alpn_information and parameters_set. But the SNI does not fit in any of those -- and yet it is a feature about as important as ALPN. I see the discussion in #85, but it did not touch the SNI. So I wonder what I should do. Write an extension? Wildcat use of an SNI property in the alpn_information? Write an extension? Suggest a \"quic:sni_information\" event?",
       "createdAt": "2026-11-16T22:37:40Z",
-      "updatedAt": "2026-11-16T22:37:40Z",
+      "updatedAt": "2026-11-17T19:18:12Z",
       "closedAt": null,
-      "comments": []
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "I got Claude to do a survey of a few open source implementations, but this long post is handwritten. \n\nOnly 1 implementation logs an SNI in qlog (picoquic). Which may not be surprising since there is no field or event for it. \n\nLooking at debug/trace logs, some implementations log SNI but it varies how and when.\n\nALPN and SNI are distinct things. Especially, SNI is not negotiated like ALPN. Conflating them in qlog, such as by adding a field for SNI in alpn_information, doesn't seem great.\n\nThe history around this area is a bit complicated\n\n* Before draft-marx -02, the chosen ALPN was an alpn field in parameters_set, and the server's supported list was in server_listening. #28 (2019) noted there was nowhere to log the list the client offered. @huitema suggested proposed_alpn next to alpn, to keep the offer distinct from the result. This happened in 2020.\n\n* In parallel, #85 argued that catch-all events like parameters_set force tools to guess what each instance means. draft-marx -02, split out to have version_information and alpn_information events (5fddd06). It was said at the time that going further with a split or additions would create many more event types.\n\nMy survey states that to date, only 2 stacks populate alpn_information (quic-go and aioquic) and don't use it as fully described in the doc. Some stack log some ALPN things in different events, and vary how they do it.\n\nThe parameters_set event has a `tis_cipher` field that my survey found only Cloudflare quiche to populates.\n\nWe also have this very old ticket from 2019 about 0-RTT https://github.com/quicwg/qlog/issues/27. With one attempt at fixing that by me in parameters_set https://github.com/quicwg/qlog/pull/561, where @marten-seemann  makes the case that \"These are not QUIC parameters\". \n\nI'm left with a feeling that the QUIC qlog events are not doing a great job of representing TLS things. And that the QUIC qlog spec is not the right place to try to fix them because a) they are QUIC adjacent only b) implementers are choosing a wide variety of options to log different things. That makes consensus hard.\n\nI think this issue has convinced me that we need to drop TLS things from the QUIC qlog specs and start a parallel piece of work (that would need to seek adoption) to go on iterate on a TLS schema. Since qlog started, TLS has added things like ECH and PQ, and there are efforts like merlke tree certs etc. At the HTTP layer, we have things like ORIGIN frame and secondary server certificates) These strike me as areas where implementers might find value in logging but have yet to test it out much.",
+          "createdAt": "2026-11-17T17:56:33Z",
+          "updatedAt": "2026-11-17T17:57:35Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "The SNI is important for systems that multiplex multiple SNI on the same IP, and logging that certainly is useful. Having a qlog-tls draft would indeed be a solution. Before that happens, I guess I can put a place holder using \"loglevel:info\".",
+          "createdAt": "2026-11-17T18:13:07Z",
+          "updatedAt": "2026-11-17T18:13:07Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "> The SNI is important for systems that multiplex multiple SNI on the same IP\n\nAgree (sorry if that was not clear)\n\nSpeaking to my experience working at a CDN operator that used anyast IP to share IPs between thousands(+) of DNS names, the SNI is some vital data. I can't recall a reason it wasn't qlogged in quiche, other than we had other observability systems that covered the gap. Loggers can use HTTP `:authority` headers as a crutch, but things like connection coalescing mean there is looser coupling to the SNI that might seem otherwise.\n\nI'm generally supportive of _more_ logging in this area but based on our track record, I am not convinced we can design a clean solution in a timely manner. ",
+          "createdAt": "2026-11-17T19:18:12Z",
+          "updatedAt": "2026-11-17T19:18:12Z"
+        }
+      ]
     }
   ],
   "pulls": [
@@ -35260,6 +35284,32 @@
       "headRepository": "quicwg/qlog",
       "headRefName": "time-units-655",
       "headRefOid": "42c5a6bf13d94aac11e0abb6e7e2e57d226c0452",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 658,
+      "id": "PR_kwDOCrLn6M8AAAABP7H0Uw",
+      "title": "Remove TLS handshake information from the QUIC event schema",
+      "url": "https://github.com/quicwg/qlog/pull/658",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "AI-assisted: drafted based on an implementation survey and the issue history, then reviewed by me.\n\nThis PR takes a machete to the draft to drop TLS stuff:  `alpn_information` and `ALPNIdentifier`, plus the `resumption_allowed`, `early_data_enabled` and `tls_cipher` fields of `parameters_set`. It is an alternative to https://github.com/quicwg/qlog/pull/561.\n\nThe QUIC event schema covers TLS only partially. Other interesting things a ClientHello or ServerHello carry (SNI, key exchange group, signature scheme, ECH) have no home. #657 raised the issue about SNI. \n\nImplementations make little use of the stuff we already provide. Of the 14 QUIC stacks checked, two emit `alpn_information`, each with a single field, and quic-go still uses the pre-#439 `transport:` name. Only quiche emits `tls_cipher`, and it uses its own algorithm names rather than IANA cipher suite names. None emit `resumption_allowed` or `early_data_enabled`. The stacks that log more TLS handshake values, s2n-quic and mvfst, already use their own events. Our oldest issue, https://github.com/quicwg/qlog/issues/27, relates to TLS 0-RTT and we have not been able to come to consensus on how to resolve it.\n\nRemoving the items from QUIC fixes the leaking layer violations. TLS handshake information can move to an extension schema, most likely in an appropriate `tis` namespace. \n\nKeys, `CryptoError`, the handshake states and CRYPTO frames stay, because QUIC defines them explicitly. We are not inventing anything there.\n",
+      "createdAt": "2026-11-17T19:30:51Z",
+      "updatedAt": "2026-11-17T19:30:52Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "8ac10602a81d7d61e1adf2142cb1d0e33dbf4943",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "remove-tls-info",
+      "headRefOid": "545c47553f167678842c80de8ec449ef70da5f54",
       "closedAt": null,
       "mergedAt": null,
       "mergedBy": null,
