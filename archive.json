@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-19T05:31:10.170561+00:00",
+  "timestamp": "2026-11-22T04:38:34.442501+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10038,7 +10038,7 @@
       ],
       "body": "The tuple is currently a property of the `Event`. I'm not sure if that makes sense. At the very least, it would complicate the data structures used in my implementation quite significantly.\n\nFor example, it doesn't really make sense to set the tuple on the `QUICKeyUpdated` event. With the exception of a few events like `QUICPacketSent`, `QUICPacketReceived`, `QUICPacketDropped`, etc., most events are connection-level events. This applies even more so when moving up the application stack: No HTTP/3 event benefits from specifying the tuple.\n\nI suggest:\n\n1. Moving the `TupleID` definition to the QUIC document.\n2. Making it a field in the few events where it actually applies.",
       "createdAt": "2025-12-03T05:08:43Z",
-      "updatedAt": "2026-11-14T15:14:55Z",
+      "updatedAt": "2026-11-19T23:05:40Z",
       "closedAt": null,
       "comments": [
         {
@@ -10082,6 +10082,13 @@
           "body": "Lets put this on the agenda for 127 and then aim to make a final call one way or another soon after",
           "createdAt": "2026-10-28T18:20:19Z",
           "updatedAt": "2026-10-28T18:20:19Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Discussed at IETF 127: agreement in room to go in this directionn, to be confirmed on the list",
+          "createdAt": "2026-11-19T23:05:40Z",
+          "updatedAt": "2026-11-19T23:05:40Z"
         }
       ]
     },
@@ -10627,7 +10634,7 @@
       ],
       "body": "It's not clear what `connection_id_updated` is for. There are two possible readings:\n\n- It logs when an endpoint **starts using** a different connection ID.\n- It logs when an endpoint **is given** a new connection ID, for example in a NEW_CONNECTION_ID frame.\n\nThese are different things. Being given a connection ID doesn't mean using it. An endpoint can use it later, or never (RFC 9000 Section 5.1.1).\n\nThe text supports both readings. It says the event is for when an endpoint \"updates its current connection ID\", which suggests using. But it also says the event is logged when an endpoint \"receives a new connection ID from the peer\", which suggests being given one.\n\nThe history points to using. The event was added so that implementations don't have to log the connection ID in every packet. Its first version had separate fields for the IDs sent and received in packet headers. Those were merged into `old` and `new` in #45, and that distinction was lost. #404 (fixing #346) removed an example that gave sending NEW_CONNECTION_ID as a trigger. In #373, a request to log where connection IDs come from was answered with \"can/should be inferred from other events ... (e.g., receipt of NCID frames ...)\".\n\nTwo related problems:\n\n- RFC 9000 lets an endpoint use any of its active connection IDs at any time, so more than one can be in use at once. The event assumes there's only one current ID.\n- A comment on PacketHeader says `dcid` can be left out of 1-RTT packets if `connection_id_updated` is logged. That only works if the event tracks exactly which ID each packet uses.\n\nOptions:\n\n1. Make the event about using connection IDs: \"local\" when this endpoint starts sending to a new one, \"remote\" when the peer does. Being given or retiring connection IDs is already visible in the NEW_CONNECTION_ID and RETIRE_CONNECTION_ID frames.\n2. Make the event about being given connection IDs, and remove the PacketHeader comment.\n3. Make the event log the set of active connection IDs for each endpoint, each time the set changes. This covers several IDs in use at once, but it doesn't say which ID a packet used, so the PacketHeader comment would still need removing.",
       "createdAt": "2026-10-23T15:26:26Z",
-      "updatedAt": "2026-10-28T18:22:25Z",
+      "updatedAt": "2026-11-19T23:09:07Z",
       "closedAt": null,
       "comments": [
         {
@@ -10643,6 +10650,13 @@
           "body": "Seems like a good candidate to present at IETF 127",
           "createdAt": "2026-10-27T12:02:53Z",
           "updatedAt": "2026-10-27T12:02:53Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Discussed at IETF 127: agreement in room to remove it, to be confirmed on the list",
+          "createdAt": "2026-11-19T23:08:58Z",
+          "updatedAt": "2026-11-19T23:08:58Z"
         }
       ]
     },
@@ -11133,15 +11147,15 @@
       "id": "I_kwDOCrLn6M8AAAABfSI8Bw",
       "title": "Define qlog extension for QUIC multipath",
       "url": "https://github.com/quicwg/qlog/issues/654",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "huitema",
       "authorAssociation": "NONE",
       "assignees": [],
       "labels": [],
       "body": "Not a new problem, of course. We discussed that 5 years ago in issue #134. That was probably premature then, but now that RFC 10069 is published, we can probably arrive at a stable design. Based on the analysis so far, we would need:\n\n1- Add a path identifier to the event header: most events are per path. Packets are sent or received on a path, congestion control is per path, etc. RFC 10069 defines a path_id, and using that is natural -- it is the same at all vantage points. For the few events that are \"global\", the simple solution is to assume that they happen on path_id=0.\n\n2- Add events related to path management, distinct from the path challenge and validation defined in the current draft. The current events happen within \"path_id=0\", but can in fact happen withing any of the paths, especially due to NAT rebinding. At a minimum, we probably need path creation and deletion events.\n\n3- Add definitions for the new frames created in RFC 10069.\n\nI understand that this should be an extension of the current QUIC events definition, but I will need some guidance to do that.",
       "createdAt": "2026-11-14T18:36:02Z",
-      "updatedAt": "2026-11-16T17:32:00Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-19T23:08:35Z",
+      "closedAt": "2026-11-19T23:08:35Z",
       "comments": [
         {
           "author": "LPardue",
@@ -11149,6 +11163,13 @@
           "body": "Item 1 overlaps with issue #501, which is proposing the opposite to take tuple out of the common event fields and put it only in the QUIC packet events that need it. #617 implements that and is still open. \n\nThe existing tuple field is not a path ID. #487 renamed Path to Tuple because the multipath editors asked for it. A multipath path keeps its ID when its four-tuple changes, for example after NAT rebinding. So a path ID would be a new field alongside tuple, not a replacement for it. Since #501 is fundamentally about whether per-path information belongs in the common event fields at all, that needs to be settled before considering adding a path ID.\n\nItems 2 and 3 can go in an extension without any change to the core drafts.\n\n- Define a new event schema with its own URI, for example urn:ietf:params:qlog:events:quic#multipath.\n- Define path creation and deletion as new event types in that schema.\n- Add the new frames by extending $QuicFrame.\n- Add path_id to existing QUIC events through their extension sockets, for example $$quic-packetsent-extension.",
           "createdAt": "2026-11-16T17:32:00Z",
           "updatedAt": "2026-11-16T17:32:00Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Discussed at IETF 127: agreement in room to work on multipath related events in a new document.\n\nAs such, closing with no action. ",
+          "createdAt": "2026-11-19T23:08:35Z",
+          "updatedAt": "2026-11-19T23:08:35Z"
         }
       ]
     },
@@ -11181,7 +11202,7 @@
       "id": "I_kwDOCrLn6M8AAAABf2Xy7w",
       "title": "Logging of selected SNI",
       "url": "https://github.com/quicwg/qlog/issues/657",
-      "state": "OPEN",
+      "state": "CLOSED",
       "author": "huitema",
       "authorAssociation": "NONE",
       "assignees": [],
@@ -11190,8 +11211,8 @@
       ],
       "body": "In my previous \"naive\" implementation of QLOG, I was logging the SNI as another \"transport parameter\", just like the ALPN. The latest draft split that into two events, alpn_information and parameters_set. But the SNI does not fit in any of those -- and yet it is a feature about as important as ALPN. I see the discussion in #85, but it did not touch the SNI. So I wonder what I should do. Write an extension? Wildcat use of an SNI property in the alpn_information? Write an extension? Suggest a \"quic:sni_information\" event?",
       "createdAt": "2026-11-16T22:37:40Z",
-      "updatedAt": "2026-11-17T19:18:12Z",
-      "closedAt": null,
+      "updatedAt": "2026-11-19T23:07:22Z",
+      "closedAt": "2026-11-19T23:07:22Z",
       "comments": [
         {
           "author": "LPardue",
@@ -11213,6 +11234,37 @@
           "body": "> The SNI is important for systems that multiplex multiple SNI on the same IP\n\nAgree (sorry if that was not clear)\n\nSpeaking to my experience working at a CDN operator that used anyast IP to share IPs between thousands(+) of DNS names, the SNI is some vital data. I can't recall a reason it wasn't qlogged in quiche, other than we had other observability systems that covered the gap. Loggers can use HTTP `:authority` headers as a crutch, but things like connection coalescing mean there is looser coupling to the SNI that might seem otherwise.\n\nI'm generally supportive of _more_ logging in this area but based on our track record, I am not convinced we can design a clean solution in a timely manner. ",
           "createdAt": "2026-11-17T19:18:12Z",
           "updatedAt": "2026-11-17T19:18:12Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Discussed at IETF 127: there was agreement in room to remove TLS things and no interest to add more. Instead, @huitema has volunteered to draft a TLS qlog.\n\nAs such, closing this issue with no action required.",
+          "createdAt": "2026-11-19T23:07:22Z",
+          "updatedAt": "2026-11-19T23:07:22Z"
+        }
+      ]
+    },
+    {
+      "number": 659,
+      "id": "I_kwDOCrLn6M8AAAABhLjDTw",
+      "title": "Migration state updated is an poor event name if doing multipath",
+      "url": "https://github.com/quicwg/qlog/issues/659",
+      "state": "OPEN",
+      "author": "huitema",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "We are starting to write the \"QUIC multipath\" extensions (see: https://github.com/huitema/qlog-multipath-extension) and we are discussing how to properly log tuple validation, path start and migration of a path to a new tuple. The current event `[migration_state_updated](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events.html#name-migration_state_updated)` is almost right, we just need to add a path_id in the event header to make it per path, which is easy to do in the extension draft. We perhaps need to have new \"migration\" event names for the validation of the first tuple in a new path, but we can also do that in the extension draft. \n\nBut we cannot do is change the name of the event in the draft. The current name 'migration_state_updated\" is a poor fit once we have multipath, because these events are not necessarily tied to a migration -- we can have multiple parallel paths, and we can have multiple tuples probed and validated for the same path. Can we change that name to something neutral, like maybe \"tuple_state_updated'?",
+      "createdAt": "2026-11-20T23:45:03Z",
+      "updatedAt": "2026-11-20T23:51:33Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "We may also want to rename the parameter MigrationState to TupleState.",
+          "createdAt": "2026-11-20T23:51:33Z",
+          "updatedAt": "2026-11-20T23:51:33Z"
         }
       ]
     }
@@ -34228,7 +34280,7 @@
       "labels": [],
       "body": "Replaces #559. Fixes #501.\n\nThe first commit is #559, rebased on main. The second commit associates events that omit the `tuple` field with the TupleID `\"\"` instead of the initial tuple. This way, a stack can reassign `\"\"` with a `tuple_assigned` event when it migrates, and only needs to log the `tuple` for packets sent or received on other tuples.",
       "createdAt": "2026-10-24T19:26:31Z",
-      "updatedAt": "2026-10-28T15:29:16Z",
+      "updatedAt": "2026-11-20T01:28:19Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "9afc6ba92cd22ef9870de1f7ea1967b6ef971884",
@@ -34253,6 +34305,27 @@
           "body": "As I said in #501 I'd rather not touch this as it would require double-checking if all logic around multipath-capabilities hold.\r\n\r\nAt first glance, this seems to be a safe approach, but I can't be sure and don't have cycles atm to really think through everything and lookup the old issues etc.\r\n\r\nSo either we keep this open until after the current cutoff and I have time to properly evaluate, or you two verify you think this is \"safe\" and have thought through the implications and then you can feel free to merge it. ",
           "createdAt": "2026-10-28T15:29:16Z",
           "updatedAt": "2026-10-28T15:29:16Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Discussed at IETF 127: my understanding is that the is not pushback to doing this. Its easier to add things back than remove them. Christian is starting a new multi path qlog document that can address those specific concerns.\r\n\r\nGiven the authors are reasonably happy to make the change on the PR, lets resolve the conflicts, and confirm on the list before merging.",
+          "createdAt": "2026-11-19T23:05:02Z",
+          "updatedAt": "2026-11-19T23:05:02Z"
+        },
+        {
+          "author": "marten-seemann",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Do we really need to wait for confirmation on the list? I'd rather move more quickly here, and revert if there is strong pushback.",
+          "createdAt": "2026-11-20T01:21:49Z",
+          "updatedAt": "2026-11-20T01:21:49Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Yes I do. The email will go out tomorrow with 1 week to raise any objection. In the meantime, we have other work to keep us busy enough.",
+          "createdAt": "2026-11-20T01:28:19Z",
+          "updatedAt": "2026-11-20T01:28:19Z"
         }
       ],
       "reviews": []
@@ -35303,7 +35376,7 @@
       "labels": [],
       "body": "AI-assisted: drafted based on an implementation survey and the issue history, then reviewed by me.\n\nThis PR takes a machete to the draft to drop TLS stuff:  `alpn_information` and `ALPNIdentifier`, plus the `resumption_allowed`, `early_data_enabled` and `tls_cipher` fields of `parameters_set`. It is an alternative to https://github.com/quicwg/qlog/pull/561.\n\nThe QUIC event schema covers TLS only partially. Other interesting things a ClientHello or ServerHello carry (SNI, key exchange group, signature scheme, ECH) have no home. #657 raised the issue about SNI. \n\nImplementations make little use of the stuff we already provide. Of the 14 QUIC stacks checked, two emit `alpn_information`, each with a single field, and quic-go still uses the pre-#439 `transport:` name. Only quiche emits `tls_cipher`, and it uses its own algorithm names rather than IANA cipher suite names. None emit `resumption_allowed` or `early_data_enabled`. The stacks that log more TLS handshake values, s2n-quic and mvfst, already use their own events. Our oldest issue, https://github.com/quicwg/qlog/issues/27, relates to TLS 0-RTT and we have not been able to come to consensus on how to resolve it.\n\nRemoving the items from QUIC fixes the leaking layer violations. TLS handshake information can move to an extension schema, most likely in an appropriate `tis` namespace. \n\nKeys, `CryptoError`, the handshake states and CRYPTO frames stay, because QUIC defines them explicitly. We are not inventing anything there.\n",
       "createdAt": "2026-11-17T19:30:51Z",
-      "updatedAt": "2026-11-17T19:30:52Z",
+      "updatedAt": "2026-11-21T01:17:32Z",
       "baseRepository": "quicwg/qlog",
       "baseRefName": "main",
       "baseRefOid": "8ac10602a81d7d61e1adf2142cb1d0e33dbf4943",
@@ -35314,7 +35387,22 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Discussed at IETF 127: agreement in room to remove TLS things, to be confirmed on the list",
+          "createdAt": "2026-11-19T23:00:26Z",
+          "updatedAt": "2026-11-19T23:00:26Z"
+        },
+        {
+          "author": "huitema",
+          "authorAssociation": "NONE",
+          "body": "FYI: I am starting work on [Qlog TLS extension](https://github.com/huitema/qlog-tls-extension). Just starting, not much done yet. We could use help from a volunteer or two. ",
+          "createdAt": "2026-11-21T01:17:32Z",
+          "updatedAt": "2026-11-21T01:17:32Z"
+        }
+      ],
       "reviews": []
     }
   ]
