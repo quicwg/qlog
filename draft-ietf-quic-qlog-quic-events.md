@@ -165,7 +165,6 @@ this specification.
 | quic:server_listening         | Extra      | {{quic-serverlistening}} |
 | quic:connection_started       | Base       | {{quic-connectionstarted}} |
 | quic:connection_closed        | Base       | {{quic-connectionclosed}} |
-| quic:connection_id_updated    | Base       | {{quic-connectionidupdated}} |
 | quic:spin_bit_updated         | Base       | {{quic-spinbitupdated}} |
 | quic:connection_state_updated | Base       | {{quic-connectionstateupdated}} |
 | quic:tuple_assigned            | Base      | {{quic-tupleassigned}} |
@@ -212,7 +211,6 @@ described in {{Section 8.2 of QLOG-MAIN}}.
 QuicEventData = QUICServerListening /
                 QUICConnectionStarted /
                 QUICConnectionClosed /
-                QUICConnectionIDUpdated /
                 QUICSpinBitUpdated /
                 QUICConnectionStateUpdated /
                 QUICTupleAssigned /
@@ -372,29 +370,6 @@ Implementations SHOULD use the most descriptive `trigger` value that they can
 determine. This is often clear at the endpoint that closes the connection, but
 can be less clear at the endpoint that receives the CONNECTION_CLOSE frame.
 
-
-## connection_id_updated {#quic-connectionidupdated}
-
-The `connection_id_updated` event is emitted when either endpoint updates its
-current connection ID. This typically happens rarely during a connection, so
-logging this event is more efficient than logging the connection ID in every
-`packet_sent` or `packet_received` event. It has Base importance level.
-
-The `connection_id_updated` event is viewed from the perspective of the
-endpoint applying the new ID. When the endpoint receives a new connection ID
-from the peer, the `initiator` field is "remote". When the endpoint updates its
-own connection ID, the `initiator` field is "local".
-
-~~~ cddl
-QUICConnectionIDUpdated = {
-    initiator: Initiator
-    ? old: ConnectionID
-    ? new: ConnectionID
-
-    * $$quic-connectionidupdated-extension
-}
-~~~
-{: #quic-connectionidupdated-def title="QUICConnectionIDUpdated definition"}
 
 ## spin_bit_updated {#quic-spinbitupdated}
 
@@ -1952,8 +1927,6 @@ PacketHeader = {
     ? token: Token
 
     ; only if present in the header.
-    ; if correctly using connection_id_updated events,
-    ; dcid can be skipped for 1RTT packets
     ? version: QuicVersion
     ? scil: uint8
     ? dcil: uint8
@@ -2549,7 +2522,6 @@ Event Types:
 : server_listening,
   connection_started,
   connection_closed,
-  connection_id_updated,
   spin_bit_updated,
   connection_state_updated,
   tuple_assigned,
