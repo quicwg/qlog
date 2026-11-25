@@ -1504,8 +1504,7 @@ for every protocol behavior would cause an explosion of event types.
 
 Event schemas also avoid duplicate data as much as possible. For example, QUIC
 packet header values that stay the same across many packets have their own
-events, logged only when a value changes (e.g., `spin_bit_updated` or
-`connection_id_updated`).
+events, logged only when a value changes (e.g., `spin_bit_updated`).
 
 Finally, many state changes can be inferred from data on the wire (e.g., flow
 control limit changes). Event schemas typically do not define events for these,
