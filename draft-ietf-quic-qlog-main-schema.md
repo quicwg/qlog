@@ -193,7 +193,7 @@ should be aware of for easy reading comprehension are:
 
 # Design Overview
 
-The main tenets for the qlog design are:
+The qlog design has these main tenets:
 
 * Streamable, event-based logging
 * A flexible format that can reduce log producer overhead, at the cost of
@@ -204,31 +204,28 @@ The main tenets for the qlog design are:
   group_ids can be used to tag events to a particular context)
 * Metadata is stored together with event data
 
-This is achieved by a logical logging hierarchy of:
+The design uses a logical hierarchy:
 
 * Log file
   * Trace(s)
     * Event(s)
 
-An abstract LogFile class is declared ({{abstract-logfile}}), from which all
-concrete log file formats derive using log file schemas. This document defines
-the QlogFile ({{qlog-file-schema}}) and QlogFileSeq ({{qlog-file-seq-schema}})
-log file schemas.
+This document declares an abstract LogFile class ({{abstract-logfile}}), from
+which all concrete log file schemas derive. It defines two log file schemas:
+QlogFile ({{qlog-file-schema}}) and QlogFileSeq ({{qlog-file-seq-schema}}).
 
-A trace is conceptually fluid but the conventional use case is to group events
-related to a single data flow, such as a single logical QUIC connection, at a
-single vantage point ({{vantage-point}}). Concrete trace definitions relate to
-the log file schemas they are contained in; see ({{traces}}, {{trace}}, and
-{{traceseq}}).
+A trace groups related events logged at a single vantage point
+({{vantage-point}}). Typically, a trace contains the events of a single data
+flow, such as one logical QUIC connection. Each log file schema defines its own
+trace type; see {{traces}}, {{trace}}, and {{traceseq}}.
 
-Events are logged at a time instant and convey specific details of the logging
-use case. For example, a network packet being sent or received. This document
-declares an abstract Event class ({{abstract-event}}) containing fields common
-to all events, which all concrete events derive from. Concrete events are
-defined by event schemas that declare or extend a namespace, which contains one
-or more related event types or their extensions. For example, this document
-defines two event schemas for two generic event namespaces `loglevel` and
-`simulation` (see {{generic-event-schema}}).
+An event records something that happened at a point in time, such as a network
+packet being sent or received. This document declares an abstract Event class
+({{abstract-event}}) containing fields common to all events, which all concrete
+events derive from. Concrete events are defined by event schemas that declare or
+extend a namespace, which contains one or more related event types or their
+extensions. For example, this document defines two event schemas for two generic
+event namespaces `loglevel` and `simulation` (see {{generic-event-schema}}).
 
 ## Default Values {#default-values}
 
@@ -240,16 +237,15 @@ default value explicitly means the same as omitting the field.
 If an optional field has no default value, omitting it implies nothing about its
 value.
 
-The rules for default values can be overridden by definitions, for example by saying
-that an omitted field keeps its value from an earlier event.
+A definition can override these rules, for example by stating that an omitted
+field keeps its value from an earlier event.
 
 # Abstract LogFile Class {#abstract-logfile}
 
-A Log file is intended to contain a collection of events that are in some way
-related. An abstract LogFile class containing fields common to all log files is
-defined in {{abstract-logfile-def}}. Each concrete log file schema derives from
-this using the CDDL unwrap operator (~) and can extend it by defining semantics
-and any custom fields.
+A log file contains a collection of related events. The abstract LogFile class
+({{abstract-logfile-def}}) contains the fields common to all log files. Each
+concrete log file schema derives from it using the CDDL unwrap operator (~) and
+can extend it with its own semantics and custom fields.
 
 ~~~ cddl
 LogFile = {
@@ -268,9 +264,9 @@ guidance.
 The required `serialization_format` field indicates the serialization
 format using a media type {{!RFC2046}}. It is case-insensitive.
 
-In order to make it easier to parse and identify qlog files and their
-serialization format, the `file_schema` and `serialization_format` fields and
-their values SHOULD be in the first 256 bytes of the resulting log file.
+To make qlog files and their serialization format easier to identify, the
+`file_schema` and `serialization_format` fields and their values SHOULD be in
+the first 256 bytes of the log file.
 
 The optional `title` and `description` fields provide additional free-text
 information about the file.
