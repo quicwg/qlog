@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-24T07:57:09.731255+00:00",
+  "timestamp": "2026-11-26T06:25:09.506296+00:00",
   "repo": "quicwg/qlog",
   "labels": [
     {
@@ -10634,7 +10634,7 @@
       ],
       "body": "It's not clear what `connection_id_updated` is for. There are two possible readings:\n\n- It logs when an endpoint **starts using** a different connection ID.\n- It logs when an endpoint **is given** a new connection ID, for example in a NEW_CONNECTION_ID frame.\n\nThese are different things. Being given a connection ID doesn't mean using it. An endpoint can use it later, or never (RFC 9000 Section 5.1.1).\n\nThe text supports both readings. It says the event is for when an endpoint \"updates its current connection ID\", which suggests using. But it also says the event is logged when an endpoint \"receives a new connection ID from the peer\", which suggests being given one.\n\nThe history points to using. The event was added so that implementations don't have to log the connection ID in every packet. Its first version had separate fields for the IDs sent and received in packet headers. Those were merged into `old` and `new` in #45, and that distinction was lost. #404 (fixing #346) removed an example that gave sending NEW_CONNECTION_ID as a trigger. In #373, a request to log where connection IDs come from was answered with \"can/should be inferred from other events ... (e.g., receipt of NCID frames ...)\".\n\nTwo related problems:\n\n- RFC 9000 lets an endpoint use any of its active connection IDs at any time, so more than one can be in use at once. The event assumes there's only one current ID.\n- A comment on PacketHeader says `dcid` can be left out of 1-RTT packets if `connection_id_updated` is logged. That only works if the event tracks exactly which ID each packet uses.\n\nOptions:\n\n1. Make the event about using connection IDs: \"local\" when this endpoint starts sending to a new one, \"remote\" when the peer does. Being given or retiring connection IDs is already visible in the NEW_CONNECTION_ID and RETIRE_CONNECTION_ID frames.\n2. Make the event about being given connection IDs, and remove the PacketHeader comment.\n3. Make the event log the set of active connection IDs for each endpoint, each time the set changes. This covers several IDs in use at once, but it doesn't say which ID a packet used, so the PacketHeader comment would still need removing.",
       "createdAt": "2026-10-23T15:26:26Z",
-      "updatedAt": "2026-11-19T23:09:07Z",
+      "updatedAt": "2026-11-25T20:21:55Z",
       "closedAt": null,
       "comments": [
         {
@@ -11256,7 +11256,7 @@
       "labels": [],
       "body": "We are starting to write the \"QUIC multipath\" extensions (see: https://github.com/huitema/qlog-multipath-extension) and we are discussing how to properly log tuple validation, path start and migration of a path to a new tuple. The current event `[migration_state_updated](https://datatracker.ietf.org/doc/html/draft-ietf-quic-qlog-quic-events.html#name-migration_state_updated)` is almost right, we just need to add a path_id in the event header to make it per path, which is easy to do in the extension draft. We perhaps need to have new \"migration\" event names for the validation of the first tuple in a new path, but we can also do that in the extension draft. \n\nBut we cannot do is change the name of the event in the draft. The current name 'migration_state_updated\" is a poor fit once we have multipath, because these events are not necessarily tied to a migration -- we can have multiple parallel paths, and we can have multiple tuples probed and validated for the same path. Can we change that name to something neutral, like maybe \"tuple_state_updated'?",
       "createdAt": "2026-11-20T23:45:03Z",
-      "updatedAt": "2026-11-23T01:16:36Z",
+      "updatedAt": "2026-11-25T20:46:12Z",
       "closedAt": null,
       "comments": [
         {
@@ -11279,6 +11279,13 @@
           "body": "Could we also define the emit conditions? Like `probing_successful` would mean the endpoint received a matching PATH_RESPONSE, and `probing_abandoned` would mean it gave up an outstanding validation attempt.",
           "createdAt": "2026-11-23T01:16:36Z",
           "updatedAt": "2026-11-23T01:16:36Z"
+        },
+        {
+          "author": "LPardue",
+          "authorAssociation": "MEMBER",
+          "body": "Yeah, this seems logical. We need to do a bit more analysis and discussion before landing on the exact spelling but a change seems good.",
+          "createdAt": "2026-11-25T20:46:12Z",
+          "updatedAt": "2026-11-25T20:46:12Z"
         }
       ]
     }
@@ -35417,6 +35424,32 @@
           "updatedAt": "2026-11-21T01:17:32Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 660,
+      "id": "PR_kwDOCrLn6M8AAAABR70x6A",
+      "title": "Remove connection_id_updated",
+      "url": "https://github.com/quicwg/qlog/pull/660",
+      "state": "OPEN",
+      "author": "LPardue",
+      "authorAssociation": "MEMBER",
+      "assignees": [],
+      "labels": [],
+      "body": "_Drafted with AI assistance; I reviewed the diff, the issue history and the CDDL validation._\n\nCloses #608.\n\n`connection_id_updated` assumed an endpoint has a single current connection ID, but RFC 9000 lets an endpoint use any of its active connection IDs, so several can be in use at once. Issuance and retirement are already visible in NEW_CONNECTION_ID and RETIRE_CONNECTION_ID frames.\n\nAt IETF 127 the room agreed to remove the event, to be confirmed on the list.\n\nThis PR removes the event definition, its table, CDDL and IANA entries, the PacketHeader comment that allowed skipping `dcid` for 1RTT packets, and the main-schema example that cited it.",
+      "createdAt": "2026-11-25T20:21:53Z",
+      "updatedAt": "2026-11-25T20:21:55Z",
+      "baseRepository": "quicwg/qlog",
+      "baseRefName": "main",
+      "baseRefOid": "8ac10602a81d7d61e1adf2142cb1d0e33dbf4943",
+      "headRepository": "quicwg/qlog",
+      "headRefName": "remove-connection-id-updated",
+      "headRefOid": "802f69e266a05541fd8d1eaa0e97508afe1a80c6",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
