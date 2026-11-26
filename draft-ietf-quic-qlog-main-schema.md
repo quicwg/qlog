@@ -309,10 +309,9 @@ Registration requests should use the template defined in {{iana}}.
 
 # QlogFile Schema {#qlog-file-schema}
 
-A qlog file using the QlogFile schema can contain several individual traces and
-logs from multiple vantage points that are in some way related. The top-level
-element in this schema defines only a small set of "header" fields and an array
-of component traces. This is defined in {{qlog-file-def}} as:
+A qlog file using the QlogFile schema can contain several related traces, from
+one or more vantage points. Its top-level element contains a small set of
+"header" fields and an array of traces, defined in {{qlog-file-def}} as:
 
 ~~~ cddl
 QlogFile = {
@@ -333,12 +332,10 @@ field contains an array of qlog traces ({{trace}}) or trace errors
 
 This document defines a JSON serialization for QlogFile; see {{format-json}} for
 guidance on populating the `serialization_format` field and other
-considerations. Where a qlog file is serialized to a JSON format, one of the
-downsides is that it is inherently a non-streamable format. Put differently, it
-is not possible to simply append new qlog events to a log file without "closing"
-this file at the end by appending "]}]}". Without these closing brackets, most
-JSON parsers will be unable to parse the file entirely. The alternative
-QlogFileSeq ({{qlog-file-seq-schema}}) is better suited to streaming use cases.
+considerations. JSON is not a streamable format. A logger cannot append events
+to a JSON QlogFile without closing the file by appending "]}]}", and most JSON
+parsers cannot parse a file that lacks these closing brackets. QlogFileSeq
+({{qlog-file-seq-schema}}) suits streaming use cases.
 
 JSON serialization example:
 
@@ -355,28 +352,26 @@ JSON serialization example:
 
 ## Traces {#traces}
 
-It can be useful to group several related qlog traces in a single file. For
-example, logging can happen simultaneously on the client, on the server, and at
-a point on their common network path. Combining these three traces in one file
-makes them easier to analyze, store, transfer, and annotate as a set.
+A single file can group several related qlog traces. For example, logging can
+happen simultaneously on the client, on the server, and at a point on their
+common network path. Combining these three traces in one file makes them easier
+to analyze, store, transfer, and annotate as a set.
 
-The QlogFile `traces` field is an array that contains a list of individual qlog
-traces. When capturing a qlog at a vantage point, it is expected that the traces
-field contains a single entry. Files can be aggregated, for example as part of a
-post-processing operation, by copying the traces from the component files into
-the combined `traces` array of a new, aggregated qlog file.
+The QlogFile `traces` field is an array of individual qlog traces. For a capture
+at a single vantage point, the `traces` field is expected to contain a single
+entry. Files can be aggregated, for example as part of a post-processing
+operation, by copying the traces from the component files into the combined
+`traces` array of a new, aggregated qlog file.
 
-Note that another way to combine events of different traces in a single qlog
-file is through the use of the `group_id` field, discussed in {{group-ids}}.
+The `group_id` field ({{group-ids}}) is another way to combine the events of
+different traces in a single qlog file.
 
 ## Trace {#trace}
 
-The exact conceptual definition of a Trace can be fluid. For example, a trace
-could contain all events for a single connection, for a single endpoint, for a
-single measurement interval, for a single protocol, etc. In the normal use case
-however, a trace is a log of a single data flow collected at a single location
-or vantage point. For example, for QUIC, a single trace typically contains
-events for a single logical QUIC connection for either the client or the server.
+A trace can contain, for example, all events for a single connection, endpoint,
+measurement interval, or protocol. Typically, a trace logs a single data flow.
+For QUIC, a trace typically contains the events of one logical QUIC connection,
+logged at either the client or the server.
 
 A Trace contains some metadata in addition to qlog events, defined in
 {{trace-def}} as:
@@ -409,8 +404,8 @@ The required `event_schemas` field contains event schema URIs that identify
 concrete event namespaces and their associated types recorded in the `events`
 field. Requirements and guidelines are defined in {{event-types-and-schema}}.
 
-The semantics and context of the trace can mainly be deduced from the entries in
-the `common_fields` list and `vantage_point` field.
+The `common_fields` and `vantage_point` fields provide most of the trace's
+context.
 
 JSON serialization example:
 
@@ -442,10 +437,10 @@ JSON serialization example:
 
 ## TraceError {#trace-error}
 
-A TraceError indicates that an attempt to find/convert a file for inclusion in
-the aggregated qlog was made, but there was an error during the process. Rather
-than silently dropping the erroneous file, it can be explicitly included in the
-qlog file as an entry in the `traces` array, defined in {{trace-error-def}} as:
+A TraceError records a failure to find or convert a file for inclusion in an
+aggregated qlog file. Instead of silently dropping the file, an aggregator can
+add a TraceError to the `traces` array. TraceError is defined in
+{{trace-error-def}} as:
 
 ~~~ cddl
 TraceError = {
@@ -472,9 +467,9 @@ JSON serialization example:
 # QlogFileSeq Schema {#qlog-file-seq-schema}
 
 A qlog file using the QlogFileSeq schema can be serialized to a streamable JSON
-format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}). The top-level
-element in this schema defines only a small set of "header" fields and a single
-component trace. This is defined in {{qlog-file-seq-def}} as:
+format called JSON Text Sequences (JSON-SEQ) ({{!RFC7464}}). Its top-level
+element contains a small set of "header" fields and a single trace, defined in
+{{qlog-file-seq-def}} as:
 
 ~~~ cddl
 QlogFileSeq = {
@@ -488,8 +483,8 @@ The QlogFileSeq schema URI is `urn:ietf:params:qlog:file:sequential`.
 
 QlogFileSeq extends LogFile using the CDDL unwrap operator (~), which copies the
 fields presented in {{abstract-logfile}}. Additionally, the required `trace`
-field contains a single TraceSeq ({{traceseq}}), which all qlog events in the
-file are related to.
+field contains a single TraceSeq ({{traceseq}}), to which all qlog events in the
+file relate.
 
 See {{format-json-seq}} for guidance on populating the `serialization_format`
 field and other serialization considerations.
@@ -529,9 +524,8 @@ shown as \<RS\>, and ends with a newline; see {{RFC7464}}.
 
 ## TraceSeq {#traceseq}
 
-TraceSeq is used with QlogFileSeq. It is conceptually similar to a Trace, with
-the exception that qlog events are not contained within it, but rather appended
-after it in a QlogFileSeq.
+TraceSeq holds the trace metadata of a QlogFileSeq. Unlike Trace, it has no
+`events` field; events are logged after it in the QlogFileSeq.
 
 ~~~ cddl
 TraceSeq = {
